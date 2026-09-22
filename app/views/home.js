@@ -216,13 +216,13 @@ const TEMPLATE = `
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <div class="eyebrow">kevala · open-source engine</div>
-      <h1>Decision models in the browser.<br><span class="grad-text">One import. No server.</span></h1>
-      <p class="lede">kevala runs System 1 decision models, <b>Laya</b> and <b>Kev-0.8B</b>, on the user's own device: a dependency-free Rust engine compiled to WebAssembly, with WebGPU kernels. Ask typed questions about any text or JSON and get calibrated probabilities back in milliseconds. Nothing leaves the tab.</p>
+      <div class="eyebrow">Open source · Apache-2.0</div>
+      <h1>Ask questions about text, <span class="grad-text">answered on the user's own GPU</span></h1>
+      <p class="lede">kevala runs the <b>Laya</b> and <b>Kev-0.8B</b> decision models inside a web page. Give it a message, an email or a JSON record, ask typed questions (yes or no, pick one, rate it), and it returns a probability for every option in about 10 ms on WebGPU. There is no server to run, and the text stays on the device.</p>
       <div class="row cta">
         <a class="btn primary" href="#/playground">Open the playground</a>
         <a class="btn" href="#/tetris">Watch it play Tetris</a>
-        <a class="btn ghost" href="#/home/embed" data-anchor="embed">Embed in 3 lines</a>
+        <a class="btn ghost" href="#/home/embed" data-anchor="embed">Add it to a page</a>
       </div>
       <ul class="facts">
         <li><b>0</b><span>runtime dependencies</span></li>
@@ -258,7 +258,7 @@ const TEMPLATE = `
   <div class="wrap embed-grid">
     <div>
       <div class="eyebrow">Embed</div>
-      <h2>Three lines to a decision</h2>
+      <h2>Add it to a page</h2>
       <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package from npm. No build step and no special headers: any static host works. The first call downloads the pinned Hugging Face checkpoint, converts it in the browser and caches it.</p>
       <div class="code"><pre data-f="install"></pre></div>
       <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words; describe every option.</p>
@@ -286,7 +286,7 @@ const TEMPLATE = `
 <section id="demos">
   <div class="wrap">
     <div class="eyebrow">Demos</div>
-    <h2>See it decide</h2>
+    <h2>What it can do</h2>
     <p class="lede">Every demo runs real inference in your browser, with the same API you would ship.</p>
     <div class="grid-3 demos">
       <a class="card demo-card" href="#/tetris">
@@ -338,7 +338,7 @@ const TEMPLATE = `
 <section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Two decision models, honest numbers</h2>
+    <h2>Two models to choose from</h2>
     <div class="grid-2">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
@@ -370,7 +370,7 @@ const TEMPLATE = `
 <section class="tight" id="under-the-hood">
   <div class="wrap">
     <div class="eyebrow">Under the hood</div>
-    <h2>How it works, and how well</h2>
+    <h2>How it works</h2>
     <div class="grid-4 hood">
       <a class="card pad mini-card" href="#/how"><h3>Architecture</h3><p class="muted small">A Rust core in WebAssembly, WGSL kernels on WebGPU, int8 packs converted in the tab.</p><span class="go">Read →</span></a>
       <a class="card pad mini-card" href="#/how/bench"><h3>Benchmarks</h3><p class="muted small">Latency per request on WebGPU, WebAssembly and native, measured in real browsers.</p><span class="go">See the numbers →</span></a>

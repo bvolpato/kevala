@@ -1,7 +1,7 @@
 {
   "name": "kevala",
-  "version": "0.1.0",
-  "description": "Decision models (Laya, Kev-0.8B) in any web page: a zero-dependency Rust engine compiled to WebAssembly, with WebGPU kernels. One import, no server.",
+  "version": "0.1.1",
+  "description": "Run the Laya and Kev-0.8B decision models inside a web page, on WebGPU or WebAssembly: typed questions in, a probability for every option out, no server.",
   "keywords": [
     "webassembly",
     "webgpu",

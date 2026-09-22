@@ -6,7 +6,7 @@ import { session, MODELS, MODEL_NOTES, LOCAL, SHOT } from "./session.js";
 import { esc, fmtBytes, fmtMs, backendLabel, REPO } from "./ui.js";
 
 const ROUTES = [
-  { id: "home", title: "kevala · decision models in the browser", load: () => import("./views/home.js"), nav: false },
+  { id: "home", title: "kevala · decision models that run in the page", load: () => import("./views/home.js"), nav: false },
   { id: "playground", label: "Playground", title: "Playground · kevala", load: () => import("./views/playground.js") },
   { id: "tetris", label: "Tetris", title: "Tetris played by a decision model · kevala", load: () => import("./views/tetris.js") },
   { id: "guardrail", label: "Guardrail", title: "Prompt guardrail · kevala", load: () => import("./views/guardrail.js") },
@@ -14,7 +14,7 @@ const ROUTES = [
   { id: "how", label: "How it works", title: "How kevala works", load: () => import("./views/how.js") },
 ];
 
-const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7aa2ff"/><stop offset=".55" stop-color="#45e0c0"/><stop offset="1" stop-color="#c592ff"/></linearGradient></defs><rect x="1" y="1" width="30" height="30" rx="9" fill="#0f131b" stroke="url(#wg)" stroke-width="2"/><path d="M7 11l4 11 5-8 5 8 4-11" fill="none" stroke="url(#wg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="wg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7aa2ff"/><stop offset=".55" stop-color="#45e0c0"/><stop offset="1" stop-color="#c592ff"/></linearGradient></defs><rect x="1" y="1" width="30" height="30" rx="9" fill="#0f131b" stroke="url(#wg)" stroke-width="2"/><path d="M11.5 7.5v17M21 12.5l-9 6.5M15.6 16.4l5.9 8.1" fill="none" stroke="url(#wg)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 // ---------------------------------------------------------------------------------------------
 // header

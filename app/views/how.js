@@ -8,10 +8,10 @@ const DOCS = `${REPO}/blob/main/docs`;
 const TEMPLATE = `<div class="wrap">
   <div class="page-head">
     <div class="eyebrow">How it works</div>
-    <h1>From a Hugging Face checkpoint to a decision, all client-side</h1>
+    <h1>From a Hugging Face checkpoint to an answer, in the browser</h1>
     <p>kevala streams the authors' weights at a pinned revision, converts them to int8 in the tab and runs them with a dependency-free Rust core, on WebGPU or on WebAssembly workers. This page shows the path, what it costs and how close it stays to the PyTorch reference.</p>
     <nav class="how-toc" aria-label="On this page">
-      <a href="#/how/architecture">Architecture</a><a href="#/how/bench">Speed</a><a href="#/how/fidelity">Fidelity</a><a href="#/how/limits">Honest limits</a><a href="#/how/more">Go deeper</a>
+      <a href="#/how/architecture">Architecture</a><a href="#/how/bench">Speed</a><a href="#/how/fidelity">Fidelity</a><a href="#/how/limits">Limits</a><a href="#/how/more">Go deeper</a>
     </nav>
   </div>
 
@@ -30,7 +30,7 @@ const TEMPLATE = `<div class="wrap">
 
   <section class="how-sec" id="bench">
     <div class="eyebrow">Speed</div>
-    <h2>Milliseconds, in the browser</h2>
+    <h2>Latency</h2>
     <p class="muted">Apple M4 Max, WebGPU in Chrome, cold requests unless noted.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Laya, short request</span><b>11 ms</b><span class="ts">one question, about 45 tokens</span></div>
@@ -57,7 +57,7 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="limits">
     <div class="grid-2 limits">
       <div>
-        <div class="eyebrow">Honest limits</div>
+        <div class="eyebrow">Limits</div>
         <h2>What to expect</h2>
         <p class="muted">kevala is young. These are the edges today.</p>
       </div>
@@ -74,7 +74,7 @@ const TEMPLATE = `<div class="wrap">
 
   <section class="how-sec" id="more">
     <div class="eyebrow">Go deeper</div>
-    <h2>Check it yourself</h2>
+    <h2>Run the checks yourself</h2>
     <div class="grid-3 more">
       <a class="card pad link-card" href="parity.html"><h3>Laya parity</h3><p class="muted small">Replay the golden fixtures against the PyTorch reference, in this browser.</p><span class="go">parity.html →</span></a>
       <a class="card pad link-card" href="parity-kev.html"><h3>Kev-0.8B parity</h3><p class="muted small">The same check for Kev, against Kev's own PyTorch code.</p><span class="go">parity-kev.html →</span></a>

@@ -1,6 +1,6 @@
 <h1 align="center">kevala</h1>
 
-<p align="center"><b>Decision models in any web page. One import. No server.</b></p>
+<p align="center"><b>Ask questions about text and get answers from small models running on the user's own GPU.</b></p>
 
 <p align="center">
   <a href="https://bvolpato.github.io/kevala/#/tetris"><img src="docs/tetris.gif" alt="Tetris played live by the Laya decision model on WebGPU: the model scores every landing spot and presses the keys to get there" width="760"></a>
