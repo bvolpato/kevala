@@ -1,5 +1,6 @@
 /tmp/
 /target/
+/dist/
 node_modules/
 *.kevala
 .DS_Store
