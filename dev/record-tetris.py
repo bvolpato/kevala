@@ -24,7 +24,7 @@ from pathlib import Path
 
 from playwright.async_api import async_playwright
 
-URL = "http://127.0.0.1:8123/?pack=local&clip=1&speed=normal#/tetris"
+URL = "http://127.0.0.1:8123/?pack=local&clip=1&speed=normal&seed=3#/tetris"
 FRAMES = Path("tmp/clip")
 FFMPEG = "ffmpeg"
 

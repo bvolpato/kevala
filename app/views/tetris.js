@@ -8,7 +8,6 @@ import { params } from "../session.js";
 
 const COLORS = { I: "#45e0c0", O: "#f6c453", T: "#b48cff", S: "#8be36b", Z: "#ff7a8a", J: "#7aa2ff", L: "#ff9f5a" };
 const TYPE_OF = ["", "I", "O", "T", "S", "Z", "J", "L"];
-const DEMO_SEED = 3;
 const DAS = 160; // ms before a held key repeats
 const ARR = 35; // ms between repeats
 const STEP = 1000 / 120; // fixed simulation step
@@ -45,10 +44,7 @@ const HTML = `<div class="wrap">
     <div class="t-tools">
       <button type="button" class="btn auto-btn" aria-pressed="false"><span class="led"></span>Auto <kbd>A</kbd></button>
       <div class="seg" role="group" aria-label="Key speed">${SPEED_BUTTONS}</div>
-      <div class="seg seed-seg" role="group" aria-label="Piece order">
-        <button type="button" class="seg-b" data-seed="demo" aria-pressed="true">Demo</button>
-        <button type="button" class="seg-b" data-seed="random" aria-pressed="false">Random</button>
-      </div>
+      <button type="button" class="btn reset-btn" title="A new game with new pieces">Reset <kbd>R</kbd></button>
     </div>
   </div>
   <div data-gate></div>
@@ -179,13 +175,9 @@ export function mount(el, { session }) {
 
   // State
 
-  let seedMode = params.get("seed") ? "custom" : "demo";
-  const customSeed = Number(params.get("seed")) || DEMO_SEED;
-  const newSeed = () => {
-    if (seedMode === "demo") return DEMO_SEED;
-    if (seedMode === "custom") return customSeed;
-    return crypto.getRandomValues(new Uint32Array(1))[0];
-  };
+  // every game draws new pieces; `?seed=N` replays one order (for tests and recordings)
+  const fixedSeed = Number(params.get("seed")) || 0;
+  const newSeed = () => fixedSeed || crypto.getRandomValues(new Uint32Array(1))[0];
   const game = new Game(newSeed());
   game.paused = true;
   let started = false;
@@ -260,7 +252,6 @@ export function mount(el, { session }) {
     started = true;
     game.paused = false;
     hideOverlay();
-    showSeed();
     ai.setEnabled(!!auto && !!model());
     if (auto) ai.request();
     if (visible) ui.board.focus({ preventScroll: true });
@@ -326,19 +317,7 @@ export function mount(el, { session }) {
     });
     button.setAttribute("aria-pressed", String(button.dataset.speed === ai.speed));
   }
-  for (const button of el.querySelectorAll("[data-seed]")) {
-    button.addEventListener("click", () => {
-      seedMode = button.dataset.seed;
-      for (const b of el.querySelectorAll("[data-seed]")) b.setAttribute("aria-pressed", String(b === button));
-      showSeed(true);
-    });
-  }
-  function showSeed(pending) {
-    const order = seedMode === "random" ? "Random pieces" : "The same pieces every game";
-    $(".seed-seg").title = `${order} (seed ${game.seed})`;
-    if (pending && started) toast(seedMode === "random" ? "The next game uses random pieces." : "The next game uses the demo order.");
-  }
-  showSeed();
+  el.querySelector(".reset-btn").addEventListener("click", () => press("reset"));
 
   // start watching as soon as the model is there, unless the player has taken the controls
   function maybeAutoStart() {
@@ -373,6 +352,7 @@ export function mount(el, { session }) {
     KeyP: "pause",
     Escape: "pause",
     Enter: "restart",
+    KeyR: "reset",
     KeyA: "auto",
   };
   const GAMEPLAY = new Set(["left", "right", "soft", "cw", "ccw", "hard", "hold"]);
@@ -382,6 +362,7 @@ export function mount(el, { session }) {
   function press(action) {
     if (action === "pause") return togglePause();
     if (action === "restart") return started && !game.over ? null : start(ai.enabled);
+    if (action === "reset") return start(ai.enabled || (!userTookOver && !!model()));
     if (action === "auto") return setAuto(!ai.enabled);
     if (!GAMEPLAY.has(action)) return;
     if (!started || game.over) {
@@ -450,7 +431,7 @@ export function mount(el, { session }) {
     const action = ACTIONS[e.code];
     if (!action) return;
     // Space and Enter keep their usual meaning on focused buttons and links outside the game
-    if ((e.code === "Space" || e.code === "Enter") && e.target.closest?.("button, a, summary") && !e.target.closest(".game")) return;
+    if ((e.code === "Space" || e.code === "Enter") && e.target.closest?.("button, a, summary") && !e.target.closest(".game, .t-tools")) return;
     e.preventDefault();
     if (e.repeat) return;
     press(action);
@@ -779,7 +760,7 @@ export function mount(el, { session }) {
   }
 
   // clicking a game control hands the keyboard straight back to the board
-  for (const button of el.querySelectorAll(".game button")) {
+  for (const button of el.querySelectorAll(".game button, .t-tools button")) {
     button.addEventListener("click", () => ui.board.focus({ preventScroll: true }));
   }
   if (params.get("touch") === "1") el.querySelector(".touch").style.display = "grid";
