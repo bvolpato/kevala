@@ -101,7 +101,7 @@
 .view-home .model-card .row { margin-bottom: 10px; justify-content: space-between; }
 .view-home .model-card h3 { margin: 0; }
 .view-home .specs { margin: 14px 0 0; display: grid; gap: 0; }
-.view-home .specs div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 0.84rem; }
+.view-home .specs div { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 12px; padding: 7px 0; border-top: 1px solid var(--border); font-size: 0.84rem; }
 .view-home .specs dt { color: var(--muted); }
 .view-home .specs dd { margin: 0; color: var(--text-2); }
 

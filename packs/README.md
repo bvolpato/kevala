@@ -28,9 +28,9 @@ downloads about half the bytes of the original checkpoints.
 | `kev-0.8b-q8.kevala` | Kev-0.8B | [jaredpalmer/kev-0.8b](https://huggingface.co/jaredpalmer/kev-0.8b) at `54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8`, with its base [Qwen/Qwen3.5-0.8B-Base](https://huggingface.co/Qwen/Qwen3.5-0.8B-Base) at `dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68` | 857 MB |
 | `kev-4b-q8.kevala` | Kev-4B | [jaredpalmer/kev-4b](https://huggingface.co/jaredpalmer/kev-4b) at `485ace8703592fcf405488b262449990824cfed1` | 4.76 GB |
 | `kev-9b-q8.kevala` | Kev-9B | [jaredpalmer/kev-9b](https://huggingface.co/jaredpalmer/kev-9b) at `2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c` | 8.96 GB |
-| `semif-qwen3.5-0.8b-q8.kevala` | SemIf-style Qwen3.5-0.8B | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) at `2fc06364715b967f1860aea9cf38778875588b17` | 855 MB |
-| `semif-qwen3.5-2b-q8.kevala` | SemIf-style Qwen3.5-2B | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) at `15852e8c16360a2fea060d615a32b45270f8a8fc` | 2.13 GB |
-| `semif-qwen3.5-4b-q8.kevala` | SemIf-style Qwen3.5-4B | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) at `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` | 4.75 GB |
+| `semif-qwen3.5-0.8b-q8.kevala` | SemIf Qwen3.5-0.8B | [Qwen/Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) at `2fc06364715b967f1860aea9cf38778875588b17` | 855 MB |
+| `semif-qwen3.5-2b-q8.kevala` | SemIf Qwen3.5-2B | [Qwen/Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) at `15852e8c16360a2fea060d615a32b45270f8a8fc` | 2.13 GB |
+| `semif-qwen3.5-4b-q8.kevala` | SemIf Qwen3.5-4B | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) at `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` | 4.75 GB |
 
 Each pack was made with the kevala command line (`kevala convert`, `kevala convert-kev`): weights are
 int8 with one f32 scale per 32 values (symmetric absmax); norms, biases, gates and decision heads stay
@@ -65,9 +65,9 @@ WebGPU. These small fixture checks measure conversion fidelity, not task accurac
 |---|---|---:|---:|
 | Kev-4B | BF16, LoRA merged in F32 | 13/13 | 0.00986 |
 | Kev-9B | F32 on CPU | 5/5 | 0.00481 |
-| SemIf-style 0.8B | F32 on CUDA | 12/12 | 0.03108 |
-| SemIf-style 2B | F32 on CUDA | 12/12 | 0.02901 |
-| SemIf-style 4B | BF16 on CUDA | 12/12 | 0.02006 |
+| SemIf 0.8B | F32 on CUDA | 12/12 | 0.03108 |
+| SemIf 2B | F32 on CUDA | 12/12 | 0.02901 |
+| SemIf 4B | BF16 on CUDA | 12/12 | 0.02006 |
 
 The larger models require the expanded-model runtime from the Kevala repository. Older published
 packages may not support them. WebGPU needs sufficient GPU memory and per-buffer limits. Browser

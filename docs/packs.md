@@ -23,7 +23,7 @@ const fromCheckpoint = await Kevala.load({ model: "laya", from: "checkpoint" });
 const own = await Kevala.load({ model: "https://example.com/laya-q8.kevala" });
 ```
 
-Kev-4B, Kev-9B, and the SemIf-style Qwen models require a converted `.kevala` pack. They do not
+Kev-4B, Kev-9B, and the SemIf Qwen models require a converted `.kevala` pack. They do not
 download and convert a large checkpoint automatically when a hosted pack is unavailable. See
 [the model guide](models.md) for names, readout differences, and memory limits.
 
@@ -91,9 +91,11 @@ The revision flags only label the pack header; the weights are whatever the dire
 download them at the same revisions. The browser conversion (`from: "checkpoint"`) runs the same Rust
 converter, compiled to WebAssembly.
 
-### Optional Kev and SemIf-style models
+<a id="optional-kev-and-semif-style-models"></a>
 
-Use [`tools/convert_models.py`](../tools/convert_models.py) for Kev-4B, Kev-9B, and the SemIf-style
+### Optional Kev and SemIf models
+
+Use [`tools/convert_models.py`](../tools/convert_models.py) for Kev-4B, Kev-9B, and the SemIf
 Qwen3.5-0.8B, 2B, and 4B packs. Its source manifest,
 [`tools/model-sources.json`](../tools/model-sources.json), pins every model revision, the exact base
 checkpoint for each Kev adapter, and the SemIf method revision.
@@ -113,7 +115,7 @@ across shards. It still holds the output pack and conversion scratch in RAM, so 
 disk and memory for the selected checkpoints and run large conversions one at a time.
 
 Kev conversion merges the adapter into the matching base in f32 before quantizing and retains
-the trained pointer head. SemIf-style conversion uses a frozen Qwen instruction model with no
+the trained pointer head. SemIf conversion uses a frozen Qwen instruction model with no
 adapter, stores native output rows for labels `A` through `P` in f32, and records the method's
 provenance. The text backbone is packed; the vision tower and multi-token-prediction weights are
 not part of the inference pack.
@@ -142,7 +144,7 @@ The fixtures come from the authors' own PyTorch code ([`tools/golden.py`](../too
 [`tools/golden_kev.py`](../tools/golden_kev.py)); regenerate them when a model's revision changes.
 [`tools/golden_semif.py`](../tools/golden_semif.py) records the complete prompt IDs, native label
 logits, and conditional probabilities for a pinned Qwen instruction model using the SemIf contract.
-Do not use the Kev-0.8B results as evidence for Kev-4B, Kev-9B, or a SemIf-style model. Large-model
+Do not use the Kev-0.8B results as evidence for Kev-4B, Kev-9B, or a SemIf model. Large-model
 validation is opt-in and belongs with conversion or runtime changes that affect those models;
 routine PR checks need not download and run every checkpoint. For seeded game comparisons, see
 [the Tetris evaluation instructions](models.md#conversion-and-validation).

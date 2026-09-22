@@ -73,7 +73,7 @@ const MODEL_FAMILIES = {
     models: [["kev-0.8b", "0.8B"], ["kev-4b", "4B"], ["kev-9b", "9B"]],
   },
   semif: {
-    name: "SemIf-style Qwen3.5",
+    name: "SemIf",
     short: "Frozen Qwen3.5 model with direct option scoring",
     models: [["semif-qwen3.5-0.8b", "0.8B"], ["semif-qwen3.5-2b", "2B"], ["semif-qwen3.5-4b", "4B"]],
   },
@@ -163,9 +163,8 @@ function modelChoices(s) {
   const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || LOCAL));
   const renderLaya = known.includes("laya") ? modelOption(s, "laya") : "";
   const renderFamily = (family) => familyModels(family).some(([id]) => known.includes(id)) ? familyOption(s, family) : "";
-  const primary = [renderLaya, renderFamily("kev")].filter(Boolean).join("");
-  const more = renderFamily("semif");
-  return `<div class="mp-models">${primary}</div>` + (more ? `<details class="mp-more"${FAMILY_BY_MODEL[s.model] === "semif" ? " open" : ""}><summary class="tiny faint">More models</summary><div class="mp-models">${more}</div></details>` : "");
+  const models = [renderLaya, renderFamily("kev"), renderFamily("semif")].filter(Boolean).join("");
+  return `<div class="mp-models">${models}</div>`;
 }
 
 const BACKEND_CHOICES = [
@@ -272,8 +271,6 @@ function syncPanelSelection(s) {
     if (pack) pack.textContent = modelSizeLabel(selected);
     if (info) info.textContent = modelStateLine(s, selected);
   }
-  const more = panel.querySelector(".mp-more");
-  if (more && FAMILY_BY_MODEL[s.model] === "semif") more.open = true;
   const loadButton = panel.querySelector('[data-act="load"]');
   if (loadButton && s.status !== "error") loadButton.textContent = `Load ${s.nameOf()}`;
 }

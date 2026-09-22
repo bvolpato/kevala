@@ -1,7 +1,7 @@
 # Choosing and running models
 
 Laya is the demo default. Select Kev in the model menu to reveal its 0.8B, 4B, and 9B size slider.
-SemIf-style Qwen3.5 is under **More models**, with 0.8B, 2B, and 4B sizes. Switching families starts
+SemIf appears alongside Laya and Kev, with 0.8B, 2B, and 4B sizes. Switching families starts
 at the smallest size; saved choices and explicit model URLs retain their selected size. Changing
 the slider updates the download size and waits for **Load** before fetching weights. Their weights are
 distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs).
@@ -41,7 +41,9 @@ console.log(result.answers, result.raw_probabilities);
 model.dispose();
 ```
 
-## How SemIf-style scoring works
+<a id="how-semif-style-scoring-works"></a>
+
+## How SemIf scoring works
 
 [SemIf](https://github.com/TheoLeeCJ/SemIf/tree/1f2dea3e25379f9dfc98cb83c324f00ab5deda37)
 provides a decision method for frozen language models. Its `direct-options-v1` prompt supplies
@@ -63,7 +65,7 @@ does not change its tokenization. Model caches are separate from the browser's s
 
 ### Interpreting the scores
 
-SemIf-style packs support `noul`, `choice`, and `score`, with **at most 16 options per question**.
+SemIf packs support `noul`, `choice`, and `score`, with **at most 16 options per question**.
 They return the Kev response shape, including full precision `raw_probabilities`, plus:
 
 ```json
@@ -113,9 +115,9 @@ and warmup. Run one large model at a time when comparing performance.
 
 The pinned-source conversion entry point is [`tools/convert_models.py`](../tools/convert_models.py).
 It uses pinned revisions in [`tools/model-sources.json`](../tools/model-sources.json), downloads
-the required checkpoints, and invokes the native converter serially. SemIf-style conversion
+the required checkpoints, and invokes the native converter serially. SemIf conversion
 first saves a tokenizer materialized by Transformers `AutoTokenizer`; using the raw checkpoint's
-`tokenizer.json` can change tokenization. See [Packs](packs.md#optional-kev-and-semif-style-models)
+`tokenizer.json` can change tokenization. See [Packs](packs.md#optional-kev-and-semif-models)
 for conversion and publication commands.
 
 Weight binaries belong in the Hugging Face repository, not Git. Routine development checks do

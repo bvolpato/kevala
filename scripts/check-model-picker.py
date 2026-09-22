@@ -43,13 +43,14 @@ def open_page(query=""):
 
 try:
     open_page("?model=laya")
+    semif = driver.find_element(By.CSS_SELECTOR, '[data-family="semif"]')
+    assert semif.is_displayed(), "SemIf must be visible when the model menu opens"
+    assert semif.find_element(By.CSS_SELECTOR, "b").text == "SemIf"
     driver.execute_script("window.loadCalls = 0; kevala_site.session.load = () => { window.loadCalls++; };")
     for family, models in [
         ("kev", ["kev-0.8b", "kev-4b", "kev-9b"]),
         ("semif", ["semif-qwen3.5-0.8b", "semif-qwen3.5-2b", "semif-qwen3.5-4b"]),
     ]:
-        if family == "semif":
-            click(".mp-more summary")
         click(f'[data-family="{family}"]')
         selected(models[0])
         slider = driver.find_element(By.CSS_SELECTOR, f'[data-family-slider="{family}"]')
@@ -95,11 +96,14 @@ try:
       const r = document.querySelector('.mpanel').getBoundingClientRect();
       return r.left >= 0 && r.right <= innerWidth;
     """)
+    click('[data-family="semif"]')
+    selected("semif-qwen3.5-0.8b")
+    assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').text == "Load SemIf-0.8B"
     open_page("?from=checkpoint&model=kev-0.8b")
     slider = driver.find_element(By.CSS_SELECTOR, '[data-family-slider="kev"]')
     assert slider.get_attribute("max") == "0"
     assert "checkpoint" in slider.get_attribute("aria-valuetext")
     assert not driver.find_elements(By.CSS_SELECTOR, '[data-family="semif"]')
-    print("Model picker passed: sizes, defaults, focus, loaded/cached switch, explicit loading, saved/URL choice, mobile width, checkpoint choices.")
+    print("Model picker passed: visible SemIf, sizes, defaults, focus, loaded/cached switch, explicit loading, saved/URL choice, mobile selection, checkpoint choices.")
 finally:
     driver.quit()
