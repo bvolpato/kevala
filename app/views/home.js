@@ -224,7 +224,7 @@ const HERO = `<section class="hero">
     <div class="hero-copy">
       <div class="eyebrow">Open source · Apache-2.0</div>
       <h1>Ask questions about text, <span class="grad-text">answered on the user's own GPU</span></h1>
-      <p class="lede">kevala runs <b>Laya</b>, <b>Kev</b>, and <b>SemIf</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option in one pass. There is no server to run, and the text stays on the device.</p>
+      <p class="lede">kevala runs <b>Laya</b>, <b>Kev</b>, <b>SemIf</b>, and <b>Gemma 4</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option without generating an answer token by token. There is no server to run, and the text stays on the device.</p>
       <div class="row cta">
         <a class="btn primary" href="#/playground">Open the playground</a>
         <a class="btn" href="#/tetris">Watch it play Tetris</a>
@@ -357,7 +357,7 @@ const DEMOS = `<section id="demos">
 const MODEL_CARDS = `<section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Laya, Kev, and SemIf</h2>
+    <h2>Laya, Kev, SemIf, and Gemma 4</h2>
     <div class="grid-3">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
@@ -393,6 +393,17 @@ const MODEL_CARDS = `<section class="tight" id="models">
           <div><dt>Credits</dt><dd>Adapted from <a href="https://github.com/TheoLeeCJ/SemIf">SemIf</a> · MIT. Qwen3.5 weights · Apache-2.0.</dd></div>
         </dl>
       </div>
+      <div class="card pad model-card">
+        <div class="row"><h3>Gemma 4</h3><span class="badge gpu"><span class="dot"></span>WebGPU + native CPU</span></div>
+        <p class="muted small">Dense Gemma 4 E2B and E4B instruction weights with per-layer embeddings and direct option scoring. The packs keep the text trunk only, without the source checkpoint's vision or audio towers, and do not use a SemIf adapter.</p>
+        <dl class="specs">
+          <div><dt>Parameters</dt><dd>E2B (default) or E4B</dd></div>
+          <div><dt>Pack download</dt><dd>5.22 GB (5,217,421,952 bytes) or 8.41 GB (8,407,043,136 bytes) int8. Runtime memory is higher.</dd></div>
+          <div><dt>Loading</dt><dd>Choose E2B or E4B in the model menu, then press Load. Browser use requires WebGPU; native 64-bit CPU loading is supported.</dd></div>
+          <div><dt>Context</dt><dd>Up to 4096 input tokens per question in Kevala.</dd></div>
+          <div><dt>Notes</dt><dd><a href="${DOCS}/gemma4.md">Gemma 4 integration notes</a>. Google DeepMind weights · Apache-2.0. Direct option scoring adapted from <a href="https://github.com/TheoLeeCJ/SemIf">SemIf</a> · MIT.</dd></div>
+        </dl>
+      </div>
     </div>
     <p class="muted small"><a href="${DOCS}/models.md">Model details and memory requirements →</a></p>
   </div>
@@ -405,7 +416,7 @@ const HOOD = `<section class="tight" id="under-the-hood">
     <div class="grid-4 hood">
       <a class="card pad mini-card" href="#/how">
         <h3>Architecture</h3>
-        <p class="muted small">A Rust core compiled to WebAssembly, WGSL kernels on WebGPU, and int8 packs converted in the tab.</p>
+        <p class="muted small">A Rust core compiled to WebAssembly, WGSL kernels on WebGPU, and int8 packs converted in the tab where supported.</p>
         <span class="go">Read →</span>
       </a>
       <a class="card pad mini-card" href="#/how/bench">
@@ -442,6 +453,10 @@ const CREDITS = `<section class="tight" id="credits">
       <div class="card pad">
         <h3>SemIf and Qwen3.5</h3>
         <p class="muted small">SemIf's direct option scoring method · <a href="https://github.com/TheoLeeCJ/SemIf">MIT</a>. Qwen3.5 base checkpoints for Kev: <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">0.8B</a>, <a href="https://huggingface.co/Qwen/Qwen3.5-4B-Base">4B</a>, and <a href="https://huggingface.co/Qwen/Qwen3.5-9B-Base">9B</a>. Qwen3.5 instruction checkpoints for SemIf: <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B">0.8B</a>, <a href="https://huggingface.co/Qwen/Qwen3.5-2B">2B</a>, and <a href="https://huggingface.co/Qwen/Qwen3.5-4B">4B</a> · Apache-2.0.</p>
+      </div>
+      <div class="card pad">
+        <h3>Gemma 4</h3>
+        <p class="muted small">Google DeepMind's <a href="https://huggingface.co/google/gemma-4-E2B-it">E2B</a> and <a href="https://huggingface.co/google/gemma-4-E4B-it">E4B</a> instruction weights · Apache-2.0. The Kevala packs keep the dense text trunks and omit the multimodal towers.</p>
       </div>
     </div>
     <p class="tiny faint credits-note">The packs are int8 conversions of the authors' checkpoints at pinned revisions, under the models' own licenses, at <a href="https://huggingface.co/bvolpato/kevala-packs">huggingface.co/bvolpato/kevala-packs</a>. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>

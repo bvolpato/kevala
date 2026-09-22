@@ -25,6 +25,8 @@ const packs = {
   "semif-qwen3.5-0.8b": "../tmp/semif-qwen3.5-0.8b-q8.kevala",
   "semif-qwen3.5-2b": "../tmp/semif-qwen3.5-2b-q8.kevala",
   "semif-qwen3.5-4b": "../tmp/semif-qwen3.5-4b-q8.kevala",
+  "gemma-4-e2b": "../tmp/gemma-4-e2b-q8.kevala",
+  "gemma-4-e4b": "../tmp/gemma-4-e4b-q8.kevala",
 };
 const knownModels = [...new Set([...Object.keys(MODELS), ...Object.keys(packs)])].sort();
 const positiveInt = (raw, fallback, max = 10000) => {

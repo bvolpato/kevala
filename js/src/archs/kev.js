@@ -5,6 +5,7 @@
 import { GpuKev, kevConfig, parseKevBatch } from "../gpu-kev.js";
 import { Wasm } from "../wasm.js";
 import { fetchBytes, fetchRange, hfFile } from "../source.js";
+import { kevGpuLayouts } from "../kev-layout.js";
 
 const enc = new TextEncoder();
 const now = () => performance.now();
@@ -15,6 +16,8 @@ export default {
 
   /** Not split across WebAssembly workers yet: on the CPU one instance runs every layer. */
   maxShards: () => 1,
+
+  gpuLayouts: kevGpuLayouts,
 
   createGpu: (gpu, layout, header) => new GpuKev(gpu, layout, kevConfig(header)),
 

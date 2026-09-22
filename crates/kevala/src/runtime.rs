@@ -46,9 +46,14 @@ fn load_kev(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
     Ok(Box::new(crate::kev::KevEngine::load(b)?))
 }
 
+fn load_gemma4(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
+    Ok(Box::new(crate::gemma4::Gemma4Engine::load(b)?))
+}
+
 pub const FAMILIES: &[Family] = &[
     Family { arch: "laya", about: "ModernBERT encoder + decision head (convaiinnovations/laya)", load: load_laya },
     Family { arch: "kev", about: "Qwen3.5 hybrid decoder + pointer head (jaredpalmer/kev)", load: load_kev },
+    Family { arch: "gemma4", about: "Gemma 4 dense text decoder + direct option scoring (Google)", load: load_gemma4 },
 ];
 
 /// The family a pack declares (`laya` when the header predates `config.arch`).

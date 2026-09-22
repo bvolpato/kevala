@@ -8,6 +8,7 @@ export const CACHE_NAME = "kevala-v1";
 
 /** Pre-converted int8 packs of the models below, pinned to one commit of their Hugging Face repo. */
 const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/45da41504c6c117eca940103e49dd5eb1c3eab4f";
+const GEMMA_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/c70e9136938026e00cbbdec9db027d862963f180";
 
 /**
  * Known models, by name. Each downloads its pre-converted pack (`hosted`); when that is
@@ -67,6 +68,15 @@ export const MODELS = {
     repo: `Qwen/Qwen3.5-${upstream}`, revision, license: "apache-2.0",
     hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala`,
     browserConvert: false, download, pack, packSha256, block: 32,
+  }])),
+  ...Object.fromEntries([
+    ["e2b", "E2B", "3e22461f65e89153144f8adb70e3b8c2cc9845a7", 5217421952, "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df"],
+    ["e4b", "E4B", "ee0ef6023621cff504d758262d4e04895a5af4a2", 8407043136, "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be"],
+  ].map(([size, upstream, revision, pack, packSha256]) => [`gemma-4-${size}`, {
+    arch: "gemma4", label: `Gemma 4 ${upstream}, instruction model with direct option scoring`,
+    repo: `google/gemma-4-${upstream}-it`, revision, license: "apache-2.0",
+    hosted: `${GEMMA_PACKS}/gemma-4-${size}-q8.kevala`,
+    browserConvert: false, pack, packSha256, block: 32,
   }])),
 };
 

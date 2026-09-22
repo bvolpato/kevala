@@ -19,7 +19,7 @@ import { archPlugin, registerArch } from "./archs/index.js";
 import { RemoteShard } from "./shard-client.js";
 import { CPU_KERNELS, cpuOptions, readTuning, threadCandidates, tuningKey, writeTuning } from "./cpu-policy.js";
 import { calibrateThreads } from "./cpu-calibrate.js";
-import { assertWasmPackSize, kevGpuLayouts, packSize } from "./kev-layout.js";
+import { assertWasmPackSize, packSize } from "./kev-layout.js";
 
 const enc = new TextEncoder();
 let E = null; // the loaded engine
@@ -252,7 +252,7 @@ async function load(o) {
     }
   }
   if (!gpu && o.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
-  if (!gpu && arch === "kev") assertWasmPackSize(fullSize);
+  if (!gpu && (plugin?.maxShards?.(header) || 1) === 1) assertWasmPackSize(fullSize);
   const coord = await Wasm.create(module, 0);
   const cpuTuning = gpu ? null : await tuneCpu(coord, module, header, headerBytes, plugin, flavor, base, o, signal);
   const threads = cpuTuning?.threads || 1;
@@ -261,7 +261,7 @@ async function load(o) {
   if (gpu) gpu.wgsl = (kernel, spec = {}) => coord.withInput(JSON.stringify({ kernel, ...spec }), (p, l) => (coord.check(coord.x.kevala_wgsl(p, l)), coord.outText()));
   const external = gpu || threads > 1;
   let layouts = [];
-  if (gpu && arch === "kev") layouts = kevGpuLayouts(header, headerBytes.byteLength);
+  if (gpu && plugin.gpuLayouts) layouts = plugin.gpuLayouts(header, headerBytes.byteLength);
   else if (external) layouts = parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice())));
   const sinks = [];
   const engine = { arch, plugin, header, coord, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached } };

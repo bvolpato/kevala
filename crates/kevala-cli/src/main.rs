@@ -1,6 +1,8 @@
 //! `kevala` command line: convert checkpoints to `.kevala` packs, answer questions, check parity
 //! against the PyTorch reference, and benchmark.
 
+mod parity_gemma;
+
 use kevala::engine::Engine;
 use kevala::json::Value;
 use kevala::model::{build_shard, AlignedBuf, Scratch, ShardPlan, Trunk};
@@ -16,9 +18,11 @@ usage:
   kevala decide <pack.kevala> --state <json|text> --questions <json>
   kevala convert-kev --base <qwen-dir> --kev <kev-dir> -o <out.kevala> [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--kev-revision <sha>] [--base-revision <sha>]
   kevala convert-semif --base <qwen-dir> --tokenizer <tokenizer.json> -o <out.kevala> [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--base-revision <sha>] [--method-revision <sha>]
+  kevala convert-gemma --base <gemma-dir> [-o <out.kevala>] [--tokenizer <tokenizer.json>] [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--base-revision <sha>] [--method-revision <sha>]
   kevala parity <pack.kevala> <golden.json> [--shards N]
   kevala parity-kev <pack.kevala> <golden-kev.json>
   kevala parity-semif <pack.kevala> <golden-semif.json> [--max-dp 0.05]
+  kevala parity-gemma <pack.kevala> <golden-gemma.json> [--max-dp 0.03]
   kevala bench <pack.kevala> [--tokens 64] [--questions 1] [--runs 5] [--shards N] [--warm]
   kevala inspect <pack.kevala>
   kevala wgsl <kernel> [--f16] [--subgroups] [--rows 1-4] [--groups 1-2] [--n N --k K]
@@ -32,8 +36,10 @@ fn main() {
         Some("parity") => parity(&args[1..]),
         Some("convert-kev") => convert_kev(&args[1..]),
         Some("convert-semif") => convert_semif(&args[1..]),
+        Some("convert-gemma") => convert_gemma(&args[1..]),
         Some("parity-kev") => parity_kev(&args[1..]),
         Some("parity-semif") => parity_semif(&args[1..]),
+        Some("parity-gemma") => parity_gemma::run(&args[1..]),
         Some("bench") => bench(&args[1..]),
         Some("inspect") => inspect(&args[1..]),
         Some("wgsl") => wgsl(&args[1..]),
@@ -498,6 +504,36 @@ fn convert_sharded(
     Ok(out)
 }
 
+fn convert_gemma_sharded(
+    shards: &[PathBuf],
+    base_config: &str,
+    tokenizer: &str,
+    block: usize,
+    model: Value,
+) -> Result<Vec<u8>, String> {
+    let headers: Vec<Vec<u8>> =
+        shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
+    let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
+    let mut converter = kevala::convert_gemma::GemmaConvert::new_sharded(&refs, base_config, tokenizer, block, model)?;
+    let mut out = vec![0u8; converter.total];
+    converter.begin(&mut out)?;
+    let mut files: Vec<File> = shards
+        .iter()
+        .map(|path| File::open(path).map_err(|e| format!("{}: {e}", path.display())))
+        .collect::<Result<_, _>>()?;
+    for (shard, name, offset, len) in converter.source_ranges() {
+        let file = files.get_mut(shard).ok_or("Gemma converter returned an invalid shard index")?;
+        file.seek(SeekFrom::Start(offset as u64)).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
+        let mut bytes = vec![0u8; len];
+        file.read_exact(&mut bytes).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
+        converter.add_source(&name, bytes, &mut out)?;
+    }
+    if !converter.finished() {
+        return Err("Gemma conversion ended with tensors still missing".into());
+    }
+    Ok(out)
+}
+
 fn model_name(args: &[String], default: &str) -> String {
     flag(args, "--name").unwrap_or(default).to_string()
 }
@@ -589,6 +625,50 @@ fn convert_semif(args: &[String]) -> Result<(), String> {
         ("method_license".into(), Value::Str("mit".into())),
     ]);
     let pack = convert_sharded(&shards, &base_config, &tokenizer, block, model, StreamMode::Semif)?;
+    output_pack(out, &pack, started)
+}
+
+fn convert_gemma(args: &[String]) -> Result<(), String> {
+    let base = flag(args, "--base").ok_or("convert-gemma needs --base <gemma-dir>")?;
+    let out = flag(args, "-o").ok_or("convert-gemma needs -o <out.kevala>")?;
+    let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
+    let started = Instant::now();
+    let text = |path: String| String::from_utf8(read(&path)?).map_err(|_| format!("{path} is not UTF-8"));
+    let base_config = text(format!("{base}/config.json"))?;
+    let base_value = Value::parse(&base_config).map_err(|e| format!("{base}/config.json: {e}"))?;
+    let tokenizer_path =
+        flag(args, "--tokenizer").map(str::to_string).unwrap_or_else(|| format!("{base}/tokenizer.json"));
+    let tokenizer = text(tokenizer_path)?;
+    let shards = indexed_shards(base)?;
+    let hidden =
+        base_value.get("text_config").and_then(|c| c.get("hidden_size")).and_then(Value::as_usize).unwrap_or(1536);
+    let default_name = if hidden <= 2048 { "gemma-4-e2b" } else { "gemma-4-e4b" };
+    let name = model_name(args, default_name);
+    let source = flag(args, "--source").map(str::to_string).unwrap_or_else(|| {
+        format!("https://huggingface.co/google/{}-it", if hidden <= 2048 { "gemma-4-E2B" } else { "gemma-4-E4B" })
+    });
+    let base_source = flag(args, "--base-source").map(str::to_string).unwrap_or_else(|| source.clone());
+    let revision = flag(args, "--base-revision").unwrap_or("unknown");
+    let method_revision = flag(args, "--method-revision").unwrap_or("1f2dea3e25379f9dfc98cb83c324f00ab5deda37");
+    let model = Value::Object(vec![
+        ("name".into(), Value::Str(name)),
+        ("source".into(), Value::Str(repo_url(&source))),
+        ("revision".into(), Value::Str(revision.to_string())),
+        ("base".into(), Value::Str(repo_url(&base_source))),
+        ("base_revision".into(), Value::Str(revision.to_string())),
+        ("author".into(), Value::Str("Google (Gemma team)".into())),
+        ("license".into(), Value::Str("apache-2.0".into())),
+        ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
+        (
+            "quantization".into(),
+            Value::Str(format!("BF16 source converted to symmetric int8 absmax, one f32 scale per {block} weights; norms and direct-option label readout in f32")),
+        ),
+        ("inspiration".into(), Value::Str("SemIf direct-options-v1 readout".into())),
+        ("method_source".into(), Value::Str("https://github.com/TheoLeeCJ/SemIf".into())),
+        ("method_revision".into(), Value::Str(method_revision.to_string())),
+        ("method_license".into(), Value::Str("mit".into())),
+    ]);
+    let pack = convert_gemma_sharded(&shards, &base_config, &tokenizer, block, model)?;
     output_pack(out, &pack, started)
 }
 

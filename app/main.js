@@ -77,6 +77,11 @@ const MODEL_FAMILIES = {
     short: "Frozen Qwen3.5 model with direct option scoring",
     models: [["semif-qwen3.5-0.8b", "0.8B"], ["semif-qwen3.5-2b", "2B"], ["semif-qwen3.5-4b", "4B"]],
   },
+  gemma4: {
+    name: "Gemma 4",
+    short: "Google's instruction model with direct option scoring. Requires WebGPU.",
+    models: [["gemma-4-e2b", "E2B"], ["gemma-4-e4b", "E4B"]],
+  },
 };
 
 const FAMILY_BY_MODEL = Object.fromEntries(
@@ -163,7 +168,7 @@ function modelChoices(s) {
   const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || LOCAL));
   const renderLaya = known.includes("laya") ? modelOption(s, "laya") : "";
   const renderFamily = (family) => familyModels(family).some(([id]) => known.includes(id)) ? familyOption(s, family) : "";
-  const models = [renderLaya, renderFamily("kev"), renderFamily("semif")].filter(Boolean).join("");
+  const models = [renderLaya, ...Object.keys(MODEL_FAMILIES).map(renderFamily)].filter(Boolean).join("");
   return `<div class="mp-models">${models}</div>`;
 }
 
@@ -173,10 +178,16 @@ const BACKEND_CHOICES = [
   ["wasm", "CPU"],
 ];
 
+function backendUnavailable(s, backend) {
+  if (backend === "webgpu" && !navigator.gpu) return "WebGPU is not available in this browser";
+  if (backend === "wasm" && MODEL_NOTES[s.model]?.requiresWebGPU) return "This model requires WebGPU in the browser";
+  return "";
+}
+
 function backendSwitch(s) {
   const buttons = BACKEND_CHOICES.map(([value, label]) => {
-    const unavailable = value === "webgpu" && !navigator.gpu;
-    const disabled = unavailable ? ` disabled title="WebGPU is not available in this browser"` : "";
+    const unavailable = backendUnavailable(s, value);
+    const disabled = unavailable ? ` disabled title="${esc(unavailable)}"` : "";
     return `<button type="button" data-be="${value}" aria-pressed="${s.backend === value}"${disabled}>${label}</button>`;
   });
   return `<div class="seg" role="group" aria-label="Backend">${buttons.join("")}</div>`;
@@ -238,6 +249,11 @@ function restorePanelFocus(focus) {
 }
 
 function syncPanelSelection(s) {
+  for (const button of panel.querySelectorAll("[data-be]")) {
+    const reason = backendUnavailable(s, button.dataset.be);
+    button.disabled = !!reason;
+    button.title = reason;
+  }
   for (const option of panel.querySelectorAll("[data-model]")) {
     const id = option.dataset.model;
     option.setAttribute("aria-pressed", String(s.model === id));

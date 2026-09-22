@@ -8,6 +8,9 @@
 //! - The Qwen3.5 base repo's own tokenizer.json (its `\p{M}` regex, 22 added tokens),
 //!   tests/fixtures/tokenizer-qwen35-base.json from `tokenizers`. Needs tmp/qwen35/tokenizer.json
 //!   or $KEVALA_QWEN_BASE_TOKENIZER_JSON.
+//! - Gemma 4 E2B/E4B, tests/fixtures/tokenizer-gemma4.json from the pinned tokenizer metadata.
+//!   Needs tmp/gemma4/E2B/tokenizer.json and/or tmp/gemma4/E4B/tokenizer.json, or the matching
+//!   environment variables.
 //!
 //! None of those files is checked in; without one its tests print a notice and pass.
 
@@ -19,6 +22,8 @@ use kevala::tokenizer::Tokenizer;
 const MODERNBERT: (&str, &str) = ("KEVALA_TOKENIZER_JSON", "tmp/laya/tokenizer/tokenizer.json");
 const QWEN: (&str, &str) = ("KEVALA_QWEN_TOKENIZER_JSON", "tmp/kev/tokenizer.json");
 const QWEN_BASE: (&str, &str) = ("KEVALA_QWEN_BASE_TOKENIZER_JSON", "tmp/qwen35/tokenizer.json");
+const GEMMA4_E2B: (&str, &str) = ("KEVALA_GEMMA4_E2B_TOKENIZER_JSON", "tmp/gemma4/E2B/tokenizer.json");
+const GEMMA4_E4B: (&str, &str) = ("KEVALA_GEMMA4_E4B_TOKENIZER_JSON", "tmp/gemma4/E4B/tokenizer.json");
 
 fn load(cell: &'static OnceLock<Option<Tokenizer>>, (var, default): (&str, &str)) -> Option<&'static Tokenizer> {
     cell.get_or_init(|| {
@@ -47,6 +52,16 @@ fn qwen() -> Option<&'static Tokenizer> {
 fn qwen_base() -> Option<&'static Tokenizer> {
     static TOK: OnceLock<Option<Tokenizer>> = OnceLock::new();
     load(&TOK, QWEN_BASE)
+}
+
+fn gemma4_e2b() -> Option<&'static Tokenizer> {
+    static TOK: OnceLock<Option<Tokenizer>> = OnceLock::new();
+    load(&TOK, GEMMA4_E2B)
+}
+
+fn gemma4_e4b() -> Option<&'static Tokenizer> {
+    static TOK: OnceLock<Option<Tokenizer>> = OnceLock::new();
+    load(&TOK, GEMMA4_E4B)
 }
 
 fn corpus(name: &str) -> Vec<(String, Vec<u32>)> {
@@ -148,6 +163,82 @@ fn qwen_base_file_with_marks_regex() {
     let Some(tok) = qwen_base() else { return };
     assert_corpus(tok, "tokenizer-qwen35-base.json");
     assert_round_trip(tok, "tokenizer-qwen35-base.json");
+}
+
+#[test]
+fn gemma4_matches_hf_tokenizers_for_both_variants() {
+    for tok in [gemma4_e2b(), gemma4_e4b()].into_iter().flatten() {
+        assert_corpus(tok, "tokenizer-gemma4.json");
+        assert_eq!(tok.vocab_size(), 262144);
+        assert_eq!(tok.token_id("<pad>"), Some(0));
+        assert_eq!(tok.token_id("<unk>"), Some(3));
+        assert_eq!(tok.token_id("<|turn>"), Some(105));
+        assert_eq!(tok.token_id("<0xF0>"), Some(478));
+        assert_eq!(tok.cls_id(), u32::MAX);
+        assert_eq!(tok.sep_id(), u32::MAX);
+        assert_eq!(tok.mask_id(), 4);
+        assert_eq!(tok.pad_id(), 0);
+    }
+}
+
+#[test]
+fn gemma4_blob_round_trip_preserves_unicode_and_fallback() {
+    for tok in [gemma4_e2b(), gemma4_e4b()].into_iter().flatten() {
+        assert_round_trip(tok, "tokenizer-gemma4.json");
+        let text = "𐀀 \u{0378} \u{00a0} 💩";
+        assert_eq!(tok.encode(text), [478, 382, 366, 366, 236743, 443, 422, 236743, 432, 398, 236743, 245526]);
+        assert_eq!(tok.encode_prefix(text, 4), [478, 382, 366, 366]);
+    }
+}
+
+fn synthetic_gemma(missing: Option<&str>) -> String {
+    let tokens: Vec<String> = (0..256)
+        .map(|b| format!("<0x{b:02X}>"))
+        .chain(["<unk>", "▁", "a", "b", "ab", "<mask>", "<pad>"].map(str::to_string))
+        .collect();
+    let vocab = Value::Object(
+        tokens
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| Some(s.as_str()) != missing)
+            .map(|(i, s)| (s.clone(), Value::Int(i.to_string())))
+            .collect(),
+    )
+    .to_json();
+    format!(
+        r#"{{"normalizer":{{"type":"Replace","pattern":{{"String":" "}},"content":"▁"}},
+      "pre_tokenizer":{{"type":"Split","pattern":{{"String":" "}},"behavior":"MergedWithPrevious","invert":false}},
+      "added_tokens":[{{"content":"<mask>","special":true}},{{"content":"<pad>","special":true}}],
+      "model":{{"type":"BPE","unk_token":"<unk>","byte_fallback":true,"fuse_unk":true,"vocab":{vocab},"merges":["a b"]}}}}"#
+    )
+}
+
+#[test]
+fn gemma_normalization_merges_fallback_and_serialization() {
+    let tok = Tokenizer::from_hf_json(&synthetic_gemma(None)).unwrap();
+    let restored = Tokenizer::from_bytes(&tok.to_bytes()).unwrap();
+    for (text, expected) in [
+        ("ab", vec![260]),
+        ("a b", vec![258, 257, 259]),
+        ("é", vec![195, 169]),
+        ("☃", vec![226, 152, 131]),
+        ("a<mask>b", vec![258, 261, 259]),
+        ("  ab", vec![257, 257, 260]),
+    ] {
+        assert_eq!(tok.encode(text), expected, "{text:?}");
+        assert_eq!(restored.encode(text), expected, "restored {text:?}");
+        assert_eq!(tok.encode_prefix(text, 1), expected[..1], "prefix {text:?}");
+    }
+    assert_eq!(restored.pad_id(), 262);
+    assert_eq!(restored.mask_id(), 261);
+}
+
+#[test]
+fn gemma_requires_complete_byte_fallback_and_unknown_token() {
+    for missing in ["<unk>", "<0xC3>"] {
+        let error = Tokenizer::from_hf_json(&synthetic_gemma(Some(missing))).err().unwrap();
+        assert!(error.contains(missing), "{error}");
+    }
 }
 
 #[test]

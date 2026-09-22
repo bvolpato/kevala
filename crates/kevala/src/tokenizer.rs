@@ -39,6 +39,8 @@ enum PreTokenizer {
     Gpt2 = 0,
     Qwen2 = 1,
     Qwen2Marks = 2,
+    /// Gemma's normalizer changes spaces to `▁`; its literal-space split then leaves one piece.
+    Gemma = 3,
 }
 
 /// FxHash-style hasher (multiply-rotate). Keys are trusted, so no DoS resistance is needed.
@@ -262,6 +264,11 @@ pub struct Tokenizer {
     offsets: Vec<u32>,
     bytes: Vec<u8>,
     byte_ids: [u32; 256],
+    /// Gemma starts BPE from Unicode scalar values and falls back to `<0xNN>` byte tokens.
+    fallback_ids: [u32; 256],
+    /// Only Gemma needs direct Unicode-symbol lookup; byte-level tokenizers use `byte_ids`.
+    vocab_ids: Option<FxMap<String, u32>>,
+    unk: u32,
     merges: PairMap,
     added: Vec<AddedToken>,
     raw_matcher: Matcher,
@@ -634,6 +641,13 @@ fn parse_pre_tokenizer(pre: &Value) -> Result<PreTokenizer, String> {
     if byte_level(pre, true) {
         return Ok(PreTokenizer::Gpt2);
     }
+    if kind(pre) == Some("Split")
+        && pre.get("pattern").and_then(|p| p.get("String")).and_then(Value::as_str) == Some(" ")
+        && pre.get("behavior").and_then(Value::as_str) == Some("MergedWithPrevious")
+        && !get_bool(pre, "invert")
+    {
+        return Ok(PreTokenizer::Gemma);
+    }
     if let (Some("Sequence"), Some([split, bl])) = (kind(pre), pre.get("pretokenizers").and_then(Value::as_array)) {
         let isolated = split.get("behavior").and_then(Value::as_str) == Some("Isolated") && !get_bool(split, "invert");
         if kind(split) == Some("Split") && isolated && byte_level(bl, false) {
@@ -646,8 +660,9 @@ fn parse_pre_tokenizer(pre: &Value) -> Result<PreTokenizer, String> {
         }
     }
     Err(format!(
-        "unsupported pre_tokenizer {}: kevala knows ByteLevel with the GPT-2 regex, and Split on the GPT-2 or \
-         Qwen2 regex (with or without \\p{{M}}) followed by ByteLevel without its regex",
+        "unsupported pre_tokenizer {}: kevala knows ByteLevel with the GPT-2 regex, Split on a literal \
+         space for Gemma, and Split on the GPT-2 or Qwen2 regex (with or without \\p{{M}}) followed by \
+         ByteLevel without its regex",
         pre.to_json()
     ))
 }
@@ -664,27 +679,46 @@ impl Tokenizer {
         // truncation, padding and the post-processor are ignored: transformers switches the
         // first two off per call, and the SDK encodes with add_special_tokens=False
         let root = Value::parse(json).map_err(|e| e.to_string())?;
+        let mut space_to_underscore = false;
         let nfc = match root.get("normalizer") {
             None | Some(Value::Null) => false,
             Some(n) if n.get("type").and_then(Value::as_str) == Some("NFC") => true,
+            Some(n)
+                if n.get("type").and_then(Value::as_str) == Some("Replace")
+                    && n.get("pattern").and_then(|p| p.get("String")).and_then(Value::as_str) == Some(" ")
+                    && n.get("content").and_then(Value::as_str) == Some("▁") =>
+            {
+                space_to_underscore = true;
+                false
+            }
             Some(n) => return Err(format!("unsupported normalizer {}", n.to_json())),
         };
         let pre = parse_pre_tokenizer(root.get("pre_tokenizer").ok_or("tokenizer.json has no pre_tokenizer")?)?;
+        if space_to_underscore != matches!(pre, PreTokenizer::Gemma) {
+            return Err("Gemma's space-to-▁ normalizer must be paired with its literal-space pre_tokenizer".into());
+        }
         let model = root.get("model").ok_or("tokenizer.json has no model")?;
         if model.get("type").and_then(Value::as_str) != Some("BPE") {
             return Err("unsupported model: expected BPE".into());
         }
         // an empty prefix or suffix is the same as none
-        for key in ["unk_token", "continuing_subword_prefix", "end_of_word_suffix"] {
-            if model.get(key).is_some_and(|v| !v.is_null() && (key == "unk_token" || v.as_str() != Some(""))) {
+        for key in ["continuing_subword_prefix", "end_of_word_suffix"] {
+            if model.get(key).is_some_and(|v| !v.is_null() && v.as_str() != Some("")) {
                 return Err(format!("unsupported BPE option {key}"));
             }
         }
-        if model.get("dropout").and_then(Value::as_f64).is_some_and(|d| d != 0.0)
-            || get_bool(model, "byte_fallback")
-            || get_bool(model, "ignore_merges")
+        let gemma = matches!(pre, PreTokenizer::Gemma);
+        if (gemma && model.get("unk_token").and_then(Value::as_str) != Some("<unk>"))
+            || (!gemma && model.get("unk_token").is_some_and(|v| !v.is_null()))
         {
-            return Err("unsupported BPE option (dropout, byte_fallback or ignore_merges)".into());
+            return Err("unsupported BPE option unk_token".into());
+        }
+        if model.get("dropout").and_then(Value::as_f64).is_some_and(|d| d != 0.0)
+            || get_bool(model, "ignore_merges")
+            || (gemma && (!get_bool(model, "byte_fallback") || !get_bool(model, "fuse_unk")))
+            || (!gemma && get_bool(model, "byte_fallback"))
+        {
+            return Err("unsupported BPE option (dropout, byte_fallback, fuse_unk or ignore_merges)".into());
         }
 
         let vocab = model.get("vocab").and_then(Value::as_object).ok_or("model.vocab is not an object")?;
@@ -733,7 +767,10 @@ impl Tokenizer {
         let n = max_id as usize + 1;
         let mut entries: Vec<(u8, Vec<u8>)> = vec![(KIND_ABSENT, Vec::new()); n];
         for (&k, &id) in &ids {
-            let raw: Option<Vec<u8>> = k.chars().map(byte_level_byte).collect();
+            // Gemma's symbols are Unicode strings. In particular, its vocab also contains the
+            // printable ByteLevel spelling `Ċ` for newline next to the literal newline token;
+            // decoding both through the old byte map would make one overwrite the other.
+            let raw: Option<Vec<u8>> = (!gemma).then(|| k.chars().map(byte_level_byte).collect()).flatten();
             entries[id as usize] = match raw {
                 Some(b) => (KIND_BYTES, b),
                 None => (KIND_LITERAL, k.as_bytes().to_vec()),
@@ -796,6 +833,31 @@ impl Tokenizer {
                 byte_ids[bytes[offsets[id] as usize] as usize] = id as u32;
             }
         }
+        let mut vocab_ids = matches!(pre, PreTokenizer::Gemma).then(FxMap::default);
+        let mut fallback_ids = [NONE; 256];
+        if let Some(ids) = &mut vocab_ids {
+            for id in 0..kinds.len() {
+                if kinds[id] == KIND_ABSENT {
+                    continue;
+                }
+                if let Ok(s) = std::str::from_utf8(&bytes[offsets[id] as usize..offsets[id + 1] as usize]) {
+                    ids.insert(s.to_string(), id as u32);
+                }
+            }
+            for a in &added {
+                ids.insert(a.content.clone(), a.id);
+            }
+            for (b, id) in fallback_ids.iter_mut().enumerate() {
+                *id = ids.get(&format!("<0x{b:02X}>")).copied().unwrap_or(NONE);
+                if *id == NONE {
+                    return Err(format!("Gemma tokenizer is missing byte fallback <0x{b:02X}>"));
+                }
+            }
+            if !ids.contains_key("<unk>") {
+                return Err("Gemma tokenizer is missing <unk>".into());
+            }
+        }
+        let unk = vocab_ids.as_ref().and_then(|ids| ids.get("<unk>")).copied().unwrap_or(NONE);
         let patterns: Vec<String> = added
             .iter()
             .map(|a| if a.normalized && nfc { crate::unicode::nfc(&a.content) } else { a.content.clone() })
@@ -813,6 +875,9 @@ impl Tokenizer {
             offsets,
             bytes,
             byte_ids,
+            fallback_ids,
+            vocab_ids,
+            unk,
             merges,
             added,
             raw_matcher,
@@ -826,7 +891,14 @@ impl Tokenizer {
         };
         let specials = match specials {
             Some(s) => s,
-            None => ["[CLS]", "[SEP]", "[MASK]", "[PAD]"].map(|name| tok.token_id(name).unwrap_or(NONE)),
+            None => {
+                let names = if matches!(pre, PreTokenizer::Gemma) {
+                    ["<cls>", "<sep>", "<mask>", "<pad>"]
+                } else {
+                    ["[CLS]", "[SEP]", "[MASK]", "[PAD]"]
+                };
+                names.map(|name| tok.token_id(name).unwrap_or(NONE))
+            }
         };
         [tok.cls, tok.sep, tok.mask, tok.pad] = specials;
         Ok(tok)
@@ -841,7 +913,7 @@ impl Tokenizer {
     ///
     /// Layout: magic `KVLATOK\0`, u32 version, u32 id count, u8 width in bytes of ids and ranks
     /// (2 to 4, the least that holds them), u8 flags (bit 0: NFC; bits 1-2: pre-tokenizer, 0 GPT-2,
-    /// 1 Qwen2, 2 Qwen2 with `\p{M}`), u32 ids of [CLS] [SEP] [MASK] [PAD] (u32::MAX when absent),
+    /// 1 Qwen2, 2 Qwen2 with `\p{M}`, 3 Gemma), u32 ids of [CLS] [SEP] [MASK] [PAD] (u32::MAX when absent),
     /// u32 merge count, u32 added-token count; a u8 vocab kind per id, a u16 byte length per id,
     /// the entry bytes; the merges as (left, right, rank, merged) in hash-table order; per added
     /// token a u32 id, u8 flags (special, normalized, lstrip, rstrip, single_word), u16 length and
@@ -903,6 +975,7 @@ impl Tokenizer {
             0 => PreTokenizer::Gpt2,
             1 => PreTokenizer::Qwen2,
             2 => PreTokenizer::Qwen2Marks,
+            3 => PreTokenizer::Gemma,
             _ => return Err("unknown pre-tokenizer in tokenizer blob".into()),
         };
         if [cls, sep, mask, pad].iter().any(|&i| i != NONE && i as usize >= n) {
@@ -983,7 +1056,13 @@ impl Tokenizer {
                 out.len() < max_tokens
             }
             Piece::Text(seg) => {
-                let norm = if self.nfc { nfc_cow(seg) } else { std::borrow::Cow::Borrowed(seg) };
+                let norm = if matches!(self.pre, PreTokenizer::Gemma) {
+                    std::borrow::Cow::Owned(seg.replace(' ', "▁"))
+                } else if self.nfc {
+                    nfc_cow(seg)
+                } else {
+                    std::borrow::Cow::Borrowed(seg)
+                };
                 self.split_added(&norm, &self.norm_matcher, &mut |p| match p {
                     Piece::Token(id) => {
                         out.push(id);
@@ -1037,6 +1116,7 @@ impl Tokenizer {
             PreTokenizer::Gpt2 => self.words(t, out, max_tokens, sc, next_pretoken),
             PreTokenizer::Qwen2 => self.words(t, out, max_tokens, sc, next_pretoken_qwen::<false>),
             PreTokenizer::Qwen2Marks => self.words(t, out, max_tokens, sc, next_pretoken_qwen::<true>),
+            PreTokenizer::Gemma => self.gemma(t, out, max_tokens, sc),
         }
     }
 
@@ -1071,6 +1151,31 @@ impl Tokenizer {
         }
         sc.ids.clear();
         sc.ids.extend(word.iter().map(|&b| self.byte_ids[b as usize]).filter(|&id| id != NONE));
+        self.bpe_ids(out, sc);
+    }
+
+    /// Gemma's BPE starts from Unicode characters and substitutes byte-fallback symbols only for
+    /// characters absent from the vocabulary. Its merge table still uses the same id-pair engine.
+    fn gemma(&self, word: &str, out: &mut Vec<u32>, max_tokens: usize, sc: &mut Scratch) -> bool {
+        let Some(vocab) = &self.vocab_ids else { return true };
+        sc.ids.clear();
+        for c in word.chars() {
+            let mut encoded = [0u8; 4];
+            let s = c.encode_utf8(&mut encoded);
+            if let Some(&id) = vocab.get(s) {
+                sc.ids.push(id);
+                continue;
+            }
+            for &b in s.as_bytes() {
+                let id = self.fallback_ids[b as usize];
+                sc.ids.push(if id == NONE { self.unk } else { id });
+            }
+        }
+        self.bpe_ids(out, sc);
+        out.len() < max_tokens
+    }
+
+    fn bpe_ids(&self, out: &mut Vec<u32>, sc: &mut Scratch) {
         if sc.ids.len() <= SCAN_MAX {
             self.merge_scan(sc);
         } else {
@@ -1167,6 +1272,9 @@ impl Tokenizer {
     pub fn token_id(&self, content: &str) -> Option<u32> {
         if let Some(a) = self.added.iter().find(|a| a.content == content) {
             return Some(a.id);
+        }
+        if let Some(ids) = &self.vocab_ids {
+            return ids.get(content).copied();
         }
         let raw: Option<Vec<u8>> = content.chars().map(byte_level_byte).collect();
         (0..self.kinds.len())

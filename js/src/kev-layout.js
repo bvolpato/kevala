@@ -65,8 +65,8 @@ export function assertWasmPackSize(bytes, role = "model") {
   }
 }
 
-function subset(header, keepTrunk) {
-  const tensors = header.tensors.filter((t) => trunk(t.name) === keepTrunk).map((t) => ({
+function subset(header, keepTrunk, isTrunk) {
+  const tensors = header.tensors.filter((t) => isTrunk(t.name) === keepTrunk).map((t) => ({
     name: t.name, dtype: t.dtype, shape: [...t.shape], offset: t.offset, size: t.size,
     ...(t.dtype === "q8" ? { block: t.block, scales_offset: t.scales_offset, scales_size: t.scales_size } : {}),
   }));
@@ -107,8 +107,13 @@ function subset(header, keepTrunk) {
 
 /** The same whole-tensor split as Rust coord_layout/trunk_layout, without u32 offsets. */
 export function kevGpuLayouts(header, headerBytes) {
+  return gpuLayouts(header, headerBytes, trunk);
+}
+
+/** Splits whole tensors using the family's placement rule, retaining safe source offsets. */
+export function gpuLayouts(header, headerBytes, isTrunk) {
   packSize(header, headerBytes);
-  const coord = subset(header, false);
+  const coord = subset(header, false, isTrunk);
   assertWasmPackSize(coord.total, "coordinator");
-  return [coord, subset(header, true)];
+  return [coord, subset(header, true, isTrunk)];
 }

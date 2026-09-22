@@ -1,7 +1,7 @@
 {
   "name": "kevala",
   "version": "0.1.3",
-  "description": "Run Laya, Kev, and SemIf Qwen3.5 decisions inside a web page, on WebGPU or WebAssembly: typed questions in, option probabilities out, no server.",
+  "description": "Run Laya, Kev, SemIf, and Gemma 4 decisions on your own hardware: typed questions in, option probabilities out, using WebGPU or supported WebAssembly/native CPU backends with no server.",
   "keywords": [
     "webassembly",
     "webgpu",
@@ -9,6 +9,8 @@
     "classification",
     "laya",
     "kev",
+    "semif",
+    "gemma",
     "system-one",
     "rust",
     "browser"

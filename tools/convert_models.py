@@ -73,7 +73,7 @@ def main():
             if spec["kind"] == "kev":
                 command += ["--kev", source, "--kev-revision", spec["revision"]]
                 subprocess.run(command, check=True, cwd=ROOT)
-            else:
+            elif spec["kind"] == "semif":
                 from transformers import AutoTokenizer
 
                 # Qwen2Tokenizer changes the raw checkpoint's pretokenizer on load.
@@ -82,6 +82,15 @@ def main():
                     command += ["--tokenizer", str(Path(tokenizer_dir) / "tokenizer.json"),
                                 "--method-revision", spec["method"]["revision"]]
                     subprocess.run(command, check=True, cwd=ROOT)
+            elif spec["kind"] == "gemma":
+                # Gemma's checkpoint already ships the tokenizer.json consumed by
+                # the native converter. Loading it through Transformers can rewrite
+                # the tokenizer and make token IDs drift from the reference.
+                command += ["--tokenizer", str(Path(source) / "tokenizer.json"),
+                            "--method-revision", spec["method"]["revision"]]
+                subprocess.run(command, check=True, cwd=ROOT)
+            else:
+                raise ValueError(f"{name}: unsupported converter kind {spec['kind']!r}")
         record = inspect(path, spec)
         manifest = path.with_suffix(".json")
         manifest.write_text(json.dumps(record, indent=2) + "\n")
@@ -96,7 +105,7 @@ def main():
         api = HfApi()
         head = api.model_info(args.publish).sha
         result = api.create_commit(repo_id=args.publish, operations=operations, parent_commit=head,
-                                   commit_message="Add pinned Kev and SemIf Qwen3.5 packs")
+                                   commit_message="Add pinned Kev, SemIf, and Gemma 4 packs")
         print(f"Published {result.commit_url}", flush=True)
 
 

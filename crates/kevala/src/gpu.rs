@@ -45,6 +45,14 @@ const SOURCES: &[(&str, &str)] = &[
     ("kev_attention", include_str!("wgsl/kev_attention.wgsl")),
     ("kev_attention_tile", include_str!("wgsl/kev_attention_tile.wgsl")),
     ("kev_silumul", include_str!("wgsl/kev_silumul.wgsl")),
+    ("gemma4_embed", include_str!("wgsl/gemma4_embed.wgsl")),
+    ("gemma4_rms", include_str!("wgsl/gemma4_rms.wgsl")),
+    ("gemma4_qkv", include_str!("wgsl/gemma4_qkv.wgsl")),
+    ("gemma4_attention", include_str!("wgsl/gemma4_attention.wgsl")),
+    ("gemma4_gelu", include_str!("wgsl/gemma4_gelu.wgsl")),
+    ("gemma4_ple", include_str!("wgsl/gemma4_ple.wgsl")),
+    ("gemma4_residual", include_str!("wgsl/gemma4_residual.wgsl")),
+    ("gemma4_gather", include_str!("wgsl/gemma4_gather.wgsl")),
 ];
 
 /// The kernels a runtime can ask for (everything but the snippets).
@@ -73,6 +81,14 @@ pub const KERNELS: &[&str] = &[
     "kev_attention",
     "kev_attention_tile",
     "kev_silumul",
+    "gemma4_embed",
+    "gemma4_rms",
+    "gemma4_qkv",
+    "gemma4_attention",
+    "gemma4_gelu",
+    "gemma4_ple",
+    "gemma4_residual",
+    "gemma4_gather",
 ];
 
 /// What a kernel is specialized for. Kernels ignore the fields they do not use.

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { mkdtemp, open, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { assertWasmPackSize, kevGpuLayouts, packSize } from "../js/src/kev-layout.js";
+import { assertWasmPackSize, gpuLayouts, kevGpuLayouts, packSize } from "../js/src/kev-layout.js";
 import { PieceSink, upstreamKey } from "../js/src/source.js";
 import { loadFile } from "../js/src/node.js";
 
@@ -78,6 +78,22 @@ test("GPU destination offsets retain precision beyond 4 GiB without allocating t
   const sink = new PieceSink(gpu, (dst, bytes) => writes.push([dst, bytes.byteLength]));
   sink.push(new Uint8Array([1, 2, 3, 4]), source.tensors.at(-1).offset);
   assert.deepEqual(writes.at(-1), [last.offset, 4]);
+});
+
+test("Gemma embedding tables stay on the GPU while only label rows enter WebAssembly", () => {
+  const source = fixture();
+  source.config.arch = "gemma4";
+  source.tensors = [
+    { name: "embed", dtype: "q8", shape: [262144, 1536], offset: HEAD + 64, size: 402653184, block: 32, scales_offset: HEAD + 64 + 402653184, scales_size: 50331648 },
+    { name: "ple.34.embed", dtype: "q8", shape: [262144, 256], offset: BIG + 64, size: 67108864, block: 32, scales_offset: BIG + 64 + 67108864, scales_size: 8388608 },
+    { name: "readout.labels", dtype: "f32", shape: [16, 1536], offset: BIG + 134217728, size: 98304 },
+  ];
+  const [coord, gpu] = gpuLayouts(source, HEAD, (name) => name !== "readout.labels");
+  assert.deepEqual(header(coord).tensors.map((t) => t.name), ["readout.labels"]);
+  assert.deepEqual(header(gpu).tensors.map((t) => t.name), ["embed", "ple.34.embed"]);
+  assert.ok(coord.total < 128 * 1024);
+  assert.equal(coord.pieces.at(-5), BIG + 134217728);
+  assert.equal(gpu.pieces.at(-5), BIG + 64 + 67108864);
 });
 
 test("unordered tensor metadata streams in increasing destination order", () => {

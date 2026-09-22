@@ -8,6 +8,7 @@
 //     maxShards(header) -> n,            // WebAssembly shard workers it can split layers across (1 = none)
 //     cpuProbe(header) -> config,        // optional: { hidden_size, intermediate_size } for Q8 gated MLP calibration
 //     createGpu(gpu, layout, header),    // optional: a GPU trunk with write(dst, bytes) for streamed weights
+//     gpuLayouts(header, headerBytes),  // optional: safe whole-tensor placement for large GPU packs
 //     initGpu(engine),                   // after the coordinator loads
 //     run(engine, requests),             // one pass through the GPU or shard trunk -> { responses, timing }
 //     convert(module, spec, opts),       // optional: build a .kevala pack from upstream files in the browser
@@ -18,6 +19,7 @@
 
 import laya from "./laya.js";
 import kev from "./kev.js";
+import gemma4 from "./gemma4.js";
 
 const ARCHS = new Map();
 
@@ -36,3 +38,4 @@ export function archNames() {
 
 registerArch(laya);
 registerArch(kev);
+registerArch(gemma4);

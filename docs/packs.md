@@ -10,7 +10,8 @@ The engine only ever runs packs. This page covers where they come from and how t
 ```js
 import { Kevala } from "kevala";
 
-// 1. By name: the pinned int8 pack from Hugging Face (479 MB for Laya, 857 MB for Kev-0.8B).
+// 1. By name: the pinned int8 pack from Hugging Face (479 MB for Laya, 857 MB for Kev-0.8B,
+//    5.22 GB for Gemma 4 E2B, or 8.41 GB for Gemma 4 E4B).
 //    Laya and Kev-0.8B can fall back to browser conversion if the hosted pack is unavailable.
 const kevala = await Kevala.load({ model: "laya" });
 
@@ -23,7 +24,7 @@ const fromCheckpoint = await Kevala.load({ model: "laya", from: "checkpoint" });
 const own = await Kevala.load({ model: "https://example.com/laya-q8.kevala" });
 ```
 
-Kev-4B, Kev-9B, and the SemIf Qwen models require a converted `.kevala` pack. They do not
+Kev-4B, Kev-9B, the SemIf Qwen models, and Gemma 4 require a converted `.kevala` pack. They do not
 download and convert a large checkpoint automatically when a hosted pack is unavailable. See
 [the model guide](models.md) for names, readout differences, and memory limits.
 
@@ -92,11 +93,12 @@ download them at the same revisions. The browser conversion (`from: "checkpoint"
 converter, compiled to WebAssembly.
 
 <a id="optional-kev-and-semif-style-models"></a>
+<a id="optional-kev-and-semif-models"></a>
 
-### Optional Kev and SemIf models
+### Optional Kev, SemIf, and Gemma 4 models
 
-Use [`tools/convert_models.py`](../tools/convert_models.py) for Kev-4B, Kev-9B, and the SemIf
-Qwen3.5-0.8B, 2B, and 4B packs. Its source manifest,
+Use [`tools/convert_models.py`](../tools/convert_models.py) for Kev-4B, Kev-9B, the SemIf
+Qwen3.5-0.8B, 2B, and 4B packs, and Gemma 4 E2B and E4B. Its source manifest,
 [`tools/model-sources.json`](../tools/model-sources.json), pins every model revision, the exact base
 checkpoint for each Kev adapter, and the SemIf method revision.
 
@@ -106,6 +108,9 @@ uv run tools/convert_models.py --models kev-4b semif-qwen3.5-0.8b
 
 # Optional larger conversions. Each selected model is converted serially.
 uv run tools/convert_models.py --models kev-9b semif-qwen3.5-2b semif-qwen3.5-4b
+
+# Gemma 4 E2B and E4B, converted as text-only dense packs
+uv run tools/convert_models.py --models gemma-4-e2b gemma-4-e4b
 ```
 
 The default output directory is `tmp/`; `--output-dir` overrides it. Each conversion writes a
@@ -118,7 +123,12 @@ Kev conversion merges the adapter into the matching base in f32 before quantizin
 the trained pointer head. SemIf conversion uses a frozen Qwen instruction model with no
 adapter, stores native output rows for labels `A` through `P` in f32, and records the method's
 provenance. The text backbone is packed; the vision tower and multi-token-prediction weights are
-not part of the inference pack.
+not part of the inference pack. Gemma conversion uses Google's frozen E2B or E4B instruction
+weights with the direct-options-v1 readout, omits the vision and audio towers, and does not add a
+SemIf adapter or decision fine-tuning. Gemma packs are intended for WebGPU in the browser or the
+native 64-bit CLI and accept up to 4096 input tokens.
+See [Gemma 4 notes](gemma4.md) for the pinned source revisions, reference generator, and backend
+details.
 
 For SemIf, the helper loads `AutoTokenizer` and calls `save_pretrained()` before passing its
 materialized `tokenizer.json` to `convert-semif --tokenizer`. This step matters: Transformers can
@@ -144,7 +154,9 @@ The fixtures come from the authors' own PyTorch code ([`tools/golden.py`](../too
 [`tools/golden_kev.py`](../tools/golden_kev.py)); regenerate them when a model's revision changes.
 [`tools/golden_semif.py`](../tools/golden_semif.py) records the complete prompt IDs, native label
 logits, and conditional probabilities for a pinned Qwen instruction model using the SemIf contract.
-Do not use the Kev-0.8B results as evidence for Kev-4B, Kev-9B, or a SemIf model. Large-model
+[`tools/golden_gemma.py`](../tools/golden_gemma.py) records the corresponding Gemma 4 prompt IDs,
+selected logits, probabilities, and final hidden state for its pinned instruction checkpoints.
+Do not use the Kev-0.8B results as evidence for Kev-4B, Kev-9B, a SemIf model, or Gemma 4. Large-model
 validation is opt-in and belongs with conversion or runtime changes that affect those models;
 routine PR checks need not download and run every checkpoint. For seeded game comparisons, see
 [the Tetris evaluation instructions](models.md#conversion-and-validation).

@@ -16,6 +16,7 @@ const DEADLINE_MS = 1500;
 const MAX_SCRATCH = 128 * 1024 * 1024;
 const RANK = new Map([
   ["gate_up", 0], ["qkvz", 1], ["down", 2], ["qkv", 3], ["out", 4], ["o", 5],
+  ["gate", 0], ["up", 0], ["q", 1], ["k", 3], ["v", 3], ["ple_gate", 6], ["ple_out", 7], ["proj", 8],
   ["wi", 0], ["wqkv", 1], ["wo2", 2], ["wo", 3], ["in_proj", 4], ["out_proj", 5], ["lin1", 6], ["lin2", 7],
 ]);
 const now = () => (typeof performance === "undefined" ? Date.now() : performance.now());
