@@ -99,6 +99,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
 
     // scores of 4 queries x 2 keys
     var s: array<vec2<f32>, 4>;
+    // Explicitly reset each key tile; Firefox/NVIDIA retains prior scores with implicit zeroing.
+    for (var c = 0u; c < 4u; c++) { s[c] = vec2<f32>(0.0); }
     for (var d = 0u; d < 16u; d++) {
       let k0 = vec4<f32>(ks[(2u * tk) * KROW + d]);
       let k1 = vec4<f32>(ks[(2u * tk + 1u) * KROW + d]);

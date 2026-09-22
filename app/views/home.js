@@ -5,6 +5,8 @@
 import { esc, fmtMs, debounce, backendBadge, highlight, wireCopy, modelGate, css, REPO, CDN } from "../ui.js";
 import { renderAnswers } from "../answers.js";
 
+const DOCS = `${REPO}/blob/main/docs`;
+
 // Four questions from each of the laya SDK's question sets, written out, and the field of the
 // state their instructions name.
 const SETS = {
@@ -355,32 +357,33 @@ const DEMOS = `<section id="demos">
 const MODEL_CARDS = `<section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Laya and Kev-0.8B</h2>
+    <h2>Laya and Kev</h2>
     <div class="grid-2">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
         <p class="muted small">ModernBERT-large encoder (28 layers, 1024 wide, local and global attention) with a 2-layer decision head. It answers yes/no (<code>noul</code>), <code>choice</code> and <code>score</code> questions, with a confidence and an act probability for each.</p>
         <dl class="specs">
           <div><dt>Parameters</dt><dd>421M</dd></div>
-          <div><dt>First download</dt><dd>about 850 MB (fp32, converted in the browser)</dd></div>
+          <div><dt>First download</dt><dd>479 MB, ready-to-load int8 pack</dd></div>
           <div><dt>Stored pack</dt><dd>479 MB int8</dd></div>
           <div><dt>Context</dt><dd>512 tokens per state</dd></div>
           <div><dt>By</dt><dd>Nandakishor M, Convai Innovations · Apache-2.0</dd></div>
         </dl>
       </div>
       <div class="card pad model-card">
-        <div class="row"><h3>Kev-0.8B</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
-        <p class="muted small">Qwen3.5-0.8B hybrid decoder (18 Gated DeltaNet and 6 full-attention layers) with Kev's LoRA merged and a pointer head that reads the answer options. It takes the same question types and returns Kev's own response format.</p>
+        <div class="row"><h3>Kev</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
+        <p class="muted small">Qwen3.5 hybrid decoder with Kev's LoRA merged and a pointer head that reads the answer options. Start with 0.8B, or select 4B or 9B with the size slider in the model menu.</p>
         <dl class="specs">
-          <div><dt>Parameters</dt><dd>0.8B</dd></div>
-          <div><dt>First download</dt><dd>about 1.6 GB (the Kev adapter and head, plus only the language-model weights of the Qwen3.5 base), converted in the browser in about a minute</dd></div>
-          <div><dt>Stored pack</dt><dd>857 MB int8, reloads in under a second. You can also self-host a pack made with <code>kevala convert-kev</code>.</dd></div>
-          <div><dt>Speed</dt><dd>WebGPU on an M4 Max: 11 ms for a short request, 32 ms at 125 tokens, 116 ms at 533 tokens. The CPU fallback takes seconds.</dd></div>
+          <div><dt>Parameters</dt><dd>0.8B (default), 4B, or 9B</dd></div>
+          <div><dt>Pack download</dt><dd>857 MB, 4.76 GB, or 8.96 GB int8, depending on size. Runtime memory is higher.</dd></div>
+          <div><dt>Loading</dt><dd>Choose a size, then press Load. The pack is kept in browser storage for later visits.</dd></div>
+          <div><dt>0.8B speed</dt><dd>WebGPU on an M4 Max: 11 ms for a short request, 32 ms at 125 tokens, 116 ms at 533 tokens. The CPU fallback takes seconds.</dd></div>
           <div><dt>State cache</dt><dd>The KV and DeltaNet states of the 4 latest states stay in memory. A repeated state takes about half the time, and an extended one runs only its new tokens.</dd></div>
           <div><dt>By</dt><dd>Jared Palmer · base by the Qwen team · Apache-2.0</dd></div>
         </dl>
       </div>
     </div>
+    <p class="muted small">More models in the menu offers SemIf-style Qwen3.5 at 0.8B, 2B, and 4B. It scores options directly with frozen instruction weights, without a trained adapter. <a href="${DOCS}/models.md">Model details and memory requirements →</a></p>
   </div>
 </section>`;
 
