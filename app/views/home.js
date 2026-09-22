@@ -419,9 +419,9 @@ const HOOD = `<section class="tight" id="under-the-hood">
         <p class="muted small">A Rust core compiled to WebAssembly, WGSL kernels on WebGPU, and int8 packs converted in the tab where supported.</p>
         <span class="go">Read →</span>
       </a>
-      <a class="card pad mini-card" href="#/how/bench">
+      <a class="card pad mini-card" href="${REPO}/blob/main/BENCHMARK.md">
         <h3>Benchmarks</h3>
-        <p class="muted small">Latency per request on WebGPU, WebAssembly and native, measured in real browsers.</p>
+        <p class="muted small">Decision accuracy, option-order stability, and WebGPU latency across all nine model packs, with the raw results.</p>
         <span class="go">See the numbers →</span>
       </a>
       <a class="card pad mini-card" href="#/how/fidelity">

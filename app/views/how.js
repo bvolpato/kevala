@@ -52,6 +52,7 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="bench">
     <div class="eyebrow">Speed</div>
     <h2>Latency</h2>
+    <p class="muted">For decision quality and current NVIDIA WebGPU measurements across all nine packs, read the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a>.</p>
     <p class="muted">Apple M4 Max, WebGPU in Chrome, cold requests unless noted.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Laya, short request</span><b>11 ms</b><span class="ts">one question, about 45 tokens</span></div>

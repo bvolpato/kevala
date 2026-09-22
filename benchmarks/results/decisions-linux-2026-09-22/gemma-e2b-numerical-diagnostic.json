@@ -1,0 +1,45 @@
+{
+  "purpose": "Investigate the three largest WebGPU Q8 versus BF16 differences; this is a numerical diagnostic, not a latency benchmark.",
+  "native": {
+    "command": "target/release/kevala parity-gemma tmp/gemma-4-e2b-q8.kevala benchmarks/results/decisions-linux-2026-09-22/gemma-e2b-native-diagnostic-fixture.json --max-dp 0.03",
+    "reference": "Measured WebGPU Q8 probabilities and original BF16 token IDs",
+    "exactTokenIds": true,
+    "matchingDecisions": 3,
+    "total": 3,
+    "maxAbsProbabilityDifference": 0.0132,
+    "probabilityLimit": 0.03,
+    "exitCode": 0,
+    "cases": [
+      {
+        "id": "kev-evidence-10::perm:rotate2",
+        "maxAbsProbabilityDifference": 0.0132
+      },
+      {
+        "id": "kev-candidate-02::perm:rotate2",
+        "maxAbsProbabilityDifference": 0.000142
+      },
+      {
+        "id": "kev-evidence-12::perm:rotate1",
+        "maxAbsProbabilityDifference": 0.005392
+      }
+    ],
+    "note": "Differences are rounded to six decimal places by the native CLI. The initial exploratory 0.005 limit failed; the final run used the existing 0.03 Gemma validation limit, with no implementation changes."
+  },
+  "fp32": {
+    "artifact": "gemma-e2b-fp32-diagnostic.json",
+    "referenceCorrect": 101,
+    "referenceTotal": 108,
+    "q8DecisionAgreement": 107,
+    "maxAbsProbabilityDifference": 0.2787037789821625,
+    "meanAbsProbabilityDifference": 0.0021909380244921214,
+    "note": "Original BF16-stored weights loaded into FP32 arithmetic. No pack quantization. Timings were not used: the native diagnostic ran concurrently."
+  },
+  "outlier": {
+    "id": "kev-evidence-10::perm:rotate2",
+    "option": "contradicted",
+    "bf16": 0.7772998809814453,
+    "fp32": 0.525897204875946,
+    "q8Webgpu": 0.24719347059726715
+  },
+  "conclusion": "Both quantized runtime arithmetic and original-weight arithmetic affect probabilities. Native/WebGPU Q8 agree on all three inspected decisions; this does not establish probability parity with the original checkpoint."
+}

@@ -5,6 +5,55 @@ Accuracy, option-order stability, conversion fidelity, and latency are separate 
 The fixtures are small synthetic tasks. They do not establish general reasoning ability,
 calibrated confidence, or a ranking against other inference engines.
 
+## Results: September 22, 2026
+
+All nine packs completed all 864 requested decisions with valid probabilities and no runtime
+failures: **7,776 WebGPU decisions in total**. Each cell below gives accuracy and the number
+of correct option orders. Pack sizes are binary GiB, not VRAM requirements.
+
+| Pack | Download GiB | Kevala authored | SemIf authored | SemIf perturbations |
+|---|---:|---:|---:|---:|
+| Laya | 0.45 | 75.0% (81/108) | 62.3% (269/432) | 69.4% (225/324) |
+| Kev 0.8B | 0.80 | 89.8% (97/108) | 71.1% (307/432) | 70.7% (229/324) |
+| Kev 4B | 4.43 | 91.7% (99/108) | 89.4% (386/432) | 90.1% (292/324) |
+| Kev 9B | 8.35 | 96.3% (104/108) | 91.9% (397/432) | 96.3% (312/324) |
+| SemIf 0.8B | 0.80 | 60.2% (65/108) | 50.9% (220/432) | 41.7% (135/324) |
+| SemIf 2B | 1.98 | 85.2% (92/108) | 63.4% (274/432) | 55.6% (180/324) |
+| SemIf 4B | 4.42 | 100.0% (108/108) | 84.0% (363/432) | 74.7% (242/324) |
+| Gemma 4 E2B IT | 4.86 | 94.4% (102/108) | 78.2% (338/432) | 71.3% (231/324) |
+| Gemma 4 E4B IT | 7.83 | 100.0% (108/108) | 89.1% (385/432) | 90.1% (292/324) |
+
+### Option-order stability and latency
+
+An order flip means at least one of the three rotations changed the selected semantic option.
+Lower is better. The three flip columns refer to 36, 144, and 108 source cases respectively.
+They are descriptive counts; related SemIf cases are not independent observations.
+
+| Pack | Kevala flips | SemIf authored flips | SemIf perturbation flips | Wall p50 ms | Wall p95 ms |
+|---|---:|---:|---:|---:|---:|
+| Laya | 10/36 | 22/144 | 17/108 | 99.9 | 100.3 |
+| Kev 0.8B | 2/36 | 19/144 | 11/108 | 99.9 | 100.3 |
+| Kev 4B | 2/36 | 6/144 | 7/108 | 100.0 | 199.9 |
+| Kev 9B | 1/36 | 3/144 | 0/108 | 200.0 | 299.7 |
+| SemIf 0.8B | 9/36 | 70/144 | 41/108 | 99.9 | 100.2 |
+| SemIf 2B | 13/36 | 93/144 | 84/108 | 99.9 | 100.2 |
+| SemIf 4B | 0/36 | 45/144 | 40/108 | 200.0 | 202.3 |
+| Gemma 4 E2B IT | 5/36 | 38/144 | 45/108 | 100.0 | 200.0 |
+| Gemma 4 E4B IT | 0/36 | 17/144 | 14/108 | 200.0 | 202.9 |
+
+Kev 9B had the highest accuracy on the two SemIf suites in this run. SemIf 4B and Gemma
+E4B answered all new Kevala cases correctly, but their lower scores on the SemIf suites show
+why one small suite is insufficient. Several direct-option models were sensitive to option
+order. Use these measurements to select candidates for your own evaluation, not as a universal
+model ranking.
+
+The [summary JSON](benchmarks/results/decisions-linux-2026-09-22/summary.json) includes per-family
+scores, grouped 95% bootstrap intervals, position bias, and validation results. The [raw outputs](benchmarks/results/decisions-linux-2026-09-22/)
+include every answer, probability, and timing. The six Kev/SemIf runs predate runtime fixture
+hash capture; their artifacts explicitly record post-run verification of the unchanged fixture
+files. Laya and both Gemma runs captured and checked those hashes in the running page. All nine
+local pack files were independently hashed in full and matched the pinned catalog digests.
+
 ## Tasks and scoring
 
 The frozen [dataset manifest](benchmarks/decisions/manifest.json) records the source revisions,
@@ -103,6 +152,24 @@ and typed-option prompt. Differences include both weight quantization and runtim
 They are not a pure measurement of quantization loss. Kevala stores INT8 weights with an FP32
 scale per 32 values, then uses floating-point matrix arithmetic and FP32 accumulation.
 
+| IT model | Q8/BF16 matching decisions | Q8 correct | BF16 correct | Mean absolute probability difference | Maximum difference |
+|---|---:|---:|---:|---:|---:|
+| Gemma 4 E2B | 107/108 | 102/108 | 101/108 | 0.004156 | 0.530106 |
+| Gemma 4 E4B | 108/108 | 108/108 | 108/108 | 0.0000145 | 0.0007614 |
+
+**E2B has a material probability outlier.** For `kev-evidence-10::perm:rotate2`, the probability
+of `contradicted` is 0.7773 with the original BF16 reference, 0.5259 when those original weights
+use FP32 arithmetic, and 0.2472 with WebGPU Q8. The Q8 answer changes to `insufficient`.
+This happens to match the fixture label, but does not show that quantization improves quality.
+
+A [numerical diagnostic](benchmarks/results/decisions-linux-2026-09-22/gemma-e2b-numerical-diagnostic.json)
+checked the three largest E2B differences against native Q8. Token IDs matched exactly, all
+three decisions agreed with WebGPU, and the maximum native/WebGPU probability difference was
+0.0132, within the existing 0.03 Gemma validation limit. Against the additional FP32 reference,
+WebGPU Q8 still matched 107/108 decisions, with a maximum probability difference of 0.2787.
+These checks support consistent Q8 execution across the two backends. They do not establish
+probability parity with the original weights. Scores should not be treated as calibrated confidence.
+
 ## Reproduce
 
 Build the generated WASM files and place the pinned packs in `tmp/`, or use `pack=hosted` to
@@ -121,7 +188,8 @@ uv run tools/benchmark_gemma_variants.py \
   --device cuda --dtype bfloat16 --output tmp/gemma-base-vs-it.json
 ```
 
-Change `model` to any name in the model table. `dataset=kevala` selects only the 36 new cases;
+Use a model ID from the [catalog](js/src/source.js), such as `kev-4b`, `semif-qwen3.5-2b`,
+or `gemma-4-e4b`. `dataset=kevala` selects only the 36 new cases;
 `dataset=semif` selects both upstream suites. `profile=1` records a separate instrumented
 request before the uninstrumented decision sweep.
 
