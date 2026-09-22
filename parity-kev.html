@@ -12,6 +12,15 @@
 </head>
 <body>
 <h1>kevala parity: Kev-0.8B against Kev's own PyTorch code</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  weights <select id="pack">
+    <option value="pack">int8 pack from Hugging Face (857 MB)</option>
+    <option value="checkpoint">original checkpoint, converted here (1.6 GB)</option>
+    <option value="local">dev pack in tmp/ (local server only)</option>
+  </select>
+  <button id="run">run</button>
+</p>
 <pre id="log"></pre>
 <table id="out"></table>
 <script type="module">
@@ -19,11 +28,21 @@ import { Kevala } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.parity = null;
+
+// #pack=local&backend=webgpu (or pack=checkpoint, or a pack URL) runs at once, for scripted checks
+const q = new URLSearchParams(location.hash.slice(1));
+if (q.get("backend")) $("backend").value = q.get("backend");
+if (["pack", "checkpoint", "local"].includes(q.get("pack"))) $("pack").value = q.get("pack");
+
 async function run() {
-  const q = new URLSearchParams(location.hash.slice(1));
-  const backend = q.get("backend") || "auto";
+  $("log").textContent = "";
+  $("out").innerHTML = "";
+  const backend = $("backend").value;
+  const choice = q.get("pack")?.includes("/") ? q.get("pack") : $("pack").value;
+  const model = choice === "local" ? "./tmp/kev-0.8b-q8.kevala" : choice.includes("/") ? choice : "kev-0.8b";
+  const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
-  const kevala = await Kevala.load({ model: q.get("pack") === "local" || !q.get("pack") ? "./tmp/kev-0.8b-q8.kevala" : q.get("pack"), backend });
+  const kevala = await Kevala.load({ model, from, backend });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
   const golden = await (await fetch("./tests/fixtures/golden-kev.json")).json();
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
@@ -48,7 +67,9 @@ async function run() {
   $("out").innerHTML = rows.map((r, i) => `<tr>${r.map((v) => (i ? `<td class="${v === "MISS" || Number(v) > 0.02 ? "bad" : ""}">${v}</td>` : `<th>${v}</th>`)).join("")}</tr>`).join("");
   kevala.dispose();
 }
-run().catch((e) => { log("ERROR " + e.message); window.parity = { error: e.message }; });
+const start = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { error: e.message }; });
+$("run").addEventListener("click", start);
+if (q.get("pack") || q.get("backend")) start();
 </script>
 </body>
 </html>

@@ -19,7 +19,11 @@
 <p>
   backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
   threads <select id="threads"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
-  pack <select id="pack"><option value="upstream">upstream (convert in browser)</option><option value="local">local /tmp/laya-q8.kevala</option></select>
+  weights <select id="pack">
+    <option value="pack">int8 pack from Hugging Face (479 MB)</option>
+    <option value="checkpoint">original checkpoint, converted here (843 MB)</option>
+    <option value="local">dev pack in tmp/ (local server only)</option>
+  </select>
   <button id="run">run</button>
 </p>
 <pre id="log"></pre>
@@ -35,10 +39,12 @@ async function run() {
   $("out").innerHTML = "";
   const backend = $("backend").value;
   const threads = Number($("threads").value);
-  const model = $("pack").value === "local" ? "./tmp/laya-q8.kevala" : undefined;
+  const choice = $("pack").value;
+  const model = choice === "local" ? "./tmp/laya-q8.kevala" : "laya";
+  const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
   let last = "";
-  const kevala = await Kevala.load({ backend, threads, model, onProgress: (p) => {
+  const kevala = await Kevala.load({ backend, threads, model, from, onProgress: (p) => {
     const s = p.phase + (p.total ? ` ${Math.round((100 * p.loaded) / p.total)}%` : "") + (p.message ? ` ${p.message}` : "");
     if (s !== last) { last = s; if (!p.total || p.loaded === p.total || p.phase !== "download") log(s); }
   } });

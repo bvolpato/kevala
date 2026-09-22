@@ -73,8 +73,8 @@ const TEMPLATE = `<div class="wrap">
       <div class="tile"><span class="tl">Max |Δp| at int8</span><b>0.024 <small>/ 0.0097</small></b><span class="ts">Laya / Kev, worst option</span></div>
     </div>
     <p class="small parity-links">
-      <a href="parity.html">Run the Laya parity check in your browser →</a>
-      <a href="parity-kev.html">Kev-0.8B parity check →</a>
+      <a href="parity.html">Replay the Laya fixtures in your browser →</a>
+      <a href="parity-kev.html">Replay the Kev-0.8B fixtures →</a>
     </p>
   </section>
 
@@ -98,17 +98,12 @@ const TEMPLATE = `<div class="wrap">
 
   <section class="how-sec" id="more">
     <div class="eyebrow">More</div>
-    <h2>Run the checks yourself</h2>
+    <h2>Read further</h2>
     <div class="grid-3 more">
-      <a class="card pad link-card" href="parity.html">
-        <h3>Laya parity</h3>
-        <p class="muted small">Replay the golden fixtures against the PyTorch reference in this browser.</p>
-        <span class="go">parity.html →</span>
-      </a>
-      <a class="card pad link-card" href="parity-kev.html">
-        <h3>Kev-0.8B parity</h3>
-        <p class="muted small">The same check for Kev, against Kev's own PyTorch code.</p>
-        <span class="go">parity-kev.html →</span>
+      <a class="card pad link-card" href="${DOCS}/packs.md">
+        <h3>Packs</h3>
+        <p class="muted small">Load the int8 pack or the original weights, and convert, check and publish packs.</p>
+        <span class="go">docs/packs.md →</span>
       </a>
       <a class="card pad link-card" href="bench.html">
         <h3>Benchmark your machine</h3>

@@ -344,9 +344,9 @@ const DEMOS = `<section id="demos">
         <h3>Examples</h3>
         <p class="muted small">Small pages to copy from: a basic call, a moderation gate on a form, an LLM cascade and a game loop.</p>
       </a>
-      <a class="card pad mini-card" href="parity.html">
-        <h3>Parity check</h3>
-        <p class="muted small">Replay the golden fixtures against the PyTorch reference in this browser.</p>
+      <a class="card pad mini-card" href="#/how">
+        <h3>How it works</h3>
+        <p class="muted small">The Rust engine, the WebGPU kernels, the packs, and how closely int8 matches the original models.</p>
       </a>
     </div>
   </div>
