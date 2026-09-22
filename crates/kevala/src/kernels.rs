@@ -159,7 +159,7 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
     let (n, k) = (m.n(), m.k());
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
-    let tb = ((64 * 1024) / (k * 4)).clamp(8, 512) & !1;
+    let tb = ((256 * 1024) / (k * 4)).clamp(8, 512) & !1;
     if let Mat::Q8 { .. } = m {
         if panel.len() < NR * k {
             panel.resize(NR * k, 0.0);
