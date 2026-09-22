@@ -55,19 +55,28 @@ export function cpuReason(info) {
   const chrome = /Chrome\//.test(ua);
   const safari = /Safari\//.test(ua) && !chrome;
   const linux = /Linux/.test(ua) && !/Android/.test(ua);
+  const reason = info.gpuUnavailable;
   let fix = "";
-  if (navigator.gpu && /worker/.test(info.gpuUnavailable)) {
+  if (/out of (?:GPU )?memory|not enough memory/i.test(reason)) {
+    fix = "Close other GPU-heavy tabs or applications, then retry WebGPU.";
+  } else if (/device lost|device was lost/i.test(reason)) {
+    fix = "Reload the page to create a new GPU device. If this keeps happening, check the browser's GPU diagnostics and graphics driver.";
+  } else if (/software WebGPU adapter/i.test(reason)) {
+    fix = "The browser is using software rendering. Check hardware acceleration and the browser's GPU diagnostics.";
+  } else if (!/no WebGPU|no .*adapter|navigator.gpu is missing/i.test(reason)) {
+    fix = "WebGPU initialization failed. Check the browser's GPU diagnostics and graphics driver before retrying.";
+  } else if (navigator.gpu && /worker/.test(reason)) {
     fix = firefox
       ? "Firefox has WebGPU on this page but not in workers, where kevala runs: set dom.webgpu.workers.enabled to true in about:config and reload."
       : "This browser has WebGPU on pages but not in workers, where kevala runs.";
   } else if (firefox) {
-    fix = "In about:config, set dom.webgpu.enabled and dom.webgpu.workers.enabled to true (and gfx.webgpu.ignore-blocklist if the GPU is blocklisted), then reload.";
+    fix = "Check the WebGPU entries in about:support. Firefox on Linux may need dom.webgpu.enabled and dom.webgpu.workers.enabled in about:config, then a reload.";
   } else if (chrome && linux) {
     fix = "Turn on chrome://flags/#enable-unsafe-webgpu and chrome://flags/#enable-vulkan, then restart the browser.";
   } else if (safari) {
     fix = "Safari has WebGPU from version 26; before that it is under Develop > Feature Flags.";
   }
-  return `Running on the CPU because ${info.gpuUnavailable}. ${fix}`.trim();
+  return `Running on the CPU because ${reason.replace(/[.\s]+$/, "")}. ${fix}`.trim();
 }
 
 export function backendBadge(info) {

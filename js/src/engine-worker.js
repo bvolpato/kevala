@@ -14,13 +14,16 @@
 
 import { Wasm, compile, parseLayouts, wasmFlavor } from "./wasm.js";
 import { openPack, PieceSink, Batcher } from "./source.js";
-import { Profiler, requestDevice, SUBMIT } from "./gpu.js";
+import { Profiler, requestDevice, SUBMIT, withGpuErrors } from "./gpu.js";
 import { archPlugin, registerArch } from "./archs/index.js";
 
 const enc = new TextEncoder();
 let E = null; // the loaded engine
 let queue = [];
 let busy = false;
+let loadController = null;
+let activeGpu = null;
+let packIterator = null;
 const shardPorts = [];
 let shardWaiters = null;
 
@@ -41,7 +44,8 @@ async function onMessage(ev) {
       shardWaiters?.();
     }
   } catch (e) {
-    post({ type: "error", id: m.id, message: String(e?.message || e), stack: e?.stack });
+    if (m.type === "load") dispose();
+    post({ type: "error", id: m.id, message: String(e?.message || e), code: e?.code, stack: e?.stack });
   }
 }
 
@@ -53,7 +57,13 @@ export function serve(p) {
 
 /** Frees the model; a worker gets the same by being terminated. */
 export function dispose() {
-  E?.gpu?.device?.destroy();
+  loadController?.abort();
+  activeGpu?.device.destroy();
+  activeGpu = null;
+  packIterator?.return?.().catch(() => {});
+  packIterator = null;
+  for (const p of shardPorts) p.close();
+  shardPorts.length = 0;
   E = null;
   queue = [];
 }
@@ -124,15 +134,21 @@ function subHeader(prefix) {
 }
 
 async function load(o) {
+  loadController = new AbortController();
+  const signal = loadController.signal;
+  const checkCancelled = () => signal.throwIfAborted();
   const t0 = now();
   const base = o.wasmBase || new URL("./", import.meta.url).href;
   for (const url of o.plugins || []) registerArch((await import(url)).default);
+  checkCancelled();
   const flavor = wasmFlavor(o.flavor);
   progress({ phase: "init", message: `compiling kevala-${flavor}.wasm` });
   const module = await compile(base, flavor);
+  checkCancelled();
   const pack = await openPack(o.model ?? {}, {
     cache: o.cache !== false,
     from: o.from,
+    signal,
     onProgress: progress,
     convert: (spec, opts) => {
       const plugin = archPlugin(spec.arch);
@@ -140,8 +156,10 @@ async function load(o) {
       return plugin.convert(module, spec, opts);
     },
   });
-  const it = pack.chunks();
+  checkCancelled();
+  const it = (packIterator = pack.chunks());
   const { head, header, headerBytes } = await readHead(it);
+  checkCancelled();
   const arch = header.config.arch || "laya";
   const plugin = archPlugin(arch);
 
@@ -149,18 +167,25 @@ async function load(o) {
   let gpu = null;
   let gpuUnavailable = plugin?.createGpu ? null : `no WebGPU backend for ${arch} yet`;
   if (plugin?.createGpu && (o.backend === "webgpu" || o.backend === "auto" || !o.backend)) {
-    try {
-      gpu = await requestDevice({ baseline: o.gpuBaseline });
-    } catch (e) {
-      gpuUnavailable = e.message;
+    if (!navigator.gpu && o.backend !== "webgpu") {
+      gpuUnavailable = "this browser has no WebGPU in a worker (navigator.gpu is missing)";
+    } else {
+      try {
+        gpu = await requestDevice({ baseline: o.gpuBaseline, powerPreference: o.gpuPowerPreference });
+        activeGpu = gpu;
+      } catch (e) {
+        throw Object.assign(new Error(`WebGPU: ${e.message}`, { cause: e }), { code: "WEBGPU_INIT" });
+      }
+      checkCancelled();
     }
   }
-  if (!gpu && o.backend === "webgpu") throw new Error(`WebGPU: ${gpuUnavailable}`);
+  if (!gpu && o.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
   const hw = Math.max(1, Math.min(16, navigator.hardwareConcurrency || 4));
   const maxShards = gpu || !plugin?.run ? 1 : plugin.maxShards?.(header) || 1;
   const threads = Math.max(1, Math.min(o.threads || Math.min(hw, 8), maxShards));
 
   const coord = await Wasm.create(module);
+  checkCancelled();
   // the GPU kernels are WGSL sources in the Rust crate; the binary hands them out specialized
   if (gpu) gpu.wgsl = (kernel, spec = {}) => coord.withInput(JSON.stringify({ kernel, ...spec }), (p, l) => (coord.check(coord.x.kevala_wgsl(p, l)), coord.outText()));
   const external = gpu || threads > 1;
@@ -187,7 +212,8 @@ async function load(o) {
     sinks.push(new PieceSink(cl, (dst, bytes) => coord.bytes(engine.coordPtr + dst, bytes.byteLength).set(bytes)));
     if (gpu) {
       progress({ phase: "init", message: `WebGPU: ${gpu.name}` });
-      engine.gpu = plugin.createGpu(gpu, layouts[1], header);
+      engine.gpu = await withGpuErrors(gpu, () => plugin.createGpu(gpu, layouts[1], header), "creating the model");
+      checkCancelled();
       sinks.push(new PieceSink(layouts[1], (dst, bytes) => engine.gpu.write(dst, bytes)));
     } else {
       const ports = await waitShards(threads - 1);
@@ -216,26 +242,36 @@ async function load(o) {
     for (const s of sinks) s.push(chunk, at);
     at += chunk.byteLength;
   };
-  feed(head);
-  for (;;) {
-    const { done, value } = await it.next();
-    if (done) break;
-    feed(value);
-  }
-  for (const s of sinks) s.batcher?.flush();
-  // finish storing the pack before reporting ready, so a page that closes right away keeps it
-  if (pack.saving) {
-    progress({ phase: "cache", message: "saving the pack for next time" });
-    await pack.saving;
-  }
+  const upload = async () => {
+    feed(head);
+    for (;;) {
+      const { done, value } = await it.next();
+      checkCancelled();
+      if (done) break;
+      feed(value);
+    }
+    packIterator = null;
+    for (const s of sinks) s.batcher?.flush();
+    // Finish a completed download's cache write before retrying a failed GPU load.
+    if (pack.saving) {
+      progress({ phase: "cache", message: "saving the pack for next time" });
+      await pack.saving;
+    }
+  };
+  if (gpu) await withGpuErrors(gpu, upload, "uploading model weights");
+  else await upload();
+  checkCancelled();
   progress({ phase: "init", message: "building the model" });
 
   const loaded = external ? [engine.coordPtr, engine.coordTotal] : [engine.fullPtr, engine.fullTotal];
   coord.call(() => coord.check(coord.x.kevala_engine_load(...loaded)));
   const meta = JSON.parse(coord.outText());
   if (engine.gpu) {
-    await plugin.initGpu(engine);
-    if (o.profile) engine.gpu.profiler = new Profiler(gpu.device);
+    await withGpuErrors(gpu, async () => {
+      await plugin.initGpu(engine);
+      if (o.profile) engine.gpu.profiler = new Profiler(gpu.device);
+    }, "initializing GPU kernels");
+    checkCancelled();
     if (["await", "split", "none"].includes(o.submit)) SUBMIT.mode = o.submit;
   } else if (engine.local) {
     const { w, ptr, total } = engine.local;
@@ -247,7 +283,10 @@ async function load(o) {
   engine.backend = backend;
   progress({ phase: "warmup" });
   const tw = now();
-  await run([{ state: "warm up", questions: { q: { type: "noul", instructions: "Is this a warm up?" } } }]);
+  const warmup = () => run([{ state: "warm up", questions: { q: { type: "noul", instructions: "Is this a warm up?" } } }]);
+  if (gpu) await withGpuErrors(gpu, warmup, "warming up the model");
+  else await warmup();
+  checkCancelled();
   const warm = now() - tw;
   post({
     type: "ready",
@@ -255,6 +294,7 @@ async function load(o) {
       arch,
       backend,
       gpu: engine.gpu?.name || null,
+      gpuPowerPreference: engine.gpu ? o.gpuPowerPreference || "high-performance" : null,
       gpuUnavailable: engine.gpu ? null : gpuUnavailable,
       threads,
       flavor,

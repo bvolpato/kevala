@@ -130,7 +130,7 @@ import { Kevala, MODELS, cacheInfo, clearCache } from "kevala";
 
 const kevala = await Kevala.load({
   model: "laya",         // a MODELS name, a .kevala URL, or an ArrayBuffer/Blob
-  backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU when available)
+  backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU, then CPU if GPU loading fails)
   onPage: false,         // run on the page, not in a worker (automatic when only pages get WebGPU)
   threads: 8,            // WebAssembly workers for the CPU backend
   from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
@@ -142,7 +142,7 @@ const kevala = await Kevala.load({
 
 await kevala.decide(state, questions, { parts });  // one request, one forward pass
 await kevala.decideMany([{ state, questions }]);   // many states, still one pass
-kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, modalities, model, config, pack, loadMs }
+kevala.info;      // { arch, backend, gpu, gpuPowerPreference, gpuUnavailable, threads, modalities, model, config, pack, loadMs }
 await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
 ```
@@ -217,14 +217,26 @@ Rust 1.85 or newer, and nothing else. Python is only used to generate the refere
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.
 - WebGPU was verified on Apple Silicon in Chromium, with every optional feature and without any
   (the default limits, as the weakest WebGPU device has). Every kernel also passes naga, the WGSL
-  compiler Firefox uses. Other GPUs and browsers were not tested for this release.
-- Browsers without WebGPU run on the CPU. `kevala.info.gpuUnavailable` says why, and the site's model
-  menu says how to turn WebGPU on in that browser.
+  compiler Firefox uses. Laya also passes all 41 reference questions on Firefox 152 on Ubuntu,
+  with a low-power adapter retry after the preferred GPU runs out of available memory.
+- GPU loading first requests the high-performance adapter, then retries with a low-power preference
+  if GPU initialization fails. The browser chooses the adapter and may return the same GPU twice.
+  `kevala.info.gpuPowerPreference` reports the successful preference. In `auto` mode, failures during
+  allocation, shader compilation or warmup fall back to the CPU; `backend: "webgpu"` reports an error
+  if both GPU attempts fail. `kevala.info.gpuUnavailable` preserves the failures when Auto uses the CPU.
 - int8 weights move probabilities by up to 0.024 (Laya) and 0.0097 (Kev) on the fixtures, with no
   argmax changes. The models themselves have their own limits: see the
   [Laya](https://huggingface.co/convaiinnovations/laya) and [Kev](https://github.com/jaredpalmer/kev)
   model cards before trusting a threshold.
 - Requests can carry image and audio parts, but no shipped pack reads them yet.
+
+On Linux, Firefox's WebGPU backend uses [Vulkan](https://searchfox.org/firefox-main/source/gfx/wgpu_bindings/Cargo.toml),
+not CUDA. Check the WebGPU entries in `about:support` and the GPU's available memory when a load
+fails. `Buffer with '' label is invalid` can be a later symptom of a failed allocation; Kevala now
+captures allocation errors while uploading weights and initializing kernels. Free GPU memory by
+closing other GPU-heavy applications, then retry. Browser storage caching saves the download but
+does not reduce the GPU memory needed to load the model. Firefox Linux support also depends on the
+browser channel and settings; see Mozilla's [WebGPU support notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Experimental_features#webgpu_api).
 
 ## Credits and license
 
