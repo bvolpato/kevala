@@ -3,6 +3,6 @@
 // second pass sums. The host computes the same count (runtime `mm_splits` twin in gpu.js).
 fn mm_splits(T: u32, N: u32, K: u32) -> u32 {
   let tiles = ((N + {{BN_MINUS_1}}u) / {{BN}}u) * ((T + {{BM_MINUS_1}}u) / {{BM}}u);
-  if (tiles >= 96u) { return 1u; }
+  if (tiles >= ({{SPLIT_TARGET}}u * 3u + 3u) / 4u) { return 1u; }
   return max(1u, min(min(8u, ({{SPLIT_TARGET}}u + tiles - 1u) / tiles), K / 128u));
 }

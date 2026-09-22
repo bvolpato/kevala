@@ -11,6 +11,7 @@ enable subgroups;
 @group(0) @binding(3) var<storage, read> tok: array<vec4<u32>>;
 @group(0) @binding(4) var<storage, read> segs: array<Seg>;
 @group(0) @binding(5) var<storage, read_write> OUT: array<f32>;
+@group(0) @binding(6) var<storage, read> KEYS: array<f32>;
 var<workgroup> q: array<vec4<f32>, 64>;
 var<workgroup> sc: array<f32, 256>;
 var<workgroup> red: array<f32, 256>;
@@ -92,7 +93,11 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) d
       if (j < plen) {
         for (var c = 0u; c < 64u; c++) { acc += q[c] * vec4<f32>(KV[kb + c * 4u], KV[kb + c * 4u + 1u], KV[kb + c * 4u + 2u], KV[kb + c * 4u + 3u]); }
       } else {
-        for (var c = 0u; c < 64u; c++) { acc += q[c] * vec4<f32>(PROJ[kb + c * 4u], PROJ[kb + c * 4u + 1u], PROJ[kb + c * 4u + 2u], PROJ[kb + c * 4u + 3u]); }
+        let kt = start + j - plen;
+        for (var c = 0u; c < 256u; c += 4u) {
+          let kb = (kvh * 256u + c) * g.T + kt;
+          acc += q[c >> 2u] * vec4<f32>(KEYS[kb], KEYS[kb + g.T], KEYS[kb + 2u * g.T], KEYS[kb + 3u * g.T]);
+        }
       }
       s = (acc.x + acc.y + acc.z + acc.w) * 0.0625;
     }

@@ -133,6 +133,7 @@ const kevala = await Kevala.load({
   backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU, then CPU if GPU loading fails)
   onPage: false,         // run on the page, not in a worker (automatic when only pages get WebGPU)
   threads: 8,            // WebAssembly workers for the CPU backend
+  submit: "await",       // GPU chunks: "await" favors responsiveness; "split" reduces queue waits
   from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
   cache: true,           // keep the pack in origin storage
   onProgress: (p) => {}, // { phase: download | convert | cache | init | warmup, loaded, total }
@@ -206,7 +207,12 @@ uv run dev/record-tetris.py                  # re-record docs/tetris.gif and doc
 cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)
 ```
 
-Rust 1.85 or newer, and nothing else. Python is only used to generate the reference fixtures.
+The core needs Rust 1.85 or newer. Python helpers generate reference fixtures and automate
+browser GPU benchmarks through `uv`.
+
+For reproducible GPU timing, model parity checks, and Firefox/Linux measurements, see
+[docs/gpu-benchmarks.md](docs/gpu-benchmarks.md). The benchmark distinguishes GPU kernel time
+from end-to-end browser latency.
 
 ## Limits
 
@@ -217,15 +223,18 @@ Rust 1.85 or newer, and nothing else. Python is only used to generate the refere
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.
 - WebGPU was verified on Apple Silicon in Chromium, with every optional feature and without any
   (the default limits, as the weakest WebGPU device has). Every kernel also passes naga, the WGSL
-  compiler Firefox uses. Laya also passes all 41 reference questions on Firefox 152 on Ubuntu,
-  with a low-power adapter retry after the preferred GPU runs out of available memory.
+  compiler Firefox uses. This Linux kernel sweep validates Firefox 152 on both NVIDIA and AMD,
+  with all 41 Laya and 13 Kev reference decisions matching. See the benchmark report for the
+  measured features, numerical limits, and performance results.
 - GPU loading first requests the high-performance adapter, then retries with a low-power preference
   if GPU initialization fails. The browser chooses the adapter and may return the same GPU twice.
   `kevala.info.gpuPowerPreference` reports the successful preference. In `auto` mode, failures during
   allocation, shader compilation or warmup fall back to the CPU; `backend: "webgpu"` reports an error
   if both GPU attempts fail. `kevala.info.gpuUnavailable` preserves the failures when Auto uses the CPU.
-- int8 weights move probabilities by up to 0.024 (Laya) and 0.0097 (Kev) on the fixtures, with no
-  argmax changes. The models themselves have their own limits: see the
+- int8 weights and GPU arithmetic move probabilities by about 0.024 (Laya) and 0.010 (Kev)
+  on the tested fixtures and Linux GPUs, with no argmax changes. The benchmark report gives
+  exact errors, including the f32 path's inherited precision edge. The models themselves have
+  their own limits: see the
   [Laya](https://huggingface.co/convaiinnovations/laya) and [Kev](https://github.com/jaredpalmer/kev)
   model cards before trusting a threshold.
 - Requests can carry image and audio parts, but no shipped pack reads them yet.

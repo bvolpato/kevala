@@ -57,11 +57,11 @@ export class GpuKev {
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],
-      QKNORM: ["kev_qknorm"],
       RECUR: [this.lanes ? "kev_recur_lanes" : "kev_recur"],
       GNORM: ["kev_gnorm"],
       APREP: ["kev_aprep"],
       SAVE_KV: ["kev_save_kv"],
+      KEYS: ["kev_attention_keys"],
       ATTN: ["kev_attention", { subgroups: this.subgroup32 }],
       SILUMUL: ["kev_silumul"],
       GATHER: ["gather"],
@@ -76,7 +76,7 @@ export class GpuKev {
       d.queue.writeBuffer(b, 0, arr);
       return b;
     };
-    // a and b projections stacked into one [32, D] matrix per DeltaNet layer
+    // Stack a and b, then interleave their vec4 weights so adjacent gate lanes read together.
     this.ab = [];
     for (let i = 0; i < cfg.layers; i++) {
       if (cfg.full[i]) {
@@ -88,7 +88,13 @@ export class GpuKev {
       const both = new Float32Array(a.length + b.length);
       both.set(a);
       both.set(b, a.length);
-      this.ab.push(f32buf(both));
+      const interleaved = new Float32Array(both.length);
+      for (let k = 0; k < 256; k++) {
+        for (let j = 0; j < 32; j++) {
+          for (let c = 0; c < 4; c++) interleaved[(k * 32 + j) * 4 + c] = both[j * 1024 + k * 4 + c];
+        }
+      }
+      this.ab.push(f32buf(interleaved));
     }
     // rotary table [pos][32] of (cos, sin), f32 inverse frequencies and angles as in PyTorch
     const maxPos = cfg.max_state + cfg.max_branch;
@@ -285,8 +291,9 @@ export class GpuKev {
         const kv = this.carry[i].kv;
         both(mm(n("qkv"), this.h, this.proj, 0));
         both({ k: "aprep", group: bg(this.p.APREP, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("q_norm")).buf, W(n("k_norm")).buf, this.tok, this.rope]) });
+        both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
         one.push({ k: "savekv", group: bg(this.p.SAVE_KV, [this.g, this.proj, kv, this.tok, this.segs]) });
-        both({ k: "attn", group: bg(this.p.ATTN, [this.g, this.proj, kv, this.tok, this.segs, this.core]) });
+        both({ k: "attn", group: bg(this.p.ATTN, [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv]) });
         both(mm(n("o"), this.core, this.x, 1));
       } else {
         const { state, tail } = this.carry[i];
@@ -294,7 +301,6 @@ export class GpuKev {
         both({ k: "gates", group: bg(this.p.GATES, [this.g, this.h, this.ab[i], W(n("dt_bias")).buf, W(n("neg_a")).buf, this.gates]) });
         both({ k: "conv", group: bg(this.p.CONV, [this.g, this.proj, W(n("conv")).buf, this.tok, this.segs, tail, this.conv]) });
         one.push({ k: "savetail", group: bg(this.p.SAVE_TAIL, [this.g, this.proj, this.segs, tail]) });
-        both({ k: "qknorm", group: bg(this.p.QKNORM, [this.g, this.conv]) });
         both({ k: "recur", group: bg(this.p.RECUR, [this.g, this.conv, this.gates, this.segs, state, this.core]) });
         both({ k: "gnorm", group: bg(this.p.GNORM, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("gnorm")).buf, this.core]) });
         both(mm(n("out"), this.core, this.x, 1));
@@ -334,10 +340,6 @@ export class GpuKev {
           pass.setPipeline(this.p.SAVE_TAIL);
           pass.dispatchWorkgroups(S, 72);
           break;
-        case "qknorm":
-          pass.setPipeline(this.p.QKNORM);
-          pass.dispatchWorkgroups(T, 32);
-          break;
         case "recur":
           pass.setPipeline(this.p.RECUR);
           pass.dispatchWorkgroups(S, 16, this.lanes ? 2 : 1);
@@ -353,6 +355,10 @@ export class GpuKev {
         case "savekv":
           pass.setPipeline(this.p.SAVE_KV);
           pass.dispatchWorkgroups(T, 4);
+          break;
+        case "keys":
+          pass.setPipeline(this.p.KEYS);
+          pass.dispatchWorkgroups(Math.ceil(T / 16), 32);
           break;
         case "attn":
           pass.setPipeline(this.p.ATTN);

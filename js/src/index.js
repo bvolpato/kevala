@@ -77,6 +77,9 @@ export class Kevala {
    *   onPage      run the engine on the page instead of in a worker (default: only when the
    *               browser offers WebGPU to pages but not to workers)
    *   threads     WebAssembly workers for the wasm backend (default: cores, at most 8)
+   *   submit      WebGPU scheduling: "await" drains each long-pass chunk (default);
+   *               "split" queues separate chunks without waiting, reducing latency at a
+   *               possible cost to UI responsiveness; "none" uses one command buffer
    *   cache       keep the pack in the Cache API (default true)
    *   onProgress  receives { phase, file, loaded, total, message }
    *   signal      AbortSignal that cancels loading

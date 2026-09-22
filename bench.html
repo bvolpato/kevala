@@ -36,43 +36,51 @@ async function run() {
   const runs = Number(q.get("runs") || 10);
   const t0 = performance.now();
   const kevala = await Kevala.load({ backend, threads, model, profile: q.get("profile") === "1", submit: q.get("submit") || undefined });
-  log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
-  const results = { model: name, arch: kevala.info.arch, backend: kevala.info.backend, gpu: kevala.info.gpu, threads: kevala.info.threads, flavor: kevala.info.flavor, load_s: (performance.now() - t0) / 1000, cases: [] };
-  // shapes: one short question, one long state, several questions, a batch of states
-  const shapes = [
-    { name: "1 question, ~40 tokens", reqs: [{ state: "Refund the duplicate charge today or we cancel.", questions: { q: Q } }] },
-    { name: "1 question, ~128 tokens", reqs: [{ state: words.repeat(6), questions: { q: Q } }] },
-    { name: "1 question, ~512 tokens", reqs: [{ state: words.repeat(30), questions: { q: Q } }] },
-    { name: "5 questions, ~60 tokens each", reqs: [{ state: words.repeat(2), questions: Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`q${i}`, Q])) }] },
-    { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
-  ];
-  const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
-  for (const s of shapes.filter((_, i) => pick.includes(i))) {
-    // the longest gap between animation frames while this shape runs: how much it stalls the page
-    let gap = 0, lastF = performance.now(), on = true;
-    const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
-    requestAnimationFrame(tick);
-    const ms = [];
-    let tokens = 0;
-    let last = null;
-    for (let i = 0; i < runs + 2; i++) {
-      const t = performance.now();
-      // unique=1 gives every run new states, so caches cannot help (cold numbers)
-      const reqs = q.get("unique") === "1" ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
-      const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
-      if (i >= 2) ms.push(performance.now() - t);
-      tokens = r[0].timing.tokens;
-      last = r[0].timing;
+  try {
+    log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+    const results = { model: name, arch: kevala.info.arch, backend: kevala.info.backend, gpu: kevala.info.gpu, threads: kevala.info.threads, flavor: kevala.info.flavor, load_s: (performance.now() - t0) / 1000, cases: [] };
+    // shapes: one short question, one long state, several questions, a batch of states
+    const shapes = [
+      { name: "1 question, ~40 tokens", reqs: [{ state: "Refund the duplicate charge today or we cancel.", questions: { q: Q } }] },
+      { name: "1 question, ~128 tokens", reqs: [{ state: words.repeat(6), questions: { q: Q } }] },
+      { name: "1 question, ~512 tokens", reqs: [{ state: words.repeat(30), questions: { q: Q } }] },
+      { name: "5 questions, ~60 tokens each", reqs: [{ state: words.repeat(2), questions: Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`q${i}`, Q])) }] },
+      { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
+    ];
+    const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
+    for (const s of shapes.filter((_, i) => pick.includes(i))) {
+      // the longest gap between animation frames while this shape runs: how much it stalls the page
+      let gap = 0, lastF = performance.now(), on = true;
+      const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+      const ms = [];
+      const samples = [];
+      let tokens = 0;
+      let last = null;
+      for (let i = 0; i < runs + 2; i++) {
+        const t = performance.now();
+        // unique=1 gives every run new states, so caches cannot help (cold numbers)
+        const reqs = q.get("unique") === "1" ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+        const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
+        if (i >= 2) {
+          ms.push(performance.now() - t);
+          samples.push(r[0].timing);
+        }
+        tokens = r[0].timing.tokens;
+        last = r[0].timing;
+      }
+      on = false;
+      ms.sort((a, b) => a - b);
+      const c = { name: s.name, frameGap: gap, tokens, p50: ms[ms.length >> 1], p95: ms[Math.min(ms.length - 1, Math.floor(ms.length * 0.95))], min: ms[0] };
+      c.last = last;
+      c.samples = samples;
+      results.cases.push(c);
+      log(`${s.name.padEnd(38)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
     }
-    on = false;
-    ms.sort((a, b) => a - b);
-    const c = { name: s.name, frameGap: gap, tokens, p50: ms[ms.length >> 1], p95: ms[Math.min(ms.length - 1, Math.floor(ms.length * 0.95))], min: ms[0] };
-    c.last = last;
-    results.cases.push(c);
-    log(`${s.name.padEnd(38)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
+    window.bench = results;
+  } finally {
+    kevala.dispose();
   }
-  window.bench = results;
-  kevala.dispose();
 }
 $("run").onclick = () => run().catch((e) => { log("ERROR " + e.message); window.bench = { error: e.message }; });
 if (location.hash.includes("auto")) {

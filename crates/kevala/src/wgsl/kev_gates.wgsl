@@ -1,4 +1,4 @@
-// DeltaNet gates: a and b projections (f32, stacked [32, D]) -> decay = exp(-exp(A_log) *
+// DeltaNet gates: a and b projections (f32, interleaved [D/4, 32, 4]) -> decay = exp(-exp(A_log) *
 // softplus(a + dt_bias)), beta = sigmoid(b)
 //#include kev_common
 
@@ -12,7 +12,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j
   let t = wg.x;
   if (t >= g.T) { return; }
   var acc = vec4<f32>(0.0);
-  for (var k = 0u; k < 256u; k++) { acc += H[t * 256u + k] * Wab[j * 256u + k]; }
+  for (var k = 0u; k < 256u; k++) { acc += H[t * 256u + k] * Wab[k * 32u + j]; }
   let v = acc.x + acc.y + acc.z + acc.w;
   var o: f32;
   if (j < 16u) {

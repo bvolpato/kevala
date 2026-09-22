@@ -1,0 +1,2127 @@
+{
+  "date": "2026-09-22",
+  "browser": "Firefox 152.0.3",
+  "os": "Ubuntu, Linux 6.17.0-1025-oem",
+  "gpus": {
+    "nvidia": "RTX 5070 Ti 16 GB, NVIDIA 595.71.05",
+    "amd": "Ryzen 9950X3D integrated graphics, RADV RAPHAEL_MENDOCINO, Mesa 25.2.8"
+  },
+  "baselineCommit": "05968889eace9947dc5bd6770e653f3e8081ee8c",
+  "runtimeCommit": "2919831583b61498e7467ddfb2792c1bef5bfb00",
+  "rust": "1.95.0",
+  "packRevision": "e75a06d9329e19fe879f44cfcce33914fb96dade",
+  "protocol": {
+    "warmups": 2,
+    "samples": 5,
+    "uniqueStates": true,
+    "cache": "pack cache allowed; inference state cache bypassed",
+    "metric": "geometric mean across six per-case medians of summed GPU timestamps",
+    "serial": true,
+    "normalFeatureGuard": {
+      "layaMaxDp": 0.024,
+      "kevMaxDp": 0.011,
+      "requireAllArgmax": true
+    }
+  },
+  "trials": [
+    {
+      "iteration": 0,
+      "commit": "0596888",
+      "hypothesis": "corrected baseline",
+      "metricMs": 34.41241330444841,
+      "guard": "-",
+      "status": "baseline"
+    },
+    {
+      "iteration": 1,
+      "commit": "e61b9bf",
+      "hypothesis": "padded Laya attention rows",
+      "metricMs": 33.641861614150784,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 2,
+      "commit": "36b0732",
+      "hypothesis": "narrower quantized weight loads",
+      "metricMs": 34.193733054657365,
+      "guard": "not-run",
+      "status": "discard"
+    },
+    {
+      "iteration": 3,
+      "commit": "b130475",
+      "hypothesis": "vector Kev recurrence",
+      "metricMs": 28.14885379207042,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 4,
+      "commit": "1c3f838",
+      "hypothesis": "transpose current Kev keys",
+      "metricMs": 27.600396129079638,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 5,
+      "commit": "55a4a78",
+      "hypothesis": "128-column matrix tiles",
+      "metricMs": 34.78283926265197,
+      "guard": "not-run",
+      "status": "discard"
+    },
+    {
+      "iteration": 6,
+      "commit": "956f162",
+      "hypothesis": "split target 256",
+      "metricMs": 26.59596024205308,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 7,
+      "commit": "746230b",
+      "hypothesis": "scaled split cutoff",
+      "metricMs": 26.105740597725294,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 8,
+      "commit": "7535a1c",
+      "hypothesis": "interleaved Kev gate weights",
+      "metricMs": 25.72309763149395,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 9,
+      "commit": "1469cb9",
+      "hypothesis": "128-thread Laya norm",
+      "metricMs": 25.737774371638615,
+      "guard": "not-run",
+      "status": "discard"
+    },
+    {
+      "iteration": 10,
+      "commit": "f6793b3",
+      "hypothesis": "vector Laya score dots",
+      "metricMs": 25.079803008296736,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 11,
+      "commit": "aa6a878",
+      "hypothesis": "fused Kev convolution and Q/K norm",
+      "metricMs": 24.60801473203351,
+      "guard": "pass",
+      "status": "keep"
+    },
+    {
+      "iteration": 12,
+      "commit": "35b0d25",
+      "hypothesis": "128-thread Kev RMS",
+      "metricMs": 24.73587345961664,
+      "guard": "not-run",
+      "status": "discard"
+    }
+  ],
+  "measurements": {
+    "nvidia": {
+      "gpuBefore": {
+        "metricMs": 33.9506906792261,
+        "mode": "GPU-profiled",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 25.511864939830684,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.080000000000382,
+                "summedGpuSamplesMs": [
+                  9.421,
+                  9.046,
+                  9.479,
+                  9.312999999999999,
+                  9.206
+                ],
+                "kernelMediansMs": {
+                  "attn": 2.141,
+                  "gather": 0.002,
+                  "geglu": 0.127,
+                  "mm.in_proj": 0.111,
+                  "mm.lin1": 0.128,
+                  "mm.lin2": 0.129,
+                  "mm.out_proj": 0.047,
+                  "mm.wi": 2.39,
+                  "mm.wo": 0.611,
+                  "mm.wo2": 1.299,
+                  "mm.wqkv": 1.6,
+                  "norm": 0.421,
+                  "rope": 0.142
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.080000000000382,
+                "summedGpuSamplesMs": [
+                  26.289999999999996,
+                  26.138,
+                  26.146,
+                  26.130000000000006,
+                  26.139
+                ],
+                "kernelMediansMs": {
+                  "attn": 6.023,
+                  "gather": 0.002,
+                  "geglu": 0.136,
+                  "mm.in_proj": 0.351,
+                  "mm.lin1": 0.408,
+                  "mm.lin2": 0.524,
+                  "mm.out_proj": 0.13,
+                  "mm.wi": 6.753,
+                  "mm.wo": 1.783,
+                  "mm.wo2": 4.211,
+                  "mm.wqkv": 5.246,
+                  "norm": 0.422,
+                  "rope": 0.161
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 205,
+                "wallP95Ms": 211,
+                "frameGapMs": 17.080000000000837,
+                "summedGpuSamplesMs": [
+                  69.052,
+                  68.179,
+                  69.518,
+                  68.21,
+                  67.55399999999999
+                ],
+                "kernelMediansMs": {
+                  "attn": 24.908,
+                  "gather": 0.002,
+                  "geglu": 0.253,
+                  "mm.in_proj": 0.67,
+                  "mm.lin1": 0.971,
+                  "mm.lin2": 1.034,
+                  "mm.out_proj": 0.271,
+                  "mm.wi": 16.519,
+                  "mm.wo": 3.817,
+                  "mm.wo2": 9.561,
+                  "mm.wqkv": 9.482,
+                  "norm": 0.716,
+                  "rope": 0.311
+                }
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 45.1809148533435,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.080000000000382,
+                "summedGpuSamplesMs": [
+                  12.025,
+                  11.732999999999999,
+                  11.782,
+                  12.072000000000001,
+                  12.037
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.028,
+                  "attn": 0.13,
+                  "conv": 0.128,
+                  "gates": 0.4,
+                  "gather": 0.002,
+                  "gnorm": 0.087,
+                  "mm.down": 1.122,
+                  "mm.gate_up": 2.011,
+                  "mm.o": 0.163,
+                  "mm.out": 0.508,
+                  "mm.qkv": 0.373,
+                  "mm.qkvz": 1.571,
+                  "qknorm": 0.092,
+                  "recur": 4.838,
+                  "rms": 0.482,
+                  "silumul": 0.094
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 200,
+                "wallP95Ms": 210,
+                "frameGapMs": 17.099999999999454,
+                "summedGpuSamplesMs": [
+                  45.157,
+                  45.742999999999995,
+                  45.797999999999995,
+                  45.37199999999999,
+                  44.62
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.08,
+                  "attn": 1.048,
+                  "conv": 0.383,
+                  "gates": 0.722,
+                  "gather": 0.002,
+                  "gnorm": 0.21,
+                  "mm.down": 3.822,
+                  "mm.gate_up": 7.608,
+                  "mm.o": 0.575,
+                  "mm.out": 1.797,
+                  "mm.qkv": 1.345,
+                  "mm.qkvz": 5.492,
+                  "qknorm": 0.25,
+                  "recur": 21.172,
+                  "rms": 0.472,
+                  "savekv": 0.022,
+                  "savetail": 0.05,
+                  "silumul": 0.198
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 300,
+                "wallP95Ms": 301,
+                "frameGapMs": 17.080000000000837,
+                "summedGpuSamplesMs": [
+                  168.846,
+                  169.06899999999996,
+                  169.04099999999997,
+                  169.05100000000002,
+                  168.833
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.179,
+                  "attn": 13.26,
+                  "conv": 0.793,
+                  "gates": 0.905,
+                  "gather": 0.002,
+                  "gnorm": 0.413,
+                  "mm.down": 15.431,
+                  "mm.gate_up": 21.662,
+                  "mm.o": 2.39,
+                  "mm.out": 6.608,
+                  "mm.qkv": 4.189,
+                  "mm.qkvz": 18.289,
+                  "qknorm": 0.583,
+                  "recur": 83.113,
+                  "rms": 0.693,
+                  "savekv": 0.036,
+                  "savetail": 0.054,
+                  "silumul": 0.344
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gpuAfter": {
+        "metricMs": 24.53559472935656,
+        "mode": "GPU-profiled",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 21.342578878667577,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.080000000000382,
+                "summedGpuSamplesMs": [
+                  7.672999999999999,
+                  7.678,
+                  7.6819999999999995,
+                  7.717,
+                  7.677
+                ],
+                "kernelMediansMs": {
+                  "attn": 1.456,
+                  "gather": 0.002,
+                  "geglu": 0.136,
+                  "mm.in_proj": 0.095,
+                  "mm.lin1": 0.115,
+                  "mm.lin2": 0.129,
+                  "mm.out_proj": 0.046,
+                  "mm.wi": 1.932,
+                  "mm.wo": 0.609,
+                  "mm.wo2": 1.297,
+                  "mm.wqkv": 1.353,
+                  "norm": 0.38,
+                  "rope": 0.135
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 200,
+                "wallP95Ms": 200,
+                "frameGapMs": 17.079999999999927,
+                "summedGpuSamplesMs": [
+                  21.44,
+                  22.209000000000003,
+                  22.246,
+                  21.641,
+                  21.436
+                ],
+                "kernelMediansMs": {
+                  "attn": 4.007,
+                  "gather": 0.002,
+                  "geglu": 0.139,
+                  "mm.in_proj": 0.296,
+                  "mm.lin1": 0.349,
+                  "mm.lin2": 0.427,
+                  "mm.out_proj": 0.112,
+                  "mm.wi": 6.391,
+                  "mm.wo": 1.533,
+                  "mm.wo2": 3.579,
+                  "mm.wqkv": 4.145,
+                  "norm": 0.421,
+                  "rope": 0.154
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 200,
+                "wallP95Ms": 202,
+                "frameGapMs": 17.080000000000837,
+                "summedGpuSamplesMs": [
+                  58.22,
+                  58.507999999999996,
+                  58.025,
+                  58.572,
+                  59.047
+                ],
+                "kernelMediansMs": {
+                  "attn": 16.131,
+                  "gather": 0.004,
+                  "geglu": 0.252,
+                  "mm.in_proj": 0.669,
+                  "mm.lin1": 0.861,
+                  "mm.lin2": 0.986,
+                  "mm.out_proj": 0.259,
+                  "mm.wi": 15.616,
+                  "mm.wo": 3.637,
+                  "mm.wo2": 8.96,
+                  "mm.wqkv": 10.115,
+                  "norm": 0.7,
+                  "rope": 0.308
+                }
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 28.206310593746412,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 200,
+                "wallP95Ms": 210,
+                "frameGapMs": 17.080000000000382,
+                "summedGpuSamplesMs": [
+                  7.9639999999999995,
+                  8.107,
+                  7.9639999999999995,
+                  7.954000000000001,
+                  7.734
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.028,
+                  "attn": 0.125,
+                  "conv": 0.136,
+                  "gates": 0.349,
+                  "gather": 0.002,
+                  "gnorm": 0.088,
+                  "keys": 0.016,
+                  "mm.down": 1.064,
+                  "mm.gate_up": 1.864,
+                  "mm.o": 0.167,
+                  "mm.out": 0.563,
+                  "mm.qkv": 0.313,
+                  "mm.qkvz": 1.414,
+                  "recur": 1.425,
+                  "rms": 0.249,
+                  "silumul": 0.104
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.080000000000837,
+                "summedGpuSamplesMs": [
+                  28.865000000000002,
+                  28.678000000000004,
+                  28.418000000000003,
+                  28.84,
+                  29.157000000000004
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.079,
+                  "attn": 0.763,
+                  "conv": 0.398,
+                  "gates": 0.689,
+                  "gather": 0.002,
+                  "gnorm": 0.206,
+                  "keys": 0.044,
+                  "mm.down": 3.655,
+                  "mm.gate_up": 7.113,
+                  "mm.o": 0.545,
+                  "mm.out": 1.864,
+                  "mm.qkv": 1.236,
+                  "mm.qkvz": 5.335,
+                  "recur": 5.919,
+                  "rms": 0.486,
+                  "savekv": 0.027,
+                  "savetail": 0.057,
+                  "silumul": 0.201
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 300,
+                "wallP95Ms": 302,
+                "frameGapMs": 17.099999999999454,
+                "summedGpuSamplesMs": [
+                  97.70400000000001,
+                  98.975,
+                  97.535,
+                  97.98400000000001,
+                  97.46900000000004
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.183,
+                  "attn": 6.029,
+                  "conv": 1.083,
+                  "gates": 0.694,
+                  "gather": 0.002,
+                  "gnorm": 0.416,
+                  "keys": 0.052,
+                  "mm.down": 12.799,
+                  "mm.gate_up": 20.898,
+                  "mm.o": 2.202,
+                  "mm.out": 5.584,
+                  "mm.qkv": 4.034,
+                  "mm.qkvz": 17.707,
+                  "recur": 24.797,
+                  "rms": 0.625,
+                  "savekv": 0.039,
+                  "savetail": 0.058,
+                  "silumul": 0.353
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "wallBefore": {
+        "metricMs": 186.84679121470836,
+        "mode": "wall-clock",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 181.81295439516336,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 100,
+                "wallP95Ms": 103,
+                "frameGapMs": 17.060000000000173,
+                "forwardSamplesMs": [
+                  100,
+                  100,
+                  99,
+                  102,
+                  98
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 100,
+                "wallP95Ms": 100,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  100,
+                  99,
+                  99,
+                  98,
+                  100
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 601,
+                "wallP95Ms": 609,
+                "frameGapMs": 17.080000000000837,
+                "forwardSamplesMs": [
+                  608,
+                  598,
+                  599,
+                  598,
+                  599
+                ]
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 192.01999936348625,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 101,
+                "wallP95Ms": 111,
+                "frameGapMs": 17.080000000000382,
+                "forwardSamplesMs": [
+                  99,
+                  100,
+                  99,
+                  105,
+                  111
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.080000000000382,
+                "forwardSamplesMs": [
+                  99,
+                  99,
+                  99,
+                  99,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 701,
+                "wallP95Ms": 707,
+                "frameGapMs": 17.080000000000382,
+                "forwardSamplesMs": [
+                  699,
+                  698,
+                  707,
+                  698,
+                  699
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "wallAfter": {
+        "metricMs": 186.48541787711034,
+        "mode": "wall-clock",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 181.71205928321402,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  99,
+                  100,
+                  99,
+                  100,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.080000000000382,
+                "forwardSamplesMs": [
+                  99,
+                  99,
+                  99,
+                  99,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 600,
+                "wallP95Ms": 612,
+                "frameGapMs": 17.080000000000837,
+                "forwardSamplesMs": [
+                  610,
+                  599,
+                  598,
+                  600,
+                  599
+                ]
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 191.38416689559253,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 100,
+                "wallP95Ms": 112,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  99,
+                  99,
+                  99,
+                  111,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  99,
+                  100,
+                  100,
+                  99,
+                  100
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 701,
+                "wallP95Ms": 714,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  698,
+                  700,
+                  700,
+                  710,
+                  699
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "wallSplitAfter": {
+        "metricMs": 112.24620483093739,
+        "mode": "wall-clock",
+        "submit": "split",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 100.00000000000004,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.200000000000045,
+                "forwardSamplesMs": [
+                  99,
+                  99,
+                  98,
+                  99,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  99,
+                  99,
+                  99,
+                  98,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  100,
+                  97,
+                  99,
+                  98,
+                  99
+                ]
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 125.99210498948733,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 100,
+                "wallP95Ms": 101,
+                "frameGapMs": 17.479999999999563,
+                "forwardSamplesMs": [
+                  99,
+                  99,
+                  99,
+                  98,
+                  99
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 100,
+                "wallP95Ms": 104,
+                "frameGapMs": 17.31999999999971,
+                "forwardSamplesMs": [
+                  100,
+                  100,
+                  95,
+                  96,
+                  94
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 200,
+                "wallP95Ms": 212,
+                "frameGapMs": 17.519999999999527,
+                "forwardSamplesMs": [
+                  190,
+                  198,
+                  199,
+                  193,
+                  209
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "amd": {
+      "gpuBefore": {
+        "metricMs": 815.1758810895863,
+        "mode": "GPU-profiled",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 622.9893603406676,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 300,
+                "wallP95Ms": 301,
+                "frameGapMs": 17.0600000000004,
+                "summedGpuSamplesMs": [
+                  159.82500000000002,
+                  161.43,
+                  161.187,
+                  160.473,
+                  161.088
+                ],
+                "kernelMediansMs": {
+                  "attn": 21.686,
+                  "gather": 0.001,
+                  "geglu": 0.99,
+                  "mm.in_proj": 2.314,
+                  "mm.lin1": 3.077,
+                  "mm.lin2": 3.262,
+                  "mm.out_proj": 0.881,
+                  "mm.wi": 54.873,
+                  "mm.wo": 12.35,
+                  "mm.wo2": 27.152,
+                  "mm.wqkv": 33.3,
+                  "norm": 0.675,
+                  "rope": 0.489
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 800,
+                "wallP95Ms": 802,
+                "frameGapMs": 17.079999999999927,
+                "summedGpuSamplesMs": [
+                  612.5590000000001,
+                  615.189,
+                  612.65,
+                  612.568,
+                  615.0339999999999
+                ],
+                "kernelMediansMs": {
+                  "attn": 141.823,
+                  "gather": 0.001,
+                  "geglu": 2.885,
+                  "mm.in_proj": 7.835,
+                  "mm.lin1": 10.455,
+                  "mm.lin2": 10.912,
+                  "mm.out_proj": 2.787,
+                  "mm.wi": 188.21,
+                  "mm.wo": 38.811,
+                  "mm.wo2": 94.034,
+                  "mm.wqkv": 111.649,
+                  "norm": 1.823,
+                  "rope": 1.678
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 2603,
+                "wallP95Ms": 2616,
+                "frameGapMs": 17.100000000002183,
+                "summedGpuSamplesMs": [
+                  2453.6249999999995,
+                  2446.6330000000003,
+                  2450.0009999999997,
+                  2445.4519999999998,
+                  2452.0919999999996
+                ],
+                "kernelMediansMs": {
+                  "attn": 1175.894,
+                  "gather": 0.001,
+                  "geglu": 10.49,
+                  "mm.in_proj": 21.15,
+                  "mm.lin1": 28.491,
+                  "mm.lin2": 29.197,
+                  "mm.out_proj": 7.243,
+                  "mm.wi": 509.806,
+                  "mm.wo": 101.041,
+                  "mm.wo2": 245.694,
+                  "mm.wqkv": 302.184,
+                  "norm": 6.461,
+                  "rope": 10.285
+                }
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 1066.650186043001,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 401,
+                "wallP95Ms": 409,
+                "frameGapMs": 17.079999999999927,
+                "summedGpuSamplesMs": [
+                  212.649,
+                  212.36599999999999,
+                  212.34500000000003,
+                  212.917,
+                  211.66599999999997
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.184,
+                  "attn": 3.804,
+                  "conv": 1.029,
+                  "gates": 2.576,
+                  "gather": 0.001,
+                  "gnorm": 0.412,
+                  "mm.down": 26.146,
+                  "mm.gate_up": 50.842,
+                  "mm.o": 3.839,
+                  "mm.out": 11.583,
+                  "mm.qkv": 9.395,
+                  "mm.qkvz": 43.945,
+                  "qknorm": 0.598,
+                  "recur": 57.357,
+                  "rms": 0.271,
+                  "silumul": 0.527
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 1101,
+                "wallP95Ms": 1101,
+                "frameGapMs": 17.06000000000131,
+                "summedGpuSamplesMs": [
+                  962.2670000000003,
+                  957.939,
+                  958.1239999999999,
+                  956.291,
+                  958.663
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.733,
+                  "attn": 168.88,
+                  "conv": 4.183,
+                  "gates": 10.363,
+                  "gather": 0.001,
+                  "gnorm": 1.624,
+                  "mm.down": 96.693,
+                  "mm.gate_up": 188.073,
+                  "mm.o": 14.035,
+                  "mm.out": 42.31,
+                  "mm.qkv": 33.756,
+                  "mm.qkvz": 161.954,
+                  "qknorm": 2.427,
+                  "recur": 229.888,
+                  "rms": 0.982,
+                  "savekv": 0.11,
+                  "savetail": 0.057,
+                  "silumul": 2.109
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 6108,
+                "wallP95Ms": 6121,
+                "frameGapMs": 17.5,
+                "summedGpuSamplesMs": [
+                  5975.696999999999,
+                  5964.298,
+                  5960.029,
+                  5978.723000000001,
+                  5940.593000000001
+                ],
+                "kernelMediansMs": {
+                  "aprep": 3.552,
+                  "attn": 2923.134,
+                  "conv": 17.951,
+                  "gates": 44.089,
+                  "gather": 0.001,
+                  "gnorm": 7.173,
+                  "mm.down": 348.529,
+                  "mm.gate_up": 692.654,
+                  "mm.o": 49.795,
+                  "mm.out": 148.814,
+                  "mm.qkv": 123.534,
+                  "mm.qkvz": 592.704,
+                  "qknorm": 10.076,
+                  "recur": 994.655,
+                  "rms": 4,
+                  "savekv": 0.502,
+                  "savetail": 0.058,
+                  "silumul": 9.178
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gpuAfter": {
+        "metricMs": 640.9643709546076,
+        "mode": "GPU-profiled",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 561.6485656616653,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 300,
+                "wallP95Ms": 301,
+                "frameGapMs": 17.100000000000364,
+                "summedGpuSamplesMs": [
+                  157.23700000000002,
+                  157.085,
+                  157.226,
+                  156.73799999999997,
+                  157.114
+                ],
+                "kernelMediansMs": {
+                  "attn": 13.488,
+                  "gather": 0.001,
+                  "geglu": 0.966,
+                  "mm.in_proj": 2.58,
+                  "mm.lin1": 3.257,
+                  "mm.lin2": 3.542,
+                  "mm.out_proj": 0.902,
+                  "mm.wi": 56.491,
+                  "mm.wo": 12.345,
+                  "mm.wo2": 27.151,
+                  "mm.wqkv": 35.193,
+                  "norm": 0.672,
+                  "rope": 0.478
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 700,
+                "wallP95Ms": 701,
+                "frameGapMs": 17.080000000000837,
+                "summedGpuSamplesMs": [
+                  571.197,
+                  565.182,
+                  565.847,
+                  566.946,
+                  564.263
+                ],
+                "kernelMediansMs": {
+                  "attn": 86.713,
+                  "gather": 0.002,
+                  "geglu": 2.869,
+                  "mm.in_proj": 8.247,
+                  "mm.lin1": 10.419,
+                  "mm.lin2": 11.367,
+                  "mm.out_proj": 2.933,
+                  "mm.wi": 188.571,
+                  "mm.wo": 40.884,
+                  "mm.wo2": 95.425,
+                  "mm.wqkv": 114.976,
+                  "norm": 1.83,
+                  "rope": 1.654
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 2201,
+                "wallP95Ms": 2202,
+                "frameGapMs": 17.100000000000364,
+                "summedGpuSamplesMs": [
+                  1987.4999999999998,
+                  1995.7550000000003,
+                  1992.8749999999998,
+                  1991.1429999999998,
+                  1996.203
+                ],
+                "kernelMediansMs": {
+                  "attn": 713.838,
+                  "gather": 0.001,
+                  "geglu": 10.577,
+                  "mm.in_proj": 21.469,
+                  "mm.lin1": 28.484,
+                  "mm.lin2": 30.168,
+                  "mm.out_proj": 7.523,
+                  "mm.wi": 508.5,
+                  "mm.wo": 105.183,
+                  "mm.wo2": 250.807,
+                  "mm.wqkv": 299.83,
+                  "norm": 6.491,
+                  "rope": 10.006
+                }
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+            "metricMs": 731.4811252998397,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 300,
+                "wallP95Ms": 310,
+                "frameGapMs": 17.09999999999991,
+                "summedGpuSamplesMs": [
+                  185.802,
+                  184.17700000000002,
+                  184.76999999999998,
+                  185.321,
+                  183.84799999999998
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.186,
+                  "attn": 1.691,
+                  "conv": 1.424,
+                  "gates": 1.138,
+                  "gather": 0.001,
+                  "gnorm": 0.415,
+                  "keys": 0.021,
+                  "mm.down": 26.242,
+                  "mm.gate_up": 52.64,
+                  "mm.o": 3.878,
+                  "mm.out": 11.593,
+                  "mm.qkv": 9.749,
+                  "mm.qkvz": 44.951,
+                  "recur": 29.998,
+                  "rms": 0.271,
+                  "silumul": 0.53
+                }
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 901,
+                "wallP95Ms": 912,
+                "frameGapMs": 17.100000000000364,
+                "summedGpuSamplesMs": [
+                  706.104,
+                  708.6850000000001,
+                  703.7990000000001,
+                  701.9079999999999,
+                  701.448
+                ],
+                "kernelMediansMs": {
+                  "aprep": 0.733,
+                  "attn": 24.294,
+                  "conv": 5.678,
+                  "gates": 3.407,
+                  "gather": 0.001,
+                  "gnorm": 1.656,
+                  "keys": 0.1,
+                  "mm.down": 97.904,
+                  "mm.gate_up": 189.385,
+                  "mm.o": 14.538,
+                  "mm.out": 43.806,
+                  "mm.qkv": 34.913,
+                  "mm.qkvz": 162.318,
+                  "recur": 121.944,
+                  "rms": 0.982,
+                  "savekv": 0.111,
+                  "savetail": 0.055,
+                  "silumul": 2.157
+                }
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 3204,
+                "wallP95Ms": 3536,
+                "frameGapMs": 17.57999999999811,
+                "summedGpuSamplesMs": [
+                  2908.304,
+                  2924.3399999999997,
+                  3009.7419999999993,
+                  3345.3329999999996,
+                  3356.112
+                ],
+                "kernelMediansMs": {
+                  "aprep": 3.533,
+                  "attn": 351.28,
+                  "conv": 26.617,
+                  "gates": 12.742,
+                  "gather": 0.001,
+                  "gnorm": 7.554,
+                  "keys": 0.615,
+                  "mm.down": 356.639,
+                  "mm.gate_up": 704.501,
+                  "mm.o": 50.945,
+                  "mm.out": 154.436,
+                  "mm.qkv": 125.062,
+                  "mm.qkvz": 602.712,
+                  "recur": 598.705,
+                  "rms": 4.317,
+                  "savekv": 0.515,
+                  "savetail": 0.062,
+                  "silumul": 9.738
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "wallBefore": {
+        "metricMs": 960.0852492475556,
+        "mode": "wall-clock",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 740.9947663696923,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 200,
+                "wallP95Ms": 209,
+                "frameGapMs": 17.080000000000382,
+                "forwardSamplesMs": [
+                  206,
+                  200,
+                  199,
+                  199,
+                  200
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 701,
+                "wallP95Ms": 709,
+                "frameGapMs": 17.080000000000837,
+                "forwardSamplesMs": [
+                  709,
+                  700,
+                  700,
+                  699,
+                  700
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 2902,
+                "wallP95Ms": 2907,
+                "frameGapMs": 17.11999999999898,
+                "forwardSamplesMs": [
+                  2811,
+                  2907,
+                  2902,
+                  2901,
+                  2900
+                ]
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 1243.954380863818,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 300,
+                "wallP95Ms": 311,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  300,
+                  300,
+                  299,
+                  299,
+                  313
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 1001,
+                "wallP95Ms": 1009,
+                "frameGapMs": 17.080000000001746,
+                "forwardSamplesMs": [
+                  1001,
+                  999,
+                  1008,
+                  1000,
+                  999
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 6410,
+                "wallP95Ms": 6422,
+                "frameGapMs": 17.360000000000582,
+                "forwardSamplesMs": [
+                  6407,
+                  6420,
+                  6412,
+                  6403,
+                  6302
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "wallAfter": {
+        "metricMs": 731.1387895150541,
+        "mode": "wall-clock",
+        "submit": "await",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 661.1190077179542,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  199,
+                  200,
+                  200,
+                  200,
+                  199
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 601,
+                "wallP95Ms": 608,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  608,
+                  600,
+                  599,
+                  600,
+                  601
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 2404,
+                "wallP95Ms": 2413,
+                "frameGapMs": 17.100000000002183,
+                "forwardSamplesMs": [
+                  2411,
+                  2412,
+                  2400,
+                  2403,
+                  2399
+                ]
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 808.574437117975,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 200,
+                "wallP95Ms": 201,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  199,
+                  200,
+                  200,
+                  199,
+                  200
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 800,
+                "wallP95Ms": 801,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  800,
+                  799,
+                  800,
+                  799,
+                  801
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 3304,
+                "wallP95Ms": 3415,
+                "frameGapMs": 17.140000000003056,
+                "forwardSamplesMs": [
+                  3412,
+                  3303,
+                  3301,
+                  3299,
+                  3304
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "wallSplitAfter": {
+        "metricMs": 694.4320127299815,
+        "mode": "wall-clock",
+        "submit": "split",
+        "models": [
+          {
+            "model": "laya",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 622.6879482801911,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 47,
+                "wallP50Ms": 201,
+                "wallP95Ms": 210,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  209,
+                  200,
+                  199,
+                  199,
+                  199
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 140,
+                "wallP50Ms": 600,
+                "wallP95Ms": 601,
+                "frameGapMs": 17.080000000000382,
+                "forwardSamplesMs": [
+                  600,
+                  599,
+                  598,
+                  599,
+                  600
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 512,
+                "wallP50Ms": 2002,
+                "wallP95Ms": 2005,
+                "frameGapMs": 17.099999999998545,
+                "forwardSamplesMs": [
+                  1999,
+                  2000,
+                  2000,
+                  2000,
+                  2002
+                ]
+              }
+            ]
+          },
+          {
+            "model": "kev-0.8b",
+            "backend": "webgpu",
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 774.4421931339851,
+            "runner": {
+              "browser": "firefox",
+              "browserVersion": "152.0.3",
+              "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+            },
+            "cases": [
+              {
+                "name": "1 question, ~40 tokens",
+                "tokens": 31,
+                "wallP50Ms": 200,
+                "wallP95Ms": 210,
+                "frameGapMs": 17.0600000000004,
+                "forwardSamplesMs": [
+                  209,
+                  200,
+                  199,
+                  200,
+                  200
+                ]
+              },
+              {
+                "name": "1 question, ~128 tokens",
+                "tokens": 124,
+                "wallP50Ms": 800,
+                "wallP95Ms": 801,
+                "frameGapMs": 17.080000000000837,
+                "forwardSamplesMs": [
+                  790,
+                  799,
+                  799,
+                  800,
+                  801
+                ]
+              },
+              {
+                "name": "1 question, ~512 tokens",
+                "tokens": 532,
+                "wallP50Ms": 2903,
+                "wallP95Ms": 2912,
+                "frameGapMs": 17.079999999999927,
+                "forwardSamplesMs": [
+                  2911,
+                  2905,
+                  2901,
+                  2900,
+                  2901
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "validation": {
+    "nvidia": {
+      "laya": {
+        "argmax": 41,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "maxDp": 0.023906444195624543,
+        "maxDpLimit": 0.024,
+        "p50": 99,
+        "p95": 602,
+        "questions": 41,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "kev": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "max": 698,
+        "maxDp": 0.010029852390289308,
+        "maxDpLimit": 0.011,
+        "p50": 100,
+        "questions": 13,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "kernels": {
+        "attention_w0": 7.450580596923828e-8,
+        "attention_w64": 8.940696716308595e-8,
+        "done": true,
+        "geglu": 9.96515154838562e-7,
+        "matmul_k1024": 0.00000947713851928711,
+        "matmul_k96": 0.0000023245811462402344,
+        "maxError": 0.00000947713851928711,
+        "norm": 2.239924595178428e-7,
+        "rope": 1.1321161424365133e-7,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "matrix": {
+        "ok": true,
+        "checks": 48,
+        "adapter": {
+          "architecture": null,
+          "description": null,
+          "device": null,
+          "features": [
+            "core-features-and-limits",
+            "shader-f16",
+            "timestamp-query"
+          ],
+          "isFallbackAdapter": false,
+          "limits": {
+            "maxBufferSize": 1073741824,
+            "maxComputeWorkgroupStorageSize": 32768,
+            "maxStorageBufferBindingSize": 1073741824
+          },
+          "name": "WebGPU",
+          "powerPreference": "high-performance",
+          "vendor": null
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "shapes": [
+          "45x132x96",
+          "45x132x1024"
+        ],
+        "kernels": [
+          "matmul@256:1",
+          "matmul@256:2",
+          "matmul@256:3",
+          "matmul@256:4",
+          "matmul_h@256:1",
+          "matmul_h@256:2",
+          "matmul_h@256:3",
+          "matmul_h@256:4"
+        ],
+        "maxAbsF32": 0.0000324249267578125,
+        "maxAbsF16": 0.0072727203369140625
+      },
+      "cache": {
+        "backend": "webgpu",
+        "extVsFresh": 0,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 100,
+          "hit": 99,
+          "miss": 95
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "stats": {
+          "extensions": 1,
+          "hits": 1,
+          "misses": 1,
+          "tokensSaved": 80
+        }
+      },
+      "visibleLaya": {
+        "argmax": 41,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "maxDp": 0.023906444195624543,
+        "maxDpLimit": 0.024,
+        "p50": 99,
+        "p95": 599,
+        "questions": 41,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      }
+    },
+    "amd": {
+      "laya": {
+        "argmax": 41,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "maxDp": 0.023606444195624576,
+        "maxDpLimit": 0.024,
+        "p50": 200,
+        "p95": 1804,
+        "questions": 41,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        }
+      },
+      "kev": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "max": 2700,
+        "maxDp": 0.010021954774856567,
+        "maxDpLimit": 0.011,
+        "p50": 511,
+        "questions": 13,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        }
+      },
+      "kernels": {
+        "attention_w0": 8.940696716308595e-8,
+        "attention_w64": 8.940696716308595e-8,
+        "done": true,
+        "geglu": 9.96515154838562e-7,
+        "matmul_k1024": 0.00002187490463256836,
+        "matmul_k96": 0.000004675628287551139,
+        "maxError": 0.00002187490463256836,
+        "norm": 2.384185791015625e-7,
+        "rope": 1.1321161424365133e-7,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        }
+      },
+      "matrix": {
+        "ok": true,
+        "checks": 48,
+        "adapter": {
+          "architecture": null,
+          "description": null,
+          "device": null,
+          "features": [
+            "core-features-and-limits",
+            "shader-f16",
+            "timestamp-query"
+          ],
+          "isFallbackAdapter": false,
+          "limits": {
+            "maxBufferSize": 1073741824,
+            "maxComputeWorkgroupStorageSize": 32768,
+            "maxStorageBufferBindingSize": 1073741824
+          },
+          "name": "WebGPU",
+          "powerPreference": "high-performance",
+          "vendor": null
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        },
+        "shapes": [
+          "45x132x96",
+          "45x132x1024"
+        ],
+        "kernels": [
+          "matmul@256:1",
+          "matmul@256:2",
+          "matmul@256:3",
+          "matmul@256:4",
+          "matmul_h@256:1",
+          "matmul_h@256:2",
+          "matmul_h@256:3",
+          "matmul_h@256:4"
+        ],
+        "maxAbsF32": 0.0000324249267578125,
+        "maxAbsF16": 0.007273674011230469
+      },
+      "cache": {
+        "backend": "webgpu",
+        "extVsFresh": 0,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 501,
+          "hit": 300,
+          "miss": 506
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        },
+        "stats": {
+          "extensions": 1,
+          "hits": 1,
+          "misses": 1,
+          "tokensSaved": 80
+        }
+      }
+    },
+    "optionalFeaturesDisabled": {
+      "layaBefore": {
+        "argmax": 41,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "maxDp": 0.024006444195624588,
+        "p50": 99,
+        "p95": 600,
+        "questions": 41,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "layaAfter": {
+        "argmax": 41,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "maxDp": 0.024006444195624588,
+        "p50": 99,
+        "p95": 599,
+        "questions": 41,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "kevAfter": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "gpu": "WebGPU",
+        "max": 708,
+        "maxDp": 0.009684622287750244,
+        "maxDpLimit": 0.011,
+        "p50": 100,
+        "questions": 13,
+        "runner": {
+          "browser": "firefox",
+          "browserVersion": "152.0.3",
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "layaStrictGuardPassed": false,
+      "note": "Both baseline and final Laya f32 maxDp=0.024006444 exceed the normal-feature 0.024 guard. Both preserve 41/41 argmax and satisfy the existing pack criterion <0.03."
+    },
+    "matrixBugBefore": [
+      {
+        "bias": false,
+        "kernel": "matmul_h:auto",
+        "maxAbs": 10.970487594604492,
+        "maxRelative": 1,
+        "message": "matmul_h:auto CPU mismatch at row 0, col 1021",
+        "mode": 0,
+        "ok": false,
+        "samples": 49,
+        "shape": "44x1024x1024",
+        "worst": {
+          "actual": 0,
+          "col": 1021,
+          "expected": 10.970487594604492,
+          "row": 0
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul:3",
+        "maxAbs": 10.970487594604492,
+        "maxRelative": 1,
+        "message": "matmul:3 CPU mismatch at row 0, col 1021",
+        "mode": 0,
+        "ok": false,
+        "samples": 49,
+        "shape": "44x1024x1024",
+        "worst": {
+          "actual": 0,
+          "col": 1021,
+          "expected": 10.970487594604492,
+          "row": 0
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_h:auto",
+        "maxAbs": 1.840612292289734,
+        "maxRelative": 1,
+        "message": "matmul_h:auto CPU mismatch at row 0, col 48",
+        "mode": 0,
+        "ok": false,
+        "samples": 5940,
+        "shape": "45x132x96",
+        "worst": {
+          "actual": 0,
+          "col": 48,
+          "expected": 1.840612292289734,
+          "row": 0
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul:3",
+        "maxAbs": 1.840612292289734,
+        "maxRelative": 1,
+        "message": "matmul:3 CPU mismatch at row 0, col 48",
+        "mode": 0,
+        "ok": false,
+        "samples": 5940,
+        "shape": "45x132x96",
+        "worst": {
+          "actual": 0,
+          "col": 48,
+          "expected": 1.840612292289734,
+          "row": 0
+        }
+      }
+    ],
+    "customScratch": {
+      "ok": true,
+      "checks": 2,
+      "adapter": {
+        "architecture": null,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "powerPreference": "high-performance",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserVersion": "152.0.3",
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "shapes": [
+        "64x16384x512"
+      ],
+      "kernels": [
+        "matmul@512:4/2",
+        "matmul_h@512:4/2"
+      ],
+      "maxAbsF32": 0.0000095367431640625,
+      "maxAbsF16": 0.0037031173706054688,
+      "floats": 4194304
+    },
+    "rustTests": 29,
+    "javascriptTests": 20
+  },
+  "limitations": [
+    "One host; desktop activity and clocks can affect timing.",
+    "No subgroup execution on these Firefox adapters.",
+    "Chromium and Apple GPU performance were not measured.",
+    "GPU timestamps exclude browser waits; default NVIDIA wall latency remains dominated by approximately 100 ms completion intervals.",
+    "Split scheduling is an explicit existing option, not a default change or a compositor-yield guarantee."
+  ]
+}
