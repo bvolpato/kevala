@@ -38,6 +38,13 @@ async def record(seconds: float) -> None:
         context = await browser.new_context(viewport={"width": 1280, "height": 720}, device_scale_factor=1.5)
         try:
             page = await context.new_page()
+            cdp = await context.new_cdp_session(page)
+            # Chrome slows a covered or undersized window and the screencast crops to it: give this
+            # window room for the whole 1280x720 page and bring it to the front
+            window = await cdp.send("Browser.getWindowForTarget")
+            bounds = {"left": 0, "top": 0, "width": 1280, "height": 900, "windowState": "normal"}
+            await cdp.send("Browser.setWindowBounds", {"windowId": window["windowId"], "bounds": bounds})
+            await page.bring_to_front()
             await page.goto(URL)
             await page.wait_for_function("window.kevala_site && window.kevala_site.session")
             await page.evaluate("window.kevala_site.session.load('laya')")
@@ -47,7 +54,6 @@ async def record(seconds: float) -> None:
             await page.wait_for_timeout(6000)
             await page.evaluate("window.tetris.ignoreKeys(); window.tetris.start(true)")
 
-            cdp = await context.new_cdp_session(page)
             frames: list[dict] = []
 
             async def on_frame(event: dict) -> None:
@@ -66,6 +72,7 @@ async def record(seconds: float) -> None:
                 await page.wait_for_timeout(250)
             await cdp.send("Page.stopScreencast")
             await page.wait_for_timeout(300)
+            per_move = await page.evaluate("document.querySelector('[data-m=\"ms\"]').textContent")
             (FRAMES / "frames.json").write_text(json.dumps({"frames": frames, "states": states}))
         finally:
             await context.close()
@@ -77,7 +84,8 @@ async def record(seconds: float) -> None:
         if state["lines"] != prev:
             cleared.append(f"{state['t'] - t0:.1f}s +{state['lines'] - prev}")
             prev = state["lines"]
-    print(f"{len(frames)} frames over {frames[-1]['t'] - t0:.1f} s; line clears at {', '.join(cleared) or 'none'}")
+    fps = len(frames) / (frames[-1]["t"] - t0)
+    print(f"{len(frames)} frames at {fps:.0f} fps, {per_move} per move; line clears at {', '.join(cleared) or 'none'}")
 
 
 def concat_list(segment: str) -> Path:

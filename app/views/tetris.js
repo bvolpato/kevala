@@ -89,8 +89,8 @@ const HTML = `<div class="wrap">
         <p>Laya, 421M parameters, on WebGPU in the browser</p>
       </div>
       <div class="ai-metrics">
-        <div title="Time for the model to score every landing spot of a piece (median of the last ten)"><b data-m="ms">–</b><span data-m="where">per piece</span></div>
-        <div title="Landing spots of this piece, all scored in one batched pass"><b data-m="spots">–</b><span>spots in one pass</span></div>
+        <div><b data-m="ms">–</b><span data-m="where">per move</span></div>
+        <div title="The places this piece can land, all scored in one batched pass"><b data-m="spots">–</b><span>moves in one pass</span></div>
       </div>
       <div class="keys">${KEY_TILES}</div>
       <div class="plan" aria-label="Keys for this piece"></div>
@@ -661,7 +661,7 @@ export function mount(el, { session }) {
     ui.auto.setAttribute("aria-pressed", String(ai.enabled));
     ui.auto.classList.toggle("thinking", ai.busy);
     const backend = session.info?.backend;
-    const where = backend ? (backend === "webgpu" ? "per piece, WebGPU" : "per piece, CPU") : "per piece";
+    const where = backend ? (backend === "webgpu" ? "per move, WebGPU" : "per move, CPU") : "per move";
     el.querySelector('[data-m="where"]').textContent = where;
     if (!ai.stats.ms.length) el.querySelector('[data-m="ms"]').textContent = ai.busy ? "…" : "–";
   }
@@ -675,14 +675,17 @@ export function mount(el, { session }) {
     ].join("");
   }
 
+  // a piece's moves are scored together, so a move costs the pass time over the moves it scored
+  const msPerMove = [];
   function showDecision(decision) {
-    const recent = ai.stats.ms.slice(-10);
-    const median = [...recent].sort((a, b) => a - b)[Math.floor(recent.length / 2)];
+    msPerMove.push(decision.ms / decision.spots);
+    if (msPerMove.length > 10) msPerMove.shift();
+    const median = [...msPerMove].sort((a, b) => a - b)[msPerMove.length >> 1];
     const msEl = el.querySelector('[data-m="ms"]');
     msEl.textContent = fmtMs(median);
     msEl.parentElement.title =
-      `median of the last ${recent.length} pieces · last ${fmtMs(decision.ms)} · ` +
-      `${decision.states} descriptions and ${decision.timing?.tokens ?? "?"} tokens in one pass`;
+      `${fmtMs(decision.ms)} for the ${decision.spots} moves of this piece, scored in one pass ` +
+      `(${decision.states} distinct outcomes, ${decision.timing?.tokens ?? "?"} tokens); median of the last ${msPerMove.length} pieces`;
     el.querySelector('[data-m="spots"]').textContent = String(decision.spots);
     const top = decision.scored.slice(0, 3);
     ui.spots.innerHTML = top.map(spotHTML).join("");
