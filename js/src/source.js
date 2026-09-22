@@ -8,6 +8,7 @@ export const CACHE_NAME = "kevala-v1";
 
 /** Pre-converted int8 packs of the models below, pinned to one commit of their Hugging Face repo. */
 const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/45da41504c6c117eca940103e49dd5eb1c3eab4f";
+const GEMMA_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/c70e9136938026e00cbbdec9db027d862963f180";
 
 /**
  * Known models, by name. Each downloads its pre-converted pack (`hosted`); when that is
@@ -74,6 +75,7 @@ export const MODELS = {
   ].map(([size, upstream, revision, pack, packSha256]) => [`gemma-4-${size}`, {
     arch: "gemma4", label: `Gemma 4 ${upstream}, instruction model with direct option scoring`,
     repo: `google/gemma-4-${upstream}-it`, revision, license: "apache-2.0",
+    hosted: `${GEMMA_PACKS}/gemma-4-${size}-q8.kevala`,
     browserConvert: false, pack, packSha256, block: 32,
   }])),
 };
