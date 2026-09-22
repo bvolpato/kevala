@@ -9,6 +9,17 @@ use crate::json::Value;
 use crate::pack::Writer;
 use crate::tokenizer::Tokenizer;
 
+pub(crate) fn text_tensor_prefix(has: impl Fn(&str) -> bool) -> Result<&'static str, String> {
+    let mut prefixes = ["model.language_model.", "language_model.", "model."]
+        .into_iter()
+        .filter(|prefix| has(&format!("{prefix}embed_tokens.weight")));
+    let prefix = prefixes.next().ok_or("checkpoint has no supported text embedding tensor namespace")?;
+    if prefixes.next().is_some() {
+        return Err("checkpoint has ambiguous text embedding tensor namespaces".into());
+    }
+    Ok(prefix)
+}
+
 pub struct Checkpoint<'a> {
     pub safetensors: &'a [u8],
     pub encoder_config: &'a str,
@@ -366,5 +377,20 @@ mod tests {
         let (q, s) = quantize(&w, 2, 4, 4);
         assert_eq!(s, vec![1.0 / 127.0, 2.0 / 127.0]);
         assert_eq!(q, vec![64, -127, 32, 0, 127, -127, 64, 0]);
+    }
+}
+
+#[cfg(test)]
+mod prefix_tests {
+    use super::text_tensor_prefix;
+
+    #[test]
+    fn text_namespace_is_selected_from_tensors_and_rejects_ambiguity() {
+        for prefix in ["model.", "model.language_model.", "language_model."] {
+            let tensor = format!("{prefix}embed_tokens.weight");
+            assert_eq!(text_tensor_prefix(|name| name == tensor).unwrap(), prefix);
+        }
+        assert!(text_tensor_prefix(|_| false).unwrap_err().contains("no supported"));
+        assert!(text_tensor_prefix(|_| true).unwrap_err().contains("ambiguous"));
     }
 }

@@ -1,8 +1,8 @@
 # How kevala works
 
-kevala runs System 1 decision models (Laya, Kev, and SemIf) inside a web page.
+kevala runs System 1 decision models (Laya, Kev, SemIf, and Gemma 4) inside a web page.
 A request is a state plus typed questions (`noul`, `choice`, `score`), and the answer is a probability
-for every option, in one forward pass. Nothing leaves the tab.
+for every option without autoregressive text generation. Nothing leaves the tab.
 
 ```
  page ──► index.js ──postMessage──► engine worker ──► coordinator (WebAssembly, Rust)
@@ -23,17 +23,20 @@ compiles for native targets and `wasm32-unknown-unknown` alike:
   library on fixture corpora and millions of fuzzed strings.
 - `content.rs`: the request model. `state` is text or JSON; `parts` carries typed content by modality.
 - `runtime.rs`: the family registry (`Model` trait, `FAMILIES`), keyed by the pack's `config.arch`.
-- Families: `engine.rs` + `sequence.rs` + `model.rs` (Laya), `kev.rs` (Kev and SemIf). Each owns its
-  template, backbone and readout. SemIf shares Qwen3.5's decoder with Kev, but reads direct option
-  label logits from frozen instruction weights instead of using Kev's LoRA adapter and pointer head.
+- Families: `engine.rs` + `sequence.rs` + `model.rs` (Laya), `kev.rs` (Kev and SemIf), and the
+  Gemma text family. Each owns its template, backbone and readout. SemIf shares Qwen3.5's decoder
+  with Kev, but reads direct option label logits from frozen instruction weights instead of using
+  Kev's LoRA adapter and pointer head.
 - `gpu.rs` and `wgsl/*.wgsl`: the WebGPU kernels. WebGPU only runs WGSL, so the kernels are WGSL
   sources compiled into the crate; `gpu.rs` specializes them (f16 tiles, rows and column groups per
   workgroup, subgroup use, optionally the matrix shape) and the WebAssembly binary hands the result
   to the browser runtime (`kevala_wgsl`). `kevala wgsl <kernel>` prints one from the command line.
 - `kernels.rs`, `simd.rs`: CPU kernels over a four-lane vector type that maps to WebAssembly SIMD128
   (with relaxed-SIMD fused multiply-add when available), NEON natively, or plain arrays.
-- `pack.rs`, `convert.rs`, `convert_kev.rs`, `torchpt.rs`: the `.kevala` format and converters from
-  upstream checkpoints (safetensors, LoRA adapters, `torch.save` files).
+- `pack.rs`, `convert.rs`, `convert_kev.rs`, `convert_gemma.rs`, `gemma4.rs`, `torchpt.rs`: the `.kevala` format
+  and converters from upstream checkpoints (safetensors, LoRA adapters, `torch.save` files).
+- `kevala-cli/src/conversion.rs`: the common native conversion path and its architecture, adapter,
+  tokenizer and readout validation.
 
 **WebAssembly ABI (`crates/kevala-wasm`).** A small C ABI: load a pack, decide, plus the entry points the
 GPU and shard backends drive (prepare, embed, finish). Three builds ship: `relaxed` (SIMD128 +
@@ -68,9 +71,10 @@ tensor-parallel shard, and applies them to the stream so no worker ever holds by
 
 `Kevala.load({ model: "laya" })` downloads the model's int8 pack from
 [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs), pinned to one commit, stores it
-in the Origin Private File System and loads it. Later visits read it from disk. The packs were made
-with `kevala convert`, `kevala convert-kev`, and `kevala convert-semif`, and pass the same parity
-fixtures as a fresh conversion.
+in the Origin Private File System and loads it. Later visits read it from disk. Packs can be converted
+with `kevala convert` and checked against the same parity fixtures as a fresh conversion. The
+family-specific `convert-kev`, `convert-semif`, and `convert-gemma` commands remain compatibility
+aliases that use the same validated conversion path.
 
 When the pack is unreachable, Laya and Kev-0.8B can download their upstream checkpoints at pinned
 revisions and convert them in the browser, with the same Rust converter the CLI uses, compiled to
@@ -78,6 +82,42 @@ WebAssembly. Larger Kev and all SemIf choices require a previously converted pac
 the pack under the same key, so either one serves later loads. You can also serve a `.kevala` file
 yourself: `Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
 [Packs](packs.md) has the commands to download, convert, check and publish them.
+
+## Converting checkpoints
+
+The preferred native command is:
+
+```sh
+kevala convert <checkpoint-dir> -o out.kevala
+```
+
+The converter reads `config.json` and selects the architecture from its model identifiers, including
+nested text configuration where present. It does not infer a family from a repository name or a
+parameter count. A plain Qwen3.5 or Gemma 4 text decoder defaults to the `direct-options` readout.
+A complete Qwen3.5 LoRA adapter with its pointer head uses `pointer`, and a Laya encoder checkpoint
+uses `encoder-head`. `--readout direct-options|pointer|encoder-head` is optional, but an explicit
+choice must agree with the detected architecture and the files supplied.
+
+The stable pack keys are `laya` for the ModernBERT decision head, `kev` for the Qwen3.5 decoder
+(including both pointer and direct-options readouts), and `gemma4` for the Gemma text decoder. These
+are format architecture keys, not repository-name lookups.
+
+An adapter directory can be supplied in either form:
+
+```sh
+kevala convert adapter-dir --base base-dir -o out.kevala
+kevala convert base-dir --adapter adapter-dir -o out.kevala
+```
+
+The common path validates adapter files, tokenizer IDs, source precision, and unsupported features
+before writing the pack. Unknown or conflicting architecture identifiers, prequantized or MoE
+checkpoints, incomplete adapters, and incompatible readouts fail with an error. The converter reads
+the checkpoint tokenizer and applies the Qwen2Tokenizer normalization and added-token overlay needed
+by Qwen3.5, so ordinary conversion needs no Python tokenizer materialization step. Use
+`--tokenizer tokenizer.json` only when intentionally overriding it with a verified tokenizer file.
+
+`convert-kev`, `convert-semif`, and `convert-gemma` are compatibility aliases for the same common
+path. New scripts should use `kevala convert` so config-driven validation stays consistent.
 
 Kev's conversion downloads only the byte range of the Qwen3.5 base that holds the language model (the
 vision tower and the multi-token-prediction head are skipped), merges Kev's LoRA adapter in f32 and

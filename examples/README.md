@@ -20,8 +20,8 @@ later visits load in about a second. Kev-0.8B can use the same browser conversio
 Kev-9B, and all SemIf sizes use their pre-converted `.kevala` packs.
 
 The model menu and the API also expose `kev-0.8b`, `kev-4b`, `kev-9b`,
-`semif-qwen3.5-0.8b`, `semif-qwen3.5-2b`, and `semif-qwen3.5-4b`. SemIf uses frozen Qwen3.5
-instruction weights and direct option scoring, with no trained adapter.
+`semif-qwen3.5-0.8b`, `semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
+SemIf uses frozen Qwen3.5 instruction weights and direct option scoring, with no trained adapter.
 
 ## The examples
 
@@ -55,7 +55,7 @@ work with all model families should treat `action` and `probability_status` as o
 ## Self-host a .kevala pack
 
 Converting in the browser is convenient, but for production you may prefer to convert once and
-serve the pack from your own CDN. Build the CLI and convert:
+serve the pack from your own CDN. Build the CLI and use the common architecture-driven command:
 
 ```sh
 cargo build --release -p kevala-cli
@@ -68,14 +68,26 @@ target/release/kevala convert laya -o laya-q8.kevala
 # Kev-0.8B: the Qwen3.5-0.8B base plus Kev's adapter and pointer head
 huggingface-cli download Qwen/Qwen3.5-0.8B-Base --revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 --local-dir qwen35
 huggingface-cli download jaredpalmer/kev-0.8b --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --local-dir kev
-target/release/kevala convert-kev --base qwen35 --kev kev -o kev-0.8b-q8.kevala \
-  --kev-revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+target/release/kevala convert qwen35 --adapter kev -o kev-0.8b-q8.kevala \
+  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+
+# The adapter-first spelling is equivalent:
+target/release/kevala convert kev --base qwen35 -o kev-0.8b-q8.kevala \
+  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+
+# A plain Qwen3.5 or Gemma 4 text checkpoint uses direct option scoring by default:
+target/release/kevala convert qwen35-instruction -o semif-qwen3.5-q8.kevala --readout direct-options
 
 # check a pack
 target/release/kevala inspect laya-q8.kevala
 target/release/kevala decide laya-q8.kevala --state "Refund me today or I cancel" \
   --questions '{"churn":{"type":"noul","instructions":"Does the customer threaten to leave?"}}'
 ```
+
+`convert-kev`, `convert-semif`, and `convert-gemma` remain compatibility aliases for the same
+validated path. The native converter applies the Qwen2Tokenizer normalization and added-token
+overlay from the checkpoint configuration, so ordinary conversion needs no Python tokenizer
+materialization; `--tokenizer` is available for an explicit verified override.
 
 Then load it by URL:
 

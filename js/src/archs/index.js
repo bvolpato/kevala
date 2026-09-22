@@ -14,8 +14,8 @@
 //     convert(module, spec, opts),       // optional: build a .kevala pack from upstream files in the browser
 //   }
 //
-// Families the WebAssembly build knows but no plugin describes still run, on the CPU, through
-// the generic `kevala_decide` path. Load extra plugins with `Kevala.load({ plugins: [url] })`.
+// A pack family must have a registered plugin before the engine will load it. Load extra plugins
+// with `Kevala.load({ plugins: [url] })` before loading packs that use them.
 
 import laya from "./laya.js";
 import kev from "./kev.js";

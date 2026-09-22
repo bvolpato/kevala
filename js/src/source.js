@@ -21,6 +21,7 @@ export const MODELS = {
     label: "Laya (English), ModernBERT-large encoder, 421M",
     repo: "convaiinnovations/laya",
     revision: "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+    author: "Nandakishor M, Convai Innovations",
     license: "apache-2.0",
     hosted: `${PACKS}/laya-q8.kevala`,
     // true when load() can convert it in the browser from upstream files (no pack to host)
@@ -36,6 +37,7 @@ export const MODELS = {
     label: "Kev-0.8B, Qwen3.5-0.8B decoder with a pointer head",
     repo: "jaredpalmer/kev-0.8b",
     revision: "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+    author: "Jared Palmer",
     base: { repo: "Qwen/Qwen3.5-0.8B-Base", revision: "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68" },
     license: "apache-2.0",
     hosted: `${PACKS}/kev-0.8b-q8.kevala`,
@@ -48,6 +50,7 @@ export const MODELS = {
   "kev-4b": {
     arch: "kev", label: "Kev-4B, Qwen3.5 decoder with a trained pointer head",
     repo: "jaredpalmer/kev-4b", revision: "485ace8703592fcf405488b262449990824cfed1",
+    author: "Jared Palmer",
     base: { repo: "Qwen/Qwen3.5-4B-Base", revision: "1001bb4d826a52d1f399e183466143f4da7b741b" },
     license: "apache-2.0", hosted: `${PACKS}/kev-4b-q8.kevala`,
     browserConvert: false, download: 9502534940, pack: 4756384192, block: 32,
@@ -56,6 +59,7 @@ export const MODELS = {
   "kev-9b": {
     arch: "kev", label: "Kev-9B, Qwen3.5 decoder with a trained pointer head",
     repo: "jaredpalmer/kev-9b", revision: "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+    author: "Jared Palmer",
     base: { repo: "Qwen/Qwen3.5-9B-Base", revision: "68c46c4b3498877f3ef123c856ecfde50c39f404" },
     license: "apache-2.0", hosted: `${PACKS}/kev-9b-q8.kevala`,
     browserConvert: false, download: 19530970823, pack: 8963899968, block: 32,
@@ -84,16 +88,54 @@ export const MODELS = {
 
 export const UPSTREAM = MODELS.laya;
 
+const SOURCE_IDENTITY_FIELDS = ["repo", "revision", "base", "hosted", "download", "pack", "packSha256", "source"];
+const DERIVED_SOURCE_FIELDS = ["hosted", "download", "pack", "packSha256"];
+const PROVENANCE_FIELDS = ["author", "license"];
+
+function hasOwn(value, key) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function registeredModel(name) {
+  return typeof name === "string" && hasOwn(MODELS, name) ? MODELS[name] : null;
+}
+
+function checkKnownArch(name, known, model) {
+  if (hasOwn(model, "arch") && model.arch !== known.arch) {
+    throw new Error(`model ${JSON.stringify(name)} uses architecture ${JSON.stringify(known.arch)}, not ${JSON.stringify(model.arch)}`);
+  }
+}
+
+/** Merge a known family with an override without carrying stale source provenance across repos. */
+function knownOverride(name, known, model) {
+  checkKnownArch(name, known, model);
+  const sourceOverride = SOURCE_IDENTITY_FIELDS.some((key) => hasOwn(model, key));
+  const spec = { ...known, ...model };
+  if (!sourceOverride) return spec;
+
+  // A changed source must not continue using the old hosted bytes, sizes, or digest. Callers can
+  // provide any of these explicitly when they intentionally publish a matching replacement.
+  for (const key of DERIVED_SOURCE_FIELDS) if (!hasOwn(model, key)) delete spec[key];
+  for (const key of PROVENANCE_FIELDS) if (!hasOwn(model, key)) delete spec[key];
+  if (hasOwn(model, "repo") && !hasOwn(model, "revision")) delete spec.revision;
+  if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "base")) delete spec.base;
+  if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "label")) delete spec.label;
+  return spec;
+}
+
 /** Resolves a model option to `{ url }` for a pack or `{ spec }` for an upstream checkpoint. */
 export function resolveModel(model) {
   if (model == null) return { spec: MODELS.laya };
   if (typeof model === "string") {
-    if (MODELS[model]) return { spec: MODELS[model] };
+    const known = registeredModel(model);
+    if (known) return { spec: known };
     return { url: model };
   }
+  const known = registeredModel(model.name);
+  if (known) checkKnownArch(model.name, known, model);
   if (model.url) return { url: model.url };
-  if (model.name && MODELS[model.name]) return { spec: { ...MODELS[model.name], ...model } };
-  return { spec: { ...MODELS.laya, ...model } };
+  if (known) return { spec: knownOverride(model.name, known, model) };
+  return { spec: { ...model } };
 }
 
 /**
@@ -296,6 +338,26 @@ export function upstreamKey(up) {
   return `https://kevala.cache/${up.repo}/${up.revision}${base}/q8-b${up.block}${artifact}.kevala`;
 }
 
+function absoluteUrl(url) {
+  const base = typeof self !== "undefined" ? self.location?.href : undefined;
+  return new URL(url, base).href;
+}
+
+function hasReplacementHosted(model, spec) {
+  if (typeof spec.hosted !== "string" || spec.hosted.length === 0) return false;
+  if (model == null) return false;
+  if (typeof model === "string") return !registeredModel(model);
+  if (typeof model !== "object") return false;
+  return !registeredModel(model.name) || hasOwn(model, "hosted");
+}
+
+/** Cache a custom or explicitly replaced hosted pack by URL, avoiding undefined identity keys. */
+function modelCacheKey(model, which) {
+  if (which.url) return absoluteUrl(which.url);
+  if (hasReplacementHosted(model, which.spec)) return absoluteUrl(which.spec.hosted);
+  return upstreamKey(which.spec);
+}
+
 function hfUrl(up, file) {
   return `https://huggingface.co/${up.repo}/resolve/${up.revision}/${file}`;
 }
@@ -324,7 +386,7 @@ async function* body(res, file, total, onProgress, signal) {
 }
 
 /**
- * Resolves a pack source to `{ size, chunks(), cached, key }`.
+ * Resolves a pack source to `{ size, chunks(), cached, key, expectedArch? }`.
  * `model` is a URL string, an ArrayBuffer / Uint8Array / Blob, or `{ repo, revision, block }`
  * naming an upstream checkpoint (the default). For a known model, `from` picks where its weights
  * come from: "pack" (its hosted int8 pack, the default) or "checkpoint" (the original weights,
@@ -341,31 +403,33 @@ export async function openPack(model, { cache = true, from = "pack", signal, onP
   }
   const store = await openCache(cache);
   const which = resolveModel(model);
-  const key = which.url ? new URL(which.url, self.location?.href).href : upstreamKey(which.spec);
+  const expectedArch = which.spec?.arch || (model && typeof model === "object" ? model.arch || registeredModel(model.name)?.arch : null);
+  const withExpectedArch = (pack) => expectedArch ? { ...pack, expectedArch } : pack;
+  const key = modelCacheKey(model, which);
   if (store) {
     const hit = await store.match(key).catch(() => null);
     if (hit) {
       const size = Number(hit.headers.get("content-length")) || Number(hit.headers.get("x-kevala-size")) || 0;
       onProgress?.({ phase: "cache", file: key, loaded: size, total: size });
-      return fromResponse(hit, "cache", size, true, key, null, signal);
+      return withExpectedArch(fromResponse(hit, "cache", size, true, key, null, signal));
     }
   }
   if (which.url) {
     const size = await remoteSize(key, signal).catch(() => 0);
     if (size && (await acceptsRanges(key, signal))) {
-      return streamIntoCache(store, key, size, fetchRange(key, 0, size, key.split("/").pop(), { signal, onProgress }), { signal, onProgress });
+      return withExpectedArch(streamIntoCache(store, key, size, fetchRange(key, 0, size, key.split("/").pop(), { signal, onProgress }), { signal, onProgress }));
     }
     // a server without byte ranges (or without HEAD): one plain stream
     const res = await checked(await fetch(key, { signal }), key);
     const length = Number(res.headers.get("content-length")) || 0;
-    return streamIntoCache(store, key, length, body(res, key.split("/").pop(), length, onProgress, signal), { signal, onProgress });
+    return withExpectedArch(streamIntoCache(store, key, length, body(res, key.split("/").pop(), length, onProgress, signal), { signal, onProgress }));
   }
   const up = which.spec;
   // a model with a hosted int8 pack downloads that (about half the bytes of the checkpoint and no
   // conversion); if it is missing or unreachable, convert from the upstream checkpoint instead
   if (up.hosted && from === "pack") {
     const size = await remoteSize(up.hosted, signal).catch((e) => (signal?.aborted ? Promise.reject(e) : 0));
-    if (size) return streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress });
+    if (size) return withExpectedArch(streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress }));
   }
   // upstream checkpoint: convert, cache, and hand back the finished bytes
   if (up.browserConvert === false) {
@@ -375,7 +439,7 @@ export async function openPack(model, { cache = true, from = "pack", signal, onP
       : `The hosted pack for ${up.label || up.repo} is unavailable. Retry the download or pass a local .kevala URL.`);
   }
   const made = await convert(up, { signal, onProgress });
-  if (!(made instanceof Uint8Array)) return streamIntoCache(store, key, made.size, made.chunks(), { signal, onProgress, file: "converted pack" });
+  if (!(made instanceof Uint8Array)) return withExpectedArch(streamIntoCache(store, key, made.size, made.chunks(), { signal, onProgress, file: "converted pack" }));
   const bytes = made;
   if (store) {
     onProgress?.({ phase: "cache", file: key, loaded: 0, total: bytes.byteLength });
@@ -385,7 +449,7 @@ export async function openPack(model, { cache = true, from = "pack", signal, onP
       onProgress?.({ phase: "cache-failed", message: String(e?.message || e) });
     }
   }
-  return { size: bytes.byteLength, cached: false, key, async *chunks() { yield bytes; } };
+  return withExpectedArch({ size: bytes.byteLength, cached: false, key, async *chunks() { yield bytes; } });
 }
 
 /**
@@ -468,7 +532,7 @@ export async function isCached(model) {
   const store = await openCache(true);
   if (!store) return false;
   const which = resolveModel(model);
-  const key = which.url ? new URL(which.url, self.location?.href).href : upstreamKey(which.spec);
+  const key = modelCacheKey(model, which);
   return (await store.keys()).some((e) => e.key === key);
 }
 

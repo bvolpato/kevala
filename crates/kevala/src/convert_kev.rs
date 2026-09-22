@@ -272,17 +272,17 @@ impl KevConvert {
         }
         let cfg_all = Value::parse(base_config).map_err(|e| format!("base config: {e}"))?;
         let cfg = cfg_all.get("text_config").unwrap_or(&cfg_all);
-        let (adapter, scaling) = if let Some((bytes, text)) = adapter_input {
+        let (adapter, scaling, adapter_rank) = if let Some((bytes, text)) = adapter_input {
             let adapter = St::whole(bytes)?;
             let acfg = Value::parse(text).map_err(|e| format!("adapter config: {e}"))?;
             let r = acfg.get("r").and_then(Value::as_f64).ok_or("adapter config: no r")?;
             let alpha = acfg.get("lora_alpha").and_then(Value::as_f64).ok_or("adapter config: no lora_alpha")?;
-            if r <= 0.0 || !r.is_finite() || !alpha.is_finite() {
-                return Err("adapter config: r and lora_alpha must be finite, and r positive".into());
+            if r <= 0.0 || !r.is_finite() || r.fract() != 0.0 || r > usize::MAX as f64 || !alpha.is_finite() {
+                return Err("adapter config: r must be a positive integer and lora_alpha must be finite".into());
             }
-            (adapter, (alpha / r) as f32)
+            (adapter, (alpha / r) as f32, Some(r as usize))
         } else {
-            (St::empty(), 0.0)
+            (St::empty(), 0.0, None)
         };
         let head = head_input.map(TorchFile::parse).transpose()?;
         if semif && head.is_some() {
@@ -415,7 +415,7 @@ impl KevConvert {
             }
         }
         let mut w = Writer::new(model, config, tok.to_bytes());
-        let pre = "model.language_model.";
+        let pre = crate::convert::text_tensor_prefix(|name| base_index.contains_key(name))?;
         let src = Sources { base, base_index, adapter, head: head_tensors, scaling, pre: pre.to_string() };
         // What each pack tensor is made of, in stream order.
         let mut plan: Vec<(String, Spec)> = vec![
@@ -479,6 +479,9 @@ impl KevConvert {
             plan.push((format!("L.{i}.down"), fused(&["down_proj"], "mlp")));
         }
 
+        if let Some(rank) = adapter_rank {
+            src.validate_adapter(&plan, rank)?;
+        }
         for (name, spec) in &plan {
             match src.shape(spec)? {
                 (shape, true) if shape.len() == 2 && shape[1] % block == 0 => w.add_q8(name, shape[0], shape[1], block),
@@ -648,6 +651,43 @@ struct Sources {
 }
 
 impl Sources {
+    fn validate_adapter(&self, plan: &[(String, Spec)], rank: usize) -> Result<(), String> {
+        let modules: std::collections::HashSet<&str> = plan
+            .iter()
+            .flat_map(|(_, spec)| match spec {
+                Spec::Merged(module) => vec![module.as_str()],
+                Spec::Fused(modules) => modules.iter().map(String::as_str).collect(),
+                _ => Vec::new(),
+            })
+            .collect();
+        let entries = self.adapter.header.as_object().ok_or("adapter safetensors header must be an object")?;
+        let mut pairs = std::collections::HashSet::new();
+        for (name, _) in entries.iter().filter(|(name, _)| name != "__metadata__") {
+            let module = name
+                .strip_prefix("base_model.model.")
+                .and_then(|name| name.strip_suffix(".lora_A.weight").or_else(|| name.strip_suffix(".lora_B.weight")))
+                .ok_or_else(|| format!("unsupported pointer-adapter tensor {name}"))?;
+            if !modules.contains(module) {
+                return Err(format!("pointer-adapter tensor {name} targets a module this converter does not merge"));
+            }
+            pairs.insert(module);
+        }
+        if pairs.is_empty() {
+            return Err("pointer adapter has no LoRA tensor pairs".into());
+        }
+        for module in pairs {
+            let base = self.base_shape(&format!("{}{module}.weight", self.pre))?;
+            let a = self.adapter.shape(&format!("base_model.model.{module}.lora_A.weight"))?;
+            let b = self.adapter.shape(&format!("base_model.model.{module}.lora_B.weight"))?;
+            if base.len() != 2 || a != [rank, base[1]] || b != [base[0], rank] {
+                return Err(format!(
+                    "{module}: LoRA shapes A={a:?}, B={b:?} do not match rank {rank} and base {base:?}"
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn base_st(&self, name: &str) -> Result<&St, String> {
         let file = *self.base_index.get(name).ok_or_else(|| format!("checkpoint has no tensor {name}"))?;
         self.base.get(file).ok_or_else(|| format!("base shard {file} is missing"))
@@ -892,5 +932,30 @@ mod tests {
             pre: String::new(),
         };
         assert!(sources.shape(&Spec::Conv("conv".into())).unwrap_err().contains("[channels, 1, kernel]"));
+    }
+
+    #[test]
+    fn pointer_adapters_reject_unconsumed_tensors_and_rank_mismatches() {
+        let header = |text: &str| {
+            let mut bytes = (text.len() as u64).to_le_bytes().to_vec();
+            bytes.extend_from_slice(text.as_bytes());
+            St::header_only(&bytes).unwrap()
+        };
+        let mut sources = Sources {
+            base: vec![header(r#"{"model.layers.0.mlp.down_proj.weight":{"shape":[32,64]}}"#)],
+            base_index: [("model.layers.0.mlp.down_proj.weight".into(), 0)].into_iter().collect(),
+            adapter: header(
+                r#"{"base_model.model.layers.0.mlp.down_proj.lora_A.weight":{"shape":[2,64]},"base_model.model.layers.0.mlp.down_proj.lora_B.weight":{"shape":[32,2]}}"#,
+            ),
+            head: Default::default(),
+            scaling: 1.0,
+            pre: "model.".into(),
+        };
+        let plan = vec![("down".into(), Spec::Merged("layers.0.mlp.down_proj".into()))];
+        assert!(sources.validate_adapter(&plan, 2).is_ok());
+        assert!(sources.validate_adapter(&plan, 4).unwrap_err().contains("do not match rank"));
+        assert!(sources.validate_adapter(&[], 2).unwrap_err().contains("does not merge"));
+        sources.adapter = header(r#"{"base_model.model.layers.0.mlp.down_proj.lora_A.weight":{"shape":[2,64]}}"#);
+        assert!(sources.validate_adapter(&plan, 2).unwrap_err().contains("lora_B"));
     }
 }

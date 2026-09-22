@@ -203,6 +203,23 @@ function subHeader(prefix) {
   return JSON.parse(new TextDecoder().decode(prefix.subarray(16, 16 + n)));
 }
 
+/** Validate the family before any coordinator, GPU, or pack-weight allocation happens. */
+export function validatePackArchitecture(header, expectedArch = null) {
+  const declared = header?.config?.arch;
+  const arch = declared == null ? "laya" : declared;
+  if (typeof arch !== "string" || !arch) {
+    throw Object.assign(new Error(`invalid pack config.arch ${JSON.stringify(declared)}`), { code: "ARCH_UNSUPPORTED" });
+  }
+  if (expectedArch != null && arch !== expectedArch) {
+    throw Object.assign(new Error(`model spec arch ${JSON.stringify(expectedArch)} does not match pack config.arch ${JSON.stringify(arch)}`), { code: "ARCH_MISMATCH" });
+  }
+  const plugin = archPlugin(arch);
+  if (!plugin) {
+    throw Object.assign(new Error(`unknown pack architecture ${JSON.stringify(arch)} in config.arch; register an architecture plugin before loading this pack`), { code: "ARCH_UNSUPPORTED" });
+  }
+  return { arch, plugin };
+}
+
 async function load(o) {
   loadController = new AbortController();
   const signal = loadController.signal;
@@ -215,7 +232,7 @@ async function load(o) {
   progress({ phase: "init", message: `compiling kevala-${flavor}.wasm` });
   const module = await compile(base, flavor);
   checkCancelled();
-  const pack = await openPack(o.model ?? {}, {
+  const pack = await openPack(o.model ?? null, {
     cache: o.cache !== false,
     from: o.from,
     signal,
@@ -229,10 +246,9 @@ async function load(o) {
   checkCancelled();
   const it = (packIterator = pack.chunks());
   const { head, header, headerBytes } = await readHead(it);
+  const { arch, plugin } = validatePackArchitecture(header, pack.expectedArch);
   const fullSize = packSize(header, headerBytes.byteLength);
   checkCancelled();
-  const arch = header.config.arch || "laya";
-  const plugin = archPlugin(arch);
   const requestedStateCache = o.stateCache !== false;
 
   // backend choice: WebGPU when the family has a GPU trunk, else shards when it can split

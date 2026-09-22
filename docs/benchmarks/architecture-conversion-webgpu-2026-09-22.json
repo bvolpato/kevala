@@ -1,0 +1,597 @@
+{
+  "argmax": 12,
+  "backend": "webgpu",
+  "crossOriginIsolated": false,
+  "details": [
+    {
+      "actual": [
+        0.28885236382484436,
+        0.016562284901738167,
+        0.694585382938385
+      ],
+      "argmax": true,
+      "expected": [
+        0.26214390993118286,
+        0.015057843178510666,
+        0.722798228263855
+      ],
+      "id": "readme_ticket::department",
+      "maxDp": 0.02821284532546997,
+      "question": "department"
+    },
+    {
+      "actual": [
+        0.2073005735874176,
+        0.79269939661026
+      ],
+      "argmax": true,
+      "expected": [
+        0.20559540390968323,
+        0.7944045662879944
+      ],
+      "id": "readme_ticket::escalate",
+      "maxDp": 0.001705169677734375,
+      "question": "escalate"
+    },
+    {
+      "actual": [
+        0.058920372277498245,
+        0.920510232448578,
+        0.020569419488310817
+      ],
+      "argmax": true,
+      "expected": [
+        0.05424409359693527,
+        0.9222995042800904,
+        0.023456498980522156
+      ],
+      "id": "readme_ticket::frustration",
+      "maxDp": 0.004676278680562973,
+      "question": "frustration"
+    },
+    {
+      "actual": [
+        0.19700054824352264,
+        0.8029994964599609
+      ],
+      "argmax": true,
+      "expected": [
+        0.1928277462720871,
+        0.8071722388267517
+      ],
+      "id": "email_object_state::churn",
+      "maxDp": 0.004172801971435547,
+      "question": "churn"
+    },
+    {
+      "actual": [
+        0.04300029203295708,
+        0.9569997191429138
+      ],
+      "argmax": true,
+      "expected": [
+        0.03883706778287888,
+        0.9611629247665404
+      ],
+      "id": "email_object_state::refund",
+      "maxDp": 0.004163224250078201,
+      "question": "refund"
+    },
+    {
+      "actual": [
+        0.31972840428352356,
+        0.680271565914154
+      ],
+      "argmax": true,
+      "expected": [
+        0.31211891770362854,
+        0.6878811120986938
+      ],
+      "id": "injection::q",
+      "maxDp": 0.007609546184539795,
+      "question": "q"
+    },
+    {
+      "actual": [
+        0.27035924792289734,
+        0.35511693358421326,
+        0.27414578199386597,
+        0.10037800669670104
+      ],
+      "argmax": true,
+      "expected": [
+        0.25476783514022827,
+        0.349653959274292,
+        0.28729018568992615,
+        0.1082880049943924
+      ],
+      "id": "list_state_numbers::q",
+      "maxDp": 0.015591412782669067,
+      "question": "q"
+    },
+    {
+      "actual": [
+        0.2523106336593628,
+        0.7476893663406372
+      ],
+      "argmax": true,
+      "expected": [
+        0.2438386231660843,
+        0.7561613917350769
+      ],
+      "id": "game_candidates::clean",
+      "maxDp": 0.008472025394439697,
+      "question": "clean"
+    },
+    {
+      "actual": [
+        0.6589313745498657,
+        0.07067882269620895,
+        0.2703897953033447
+      ],
+      "argmax": true,
+      "expected": [
+        0.6281015276908875,
+        0.0811614990234375,
+        0.29073700308799744
+      ],
+      "id": "game_candidates::where",
+      "maxDp": 0.03082984685897827,
+      "question": "where"
+    },
+    {
+      "actual": [
+        0.48822712898254395,
+        0.23216864466667175,
+        0.2796042561531067
+      ],
+      "argmax": true,
+      "expected": [
+        0.4798126518726349,
+        0.23524761199951172,
+        0.284939706325531
+      ],
+      "id": "multilingual_marks::q",
+      "maxDp": 0.008414477109909058,
+      "question": "q"
+    },
+    {
+      "actual": [
+        0.053007859736680984,
+        0.9469921588897704
+      ],
+      "argmax": true,
+      "expected": [
+        0.047262080013751984,
+        0.9527379274368286
+      ],
+      "id": "long_state::q",
+      "maxDp": 0.005745779722929001,
+      "question": "q"
+    },
+    {
+      "actual": [
+        0.28345778584480286,
+        0.7165421843528748
+      ],
+      "argmax": true,
+      "expected": [
+        0.27404770255088806,
+        0.7259522676467896
+      ],
+      "id": "long_state::r",
+      "maxDp": 0.009410083293914797,
+      "question": "r"
+    }
+  ],
+  "done": true,
+  "flavor": "relaxed",
+  "gpu": "WebGPU",
+  "gpuTuning": {
+    "elapsedMs": 481,
+    "method": "timestamp-query",
+    "points": [
+      {
+        "name": "L.0.gate_up",
+        "points": [
+          {
+            "K": 1024,
+            "N": 7168,
+            "benefit": 0.14384137119811796,
+            "elapsedMs": 73,
+            "genericMs": 0.047608,
+            "kernel": "generic",
+            "key": "7168:1024:r1",
+            "reason": "noisy",
+            "stable": false,
+            "tokens": 16,
+            "wideMs": 0.04076
+          },
+          {
+            "K": 1024,
+            "N": 7168,
+            "benefit": 0.092180217503884,
+            "elapsedMs": 73,
+            "genericMs": 0.061792,
+            "kernel": "generic",
+            "key": "7168:1024:r2",
+            "reason": "noisy",
+            "stable": false,
+            "tokens": 32,
+            "wideMs": 0.056096
+          },
+          {
+            "K": 1024,
+            "N": 7168,
+            "benefit": 0.2548327137546468,
+            "elapsedMs": 73,
+            "genericMs": 0.08608,
+            "kernel": "wide",
+            "key": "7168:1024:r3",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 48,
+            "wideMs": 0.064144
+          },
+          {
+            "K": 1024,
+            "N": 7168,
+            "benefit": 0.2624833717270692,
+            "elapsedMs": 73,
+            "genericMs": 0.246568,
+            "kernel": "wide",
+            "key": "7168:1024:mid",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 128,
+            "wideMs": 0.181848
+          },
+          {
+            "K": 1024,
+            "N": 7168,
+            "benefit": 0.24237372895482576,
+            "elapsedMs": 73,
+            "genericMs": 0.71988,
+            "kernel": "wide",
+            "key": "7168:1024:long",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 512,
+            "wideMs": 0.5454
+          }
+        ],
+        "shape": "7168x1024"
+      },
+      {
+        "name": "L.0.qkvz",
+        "points": [
+          {
+            "K": 1024,
+            "N": 8192,
+            "benefit": 0.27237728585178056,
+            "elapsedMs": 99,
+            "genericMs": 0.058184,
+            "kernel": "wide",
+            "key": "8192:1024:r1",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 16,
+            "wideMs": 0.042336
+          },
+          {
+            "K": 1024,
+            "N": 8192,
+            "benefit": 0.154891886105759,
+            "elapsedMs": 99,
+            "genericMs": 0.074736,
+            "kernel": "generic",
+            "key": "8192:1024:r2",
+            "reason": "noisy",
+            "stable": false,
+            "tokens": 32,
+            "wideMs": 0.06316
+          },
+          {
+            "K": 1024,
+            "N": 8192,
+            "benefit": 0.3019498174473706,
+            "elapsedMs": 99,
+            "genericMs": 0.102984,
+            "kernel": "wide",
+            "key": "8192:1024:r3",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 48,
+            "wideMs": 0.071888
+          },
+          {
+            "K": 1024,
+            "N": 8192,
+            "benefit": 0.27643390666758033,
+            "elapsedMs": 99,
+            "genericMs": 0.233488,
+            "kernel": "wide",
+            "key": "8192:1024:mid",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 128,
+            "wideMs": 0.168944
+          },
+          {
+            "K": 1024,
+            "N": 8192,
+            "benefit": 0.1920123364795496,
+            "elapsedMs": 99,
+            "genericMs": 0.772992,
+            "kernel": "wide",
+            "key": "8192:1024:long",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 512,
+            "wideMs": 0.624568
+          }
+        ],
+        "shape": "8192x1024"
+      },
+      {
+        "name": "L.0.down",
+        "points": [
+          {
+            "K": 3584,
+            "N": 1024,
+            "benefit": 0.2805272320318329,
+            "elapsedMs": 98,
+            "genericMs": 0.032168,
+            "kernel": "wide",
+            "key": "1024:3584:r1",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 16,
+            "wideMs": 0.023144
+          },
+          {
+            "K": 3584,
+            "N": 1024,
+            "benefit": 0.19922274493761505,
+            "elapsedMs": 98,
+            "genericMs": 0.039112,
+            "kernel": "wide",
+            "key": "1024:3584:r2",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 32,
+            "wideMs": 0.03132
+          },
+          {
+            "K": 3584,
+            "N": 1024,
+            "benefit": 0.37188044109112006,
+            "elapsedMs": 98,
+            "genericMs": 0.055136,
+            "kernel": "wide",
+            "key": "1024:3584:r3",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 48,
+            "wideMs": 0.034632
+          },
+          {
+            "K": 3584,
+            "N": 1024,
+            "benefit": 0.2584096738732136,
+            "elapsedMs": 98,
+            "genericMs": 0.10916,
+            "kernel": "wide",
+            "key": "1024:3584:mid",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 128,
+            "wideMs": 0.080952
+          },
+          {
+            "K": 3584,
+            "N": 1024,
+            "benefit": 0.15358658115441537,
+            "elapsedMs": 98,
+            "genericMs": 0.4054,
+            "kernel": "wide",
+            "key": "1024:3584:long",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 512,
+            "wideMs": 0.343136
+          }
+        ],
+        "shape": "1024x3584"
+      },
+      {
+        "name": "L.3.qkv",
+        "points": [
+          {
+            "K": 1024,
+            "N": 5120,
+            "benefit": 0.20863309352517984,
+            "elapsedMs": 99,
+            "genericMs": 0.036696,
+            "kernel": "wide",
+            "key": "5120:1024:r1",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 16,
+            "wideMs": 0.02904
+          },
+          {
+            "K": 1024,
+            "N": 5120,
+            "benefit": 0.1495854063018242,
+            "elapsedMs": 99,
+            "genericMs": 0.04824,
+            "kernel": "wide",
+            "key": "5120:1024:r2",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 32,
+            "wideMs": 0.041024
+          },
+          {
+            "K": 1024,
+            "N": 5120,
+            "benefit": 0.30241077759394946,
+            "elapsedMs": 99,
+            "genericMs": 0.067696,
+            "kernel": "wide",
+            "key": "5120:1024:r3",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 48,
+            "wideMs": 0.047224
+          },
+          {
+            "K": 1024,
+            "N": 5120,
+            "benefit": 0.25741831815747185,
+            "elapsedMs": 99,
+            "genericMs": 0.14936,
+            "kernel": "wide",
+            "key": "5120:1024:mid",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 128,
+            "wideMs": 0.110912
+          },
+          {
+            "K": 1024,
+            "N": 5120,
+            "benefit": 0.1585653814035189,
+            "elapsedMs": 99,
+            "genericMs": 0.555632,
+            "kernel": "wide",
+            "key": "5120:1024:long",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 512,
+            "wideMs": 0.467528
+          }
+        ],
+        "shape": "5120x1024"
+      },
+      {
+        "name": "L.0.out",
+        "points": [
+          {
+            "K": 2048,
+            "N": 1024,
+            "benefit": 0.24777327935222668,
+            "elapsedMs": 98,
+            "genericMs": 0.01976,
+            "kernel": "wide",
+            "key": "1024:2048:r1",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 16,
+            "wideMs": 0.014864
+          },
+          {
+            "K": 2048,
+            "N": 1024,
+            "benefit": 0.15754560530679926,
+            "elapsedMs": 98,
+            "genericMs": 0.02412,
+            "kernel": "wide",
+            "key": "1024:2048:r2",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 32,
+            "wideMs": 0.02032
+          },
+          {
+            "K": 2048,
+            "N": 1024,
+            "benefit": 0.3447033389382657,
+            "elapsedMs": 98,
+            "genericMs": 0.033304,
+            "kernel": "wide",
+            "key": "1024:2048:r3",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 48,
+            "wideMs": 0.021824
+          },
+          {
+            "K": 2048,
+            "N": 1024,
+            "benefit": 0.2778236752035878,
+            "elapsedMs": 98,
+            "genericMs": 0.067784,
+            "kernel": "wide",
+            "key": "1024:2048:mid",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 128,
+            "wideMs": 0.048952
+          },
+          {
+            "K": 2048,
+            "N": 1024,
+            "benefit": 0.2712625819090725,
+            "elapsedMs": 98,
+            "genericMs": 0.236848,
+            "kernel": "wide",
+            "key": "1024:2048:long",
+            "reason": "stable-wide-win",
+            "stable": true,
+            "tokens": 512,
+            "wideMs": 0.1726
+          }
+        ],
+        "shape": "1024x2048"
+      }
+    ],
+    "revision": 1,
+    "truncated": false
+  },
+  "hardwareConcurrency": 32,
+  "max": 598,
+  "maxDp": 0.03082984685897827,
+  "maxDpLimit": 0.05,
+  "model": {
+    "converter": "kevala 0.1.3",
+    "inspiration": "SemIf direct-options-v1 readout",
+    "method_license": "mit",
+    "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+    "method_source": "https://github.com/TheoLeeCJ/SemIf",
+    "name": "custom-checkpoint",
+    "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+    "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+  },
+  "p50": 99,
+  "questions": 12,
+  "reference": "./tests/fixtures/golden-semif.json",
+  "referenceSource": {
+    "device": "cuda:0",
+    "dtype": "float32",
+    "hidden_size": 1024,
+    "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+    "torch_version": "2.14.0+cu130",
+    "transformers_version": "5.17.0",
+    "vocab_size": 248320
+  },
+  "runner": {
+    "actualThreads": 1,
+    "browser": "firefox",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "selectedFlavor": "relaxed",
+  "threads": 1
+}

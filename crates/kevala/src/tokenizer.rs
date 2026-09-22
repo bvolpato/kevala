@@ -668,6 +668,97 @@ fn parse_pre_tokenizer(pre: &Value) -> Result<PreTokenizer, String> {
 }
 
 impl Tokenizer {
+    /// Applies the declared Qwen2Tokenizer policy that AutoTokenizer uses for Qwen3.5:
+    /// its canonical pre-tokenizer regex and the added-token overlay from tokenizer_config.
+    /// Vocabulary and merge rules are retained exactly; conflicting token IDs are rejected.
+    pub fn normalize_qwen2_json(json: &str, config: &str) -> Result<String, String> {
+        let mut root = Value::parse(json).map_err(|error| format!("tokenizer.json: {error}"))?;
+        let config = Value::parse(config).map_err(|error| format!("tokenizer_config.json: {error}"))?;
+        if config.get("tokenizer_class").and_then(Value::as_str) != Some("Qwen2Tokenizer") {
+            return Err(
+                "Qwen3.5 conversion requires a Qwen2Tokenizer contract or an explicit materialized --tokenizer".into(),
+            );
+        }
+        for key in ["add_prefix_space", "add_bos_token", "split_special_tokens"] {
+            if config.get(key).is_some_and(|value| value.as_bool() != Some(false)) {
+                return Err(format!("unsupported Qwen2Tokenizer option {key}"));
+            }
+        }
+        for key in ["bos_token", "unk_token"] {
+            if config.get(key).is_some_and(|value| !value.is_null()) {
+                return Err(format!("unsupported Qwen2Tokenizer option {key}"));
+            }
+        }
+        let pre = parse_pre_tokenizer(root.get("pre_tokenizer").ok_or("tokenizer has no pre_tokenizer")?)?;
+        if !matches!(pre, PreTokenizer::Qwen2 | PreTokenizer::Qwen2Marks) {
+            return Err("Qwen2Tokenizer has an unsupported pre-tokenizer contract".into());
+        }
+        let mut overlay: Vec<(usize, Value)> = config
+            .get("added_tokens_decoder")
+            .and_then(Value::as_object)
+            .ok_or("Qwen2Tokenizer config has no added_tokens_decoder")?
+            .iter()
+            .map(|(id, value)| {
+                Ok((id.parse().map_err(|_| "added_tokens_decoder contains an invalid ID")?, value.clone()))
+            })
+            .collect::<Result<_, String>>()?;
+        overlay.sort_by_key(|(id, _)| *id);
+        let mut added =
+            root.get("added_tokens").and_then(Value::as_array).ok_or("tokenizer has no added_tokens")?.to_vec();
+        for (id, value) in &overlay {
+            let content = value.get("content").and_then(Value::as_str).ok_or("added token has no content")?;
+            let mut fields = value.as_object().ok_or("added token must be an object")?.to_vec();
+            fields.push(("id".into(), Value::Int(id.to_string())));
+            let value = Value::Object(fields);
+            if let Some(existing) = added.iter().find(|token| {
+                token.get("id").and_then(Value::as_usize) == Some(*id)
+                    || token.get("content").and_then(Value::as_str) == Some(content)
+            }) {
+                for key in ["id", "content", "single_word", "lstrip", "rstrip", "normalized", "special"] {
+                    if existing.get(key) != value.get(key) {
+                        return Err(format!("Qwen2Tokenizer added-token overlay conflicts at ID {id}, field {key}"));
+                    }
+                }
+            } else {
+                added.push(value);
+            }
+        }
+        let set = |object: &mut Value, key: &str, value: Value| -> Result<(), String> {
+            let Value::Object(fields) = object else { return Err("tokenizer entry must be an object".into()) };
+            if let Some((_, old)) = fields.iter_mut().find(|(name, _)| name == key) {
+                *old = value;
+            } else {
+                fields.push((key.into(), value));
+            }
+            Ok(())
+        };
+        let mut pre = root.get("pre_tokenizer").unwrap().clone();
+        let mut parts = pre.get("pretokenizers").and_then(Value::as_array).unwrap().to_vec();
+        set(&mut parts[0], "pattern", Value::Object(vec![("Regex".into(), Value::Str(QWEN2_REGEX.into()))]))?;
+        set(&mut parts[1], "trim_offsets", Value::Bool(true))?;
+        set(&mut pre, "pretokenizers", Value::Array(parts))?;
+        set(&mut root, "pre_tokenizer", pre)?;
+        set(&mut root, "added_tokens", Value::Array(added))?;
+        if let Some(mut decoder) = root.get("decoder").cloned() {
+            if decoder.get("type").and_then(Value::as_str) != Some("ByteLevel") {
+                return Err("Qwen2Tokenizer requires the ByteLevel decoder".into());
+            }
+            for key in ["add_prefix_space", "trim_offsets", "use_regex"] {
+                set(&mut decoder, key, Value::Bool(true))?;
+            }
+            set(&mut root, "decoder", decoder)?;
+        }
+        let json = root.to_json();
+        let tokenizer = Self::from_hf_json(&json)?;
+        for (id, value) in overlay {
+            let content = value.get("content").and_then(Value::as_str).unwrap();
+            if tokenizer.token_id(content).map(|value| value as usize) != Some(id) {
+                return Err(format!("Qwen2Tokenizer overlay ID {id} for {content:?} cannot be preserved"));
+            }
+        }
+        Ok(json)
+    }
+
     /// Build from a Hugging Face tokenizer.json. Only configurations kevala reproduces exactly are
     /// accepted: a byte-level BPE model, NFC or no normalizer, and one of the known pre-tokenizer
     /// regexes; anything else is an error rather than a silent mismatch.
@@ -1318,6 +1409,33 @@ impl Tokenizer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn qwen_normalization_rejects_unknown_contracts_and_token_conflicts() {
+        assert!(Tokenizer::normalize_qwen2_json("{}", r#"{"tokenizer_class":"UnknownTokenizer"}"#)
+            .unwrap_err()
+            .contains("Qwen2Tokenizer contract"));
+        assert!(Tokenizer::normalize_qwen2_json(
+            "{}",
+            r#"{"tokenizer_class":"Qwen2Tokenizer","add_prefix_space":true}"#
+        )
+        .unwrap_err()
+        .contains("add_prefix_space"));
+        let pre = Value::parse(&format!(
+            r#"{{"type":"Sequence","pretokenizers":[{{"type":"Split","pattern":{{"Regex":{}}},"behavior":"Isolated","invert":false}},{{"type":"ByteLevel","add_prefix_space":false,"use_regex":false}}]}}"#,
+            Value::Str(QWEN2_MARKS_REGEX.into()).to_json()
+        )).unwrap();
+        let root = Value::Object(vec![
+            ("pre_tokenizer".into(), pre),
+            ("added_tokens".into(), Value::parse(r#"[{"id":0,"content":"old"}]"#).unwrap()),
+        ]);
+        let error = Tokenizer::normalize_qwen2_json(
+            &root.to_json(),
+            r#"{"tokenizer_class":"Qwen2Tokenizer","added_tokens_decoder":{"0":{"content":"new"}}}"#,
+        )
+        .unwrap_err();
+        assert!(error.contains("overlay conflicts"), "{error}");
+    }
 
     /// A toy byte-level vocab with random merges over "abc", as tokenizer.json.
     fn toy() -> Tokenizer {

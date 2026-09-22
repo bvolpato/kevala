@@ -109,12 +109,33 @@ const kevala = await loadFile("laya-q8.kevala");
 const r = kevala.decide("I want my money back.", { refund: { type: "noul", instructions: "Does the customer ask for money back?" } });
 ```
 
+## Convert checkpoints
+
+Use the native CLI's common, config-driven path:
+
+```sh
+kevala convert <checkpoint-dir> -o out.kevala
+```
+
+It selects the architecture from `config.json` and does not guess from a repository name or model
+size. Plain Qwen3.5 and Gemma 4 text checkpoints default to `direct-options`; a complete Qwen3.5
+adapter with its pointer head uses `pointer`; Laya encoder checkpoints use `encoder-head`. An adapter
+can be supplied as `kevala convert adapter-dir --base base-dir -o out.kevala` or
+`kevala convert base-dir --adapter adapter-dir -o out.kevala`. `--readout` is optional and must agree
+with the detected files. Unknown or conflicting configs, unsupported features, and incomplete
+adapters fail validation.
+
+The converter applies Qwen2Tokenizer normalization and its added-token overlay from the checkpoint
+configuration, so ordinary conversion needs no Python tokenizer materialization. Use `--tokenizer`
+only for an explicit verified tokenizer override. `convert-kev`, `convert-semif`, and `convert-gemma`
+remain compatibility aliases for the same validation path.
+
 ## Hosting
 
 - Pages must be served over HTTPS or localhost (storage and WebGPU need a secure context).
 - No special headers are needed. Cross-origin isolation is not required.
 - To serve the weights from your own host, put the `.kevala` file from bvolpato/kevala-packs (or one
-  made with `kevala convert`, `kevala convert-kev`, `kevala convert-semif`, or `kevala convert-gemma`) behind `Content-Length` and byte ranges, and pass
+  made with `kevala convert`) behind `Content-Length` and byte ranges, and pass
   its URL as `model`.
 
 ## Examples to copy

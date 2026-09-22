@@ -142,6 +142,9 @@ impl Gemma4Config {
             }
         }
         let c = text_config(c);
+        if c.get("hidden_activation").is_some_and(|value| value.as_str() != Some("gelu_pytorch_tanh")) {
+            return Err("Gemma4 config: only hidden_activation=gelu_pytorch_tanh is supported".into());
+        }
         let hidden = usize_field(c, "hidden_size")?;
         let layers = usize_field(c, "num_hidden_layers")?;
         let intermediate = usize_field(c, "intermediate_size")?;
@@ -1307,6 +1310,9 @@ mod tests {
         set_config_field(&mut c, "max_position_embeddings", Value::Int("8192".into()));
         set_config_field(&mut c, "max_input_tokens", Value::Int("4097".into()));
         assert!(Gemma4Config::from_json(&c).unwrap_err().contains("runtime limit"));
+        let mut c = cfg_json();
+        add_config_field(&mut c, "hidden_activation", Value::Str("silu".into()));
+        assert!(Gemma4Config::from_json(&c).unwrap_err().contains("hidden_activation"));
     }
 
     #[test]

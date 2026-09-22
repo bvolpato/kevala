@@ -24,6 +24,23 @@ const fromCheckpoint = await Kevala.load({ model: "laya", from: "checkpoint" });
 const own = await Kevala.load({ model: "https://example.com/laya-q8.kevala" });
 ```
 
+For a registry entry you own, include the architecture and source identity explicitly. The pack
+header must declare the same architecture; the runtime rejects an unknown or mismatched value.
+
+```js
+const custom = await Kevala.load({ model: {
+  name: "my-gemma-pack",
+  arch: "gemma4",
+  hosted: "https://cdn.example.com/models/my-gemma-q8.kevala",
+  repo: "example/gemma-checkpoint",
+  revision: "<pinned-checkpoint-revision>",
+  block: 32,
+} });
+```
+
+Use the URL form when you only need to load a hosted pack and do not have upstream conversion
+metadata. Do not rely on a repository name or model size to select an architecture.
+
 Kev-4B, Kev-9B, the SemIf Qwen models, and Gemma 4 require a converted `.kevala` pack. They do not
 download and convert a large checkpoint automatically when a hosted pack is unavailable. See
 [the model guide](models.md) for names, readout differences, and memory limits.
@@ -67,8 +84,11 @@ being cached does not reduce the memory required to load it.
 ## Converting the original weights
 
 Build the command line, then download each checkpoint at the revision pinned in `MODELS`
-([`js/src/source.js`](../js/src/source.js)). Only the files the converter reads are needed: the Laya
-repo also holds multilingual and typed-decision variants that would triple the download.
+([`js/src/source.js`](../js/src/source.js)). The preferred conversion command is the single native
+`kevala convert <checkpoint-dir> -o out.kevala` path. It reads the checkpoint config to select the
+architecture and readout, rather than guessing from a repository name or parameter count. Only the
+files the converter reads are needed: the Laya repo also holds multilingual and typed-decision
+variants that would triple the download.
 
 ```sh
 cargo build --release -p kevala-cli
@@ -84,13 +104,29 @@ uvx --from huggingface-hub hf download jaredpalmer/kev-0.8b adapter_config.json 
   --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --local-dir ckpt/kev-0.8b
 uvx --from huggingface-hub hf download Qwen/Qwen3.5-0.8B-Base config.json model.safetensors-00001-of-00001.safetensors \
   --revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 --local-dir ckpt/qwen3.5-0.8b-base
-$kevala convert-kev --base ckpt/qwen3.5-0.8b-base --kev ckpt/kev-0.8b -o packs/kev-0.8b-q8.kevala \
-  --kev-revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+$kevala convert ckpt/qwen3.5-0.8b-base --adapter ckpt/kev-0.8b -o packs/kev-0.8b-q8.kevala \
+  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
 ```
 
-The revision flags only label the pack header; the weights are whatever the directories hold, so
-download them at the same revisions. The browser conversion (`from: "checkpoint"`) runs the same Rust
-converter, compiled to WebAssembly.
+An adapter directory can also be the positional checkpoint when the base is supplied separately:
+
+```sh
+$kevala convert ckpt/kev-0.8b --base ckpt/qwen3.5-0.8b-base -o packs/kev-0.8b-q8.kevala \
+  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+```
+
+The revision flags label the pack header; the weights are whatever the directories hold, so download
+them at the same revisions. Plain Qwen3.5 and Gemma 4 text checkpoints default to the
+`direct-options` readout, a complete Qwen3.5 adapter plus pointer head uses `pointer`, and Laya uses
+`encoder-head`. Pass `--readout` only when it matches that inferred layout.
+
+The native converter reads the checkpoint tokenizer and applies the Qwen2Tokenizer normalization and
+added-token overlay needed by Qwen3.5. Ordinary conversion needs no Python tokenizer materialization;
+`--tokenizer tokenizer.json` remains available as an explicit override for a verified tokenizer file.
+The browser conversion (`from: "checkpoint"`) runs the same Rust converter, compiled to WebAssembly.
+
+`convert-kev`, `convert-semif`, and `convert-gemma` remain compatibility aliases for this validated
+common path. New scripts should use `kevala convert`.
 
 <a id="optional-kev-and-semif-style-models"></a>
 <a id="optional-kev-and-semif-models"></a>
@@ -130,10 +166,10 @@ native 64-bit CLI and accept up to 4096 input tokens.
 See [Gemma 4 notes](gemma4.md) for the pinned source revisions, reference generator, and backend
 details.
 
-For SemIf, the helper loads `AutoTokenizer` and calls `save_pretrained()` before passing its
-materialized `tokenizer.json` to `convert-semif --tokenizer`. This step matters: Transformers can
-replace the raw Qwen checkpoint's pre-tokenizer and added-token configuration. Passing the raw
-file can produce different prompt IDs. Prefer the helper over assembling these inputs manually.
+The helper invokes the native common conversion path for each selected model. It does not need a
+Transformers tokenizer materialization step: the converter uses the checkpoint's Qwen2Tokenizer
+configuration to preserve token IDs and its added-token overlay. Use the CLI's `--tokenizer` option
+only for an intentional, verified override.
 
 Conversion does not run model parity or game benchmarks, and it does not upload unless
 `--publish` is supplied. Keep the `.kevala` files and downloaded checkpoints out of Git.
@@ -168,8 +204,9 @@ establish decision accuracy or calibration. Use `--max-dp` to impose a stricter 
 
 ## Publishing packs
 
-[`packs/README.md`](../packs/README.md) is the model card of the Hugging Face repo. Uploading needs a
-Hugging Face token with write access to the repo. Authenticate with
+[`docs/pack-model-card.md`](pack-model-card.md) is the canonical model card, and
+[`packs/README.md`](../packs/README.md) mirrors it for the pack directory and Hugging Face workflow.
+Uploading needs a Hugging Face token with write access to the repo. Authenticate with
 `uvx --from huggingface-hub hf auth login`; an `HF_TOKEN` in the environment takes precedence over
 the saved login.
 
@@ -179,11 +216,11 @@ again:
 ```sh
 uv run tools/convert_models.py --models kev-4b kev-9b \
   semif-qwen3.5-0.8b semif-qwen3.5-2b semif-qwen3.5-4b \
-  --upload-only --publish bvolpato/kevala-packs --model-card packs/README.md
+  --upload-only --publish bvolpato/kevala-packs --model-card docs/pack-model-card.md
 ```
 
 Use the same `--output-dir` as conversion if it was overridden. The helper uploads the selected
-packs and their manifests. `--model-card` includes that README, `LICENSE`, and
+packs and their manifests. `--model-card` includes that card as `README.md`, along with `LICENSE` and
 [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES) in the same commit. Keep the card's listed models,
 provenance, measured validation, and limitations consistent with the uploaded files.
 For manual uploads, the Hugging Face CLI is also available through `uvx`:

@@ -305,7 +305,7 @@ impl GemmaConvert {
             return Err("Gemma answer tokens collide".into());
         }
 
-        let text_prefix = "model.language_model.";
+        let text_prefix = crate::convert::text_tensor_prefix(|name| catalog.contains_key(name))?;
         let embed = format!("{text_prefix}embed_tokens.weight");
         let ple_embed = format!("{text_prefix}embed_tokens_per_layer.weight");
         let norm = format!("{text_prefix}norm.weight");

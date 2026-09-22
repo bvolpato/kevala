@@ -4,7 +4,8 @@
 //   const kevala = await loadFile("laya-q8.kevala");
 //   const r = kevala.decide("Refund me or I cancel.", { churn: { type: "noul", instructions: "Will they leave?" } });
 //
-// Packs come from `kevala convert` / `kevala convert-kev`, or from a browser's converted cache.
+// Packs come from the common `kevala convert` path (family aliases remain compatible), or from a
+// browser's converted cache.
 
 import { readFile, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
