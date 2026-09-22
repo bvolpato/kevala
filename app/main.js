@@ -88,7 +88,8 @@ function modelOption(s, id) {
 const PRIMARY_MODELS = ["laya", "kev-0.8b"];
 
 function modelChoices(s) {
-  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id]);
+  // a model without a published pack is offered only in dev mode, which loads packs from tmp/
+  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || LOCAL));
   const primary = PRIMARY_MODELS.filter((id) => known.includes(id));
   const more = known.filter((id) => !PRIMARY_MODELS.includes(id));
   const render = (ids) => `<div class="mp-models">${ids.map((id) => modelOption(s, id)).join("")}</div>`;
