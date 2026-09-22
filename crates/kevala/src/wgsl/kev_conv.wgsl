@@ -1,4 +1,4 @@
-// causal depthwise conv (kernel 4) + SiLU over the qkv channels, continuing a parent's tail
+// Causal depthwise conv + SiLU and q/k l2 normalization, continuing a parent's tail.
 //#include kev_common
 
 @group(0) @binding(1) var<storage, read> PROJ: array<f32>;
@@ -9,6 +9,7 @@
 @group(0) @binding(6) var<storage, read_write> C: array<f32>;
 const CD = 6144u;
 const PW = 8192u;
+var<workgroup> red: array<f32, 256>;
 @compute @workgroup_size(256)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32) {
   let t = wg.x;
@@ -28,5 +29,19 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     }
     s += w[i] * x;
   }
-  C[t * CD + c] = s / (1.0 + exp(-s));
+  var v = s / (1.0 + exp(-s));
+  if (wg.y < 16u) {
+    // Each workgroup contains two 128-wide q/k heads.
+    let j = l % 128u;
+    red[l] = v * v;
+    workgroupBarrier();
+    for (var k = 64u; k > 0u; k >>= 1u) {
+      if (j < k) { red[l] += red[l + k]; }
+      workgroupBarrier();
+    }
+    var inv = inverseSqrt(red[l - j] + 1e-6);
+    if (wg.y < 8u) { inv *= 0.08838834764831845; }
+    v *= inv;
+  }
+  C[t * CD + c] = v;
 }

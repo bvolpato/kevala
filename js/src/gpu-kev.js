@@ -57,7 +57,6 @@ export class GpuKev {
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],
-      QKNORM: ["kev_qknorm"],
       RECUR: [this.lanes ? "kev_recur_lanes" : "kev_recur"],
       GNORM: ["kev_gnorm"],
       APREP: ["kev_aprep"],
@@ -302,7 +301,6 @@ export class GpuKev {
         both({ k: "gates", group: bg(this.p.GATES, [this.g, this.h, this.ab[i], W(n("dt_bias")).buf, W(n("neg_a")).buf, this.gates]) });
         both({ k: "conv", group: bg(this.p.CONV, [this.g, this.proj, W(n("conv")).buf, this.tok, this.segs, tail, this.conv]) });
         one.push({ k: "savetail", group: bg(this.p.SAVE_TAIL, [this.g, this.proj, this.segs, tail]) });
-        both({ k: "qknorm", group: bg(this.p.QKNORM, [this.g, this.conv]) });
         both({ k: "recur", group: bg(this.p.RECUR, [this.g, this.conv, this.gates, this.segs, state, this.core]) });
         both({ k: "gnorm", group: bg(this.p.GNORM, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("gnorm")).buf, this.core]) });
         both(mm(n("out"), this.core, this.x, 1));
@@ -341,10 +339,6 @@ export class GpuKev {
         case "savetail":
           pass.setPipeline(this.p.SAVE_TAIL);
           pass.dispatchWorkgroups(S, 72);
-          break;
-        case "qknorm":
-          pass.setPipeline(this.p.QKNORM);
-          pass.dispatchWorkgroups(T, 32);
           break;
         case "recur":
           pass.setPipeline(this.p.RECUR);
