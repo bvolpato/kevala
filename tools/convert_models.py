@@ -96,7 +96,7 @@ def main():
         api = HfApi()
         head = api.model_info(args.publish).sha
         result = api.create_commit(repo_id=args.publish, operations=operations, parent_commit=head,
-                                   commit_message="Add pinned Kev and SemIf-style Qwen3.5 packs")
+                                   commit_message="Add pinned Kev and SemIf Qwen3.5 packs")
         print(f"Published {result.commit_url}", flush=True)
 
 

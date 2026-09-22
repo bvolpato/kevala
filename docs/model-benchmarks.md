@@ -42,9 +42,9 @@ timings below were captured before this kernel integration and have not been rer
 |---|---|---:|---:|
 | Kev-4B | CUDA BF16, LoRA merged in F32 | 13/13 | 0.00986 |
 | Kev-9B | CPU F32 | 5/5 | 0.00481 |
-| SemIf-style Qwen3.5-0.8B | CUDA F32 | 12/12 | 0.03108 |
-| SemIf-style Qwen3.5-2B | CUDA F32 | 12/12 | 0.02901 |
-| SemIf-style Qwen3.5-4B | CUDA BF16 | 12/12 | 0.02006 |
+| SemIf Qwen3.5-0.8B | CUDA F32 | 12/12 | 0.03108 |
+| SemIf Qwen3.5-2B | CUDA F32 | 12/12 | 0.02901 |
+| SemIf Qwen3.5-4B | CUDA BF16 | 12/12 | 0.02006 |
 
 SemIf prompt token IDs match the native reference on all 12 cases, including multilingual text.
 The three sizes use the same token sequences. The 0.8B native CPU run also matched all decisions,
@@ -64,7 +64,7 @@ process peaked at 8,841,068 KiB RSS. Reading directly into aligned storage avoid
 8.96 GB pack copy. These native checks used one CPU thread; they are correctness checks, not a
 claim of competitive CPU latency.
 
-A Firefox WASM smoke check also loaded the 2.13 GB SemIf-style 2B pack and matched its checked
+A Firefox WASM smoke check also loaded the 2.13 GB SemIf 2B pack and matched its checked
 decision (maximum difference 0.00604). Its WASM addresses can exceed 2 GiB even though the pack
 allocation itself is smaller; the JS bridge now treats returned wasm32 pointers as unsigned.
 
@@ -78,13 +78,13 @@ Times include scoring every candidate for a piece, and exclude downloading/loadi
 | Policy/model | Pieces placed | Lines cleared | Mean final holes | Median time per piece |
 |---|---:|---:|---:|---:|
 | Kev-4B | 60 | 11 | 1.67 | 2.006 s |
-| SemIf-style 0.8B | 60 | 2 | 7.00 | 1.901 s |
-| SemIf-style 2B | 60 | 10 | 1.00 | 2.393 s |
-| SemIf-style 4B | 60 | 3 | 12.67 | 2.101 s |
+| SemIf 0.8B | 60 | 2 | 7.00 | 1.901 s |
+| SemIf 2B | 60 | 10 | 1.00 | 2.393 s |
+| SemIf 4B | 60 | 3 | 12.67 | 2.101 s |
 | Drop in the spawn column, no model | 36 | 0 | 28.67 | n/a |
 
 All three model-driven games survived the piece limit for every model. The simple drop baseline
-lost all three games. Kev-4B cleared the most lines; SemIf-style 2B ended with the fewest holes.
+lost all three games. Kev-4B cleared the most lines; SemIf 2B ended with the fewest holes.
 The larger SemIf model did not improve this policy. Longer runs, more seeds, and task-specific
 evaluation are needed before choosing a general default or claiming a quality improvement.
 

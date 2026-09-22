@@ -63,7 +63,7 @@ export const MODELS = {
     ["2b", "2B", "15852e8c16360a2fea060d615a32b45270f8a8fc", 4571274023, 2127742976, "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2"],
     ["4b", "4B", "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a", 9342907469, 4751303104, "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e"],
   ].map(([size, upstream, revision, download, pack, packSha256]) => [`semif-qwen3.5-${size}`, {
-    arch: "kev", label: `SemIf-style Qwen3.5-${upstream}, frozen model with direct option scoring`,
+    arch: "kev", label: `SemIf Qwen3.5-${upstream}, frozen model with direct option scoring`,
     repo: `Qwen/Qwen3.5-${upstream}`, revision, license: "apache-2.0",
     hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala`,
     browserConvert: false, download, pack, packSha256, block: 32,

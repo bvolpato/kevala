@@ -17,7 +17,7 @@
 
 kevala runs [Laya](https://huggingface.co/convaiinnovations/laya),
 [Kev](https://github.com/jaredpalmer/kev), and frozen Qwen3.5 models with
-[SemIf-style option scoring](docs/models.md#how-semif-style-scoring-works) inside the browser.
+[SemIf option scoring](docs/models.md#how-semif-scoring-works) inside the browser.
 You give it text or JSON and typed questions (`noul` for yes/no, `choice`, `score`), and it scores
 the options without generating an answer token by token. There is no model server, no API key,
 and no data leaving the tab.
@@ -26,7 +26,7 @@ The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU 
 these models. The browser runtime is a few plain ES modules. The first load downloads a pinned int8
 pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) and keeps it in
 the browser, so there is nothing to host. Laya and Kev-0.8B also support conversion from the
-original checkpoint in the browser. Larger Kev models and SemIf-style models require a converted pack.
+original checkpoint in the browser. Larger Kev models and SemIf models require a converted pack.
 
 ## Quick start
 
@@ -77,7 +77,7 @@ Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
 `Kevala.load({ model: "kev-0.8b" })`, or pass a `.kevala` URL you host.
 
 Laya remains the demo default. Select **Kev** to choose 0.8B, 4B, or 9B with the size slider.
-**More models** offers SemIf-style Qwen3.5 at 0.8B, 2B, or 4B. Selecting either family starts
+**SemIf** appears alongside Laya and Kev, with 0.8B, 2B, or 4B sizes. Selecting either family starts
 at its smallest size; changing sizes waits for **Load** before downloading.
 
 <details>
@@ -186,7 +186,7 @@ CPU tuning runs automatically and caches its result for the browser and model. S
 
 Questions use the System One request shape (`type`, `instructions`, `criteria`), and each family
 answers in its own reference format: Laya like `laya` 0.3.5 (`action.act_probability`, 4 decimals),
-Kev like `kev.serve` (2 decimals, plus `raw_probabilities` at full precision). SemIf-style packs use
+Kev like `kev.serve` (2 decimals, plus `raw_probabilities` at full precision). SemIf packs use
 the Kev response shape and return `probability_status` to identify uncalibrated conditional option
 scores. They support at most 16 options per question. For starting points,
 `import { presets } from "kevala"` has the `laya` SDK's question sets for triage, email,

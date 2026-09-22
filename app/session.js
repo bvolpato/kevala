@@ -46,17 +46,17 @@ export const MODEL_NOTES = {
     large: true,
   },
   "semif-qwen3.5-0.8b": {
-    name: "SemIf-style Qwen3.5-0.8B",
+    name: "SemIf-0.8B",
     short: "Direct option scores from a frozen Qwen3.5-0.8B model",
     large: true,
   },
   "semif-qwen3.5-2b": {
-    name: "SemIf-style Qwen3.5-2B",
+    name: "SemIf-2B",
     short: "Direct option scores from a frozen Qwen3.5-2B model",
     large: true,
   },
   "semif-qwen3.5-4b": {
-    name: "SemIf-style Qwen3.5-4B",
+    name: "SemIf-4B",
     short: "Direct option scores from a frozen Qwen3.5-4B model",
     large: true,
   },

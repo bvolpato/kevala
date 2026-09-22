@@ -357,8 +357,8 @@ const DEMOS = `<section id="demos">
 const MODEL_CARDS = `<section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Laya and Kev</h2>
-    <div class="grid-2">
+    <h2>Laya, Kev, and SemIf</h2>
+    <div class="grid-3">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
         <p class="muted small">ModernBERT-large encoder (28 layers, 1024 wide, local and global attention) with a 2-layer decision head. It answers yes/no (<code>noul</code>), <code>choice</code> and <code>score</code> questions, with a confidence and an act probability for each.</p>
@@ -382,8 +382,19 @@ const MODEL_CARDS = `<section class="tight" id="models">
           <div><dt>By</dt><dd>Jared Palmer · base by the Qwen team · Apache-2.0</dd></div>
         </dl>
       </div>
+      <div class="card pad model-card">
+        <div class="row"><h3>SemIf</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
+        <p class="muted small">SemIf's prompt and direct option scoring with frozen Qwen3.5 instruction weights. It reads option-label logits in one forward pass, without generating an answer or training an adapter.</p>
+        <dl class="specs">
+          <div><dt>Parameters</dt><dd>0.8B (default), 2B, or 4B</dd></div>
+          <div><dt>Pack download</dt><dd>855 MB, 2.13 GB, or 4.75 GB int8. Runtime memory is higher; the 4B pack requires WebGPU in the browser.</dd></div>
+          <div><dt>Loading</dt><dd>Select SemIf in the model menu, choose a size, then press Load.</dd></div>
+          <div><dt>Scores</dt><dd>Relative scores for up to 16 options per question, not calibrated decision confidence.</dd></div>
+          <div><dt>Credits</dt><dd>Adapted from <a href="https://github.com/TheoLeeCJ/SemIf">SemIf</a> · MIT. Qwen3.5 weights · Apache-2.0.</dd></div>
+        </dl>
+      </div>
     </div>
-    <p class="muted small">More models in the menu offers SemIf-style Qwen3.5 at 0.8B, 2B, and 4B. It scores options directly with frozen instruction weights, without a trained adapter. <a href="${DOCS}/models.md">Model details and memory requirements →</a></p>
+    <p class="muted small"><a href="${DOCS}/models.md">Model details and memory requirements →</a></p>
   </div>
 </section>`;
 

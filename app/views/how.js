@@ -87,7 +87,7 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <ul class="limit-list">
         <li><b>Large first download.</b> Laya downloads a 479 MB int8 pack and keeps it in browser storage. The weights also occupy GPU or WebAssembly memory while loaded.</li>
-        <li><b>Larger sizes need more memory.</b> Kev packs range from 857 MB to 8.96 GB; SemIf-style Qwen3.5 packs range from 855 MB to 4.75 GB. Runtime memory is higher. Both size sliders start at 0.8B, and loading begins when you press Load.</li>
+        <li><b>Larger sizes need more memory.</b> Kev packs range from 857 MB to 8.96 GB; SemIf Qwen3.5 packs range from 855 MB to 4.75 GB. Runtime memory is higher. Both size sliders start at 0.8B, and loading begins when you press Load.</li>
         <li><b>WebGPU is not available in every browser.</b> Without it kevala falls back to WebAssembly, which gives the same answers several times slower: a short Laya request takes about 160 ms on 8 CPU workers, against tens of ms on WebGPU.</li>
         <li><b>No multi-step reasoning.</b> These are System 1 models: they give fast, calibrated reads of what a text says. Compute facts in code and state them in words, and do not ask the model to do arithmetic or plan.</li>
         <li><b>English, 512 tokens.</b> Laya reads up to 512 tokens per state and is trained on English.</li>
