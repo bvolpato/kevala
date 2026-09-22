@@ -153,6 +153,12 @@ accuracy, and end-to-end CPU/WebGPU latency. That experiment should compare
 per-layer or calibrated scales and mixed precision, rather than treating this
 absmax sample as a universal FP8 verdict.
 
+The matrix tiling and floating-point accumulation could be shared across Q8
+and FP8 implementations. The byte decoder and scale interpretation cannot:
+an INT8 byte and an FP8 byte represent different values. Supporting both would
+require explicit pack-format metadata, matching decode kernels, and numerical
+checks before dispatching the shared matrix path.
+
 ## Primary references
 
 * NVIDIA's [quantized types and scaling schemes](https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/quantized-types-schemes.html)
