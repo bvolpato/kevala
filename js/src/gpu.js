@@ -100,6 +100,11 @@ function parseSubpackHeader(prefix) {
 /** Detects a usable GPU. Returns null when WebGPU is missing or the adapter is too small. */
 // Compilers differ on the directive WGSL requires for subgroups (naga, Firefox's, rejects it in
 // 2026), so the subgroup kernels are used only when this compiles.
+/** Workgroup memory of attention_tile.wgsl: Q, K, V and probability tiles and the block info, and
+ * without subgroups the table its threads exchange row statistics through. */
+const ATTENTION_TILE_BYTES = 1088 * 8 + 544 * 8 + 512 * 8 + 2112 * 4 + 16;
+const ATTENTION_TILE_SHARED_BYTES = ATTENTION_TILE_BYTES + 1088 * 4;
+
 const SUBGROUP_PROBE = "enable subgroups;\n@compute @workgroup_size(32) fn main() { _ = subgroupAdd(1u); }\n";
 
 async function compiles(device, code) {
@@ -110,9 +115,11 @@ async function compiles(device, code) {
 /**
  * A WebGPU device with the optional features and larger limits the adapter offers, or an error
  * saying why there is none. `baseline` asks for no optional feature and the default limits, the
- * way the weakest WebGPU device runs (for testing those kernel paths on a strong one).
+ * way the weakest WebGPU device runs (for testing those kernel paths on a strong one). `features`
+ * limits the optional features asked for (for example ["shader-f16", "timestamp-query"] runs the
+ * kernel paths of a GPU with f16 but no subgroups).
  */
-export async function requestDevice({ baseline = false, powerPreference = "high-performance" } = {}) {
+export async function requestDevice({ baseline = false, features = null, powerPreference = "high-performance" } = {}) {
   const where = typeof window === "undefined" ? "worker" : "page";
   if (typeof navigator === "undefined" || !navigator.gpu) throw new Error(`this browser has no WebGPU in a ${where} (navigator.gpu is missing)`);
   const adapter = (await navigator.gpu.requestAdapter({ powerPreference })) || (await navigator.gpu.requestAdapter());
@@ -125,8 +132,9 @@ export async function requestDevice({ baseline = false, powerPreference = "high-
         maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1 << 30),
         maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
       };
-  // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`)
-  const optional = baseline ? [] : ["timestamp-query", "shader-f16", "subgroups"];
+  // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`), so the baseline
+  // keeps them: they change no kernel
+  const optional = baseline ? ["timestamp-query"] : features || ["timestamp-query", "shader-f16", "subgroups"];
   const requiredFeatures = optional.filter((f) => adapter.features.has(f));
   const device = await adapter.requestDevice({ requiredLimits: want, requiredFeatures });
   const gpu = { device, adapter, powerPreference, lost: null };
@@ -144,7 +152,13 @@ export async function requestDevice({ baseline = false, powerPreference = "high-
   const subgroup32 = subgroups && info.subgroupMinSize === 32 && info.subgroupMaxSize === 32 && device.limits.maxComputeWorkgroupStorageSize >= 24576;
   // others add across groups of 4 lanes, so any subgroup of at least 4 will do
   const subgroup4 = subgroups && info.subgroupMinSize >= 4;
-  return Object.assign(gpu, { subgroup32, subgroup4, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" });
+  // the tiled attention reduces across 16 lanes and keeps f16 tiles in 25 KB of workgroup memory
+  const f16 = device.features.has("shader-f16");
+  const room = device.limits.maxComputeWorkgroupStorageSize;
+  const attentionTile = subgroups && info.subgroupMinSize >= 16 && f16 && room >= ATTENTION_TILE_BYTES;
+  // without such subgroups the same kernel trades row statistics through workgroup memory
+  const attentionTileShared = !attentionTile && f16 && room >= ATTENTION_TILE_SHARED_BYTES;
+  return Object.assign(gpu, { subgroup32, subgroup4, attentionTile, attentionTileShared, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" });
 }
 
 /** Preserve allocation errors before a later write or readback reports an invalid buffer. */
@@ -344,6 +358,10 @@ export class GpuTrunk {
     this.device = gpu.device;
     this.name = gpu.name;
     this.subgroup32 = !!gpu.subgroup32;
+    // queries per attention workgroup: 64 for the tiled kernel, 16 for the others
+    const tile = gpu.attentionTile || gpu.attentionTileShared;
+    this.attnKernel = tile ? ["attention_tile", { subgroups: !!gpu.attentionTile }] : [this.subgroup32 ? "attention_subgroup" : "attention"];
+    this.attnQueries = tile ? 64 : 16;
     this.wgsl = gpu.wgsl;
     this.cfg = cfg;
     this.weights = new GpuWeights(gpu.device, layout);
@@ -366,12 +384,12 @@ export class GpuTrunk {
     const d = this.device;
     const cfg = this.cfg;
     const pipe = (code, label) => pipeline(d, code, label);
-    const kernel = (name) => pipe(this.wgsl(name), name);
+    const kernel = (name, spec) => pipe(this.wgsl(name, spec), name);
     [this.mm, this.pNorm, this.pRope, this.pAttn, this.pGeglu, this.pGather] = await Promise.all([
       matmulPipelines(d, this.wgsl),
       kernel("norm"),
       kernel("rope"),
-      kernel(this.subgroup32 ? "attention_subgroup" : "attention"),
+      kernel(...this.attnKernel),
       kernel("geglu"),
       kernel("gather"),
     ]);
@@ -529,7 +547,7 @@ export class GpuTrunk {
       d.pushErrorScope("out-of-memory");
     }
     const blocks = [];
-    for (const sg of segs) for (let q0 = 0; q0 < sg.len; q0 += 16) blocks.push(sg.start, sg.len, q0, 0);
+    for (const sg of segs) for (let q0 = 0; q0 < sg.len; q0 += this.attnQueries) blocks.push(sg.start, sg.len, q0, 0);
     const nblocks = blocks.length / 4;
     q.writeBuffer(this.globals, 0, new Uint32Array([tokens, rows.length, nblocks, 0]));
     q.writeBuffer(this.blocks, 0, new Uint32Array(blocks));

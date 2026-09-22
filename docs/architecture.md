@@ -113,9 +113,10 @@ layer and returns only the rows the head reads. Kernels:
   lane, so each query's running max and sum come from `subgroupMax` / `subgroupAdd`.
 - Kev's Gated DeltaNet: causal depthwise conv, q/k L2 norm, the gated delta rule, gated RMSNorm.
   The recurrence is sequential in time, so its cost is the length of each token's dependency
-  chain: with subgroups, four lanes share a value column (32 of its 128 keys each) and combine
-  their partial dot products with `subgroupShuffleXor`, which made it 5x faster than one thread
-  per column. The next token's q and k are staged while the current one computes.
+  chain: four lanes share a value column (32 of its 128 keys each) and combine their partial dot
+  products with `subgroupShuffleXor`, or without subgroups through workgroup memory behind one
+  more barrier per token. That is 3-5x faster than one thread per column. The next token's q and
+  k are staged while the current one computes.
 
 Where the time goes is visible per kernel: `kevala.profile(true)` adds `timing.gpu` (milliseconds
 per kernel) to every response, and the Playground's Profile tab shows it for any request.

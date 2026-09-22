@@ -12,6 +12,8 @@ const destination = join(dist, "site");
 const publicFiles = [".nojekyll", "LICENSE", "README.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html", "site/index.html"];
 const publicDirectories = ["app", "assets", "docs", "examples", "js/src", "skills", "tests/fixtures"];
 const publicHarnesses = [
+  "dev/attn-bench.html",
+  "dev/attn-bench.js",
   "dev/cache-test.html",
   "dev/convert-test.html",
   "dev/gpu-bench.html",

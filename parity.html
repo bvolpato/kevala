@@ -47,8 +47,11 @@ async function run() {
   const t0 = performance.now();
   let last = "";
   // #auto&baseline=1 runs WebGPU without optional features and with default limits, like the weakest device
-  const gpuBaseline = new URLSearchParams(location.hash.slice(1)).get("baseline") === "1";
-  const kevala = await Kevala.load({ backend, threads, flavor, model, from, gpuBaseline, onProgress: (p) => {
+  // features=shader-f16,timestamp-query: only those optional GPU features (f16 without subgroups, as Firefox)
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const gpuBaseline = hash.get("baseline") === "1";
+  const gpuFeatures = hash.get("features") ? hash.get("features").split(",") : undefined;
+  const kevala = await Kevala.load({ backend, threads, flavor, model, from, gpuBaseline, gpuFeatures, onProgress: (p) => {
     const s = p.phase + (p.total ? ` ${Math.round((100 * p.loaded) / p.total)}%` : "") + (p.message ? ` ${p.message}` : "");
     if (s !== last) { last = s; if (!p.total || p.loaded === p.total || p.phase !== "download") log(s); }
   } });
