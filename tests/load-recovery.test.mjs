@@ -52,6 +52,19 @@ function workers(t, outcomes, { probe = true } = {}) {
 const gpuError = (message) => ({ type: "error", code: "WEBGPU_INIT", message });
 const ready = (backend = "webgpu") => ({ type: "ready", info: { backend, gpu: backend === "webgpu" ? "Test GPU" : null } });
 
+test("GPU kernel overrides reject invalid values before starting a worker", async () => {
+  for (const gpuKernel of [null, "cuda", 1]) {
+    await assert.rejects(Kevala.load({ gpuKernel }), /gpuKernel must be/);
+  }
+});
+
+test("GPU kernel overrides reach the engine unchanged", async (t) => {
+  const state = workers(t, [ready()]);
+  const model = await Kevala.load({ backend: "webgpu", gpuKernel: "wide", cache: false });
+  assert.equal(state.loads[0].gpuKernel, "wide");
+  model.dispose();
+});
+
 test("Auto retries a GPU load failure once on the low-power adapter", async (t) => {
   const state = workers(t, [gpuError("WebGPU: uploading model weights: Not enough memory left."), ready()]);
   const model = await Kevala.load({ backend: "auto", cache: false });

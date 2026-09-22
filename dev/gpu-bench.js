@@ -49,17 +49,18 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups };
   }
   const match = raw.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
-  const f16 = match[1] === "matmul_h";
+  const f16 = match[1].endsWith("_h");
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
+  if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: "matmul", f16, target, rows, groups };
+  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups };
 }
 
 function makeRng(seed) {
@@ -306,7 +307,7 @@ async function main() {
   const getPipelines = async (variant, T) => {
     const key = `${variant.label}|${T}`;
     if (!pipelineCache.has(key)) {
-      const code = source("matmul", { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const code = source(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       const reduceCode = source("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       pipelineCache.set(key, Promise.all([
         pipeline(device, code, `${variant.label}.matmul`, pipelineLayouts.matmul),

@@ -79,6 +79,7 @@ export class Kevala {
    *               browser offers WebGPU to pages but not to workers)
    *   threads     "auto" measures CPU worker counts (default); 1..16 overrides, capped by model
    *   cpuKernel   "auto" measures CPU register tiles (default), or "2x4" / "4x4"
+   *   gpuKernel   GPU matrices: "auto" measures kernels (default), "generic", or "wide"
    *   retune      ignore the cached CPU tuning profile and measure again (default false)
    *   submit      WebGPU scheduling: "await" drains each long-pass chunk (default);
    *               "split" queues separate chunks without waiting, reducing latency at a
@@ -91,6 +92,7 @@ export class Kevala {
    */
   static async load(options = {}) {
     cpuOptions(options);
+    if (options.gpuKernel !== undefined && !["auto", "generic", "wide"].includes(options.gpuKernel)) throw new Error('gpuKernel must be "auto", "generic", or "wide"');
     const w = new Kevala();
     await w.#start(options);
     return w;

@@ -31,6 +31,10 @@ fn specs() -> Vec<Spec> {
 fn every_kernel_renders_completely() {
     for kernel in KERNELS {
         for spec in specs() {
+            if *kernel == "matmul_wide" && spec.groups != 1 {
+                assert!(wgsl(kernel, &spec).is_err());
+                continue;
+            }
             let src = wgsl(kernel, &spec).unwrap_or_else(|e| panic!("{kernel} {spec:?}: {e}"));
             assert!(!src.contains("{{") && !src.contains("//#"), "{kernel} {spec:?} left a template marker");
             assert_eq!(src.matches("@compute").count(), 1, "{kernel} {spec:?}: one entry point");

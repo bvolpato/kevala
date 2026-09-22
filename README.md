@@ -165,6 +165,7 @@ const kevala = await Kevala.load({
   onPage: false,         // run on the page, not in a worker (automatic when only pages get WebGPU)
   threads: "auto",       // measure CPU worker counts; 1..16 overrides, capped by the model
   cpuKernel: "auto",     // measure CPU register tiles; "2x4" or "4x4" overrides
+  gpuKernel: "auto",     // measure GPU matrices; "generic" or "wide" overrides
   retune: false,         // reuse the browser's CPU tuning profile; true measures again
   submit: "await",       // GPU chunks: "await" favors responsiveness; "split" reduces queue waits
   from: "pack",          // "checkpoint" conversion is available for Laya and Kev-0.8B
@@ -176,13 +177,15 @@ const kevala = await Kevala.load({
 
 await kevala.decide(state, questions, { parts });  // score a request's questions
 await kevala.decideMany([{ state, questions }]);   // batch requests; GPU work may split to fit
-kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, cpuTiles, cpuTuning, modalities, model, config, pack, loadMs }
+kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, cpuTiles, cpuTuning, gpuTuning, modalities, model, config, pack, loadMs }
 await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
 ```
 
 CPU tuning runs automatically and caches its result for the browser and model. See
 [CPU tuning and API overrides](docs/cpu-tuning.md) for the measurements, limits, and diagnostics.
+All model families also select GPU matrix kernels using the loaded model's shapes and GPU timestamps.
+See [GPU matrix tuning](docs/semif-matmul.md) for the results, API overrides, and fallback rules.
 
 Questions use the System One request shape (`type`, `instructions`, `criteria`), and each family
 answers in its own reference format: Laya like `laya` 0.3.5 (`action.act_probability`, 4 decimals),

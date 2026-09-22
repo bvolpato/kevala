@@ -18,7 +18,7 @@
 </p>
 <pre id="log"></pre>
 <script type="module">
-import { Kevala } from "./js/src/index.js";
+import { Kevala, MODELS } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.bench = { status: "idle" };
@@ -43,7 +43,9 @@ async function run() {
     const threadOption = q.get("threads") || $("threads").value;
     const threads = threadOption === "auto" ? "auto" : Number(threadOption);
     const name = q.get("model") || "laya";
-    const model = q.get("pack") === "local" ? { laya: "./tmp/laya-q8.kevala", "kev-0.8b": "./tmp/kev-0.8b-q8.kevala" }[name] : name;
+    const local = q.get("pack") === "local";
+    if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
+    const model = local ? `./tmp/${name}-q8.kevala` : name;
     const runs = integerParam(q, "runs", 10, 1);
     const warmups = integerParam(q, "warmups", 2, 0);
     const requestedFlavor = q.get("flavor") || undefined;
@@ -52,7 +54,7 @@ async function run() {
     // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
     // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
     const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
-    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const results = {
       model: name,
@@ -63,6 +65,7 @@ async function run() {
       flavor: kevala.info.flavor,
       cpuTiles: kevala.info.cpuTiles,
       cpuTuning: kevala.info.cpuTuning,
+      gpuTuning: kevala.info.gpuTuning,
       selectedFlavor: kevala.info.flavor || null,
       hardwareConcurrency: navigator.hardwareConcurrency || null,
       crossOriginIsolated: globalThis.crossOriginIsolated === true,
