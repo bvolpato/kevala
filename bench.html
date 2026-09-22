@@ -40,7 +40,8 @@ async function run() {
   let kevala = null;
   try {
     const backend = q.get("backend") || $("backend").value;
-    const threads = Number(q.get("threads") || $("threads").value);
+    const threadOption = q.get("threads") || $("threads").value;
+    const threads = threadOption === "auto" ? "auto" : Number(threadOption);
     const name = q.get("model") || "laya";
     const model = q.get("pack") === "local" ? { laya: "./tmp/laya-q8.kevala", "kev-0.8b": "./tmp/kev-0.8b-q8.kevala" }[name] : name;
     const runs = integerParam(q, "runs", 10, 1);
@@ -48,7 +49,7 @@ async function run() {
     const requestedFlavor = q.get("flavor") || undefined;
     const unique = q.get("unique") === "1";
     const t0 = performance.now();
-    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, profile: q.get("profile") === "1", submit: q.get("submit") || undefined });
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined });
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const results = {
       model: name,
@@ -58,6 +59,7 @@ async function run() {
       threads: kevala.info.threads,
       flavor: kevala.info.flavor,
       cpuTiles: kevala.info.cpuTiles,
+      cpuTuning: kevala.info.cpuTuning,
       selectedFlavor: kevala.info.flavor || null,
       hardwareConcurrency: navigator.hardwareConcurrency || null,
       crossOriginIsolated: globalThis.crossOriginIsolated === true,

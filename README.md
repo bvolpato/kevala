@@ -132,10 +132,12 @@ const kevala = await Kevala.load({
   model: "laya",         // a MODELS name, a .kevala URL, or an ArrayBuffer/Blob
   backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU, then CPU if GPU loading fails)
   onPage: false,         // run on the page, not in a worker (automatic when only pages get WebGPU)
-  threads: 8,            // WebAssembly workers for the CPU backend
+  threads: "auto",       // measure CPU worker counts; 1..16 overrides, capped by the model
+  cpuKernel: "auto",     // measure CPU register tiles; "2x4" or "4x4" overrides
+  retune: false,         // reuse the browser's CPU tuning profile; true measures again
   submit: "await",       // GPU chunks: "await" favors responsiveness; "split" reduces queue waits
   from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
-  cache: true,           // keep the pack in origin storage
+  cache: true,           // keep the pack and CPU tuning profile in origin storage
   onProgress: (p) => {}, // { phase: download | convert | cache | init | warmup, loaded, total }
   signal,                // AbortSignal
   plugins: [],           // URLs of extra architecture plugins
@@ -143,10 +145,13 @@ const kevala = await Kevala.load({
 
 await kevala.decide(state, questions, { parts });  // one request, one forward pass
 await kevala.decideMany([{ state, questions }]);   // many states, still one pass
-kevala.info;      // { arch, backend, gpu, gpuPowerPreference, gpuUnavailable, threads, modalities, model, config, pack, loadMs }
+kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, cpuTiles, cpuTuning, modalities, model, config, pack, loadMs }
 await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
 ```
+
+CPU tuning runs automatically and caches its result for the browser and model. See
+[CPU tuning and API overrides](docs/cpu-tuning.md) for the measurements, limits, and diagnostics.
 
 Questions use the System One request shape (`type`, `instructions`, `criteria`), and each family
 answers in its own reference format: Laya like `laya` 0.3.5 (`action.act_probability`, 4 decimals),

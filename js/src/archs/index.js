@@ -6,6 +6,7 @@
 //     arch: "name",                      // matches the pack's config.arch
 //     about: "one line",
 //     maxShards(header) -> n,            // WebAssembly shard workers it can split layers across (1 = none)
+//     cpuProbe(header) -> config,        // optional: { hidden_size, intermediate_size } for Q8 gated MLP calibration
 //     createGpu(gpu, layout, header),    // optional: a GPU trunk with write(dst, bytes) for streamed weights
 //     initGpu(engine),                   // after the coordinator loads
 //     run(engine, requests),             // one pass through the GPU or shard trunk -> { responses, timing }

@@ -157,3 +157,39 @@ test("cancelling as the CPU fallback becomes ready rejects and frees every worke
   assert.equal(state.loads.length, 3);
   assert.ok(state.instances.every((w) => w.terminated));
 });
+
+test("CPU probe workers are released before replacement workers load", async (t) => {
+  const state = workers(t, [(worker) => {
+    worker.reply({ type: "need-shards", n: 2, generation: 0 });
+    assert.equal(state.instances.length, 3);
+    worker.reply({ type: "release-shards" });
+    assert.ok(state.instances.slice(1).every((w) => w.terminated));
+    worker.reply({ type: "need-shards", n: 1, generation: 1 });
+    worker.reply(ready("wasm-relaxed x2"));
+  }]);
+  const model = await Kevala.load({ backend: "wasm", cache: false });
+  assert.equal(state.instances.length, 4);
+  assert.equal(state.instances[3].terminated, false);
+  model.dispose();
+  assert.ok(state.instances.every((w) => w.terminated));
+});
+
+test("a shard startup error rejects loading and terminates its whole pool", async (t) => {
+  const state = workers(t, [(worker) => {
+    worker.reply({ type: "need-shards", n: 2, generation: 0 });
+    state.instances[1].onerror({ message: "shard import failed" });
+  }]);
+  await assert.rejects(Kevala.load({ backend: "wasm", cache: false }), /shard import failed/);
+  assert.ok(state.instances.every((w) => w.terminated));
+});
+
+test("cancelling during CPU calibration terminates every created worker", async (t) => {
+  const controller = new AbortController();
+  const state = workers(t, [(worker) => {
+    worker.reply({ type: "need-shards", n: 3, generation: 0 });
+    controller.abort();
+  }]);
+  await assert.rejects(Kevala.load({ backend: "wasm", cache: false, signal: controller.signal }), { name: "AbortError" });
+  assert.equal(state.instances.length, 4);
+  assert.ok(state.instances.every((w) => w.terminated));
+});
