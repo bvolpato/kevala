@@ -1,5 +1,7 @@
 /tmp/
 /target/
+/dist/
+/js/src/kevala-*.wasm
 node_modules/
 *.kevala
 .DS_Store

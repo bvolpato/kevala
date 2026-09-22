@@ -51,6 +51,10 @@
     "check": "node scripts/check-js.mjs",
     "test": "node --test tests/*.test.mjs",
     "build": "scripts/build-wasm.sh",
+    "check:wasm": "node scripts/check-wasm.mjs",
+    "check:package": "node scripts/check-package.mjs",
+    "stage:site": "node scripts/stage-site.mjs",
+    "prepack": "scripts/build-wasm.sh",
     "serve": "node scripts/serve.mjs .",
     "smoke": "node scripts/node-smoke.mjs"
   },
