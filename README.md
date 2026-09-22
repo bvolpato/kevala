@@ -201,6 +201,7 @@ kevala bench kev-0.8b-q8.kevala --tokens 128
 kevala wgsl matmul --f16 --rows 3                  # a GPU kernel, specialized
 
 node scripts/serve.mjs . --port=8080         # static server for the site and examples
+uv run dev/record-tetris.py                  # re-record docs/tetris.gif and docs/tetris.mp4 (needs port 8123)
 cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)
 ```
 

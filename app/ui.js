@@ -223,6 +223,20 @@ export function css(href) {
 
 export const REPO = "https://github.com/bvolpato/kevala";
 
+/** The kevala mark; `id` names its gradient, so two marks on one page need different ids. */
+export function logo(id) {
+  return [
+    `<svg viewBox="0 0 32 32" aria-hidden="true">`,
+    `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1">`,
+    `<stop offset="0" stop-color="#7aa2ff"/><stop offset=".55" stop-color="#45e0c0"/><stop offset="1" stop-color="#c592ff"/>`,
+    `</linearGradient></defs>`,
+    `<rect x="1" y="1" width="30" height="30" rx="9" fill="#0f131b" stroke="url(#${id})" stroke-width="2"/>`,
+    `<path d="M11.5 7.5v17M21 12.5l-9 6.5M15.6 16.4l5.9 8.1" fill="none" stroke="url(#${id})" stroke-width="2.6"` +
+      ` stroke-linecap="round" stroke-linejoin="round"/>`,
+    `</svg>`,
+  ].join("");
+}
+
 /** Where pages import the library from: the npm package on jsDelivr. */
 export const CDN = "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 

@@ -3,7 +3,7 @@
 
 import { Game, W, H, HIDDEN, VISIBLE, SHAPES, pieceCells } from "../tetris/engine.js";
 import { AutoPlayer, QUESTION, SPEEDS, KEYS, GLYPH, KEY_NAME } from "../tetris/ai.js";
-import { css, esc, fmtMs, backendBadge, highlightJSON, modelGate } from "../ui.js";
+import { css, esc, fmtMs, highlightJSON, logo, modelGate } from "../ui.js";
 import { params } from "../session.js";
 
 const COLORS = { I: "#45e0c0", O: "#f6c453", T: "#b48cff", S: "#8be36b", Z: "#ff7a8a", J: "#7aa2ff", L: "#ff9f5a" };
@@ -14,6 +14,8 @@ const ARR = 35; // ms between repeats
 const STEP = 1000 / 120; // fixed simulation step
 const BEST_KEY = "tetris.best.v1";
 const LINE_CLEARS = ["", "SINGLE", "DOUBLE", "TRIPLE", "TETRIS"];
+/** `?clip=1`: a full-window 16:9 stage without the site around it, for recording the model play. */
+const CLIP = params.get("clip") === "1";
 
 const SPEED_BUTTONS = Object.entries(SPEEDS)
   .map(([id, speed]) => {
@@ -37,15 +39,22 @@ const KEY_TILES = ["rotate", "left", "drop", "right"]
 const HTML = `<div class="wrap">
   <div class="t-head">
     <div>
-      <div class="eyebrow">Demo · real-time control</div>
       <h1>Tetris, played by a decision model</h1>
-      <p>For each new piece, the model reads a description of every place it could land and scores them all in one pass. Then it presses the keys to get there (turn, left, right, drop). Everything runs in this tab.</p>
+      <p>Every place the piece can land, scored in one pass on this device. Then the model presses the keys.</p>
+    </div>
+    <div class="t-tools">
+      <button type="button" class="btn auto-btn" aria-pressed="false"><span class="led"></span>Auto <kbd>A</kbd></button>
+      <div class="seg" role="group" aria-label="Key speed">${SPEED_BUTTONS}</div>
+      <div class="seg seed-seg" role="group" aria-label="Piece order">
+        <button type="button" class="seg-b" data-seed="demo" aria-pressed="true">Demo</button>
+        <button type="button" class="seg-b" data-seed="random" aria-pressed="false">Random</button>
+      </div>
     </div>
   </div>
   <div data-gate></div>
   <div class="game">
     <aside class="side left">
-      <div class="box">
+      <div class="box hold-box">
         <div class="box-t">Hold <kbd>C</kbd></div>
         <canvas class="hold" width="120" height="80" aria-label="Held piece"></canvas>
       </div>
@@ -53,8 +62,6 @@ const HTML = `<div class="wrap">
         <div class="stat"><span>Score</span><b data-s="score">0</b></div>
         <div class="stat"><span>Lines</span><b data-s="lines">0</b></div>
         <div class="stat"><span>Level</span><b data-s="level">1</b></div>
-        <div class="stat"><span>Time</span><b data-s="time">0:00</b></div>
-        <div class="stat"><span>Pieces</span><b data-s="pieces">0</b></div>
         <div class="stat best"><span>Best</span><b data-s="best">0</b></div>
       </div>
     </aside>
@@ -78,39 +85,26 @@ const HTML = `<div class="wrap">
         <div class="box-t">Next</div>
         <canvas class="next" width="120" height="330" aria-label="Next pieces"></canvas>
       </div>
-      <div class="box mode">
-        <div class="box-t">Pieces</div>
-        <div class="seg" role="group" aria-label="Piece order">
-          <button type="button" class="seg-b" data-seed="demo" aria-pressed="true">Demo</button>
-          <button type="button" class="seg-b" data-seed="random" aria-pressed="false">Random</button>
-        </div>
-        <div class="tiny faint seed-label"></div>
-      </div>
     </aside>
-    <section class="ai card" aria-label="Model panel">
-      <div class="ai-top">
-        <button type="button" class="btn auto-btn" aria-pressed="false"><span class="led"></span>Auto <kbd>A</kbd></button>
-        <div class="seg" role="group" aria-label="Key speed">${SPEED_BUTTONS}</div>
+    <section class="ai" aria-label="What the model decides">
+      <div class="clip-brand">
+        <div class="clip-mark">${logo("tg")}<span>kevala</span></div>
+        <h2>A decision model plays Tetris</h2>
+        <p>Laya, 421M parameters, on WebGPU in the browser</p>
       </div>
-      <div class="ai-model"></div>
       <div class="ai-metrics">
-        <div title="Time for the model to score every landing spot of this piece"><span>Model</span><b data-m="ms">–</b></div>
-        <div title="Landing spots, and the distinct descriptions sent in one pass"><span>Spots</span><b data-m="spots">–</b></div>
-        <div><span>Pieces</span><b data-m="dec">0</b></div>
-        <div title="Pieces whose answer was ready when they appeared: the model scored them while the previous piece was still falling"><span>Ready ahead</span><b data-m="ahead">–</b></div>
+        <div title="Time for the model to score every landing spot of a piece (median of the last ten)"><b data-m="ms">–</b><span data-m="where">per piece</span></div>
+        <div title="Landing spots of this piece, all scored in one batched pass"><b data-m="spots">–</b><span>spots in one pass</span></div>
       </div>
-      <div class="ai-sub"><span>Keys</span><span class="tiny faint">best model score among the spots each key leads to</span></div>
       <div class="keys">${KEY_TILES}</div>
-      <div class="ai-sub"><span>Plan for this piece</span></div>
-      <div class="plan"><span class="pl-t">Waiting for the model…</span></div>
-      <div class="ai-sub"><span>Where it is going</span><span class="tiny faint">P(the stack looks clean)</span></div>
-      <ol class="spots"><li class="empty faint small">Turn on Auto to see how the model scores every landing spot.</li></ol>
+      <div class="plan" aria-label="Keys for this piece"></div>
+      <div class="ai-sub"><span>Best spots</span><span>P(clean stack)</span></div>
+      <ol class="spots"><li class="empty">Turn on Auto to watch the model score every spot.</li></ol>
       <details class="seen">
-        <summary>What the model read for the chosen spot</summary>
+        <summary>What the model read</summary>
         <div class="code"><pre class="json" data-seen></pre></div>
       </details>
-      <div class="ai-sub"><span>Recent pieces</span></div>
-      <ol class="trail"></ol>
+      <div class="clip-foot">bvolpato.github.io/kevala</div>
     </section>
   </div>
   <div class="touch" aria-label="Touch controls">
@@ -123,24 +117,10 @@ const HTML = `<div class="wrap">
     <button type="button" data-t="right" aria-label="Move right">▶</button>
     <button type="button" data-t="hard" aria-label="Hard drop">⤓</button>
   </div>
-  <section class="explain">
-    <h2 style="font-size:1.4rem">How the model plays</h2>
-    <p class="muted" style="max-width:78ch;margin-bottom:18px">When a piece appears, the code lists every place it can land and describes each outcome in plain words. The model gets all of them in one batched pass with a single yes/no question: <em>“Does the stack look clean after this move?”</em>. The piece then heads for the spot with the highest P(yes), one key at a time, while gravity keeps pulling it down. A drop makes it fall fast instead of jumping to the spot. The chosen spot also fixes the board the next piece will land on, so the model scores that piece while this one is still moving, and its answer is usually ready the moment it appears. The code only measures and describes the spots; the choice between them comes from the model.</p>
-    <div class="grid-3">
-      <div class="card pad">
-        <h3>1 · List the spots</h3>
-        <p class="muted small">Every turn of the piece and every column it can slide to, dropped with the same collision and wall-kick code the game uses. Spots that read the same are merged.</p>
-      </div>
-      <div class="card pad">
-        <h3>2 · Describe them</h3>
-        <p class="muted small">Holes buried, rows completed, and whether the surface and height end up better or worse than with most other spots. Numbers and comparisons are computed in code and stated in words.</p>
-      </div>
-      <div class="card pad">
-        <h3>3 · Score them and move</h3>
-        <p class="muted small">One <code>decideMany</code> pass scores every spot. The keys panel shows, for each key, the best score among the spots it leads toward; the piece presses the top one until it lands.</p>
-      </div>
-    </div>
-    <p class="tiny faint" style="margin-top:14px">Asking the model for one key at a time (left, right, turn or drop, with what each would lead to) was tried first and played far worse: it cleared no lines in 40 pieces. The probabilities are the model's own scores on a task it was not trained for, and they do not measure how well it plays.</p>
+  <section class="explain grid-3">
+    <div><h3>1 · List</h3><p>Every turn and column the piece can reach, found with the game's own collision code.</p></div>
+    <div><h3>2 · Describe</h3><p>Each outcome in plain words: holes left, rows cleared, a flatter or bumpier surface.</p></div>
+    <div><h3>3 · Score</h3><p>One pass asks <em>“Does the stack look clean?”</em> about every spot. The piece heads for the likeliest yes. Laya never saw Tetris in training.</p></div>
   </section>
 </div>`;
 
@@ -192,9 +172,7 @@ export function mount(el, { session }) {
     float: $(".float"),
     auto: $(".auto-btn"),
     spots: $(".spots"),
-    trail: $(".trail"),
     plan: $(".plan"),
-    aiModel: $(".ai-model"),
     seen: $("[data-seen]"),
   };
   const unGate = modelGate($("[data-gate]"), "watch it play");
@@ -218,8 +196,6 @@ export function mount(el, { session }) {
   let restartTimer = 0;
   let flashes = [];
   let userTookOver = false;
-  let lastDecision = null;
-  let pieceKeys = [];
   let wantAuto = false;
   const model = () => (session.ready ? session.kevala : null);
 
@@ -227,7 +203,6 @@ export function mount(el, { session }) {
     getModel: model,
     onDecision: showDecision,
     onPress: (key) => {
-      pieceKeys.push(key);
       const tile = el.querySelector(`.key[data-k="${key}"]`);
       tile?.classList.add("hit");
       setTimeout(() => tile?.classList.remove("hit"), 90);
@@ -237,15 +212,10 @@ export function mount(el, { session }) {
   });
   if (SPEEDS[params.get("speed")]) ai.speed = params.get("speed");
 
-  game.on("spawn", () => {
-    pieceKeys = [];
-    ai.onSpawn();
-  });
-  game.on("lock", ({ rows, points, spin, piece }) => {
-    if (ai.enabled) {
-      autoPieces++;
-      if (lastDecision) addTrail(piece.type, pieceKeys, lastDecision.best.p, lastDecision.ms, rows.length);
-    } else humanPieces++;
+  game.on("spawn", () => ai.onSpawn());
+  game.on("lock", ({ rows, points, spin }) => {
+    if (ai.enabled) autoPieces++;
+    else humanPieces++;
     if (rows.length) flashes.push({ rows: rows.map((y) => y - HIDDEN), t: performance.now() });
     if (rows.length === 4 || (spin && rows.length)) {
       // restart the shake animation
@@ -291,7 +261,6 @@ export function mount(el, { session }) {
     game.paused = false;
     hideOverlay();
     showSeed();
-    ui.trail.innerHTML = "";
     ai.setEnabled(!!auto && !!model());
     if (auto) ai.request();
     if (visible) ui.board.focus({ preventScroll: true });
@@ -365,9 +334,9 @@ export function mount(el, { session }) {
     });
   }
   function showSeed(pending) {
-    const label = $(".seed-label");
-    if (pending && started) label.textContent = seedMode === "demo" ? "Next game: demo order" : "Next game: random";
-    else label.textContent = seedMode === "random" ? `Random · seed ${game.seed}` : `Seed ${game.seed}, same pieces every time`;
+    const order = seedMode === "random" ? "Random pieces" : "The same pieces every game";
+    $(".seed-seg").title = `${order} (seed ${game.seed})`;
+    if (pending && started) toast(seedMode === "random" ? "The next game uses random pieces." : "The next game uses the demo order.");
   }
   showSeed();
 
@@ -529,9 +498,10 @@ export function mount(el, { session }) {
   function layout() {
     dpr = Math.min(2, window.devicePixelRatio || 1);
     const narrow = innerWidth <= 640;
-    const byHeight = Math.floor((innerHeight - 250) / VISIBLE);
-    const byWidth = narrow ? Math.floor((innerWidth - 48) / W) : 40;
-    cell = Math.max(16, Math.min(32, byHeight, byWidth));
+    // the page keeps room for the header and title; the clip stage gives the board the full height
+    const byHeight = Math.floor((innerHeight - (CLIP ? 96 : 200)) / VISIBLE);
+    const byWidth = narrow ? Math.floor((innerWidth - 48) / W) : 64;
+    cell = Math.max(16, Math.min(CLIP ? 64 : 38, byHeight, byWidth));
     el.querySelector(".game").style.setProperty("--cell", `${cell}px`);
     ui.board.width = W * cell * dpr;
     ui.board.height = VISIBLE * cell * dpr;
@@ -667,7 +637,7 @@ export function mount(el, { session }) {
   }
 
   const statEls = {};
-  for (const key of ["score", "lines", "level", "time", "pieces", "best"]) {
+  for (const key of ["score", "lines", "level", "best"]) {
     statEls[key] = el.querySelector(`[data-s="${key}"]`);
   }
   const shownStats = {};
@@ -680,9 +650,6 @@ export function mount(el, { session }) {
     setStat("score", game.score.toLocaleString());
     setStat("lines", String(game.lines));
     setStat("level", String(game.level));
-    const secs = Math.floor(game.elapsed / 1000);
-    setStat("time", `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, "0")}`);
-    setStat("pieces", String(game.pieces));
     setStat("best", Math.max(best.score, game.score).toLocaleString());
   }
 
@@ -712,45 +679,31 @@ export function mount(el, { session }) {
   function showStatus() {
     ui.auto.setAttribute("aria-pressed", String(ai.enabled));
     ui.auto.classList.toggle("thinking", ai.busy);
-    const info = session.info;
-    if (info) {
-      const cpuNote = info.backend !== "webgpu" ? `<span class="badge warn">CPU: slower decisions</span>` : "";
-      ui.aiModel.innerHTML = `<span class="badge">${esc(session.nameOf())}</span>${backendBadge(info)}${cpuNote}`;
-    } else {
-      const state = session.status === "loading" ? "model loading…" : "no model loaded";
-      ui.aiModel.innerHTML = `<span class="badge"><span class="dot"></span>${state}</span>`;
-    }
-    const { stats } = ai;
-    el.querySelector('[data-m="dec"]').textContent = String(stats.decisions);
-    el.querySelector('[data-m="ahead"]').textContent = stats.decisions ? `${Math.round((100 * stats.ahead) / stats.decisions)}%` : "–";
-    if (!stats.ms.length) el.querySelector('[data-m="ms"]').textContent = ai.busy ? "…" : "–";
+    const backend = session.info?.backend;
+    const where = backend ? (backend === "webgpu" ? "per piece, WebGPU" : "per piece, CPU") : "per piece";
+    el.querySelector('[data-m="where"]').textContent = where;
+    if (!ai.stats.ms.length) el.querySelector('[data-m="ms"]').textContent = ai.busy ? "…" : "–";
   }
 
   function spotHTML(spot, i) {
-    const chosen = i === 0;
-    const label = `${esc(spot.group[0].summary)}${chosen ? " · <b style='color:var(--accent-2)'>chosen</b>" : ""}`;
     return [
-      `<li class="${chosen ? "chosen" : ""}">`,
-      `<div class="rt"><span>${label}</span><b>${pct(spot.p)}</b></div>`,
+      `<li class="${i === 0 ? "chosen" : ""}">`,
+      `<div class="rt"><span>${esc(spot.group[0].summary)}</span><b>${pct(spot.p)}</b></div>`,
       `<div class="pbar"><i style="width:0"></i></div>`,
-      chosen ? `<div class="desc">${esc(spot.text)}</div>` : "",
       `</li>`,
     ].join("");
   }
 
   function showDecision(decision) {
-    lastDecision = decision;
-    const recent = ai.stats.ms.slice(-20);
-    const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const recent = ai.stats.ms.slice(-10);
+    const median = [...recent].sort((a, b) => a - b)[Math.floor(recent.length / 2)];
     const msEl = el.querySelector('[data-m="ms"]');
-    msEl.textContent = fmtMs(decision.ms);
-    msEl.title =
-      `last ${fmtMs(decision.ms)} · average ${fmtMs(avg)} over ${recent.length} pieces · ` +
-      `${decision.timing?.tokens ?? "?"} tokens in one pass`;
-    const spotsEl = el.querySelector('[data-m="spots"]');
-    spotsEl.textContent = `${decision.spots} → ${decision.states}`;
-    spotsEl.title = `${decision.spots} landing spots, ${decision.states} distinct descriptions scored in one batch`;
-    const top = decision.scored.slice(0, 4);
+    msEl.textContent = fmtMs(median);
+    msEl.parentElement.title =
+      `median of the last ${recent.length} pieces · last ${fmtMs(decision.ms)} · ` +
+      `${decision.states} descriptions and ${decision.timing?.tokens ?? "?"} tokens in one pass`;
+    el.querySelector('[data-m="spots"]').textContent = String(decision.spots);
+    const top = decision.scored.slice(0, 3);
     ui.spots.innerHTML = top.map(spotHTML).join("");
     requestAnimationFrame(() => {
       ui.spots.querySelectorAll(".pbar i").forEach((bar, i) => (bar.style.width = `${(top[i].p * 100).toFixed(1)}%`));
@@ -759,25 +712,13 @@ export function mount(el, { session }) {
     showStatus();
   }
 
-  function addTrail(type, keys, p, ms, lines) {
-    const item = document.createElement("li");
-    const cleared = lines ? ` <span style="color:var(--accent-2)">+${lines}</span>` : "";
-    item.innerHTML = [
-      `<span class="pc" style="background:${COLORS[type]}"></span>`,
-      `<span class="tk">${keys.map((key) => GLYPH[key]).join(" ")}${cleared}</span>`,
-      `<span class="pp">${pct(p)}</span>`,
-      `<span class="ms">${fmtMs(ms)}</span>`,
-    ].join("");
-    ui.trail.prepend(item);
-    while (ui.trail.children.length > 6) ui.trail.lastChild.remove();
-  }
-
   function planHTML(plan) {
-    const keys = plan.keys.map((key, i) => {
-      const state = i < plan.pressed ? "done" : i === plan.pressed ? "now" : "";
-      return `<kbd class="${state}" title="${KEY_NAME[key]}">${GLYPH[key]}</kbd>`;
-    });
-    return `${keys.join("")}<span class="pl-t">toward the ${pct(plan.best.p)} spot</span>`;
+    return plan.keys
+      .map((key, i) => {
+        const state = i < plan.pressed ? "done" : i === plan.pressed ? "now" : "";
+        return `<kbd class="${state}" title="${KEY_NAME[key]}">${GLYPH[key]}</kbd>`;
+      })
+      .join("");
   }
 
   // the keys and the plan strip follow the piece every frame; the DOM changes only when they do
@@ -797,13 +738,8 @@ export function mount(el, { session }) {
       tile.querySelector(".kv").textContent = value == null ? "–" : pct(value);
       tile.querySelector(".kb i").style.width = `${value == null ? 0 : (value * 100).toFixed(1)}%`;
     }
-    if (plan) {
-      ui.plan.innerHTML = planHTML(plan);
-    } else {
-      let waiting = "Auto is off.";
-      if (ai.enabled) waiting = ai.busy ? "The model is scoring the landing spots…" : "Waiting for the next piece…";
-      ui.plan.innerHTML = `<span class="pl-t">${waiting}</span>`;
-    }
+    if (plan) ui.plan.innerHTML = planHTML(plan);
+    else ui.plan.innerHTML = ai.enabled && ai.busy ? `<span class="pl-t">scoring…</span>` : "";
   }
 
   // The loop: fixed steps, bounded catch-up; stops while the view is hidden
@@ -855,6 +791,7 @@ export function mount(el, { session }) {
   return {
     show() {
       visible = true;
+      document.body.classList.toggle("t-clip", CLIP);
       layout();
       lastFrame = performance.now();
       if (!raf) raf = requestAnimationFrame(frame);
@@ -864,6 +801,7 @@ export function mount(el, { session }) {
     },
     hide() {
       visible = false;
+      document.body.classList.remove("t-clip");
       onBlur();
       if (started && !game.paused && !game.over) {
         // an Auto game picks up where it was; a human game waits for an explicit resume
