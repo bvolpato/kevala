@@ -6,18 +6,23 @@ const log = (line) => {
   logNode.textContent += `${line}\n`;
 };
 
-const U = GPUBufferUsage;
+let U;
 const lostDevices = new WeakMap();
 let activeDevice = null;
 const DEFAULT_CASES = [
   [44, 3072, 1024],
   [44, 5248, 1024],
   [44, 1024, 2624],
+  [44, 1024, 1024],
+  [44, 4096, 1024],
+  [44, 1024, 4096],
   [140, 3072, 1024],
   [512, 3072, 1024],
   [512, 5248, 1024],
   [32, 8192, 1024],
   [128, 1024, 3584],
+  [128, 1024, 2048],
+  [128, 5120, 1024],
   [512, 7168, 1024],
   [45, 132, 96],
 ];
@@ -126,6 +131,9 @@ function compareCpu(input, values, kernel, mode, withBias) {
     const col = index % input.N;
     const expected = cpuValue(input, row, col, mode, withBias);
     const actual = values[index];
+    if (!Number.isFinite(actual) || !Number.isFinite(expected)) {
+      return { ok: false, message: `non-finite result at row ${row}, col ${col}`, mode, withBias };
+    }
     const abs = Math.abs(actual - expected);
     const relative = abs / Math.max(1, Math.abs(expected));
     if (abs > maxAbs) {
@@ -274,6 +282,7 @@ async function main() {
   const requestedKernels = (query.get("kernels") || "runtime").split(",").filter(Boolean);
   const shapes = parseCases(query);
   const gpu = await requestDevice();
+  U = GPUBufferUsage;
   const device = gpu.device;
   activeDevice = device;
   lostDevices.set(device, null);
@@ -431,10 +440,9 @@ async function main() {
 }
 
 window.gpuBench = { status: "running", backend: "webgpu" };
-main().catch((error) => {
-  const message = error?.stack || error?.message || String(error);
+main().finally(() => activeDevice?.destroy()).catch((error) => {
+  const message = `${error?.message || error}\n${error?.stack || ""}`;
   const previous = window.gpuBench && typeof window.gpuBench === "object" ? window.gpuBench : {};
   window.gpuBench = { ...previous, status: "error", backend: "webgpu", error: message };
-  activeDevice?.destroy();
   log(`ERROR ${message}`);
 });
