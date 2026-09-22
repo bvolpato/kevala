@@ -7,6 +7,18 @@ outcomes, and every selected placement are in [the results JSON](benchmarks/mode
 Hardware: RTX 5070 Ti, 16 GB, NVIDIA 595.71.05, Ryzen 9 9950X3D, Ubuntu, Firefox 152.0.3.
 Browser inference used hardware WebGPU through Vulkan. Runs were serialized.
 
+## Published packs
+
+All five new packs, their manifests, the model card, and license notices are published at
+[Hugging Face revision `45da415`](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).
+Public metadata confirms every new pack's byte count and SHA-256, and each public range request
+returns its valid pack header. Remote manifests and notices match the local files. The existing
+Laya and Kev-0.8B pack hashes are unchanged.
+
+Loading `semif-qwen3.5-0.8b` by name from this hosted revision, with browser caching disabled,
+also passed all 12 Firefox GPU reference decisions (maximum score difference 0.03083).
+The results JSON records the publication checks and hosted run under `publication`.
+
 ## Integration with the latest kernels
 
 After integrating `main` at `5867706`, Firefox parity passed again for all six decoder packs:

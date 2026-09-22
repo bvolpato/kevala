@@ -7,7 +7,7 @@ import { clearTuning } from "./cpu-policy.js";
 export const CACHE_NAME = "kevala-v1";
 
 /** Pre-converted int8 packs of the models below, pinned to one commit of their Hugging Face repo. */
-const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/e75a06d9329e19fe879f44cfcce33914fb96dade";
+const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/45da41504c6c117eca940103e49dd5eb1c3eab4f";
 
 /**
  * Known models, by name. Each downloads its pre-converted pack (`hosted`); when that is
@@ -46,8 +46,7 @@ export const MODELS = {
     arch: "kev", label: "Kev-4B, Qwen3.5 decoder with a trained pointer head",
     repo: "jaredpalmer/kev-4b", revision: "485ace8703592fcf405488b262449990824cfed1",
     base: { repo: "Qwen/Qwen3.5-4B-Base", revision: "1001bb4d826a52d1f399e183466143f4da7b741b" },
-    // hosted: `${PACKS}/kev-4b-q8.kevala` once uploaded (docs/packs.md)
-    license: "apache-2.0", hosted: null,
+    license: "apache-2.0", hosted: `${PACKS}/kev-4b-q8.kevala`,
     browserConvert: false, download: 9502534940, pack: 4756384192, block: 32,
     packSha256: "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
   },
@@ -55,8 +54,7 @@ export const MODELS = {
     arch: "kev", label: "Kev-9B, Qwen3.5 decoder with a trained pointer head",
     repo: "jaredpalmer/kev-9b", revision: "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
     base: { repo: "Qwen/Qwen3.5-9B-Base", revision: "68c46c4b3498877f3ef123c856ecfde50c39f404" },
-    // hosted: `${PACKS}/kev-9b-q8.kevala` once uploaded
-    license: "apache-2.0", hosted: null,
+    license: "apache-2.0", hosted: `${PACKS}/kev-9b-q8.kevala`,
     browserConvert: false, download: 19530970823, pack: 8963899968, block: 32,
     packSha256: "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
   },
@@ -67,8 +65,7 @@ export const MODELS = {
   ].map(([size, upstream, revision, download, pack, packSha256]) => [`semif-qwen3.5-${size}`, {
     arch: "kev", label: `SemIf-style Qwen3.5-${upstream}, frozen model with direct option scoring`,
     repo: `Qwen/Qwen3.5-${upstream}`, revision, license: "apache-2.0",
-    // hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala` once uploaded
-    hosted: null,
+    hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala`,
     browserConvert: false, download, pack, packSha256, block: 32,
   }])),
 };

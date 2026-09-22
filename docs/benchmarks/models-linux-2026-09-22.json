@@ -9879,5 +9879,277 @@
       "--disable-vulkan-surface"
     ],
     "limitations": "Default headless Chrome exposed no adapter. The flags enabled the NVIDIA hardware adapter and subgroup path. This adapter did not expose shader-f16, so its tiled f16 attention path was not executed."
+  },
+  "publication": {
+    "repository": "bvolpato/kevala-packs",
+    "revision": "45da41504c6c117eca940103e49dd5eb1c3eab4f",
+    "verified": [
+      {
+        "file": "kev-4b-q8.kevala",
+        "bytes": 4756384192,
+        "sha256": "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+        "httpRange": 206
+      },
+      {
+        "file": "kev-9b-q8.kevala",
+        "bytes": 8963899968,
+        "sha256": "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+        "httpRange": 206
+      },
+      {
+        "file": "semif-qwen3.5-0.8b-q8.kevala",
+        "bytes": 855225984,
+        "sha256": "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a",
+        "httpRange": 206
+      },
+      {
+        "file": "semif-qwen3.5-2b-q8.kevala",
+        "bytes": 2127742976,
+        "sha256": "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2",
+        "httpRange": 206
+      },
+      {
+        "file": "semif-qwen3.5-4b-q8.kevala",
+        "bytes": 4751303104,
+        "sha256": "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e",
+        "httpRange": 206
+      }
+    ],
+    "modelCardAndLicensesMatch": true,
+    "existingPacksUnchanged": true,
+    "hostedParity": {
+      "argmax": 12,
+      "backend": "webgpu",
+      "crossOriginIsolated": false,
+      "details": [
+        {
+          "actual": [
+            0.28885236382484436,
+            0.016562284901738167,
+            0.694585382938385
+          ],
+          "argmax": true,
+          "expected": [
+            0.26214390993118286,
+            0.015057843178510666,
+            0.722798228263855
+          ],
+          "id": "readme_ticket::department",
+          "maxDp": 0.02821284532546997,
+          "question": "department"
+        },
+        {
+          "actual": [
+            0.2073005735874176,
+            0.79269939661026
+          ],
+          "argmax": true,
+          "expected": [
+            0.20559540390968323,
+            0.7944045662879944
+          ],
+          "id": "readme_ticket::escalate",
+          "maxDp": 0.001705169677734375,
+          "question": "escalate"
+        },
+        {
+          "actual": [
+            0.058920372277498245,
+            0.920510232448578,
+            0.020569419488310817
+          ],
+          "argmax": true,
+          "expected": [
+            0.05424409359693527,
+            0.9222995042800904,
+            0.023456498980522156
+          ],
+          "id": "readme_ticket::frustration",
+          "maxDp": 0.004676278680562973,
+          "question": "frustration"
+        },
+        {
+          "actual": [
+            0.19700054824352264,
+            0.8029994964599609
+          ],
+          "argmax": true,
+          "expected": [
+            0.1928277462720871,
+            0.8071722388267517
+          ],
+          "id": "email_object_state::churn",
+          "maxDp": 0.004172801971435547,
+          "question": "churn"
+        },
+        {
+          "actual": [
+            0.04300029203295708,
+            0.9569997191429138
+          ],
+          "argmax": true,
+          "expected": [
+            0.03883706778287888,
+            0.9611629247665404
+          ],
+          "id": "email_object_state::refund",
+          "maxDp": 0.004163224250078201,
+          "question": "refund"
+        },
+        {
+          "actual": [
+            0.31972840428352356,
+            0.680271565914154
+          ],
+          "argmax": true,
+          "expected": [
+            0.31211891770362854,
+            0.6878811120986938
+          ],
+          "id": "injection::q",
+          "maxDp": 0.007609546184539795,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.27035924792289734,
+            0.35511693358421326,
+            0.27414578199386597,
+            0.10037800669670104
+          ],
+          "argmax": true,
+          "expected": [
+            0.25476783514022827,
+            0.349653959274292,
+            0.28729018568992615,
+            0.1082880049943924
+          ],
+          "id": "list_state_numbers::q",
+          "maxDp": 0.015591412782669067,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.2523106336593628,
+            0.7476893663406372
+          ],
+          "argmax": true,
+          "expected": [
+            0.2438386231660843,
+            0.7561613917350769
+          ],
+          "id": "game_candidates::clean",
+          "maxDp": 0.008472025394439697,
+          "question": "clean"
+        },
+        {
+          "actual": [
+            0.6589313745498657,
+            0.07067882269620895,
+            0.2703897953033447
+          ],
+          "argmax": true,
+          "expected": [
+            0.6281015276908875,
+            0.0811614990234375,
+            0.29073700308799744
+          ],
+          "id": "game_candidates::where",
+          "maxDp": 0.03082984685897827,
+          "question": "where"
+        },
+        {
+          "actual": [
+            0.48822712898254395,
+            0.23216864466667175,
+            0.2796042561531067
+          ],
+          "argmax": true,
+          "expected": [
+            0.4798126518726349,
+            0.23524761199951172,
+            0.284939706325531
+          ],
+          "id": "multilingual_marks::q",
+          "maxDp": 0.008414477109909058,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.053007859736680984,
+            0.9469921588897704
+          ],
+          "argmax": true,
+          "expected": [
+            0.047262080013751984,
+            0.9527379274368286
+          ],
+          "id": "long_state::q",
+          "maxDp": 0.005745779722929001,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.28345778584480286,
+            0.7165421843528748
+          ],
+          "argmax": true,
+          "expected": [
+            0.27404770255088806,
+            0.7259522676467896
+          ],
+          "id": "long_state::r",
+          "maxDp": 0.009410083293914797,
+          "question": "r"
+        }
+      ],
+      "done": true,
+      "flavor": "relaxed",
+      "gpu": "WebGPU",
+      "hardwareConcurrency": 32,
+      "max": 598,
+      "maxDp": 0.03082984685897827,
+      "maxDpLimit": 0.05,
+      "model": {
+        "author": "Qwen team (weights); SemIf (decision method)",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+        "base_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "semif-qwen3.5-0.8b",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+        "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+      },
+      "p50": 99,
+      "questions": 12,
+      "reference": "./tests/fixtures/golden-semif.json",
+      "referenceSource": {
+        "device": "cuda:0",
+        "dtype": "float32",
+        "hidden_size": 1024,
+        "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+        "torch_version": "2.14.0+cu130",
+        "transformers_version": "5.17.0",
+        "vocab_size": 248320
+      },
+      "runner": {
+        "actualThreads": 1,
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "selectedFlavor": "relaxed",
+      "threads": 1,
+      "packSource": "Hugging Face, named model, cache disabled"
+    }
   }
 }
