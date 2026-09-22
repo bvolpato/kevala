@@ -115,6 +115,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         let row = m0 + lid.y + 16u * i;
         if (row >= T) { break; }
         let o = row * N + col;
+        // Separate the array and vector reads: nested indexing loses components on NVIDIA/Naga.
         let values = acc[i * {{GROUPS}}u + gg];
         let v0 = values[j];
         if (splits > 1u) {

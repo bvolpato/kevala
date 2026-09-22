@@ -16,8 +16,9 @@ const DEFAULT_CASES = [
   [140, 3072, 1024],
   [512, 3072, 1024],
   [512, 5248, 1024],
-  [32, 6144, 2048],
-  [128, 2048, 4096],
+  [32, 8192, 1024],
+  [128, 1024, 3584],
+  [512, 7168, 1024],
   [45, 132, 96],
 ];
 
@@ -112,7 +113,7 @@ function finiteSummary(values) {
 }
 
 function compareCpu(input, values, kernel, mode, withBias) {
-  const all = input.T === 45 && input.N === 132 && input.K === 96;
+  const all = input.T * input.N <= 8192;
   const indices = sampleIndices(input.T, input.N, all);
   const absTolerance = kernel.f16 ? 0.03 : 0.0005;
   const relativeTolerance = kernel.f16 ? 0.002 : 0.0001;
@@ -340,7 +341,7 @@ async function main() {
     const outputs = {};
     const timings = [];
     const variantObjects = variantsFor(T);
-    const shouldCheckEpilogues = T === 45 && N === 132 && K === 96;
+    const shouldCheckEpilogues = T * N <= 8192;
     for (const variant of variantObjects) {
       const pipes = await getPipelines(variant, T);
       const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, W, S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
@@ -368,7 +369,7 @@ async function main() {
       const cpu = compareCpu(input, outputs[variant.label], variant, 0, false);
       correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode: 0, bias: false, ...cpu });
       if (!cpu.ok) correctness.ok = false;
-      if (shouldCheckEpilogues && variant.label === labels[0]) {
+      if (shouldCheckEpilogues) {
         for (const mode of [1, 2]) {
           const withBias = true;
           await checked(device, async () => {
