@@ -1,13 +1,13 @@
 ---
 name: kevala
-description: Add fast, private, typed decisions to a web page with kevala, which runs System 1 decision models (Laya, Kev, and SemIf) in the browser on WebGPU or WebAssembly, with no server and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Kev, SemIf, typed decisions, or a System One API in the browser.
+description: Add fast, private, typed decisions to a web page with kevala, which runs Laya, Kev, SemIf, and Gemma 4 in the browser on WebGPU, with WebAssembly support for smaller packs, no server, and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Kev, SemIf, Gemma 4, typed decisions, or a System One API in the browser.
 ---
 
 # Integrating kevala
 
 kevala answers typed questions about a piece of text inside the page. You pass a `state` (text or JSON)
-and a dict of questions; it returns a probability for every option of every question in one forward
-pass. It never generates text. Weights download once from Hugging Face as an int8 pack and stay in
+and a dict of questions; it returns a probability for every option of every question in one
+request. It never generates text. Weights download once from Hugging Face as an int8 pack and stay in
 the site's origin storage; nothing is sent anywhere.
 
 Reach for it when the page needs a decision (which queue, is this toxic, how urgent, should this
@@ -23,22 +23,24 @@ with a bundler.
 import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
 const kevala = await Kevala.load({
-  model: "laya",               // or a Kev/SemIf model name, or a hosted .kevala URL
+  model: "laya",               // or a Kev, SemIf, or Gemma 4 model name, or a hosted .kevala URL
   onProgress: (p) => show(p),  // {phase, file, loaded, total}: download, convert, cache, init, warmup
 });
 ```
 
 Known names include `kev-0.8b`, `kev-4b`, `kev-9b`, `semif-qwen3.5-0.8b`,
-`semif-qwen3.5-2b`, and `semif-qwen3.5-4b`.
+`semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
 
-- First visit: Laya downloads a 479 MB int8 pack; Kev packs range from 857 MB to 8.96 GB; and
-  SemIf Qwen3.5 packs range from 855 MB to 4.75 GB. `from: "checkpoint"` downloads and converts
-  original weights in the browser for Laya and Kev-0.8B only. The larger Kev and all SemIf choices
+- First visit: Laya downloads a 479 MB int8 pack; Kev packs range from 857 MB to 8.96 GB;
+  SemIf Qwen3.5 packs range from 855 MB to 4.75 GB; and Gemma 4 packs are 5.22 GB or 8.41 GB.
+  `from: "checkpoint"` downloads and converts
+  original weights in the browser for Laya and Kev-0.8B only. The larger Kev, SemIf, and Gemma choices
   use converted packs. Later visits reuse browser storage and avoid another download; small packs
   often load in under a second. Always show progress and load on a user action (a button), never on
   page load for every visitor.
-- `kevala.info.backend` is `webgpu` or `wasm-*`. WebGPU is 10-50x faster; the WebAssembly fallback works
-  everywhere but a request can take seconds.
+- `kevala.info.backend` is `webgpu` or `wasm-*`. Performance depends on the model and hardware.
+  Gemma 4 requires WebGPU in the browser. Other large packs can also exceed WebAssembly's
+  allocation limits; consult the model's memory requirements before offering CPU fallback.
 - Call `kevala.dispose()` when the feature goes away.
 
 ## Ask
@@ -56,12 +58,13 @@ r.answers.churn.noul;                // P(true)
 ```
 
 Ask everything about one state in one `decide` call. For many states (candidate moves, a list of
-emails), use `decideMany([{ state, questions }, ...])`: one forward pass for all of them. Concurrent
-`decide` calls are also packed together automatically.
+emails), use `decideMany([{ state, questions }, ...])`. Concurrent `decide` calls are also batched
+automatically. The backend determines the number of forward passes; Gemma currently performs
+one full pass per question.
 
 Responses follow each model's reference format: Laya rounds to 4 places and adds `confidence` and
 `action.act_probability`; Kev rounds to 2 places and adds `raw_probabilities` at full precision;
-SemIf uses the Kev-shaped response, adds `raw_probabilities`, and reports conditional option scores
+SemIf and Gemma use the Kev-shaped response, add `raw_probabilities`, and report conditional option scores
 that are not calibrated decision confidence.
 
 ## Questions that work
@@ -88,12 +91,17 @@ that are not calibrated decision confidence.
 Pick thresholds from labelled examples, not 0.5 by default, and send the unsure middle somewhere
 slower (a person, an LLM). Probabilities are the product; accuracy out of the box is modest on nuanced
 or graded questions. Measure on 50-200 of the site's own examples and report the numbers.
+The [decision benchmark](https://github.com/bvolpato/kevala/blob/main/BENCHMARK.md) compares all
+supported packs and tests sensitivity to option order. It is a starting point for evaluation,
+not a guarantee for a different task.
 
 ## Server side
 
 The same engine runs in Node.js, Deno or Bun, in one instance, without workers or a GPU. It reads a
 pack file: download one from [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs)
 (`hf download bvolpato/kevala-packs laya-q8.kevala`) or convert one with the CLI.
+This path uses WebAssembly and cannot load Gemma's packs. Use the native 64-bit CLI for Gemma
+CPU inference with sufficient memory.
 
 ```js
 import { loadFile } from "kevala/node"; // pnpm add kevala
@@ -106,7 +114,7 @@ const r = kevala.decide("I want my money back.", { refund: { type: "noul", instr
 - Pages must be served over HTTPS or localhost (storage and WebGPU need a secure context).
 - No special headers are needed. Cross-origin isolation is not required.
 - To serve the weights from your own host, put the `.kevala` file from bvolpato/kevala-packs (or one
-  made with `kevala convert`, `kevala convert-kev`, or `kevala convert-semif`) behind `Content-Length` and byte ranges, and pass
+  made with `kevala convert`, `kevala convert-kev`, `kevala convert-semif`, or `kevala convert-gemma`) behind `Content-Length` and byte ranges, and pass
   its URL as `model`.
 
 ## Examples to copy

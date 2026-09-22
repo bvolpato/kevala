@@ -22,6 +22,43 @@ function plan(gpu, states) {
   return gpu.plan(batch, Uint32Array.from(states.flat()));
 }
 
+function batch(states) {
+  let offset = 0;
+  const ranges = states.map((ids) => {
+    const range = [offset, ids.length];
+    offset += ids.length;
+    return range;
+  });
+  return {
+    T1: offset,
+    T2: states.length,
+    states: ranges,
+    branches: states.map((_, index) => [index, 1, index]),
+    rows: states.map((_, index) => index),
+  };
+}
+
+function fakeForward(gpu) {
+  gpu.cfg = { hidden: 1 };
+  gpu.cap = { S: 4 };
+  gpu.carry = [];
+  gpu.ops = [[], []];
+  gpu.ensureCarries = () => {};
+  gpu.ensure = () => {};
+  gpu.encode = () => {};
+  gpu.device = {
+    pushErrorScope() {},
+    popErrorScope: async () => null,
+    queue: { writeBuffer() {}, submit() {} },
+    createCommandEncoder: () => ({ copyBufferToBuffer() {}, finish: () => ({}) }),
+  };
+  gpu.readback = {
+    mapAsync: async () => {},
+    getMappedRange: () => new ArrayBuffer(16),
+    unmap() {},
+  };
+}
+
 test("fresh prefixes run independently while exact duplicates share their destination", () => {
   const gpu = cache();
   const prefix = tokens(1);
@@ -56,6 +93,36 @@ test("an evicted prefix cannot become a parent after its slot has been reassigne
   assert.deepEqual(result.segs.map((s) => [s.parent, s.dst, s.plen]), [[NO_PARENT, 0, 0], [NO_PARENT, 1, 0], [2, 3, 32]]);
   assert.deepEqual(result.copies, [{ from: 2048, to: 3072, rows: 32 }]);
   assert.deepEqual(gpu.stats, { hits: 0, extensions: 1, misses: 2, tokensSaved: 32 });
+});
+
+test("disabled state cache misses warm prefixes but shares duplicates within a pass", async (t) => {
+  const oldMapMode = Object.getOwnPropertyDescriptor(globalThis, "GPUMapMode");
+  Object.defineProperty(globalThis, "GPUMapMode", { configurable: true, value: { READ: 1 } });
+  t.after(() => oldMapMode ? Object.defineProperty(globalThis, "GPUMapMode", oldMapMode) : delete globalThis.GPUMapMode);
+
+  const prefix = tokens(1);
+  const gpu = cache([prefix]);
+  gpu.stateCacheEnabled = false;
+  fakeForward(gpu);
+  const plans = [];
+  const originalPlan = gpu.plan;
+  gpu.plan = (...args) => {
+    const result = originalPlan.apply(gpu, args);
+    plans.push(result);
+    return result;
+  };
+
+  const warmBatch = batch([prefix]);
+  await gpu.forward(new Float32Array(warmBatch.T1), new Float32Array(warmBatch.T2), warmBatch, Uint32Array.from(prefix));
+  assert.deepEqual(plans[0].segs.map((s) => [s.parent, s.len, s.plen]), [[NO_PARENT, 32, 0]]);
+  assert.deepEqual(plans[0].copies, []);
+
+  const duplicateBatch = batch([prefix, prefix]);
+  await gpu.forward(new Float32Array(duplicateBatch.T1), new Float32Array(duplicateBatch.T2), duplicateBatch, Uint32Array.from([...prefix, ...prefix]));
+  assert.deepEqual(plans[1].segs.map((s) => [s.parent, s.len, s.plen]), [[NO_PARENT, 32, 0]]);
+  assert.deepEqual(plans[1].copies, []);
+  assert.equal(plans[1].carries[0], plans[1].carries[1]);
+  assert.deepEqual(gpu.stats, { hits: 0, extensions: 0, misses: 2, tokensSaved: 0 });
 });
 
 test("a rejected GPU pass cannot leave a reusable carry for the next request", async () => {

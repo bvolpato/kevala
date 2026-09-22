@@ -1,0 +1,71 @@
+{
+  "counts": {
+    "kevala_authored": 36,
+    "semif_authored": 144,
+    "semif_perturbations": 108
+  },
+  "expanded_counts": {
+    "kevala_authored": 108,
+    "semif_authored": 432,
+    "semif_perturbations": 324,
+    "total": 864
+  },
+  "kevala": {
+    "families": {
+      "candidate_selection": 12,
+      "evidence_interpretation": 12,
+      "rule_application": 12
+    },
+    "groups": 36,
+    "options": {
+      "3": 36
+    },
+    "path": "kevala-authored36.jsonl",
+    "rows": 36,
+    "sha256": "2b1c67080104f910412457ef77a6d37575be0b07d4e9d47c15a3da24346233c2"
+  },
+  "permutations": [
+    "identity",
+    "rotate1",
+    "rotate2"
+  ],
+  "semif": {
+    "fixtures": [
+      {
+        "families": {
+          "candidate_selection": 48,
+          "evidence_interpretation": 48,
+          "rule_application": 48
+        },
+        "groups": 36,
+        "options": {
+          "3": 144
+        },
+        "path": "semif-authored144.jsonl",
+        "rows": 144,
+        "sha256": "8162d1c73f925af64453f1ec05ef36d583b3815bf698e60f0d454bd11537e079"
+      },
+      {
+        "families": {
+          "candidate_selection": 36,
+          "evidence_interpretation": 36,
+          "rule_application": 36
+        },
+        "groups": 36,
+        "options": {
+          "3": 108
+        },
+        "path": "semif-perturbations108.jsonl",
+        "rows": 108,
+        "sha256": "1dd7ccf80518d0e34886478ca23982aa726e9daccd343b9e95cedaf6b569bec4"
+      }
+    ],
+    "license": "MIT",
+    "license_sha256": "f765f2140f8507a8f0d81ec0fd2c4bd72fe6a066841ef27883ff876a76bf61be",
+    "perturbation_manifest_sha256": "f81f93b57e0b46b0164b6eb6d65a419604c6af37a5aaba55c413f76581f2fef8",
+    "repository": "https://github.com/TheoLeeCJ/SemIf",
+    "revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37"
+  },
+  "source_policy": "SemIf fixture bytes are copied unchanged after revision, license, and SHA-256 checks.",
+  "version": "kevala-decision-v1"
+}

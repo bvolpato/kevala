@@ -68,6 +68,12 @@ jobs:
         run: pnpm check
       - name: JavaScript regression tests
         run: pnpm test
+      - name: Validate published decision results
+        run: |
+          pnpm exec node scripts/report-decisions.mjs \
+            --results benchmarks/results/decisions-linux-2026-09-22 \
+            --reference benchmarks/results/decisions-linux-2026-09-22/gemma-base-vs-it.json \
+            --output "$RUNNER_TEMP/decision-summary.json"
 
   package:
     needs: [rust, js]

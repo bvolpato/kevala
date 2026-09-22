@@ -130,6 +130,10 @@ cache is impossible; it packs every question of a request into one pass instead.
 
 ## Fidelity
 
+Decision accuracy, option-order stability, and browser latency for all nine supported packs:
+[BENCHMARK.md](BENCHMARK.md). The report includes Gemma base versus IT and Q8 versus BF16
+comparisons, with raw outputs and reproducible scoring.
+
 Reference checks for Laya, Kev, and SemIf: [GPU validation](docs/semif-matmul.md#correctness-and-feature-fallbacks).
 Gemma 4 checks: [Gemma 4 notes](docs/gemma4.md#verification). Conversion fidelity and seeded game
 results: [model validation](docs/model-benchmarks.md).

@@ -34,11 +34,15 @@ from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 
 
+DECISION_PROBABILITY_SUM_TOLERANCE = 0.0005
+SHA256_RE = re.compile(r"[0-9a-f]{64}")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--result",
-        choices=("gpu", "bench", "latency", "parity", "kernels", "cache", "tetris"),
+        choices=("gpu", "bench", "latency", "parity", "decision", "kernels", "cache", "tetris"),
         default="gpu",
         help="page result contract to validate",
     )
@@ -85,6 +89,7 @@ DEFAULT_URLS = {
     "kernels": "http://127.0.0.1:18086/dev/kernels.html",
     "cache": "http://127.0.0.1:18086/dev/cache-test.html?backend=webgpu",
     "tetris": "http://127.0.0.1:18086/dev/tetris-eval.html#model=kev-4b&backend=webgpu&pieces=20&seeds=1,2,3",
+    "decision": "http://127.0.0.1:18086/dev/decision-bench.html?model=laya&backend=webgpu&pack=local&permutations=3&dataset=all",
 }
 
 
@@ -96,6 +101,7 @@ RESULT_GLOBALS = {
     "kernels": "kernelResults",
     "cache": "ct",
     "tetris": "evalResult",
+    "decision": "decisionBench",
 }
 
 
@@ -248,6 +254,167 @@ def latency_metric(result: dict, expected_backend: str = "webgpu") -> float:
     return metric
 
 
+def manifest_file_entry(manifest: dict, path: str) -> dict | None:
+    kevala = manifest.get("kevala")
+    if isinstance(kevala, dict) and kevala.get("path") == path:
+        return kevala
+    semif = manifest.get("semif")
+    fixtures = semif.get("fixtures") if isinstance(semif, dict) else None
+    if isinstance(fixtures, list):
+        for entry in fixtures:
+            if isinstance(entry, dict) and entry.get("path") == path:
+                return entry
+    return None
+
+
+def validate_decision_metadata(result: dict) -> None:
+    """Validate provenance and timing controls emitted by the decision page."""
+    metadata = result.get("metadata")
+    if not isinstance(metadata, dict):
+        raise ValueError("decision metadata is not an object")
+    model_info = metadata.get("modelInfo")
+    if not isinstance(model_info, dict):
+        raise ValueError("decision metadata is missing the loaded model header")
+    model_name = result.get("model")
+    if not isinstance(model_name, str) or not model_name or model_info.get("name") != model_name:
+        raise ValueError("decision result model does not match the loaded model header")
+    for key in ("name", "revision", "source"):
+        if not isinstance(model_info.get(key), str) or not model_info[key]:
+            raise ValueError(f"decision model header is missing {key}")
+    model_arch = metadata.get("modelArch")
+    if not isinstance(model_arch, str) or not model_arch:
+        raise ValueError("decision metadata is missing the loaded architecture")
+    if result.get("modelInfo") != model_info or result.get("modelArch") != model_arch:
+        raise ValueError("decision result and metadata model headers disagree")
+
+    state_cache = metadata.get("stateCache")
+    if not isinstance(state_cache, dict) or state_cache.get("enabled") is not False:
+        raise ValueError(f"decision state cache must be disabled, got {state_cache!r}")
+    if result.get("stateCache") != state_cache:
+        raise ValueError("decision result and metadata state cache policies disagree")
+    clock = metadata.get("clock")
+    if not isinstance(clock, dict) or clock.get("quantized") is not False or clock.get("fine") is not True:
+        raise ValueError(f"decision benchmark requires a fine, non-quantized clock, got {clock!r}")
+    min_delta = clock.get("minDeltaMs")
+    if not finite_number(min_delta) or float(min_delta) <= 0 or float(min_delta) >= 50:
+        raise ValueError(f"decision clock has no fine resolution: {clock!r}")
+
+    manifest = metadata.get("datasetManifest")
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("version"), str) or not manifest["version"]:
+        raise ValueError("decision metadata is missing the parsed dataset manifest")
+    manifest_sha = metadata.get("datasetManifestSha256")
+    if not isinstance(manifest_sha, str) or SHA256_RE.fullmatch(manifest_sha) is None:
+        raise ValueError("decision metadata has an invalid dataset manifest SHA-256")
+    files = metadata.get("datasetFiles")
+    file_hashes = metadata.get("datasetFileHashes")
+    if not isinstance(files, list) or not files or any(not isinstance(path, str) for path in files) or len(set(files)) != len(files):
+        raise ValueError("decision metadata has no valid dataset file list")
+    if not isinstance(file_hashes, dict):
+        raise ValueError("decision metadata is missing dataset file hashes")
+    if set(file_hashes) != set(files):
+        raise ValueError("decision dataset file hashes do not match the selected files")
+    for path in files:
+        entry = manifest_file_entry(manifest, path)
+        actual = file_hashes.get(path)
+        if not isinstance(entry, dict) or not isinstance(actual, dict):
+            raise ValueError(f"decision dataset provenance is missing {path}")
+        if actual.get("rows") != entry.get("rows") or not isinstance(actual.get("rows"), int) or actual["rows"] <= 0:
+            raise ValueError(f"decision dataset row count does not match the manifest for {path}")
+        if actual.get("sha256") != entry.get("sha256") or SHA256_RE.fullmatch(str(actual.get("sha256"))) is None:
+            raise ValueError(f"decision dataset SHA-256 does not match the manifest for {path}")
+
+
+def validate_decision_probabilities(rows: list, probabilities: list) -> None:
+    """Require every emitted probability map to match its typed option set exactly."""
+    if len(probabilities) != len(rows):
+        raise ValueError("decision rawProbs count does not match timing rows")
+    for index, (row, probability) in enumerate(zip(rows, probabilities, strict=True)):
+        options = row.get("options") if isinstance(row, dict) else None
+        values = probability.get("probabilities") if isinstance(probability, dict) else None
+        if not isinstance(probability, dict) or probability.get("caseId") != row.get("caseId") or probability.get("permutation") != row.get("permutation"):
+            raise ValueError(f"decision probability row {index} has mismatched case/permutation identity")
+        if not isinstance(options, list) or any(not isinstance(option, str) for option in options) or len(set(options)) != len(options):
+            raise ValueError(f"decision timing row {index} has invalid option IDs")
+        if not isinstance(values, dict) or set(values) != set(options) or len(values) != len(options):
+            raise ValueError(f"decision probability row {index} has extra or missing option keys")
+        numbers = [values[option] for option in options]
+        if any(not finite_number(value) or float(value) < 0 or float(value) > 1 for value in numbers):
+            raise ValueError(f"decision probability row {index} has an invalid value")
+        if abs(sum(float(value) for value in numbers) - 1) > DECISION_PROBABILITY_SUM_TOLERANCE:
+            raise ValueError(f"decision probability row {index} does not sum to one within {DECISION_PROBABILITY_SUM_TOLERANCE}")
+
+
+def decision_metric(result: dict, expected_backend: str = "webgpu") -> float:
+    """Validate one-model decision quality and return the independent p50 latency metric."""
+    validate_backend(result, expected_backend)
+    if result.get("status") != "done" or result.get("done") is not True:
+        raise ValueError("decision benchmark did not finish")
+    for key in ("model", "modelRevision", "hash", "hashScope", "catalogHash", "catalogHashScope", "backend", "gpuInfo", "timingAllRows", "rawProbs", "quality", "latency", "metadata"):
+        if key not in result:
+            raise ValueError(f"decision result is missing {key}")
+    revision = result.get("modelRevision")
+    if not isinstance(revision, str) or not revision:
+        raise ValueError("decision result has no model revision")
+    pack_hash = result.get("hash")
+    if not isinstance(pack_hash, str) or not pack_hash:
+        raise ValueError("decision result has no catalog or header hash")
+    catalog_hash = result.get("catalogHash")
+    hash_scope = result.get("hashScope")
+    if catalog_hash is not None:
+        if SHA256_RE.fullmatch(str(catalog_hash)) is None or result.get("hash") != catalog_hash:
+            raise ValueError("decision catalog hash is invalid or disagrees with hash")
+        if hash_scope != "expected-catalog-pack-sha256" or result.get("catalogHashScope") != hash_scope:
+            raise ValueError("decision catalog hash must be labeled as an expected catalog value")
+    elif hash_scope != "pack-header-metadata-sha256" or result.get("catalogHashScope") is not None:
+        raise ValueError("decision header hash has an invalid scope")
+    validate_decision_metadata(result)
+    errors = result.get("errors")
+    if not isinstance(errors, list) or errors:
+        raise ValueError(f"decision benchmark reported errors: {errors!r}")
+    quality = result["quality"]
+    if not isinstance(quality, dict):
+        raise ValueError("decision quality is not an object")
+    total = quality.get("total")
+    valid = quality.get("valid")
+    correct = quality.get("correct")
+    invalid = quality.get("invalidCount")
+    if any(not isinstance(value, int) or isinstance(value, bool) for value in (total, valid, correct, invalid)) or total <= 0:
+        raise ValueError(f"decision quality counts are invalid: {quality!r}")
+    if valid != total or invalid != 0 or correct < 0 or correct > total:
+        raise ValueError(f"decision quality has invalid rows: {quality!r}")
+    if not finite_number(quality.get("accuracy")) or float(quality["accuracy"]) != correct / total:
+        raise ValueError(f"decision quality accuracy is inconsistent: {quality!r}")
+    rows = result["timingAllRows"]
+    if not isinstance(rows, list) or len(rows) != total:
+        raise ValueError(f"decision timing rows {len(rows) if isinstance(rows, list) else rows!r} != quality total {total}")
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ValueError(f"decision timing row {index} is not an object")
+        wall = row.get("wallMs")
+        if not finite_number(wall) or float(wall) <= 0:
+            raise ValueError(f"decision timing row {index} has invalid wallMs {wall!r}")
+        if not isinstance(row.get("caseId"), str) or not isinstance(row.get("permutation"), (int, str)) or row.get("permutation") == "":
+            raise ValueError(f"decision timing row {index} is missing its case/permutation identity")
+    probs = result["rawProbs"]
+    if not isinstance(probs, list) or len(probs) != total:
+        raise ValueError("decision rawProbs count does not match quality total")
+    validate_decision_probabilities(rows, probs)
+    latency = result["latency"]
+    if not isinstance(latency, dict):
+        raise ValueError("decision latency is not an object")
+    p50 = latency.get("p50Ms")
+    p95 = latency.get("p95Ms")
+    if not finite_number(p50) or not finite_number(p95) or float(p50) <= 0 or float(p95) <= 0 or float(p95) < float(p50):
+        raise ValueError(f"decision latency percentiles are invalid: {latency!r}")
+    if expected_backend == "webgpu":
+        gpu = result["gpuInfo"]
+        if not isinstance(gpu, dict) or gpu.get("available") is not True or gpu.get("isFallbackAdapter") is True:
+            raise ValueError(f"decision benchmark did not report a hardware WebGPU adapter: {gpu!r}")
+    result["metricMs"] = float(p50)
+    result["metric"] = "per-decision wall-clock p50 milliseconds; quality validated independently"
+    return float(p50)
+
+
 def kernels_metric(result: dict) -> float:
     if result.get("done") is not True:
         raise ValueError("kernel test page did not finish")
@@ -338,6 +505,12 @@ def create_browser(args: argparse.Namespace):
     options.binary_location = binary
     options.set_preference("dom.webgpu.enabled", True)
     options.set_preference("dom.webgpu.workers.enabled", True)
+    # Selenium creates a fresh temporary profile for this process. Relax Firefox's timer privacy
+    # settings only for the isolated decision benchmark profile, never for a user's browser.
+    if args.result == "decision":
+        options.set_preference("privacy.resistFingerprinting", False)
+        options.set_preference("privacy.reduceTimerPrecision", False)
+        options.set_preference("privacy.reduceTimerPrecision.jitter", False)
     options.add_argument("-no-remote")
     if not args.headed:
         options.add_argument("-headless")
@@ -407,7 +580,7 @@ def main() -> int:
         return 2
     url = args.url or (
         url_with_backend(DEFAULT_URLS[args.result], args.backend)
-        if args.result in {"bench", "latency", "parity", "cache", "tetris"}
+        if args.result in {"bench", "latency", "parity", "decision", "cache", "tetris"}
         else DEFAULT_URLS[args.result]
     )
     browser = None
@@ -445,6 +618,11 @@ def main() -> int:
         "headless": not args.headed and not args.cdp,
         "expectedBackend": args.backend,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
+        "timerPrivacy": {
+            "isolatedSeleniumProfile": not bool(args.cdp),
+            "firefoxPrecisionDisabled": args.result == "decision" and args.browser == "firefox" and not bool(args.cdp),
+            "note": "Firefox timer privacy settings are changed only in the temporary Selenium profile" if args.result == "decision" and args.browser == "firefox" and not args.cdp else "unchanged",
+        },
     }
     result["runner"] = runner
     if args.output:
@@ -480,6 +658,9 @@ def main() -> int:
         elif args.result == "cache":
             actual_threads = validate_backend(result, args.backend)
             metric = cache_metric(result, args.backend)
+        elif args.result == "decision":
+            actual_threads = validate_backend(result, args.backend)
+            metric = decision_metric(result, args.backend)
         elif args.result == "tetris":
             summary = result["summary"]
             games = result["games"]
@@ -501,7 +682,7 @@ def main() -> int:
         runner["actualThreads"] = actual_threads
     if args.output:
         args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if args.result in {"gpu", "bench", "latency"}:
+    if args.result in {"gpu", "bench", "latency", "decision"}:
         print(json.dumps({"backend": result.get("backend"), "method": result.get("method") or result.get("metric"), "metricMs": metric}, sort_keys=True), file=sys.stderr)
     elif args.result == "parity":
         print(json.dumps({"backend": result.get("backend"), "argmax": result.get("argmax"), "questions": result.get("questions"), "maxDp": metric}, sort_keys=True), file=sys.stderr)
