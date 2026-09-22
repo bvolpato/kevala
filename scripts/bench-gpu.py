@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--result",
-        choices=("gpu", "bench", "parity", "kernels"),
+        choices=("gpu", "bench", "latency", "parity", "kernels"),
         default="gpu",
         help="page result contract to validate",
     )
@@ -51,6 +51,7 @@ def parse_args() -> argparse.Namespace:
 DEFAULT_URLS = {
     "gpu": "http://127.0.0.1:18086/dev/gpu-bench.html",
     "bench": "http://127.0.0.1:18086/bench.html#auto&backend=webgpu&pack=local&model=laya&profile=1&runs=10&unique=1",
+    "latency": "http://127.0.0.1:18086/bench.html#auto&backend=webgpu&pack=local&model=laya&profile=0&runs=10&unique=1",
     "parity": "http://127.0.0.1:18086/parity.html#auto&backend=webgpu&pack=local",
     "kernels": "http://127.0.0.1:18086/dev/kernels.html",
 }
@@ -59,6 +60,7 @@ DEFAULT_URLS = {
 RESULT_GLOBALS = {
     "gpu": "gpuBench",
     "bench": "bench",
+    "latency": "bench",
     "parity": "parity",
     "kernels": "kernelResults",
 }
@@ -125,6 +127,26 @@ def parity_metric(result: dict, max_dp: float) -> float:
         raise ValueError(f"parity maxDp {max_observed!r} exceeds {max_dp}")
     result["maxDpLimit"] = max_dp
     return float(max_observed)
+
+
+def latency_metric(result: dict) -> float:
+    if result.get("backend") != "webgpu":
+        raise ValueError(f"latency backend is {result.get('backend')!r}, expected 'webgpu'")
+    cases = result.get("cases")
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("latency result has no cases")
+    medians: list[float] = []
+    for index, case in enumerate(cases):
+        if not isinstance(case, dict) or not finite_number(case.get("p50")) or float(case["p50"]) <= 0:
+            raise ValueError(f"latency case {index} has an invalid p50")
+        medians.append(float(case["p50"]))
+    metric = math.exp(sum(math.log(value) for value in medians) / len(medians))
+    if not math.isfinite(metric) or metric <= 0:
+        raise ValueError("latency geometric mean is invalid")
+    result["metricMs"] = metric
+    result["metric"] = "geometric mean of per-case wall-clock p50 milliseconds"
+    result["p50CaseMediansMs"] = medians
+    return metric
 
 
 def kernels_metric(result: dict) -> float:
@@ -207,6 +229,8 @@ def main() -> int:
                 raise ValueError(f"invalid metricMs: {metric!r}")
         elif args.result == "bench":
             metric = bench_metric(result)
+        elif args.result == "latency":
+            metric = latency_metric(result)
         elif args.result == "parity":
             metric = parity_metric(result, args.max_dp)
         else:
@@ -216,7 +240,7 @@ def main() -> int:
         return 1
     if args.output:
         args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if args.result == "gpu" or args.result == "bench":
+    if args.result in {"gpu", "bench", "latency"}:
         print(json.dumps({"backend": result.get("backend"), "method": result.get("method"), "metricMs": metric}, sort_keys=True), file=sys.stderr)
     elif args.result == "parity":
         print(json.dumps({"backend": result.get("backend"), "argmax": result.get("argmax"), "questions": result.get("questions"), "maxDp": metric}, sort_keys=True), file=sys.stderr)

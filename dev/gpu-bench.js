@@ -1,5 +1,5 @@
 import { kernelSource } from "./wgsl.js";
-import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, SPLIT_SCRATCH, pipeline } from "../js/src/gpu.js";
+import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, pipeline } from "../js/src/gpu.js";
 
 const logNode = document.getElementById("log");
 const log = (line) => {
@@ -54,10 +54,12 @@ function parseKernel(raw, T, config) {
   }
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
+  const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1] === "matmul_h";
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
+  if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: "matmul", f16, target: match[2] ? Number(match[2]) : 128, rows, groups };
+  return { label: raw, name: "matmul", f16, target, rows, groups };
 }
 
 function makeRng(seed) {
@@ -326,6 +328,11 @@ async function main() {
   for (let shapeIndex = 0; shapeIndex < shapes.length; shapeIndex++) {
     const shape = shapes[shapeIndex];
     const [T, N, K] = shape;
+    const variantObjects = variantsFor(T);
+    const partialFloats = Math.max(0, ...variantObjects.map((variant) => {
+      const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
+      return splits > 1 ? splits * T * N : 0;
+    }));
     const input = makeInput(T, N, K, (seed + shapeIndex * 0x9e3779b9) >>> 0);
     const bytes = T * N * 4;
     const X = makeBuffer(device, input.x.byteLength, U.STORAGE | U.COPY_DST, `${caseLabel(shape)}.X`);
@@ -333,7 +340,7 @@ async function main() {
     const S = makeBuffer(device, input.scales.byteLength, U.STORAGE | U.COPY_DST, `${caseLabel(shape)}.scales`);
     const B = makeBuffer(device, input.bias.byteLength, U.STORAGE | U.COPY_DST, `${caseLabel(shape)}.bias`);
     const Y = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC | U.COPY_DST, `${caseLabel(shape)}.Y`);
-    const part = makeBuffer(device, SPLIT_SCRATCH * 4, U.STORAGE, `${caseLabel(shape)}.split-partials`);
+    const part = makeBuffer(device, partialFloats * 4, U.STORAGE, `${caseLabel(shape)}.split-partials`);
     const globals = makeBuffer(device, 16, U.UNIFORM | U.COPY_DST, `${caseLabel(shape)}.globals`);
     const params = makeBuffer(device, 16, U.UNIFORM | U.COPY_DST, `${caseLabel(shape)}.params`);
     const zero = new Float32Array(T * N);
@@ -350,7 +357,6 @@ async function main() {
 
     const outputs = {};
     const timings = [];
-    const variantObjects = variantsFor(T);
     const shouldCheckEpilogues = T * N <= 8192;
     for (const variant of variantObjects) {
       const pipes = await getPipelines(variant, T);
