@@ -4,7 +4,6 @@
 //! benchmark state or entry points. The host creates the inputs once, then times only `run`.
 
 use kevala::kernels::{self, Mat};
-use kevala::simd::F4;
 
 const SEED: u32 = 0x4b45_5641;
 const X_TAG: u32 = 1;
@@ -161,36 +160,4 @@ pub extern "C" fn kevala_cpu_bench_out_len() -> usize {
 #[no_mangle]
 pub extern "C" fn kevala_cpu_bench_checksum() -> f64 {
     output_checksum(&state().out)
-}
-
-/// Allocates an exp input array that the host fills through the returned pointer.
-#[no_mangle]
-pub extern "C" fn kevala_cpu_bench_exp_prepare(len: usize) -> *mut f32 {
-    let s = state();
-    s.x.resize(len, 0.0);
-    s.out.resize(len, 0.0);
-    s.x.as_mut_ptr()
-}
-
-/// Applies the production vector exp to full groups of four and scalar exp to the tail.
-#[no_mangle]
-pub extern "C" fn kevala_cpu_bench_exp_run() -> u32 {
-    let s = state();
-    if s.x.len() != s.out.len() {
-        return 1;
-    }
-    let vector_len = s.x.len() / 4 * 4;
-    for i in (0..vector_len).step_by(4) {
-        unsafe { F4::load(s.x.as_ptr().add(i)).exp().store(s.out.as_mut_ptr().add(i)) };
-    }
-    for i in vector_len..s.x.len() {
-        s.out[i] = s.x[i].exp();
-    }
-    0
-}
-
-/// Provides the same scalar exp used by exceptional vectors and tails as a reference.
-#[no_mangle]
-pub extern "C" fn kevala_cpu_bench_exp_scalar(x: f32) -> f32 {
-    x.exp()
 }
