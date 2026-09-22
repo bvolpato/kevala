@@ -1,6 +1,6 @@
 # kevala examples
 
-Small, complete pages. Each one imports kevala from the npm CDN, loads a model once and calls
+Small, complete pages. Each one imports kevala from the jsDelivr CDN, loads a model once and calls
 `decide` or `decideMany`. Everything it needs is in the file: copy one into your site and it
 works. No build step and no dependencies.
 
@@ -14,8 +14,14 @@ pnpm serve
 open http://127.0.0.1:8080/examples/basic.html
 ```
 
-The first load downloads Laya from its pinned Hugging Face revision (about 850 MB) and converts
-it in the browser to a 479 MB int8 pack, which is cached: later visits load in about a second.
+The basic example loads Laya by default. Its first visit downloads the pinned Hugging Face
+checkpoint (about 850 MB) and converts it in the browser to a 479 MB int8 pack, which is cached:
+later visits load in about a second. Kev-0.8B can use the same browser conversion path; Kev-4B,
+Kev-9B, and all SemIf sizes use their pre-converted `.kevala` packs.
+
+The model menu and the API also expose `kev-0.8b`, `kev-4b`, `kev-9b`,
+`semif-qwen3.5-0.8b`, `semif-qwen3.5-2b`, and `semif-qwen3.5-4b`. SemIf uses frozen Qwen3.5
+instruction weights and direct option scoring, with no trained adapter.
 
 ## The examples
 
@@ -40,9 +46,11 @@ r.answers.team.action.act_probability; // Laya only: its estimate that acting on
 r.timing;                            // { forward, total, tokens, batched } in ms
 ```
 
-Kev-0.8B follows its own upstream format (answers rounded to 2 places, `raw_probabilities` at
-full precision, no `action`). Code that must work with both should treat `action` as optional,
-as `llm-cascade.html` does.
+Kev and SemIf follow the decoder response format (answers rounded to 2 places and
+`raw_probabilities` at full precision, with no Laya `action`). SemIf also reports that its scores
+are conditional on the listed options and are not calibrated decision confidence. Code that must
+work with all model families should treat `action` and `probability_status` as optional, as
+`llm-cascade.html` does.
 
 ## Self-host a .kevala pack
 
@@ -121,7 +129,8 @@ enable compression for `.kevala`, and add a CORS rule that allows `GET` from you
 ## Node.js, Deno and Bun
 
 The same WebAssembly engine runs on a server or in a script, in one instance, without workers or a
-GPU. It reads a pack converted by the CLI (or one exported from a browser's storage).
+GPU. It reads a pack converted by the CLI (or one exported from a browser's storage), including
+Kev and SemIf packs.
 
 ```sh
 pnpm add kevala
@@ -145,5 +154,7 @@ answers a short Laya request in about 0.4 s; `pnpm exec node scripts/bench-node.
 
 ## Licenses
 
-Laya (Nandakishor M, Convai Innovations), Kev-0.8B (Jared Palmer) and its base Qwen3.5-0.8B (Qwen
-team) are Apache-2.0. If you self-host packs, keep the license and attribution with them.
+Laya (Nandakishor M, Convai Innovations), Kev-0.8B, Kev-4B, and Kev-9B (Jared Palmer), and their
+Qwen3.5 base models are Apache-2.0. SemIf's direct option scoring method is MIT; its Qwen3.5
+instruction weights remain under Qwen's Apache-2.0 license. If you self-host packs, keep the
+license and attribution with them.

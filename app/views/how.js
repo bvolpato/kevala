@@ -7,14 +7,14 @@ const DOCS = `${REPO}/blob/main/docs`;
 
 const ARCH_ALT =
   "Diagram: pinned Hugging Face checkpoints stream into an in-browser int8 converter and a cached .kevala pack; " +
-  "the Rust core compiled to WebAssembly runs Laya or Kev on WebGPU or on tensor-parallel WebAssembly workers; " +
+  "the Rust core compiled to WebAssembly runs Laya, Kev, or SemIf on WebGPU; Laya can also use tensor-parallel WebAssembly workers; " +
   "your page gets typed answers.";
 
 const TEMPLATE = `<div class="wrap">
   <div class="page-head">
     <div class="eyebrow">How it works</div>
     <h1>From a Hugging Face checkpoint to an answer, in the browser</h1>
-    <p>kevala streams the authors' weights at a pinned revision, converts them to int8 in the tab and runs them with a dependency-free Rust core, on WebGPU or on WebAssembly workers. This page covers each step, the latency, and how close the results stay to the PyTorch reference.</p>
+    <p>kevala streams the authors' weights at a pinned revision, converts supported checkpoints to int8 in the tab and runs Laya, Kev, or SemIf with a dependency-free Rust core, on WebGPU or WebAssembly. Laya can split its CPU layers across workers; Kev and SemIf use one CPU instance. This page covers each step, the latency, and how close the results stay to the PyTorch reference.</p>
     <nav class="how-toc" aria-label="On this page">
       <a href="#/how/architecture">Architecture</a>
       <a href="#/how/bench">Speed</a>
@@ -31,15 +31,15 @@ const TEMPLATE = `<div class="wrap">
     <div class="grid-4 how-points">
       <div>
         <span class="n">1</span><h3>Rust core</h3>
-        <p class="muted small">Tokenizers, kernels and both architectures in dependency-free Rust, compiled to three WebAssembly builds (relaxed-SIMD, SIMD128, baseline). The same binary runs in Node.</p>
+        <p class="muted small">Tokenizers, kernels and the model families in dependency-free Rust, compiled to three WebAssembly builds (relaxed-SIMD, SIMD128, baseline). The same binary runs in Node.</p>
       </div>
       <div>
         <span class="n">2</span><h3>Streamed packs</h3>
-        <p class="muted small">The int8 pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in the browser (Origin Private File System, with the Cache API as a fallback). If it is unreachable, the original checkpoint is quantized in the browser as it arrives.</p>
+        <p class="muted small">The int8 pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in the browser (Origin Private File System, with the Cache API as a fallback). Laya and Kev-0.8B can also quantize their original checkpoints in the browser when the pack is unreachable; larger Kev and all SemIf choices use converted packs.</p>
       </div>
       <div>
         <span class="n">3</span><h3>WebGPU or workers</h3>
-        <p class="muted small">On WebGPU, WGSL kernels run every layer of both models. Without it, Laya's layers split across tensor-parallel WebAssembly workers, with two exchanges per layer.</p>
+        <p class="muted small">On WebGPU, WGSL kernels run every transformer layer of Laya, Kev, and SemIf. Without it, Laya's layers split across tensor-parallel WebAssembly workers, with two exchanges per layer; Kev and SemIf run in one CPU instance.</p>
       </div>
       <div>
         <span class="n">4</span><h3>Batching</h3>
@@ -65,16 +65,17 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="fidelity">
     <div class="eyebrow">Fidelity</div>
     <h2>Same answers as the PyTorch reference</h2>
-    <p class="lede">Golden fixtures are generated with each model's own reference code and replayed through kevala. At int8 the argmax matches on every fixture, and probabilities differ by a few hundredths at most.</p>
+    <p class="lede">Golden fixtures are generated with each model's own reference code and replayed through kevala. At int8 the argmax matches on every checked Laya, Kev, and SemIf fixture; the score differences below are fixture fidelity measurements, not general decision quality or calibration.</p>
     <div class="grid-4 tiles">
-      <div class="tile"><span class="tl">Token ids</span><b>exact</b><span class="ts">both tokenizers, every fixture</span></div>
+      <div class="tile"><span class="tl">Token ids</span><b>exact</b><span class="ts">Laya and Qwen tokenizers, every fixture</span></div>
       <div class="tile"><span class="tl">Laya argmax</span><b>41 / 41</b><span class="ts">questions agree with PyTorch</span></div>
-      <div class="tile"><span class="tl">Kev argmax</span><b>13 / 13</b><span class="ts">questions agree with PyTorch</span></div>
-      <div class="tile"><span class="tl">Max |Δp| at int8</span><b>0.024 <small>/ 0.0097</small></b><span class="ts">Laya / Kev, worst option</span></div>
+      <div class="tile"><span class="tl">Kev argmax</span><b>31 / 31</b><span class="ts">0.8B, 4B, and 9B fixtures</span></div>
+      <div class="tile"><span class="tl">SemIf argmax</span><b>36 / 36</b><span class="ts">three sizes, 12 questions each</span></div>
+      <div class="tile"><span class="tl">Max |Δp| at int8</span><b>≈0.031</b><span class="ts">all checked models · <a href="${DOCS}/semif-matmul.md">numerical report</a></span></div>
     </div>
     <p class="small parity-links">
       <a href="parity.html">Replay the Laya fixtures in your browser →</a>
-      <a href="parity-kev.html">Replay the Kev-0.8B fixtures →</a>
+      <a href="parity-kev.html">Replay the Kev and SemIf fixtures →</a>
     </p>
   </section>
 
@@ -89,7 +90,7 @@ const TEMPLATE = `<div class="wrap">
         <li><b>Large first download.</b> Laya downloads a 479 MB int8 pack and keeps it in browser storage. The weights also occupy GPU or WebAssembly memory while loaded.</li>
         <li><b>Larger sizes need more memory.</b> Kev packs range from 857 MB to 8.96 GB; SemIf Qwen3.5 packs range from 855 MB to 4.75 GB. Runtime memory is higher. Both size sliders start at 0.8B, and loading begins when you press Load.</li>
         <li><b>WebGPU is not available in every browser.</b> Without it kevala falls back to WebAssembly, which gives the same answers several times slower: a short Laya request takes about 160 ms on 8 CPU workers, against tens of ms on WebGPU.</li>
-        <li><b>No multi-step reasoning.</b> These are System 1 models: they give fast, calibrated reads of what a text says. Compute facts in code and state them in words, and do not ask the model to do arithmetic or plan.</li>
+        <li><b>No multi-step reasoning.</b> These are System 1 models: they score or read what a text says in one pass. SemIf scores are conditional on the listed options and are not calibrated decision confidence. Compute facts in code and state them in words, and do not ask the model to do arithmetic or plan.</li>
         <li><b>English, 512 tokens.</b> Laya reads up to 512 tokens per state and is trained on English.</li>
         <li><b>int8 shifts probabilities slightly.</b> They can differ from fp32 by up to 0.024 (Laya), so leave a margin around thresholds near a decision boundary.</li>
       </ul>
@@ -102,7 +103,7 @@ const TEMPLATE = `<div class="wrap">
     <div class="grid-3 more">
       <a class="card pad link-card" href="${DOCS}/packs.md">
         <h3>Packs</h3>
-        <p class="muted small">Load the int8 pack or the original weights, and convert, check and publish packs.</p>
+        <p class="muted small">Load an int8 pack or, for Laya and Kev-0.8B, original weights; then convert, check and publish packs.</p>
         <span class="go">docs/packs.md →</span>
       </a>
       <a class="card pad link-card" href="bench.html">

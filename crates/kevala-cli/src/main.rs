@@ -9,7 +9,7 @@ use std::io::{Read, Seek, SeekFrom, Write};
 use std::path::{Component, Path, PathBuf};
 use std::time::Instant;
 
-const USAGE: &str = "kevala: System 1 decision models (Laya, Kev) without Python
+const USAGE: &str = "kevala: System 1 decision models (Laya, Kev, SemIf) without Python
 
 usage:
   kevala convert <checkpoint-dir> -o <out.kevala> [--block 32] [--keep-f32 head.,emb] [--revision <sha>]

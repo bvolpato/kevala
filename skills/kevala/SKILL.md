@@ -1,6 +1,6 @@
 ---
 name: kevala
-description: Add fast, private, typed decisions to a web page with kevala, which runs System 1 decision models (Laya, Kev-0.8B) in the browser on WebGPU or WebAssembly, with no server and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Kev, typed decisions, or a System One API in the browser.
+description: Add fast, private, typed decisions to a web page with kevala, which runs System 1 decision models (Laya, Kev, and SemIf) in the browser on WebGPU or WebAssembly, with no server and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Kev, SemIf, typed decisions, or a System One API in the browser.
 ---
 
 # Integrating kevala
@@ -23,15 +23,20 @@ with a bundler.
 import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
 const kevala = await Kevala.load({
-  model: "laya",               // or "kev-0.8b", or the URL of a .kevala pack you host
+  model: "laya",               // or a Kev/SemIf model name, or a hosted .kevala URL
   onProgress: (p) => show(p),  // {phase, file, loaded, total}: download, convert, cache, init, warmup
 });
 ```
 
-- First visit: Laya downloads a 479 MB int8 pack from Hugging Face, Kev-0.8B an 857 MB one.
-  `from: "checkpoint"` downloads the original weights instead (843 MB / 1.6 GB) and converts them in
-  the browser. Later visits load from disk in under a second. Always show progress and
-  load on a user action (a button), never on page load for every visitor.
+Known names include `kev-0.8b`, `kev-4b`, `kev-9b`, `semif-qwen3.5-0.8b`,
+`semif-qwen3.5-2b`, and `semif-qwen3.5-4b`.
+
+- First visit: Laya downloads a 479 MB int8 pack; Kev packs range from 857 MB to 8.96 GB; and
+  SemIf Qwen3.5 packs range from 855 MB to 4.75 GB. `from: "checkpoint"` downloads and converts
+  original weights in the browser for Laya and Kev-0.8B only. The larger Kev and all SemIf choices
+  use converted packs. Later visits reuse browser storage and avoid another download; small packs
+  often load in under a second. Always show progress and load on a user action (a button), never on
+  page load for every visitor.
 - `kevala.info.backend` is `webgpu` or `wasm-*`. WebGPU is 10-50x faster; the WebAssembly fallback works
   everywhere but a request can take seconds.
 - Call `kevala.dispose()` when the feature goes away.
@@ -55,7 +60,9 @@ emails), use `decideMany([{ state, questions }, ...])`: one forward pass for all
 `decide` calls are also packed together automatically.
 
 Responses follow each model's reference format: Laya rounds to 4 places and adds `confidence` and
-`action.act_probability`; Kev rounds to 2 places and adds `raw_probabilities` at full precision.
+`action.act_probability`; Kev rounds to 2 places and adds `raw_probabilities` at full precision;
+SemIf uses the Kev-shaped response, adds `raw_probabilities`, and reports conditional option scores
+that are not calibrated decision confidence.
 
 ## Questions that work
 
@@ -99,7 +106,7 @@ const r = kevala.decide("I want my money back.", { refund: { type: "noul", instr
 - Pages must be served over HTTPS or localhost (storage and WebGPU need a secure context).
 - No special headers are needed. Cross-origin isolation is not required.
 - To serve the weights from your own host, put the `.kevala` file from bvolpato/kevala-packs (or one
-  made with `kevala convert` / `kevala convert-kev`) behind `Content-Length` and byte ranges, and pass
+  made with `kevala convert`, `kevala convert-kev`, or `kevala convert-semif`) behind `Content-Length` and byte ranges, and pass
   its URL as `model`.
 
 ## Examples to copy

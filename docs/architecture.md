@@ -1,6 +1,6 @@
 # How kevala works
 
-kevala runs System 1 decision models (Laya, Kev, and whatever family comes next) inside a web page.
+kevala runs System 1 decision models (Laya, Kev, and SemIf) inside a web page.
 A request is a state plus typed questions (`noul`, `choice`, `score`), and the answer is a probability
 for every option, in one forward pass. Nothing leaves the tab.
 
@@ -23,8 +23,9 @@ compiles for native targets and `wasm32-unknown-unknown` alike:
   library on fixture corpora and millions of fuzzed strings.
 - `content.rs`: the request model. `state` is text or JSON; `parts` carries typed content by modality.
 - `runtime.rs`: the family registry (`Model` trait, `FAMILIES`), keyed by the pack's `config.arch`.
-- Families: `engine.rs` + `sequence.rs` + `model.rs` (Laya), `kev.rs` (Kev). Each owns its template,
-  backbone and head.
+- Families: `engine.rs` + `sequence.rs` + `model.rs` (Laya), `kev.rs` (Kev and SemIf). Each owns its
+  template, backbone and readout. SemIf shares Qwen3.5's decoder with Kev, but reads direct option
+  label logits from frozen instruction weights instead of using Kev's LoRA adapter and pointer head.
 - `gpu.rs` and `wgsl/*.wgsl`: the WebGPU kernels. WebGPU only runs WGSL, so the kernels are WGSL
   sources compiled into the crate; `gpu.rs` specializes them (f16 tiles, rows and column groups per
   workgroup, subgroup use, optionally the matrix shape) and the WebAssembly binary hands the result
@@ -68,17 +69,24 @@ tensor-parallel shard, and applies them to the stream so no worker ever holds by
 `Kevala.load({ model: "laya" })` downloads the model's int8 pack from
 [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs), pinned to one commit, stores it
 in the Origin Private File System and loads it. Later visits read it from disk. The packs were made
-with `kevala convert` and `kevala convert-kev`, and pass the same parity fixtures as a fresh conversion.
+with `kevala convert`, `kevala convert-kev`, and `kevala convert-semif`, and pass the same parity
+fixtures as a fresh conversion.
 
-When the pack is unreachable, the runtime downloads the upstream checkpoint at its pinned revision
-instead and converts it in the browser, with the same Rust converter the CLI uses, compiled to
-WebAssembly. Both paths store the pack under the same key, so either one serves later loads. You can
-also serve a `.kevala` file yourself: `Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
+When the pack is unreachable, Laya and Kev-0.8B can download their upstream checkpoints at pinned
+revisions and convert them in the browser, with the same Rust converter the CLI uses, compiled to
+WebAssembly. Larger Kev and all SemIf choices require a previously converted pack. Both paths store
+the pack under the same key, so either one serves later loads. You can also serve a `.kevala` file
+yourself: `Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
 [Packs](packs.md) has the commands to download, convert, check and publish them.
 
 Kev's conversion downloads only the byte range of the Qwen3.5 base that holds the language model (the
 vision tower and the multi-token-prediction head are skipped), merges Kev's LoRA adapter in f32 and
 quantizes each tensor as it arrives.
+
+SemIf uses the same Qwen3.5 decoder without an adapter or additional training step. Its pinned
+`direct-options-v1` prompt labels up to 16 choices `A` through `P`; kevala reads those final label
+logits and preserves the selected rows in f32. SemIf packs are pre-converted and record the method
+revision and MIT source in their headers.
 
 Packs and checkpoints download as six 16 MB byte ranges at a time, handed on in order: a
 single stream from Hugging Face's CDN ran at about 24 MB/s where parallel ranges reached 38 MB/s
@@ -108,10 +116,10 @@ layer and returns only the rows the head reads. Kernels:
   Narrow outputs at short lengths split K across workgroups (a 1024-wide projection at 64 tokens is
   16 tiles, too few to fill a GPU).
 - LayerNorm / RMSNorm, rotary embeddings, sliding-window and global attention (Laya), causal GQA
-  attention with online softmax and an output gate (Kev), GeGLU / SwiGLU. On GPUs whose subgroups
+  attention with online softmax and an output gate (Kev and SemIf), GeGLU / SwiGLU. On GPUs whose subgroups
   are exactly 32 lanes (Apple, NVIDIA), Laya's attention takes 32 keys per step with one key per
   lane, so each query's running max and sum come from `subgroupMax` / `subgroupAdd`.
-- Kev's Gated DeltaNet: causal depthwise conv, q/k L2 norm, the gated delta rule, gated RMSNorm.
+- Kev and SemIf's Gated DeltaNet: causal depthwise conv, q/k L2 norm, the gated delta rule, gated RMSNorm.
   The recurrence is sequential in time, so its cost is the length of each token's dependency
   chain: four lanes share a value column (32 of its 128 keys each) and combine their partial dot
   products with `subgroupShuffleXor`, or without subgroups through workgroup memory behind one
@@ -126,8 +134,8 @@ tiles) on the models' shapes, best of several trials, and checks they agree.
 A pass over more than 256 tokens goes out as a few command buffers, waiting for the queue between
 them, so a big batch does not freeze the page's rendering while the GPU works.
 
-Kev runs a request's state once, keeps each DeltaNet layer's recurrent state and conv tail and each
-attention layer's keys and values, and starts every question branch from them (see Caches below).
+Kev and SemIf run a request's state once, keep each DeltaNet layer's recurrent state and conv tail and
+each attention layer's keys and values, and start every question branch from them (see Caches below).
 
 **WebAssembly.** One instance runs the whole model, or (Laya) the layers split across N shard workers:
 each shard holds a contiguous range of attention heads and MLP columns, turns the replicated residual
@@ -137,14 +145,13 @@ matmul register tile (2x4 or 4x4) is picked per device by timing both at startup
 
 ## Caches
 
-A causal decoder like Kev has a KV cache; a bidirectional encoder like Laya cannot, because every
+A causal decoder like Kev or SemIf has a KV cache; a bidirectional encoder like Laya cannot, because every
 token attends to every other token, question tokens included, so nothing computed for one question's
 sequence is valid for another's. What kevala reuses:
 
-- **Within a request (Kev).** Questions share the state: it runs once, and every question branch
-  starts from its carry (the KV cache of the 6 attention layers plus the recurrent state and conv
-  tail of the 18 Gated DeltaNet layers). Kev's own server does the same.
-- **Across requests (Kev).** The carries of the 4 most recent states of 32 to 1024 tokens stay
+- **Within a request (Kev and SemIf).** Questions share the state: it runs once, and every question
+  branch starts from its carry. Kev's own server uses the same shared-state pattern.
+- **Across requests (Kev and SemIf).** The carries of the 4 most recent states of 32 to 1024 tokens stay
   resident (in GPU buffers on WebGPU, in memory on the CPU). A repeated state skips its pass. A
   state that extends a cached one (a growing conversation, a log with new lines, a document with a
   new paragraph) runs only its new tokens, continuing the cached carry. Both are exact: the tests
@@ -160,8 +167,10 @@ sequence is valid for another's. What kevala reuses:
 Parity is checked against the upstream PyTorch code, not against another port:
 
 - `tools/golden.py` runs Laya through the `laya` SDK 0.3.5; `tools/golden_kev.py` runs Kev through
-  Kev's own `kev.checkpoint` / `kev.api` code. Both write fixtures under `tests/fixtures/`.
+  Kev's own `kev.checkpoint` / `kev.api` code; `tools/golden_semif.py` records SemIf's direct label
+  scores from the Qwen3.5 reference. All write fixtures under `tests/fixtures/`.
 - `kevala parity` / `kevala parity-kev` (native) and `parity.html` / `parity-kev.html` (browser)
   compare token ids exactly and probabilities within a tolerance.
-- With f32 weights the Laya port matches PyTorch to within 5e-5 on every logit. int8 packs keep every
-  argmax, with a max probability difference of 0.024 (Laya, 41 questions) and 0.0097 (Kev, 13).
+- With f32 weights the Laya port matches PyTorch to within 5e-5 on every logit. The checked int8
+  packs keep every Laya, Kev, and SemIf fixture argmax; model-specific score differences and limits
+  are recorded in [model validation](model-benchmarks.md).

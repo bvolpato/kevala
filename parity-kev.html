@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>kevala parity check: Kev</title>
+<title>kevala parity check: Kev and SemIf</title>
 <style>
   body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
   td, th { padding: 2px 10px; text-align: right; border-bottom: 1px solid #1f2630; } td:first-child { text-align: left; }
@@ -11,16 +11,19 @@
 </style>
 </head>
 <body>
-<h1>kevala parity: Kev-0.8B against Kev's own PyTorch code</h1>
+<h1>kevala parity: Kev and SemIf against their reference outputs</h1>
 <p>
   backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
   weights <select id="pack">
-    <option value="pack">int8 pack from Hugging Face (857 MB)</option>
-    <option value="checkpoint">original checkpoint, converted here (1.6 GB)</option>
+    <option value="pack">int8 pack from Hugging Face (model-dependent)</option>
+    <option value="checkpoint">original Kev-0.8B checkpoint, converted here (1.6 GB)</option>
     <option value="local">dev pack in tmp/ (local server only)</option>
   </select>
   <button id="run">run</button>
 </p>
+<p>Use <code>model=semif-qwen3.5-0.8b</code>, <code>semif-qwen3.5-2b</code>, or
+  <code>semif-qwen3.5-4b</code> with its matching <code>golden-semif</code> fixture to replay
+  SemIf's direct option scores. Checkpoint conversion is available for Kev-0.8B only.</p>
 <pre id="log"></pre>
 <table id="out"></table>
 <script type="module">

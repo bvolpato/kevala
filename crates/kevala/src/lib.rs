@@ -1,4 +1,4 @@
-//! kevala: a dependency-free engine for System 1 decision models (Laya, Kev), built for
+//! kevala: a dependency-free engine for System 1 decision models (Laya, Kev, SemIf), built for
 //! WebAssembly and WebGPU.
 pub mod content;
 pub mod convert;

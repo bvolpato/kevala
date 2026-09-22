@@ -2,6 +2,8 @@
 
 kevala is organised so a new family (a new backbone, head, request template, or modality) plugs in
 without touching the others. A family is identified by the `arch` string in its pack's config.
+Laya is the encoder example; Kev and SemIf share the Qwen3.5 decoder family with different
+decision readouts.
 
 ## 1. Rust: the family
 
@@ -28,10 +30,13 @@ A family owns three pieces; reuse what exists:
 
 - **Template**: request to token sequences. Laya renders one sequence per question with a `[MASK]`
   per option (`sequence.rs`); Kev renders causal rows sharing the state (`kev.rs`, `render` /
-  `encode`). Match your reference implementation byte for byte and add a golden fixture.
+  `encode`), while SemIf uses its direct option-label prompt. Match your reference implementation
+  byte for byte and add a golden fixture.
 - **Backbone**: the layers. `kernels.rs` has int8-weight matmul, layer/RMS norm, attention, rotary
-  embeddings and activations over `simd::F4`; `kev.rs` has causal GQA attention and Gated DeltaNet.
-- **Head**: hidden states to answer distributions (Laya's marker scorer, Kev's pointer head).
+  embeddings and activations over `simd::F4`; `kev.rs` has causal GQA attention and Gated DeltaNet
+  shared by Kev and SemIf.
+- **Head**: hidden states to answer distributions (Laya's marker scorer, Kev's pointer head, or
+  SemIf's selected label rows). SemIf uses frozen Qwen weights, without an adapter or extra training.
 
 `runtime::text_requests` checks modalities and folds text parts into the state for text-only
 families.
@@ -99,6 +104,8 @@ pack's modalities.
 
 ## 6. Prove it
 
-Write a reference dump from the upstream code (see `tools/golden.py`, `tools/golden_kev.py`), commit
-the fixture, and add a parity command and a browser parity page. Token ids must match exactly; report
-argmax agreement and the maximum probability difference at the precision you ship.
+Write a reference dump from the upstream code (see `tools/golden.py`, `tools/golden_kev.py`, and
+`tools/golden_semif.py`), commit the fixture, and add a parity command and a browser parity page.
+Token ids must match exactly; report argmax agreement and the maximum probability difference at the
+precision you ship. For a SemIf family, document that the scores are conditional on the listed
+options and are not calibrated decision confidence.

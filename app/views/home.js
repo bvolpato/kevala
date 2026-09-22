@@ -224,7 +224,7 @@ const HERO = `<section class="hero">
     <div class="hero-copy">
       <div class="eyebrow">Open source · Apache-2.0</div>
       <h1>Ask questions about text, <span class="grad-text">answered on the user's own GPU</span></h1>
-      <p class="lede">kevala runs the <b>Laya</b> and <b>Kev-0.8B</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a probability for every option in about 10 ms on WebGPU. There is no server to run, and the text stays on the device.</p>
+      <p class="lede">kevala runs <b>Laya</b>, <b>Kev</b>, and <b>SemIf</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option in one pass. There is no server to run, and the text stays on the device.</p>
       <div class="row cta">
         <a class="btn primary" href="#/playground">Open the playground</a>
         <a class="btn" href="#/tetris">Watch it play Tetris</a>
@@ -436,12 +436,12 @@ const CREDITS = `<section class="tight" id="credits">
         <p class="muted small">By Nandakishor M, Convai Innovations. <a href="https://huggingface.co/convaiinnovations/laya">convaiinnovations/laya</a> · Apache-2.0.</p>
       </div>
       <div class="card pad">
-        <h3>Kev-0.8B</h3>
-        <p class="muted small">By Jared Palmer. <a href="https://huggingface.co/jaredpalmer/kev-0.8b">jaredpalmer/kev-0.8b</a> · Apache-2.0.</p>
+        <h3>Kev</h3>
+        <p class="muted small">By Jared Palmer: <a href="https://huggingface.co/jaredpalmer/kev-0.8b">Kev-0.8B</a>, <a href="https://huggingface.co/jaredpalmer/kev-4b">Kev-4B</a>, and <a href="https://huggingface.co/jaredpalmer/kev-9b">Kev-9B</a> · Apache-2.0.</p>
       </div>
       <div class="card pad">
-        <h3>Qwen3.5-0.8B</h3>
-        <p class="muted small">Base model for Kev, by the Qwen team. <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">Qwen/Qwen3.5-0.8B-Base</a> · Apache-2.0.</p>
+        <h3>SemIf and Qwen3.5</h3>
+        <p class="muted small">SemIf's direct option scoring method · <a href="https://github.com/TheoLeeCJ/SemIf">MIT</a>. Qwen3.5 base checkpoints for Kev: <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">0.8B</a>, <a href="https://huggingface.co/Qwen/Qwen3.5-4B-Base">4B</a>, and <a href="https://huggingface.co/Qwen/Qwen3.5-9B-Base">9B</a>. Qwen3.5 instruction checkpoints for SemIf: <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B">0.8B</a>, <a href="https://huggingface.co/Qwen/Qwen3.5-2B">2B</a>, and <a href="https://huggingface.co/Qwen/Qwen3.5-4B">4B</a> · Apache-2.0.</p>
       </div>
     </div>
     <p class="tiny faint credits-note">The packs are int8 conversions of the authors' checkpoints at pinned revisions, under the models' own licenses, at <a href="https://huggingface.co/bvolpato/kevala-packs">huggingface.co/bvolpato/kevala-packs</a>. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>

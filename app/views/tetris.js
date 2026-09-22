@@ -86,7 +86,7 @@ const HTML = `<div class="wrap">
       <div class="clip-brand">
         <div class="clip-mark">${logo("tg")}<span>kevala</span></div>
         <h2>A decision model plays Tetris</h2>
-        <p>Laya, 421M parameters, on WebGPU in the browser</p>
+        <p>The selected Laya, Kev, or SemIf model on WebGPU or WebAssembly in the browser</p>
       </div>
       <div class="ai-metrics">
         <div><b data-m="ms">–</b><span data-m="where">per move</span></div>
@@ -116,7 +116,7 @@ const HTML = `<div class="wrap">
   <section class="explain grid-3">
     <div><h3>1 · List</h3><p>Every turn and column the piece can reach, found with the game's own collision code.</p></div>
     <div><h3>2 · Describe</h3><p>Each outcome in plain words: holes left, rows cleared, a flatter or bumpier surface.</p></div>
-    <div><h3>3 · Score</h3><p>One pass asks <em>“Does the stack look clean?”</em> about every spot. The piece heads for the likeliest yes. Laya was never trained to play Tetris.</p></div>
+    <div><h3>3 · Score</h3><p>One pass asks <em>“Does the stack look clean?”</em> about every spot. The piece heads for the likeliest yes. The decision models were not trained to play Tetris.</p></div>
   </section>
 </div>`;
 

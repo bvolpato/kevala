@@ -1,6 +1,6 @@
 <h1 align="center">kevala</h1>
 
-<p align="center"><b>Ask questions about text and get answers from small models running on the user's own GPU.</b></p>
+<p align="center"><b>Ask questions about text with Laya, Kev, and SemIf running on the user's own hardware.</b></p>
 
 <p align="center">
   <a href="https://bvolpato.github.io/kevala/#/tetris"><img src="docs/tetris.gif" alt="Tetris played live by the Laya decision model on WebGPU: the model scores every landing spot and presses the keys to get there" width="760"></a>
@@ -68,41 +68,38 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 
 ## Models
 
-| name | family | backbone | head | upstream checkpoint | stored pack |
-|---|---|---|---|---|---|
-| `laya` | `laya` | ModernBERT-large encoder (28 layers) | 2-layer transformer + marker scorer + act head | about 850 MB | 479 MB |
-| `kev-0.8b` | `kev` | Qwen3.5-0.8B decoder (18 Gated DeltaNet + 6 gated attention layers), Kev's LoRA merged | pointer head | about 1.6 GB | 857 MB |
+| Family | Model name | Decision readout | Pack download |
+|---|---|---|---:|
+| Laya | `laya` | Marker scorer and act head | 479 MB |
+| Kev | `kev-0.8b` | Trained pointer head | 857 MB |
+| Kev | `kev-4b` | Trained pointer head | 4.76 GB |
+| Kev | `kev-9b` | Trained pointer head | 8.96 GB |
+| SemIf | `semif-qwen3.5-0.8b` | Native option-label logits | 855 MB |
+| SemIf | `semif-qwen3.5-2b` | Native option-label logits | 2.13 GB |
+| SemIf | `semif-qwen3.5-4b` | Native option-label logits | 4.75 GB |
+
+Laya uses a ModernBERT-large encoder. Kev uses Qwen3.5 base models with its merged LoRA adapter
+and trained pointer head. SemIf applies direct option scoring to frozen Qwen3.5 instruction
+models. See [the model guide](docs/models.md) for their differences and backend limits.
 
 Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
-`Kevala.load({ model: "kev-0.8b" })`, or pass a `.kevala` URL you host.
+`Kevala.load({ model: "kev-4b" })` or `Kevala.load({ model: "semif-qwen3.5-2b" })`,
+or pass a `.kevala` URL you host.
 
 Laya remains the demo default. Select **Kev** to choose 0.8B, 4B, or 9B with the size slider.
 **SemIf** appears alongside Laya and Kev, with 0.8B, 2B, or 4B sizes. Selecting either family starts
 at its smallest size; changing sizes waits for **Load** before downloading.
 
-<details>
-<summary>Additional model packs</summary>
-
-The additional packs are published on Hugging Face and pinned to a verified revision.
-Load them by name, for example `Kevala.load({ model: "semif-qwen3.5-0.8b" })`.
-
-| name | readout | pack download |
-|---|---|---:|
-| `kev-4b` | Trained Kev pointer head | 4.76 GB |
-| `kev-9b` | Trained Kev pointer head | 8.96 GB |
-| `semif-qwen3.5-0.8b` | Native option-label logits | 855 MB |
-| `semif-qwen3.5-2b` | Native option-label logits | 2.13 GB |
-| `semif-qwen3.5-4b` | Native option-label logits | 4.75 GB |
-
 Sizes use decimal MB/GB and describe the pack, not total runtime memory. Load these as pre-converted
-packs; browser checkpoint conversion is unavailable. See [the model guide](docs/models.md) for
-their differences and backend limits.
-
-</details>
+packs published on Hugging Face at a pinned revision. Browser checkpoint conversion is available
+only for Laya and Kev-0.8B.
 
 Families are pluggable: see [Adding a model family](docs/adding-a-model.md).
 
 ## Speed
+
+For GPU measurements across all seven models on Firefox/Linux, see
+[GPU matrix tuning](docs/semif-matmul.md). Performance depends on the model, request, and hardware.
 
 On an Apple M4 Max, with WebGPU in Chrome:
 
@@ -115,14 +112,15 @@ Laya scores 32 states in one pass in 186 ms, and Kev answers a 533-token state i
 WebGPU, a short request takes about 0.4 s on one CPU core. The Playground's Profile tab (or
 `kevala.profile(true)`) shows the time of every GPU kernel for any request. [`bench.html`](https://bvolpato.github.io/kevala/bench.html) measures your own machine.
 
-Kev reuses its KV cache: all questions about a state share one pass over it, and the carries of recent
+Kev and SemIf reuse their state caches: all questions about a state share one pass over it, and the carries of recent
 states stay resident, so a repeated state only runs its question tokens and a state that extends a
 cached one (a growing conversation) only runs its new tokens. Laya is a bidirectional encoder, where a KV
 cache is impossible; it packs every question of a request into one pass instead.
 
 ## Fidelity
 
-Additional model checks and seeded game results: [optional model validation](docs/model-benchmarks.md).
+Reference checks for every published model: [GPU validation](docs/semif-matmul.md#correctness-and-feature-fallbacks).
+Conversion fidelity and seeded game results: [model validation](docs/model-benchmarks.md).
 
 The following Laya and Kev-0.8B fixtures are checked against upstream PyTorch code
 (`tools/golden.py` runs the `laya` SDK, `tools/golden_kev.py` runs Kev's own code), natively and in
@@ -282,11 +280,11 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
 
 ## Limits
 
-- First visits are heavy: a 479 MB pack for Laya, 857 MB for Kev-0.8B, and larger downloads for the
-  optional models. Later visits read the cached weights from disk and reload them into memory.
+- First visits download 479 MB for Laya, 857 MB to 8.96 GB for Kev, or 855 MB to 4.75 GB for SemIf,
+  depending on size. Later visits read the cached weights from disk and reload them into memory.
   You can also convert once with the CLI and serve the pack from your own host.
 - Without WebGPU, a request takes about a second on a fast laptop core, more on phones. Laya splits
-  across CPU workers; Kev runs in one instance on the CPU for now.
+  across CPU workers; Kev and SemIf run in one instance on the CPU for now.
 - Browser and Node WebAssembly cannot allocate a whole pack of 2 GiB or more. Large packs need
   WebGPU or the native CLI. GPU loading streams the transformer weights separately, while the
   tokenizer, embeddings, and readout must still fit in a coordinator allocation under 2 GiB.
@@ -294,20 +292,19 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.
 - WebGPU was verified on Apple Silicon in Chromium, with every optional feature and without any
   (the default limits, as the weakest WebGPU device has). Every kernel also passes naga, the WGSL
-  compiler Firefox uses. This Linux kernel sweep validates Firefox 152 on both NVIDIA and AMD,
-  with all 41 Laya and 13 Kev reference decisions matching. See the benchmark report for the
+  compiler Firefox uses. The Linux kernel sweeps validate Firefox 152 on both NVIDIA and AMD,
+  including reference checks for all seven models on NVIDIA. See [GPU matrix tuning](docs/semif-matmul.md) for the
   measured features, numerical limits, and performance results.
 - GPU loading first requests the high-performance adapter, then retries with a low-power preference
   if GPU initialization fails. The browser chooses the adapter and may return the same GPU twice.
   `kevala.info.gpuPowerPreference` reports the successful preference. In `auto` mode, failures during
   allocation, shader compilation or warmup fall back to the CPU; `backend: "webgpu"` reports an error
   if both GPU attempts fail. `kevala.info.gpuUnavailable` preserves the failures when Auto uses the CPU.
-- int8 weights and GPU arithmetic move probabilities by about 0.024 (Laya) and 0.010 (Kev-0.8B)
-  on the tested fixtures and Linux GPUs, with no argmax changes. The benchmark report gives
-  exact errors, including the f32 path's inherited precision edge. The models themselves have
-  their own limits: see the
-  [Laya](https://huggingface.co/convaiinnovations/laya) and [Kev](https://github.com/jaredpalmer/kev)
-  model cards before trusting a threshold.
+- int8 weights and GPU arithmetic change option probabilities. The [validation report](docs/semif-matmul.md#correctness-and-feature-fallbacks)
+  records the differences and matching reference decisions for every model. These fixture checks
+  do not establish general decision quality or confidence calibration. See the
+  [model guide](docs/models.md#interpreting-the-scores) and the upstream Laya, Kev, and Qwen model
+  cards before choosing a threshold.
 - Requests can carry image and audio parts, but no shipped pack reads them yet.
 
 On Linux, Firefox's WebGPU backend uses [Vulkan](https://searchfox.org/firefox-main/source/gfx/wgpu_bindings/Cargo.toml),

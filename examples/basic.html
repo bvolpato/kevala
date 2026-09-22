@@ -15,7 +15,7 @@
 </head>
 <body>
 <h1>Basic: load once, decide many times</h1>
-<p class="muted">Loads Laya, then answers three typed questions about the text in one forward pass.</p>
+<p class="muted">Loads Laya by default, then answers three typed questions about the text in one forward pass. The same API also supports Kev and SemIf model sizes.</p>
 <textarea id="text">Hi team, the invoice you sent charges us twice for March. Can you fix it before Friday? Our finance close is that day.</textarea>
 <p><button id="go" disabled>Decide</button> <span id="status" class="muted">Loading the model…</span></p>
 <pre id="out"></pre>
@@ -26,7 +26,7 @@ import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.
 
 const status = document.getElementById("status");
 
-// 1. Load once. The first visit downloads and converts the model (hundreds of MB); after that it
+// 1. Load once. The first visit downloads and converts Laya (hundreds of MB); after that it
 //    comes from the browser cache in about a second. backend "auto" = WebGPU if available.
 const kevala = await Kevala.load({
   model: "laya",
