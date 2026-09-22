@@ -18,7 +18,7 @@
 </p>
 <pre id="log"></pre>
 <script type="module">
-import { Kevala } from "./js/src/index.js";
+import { Kevala, MODELS } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.bench = { status: "idle" };
@@ -43,7 +43,9 @@ async function run() {
     const threadOption = q.get("threads") || $("threads").value;
     const threads = threadOption === "auto" ? "auto" : Number(threadOption);
     const name = q.get("model") || "laya";
-    const model = q.get("pack") === "local" ? { laya: "./tmp/laya-q8.kevala", "kev-0.8b": "./tmp/kev-0.8b-q8.kevala" }[name] : name;
+    const local = q.get("pack") === "local";
+    if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
+    const model = local ? `./tmp/${name}-q8.kevala` : name;
     const runs = integerParam(q, "runs", 10, 1);
     const warmups = integerParam(q, "warmups", 2, 0);
     const requestedFlavor = q.get("flavor") || undefined;
