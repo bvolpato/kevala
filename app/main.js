@@ -2,7 +2,7 @@
 // alive. Views are ES modules loaded on first visit; hiding one calls its hide() so games pause
 // and timers stop, and the model keeps loading in the session whatever the tab.
 
-import { session, MODELS, MODEL_NOTES, LOCAL, SHOT } from "./session.js";
+import { session, MODELS, MODEL_NOTES, LOCAL, SHOT, FROM } from "./session.js";
 import { esc, fmtBytes, fmtMs, backendLabel, REPO } from "./ui.js";
 
 /** A view with a tab in the header; without a label it has no tab. */
@@ -78,7 +78,8 @@ function renderChip(s) {
 function modelOption(s, id) {
   const note = MODEL_NOTES[id];
   const active = s.model === id;
-  let badge = `<span class="badge faint-b">${fmtBytes(MODELS[id].download)} download</span>`;
+  const { hosted, pack, download } = MODELS[id];
+  let badge = `<span class="badge faint-b">${fmtBytes(hosted && FROM === "pack" ? pack : download)} download</span>`;
   if (active && s.status === "ready") badge = `<span class="badge good">loaded</span>`;
   else if (s.cached[id]) badge = `<span class="badge">cached</span>`;
   return [

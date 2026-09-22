@@ -263,7 +263,7 @@ const EMBED = `<section class="tight" id="embed">
     <div>
       <div class="eyebrow">Embed</div>
       <h2>Add it to a page</h2>
-      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package from npm. It needs no build step and no special headers, so any static host works. The first call downloads the pinned Hugging Face checkpoint, converts it in the browser and caches it.</p>
+      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package from npm. It needs no build step and no special headers, so any static host works. The first call downloads the model's int8 pack from Hugging Face and keeps it in the browser.</p>
       <div class="code"><pre data-f="install"></pre></div>
       <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words, and describe every option.</p>
     </div>
@@ -430,7 +430,7 @@ const CREDITS = `<section class="tight" id="credits">
         <p class="muted small">Base model for Kev, by the Qwen team. <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">Qwen/Qwen3.5-0.8B-Base</a> · Apache-2.0.</p>
       </div>
     </div>
-    <p class="tiny faint credits-note">kevala re-hosts no weights: packs are converted in your browser from the authors' repositories at pinned revisions. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>
+    <p class="tiny faint credits-note">The packs are int8 conversions of the authors' checkpoints at pinned revisions, under the models' own licenses, at <a href="https://huggingface.co/bvolpato/kevala-packs">huggingface.co/bvolpato/kevala-packs</a>. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>
   </div>
 </section>`;
 

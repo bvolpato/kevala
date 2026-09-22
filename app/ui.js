@@ -224,7 +224,7 @@ export function css(href) {
 export const REPO = "https://github.com/bvolpato/kevala";
 
 /** Where pages import the library from: the npm package on jsDelivr. */
-export const CDN = "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
+export const CDN = "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
 /**
  * Formats a value as JavaScript source for the code snippets on the site: unquoted keys where

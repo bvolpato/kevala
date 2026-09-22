@@ -111,6 +111,7 @@ async function load(o) {
   const module = await compile(base, flavor);
   const pack = await openPack(o.model ?? {}, {
     cache: o.cache !== false,
+    from: o.from,
     onProgress: progress,
     convert: (spec, opts) => {
       const plugin = archPlugin(spec.arch);

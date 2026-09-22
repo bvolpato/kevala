@@ -4,18 +4,18 @@ version = 4
 
 [[package]]
 name = "kevala"
-version = "0.1.2"
+version = "0.1.3"
 
 [[package]]
 name = "kevala-cli"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "kevala",
 ]
 
 [[package]]
 name = "kevala-wasm"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "kevala",
 ]

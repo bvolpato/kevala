@@ -11,7 +11,7 @@ const USAGE: &str = "kevala: System 1 decision models (Laya, Kev) without Python
 usage:
   kevala convert <checkpoint-dir> -o <out.kevala> [--block 32] [--keep-f32 head.,emb] [--revision <sha>]
   kevala decide <pack.kevala> --state <json|text> --questions <json>
-  kevala convert-kev --base <qwen-dir> --kev <kev-dir> -o <out.kevala> [--block 32]
+  kevala convert-kev --base <qwen-dir> --kev <kev-dir> -o <out.kevala> [--block 32] [--kev-revision <sha>] [--base-revision <sha>]
   kevala parity <pack.kevala> <golden.json> [--shards N]
   kevala parity-kev <pack.kevala> <golden-kev.json>
   kevala bench <pack.kevala> [--tokens 64] [--questions 1] [--runs 5] [--shards N] [--warm]

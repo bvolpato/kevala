@@ -22,9 +22,10 @@ every option of every question in one forward pass. There is no model server, no
 data leaving the tab.
 
 The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU kernels written for
-these models. The browser runtime is a few plain ES modules. Weights come straight from the models'
-own Hugging Face repos at pinned revisions and are converted in the browser, so there is nothing to
-host.
+these models. The browser runtime is a few plain ES modules. The first load downloads a pinned int8
+pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) and keeps it in
+the browser, so there is nothing to host. If the pack is unreachable, kevala converts the original
+checkpoint in the browser instead.
 
 ## Quick start
 
@@ -32,7 +33,7 @@ From a CDN, in any page:
 
 ```html
 <script type="module">
-  import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
+  import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
   const kevala = await Kevala.load({ model: "laya", onProgress: console.log });
   const r = await kevala.decide("We were billed twice. Refund the duplicate today or we cancel.", {
@@ -57,9 +58,11 @@ import { Kevala } from "kevala";
 Building with a coding agent? The site has [a prompt to paste into it](https://bvolpato.github.io/kevala/#/home/agent),
 and [`skills/kevala/SKILL.md`](skills/kevala/SKILL.md) is the same guide as an agent skill.
 
-The first visit downloads and converts the model (Laya: about 850 MB, about 30 s on a fast connection).
-The converted pack is stored in the site's Origin Private File System, so later visits load in under
-a second. It works from any origin and needs no special headers.
+The first visit downloads the model's int8 pack from Hugging Face (Laya: 479 MB). It is stored in the
+site's Origin Private File System, so later visits load in under a second. It works from any origin
+and needs no special headers. To load the original weights and convert them in the browser instead,
+pass `from: "checkpoint"`; to serve the weights yourself, pass the URL of a `.kevala` file. See
+[Packs](docs/packs.md) for both, and for how the packs are made and published.
 
 ## Models
 
@@ -129,7 +132,8 @@ const kevala = await Kevala.load({
   model: "laya",         // a MODELS name, a .kevala URL, or an ArrayBuffer/Blob
   backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU when available)
   threads: 8,            // WebAssembly workers for the CPU backend
-  cache: true,           // keep the converted pack in origin storage
+  from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
+  cache: true,           // keep the pack in origin storage
   onProgress: (p) => {}, // { phase: download | convert | cache | init | warmup, loaded, total }
   signal,                // AbortSignal
   plugins: [],           // URLs of extra architecture plugins
@@ -180,7 +184,8 @@ page ─► index.js ─► engine worker ─► coordinator (Rust → WebAssemb
   architecture plugin in JavaScript. Each family owns its template, backbone and head, and declares its
   modalities.
 
-Details: [docs/architecture.md](docs/architecture.md).
+Details: [docs/architecture.md](docs/architecture.md). Packs, and how to convert and publish them:
+[docs/packs.md](docs/packs.md).
 
 ## Command line and building from source
 
@@ -189,7 +194,7 @@ scripts/build-wasm.sh                        # js/src/kevala-{relaxed,simd,base}
 cargo build --release -p kevala-cli            # target/release/kevala
 
 kevala convert <laya-checkpoint-dir> -o laya-q8.kevala
-kevala convert-kev --base <qwen3.5-dir> --kev <kev-dir> -o kev-0.8b-q8.kevala
+kevala convert-kev --base <qwen3.5-dir> --kev <kev-dir> -o kev-0.8b-q8.kevala   # see docs/packs.md
 kevala decide laya-q8.kevala --state "..." --questions '{"q": {"type": "noul", "instructions": "..."}}'
 kevala parity laya-q8.kevala tests/fixtures/golden.json
 kevala bench kev-0.8b-q8.kevala --tokens 128
@@ -203,8 +208,8 @@ Rust 1.85 or newer, and nothing else. Python is only used to generate the refere
 
 ## Limits
 
-- First visits are heavy: about 850 MB (Laya) or about 1.6 GB (Kev) from Hugging Face. For production,
-  convert once with the CLI and serve the pack yourself (479 MB / 857 MB).
+- First visits are heavy: a 479 MB pack for Laya, 857 MB for Kev. Later visits read it from disk.
+  You can also convert once with the CLI and serve the pack from your own host.
 - Without WebGPU, a request takes about a second on a fast laptop core, more on phones. Laya splits
   across CPU workers; Kev runs in one instance on the CPU for now.
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.

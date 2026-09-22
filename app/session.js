@@ -15,6 +15,8 @@ const LOCAL_PACKS = {
   laya: new URL("../tmp/laya-q8.kevala", import.meta.url).href,
   "kev-0.8b": new URL("../tmp/kev-0.8b-q8.kevala", import.meta.url).href,
 };
+/** `?from=checkpoint` converts the original weights in the browser instead of downloading the pack. */
+export const FROM = params.get("from") === "checkpoint" ? "checkpoint" : "pack";
 /** `?shot=1` hides dev-only chrome, for README screenshots taken with dev packs. */
 export const SHOT = params.get("shot") === "1";
 
@@ -238,7 +240,7 @@ class Session extends EventTarget {
     };
     const backend = this.backend;
     try {
-      const kevala = await Kevala.load({ model: src, backend, signal: abort.signal, onProgress });
+      const kevala = await Kevala.load({ model: src, from: FROM, backend, signal: abort.signal, onProgress });
       if (this.#abort !== abort) {
         kevala.dispose();
         return null;
@@ -302,6 +304,7 @@ class Session extends EventTarget {
     if (LOCAL && !SHOT) return "Dev mode: loads the local pack from this server.";
     if (this.cached[model]) return "Cached in this browser: loads in about a second.";
     if (!spec) return "Loads the pack from its URL and caches it.";
+    if (spec.hosted && FROM === "pack") return `First load: a ${fmtBytes(spec.pack)} int8 pack from Hugging Face, then cached in this browser.`;
     return `First load: ${fmtBytes(spec.download)} from Hugging Face, converted to a ${fmtBytes(spec.pack)} int8 pack and cached.`;
   }
 }

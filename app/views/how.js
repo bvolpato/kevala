@@ -35,7 +35,7 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div>
         <span class="n">2</span><h3>Streamed packs</h3>
-        <p class="muted small">Weights stream from Hugging Face at a pinned revision and are quantized to int8 as they arrive. The pack is stored in the browser (Origin Private File System, with the Cache API as a fallback). No weights are re-hosted.</p>
+        <p class="muted small">The int8 pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in the browser (Origin Private File System, with the Cache API as a fallback). If it is unreachable, the original checkpoint is quantized in the browser as it arrives.</p>
       </div>
       <div>
         <span class="n">3</span><h3>WebGPU or workers</h3>

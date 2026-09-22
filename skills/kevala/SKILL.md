@@ -7,8 +7,8 @@ description: Add fast, private, typed decisions to a web page with kevala, which
 
 kevala answers typed questions about a piece of text inside the page. You pass a `state` (text or JSON)
 and a dict of questions; it returns a probability for every option of every question in one forward
-pass. It never generates text. Weights download once from Hugging Face, convert in the browser, and
-stay in the site's origin storage; nothing is sent anywhere.
+pass. It never generates text. Weights download once from Hugging Face as an int8 pack and stay in
+the site's origin storage; nothing is sent anywhere.
 
 Reach for it when the page needs a decision (which queue, is this toxic, how urgent, should this
 prompt be blocked). Do not use it for free-form answers, extraction, arithmetic or multi-step
@@ -20,7 +20,7 @@ Import from the CDN in a plain page, or `npm install kevala` and `import { Keval
 with a bundler.
 
 ```js
-import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
+import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
 const kevala = await Kevala.load({
   model: "laya",               // or "kev-0.8b", or the URL of a .kevala pack you host
@@ -28,8 +28,9 @@ const kevala = await Kevala.load({
 });
 ```
 
-- First visit: Laya downloads about 850 MB and converts in the browser (about 30 s on a fast link); Kev-0.8B
-  downloads about 1.6 GB. Later visits load from disk in under a second. Always show progress and
+- First visit: Laya downloads a 479 MB int8 pack from Hugging Face, Kev-0.8B an 857 MB one.
+  `from: "checkpoint"` downloads the original weights instead (843 MB / 1.6 GB) and converts them in
+  the browser. Later visits load from disk in under a second. Always show progress and
   load on a user action (a button), never on page load for every visitor.
 - `kevala.info.backend` is `webgpu` or `wasm-*`. WebGPU is 10-50x faster; the WebAssembly fallback works
   everywhere but a request can take seconds.
@@ -84,7 +85,8 @@ or graded questions. Measure on 50-200 of the site's own examples and report the
 ## Server side
 
 The same engine runs in Node.js, Deno or Bun, in one instance, without workers or a GPU. It reads a
-pack converted by the CLI:
+pack file: download one from [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs)
+(`hf download bvolpato/kevala-packs laya-q8.kevala`) or convert one with the CLI.
 
 ```js
 import { loadFile } from "kevala/node"; // npm install kevala
@@ -96,8 +98,9 @@ const r = kevala.decide("I want my money back.", { refund: { type: "noul", instr
 
 - Pages must be served over HTTPS or localhost (storage and WebGPU need a secure context).
 - No special headers are needed. Cross-origin isolation is not required.
-- To avoid the first-visit conversion, convert once with the CLI (`kevala convert` for Laya,
-  `kevala convert-kev` for Kev) and serve the `.kevala` file with `Content-Length`; pass its URL as `model`.
+- To serve the weights from your own host, put the `.kevala` file from bvolpato/kevala-packs (or one
+  made with `kevala convert` / `kevala convert-kev`) behind `Content-Length` and byte ranges, and pass
+  its URL as `model`.
 
 ## Examples to copy
 

@@ -65,17 +65,22 @@ tensor-parallel shard, and applies them to the stream so no worker ever holds by
 
 ## Where the weights come from
 
-`Kevala.load({ model: "laya" })` downloads the upstream checkpoint at a pinned Hugging Face revision,
-converts it in the browser (the same Rust converter the CLI uses, compiled to WebAssembly), stores the
-pack in the Origin Private File System and loads it. Later visits read it from disk. Nothing is
-re-hosted. For production you can convert once with the CLI and serve the `.kevala` file yourself:
-`Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
+`Kevala.load({ model: "laya" })` downloads the model's int8 pack from
+[bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs), pinned to one commit, stores it
+in the Origin Private File System and loads it. Later visits read it from disk. The packs were made
+with `kevala convert` and `kevala convert-kev`, and pass the same parity fixtures as a fresh conversion.
+
+When the pack is unreachable, the runtime downloads the upstream checkpoint at its pinned revision
+instead and converts it in the browser, with the same Rust converter the CLI uses, compiled to
+WebAssembly. Both paths store the pack under the same key, so either one serves later loads. You can
+also serve a `.kevala` file yourself: `Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
+[Packs](packs.md) has the commands to download, convert, check and publish them.
 
 Kev's conversion downloads only the byte range of the Qwen3.5 base that holds the language model (the
 vision tower and the multi-token-prediction head are skipped), merges Kev's LoRA adapter in f32 and
 quantizes each tensor as it arrives.
 
-Checkpoints download as six 16 MB byte ranges at a time, handed to the converter in order: a
+Packs and checkpoints download as six 16 MB byte ranges at a time, handed on in order: a
 single stream from Hugging Face's CDN ran at about 24 MB/s where parallel ranges reached 38 MB/s
 on the same connection. Only the converted pack is stored, so switching backend or reloading the
 page reads it back from disk in under a second.

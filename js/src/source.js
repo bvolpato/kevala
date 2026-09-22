@@ -4,9 +4,12 @@
 
 export const CACHE_NAME = "kevala-v1";
 
+/** Pre-converted int8 packs of the models below, pinned to one commit of their Hugging Face repo. */
+const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/e75a06d9329e19fe879f44cfcce33914fb96dade";
+
 /**
- * Known models, by name. Each converts in the browser from its upstream Hugging Face repos at a
- * pinned revision (nothing is re-hosted), or loads from a `.kevala` pack you host yourself.
+ * Known models, by name. Each downloads its pre-converted pack (`hosted`); when that is
+ * unreachable, it converts in the browser from the upstream Hugging Face repos at a pinned revision.
  */
 export const MODELS = {
   laya: {
@@ -15,10 +18,12 @@ export const MODELS = {
     repo: "convaiinnovations/laya",
     revision: "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
     license: "apache-2.0",
+    hosted: `${PACKS}/laya-q8.kevala`,
     // true when load() can convert it in the browser from upstream files (no pack to host)
     browserConvert: true,
+    // bytes of the upstream checkpoint and of the int8 pack
     download: 842609210,
-    pack: 478786688,
+    pack: 478886720,
     block: 32,
   },
   "kev-0.8b": {
@@ -28,9 +33,10 @@ export const MODELS = {
     revision: "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
     base: { repo: "Qwen/Qwen3.5-0.8B-Base", revision: "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68" },
     license: "apache-2.0",
+    hosted: `${PACKS}/kev-0.8b-q8.kevala`,
     browserConvert: true,
     download: 1620000000,
-    pack: 857300000,
+    pack: 857259584,
     block: 32,
   },
 };
@@ -214,9 +220,12 @@ async function* body(res, file, total, onProgress, signal) {
 /**
  * Resolves a pack source to `{ size, chunks(), cached, key }`.
  * `model` is a URL string, an ArrayBuffer / Uint8Array / Blob, or `{ repo, revision, block }`
- * naming an upstream checkpoint (the default).
+ * naming an upstream checkpoint (the default). For a known model, `from` picks where its weights
+ * come from: "pack" (its hosted int8 pack, the default) or "checkpoint" (the original weights,
+ * converted here).
  */
-export async function openPack(model, { cache = true, signal, onProgress, convert } = {}) {
+export async function openPack(model, { cache = true, from = "pack", signal, onProgress, convert } = {}) {
+  if (from !== "pack" && from !== "checkpoint") throw new Error(`from must be "pack" or "checkpoint", not ${JSON.stringify(from)}`);
   if (model instanceof ArrayBuffer || ArrayBuffer.isView(model)) {
     const bytes = model instanceof ArrayBuffer ? new Uint8Array(model) : new Uint8Array(model.buffer, model.byteOffset, model.byteLength);
     return { size: bytes.byteLength, cached: false, key: null, async *chunks() { yield bytes; } };
@@ -248,7 +257,7 @@ export async function openPack(model, { cache = true, signal, onProgress, conver
   const up = which.spec;
   // a model with a hosted int8 pack downloads that (about half the bytes of the checkpoint and no
   // conversion); if it is missing or unreachable, convert from the upstream checkpoint instead
-  if (up.hosted) {
+  if (up.hosted && from === "pack") {
     const size = await remoteSize(up.hosted, signal).catch((e) => (signal?.aborted ? Promise.reject(e) : 0));
     if (size) return streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress });
   }

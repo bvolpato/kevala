@@ -11,7 +11,7 @@ import { MODELS } from "./source.js";
 export { cacheInfo, clearCache, isCached, MODELS } from "./source.js";
 export * as presets from "./presets.js";
 
-export const VERSION = "0.1.2";
+export const VERSION = "0.1.3";
 
 function spawn(file) {
   const url = new URL(file, import.meta.url);
@@ -27,9 +27,11 @@ export class Kevala {
    * Loads the model.
    *
    * options:
-   *   model       a known model name ("laya", "kev-0.8b"; see MODELS), converted in the browser from
-   *               its pinned upstream Hugging Face revision; or the URL of a .kevala pack; or an
-   *               ArrayBuffer/Blob of one (default: "laya")
+   *   model       a known model name ("laya", "kev-0.8b"; see MODELS); or the URL of a .kevala
+   *               pack; or an ArrayBuffer/Blob of one (default: "laya")
+   *   from        for a known model: "pack" downloads its pinned int8 pack from Hugging Face, and
+   *               converts the original weights when the pack is unreachable (default);
+   *               "checkpoint" always downloads the original weights and converts them here
    *   backend     "auto" (WebGPU when available, else WebAssembly), "webgpu", or "wasm"
    *   threads     WebAssembly workers for the wasm backend (default: cores, at most 8)
    *   cache       keep the pack in the Cache API (default true)
