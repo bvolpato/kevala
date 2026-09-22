@@ -32,13 +32,6 @@
 .view-guardrail .check .state.unsure { color: #ffe1b0; border-color: rgba(246, 184, 90, 0.45); }
 .view-guardrail .check .num { font: 0.76rem var(--mono); color: var(--text-2); }
 
-.view-guardrail .cascade { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; align-items: stretch; }
-.view-guardrail .stage { border: 1px solid var(--border); border-radius: 11px; padding: 10px; background: var(--surface-2); font-size: 0.78rem; color: var(--muted); transition: all 0.25s; }
-.view-guardrail .stage b { display: block; color: var(--text-2); font-size: 0.84rem; margin-bottom: 2px; }
-.view-guardrail .stage.lit { border-color: var(--accent-2); color: var(--text-2); box-shadow: 0 0 0 3px rgba(69, 224, 192, 0.1); }
-.view-guardrail .stage.lit b { color: var(--text); }
-.view-guardrail .stage.lit.warn { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(246, 184, 90, 0.1); }
-.view-guardrail .stage.lit.bad { border-color: var(--bad); box-shadow: 0 0 0 3px rgba(255, 107, 125, 0.1); }
 
 .view-guardrail .policy { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; font-size: 0.84rem; color: var(--muted); }
 .view-guardrail .policy input[type="range"] { width: 160px; accent-color: var(--accent); }
@@ -54,6 +47,5 @@
 
 @media (max-width: 900px) {
   .view-guardrail .g-grid { grid-template-columns: 1fr; }
-  .view-guardrail .cascade { grid-template-columns: 1fr; }
   .view-guardrail .session { grid-template-columns: repeat(2, 1fr); }
 }

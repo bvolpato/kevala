@@ -66,11 +66,31 @@ Responses follow each model's reference format: Laya rounds to 4 places and adds
 - Keep option lists short and the state front-loaded (Laya reads 512 tokens in total).
 - Try two or three phrasings on real examples and keep the best.
 
+## Wire it into the page
+
+- Keep one request in flight and let the latest input win: when the user types, debounce
+  (about 200 ms on WebGPU, a second on the CPU) and drop answers for text that has changed.
+- For a list (emails, comments, candidate moves), call `decideMany` in growing batches (1, 2, 4,
+  8, ...) and render each batch as it returns, so the first rows appear after one short pass.
+- `Kevala.load` rejects when the model cannot load (no storage, a failed download); show the error
+  and keep the page usable. Pass `signal` from an `AbortController` to cancel a download.
+
 ## Act on probabilities
 
 Pick thresholds from labelled examples, not 0.5 by default, and send the unsure middle somewhere
 slower (a person, an LLM). Probabilities are the product; accuracy out of the box is modest on nuanced
 or graded questions. Measure on 50-200 of the site's own examples and report the numbers.
+
+## Server side
+
+The same engine runs in Node.js, Deno or Bun, in one instance, without workers or a GPU. It reads a
+pack converted by the CLI:
+
+```js
+import { loadFile } from "kevala/node"; // npm install kevala
+const kevala = await loadFile("laya-q8.kevala");
+const r = kevala.decide("I want my money back.", { refund: { type: "noul", instructions: "Does the customer ask for money back?" } });
+```
 
 ## Hosting
 
@@ -78,3 +98,9 @@ or graded questions. Measure on 50-200 of the site's own examples and report the
 - No special headers are needed. Cross-origin isolation is not required.
 - To avoid the first-visit conversion, convert once with the CLI (`kevala convert` for Laya,
   `kevala convert-kev` for Kev) and serve the `.kevala` file with `Content-Length`; pass its URL as `model`.
+
+## Examples to copy
+
+Complete single-file pages: https://github.com/bvolpato/kevala/tree/main/examples (a minimal page,
+a moderation gate on a comment form, an LLM cascade that answers confident cases locally, a game
+loop). Live demos: https://bvolpato.github.io/kevala/

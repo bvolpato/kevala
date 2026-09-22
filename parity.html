@@ -25,7 +25,7 @@
 <pre id="log"></pre>
 <table id="out"></table>
 <script type="module">
-import { Kevala } from "../js/src/index.js";
+import { Kevala } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.parity = null;
@@ -35,7 +35,7 @@ async function run() {
   $("out").innerHTML = "";
   const backend = $("backend").value;
   const threads = Number($("threads").value);
-  const model = $("pack").value === "local" ? "../tmp/laya-q8.kevala" : undefined;
+  const model = $("pack").value === "local" ? "./tmp/laya-q8.kevala" : undefined;
   const t0 = performance.now();
   let last = "";
   const kevala = await Kevala.load({ backend, threads, model, onProgress: (p) => {
@@ -43,7 +43,7 @@ async function run() {
     if (s !== last) { last = s; if (!p.total || p.loaded === p.total || p.phase !== "download") log(s); }
   } });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${JSON.stringify(kevala.info)}`);
-  const golden = await (await fetch("../tests/fixtures/golden.json")).json();
+  const golden = await (await fetch("./tests/fixtures/golden.json")).json();
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
   let worst = 0, agree = 0, n = 0;
   const times = [];

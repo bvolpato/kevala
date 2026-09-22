@@ -10,7 +10,7 @@
 <p>Plays seeded games without gravity: score every landing spot, play the best one. <code>#model=laya&amp;pieces=60&amp;seeds=1,2,3</code></p>
 <pre id="log"></pre>
 <script type="module">
-import { Kevala } from "../../js/src/index.js";
+import { Kevala } from "../js/src/index.js";
 import { Game, countHoles, columnHeights } from "../app/tetris/engine.js";
 import { candidates, QUESTION } from "../app/tetris/ai.js";
 
@@ -22,7 +22,7 @@ const seeds = (q.get("seeds") || "3").split(",").map(Number);
 const policy = q.get("policy") || "placement";
 const verbose = q.get("verbose") === "1";
 const style = {};
-const packs = { laya: "../../tmp/laya-q8.kevala", "kev-0.8b": "../../tmp/kev-0.8b-q8.kevala" };
+const packs = { laya: "../tmp/laya-q8.kevala", "kev-0.8b": "../tmp/kev-0.8b-q8.kevala" };
 window.evalResult = null;
 try {
   const kevala = policy !== "drop" ? await Kevala.load({ model: packs[name], backend: q.get("backend") || "auto" }) : null;

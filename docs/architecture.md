@@ -112,7 +112,7 @@ sequence is valid for another's. What kevala reuses:
   resident (in GPU buffers on WebGPU, in memory on the CPU). A repeated state skips its pass. A
   state that extends a cached one (a growing conversation, a log with new lines, a document with a
   new paragraph) runs only its new tokens, continuing the cached carry. Both are exact: the tests
-  check them against a cold engine (`crates/kevala/tests/kev_cache.rs`, `site/dev/cache-test.html`).
+  check them against a cold engine (`crates/kevala/tests/kev_cache.rs`, `dev/cache-test.html`).
   On WebGPU a repeated 512-token state answers in 28 ms instead of 334 ms.
 - **Short single-question rows** (states under 32 tokens) are run as one causal row instead, which
   halves the GPU dispatches; they are cheaper to recompute than to cache.
@@ -125,7 +125,7 @@ Parity is checked against the upstream PyTorch code, not against another port:
 
 - `tools/golden.py` runs Laya through the `laya` SDK 0.3.5; `tools/golden_kev.py` runs Kev through
   Kev's own `kev.checkpoint` / `kev.api` code. Both write fixtures under `tests/fixtures/`.
-- `kevala parity` / `kevala parity-kev` (native) and `site/parity.html` / `site/parity-kev.html` (browser)
+- `kevala parity` / `kevala parity-kev` (native) and `parity.html` / `parity-kev.html` (browser)
   compare token ids exactly and probabilities within a tolerance.
 - With f32 weights the Laya port matches PyTorch to within 5e-5 on every logit. int8 packs keep every
   argmax, with a max probability difference of 0.024 (Laya, 41 questions) and 0.0097 (Kev, 13).

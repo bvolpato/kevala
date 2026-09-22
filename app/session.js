@@ -3,7 +3,7 @@
 // The choice sticks for the browser session (sessionStorage): after a reload, a model that was
 // loaded comes back by itself when its pack is cached.
 
-import { Kevala, MODELS, cacheInfo, clearCache, isCached } from "../../js/src/index.js";
+import { Kevala, MODELS, cacheInfo, clearCache, isCached } from "../js/src/index.js";
 
 export { MODELS };
 
@@ -12,8 +12,8 @@ export const params = new URLSearchParams(location.search);
 /** `?pack=local` loads the dev packs from /tmp instead of converting from Hugging Face. */
 export const LOCAL = params.get("pack") === "local";
 const LOCAL_PACKS = {
-  laya: new URL("../../tmp/laya-q8.kevala", import.meta.url).href,
-  "kev-0.8b": new URL("../../tmp/kev-0.8b-q8.kevala", import.meta.url).href,
+  laya: new URL("../tmp/laya-q8.kevala", import.meta.url).href,
+  "kev-0.8b": new URL("../tmp/kev-0.8b-q8.kevala", import.meta.url).href,
 };
 /** `?shot=1` hides dev-only chrome, for README screenshots taken with dev packs. */
 export const SHOT = params.get("shot") === "1";

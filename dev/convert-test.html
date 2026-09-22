@@ -3,7 +3,7 @@
 <title>kevala in-browser conversion test</title>
 <pre id="log" style="font: 13px ui-monospace, monospace"></pre>
 <script type="module">
-import { Kevala, cacheInfo } from "../../js/src/index.js";
+import { Kevala, cacheInfo } from "../js/src/index.js";
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 const q = new URLSearchParams(location.search);
 window.conv = { phase: "start" };

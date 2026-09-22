@@ -3,7 +3,7 @@
 <title>Kev state cache test</title>
 <pre id="log" style="font: 13px ui-monospace, monospace"></pre>
 <script type="module">
-import { Kevala } from "../../js/src/index.js";
+import { Kevala } from "../js/src/index.js";
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 window.ct = null;
 const backend = new URLSearchParams(location.search).get("backend") || "webgpu";
@@ -16,7 +16,7 @@ const longer = base + " I called support on Monday and nobody answered, so pleas
 const flat = (r) => [...r.raw_probabilities.a, ...r.raw_probabilities.b];
 const diff = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])));
 try {
-  const warm = await Kevala.load({ model: "../../tmp/kev-0.8b-q8.kevala", backend });
+  const warm = await Kevala.load({ model: "../tmp/kev-0.8b-q8.kevala", backend });
   const t = [];
   const time = async (s) => { const t0 = performance.now(); const r = await warm.decide(s, Q); t.push(Math.round(performance.now() - t0)); return r; };
   const miss = await time(base);
@@ -24,7 +24,7 @@ try {
   const ext = await time(longer);
   const stats = ext.timing.cache;
   warm.dispose();
-  const cold = await Kevala.load({ model: "../../tmp/kev-0.8b-q8.kevala", backend });
+  const cold = await Kevala.load({ model: "../tmp/kev-0.8b-q8.kevala", backend });
   const fresh = await cold.decide(longer, Q);
   cold.dispose();
   window.ct = { backend, stats, ms: { miss: t[0], hit: t[1], extension: t[2] }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)) };

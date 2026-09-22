@@ -33,4 +33,4 @@ jobs:
         with:
           node-version: 22
       - name: Syntax
-        run: for f in js/src/*.js js/src/archs/*.js scripts/*.mjs; do node --check "$f"; done
+        run: for f in js/src/*.js js/src/archs/*.js app/*.js app/views/*.js app/tetris/*.js scripts/*.mjs; do node --check "$f"; done

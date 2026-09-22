@@ -3,8 +3,8 @@
 <title>DeltaNet recurrence A/B</title>
 <pre id="log" style="font: 13px ui-monospace, monospace"></pre>
 <script type="module">
-import { KEV_SHADERS } from "../../js/src/gpu-kev.js";
-import { requestDevice } from "../../js/src/gpu.js";
+import { KEV_SHADERS } from "../js/src/gpu-kev.js";
+import { requestDevice } from "../js/src/gpu.js";
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 window.rb = null;
 const gpu = await requestDevice();

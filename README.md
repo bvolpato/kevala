@@ -54,6 +54,9 @@ npm install kevala
 import { Kevala } from "kevala";
 ```
 
+Building with a coding agent? The site has [a prompt to paste into it](https://bvolpato.github.io/kevala/#/home/agent),
+and [`skills/kevala/SKILL.md`](skills/kevala/SKILL.md) is the same guide as an agent skill.
+
 The first visit downloads and converts the model (Laya: about 850 MB, about 30 s on a fast connection).
 The converted pack is stored in the site's Origin Private File System, so later visits load in under
 a second. It works from any origin and needs no special headers.
@@ -78,7 +81,7 @@ On an Apple M4 Max, with WebGPU in Chrome:
 | the same state asked again (cache hit) | | **10 ms** |
 
 Laya scores 32 states in one pass in 186 ms. Without WebGPU, a short request takes about 0.4 s on
-one CPU core. [`site/bench.html`](site/bench.html) measures your own machine.
+one CPU core. [`bench.html`](https://bvolpato.github.io/kevala/bench.html) measures your own machine.
 
 Kev reuses its KV cache: all questions about a state share one pass over it, and the carries of recent
 states stay resident, so a repeated state only runs its question tokens and a state that extends a
@@ -97,7 +100,7 @@ Every number is checked against the upstream PyTorch code (`tools/golden.py` run
 | Kev-0.8B, int8 pack (CPU, WebAssembly, WebGPU) | 8 / 8 requests exact | 13 / 13 | 0.0097 |
 
 The tokenizers also match the Hugging Face `tokenizers` library on the fixture corpora and on about
-ten million fuzzed strings. Open [`site/parity.html`](site/parity.html) to rerun the Laya check in
+ten million fuzzed strings. Open [`parity.html`](https://bvolpato.github.io/kevala/parity.html) to rerun the Laya check in
 your own browser.
 
 ## Demos and examples

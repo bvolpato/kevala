@@ -180,6 +180,26 @@ const { answers } = await kevala.decide("Can you refund the duplicate charge by 
 });
 console.log(answers.urgent.noul); // P(yes), for example 0.94`;
 
+const PROMPT_INTRO = `I want to add kevala (${REPO}) to this project. kevala runs small decision models in the browser: given a piece of text or JSON and typed questions, it returns a probability for every option, with no server. Read the guide below, then help me pick the decision this project needs, write the questions, wire it into the UI with a loading state, and check it on real examples from the project.`;
+
+/** Joins the hard-wrapped lines of each paragraph and list item; code blocks stay as they are. */
+function unwrap(md) {
+  const out = [];
+  let code = false;
+  for (const line of md.split("\n")) {
+    if (line.startsWith("```")) {
+      code = !code;
+      out.push(line);
+      continue;
+    }
+    const prev = out[out.length - 1];
+    const joins = !code && line.trim() && prev?.trim() && !/^(#|\||```)/.test(prev) && !/^\s*(-|\d+\.|#|\||```)/.test(line);
+    if (joins) out[out.length - 1] = `${prev} ${line.trim()}`;
+    else out.push(line);
+  }
+  return out.join("\n");
+}
+
 const INSTALL = `npm install kevala
 
 import { Kevala } from "kevala";`;
@@ -247,6 +267,22 @@ const TEMPLATE = `
   </div>
 </section>
 
+<section class="tight" id="agent">
+  <div class="wrap agent-grid">
+    <div>
+      <div class="eyebrow">Build with an agent</div>
+      <h2>A prompt for your coding agent</h2>
+      <p class="muted">Paste this into Claude Code, Cursor, Codex or any coding agent. It covers loading, the question types, how to write questions that work, the response format and the pitfalls, so the agent can add kevala to your project on its own.</p>
+      <div class="row">
+        <button type="button" class="btn primary" data-act="copy-prompt">Copy prompt</button>
+        <a class="btn ghost" href="skills/kevala/SKILL.md" download="SKILL.md">Download as a skill</a>
+        <span class="tiny faint" data-f="copied"></span>
+      </div>
+    </div>
+    <textarea class="agent-prompt" data-f="prompt" readonly spellcheck="false" aria-label="Prompt for a coding agent">Loading the prompt…</textarea>
+  </div>
+</section>
+
 <section id="demos">
   <div class="wrap">
     <div class="eyebrow">Demos</div>
@@ -293,7 +329,7 @@ const TEMPLATE = `
     </div>
     <div class="grid-3 demos small-cards">
       <a class="card pad mini-card" href="#/playground"><h3>Playground</h3><p class="muted small">Edit any request as JSON, pick model and backend, see the raw response and timing.</p></a>
-      <a class="card pad mini-card" href="../examples/basic.html"><h3>Examples</h3><p class="muted small">Copy-paste integrations: a basic call, a moderation gate on a form, an LLM cascade, a game loop.</p></a>
+      <a class="card pad mini-card" href="examples/basic.html"><h3>Examples</h3><p class="muted small">Copy-paste integrations: a basic call, a moderation gate on a form, an LLM cascade, a game loop.</p></a>
       <a class="card pad mini-card" href="parity.html"><h3>Parity check</h3><p class="muted small">Run the golden fixtures against the PyTorch reference, in your browser.</p></a>
     </div>
   </div>
@@ -367,6 +403,22 @@ export function mount(el, { session }) {
 
   modelGate($("gate"), "try it live");
   $("snippet").innerHTML = highlight(SNIPPET);
+  // the agent prompt is the skill file (one source for both), without its front matter
+  fetch("skills/kevala/SKILL.md")
+    .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
+    .then((md) => ($("prompt").value = `${PROMPT_INTRO}\n\n${unwrap(md.replace(/^---[\s\S]*?---\s*/, ""))}`))
+    .catch(() => ($("prompt").value = `${PROMPT_INTRO}\n\nThe full guide is at ${REPO}/blob/main/skills/kevala/SKILL.md`));
+  el.querySelector('[data-act="copy-prompt"]').addEventListener("click", async () => {
+    const ta = $("prompt");
+    try {
+      await navigator.clipboard.writeText(ta.value);
+      $("copied").textContent = "Copied. Paste it into your agent.";
+    } catch {
+      ta.select();
+      $("copied").textContent = "Selected: press Ctrl+C or ⌘C to copy.";
+    }
+    setTimeout(() => ($("copied").textContent = ""), 3000);
+  });
   $("install").innerHTML = highlight(INSTALL);
   wireCopy(el);
 

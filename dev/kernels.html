@@ -3,7 +3,7 @@
 <title>kevala GPU kernel tests</title>
 <pre id="log" style="font: 13px ui-monospace, monospace"></pre>
 <script type="module">
-import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH } from "../../js/src/gpu.js";
+import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH } from "../js/src/gpu.js";
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 const results = {};
 window.kernelResults = results;

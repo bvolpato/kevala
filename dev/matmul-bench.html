@@ -5,7 +5,7 @@
 <script type="module">
 // Times every matmul kernel on Laya's shapes and checks they agree with each other.
 // ?kernels=matmul,matmul_h  ?shapes=44x3072x1024,1472x1024x2624
-import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH, dispatchMatmul, matmulLayout, rowsPerThread } from "../../js/src/gpu.js";
+import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH, dispatchMatmul, matmulLayout, rowsPerThread } from "../js/src/gpu.js";
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 window.mm = null;
 async function main() {

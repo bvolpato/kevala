@@ -15,7 +15,7 @@
 <pre id="log"></pre>
 <table id="out"></table>
 <script type="module">
-import { Kevala } from "../js/src/index.js";
+import { Kevala } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.parity = null;
@@ -23,9 +23,9 @@ async function run() {
   const q = new URLSearchParams(location.hash.slice(1));
   const backend = q.get("backend") || "auto";
   const t0 = performance.now();
-  const kevala = await Kevala.load({ model: q.get("pack") === "local" || !q.get("pack") ? "../tmp/kev-0.8b-q8.kevala" : q.get("pack"), backend });
+  const kevala = await Kevala.load({ model: q.get("pack") === "local" || !q.get("pack") ? "./tmp/kev-0.8b-q8.kevala" : q.get("pack"), backend });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
-  const golden = await (await fetch("../tests/fixtures/golden-kev.json")).json();
+  const golden = await (await fetch("./tests/fixtures/golden-kev.json")).json();
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
   let worst = 0, agree = 0, n = 0;
   const times = [];

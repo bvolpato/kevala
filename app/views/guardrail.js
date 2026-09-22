@@ -113,11 +113,6 @@ const TEMPLATE = `<div class="wrap">
       <div class="card verdict-card">
         <div class="verdict" data-f="verdict"></div>
         <p class="v-why" data-f="why"></p>
-        <div class="cascade">
-          <div class="stage" data-s="s1"><b>1 · kevala, on device</b>~tens of ms, every prompt</div>
-          <div class="stage" data-s="act"><b>2 · act</b>allow, or block with a reason</div>
-          <div class="stage" data-s="s2"><b>3 · escalate</b>stronger model or a human, only when unsure</div>
-        </div>
         <div class="checks" data-f="checks"></div>
         <div class="topic" data-f="topic"></div>
       </div>
@@ -127,7 +122,7 @@ const TEMPLATE = `<div class="wrap">
   <section class="tight">
     <div class="grid-2">
       <div class="card pad">
-        <h3>The cascade in code</h3>
+        <h3>The gate in code</h3>
         <div class="code"><pre data-f="code"></pre></div>
       </div>
       <div class="card pad">
@@ -160,7 +155,6 @@ export function mount(el, { session }) {
   el.innerHTML = TEMPLATE;
   const $ = (f) => el.querySelector(`[data-f="${f}"]`);
   const ta = el.querySelector("#gr-prompt");
-  const stages = [...el.querySelectorAll(".stage")];
 
   modelGate($("gate"), "screen prompts");
   $("code").innerHTML = highlight(CODE);
@@ -221,7 +215,6 @@ export function mount(el, { session }) {
     v.className = "verdict";
     v.innerHTML = `<div class="v-icon">?</div><div><div class="v-big">Waiting</div><div class="tiny faint">${kevala ? "Checking…" : "Load the model to start"}</div></div>`;
     $("why").textContent = WHY;
-    for (const s of stages) s.classList.remove("lit", "warn", "bad");
     $("checks").innerHTML = "";
     $("topic").innerHTML = "";
   }
@@ -232,10 +225,6 @@ export function mount(el, { session }) {
     v.className = `verdict v-${g.verdict}`;
     v.innerHTML = `<div class="v-icon">${ICON[g.verdict]}</div><div><div class="v-big">${WORD[g.verdict]}</div><div class="tiny faint">${fmtMs(ms)} round trip · ${r.usage?.input_tokens ?? "?"} tokens · ${esc(backendLabel(info))}</div></div>`;
     $("why").textContent = g.why;
-    for (const s of stages) s.classList.remove("lit", "warn", "bad");
-    el.querySelector('[data-s="s1"]').classList.add("lit");
-    if (g.verdict === "escalate") el.querySelector('[data-s="s2"]').classList.add("lit", "warn");
-    else el.querySelector('[data-s="act"]').classList.add("lit", ...(g.verdict === "block" ? ["bad"] : []));
     $("checks").innerHTML = g.checks
       .map(
         (c) =>
