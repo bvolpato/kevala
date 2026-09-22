@@ -11,7 +11,7 @@ import { MODELS } from "./source.js";
 export { cacheInfo, clearCache, isCached, MODELS } from "./source.js";
 export * as presets from "./presets.js";
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.1.1";
 
 function spawn(file) {
   const url = new URL(file, import.meta.url);
@@ -150,6 +150,21 @@ export class Kevala {
   async decideMany(items) {
     const m = await this.#send(items);
     return m.responses.map((r) => ({ ...r, timing: m.timing }));
+  }
+
+  /**
+   * Turns per-kernel GPU timing on or off. While it is on, every response's `timing.gpu` maps
+   * each kernel (matmul by weight, attention, norms...) to its milliseconds. Each kernel then
+   * runs in its own pass with timestamps, so requests are slower than usual: profile, then turn
+   * it off. Resolves to whether the backend can profile (WebGPU with timestamp queries).
+   */
+  async profile(on = true) {
+    if (!this.#worker) throw new Error("kevala was disposed");
+    const id = ++this.#seq;
+    return new Promise((resolve, reject) => {
+      this.#pending.set(id, { resolve: (m) => resolve(m.supported), reject });
+      this.#worker.postMessage({ type: "profile", id, on });
+    });
   }
 
   /** Stops every worker and frees the model. */

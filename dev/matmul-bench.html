@@ -21,13 +21,21 @@ async function main() {
   const mk = (code) => d.createComputePipelineAsync({ layout: pl, compute: { module: d.createShaderModule({ code }), entryPoint: "main" } });
   // "matmul_h@256" = the f16 kernel with a split-K target of 256 workgroups; "matmul_h:2" uses
   // 2 rows per thread (32-row tiles); "matmul_h:auto" picks the rows from T like the trunks do
-  const spec = (k, T) => { const m = k.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?$/); const R = m[3] === "auto" ? rowsPerThread(T) : m[3] ? Number(m[3]) : 4; return { name: m[1], target: m[2] ? Number(m[2]) : 128, R }; };
-  const code = (k, T) => { const { name, target, R } = spec(k, T); return name === "matmul_h" ? SHADERS.matmulKernel(true, target, R) : SHADERS.matmulKernel(false, target, R); };
+  // "matmul_h:auto/2": f16 tiles, rows per thread picked from T, 2 groups of 64 columns
+  const spec = (k, T) => {
+    const m = k.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d))?$/);
+    const R = m[3] === "auto" ? rowsPerThread(T) : m[3] ? Number(m[3]) : 4;
+    return { name: m[1], target: m[2] ? Number(m[2]) : 128, R, J: m[4] ? Number(m[4]) : 1 };
+  };
+  const code = (k, T) => {
+    const { name, target, R, J } = spec(k, T);
+    return SHADERS.matmulKernel(name !== "matmul", target, R, J);
+  };
   const cache = new Map();
   const pipesFor = async (k, T) => {
-    const { target, R } = spec(k, T);
+    const { target, R, J } = spec(k, T);
     const key = `${k}|${R}`;
-    if (!cache.has(key)) cache.set(key, [await mk(code(k, T)), await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code: SHADERS.reduceKernel(target, 16 * R) }), entryPoint: "main" } })]);
+    if (!cache.has(key)) cache.set(key, [await mk(code(k, T)), await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code: SHADERS.reduceKernel(target, 16 * R, 64 * J) }), entryPoint: "main" } })]);
     return cache.get(key);
   };
   const part = buf(SPLIT_SCRATCH * 4);
@@ -47,11 +55,11 @@ async function main() {
     const outs = {};
     for (const k of kernels) {
       const [pk, pr] = await pipesFor(k, T);
-      const { target, R } = spec(k, T);
+      const { target, R, J } = spec(k, T);
       const Y = buf(T * N * 4);
       const group = d.createBindGroup({ layout, entries: [g, pp, X, W, S, B, Y, part].map((b, i) => ({ binding: i, resource: { buffer: b } })) });
       const op = { N, K, group, reduce: d.createBindGroup({ layout: pr.getBindGroupLayout(0), entries: [g, pp, part, B, Y].map((b, i) => ({ binding: i, resource: { buffer: b } })) }) };
-      const one = (pass) => dispatchMatmul(pass, pk, pr, op, T, target, R);
+      const one = (pass) => dispatchMatmul(pass, pk, pr, op, T, target, R, J);
       const go = async (n) => {
         const e = d.createCommandEncoder();
         const pass = e.beginComputePass();
@@ -79,7 +87,7 @@ async function main() {
       }
       const tflops = (2 * T * N * K) / (ms / 1e3) / 1e12;
       res.push({ kernel: k, T, N, K, ms, tflops });
-      log(`${k.padEnd(13)} T=${String(T).padStart(4)} N=${String(N).padStart(4)} K=${String(K).padStart(4)} R=${R} splits=${mmSplits(T, N, K, target, 16 * R)}: ${ms.toFixed(3).padStart(7)} ms  ${tflops.toFixed(2)} TFLOP/s`);
+      log(`${k.padEnd(13)} T=${String(T).padStart(4)} N=${String(N).padStart(4)} K=${String(K).padStart(4)} R=${R} J=${J} splits=${mmSplits(T, N, K, target, 16 * R, 64 * J)}: ${ms.toFixed(3).padStart(7)} ms  ${tflops.toFixed(2)} TFLOP/s`);
       Y.destroy();
     }
     for (const k of kernels.slice(1)) {

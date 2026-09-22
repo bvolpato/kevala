@@ -11,17 +11,17 @@ struct Globals { T: u32, R: u32, S: u32, _b: u32 }
 // at 64 tokens is 16 workgroups), so K is split across up to 8 workgroups whose partial tiles a
 // second pass sums. The shader and the host compute the same split count.
 const SPLIT_TARGET = 128;
-const splitsWGSL = (target, bm = 64) => /* wgsl */ `
+const splitsWGSL = (target, bm = 64, bn = 64) => /* wgsl */ `
 fn mm_splits(T: u32, N: u32, K: u32) -> u32 {
-  let tiles = ((N + 63u) / 64u) * ((T + ${bm - 1}u) / ${bm}u);
+  let tiles = ((N + ${bn - 1}u) / ${bn}u) * ((T + ${bm - 1}u) / ${bm}u);
   if (tiles >= 96u) { return 1u; }
   return max(1u, min(min(8u, (${target}u + tiles - 1u) / tiles), K / 128u));
 }
 `;
 
 /** Host side of `mm_splits`. */
-export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64) {
-  const tiles = Math.ceil(N / 64) * Math.ceil(T / bm);
+export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
+  const tiles = Math.ceil(N / bn) * Math.ceil(T / bm);
   if (tiles >= 96) return 1;
   return Math.max(1, Math.min(8, Math.ceil(target / tiles), Math.floor(K / 128)));
 }
@@ -29,13 +29,17 @@ export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64) {
 /** Rows per thread for an input of T tokens: a short input gets a shorter tile (16 R rows). */
 export const rowsPerThread = (T) => (T >= 64 ? 4 : Math.max(1, Math.ceil(T / 16)));
 
-/** Encodes a matmul op (bind groups `group` and `reduce`), splitting K when it helps. */
-export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4) {
+/**
+ * Encodes a matmul op (bind groups `group` and `reduce`), splitting K when it helps. The kernel
+ * variant covers 16 R rows and 64 J columns per workgroup.
+ */
+export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1) {
   const bm = 16 * R;
-  const splits = mmSplits(T, op.N, op.K, target, bm);
+  const bn = 64 * J;
+  const splits = mmSplits(T, op.N, op.K, target, bm, bn);
   pass.setPipeline(pMatmul);
   pass.setBindGroup(0, op.group);
-  pass.dispatchWorkgroups(Math.ceil(op.N / 64), Math.ceil(T / bm), splits);
+  pass.dispatchWorkgroups(Math.ceil(op.N / bn), Math.ceil(T / bm), splits);
   if (splits > 1) {
     const n = Math.ceil((T * op.N) / 256);
     pass.setPipeline(pReduce);
@@ -97,8 +101,49 @@ export const SPLIT_SCRATCH = 8 * 96 * 64 * 64;
 // output stores coalesce. Tiles hold one quantization block of K as vec4 rows; every thread
 // writes whole vectors (sub-vector writes from several threads race on some GPUs), and the
 // weight tile is XOR-swizzled so neighbouring threads read different banks.
-/** `h` stores the tiles as f16 (half the workgroup-memory traffic; math stays f32). */
-const matmulKernel = (h, target = SPLIT_TARGET, R = 4) => /* wgsl */ `
+/**
+ * The int8-weight matmul. A workgroup of 16 x 16 threads covers 16 R rows and 64 J columns of the
+ * output; thread (x, y) owns rows y + 16 i and columns x + 16 j + 64 g, so output stores
+ * coalesce. `h` stores the tiles in workgroup memory as f16 (half the traffic); products and
+ * sums stay f32.
+ */
+const matmulKernel = (h, target = SPLIT_TARGET, R = 4, J = 1) => {
+  const t = h ? "f16" : "f32";
+  // WGSL that reads block "kb" of X (rows 0..16R) and W (rows lr + 64 g) into registers, and that
+  // writes those registers into the workgroup tiles (whole vectors only: sub-vector writes from
+  // several threads race on some GPUs)
+  const loadX = (kb) => `
+    xv0 = vec4<f32>(0.0);
+    xv1 = vec4<f32>(0.0);
+    if (lr < ${16 * R}u && xrow < T) {
+      let base = (xrow * K + (${kb}) * 32u) / 4u + lq * 2u;
+      xv0 = X[base];
+      xv1 = X[base + 1u];
+    }`;
+  const loadW = (kb) => `
+    for (var gg = 0u; gg < ${J}u; gg++) {
+      let wrow = n0 + lr + 64u * gg;
+      wv[2u * gg] = vec4<f32>(0.0);
+      wv[2u * gg + 1u] = vec4<f32>(0.0);
+      if (wrow < N) {
+        let v = W[(wrow * K + (${kb}) * 32u) / 16u + lq / 2u];
+        let s = S[wrow * nb + (${kb})];
+        let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
+        wv[2u * gg] = sx(lo.x) * s;
+        wv[2u * gg + 1u] = sx(lo.y) * s;
+      }
+    }`;
+  const storeTiles = `
+    if (lr < ${16 * R}u) {
+      xs[lr * 8u + lq * 2u] = vec4<${t}>(xv0);
+      xs[lr * 8u + lq * 2u + 1u] = vec4<${t}>(xv1);
+    }
+    for (var gg = 0u; gg < ${J}u; gg++) {
+      let r = lr + 64u * gg;
+      ws[r * 8u + ((lq * 2u) ^ sw)] = vec4<${t}>(wv[2u * gg]);
+      ws[r * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<${t}>(wv[2u * gg + 1u]);
+    }`;
+  return /* wgsl */ `
 ${h ? "enable f16;" : ""}
 ${WGSL_COMMON}
 struct P { N: u32, K: u32, mode: u32, bias: u32 }
@@ -110,16 +155,15 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
-var<workgroup> xs: array<vec4<${h ? "f16" : "f32"}>, 512>; // [m][k/4], 64 x 8
-var<workgroup> ws: array<vec4<${h ? "f16" : "f32"}>, 512>; // [n][(k/4) ^ (n & 7)], 64 x 8
-
-fn TV(v: vec4<f32>) -> ${h ? "vec4<f16>" : "vec4<f32>"} { return ${h ? "vec4<f16>" : "vec4<f32>"}(v); }
+// one quantization block of K (32 values) per step, as 8 vec4 per row
+var<workgroup> xs: array<vec4<${t}>, ${64 * 8}>; // [m][k/4]
+var<workgroup> ws: array<vec4<${t}>, ${64 * J * 8}>; // [n][(k/4) ^ (n & 7)], swizzled
 
 fn sx(w: u32) -> vec4<f32> {
   return vec4<f32>(vec4<i32>(bitcast<i32>(w << 24u), bitcast<i32>(w << 16u), bitcast<i32>(w << 8u), bitcast<i32>(w)) >> vec4<u32>(24u));
 }
 
-${splitsWGSL(target, 16 * R)}
+${splitsWGSL(target, 16 * R, 64 * J)}
 
 @compute @workgroup_size(16, 16)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid: vec3<u32>, @builtin(local_invocation_index) li: u32) {
@@ -128,90 +172,79 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let K = p.K;
   let nb = K / 32u;
   let m0 = wg.y * ${16 * R}u;
-  let n0 = wg.x * 64u;
+  let n0 = wg.x * ${64 * J}u;
   // split-K: this workgroup covers blocks kb0..kb1 and, when split, writes a partial tile
   let splits = mm_splits(T, N, K);
   let per = (nb + splits - 1u) / splits;
   let kb0 = wg.z * per;
   let kb1 = min(nb, kb0 + per);
-  var acc: array<vec4<f32>, ${R}>;
-  // loader roles: ${16 * R} rows of X and 64 of W x 32 k per tile, 4 threads per row, 8 values each
+  var acc: array<vec4<f32>, ${R * J}>; // [i][g]: row y + 16 i, columns x + 16 j + 64 g for j < 4
+
+  // loaders: 4 threads per row, 8 values each; X rows 0..16R, W rows lr + 64 g
   let lr = li / 4u;
   let lq = li % 4u;
   let xrow = m0 + lr;
-  let wrow = n0 + lr;
-  let xok = lr < ${16 * R}u && xrow < T;
-  let wok = wrow < N;
   let sw = lr & 7u;
+  var xv0 = vec4<f32>(0.0);
+  var xv1 = vec4<f32>(0.0);
+  var wv: array<vec4<f32>, ${2 * J}>;
   for (var kb = kb0; kb < kb1; kb++) {
-    let k0 = kb * 32u;
-    if (lr >= ${16 * R}u) {
-      // this thread only loads weights
-    } else if (xok) {
-      let base = (xrow * K + k0) / 4u + lq * 2u;
-      xs[lr * 8u + lq * 2u] = TV(X[base]);
-      xs[lr * 8u + lq * 2u + 1u] = TV(X[base + 1u]);
-    } else {
-      xs[lr * 8u + lq * 2u] = TV(vec4<f32>(0.0));
-      xs[lr * 8u + lq * 2u + 1u] = TV(vec4<f32>(0.0));
-    }
-    if (wok) {
-      let v = W[(wrow * K + k0) / 16u + lq / 2u];
-      let s = S[wrow * nb + kb];
-      var w0 = v.x;
-      var w1 = v.y;
-      if ((lq & 1u) == 1u) { w0 = v.z; w1 = v.w; }
-      ws[lr * 8u + ((lq * 2u) ^ sw)] = TV(sx(w0) * s);
-      ws[lr * 8u + ((lq * 2u + 1u) ^ sw)] = TV(sx(w1) * s);
-    } else {
-      ws[lr * 8u + ((lq * 2u) ^ sw)] = TV(vec4<f32>(0.0));
-      ws[lr * 8u + ((lq * 2u + 1u) ^ sw)] = TV(vec4<f32>(0.0));
-    }
+${loadX("kb")}
+${loadW("kb")}
+${storeTiles}
     workgroupBarrier();
+    let nx = lid.x & 7u;
     for (var kq = 0u; kq < 8u; kq++) {
-      let nx = lid.x & 7u;
-      let b0 = vec4<f32>(ws[lid.x * 8u + (kq ^ nx)]);
-      let b1 = vec4<f32>(ws[(lid.x + 16u) * 8u + (kq ^ nx)]);
-      let b2 = vec4<f32>(ws[(lid.x + 32u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(lid.x + 48u) * 8u + (kq ^ nx)]);
-      for (var i = 0u; i < ${R}u; i++) {
-        let a = vec4<f32>(xs[(lid.y + 16u * i) * 8u + kq]);
-        acc[i] += vec4<f32>(dot(a, b0), dot(a, b1), dot(a, b2), dot(a, b3));
+      for (var gg = 0u; gg < ${J}u; gg++) {
+        let c = lid.x + 64u * gg;
+        let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+        let b1 = vec4<f32>(ws[(c + 16u) * 8u + (kq ^ nx)]);
+        let b2 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+        let b3 = vec4<f32>(ws[(c + 48u) * 8u + (kq ^ nx)]);
+        for (var i = 0u; i < ${R}u; i++) {
+          let a = vec4<f32>(xs[(lid.y + 16u * i) * 8u + kq]);
+          acc[i * ${J}u + gg] += vec4<f32>(dot(a, b0), dot(a, b1), dot(a, b2), dot(a, b3));
+        }
       }
     }
     workgroupBarrier();
   }
-  for (var j = 0u; j < 4u; j++) {
-    let col = n0 + lid.x + 16u * j;
-    if (col >= N) { break; }
-    var bias = 0.0;
-    if (p.bias == 1u) { bias = B[col]; }
-    for (var i = 0u; i < ${R}u; i++) {
-      let row = m0 + lid.y + 16u * i;
-      if (row >= T) { break; }
-      let o = row * N + col;
-      if (splits > 1u) {
-        PART[wg.z * T * N + o] = acc[i][j];
-        continue;
+
+  for (var gg = 0u; gg < ${J}u; gg++) {
+    for (var j = 0u; j < 4u; j++) {
+      let col = n0 + lid.x + 16u * j + 64u * gg;
+      if (col >= N) { break; }
+      var bias = 0.0;
+      if (p.bias == 1u) { bias = B[col]; }
+      for (var i = 0u; i < ${R}u; i++) {
+        let row = m0 + lid.y + 16u * i;
+        if (row >= T) { break; }
+        let o = row * N + col;
+        let v0 = acc[i * ${J}u + gg][j];
+        if (splits > 1u) {
+          PART[wg.z * T * N + o] = v0;
+          continue;
+        }
+        var v = v0 + bias;
+        if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }
+        Y[o] = v;
       }
-      var v = acc[i][j] + bias;
-      if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }
-      Y[o] = v;
     }
   }
 }
 `;
+};
 const WGSL_MATMUL = matmulKernel(false);
 
 // Sums split-K partials and applies the matmul epilogue (bias, residual add or ReLU).
-const reduceKernel = (target = SPLIT_TARGET, bm = 64) => /* wgsl */ `
+const reduceKernel = (target = SPLIT_TARGET, bm = 64, bn = 64) => /* wgsl */ `
 ${WGSL_COMMON}
 struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(1) var<uniform> p: P;
 @group(0) @binding(2) var<storage, read> PART: array<f32>;
 @group(0) @binding(3) var<storage, read> B: array<f32>;
 @group(0) @binding(4) var<storage, read_write> Y: array<f32>;
-${splitsWGSL(target, bm)}
+${splitsWGSL(target, bm, bn)}
 @compute @workgroup_size(256)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let T = g.T;
@@ -414,6 +447,118 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
 }
 `;
 
+// The same attention with 32 keys per step and 128 threads, for GPUs whose subgroups are exactly
+// 32 lanes wide. Scores are laid out one key per lane, so each query's running max and sum come
+// from subgroupMax and subgroupAdd instead of a serial loop; the K tile is stored transposed so the
+// 32 lanes read 32 consecutive keys; and a step needs three barriers for 32 keys instead of four
+// for 16.
+const WGSL_ATTN_SUBGROUP = /* wgsl */ `
+enable subgroups;
+${WGSL_COMMON}
+struct P { width: u32, stride: u32, window: u32, _a: u32 }
+@group(0) @binding(1) var<uniform> p: P;
+@group(0) @binding(2) var<storage, read> QKV: array<f32>;
+@group(0) @binding(3) var<storage, read> blocks: array<vec4<u32>>;
+@group(0) @binding(4) var<storage, read_write> CTX: array<f32>;
+var<workgroup> qs: array<f32, 1024>; // [16 queries][64 dims]
+var<workgroup> kt: array<f32, 2048>; // [64 dims][32 keys]
+var<workgroup> vs: array<f32, 2048>; // [32 keys][64 dims]
+var<workgroup> ps: array<f32, 512>;  // [16 queries][32 keys]: exp(score - running max)
+var<workgroup> scale: array<f32, 16>; // per query: the rescale factor this step, then the final sum
+var<workgroup> info: vec4<u32>;
+
+@compute @workgroup_size(128)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t: u32) {
+  let h = wg.y;
+  if (wg.x >= g.S) { return; }
+  if (t == 0u) { info = blocks[wg.x]; }
+  let bi = workgroupUniformLoad(&info);
+  let s0 = bi.x; // segment start (token index)
+  let L = bi.y;  // segment length
+  let q0 = bi.z; // first query of the block, within the segment
+  let nq = min(16u, L - q0);
+  let w = p.window;
+  var lo = 0u;
+  var hi = L;
+  if (w > 0u) {
+    if (q0 > w) { lo = q0 - w; }
+    hi = min(L, q0 + nq - 1u + w + 1u);
+  }
+  for (var e = t; e < 1024u; e += 128u) {
+    let qi = e / 64u;
+    var v = 0.0;
+    if (qi < nq) { v = QKV[(s0 + q0 + qi) * p.stride + h * 64u + e % 64u]; }
+    qs[e] = v;
+  }
+
+  // scores and softmax: key "lane" of the step, for queries 4 qg .. 4 qg + 3
+  let lane = t % 32u;
+  let qg = t / 32u;
+  // output: dimension "dim", for queries 8 qh .. 8 qh + 7
+  let dim = t % 64u;
+  let qh = t / 64u;
+  var mx: array<f32, 4>;
+  var sum: array<f32, 4>;
+  for (var c = 0u; c < 4u; c++) {
+    mx[c] = -3.0e38;
+    sum[c] = 0.0;
+  }
+  var o: array<f32, 8>;
+  for (var c = 0u; c < 8u; c++) { o[c] = 0.0; }
+
+  for (var j0 = lo; j0 < hi; j0 += 32u) {
+    workgroupBarrier();
+    for (var e = t; e < 2048u; e += 128u) {
+      let kj = e / 64u;
+      let d = e % 64u;
+      var kv = 0.0;
+      var vv = 0.0;
+      if (j0 + kj < hi) {
+        let row = (s0 + j0 + kj) * p.stride + h * 64u + d;
+        kv = QKV[row + p.width];
+        vv = QKV[row + 2u * p.width];
+      }
+      kt[d * 32u + kj] = kv;
+      vs[e] = vv;
+    }
+    workgroupBarrier();
+    let j = j0 + lane;
+    for (var c = 0u; c < 4u; c++) {
+      let qi = qg * 4u + c;
+      let i = q0 + qi;
+      let valid = qi < nq && j < hi && (w == 0u || max(i, j) - min(i, j) <= w);
+      var dot = 0.0;
+      for (var d = 0u; d < 64u; d++) { dot += qs[qi * 64u + d] * kt[d * 32u + lane]; }
+      let score = select(-3.0e38, dot * 0.125, valid);
+      let top = max(mx[c], subgroupMax(score));
+      let e = select(0.0, exp(score - top), valid);
+      let rescale = exp(mx[c] - top);
+      sum[c] = sum[c] * rescale + subgroupAdd(e);
+      mx[c] = top;
+      ps[qi * 32u + lane] = e;
+      if (lane == 0u) { scale[qi] = rescale; }
+    }
+    workgroupBarrier();
+    for (var c = 0u; c < 8u; c++) {
+      let qi = qh * 8u + c;
+      var acc = o[c] * scale[qi];
+      for (var kj = 0u; kj < 32u; kj++) { acc += ps[qi * 32u + kj] * vs[kj * 64u + dim]; }
+      o[c] = acc;
+    }
+  }
+
+  workgroupBarrier();
+  if (lane == 0u) {
+    for (var c = 0u; c < 4u; c++) { scale[qg * 4u + c] = sum[c]; }
+  }
+  workgroupBarrier();
+  for (var c = 0u; c < 8u; c++) {
+    let qi = qh * 8u + c;
+    if (qi < nq) { CTX[(s0 + q0 + qi) * p.width + h * 64u + dim] = o[c] / scale[qi]; }
+  }
+}
+`;
+
 // GeGLU: A[t, i] = gelu(U[t, i]) * U[t, I + i], exact erf GELU.
 const WGSL_GEGLU = /* wgsl */ `
 ${WGSL_COMMON}
@@ -481,16 +626,18 @@ export async function requestDevice() {
     maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
   };
   // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`)
-  const requiredFeatures = ["timestamp-query", "shader-f16"].filter((f) => adapter.features.has(f));
+  const requiredFeatures = ["timestamp-query", "shader-f16", "subgroups"].filter((f) => adapter.features.has(f));
   const device = await adapter.requestDevice({ requiredLimits: want, requiredFeatures });
   const info = adapter.info || {};
-  return { device, adapter, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" };
+  // some kernels map one lane to each of 32 keys: they need subgroups of exactly 32 lanes
+  const subgroup32 = device.features.has("subgroups") && info.subgroupMinSize === 32 && info.subgroupMaxSize === 32;
+  return { device, adapter, subgroup32, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" };
 }
 
 let U;
 
 /** The shader sources, exported for the kernel tests. */
-export const SHADERS = { attention_block: WGSL_ATTN_BLOCK, matmul: WGSL_MATMUL, matmul_h: matmulKernel(true), matmulKernel, reduceKernel, reduce: WGSL_REDUCE, norm: WGSL_NORM, rope: WGSL_ROPE, geglu: WGSL_GEGLU, gather: WGSL_GATHER };
+export const SHADERS = { attention_block: WGSL_ATTN_BLOCK, attention_subgroup: WGSL_ATTN_SUBGROUP, matmul: WGSL_MATMUL, matmul_h: matmulKernel(true), matmulKernel, reduceKernel, reduce: WGSL_REDUCE, norm: WGSL_NORM, rope: WGSL_ROPE, geglu: WGSL_GEGLU, gather: WGSL_GATHER };
 
 /**
  * Trunk weights streamed straight into GPU buffers, one buffer per tensor (and one for q8
@@ -655,6 +802,7 @@ export class GpuTrunk {
     U = GPUBufferUsage;
     this.device = gpu.device;
     this.name = gpu.name;
+    this.subgroup32 = !!gpu.subgroup32;
     this.cfg = cfg;
     this.weights = new GpuWeights(gpu.device, layout);
     this.tensors = this.weights.tensors;
@@ -680,7 +828,7 @@ export class GpuTrunk {
       matmulPipelines(d),
       pipe(WGSL_NORM, "norm"),
       pipe(WGSL_ROPE, "rope"),
-      pipe(WGSL_ATTN_BLOCK, "attention"),
+      pipe(this.subgroup32 ? WGSL_ATTN_SUBGROUP : WGSL_ATTN_BLOCK, "attention"),
       pipe(WGSL_GEGLU, "geglu"),
       pipe(WGSL_GATHER, "gather"),
     ]);

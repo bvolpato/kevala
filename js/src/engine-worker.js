@@ -29,6 +29,7 @@ self.onmessage = async (ev) => {
   try {
     if (m.type === "load") await load(m.options);
     else if (m.type === "decide") enqueue(m);
+    else if (m.type === "profile") setProfiling(m);
     else if (m.type === "shards") {
       shardPorts.push(...m.ports);
       shardWaiters?.();
@@ -253,6 +254,15 @@ async function run(requests) {
   const t0 = now();
   c.withInput(enc.encode(JSON.stringify({ requests })), (p, l) => c.check(c.x.kevala_decide(p, l)));
   return { responses: JSON.parse(c.outText()), timing: { forward: now() - t0 } };
+}
+
+/** Starts or stops per-kernel GPU timing; answers whether this backend supports it. */
+function setProfiling(m) {
+  const gpu = E?.gpu;
+  const supported = !!gpu && gpu.device.features.has("timestamp-query");
+  if (supported) gpu.profiler = m.on ? new Profiler(gpu.device) : null;
+  if (gpu && !m.on) gpu.lastProfile = null;
+  post({ type: "result", id: m.id, supported, responses: [] });
 }
 
 function enqueue(m) {

@@ -226,40 +226,25 @@ export async function openPack(model, { cache = true, signal, onProgress, conver
     }
   }
   if (which.url) {
-    const res = await checked(await fetch(key, { signal }), key);
-    const size = Number(res.headers.get("content-length")) || 0;
-    if (store) {
-      // tee: one branch fills the cache while the other feeds the loader
-      const [a, b] = res.body.tee();
-      const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
-      const saving = store.put(key, new Response(b, { headers })).catch((e) => onProgress?.({ phase: "cache-failed", message: String(e?.message || e) }));
-      return { ...fromResponse(new Response(a), key.split("/").pop(), size, false, key, onProgress, signal), saving };
+    const size = await remoteSize(key, signal).catch(() => 0);
+    if (size && (await acceptsRanges(key, signal))) {
+      return streamIntoCache(store, key, size, fetchRange(key, 0, size, key.split("/").pop(), { signal, onProgress }), signal);
     }
-    return fromResponse(res, key.split("/").pop(), size, false, key, onProgress, signal);
+    // a server without byte ranges (or without HEAD): one plain stream
+    const res = await checked(await fetch(key, { signal }), key);
+    const length = Number(res.headers.get("content-length")) || 0;
+    return streamIntoCache(store, key, length, body(res, key.split("/").pop(), length, onProgress, signal), signal);
+  }
+  const up = which.spec;
+  // a model with a hosted int8 pack downloads that (about half the bytes of the checkpoint and no
+  // conversion); if it is missing or unreachable, convert from the upstream checkpoint instead
+  if (up.hosted) {
+    const size = await remoteSize(up.hosted, signal).catch((e) => (signal?.aborted ? Promise.reject(e) : 0));
+    if (size) return streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), signal);
   }
   // upstream checkpoint: convert, cache, and hand back the finished bytes
-  const up = which.spec;
   const made = await convert(up, { signal, onProgress });
-  if (!(made instanceof Uint8Array)) {
-    // a converter that streams its pack out ({ size, chunks() }): tee it into the cache
-    const size = made.size;
-    const it = made.chunks();
-    let stream = new ReadableStream({
-      async pull(ctl) {
-        const { done, value } = await it.next();
-        if (done) ctl.close();
-        else ctl.enqueue(value);
-      },
-    });
-    let saving = null;
-    if (store) {
-      const [a, b] = stream.tee();
-      stream = b;
-      const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
-      saving = store.put(key, new Response(a, { headers })).catch((e) => onProgress?.({ phase: "cache-failed", message: String(e?.message || e) }));
-    }
-    return { ...fromResponse(new Response(stream), "converted pack", size, false, key, null, signal), saving };
-  }
+  if (!(made instanceof Uint8Array)) return streamIntoCache(store, key, made.size, made.chunks(), signal, "converted pack");
   const bytes = made;
   if (store) {
     onProgress?.({ phase: "cache", file: key, loaded: 0, total: bytes.byteLength });
@@ -272,6 +257,28 @@ export async function openPack(model, { cache = true, signal, onProgress, conver
   return { size: bytes.byteLength, cached: false, key, async *chunks() { yield bytes; } };
 }
 
+/**
+ * A pack arriving as chunks (an async iterator), copied into the cache under `key` while the
+ * loader reads it. `saving` settles when the cached copy is complete.
+ */
+function streamIntoCache(store, key, size, chunks, signal, file = "pack") {
+  let stream = new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await chunks.next();
+      if (done) controller.close();
+      else controller.enqueue(value);
+    },
+  });
+  let saving = null;
+  if (store) {
+    const [toCache, toLoader] = stream.tee();
+    stream = toLoader;
+    const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
+    saving = store.put(key, new Response(toCache, { headers })).catch(() => {});
+  }
+  return { ...fromResponse(new Response(stream), file, size, false, key, null, signal), saving };
+}
+
 function fromResponse(res, file, size, cached, key, onProgress, signal) {
   return {
     size,
@@ -281,14 +288,33 @@ function fromResponse(res, file, size, cached, key, onProgress, signal) {
   };
 }
 
+/** The size of a remote file, from a HEAD request (which follows Hugging Face's CDN redirect). */
+async function remoteSize(url, signal) {
+  const res = await checked(await fetch(url, { method: "HEAD", signal }), url);
+  const size = Number(res.headers.get("content-length")) || Number(res.headers.get("x-linked-size"));
+  if (!size) throw new Error(`${url}: the server did not report the file size`);
+  return size;
+}
+
+/** Whether a server answers byte-range requests, probed with a one-byte range. */
+async function acceptsRanges(url, signal) {
+  try {
+    const res = await fetch(url, { signal, headers: { range: "bytes=0-0" } });
+    await res.body?.cancel();
+    return res.status === 206;
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    return false;
+  }
+}
+
 /** Fetches the upstream files a conversion needs, reporting progress. */
 export async function fetchUpstream(up, { signal, onProgress }) {
   const text = async (file) => (await checked(await fetch(hfUrl(up, file), { signal }), file)).text();
   const [enc, agent, tok] = await Promise.all([text("encoder/config.json"), text("rl_agent_config.json"), text("tokenizer/tokenizer.json")]);
   const url = hfUrl(up, "model.safetensors");
-  const res = await checked(await fetch(url, { signal }), url);
-  const total = Number(res.headers.get("content-length")) || Number(res.headers.get("x-linked-size")) || 0;
-  return { enc, agent, tok, total, chunks: () => body(res, "model.safetensors", total, onProgress, signal) };
+  const total = await remoteSize(url, signal);
+  return { enc, agent, tok, total, chunks: () => fetchRange(url, 0, total, "model.safetensors", { signal, onProgress }) };
 }
 
 /** Lists stored packs with their sizes. */
@@ -416,9 +442,44 @@ export async function fetchBytes(url, file, { signal, onProgress } = {}) {
   return out;
 }
 
-/** Streams bytes `[start, end)` of a file as chunks, with progress. */
-export async function fetchRange(url, start, end, file, { signal, onProgress } = {}) {
-  const res = await checked(await fetch(url, { signal, headers: { range: `bytes=${start}-${end - 1}` } }), url);
-  if (res.status !== 206 && start > 0) throw new Error(`${url}: the server ignored the byte range`);
-  return body(res, file, end - start, onProgress, signal);
+/**
+ * Streams bytes `[start, end)` of a file as chunks, in order, with progress. Several byte ranges
+ * download at once: a single stream from a CDN often runs far below the connection's bandwidth.
+ * At most `streams` pieces of `piece` bytes are held in memory while they wait their turn.
+ */
+export async function* fetchRange(url, start, end, file, { signal, onProgress, streams = 6, piece = 16 << 20 } = {}) {
+  const total = end - start;
+  let loaded = 0;
+  const download = async (lo, hi) => {
+    const res = await checked(await fetch(url, { signal, headers: { range: `bytes=${lo}-${hi - 1}` } }), url);
+    if (res.status !== 206) throw new Error(`${url}: the server ignored the byte range`);
+    const out = new Uint8Array(hi - lo);
+    let at = 0;
+    const reader = res.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      out.set(value, at);
+      at += value.byteLength;
+      loaded += value.byteLength;
+      onProgress?.({ phase: "download", file, loaded, total });
+    }
+    if (at !== out.byteLength) throw new Error(`${url}: got ${at} of ${out.byteLength} bytes`);
+    return out;
+  };
+  const pending = [];
+  let next = start;
+  const startNext = () => {
+    const lo = next;
+    next = Math.min(end, lo + piece);
+    const job = download(lo, next);
+    job.catch(() => {}); // each job is awaited in order below; this only covers the ones never reached
+    pending.push(job);
+  };
+  while (next < end && pending.length < streams) startNext();
+  while (pending.length) {
+    const bytes = await pending.shift();
+    if (next < end) startNext();
+    yield bytes;
+  }
 }

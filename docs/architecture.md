@@ -70,6 +70,11 @@ Kev's conversion downloads only the byte range of the Qwen3.5 base that holds th
 vision tower and the multi-token-prediction head are skipped), merges Kev's LoRA adapter in f32 and
 quantizes each tensor as it arrives.
 
+Checkpoints download as six 16 MB byte ranges at a time, handed to the converter in order: a
+single stream from Hugging Face's CDN ran at about 24 MB/s where parallel ranges reached 38 MB/s
+on the same connection. Only the converted pack is stored, so switching backend or reloading the
+page reads it back from disk in under a second.
+
 ## Backends
 
 **WebGPU.** The coordinator embeds tokens and runs the family's head; the GPU runs every transformer
@@ -83,9 +88,19 @@ layer and returns only the rows the head reads. Kernels:
   Narrow outputs at short lengths split K across workgroups (a 1024-wide projection at 64 tokens is
   16 tiles, too few to fill a GPU).
 - LayerNorm / RMSNorm, rotary embeddings, sliding-window and global attention (Laya), causal GQA
-  attention with online softmax and an output gate (Kev), GeGLU / SwiGLU.
-- Kev's Gated DeltaNet: causal depthwise conv, q/k L2 norm, the gated delta rule (one thread per value
-  column, the next token prefetched while the current one computes), gated RMSNorm.
+  attention with online softmax and an output gate (Kev), GeGLU / SwiGLU. On GPUs whose subgroups
+  are exactly 32 lanes (Apple, NVIDIA), Laya's attention takes 32 keys per step with one key per
+  lane, so each query's running max and sum come from `subgroupMax` / `subgroupAdd`.
+- Kev's Gated DeltaNet: causal depthwise conv, q/k L2 norm, the gated delta rule, gated RMSNorm.
+  The recurrence is sequential in time, so its cost is the length of each token's dependency
+  chain: with subgroups, four lanes share a value column (32 of its 128 keys each) and combine
+  their partial dot products with `subgroupShuffleXor`, which made it 5x faster than one thread
+  per column. The next token's q and k are staged while the current one computes.
+
+Where the time goes is visible per kernel: `kevala.profile(true)` adds `timing.gpu` (milliseconds
+per kernel) to every response, and the Playground's Profile tab shows it for any request.
+`dev/matmul-bench.html` times matmul variants (tile rows, column groups, split-K target, f16
+tiles) on the models' shapes, best of several trials, and checks they agree.
 
 A pass over more than 256 tokens goes out as a few command buffers, waiting for the queue between
 them, so a big batch does not freeze the page's rendering while the GPU works.
