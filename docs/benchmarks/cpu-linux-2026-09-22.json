@@ -1,0 +1,4447 @@
+{
+  "date": "2026-09-22",
+  "environment": {
+    "os": "Ubuntu Linux",
+    "cpu": "AMD Ryzen 9 9950X3D",
+    "physicalCores": 16,
+    "logicalCores": 32,
+    "rust": "1.95.0",
+    "node": "24.21.0",
+    "firefox": "152.0.3",
+    "chrome": "149.0.7827.200",
+    "gpuRecheck": "NVIDIA GeForce RTX 5070 Ti"
+  },
+  "revisions": {
+    "baseline": "5f1a7104aa6213cbe52ff03f876b5198fe451595",
+    "baselineHarness": "fc8e1eeffee80b6afb0f85025348d489964b7346",
+    "retainedCpuKernels": "434360720e64899b808f2675cb6e698abbd27524",
+    "stableTileSelector": "90ea5ec4bb4af6d19a1c556d2d0db85fd973b554"
+  },
+  "method": {
+    "metric": "geometric mean of per-case wall-clock medians",
+    "backend": "forced wasm-relaxed",
+    "inferenceOnly": true,
+    "distinctStatePerRequest": true,
+    "serialJobs": true,
+    "trialWarmups": 1,
+    "trialSamples": 3,
+    "finalWarmups": 2,
+    "finalSamples": 5,
+    "layaWorkers": 4,
+    "kevWorkers": 1,
+    "layaTokens": [
+      47,
+      140,
+      512
+    ],
+    "kevTokens": [
+      31,
+      124,
+      532
+    ]
+  },
+  "trials": [
+    {
+      "iteration": 0,
+      "commit": "5f1a7104aa6213cbe52ff03f876b5198fe451595",
+      "metric": 1329.9729091042127,
+      "delta": 0,
+      "guard": "-",
+      "status": "baseline",
+      "description": "Current main CPU kernels, cold unique short/medium/long requests, browser baseline harness"
+    },
+    {
+      "iteration": 1,
+      "commit": "03864a40a95ce3011254bd6e4b4e0d648b13b6a6",
+      "metric": 1414.7838096336095,
+      "delta": 84.8109005293968,
+      "guard": "pass",
+      "status": "discard",
+      "description": "Packed 4x8 output-lane Q8 GEMM: 6.4 percent slower end to end; 1400 kernel cases and both model/cache guards passed; parent fc8e1ee"
+    },
+    {
+      "iteration": 2,
+      "commit": "18566a8595bd36d3b04817e3088f0cbd1eacee17",
+      "metric": 1299.5766377685406,
+      "delta": -30.3962713356721,
+      "guard": "pass",
+      "status": "keep",
+      "description": "Reuse Laya worker transfer buffers: Laya geomean 645.807 ms, 5 percent faster; six-case 2.3 percent faster; both model/cache guards pass; parent 633676a"
+    },
+    {
+      "iteration": 3,
+      "commit": "2705c97e845865d67b23eb7c1ae690aea776edc6",
+      "metric": 1478.3915736836157,
+      "delta": 178.8149359150751,
+      "guard": "pass",
+      "status": "discard",
+      "description": "Kev recurrence value tiling: 14 percent slower overall despite unchanged numerical/cache results; parent 18566a8"
+    },
+    {
+      "iteration": 4,
+      "commit": "8cc91b1a78c08d920163a42ac9e7047a3e1258ef",
+      "metric": 2087.0673974434826,
+      "delta": 787.490759674942,
+      "guard": "pass",
+      "status": "discard",
+      "description": "Packed Q8 GEMM with KC256 chunks: 60.6 percent slower than retained browser metric despite passing 1400 kernel cases and model/cache guards; parent 8d3020c"
+    },
+    {
+      "iteration": 5,
+      "commit": "9ab8b884d80868b3e447053048bcf280241588be",
+      "metric": 1911.3973115305607,
+      "delta": 611.8206737620201,
+      "guard": "pass",
+      "status": "discard",
+      "description": "3x4 SIMD tile: 47.1 percent slower overall, likely register pressure; 1400 kernel cases and model/cache parity passed; parent bf8ce68"
+    },
+    {
+      "iteration": 6,
+      "commit": "-",
+      "metric": 1299.5766377685406,
+      "delta": 0,
+      "guard": "-",
+      "status": "refine",
+      "description": "Three consecutive slower kernel layouts: retain existing 2x4 and switch to sampled profiles plus actual tile-selection metadata before trying a smaller register tile and SIMD worker reduction"
+    },
+    {
+      "iteration": 7,
+      "commit": "ced8c0013daf9fa57bd24bd31677ce7837ded6d8",
+      "metric": 1366.0251587898833,
+      "delta": 66.4485210213427,
+      "guard": "pass",
+      "status": "discard",
+      "description": "3x3 SIMD tile selected on every worker but 5.1 percent slower than retained browser metric; all kernel/model/cache checks passed; parent 9e14cc9"
+    },
+    {
+      "iteration": 8,
+      "commit": "-",
+      "metric": 1299.5766377685406,
+      "delta": 0,
+      "guard": "-",
+      "status": "pivot",
+      "description": "Profiles confirm 78-82 percent linear but every wider or repacked tile loses; abandon register-layout expansion and optimize JS/WASM shard reduction plus profiled transcendental math"
+    },
+    {
+      "iteration": 9,
+      "commit": "d61c9b4b428d45c795bf42cb26dbe4f4a7a3a9af",
+      "metric": 1260.2623988919142,
+      "delta": -39.3142388766264,
+      "guard": "pass",
+      "status": "keep",
+      "description": "SIMD shard reduction: Laya 611.266 ms and Kev 2598.316 ms; 3 percent overall gain versus retained best; model/cache guards pass; parent f52a4fcd64995973d44726b28e0de69df02569a6"
+    },
+    {
+      "iteration": 10,
+      "commit": "6e65aec",
+      "metric": 1272.0317755769606,
+      "delta": 11.7693766850464,
+      "guard": "pass",
+      "status": "discard",
+      "description": "Vector exponential: 125156 WASM inputs max 1 ULP, native attention and model/cache guards pass, but Laya 622.802 ms is 1.9 percent slower; parent d61c9b4; production fd002c3 and guard 6e65aec reverted together"
+    },
+    {
+      "iteration": 11,
+      "commit": "a7faac0",
+      "metric": 1784.489339917073,
+      "delta": 524.2269410251588,
+      "guard": "pass",
+      "status": "discard",
+      "description": "64 KiB activation blocks: Laya 757.405 ms, Kev 4204.359 ms; 41.6 percent slower overall; 1400 numerical cases and model/cache guards pass; parent bd83365"
+    },
+    {
+      "iteration": 12,
+      "commit": "434360720e64899b808f2675cb6e698abbd27524",
+      "metric": 1192.2835767711208,
+      "delta": -67.9788221207934,
+      "guard": "pass",
+      "status": "keep",
+      "description": "1 MiB activation blocks: Laya 591.064 ms, Kev 2405.052 ms; 5.4 percent faster than retained metric and 10.4 percent below baseline; 1400 numerical cases and model/cache checks pass; parent 7615c4b"
+    }
+  ],
+  "final": {
+    "firefox": {
+      "before": {
+        "metricMs": 1329.6274541730327,
+        "options": {
+          "runs": "5",
+          "warmups": "2",
+          "browser": "firefox",
+          "threads": "4",
+          "flavor": "relaxed",
+          "models": "laya,kev-0.8b",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed x4",
+            "cases": [
+              {
+                "frameGap": 17.0600000000004,
+                "last": {
+                  "batched": 1,
+                  "forward": 210,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 210
+                },
+                "min": 212,
+                "name": "1 question, ~40 tokens",
+                "p50": 216,
+                "p95": 222,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 215,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 215,
+                    "wallMs": 216
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 223,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 223,
+                    "wallMs": 222
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 219,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 219,
+                    "wallMs": 220
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 212,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 213,
+                    "wallMs": 213
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 210,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 210,
+                    "wallMs": 212
+                  }
+                ],
+                "tokens": 47,
+                "wallMs": [
+                  216,
+                  222,
+                  220,
+                  213,
+                  212
+                ]
+              },
+              {
+                "frameGap": 17.079999999999927,
+                "last": {
+                  "batched": 1,
+                  "forward": 601,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 601
+                },
+                "min": 602,
+                "name": "1 question, ~128 tokens",
+                "p50": 627,
+                "p95": 637,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 635,
+                    "prepare": 1,
+                    "tokens": 140,
+                    "total": 637,
+                    "wallMs": 637
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 624,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 625,
+                    "wallMs": 624
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 627,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 627,
+                    "wallMs": 629
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 626,
+                    "prepare": 1,
+                    "tokens": 140,
+                    "total": 627,
+                    "wallMs": 627
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 601,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 601,
+                    "wallMs": 602
+                  }
+                ],
+                "tokens": 140,
+                "wallMs": [
+                  637,
+                  624,
+                  629,
+                  627,
+                  602
+                ]
+              },
+              {
+                "frameGap": 17.079999999999927,
+                "last": {
+                  "batched": 1,
+                  "forward": 2325,
+                  "prepare": 2,
+                  "tokens": 512,
+                  "total": 2327
+                },
+                "min": 2289,
+                "name": "1 question, ~512 tokens",
+                "p50": 2315,
+                "p95": 2338,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 2290,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2292,
+                    "wallMs": 2292
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2335,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2337,
+                    "wallMs": 2338
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2286,
+                    "prepare": 2,
+                    "tokens": 512,
+                    "total": 2289,
+                    "wallMs": 2289
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2313,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2315,
+                    "wallMs": 2315
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2325,
+                    "prepare": 2,
+                    "tokens": 512,
+                    "total": 2327,
+                    "wallMs": 2327
+                  }
+                ],
+                "tokens": 512,
+                "wallMs": [
+                  2292,
+                  2338,
+                  2289,
+                  2315,
+                  2327
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.26,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 679.3455930315381,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              216,
+              627,
+              2315
+            ],
+            "runner": {
+              "actualThreads": 4,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 4,
+            "unique": true,
+            "warmups": 2
+          },
+          {
+            "arch": "kev",
+            "backend": "wasm-relaxed",
+            "cases": [
+              {
+                "frameGap": 17.18000000000029,
+                "last": {
+                  "batched": 1,
+                  "forward": 681
+                },
+                "min": 672,
+                "name": "1 question, ~40 tokens",
+                "p50": 682,
+                "p95": 725,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 671,
+                    "wallMs": 672
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 682,
+                    "wallMs": 682
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 725,
+                    "wallMs": 725
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 682,
+                    "wallMs": 682
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 681,
+                    "wallMs": 682
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  672,
+                  682,
+                  725,
+                  682,
+                  682
+                ]
+              },
+              {
+                "frameGap": 17.080000000001746,
+                "last": {
+                  "batched": 1,
+                  "forward": 2459
+                },
+                "min": 2458,
+                "name": "1 question, ~128 tokens",
+                "p50": 2467,
+                "p95": 2496,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 2468,
+                    "wallMs": 2467
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2496,
+                    "wallMs": 2496
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2475,
+                    "wallMs": 2477
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2465,
+                    "wallMs": 2465
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2459,
+                    "wallMs": 2458
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  2467,
+                  2496,
+                  2477,
+                  2465,
+                  2458
+                ]
+              },
+              {
+                "frameGap": 17.10000000000582,
+                "last": {
+                  "batched": 1,
+                  "forward": 10454
+                },
+                "min": 10430,
+                "name": "1 question, ~512 tokens",
+                "p50": 10475,
+                "p95": 10586,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 10428,
+                    "wallMs": 10430
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 10480,
+                    "wallMs": 10479
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 10585,
+                    "wallMs": 10586
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 10475,
+                    "wallMs": 10475
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 10454,
+                    "wallMs": 10454
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  10430,
+                  10479,
+                  10586,
+                  10475,
+                  10454
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 2.028,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 2602.370847805869,
+            "model": "kev-0.8b",
+            "p50CaseMediansMs": [
+              682,
+              2467,
+              10475
+            ],
+            "runner": {
+              "actualThreads": 1,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 1,
+            "unique": true,
+            "warmups": 2
+          }
+        ]
+      },
+      "after": {
+        "metricMs": 1202.8661319119387,
+        "options": {
+          "runs": "5",
+          "warmups": "2",
+          "browser": "firefox",
+          "threads": "4",
+          "flavor": "relaxed",
+          "models": "laya,kev-0.8b",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed x4",
+            "cases": [
+              {
+                "frameGap": 17.079999999999927,
+                "last": {
+                  "batched": 1,
+                  "forward": 198,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 199
+                },
+                "min": 194,
+                "name": "1 question, ~40 tokens",
+                "p50": 202,
+                "p95": 203,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 201,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 201,
+                    "wallMs": 202
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 201,
+                    "prepare": 1,
+                    "tokens": 47,
+                    "total": 203,
+                    "wallMs": 203
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 201,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 202,
+                    "wallMs": 202
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 195,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 195,
+                    "wallMs": 194
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 198,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 199,
+                    "wallMs": 199
+                  }
+                ],
+                "tokens": 47,
+                "wallMs": [
+                  202,
+                  203,
+                  202,
+                  194,
+                  199
+                ]
+              },
+              {
+                "frameGap": 17.0600000000004,
+                "last": {
+                  "batched": 1,
+                  "forward": 530,
+                  "prepare": 1,
+                  "tokens": 140,
+                  "total": 531
+                },
+                "min": 509,
+                "name": "1 question, ~128 tokens",
+                "p50": 532,
+                "p95": 565,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 525,
+                    "prepare": 1,
+                    "tokens": 140,
+                    "total": 527,
+                    "wallMs": 525
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 564,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 564,
+                    "wallMs": 565
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 545,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 545,
+                    "wallMs": 546
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 510,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 510,
+                    "wallMs": 509
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 530,
+                    "prepare": 1,
+                    "tokens": 140,
+                    "total": 531,
+                    "wallMs": 532
+                  }
+                ],
+                "tokens": 140,
+                "wallMs": [
+                  525,
+                  565,
+                  546,
+                  509,
+                  532
+                ]
+              },
+              {
+                "frameGap": 17.280000000000655,
+                "last": {
+                  "batched": 1,
+                  "forward": 2032,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 2033
+                },
+                "min": 2008,
+                "name": "1 question, ~512 tokens",
+                "p50": 2021,
+                "p95": 2035,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 2007,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2008,
+                    "wallMs": 2008
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2007,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2009,
+                    "wallMs": 2009
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2019,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2020,
+                    "wallMs": 2021
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2033,
+                    "prepare": 2,
+                    "tokens": 512,
+                    "total": 2035,
+                    "wallMs": 2035
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2032,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2033,
+                    "wallMs": 2033
+                  }
+                ],
+                "tokens": 512,
+                "wallMs": [
+                  2008,
+                  2009,
+                  2021,
+                  2035,
+                  2033
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.759,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 601.0949856469437,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              202,
+              532,
+              2021
+            ],
+            "runner": {
+              "actualThreads": 4,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 4,
+            "unique": true,
+            "warmups": 2
+          },
+          {
+            "arch": "kev",
+            "backend": "wasm-relaxed",
+            "cases": [
+              {
+                "frameGap": 17.079999999999927,
+                "last": {
+                  "batched": 1,
+                  "forward": 658
+                },
+                "min": 648,
+                "name": "1 question, ~40 tokens",
+                "p50": 659,
+                "p95": 695,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 654,
+                    "wallMs": 655
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 695,
+                    "wallMs": 695
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 662,
+                    "wallMs": 663
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 649,
+                    "wallMs": 648
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 658,
+                    "wallMs": 659
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  655,
+                  695,
+                  663,
+                  648,
+                  659
+                ]
+              },
+              {
+                "frameGap": 17.079999999999927,
+                "last": {
+                  "batched": 1,
+                  "forward": 2254
+                },
+                "min": 2255,
+                "name": "1 question, ~128 tokens",
+                "p50": 2263,
+                "p95": 2289,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 2289,
+                    "wallMs": 2289
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2263,
+                    "wallMs": 2263
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2283,
+                    "wallMs": 2283
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2259,
+                    "wallMs": 2258
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2254,
+                    "wallMs": 2255
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  2289,
+                  2263,
+                  2283,
+                  2258,
+                  2255
+                ]
+              },
+              {
+                "frameGap": 17.139999999999418,
+                "last": {
+                  "batched": 1,
+                  "forward": 9335
+                },
+                "min": 9335,
+                "name": "1 question, ~512 tokens",
+                "p50": 9352,
+                "p95": 9409,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 9346,
+                    "wallMs": 9347
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9352,
+                    "wallMs": 9352
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9408,
+                    "wallMs": 9409
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9366,
+                    "wallMs": 9366
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9335,
+                    "wallMs": 9335
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  9347,
+                  9352,
+                  9409,
+                  9366,
+                  9335
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 2.82,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 2407.0853456605355,
+            "model": "kev-0.8b",
+            "p50CaseMediansMs": [
+              659,
+              2263,
+              9352
+            ],
+            "runner": {
+              "actualThreads": 1,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 1,
+            "unique": true,
+            "warmups": 2
+          }
+        ]
+      }
+    },
+    "chrome": {
+      "before": {
+        "metricMs": 1131.7373339308838,
+        "options": {
+          "browser": "chromium",
+          "runs": "5",
+          "warmups": "2",
+          "threads": "4",
+          "flavor": "relaxed",
+          "models": "laya,kev-0.8b",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed x4",
+            "cases": [
+              {
+                "frameGap": 16.799999999999955,
+                "last": {
+                  "batched": 1,
+                  "forward": 169.19999980926514,
+                  "prepare": 0.10000038146972656,
+                  "tokens": 47,
+                  "total": 169.70000076293945
+                },
+                "min": 169,
+                "name": "1 question, ~40 tokens",
+                "p50": 174.5,
+                "p95": 186.19999980926514,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 180.70000076293945,
+                    "prepare": 0.09999942779541016,
+                    "tokens": 47,
+                    "total": 181.30000019073486,
+                    "wallMs": 181.4000005722046
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 168.39999961853027,
+                    "prepare": 0.10000038146972656,
+                    "tokens": 47,
+                    "total": 168.80000019073486,
+                    "wallMs": 169
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 173.80000019073486,
+                    "prepare": 0.19999980926513672,
+                    "tokens": 47,
+                    "total": 174.19999980926514,
+                    "wallMs": 174.5
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 185.5,
+                    "prepare": 0.10000038146972656,
+                    "tokens": 47,
+                    "total": 186,
+                    "wallMs": 186.19999980926514
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 169.19999980926514,
+                    "prepare": 0.10000038146972656,
+                    "tokens": 47,
+                    "total": 169.70000076293945,
+                    "wallMs": 169.80000019073486
+                  }
+                ],
+                "tokens": 47,
+                "wallMs": [
+                  181.4000005722046,
+                  169,
+                  174.5,
+                  186.19999980926514,
+                  169.80000019073486
+                ]
+              },
+              {
+                "frameGap": 16.800000000000182,
+                "last": {
+                  "batched": 1,
+                  "forward": 488,
+                  "prepare": 0.3000001907348633,
+                  "tokens": 140,
+                  "total": 488.69999980926514
+                },
+                "min": 488.9000005722046,
+                "name": "1 question, ~128 tokens",
+                "p50": 505.1000003814697,
+                "p95": 511.5999994277954,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 504.19999980926514,
+                    "prepare": 0.40000057220458984,
+                    "tokens": 140,
+                    "total": 505,
+                    "wallMs": 505.1000003814697
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 504.69999980926514,
+                    "prepare": 0.39999961853027344,
+                    "tokens": 140,
+                    "total": 505.3999996185303,
+                    "wallMs": 505.5
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 498.6000003814697,
+                    "prepare": 0.3000001907348633,
+                    "tokens": 140,
+                    "total": 499.20000076293945,
+                    "wallMs": 499.30000019073486
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 510.69999980926514,
+                    "prepare": 0.3000001907348633,
+                    "tokens": 140,
+                    "total": 511.30000019073486,
+                    "wallMs": 511.5999994277954
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 488,
+                    "prepare": 0.3000001907348633,
+                    "tokens": 140,
+                    "total": 488.69999980926514,
+                    "wallMs": 488.9000005722046
+                  }
+                ],
+                "tokens": 140,
+                "wallMs": [
+                  505.1000003814697,
+                  505.5,
+                  499.30000019073486,
+                  511.5999994277954,
+                  488.9000005722046
+                ]
+              },
+              {
+                "frameGap": 16.80000000000291,
+                "last": {
+                  "batched": 1,
+                  "forward": 1991.1999998092651,
+                  "prepare": 1.1000003814697266,
+                  "tokens": 512,
+                  "total": 1992.6000003814697
+                },
+                "min": 1961.1999998092651,
+                "name": "1 question, ~512 tokens",
+                "p50": 2062.8999996185303,
+                "p95": 2086.1000003814697,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 1959.3000001907349,
+                    "prepare": 1.1999998092651367,
+                    "tokens": 512,
+                    "total": 1960.8999996185303,
+                    "wallMs": 1961.1999998092651
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2084.300000190735,
+                    "prepare": 1.0999994277954102,
+                    "tokens": 512,
+                    "total": 2085.8999996185303,
+                    "wallMs": 2086.1000003814697
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2061.300000190735,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2062.7000007629395,
+                    "wallMs": 2062.8999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2062.6000003814697,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 2064,
+                    "wallMs": 2064.199999809265
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1991.1999998092651,
+                    "prepare": 1.1000003814697266,
+                    "tokens": 512,
+                    "total": 1992.6000003814697,
+                    "wallMs": 1992.8000001907349
+                  }
+                ],
+                "tokens": 512,
+                "wallMs": [
+                  1961.1999998092651,
+                  2086.1000003814697,
+                  2062.8999996185303,
+                  2064.199999809265,
+                  1992.8000001907349
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.0996000003814697,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 566.522276932901,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              174.5,
+              505.1000003814697,
+              2062.8999996185303
+            ],
+            "runner": {
+              "actualThreads": 4,
+              "browser": "chrome",
+              "browserRequested": "chromium",
+              "browserVersion": "149.0.7827.200",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 4,
+            "unique": true,
+            "warmups": 2
+          },
+          {
+            "arch": "kev",
+            "backend": "wasm-relaxed",
+            "cases": [
+              {
+                "frameGap": 16.800000000000182,
+                "last": {
+                  "batched": 1,
+                  "forward": 572.6000003814697
+                },
+                "min": 572.8000001907349,
+                "name": "1 question, ~40 tokens",
+                "p50": 574.1000003814697,
+                "p95": 575.2999992370605,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 573.1999998092651,
+                    "wallMs": 573.3999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 574.5,
+                    "wallMs": 574.7000007629395
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 575.1999998092651,
+                    "wallMs": 575.2999992370605
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 574,
+                    "wallMs": 574.1000003814697
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 572.6000003814697,
+                    "wallMs": 572.8000001907349
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  573.3999996185303,
+                  574.7000007629395,
+                  575.2999992370605,
+                  574.1000003814697,
+                  572.8000001907349
+                ]
+              },
+              {
+                "frameGap": 16.80000000000291,
+                "last": {
+                  "batched": 1,
+                  "forward": 2192.5
+                },
+                "min": 2159.8999996185303,
+                "name": "1 question, ~128 tokens",
+                "p50": 2169.699999809265,
+                "p95": 2192.7000007629395,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 2169.5,
+                    "wallMs": 2169.699999809265
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2161.300000190735,
+                    "wallMs": 2161.6000003814697
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2159.8999996185303,
+                    "wallMs": 2159.8999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2170.800000190735,
+                    "wallMs": 2171
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2192.5,
+                    "wallMs": 2192.7000007629395
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  2169.699999809265,
+                  2161.6000003814697,
+                  2159.8999996185303,
+                  2171,
+                  2192.7000007629395
+                ]
+              },
+              {
+                "frameGap": 16.80000000000291,
+                "last": {
+                  "batched": 1,
+                  "forward": 9241.39999961853
+                },
+                "min": 9241.5,
+                "name": "1 question, ~512 tokens",
+                "p50": 9277.60000038147,
+                "p95": 9308.300000190735,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 9274.89999961853,
+                    "wallMs": 9308.300000190735
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9272.300000190735,
+                    "wallMs": 9277.60000038147
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9289.400000572205,
+                    "wallMs": 9289.599999427795
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9272.5,
+                    "wallMs": 9272.800000190735
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9241.39999961853,
+                    "wallMs": 9241.5
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  9308.300000190735,
+                  9277.60000038147,
+                  9289.599999427795,
+                  9272.800000190735,
+                  9241.5
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.8680999994277954,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 2260.863244332196,
+            "model": "kev-0.8b",
+            "p50CaseMediansMs": [
+              574.1000003814697,
+              2169.699999809265,
+              9277.60000038147
+            ],
+            "runner": {
+              "actualThreads": 1,
+              "browser": "chrome",
+              "browserRequested": "chromium",
+              "browserVersion": "149.0.7827.200",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 1,
+            "unique": true,
+            "warmups": 2
+          }
+        ]
+      },
+      "after": {
+        "metricMs": 1028.4953958967724,
+        "options": {
+          "browser": "chromium",
+          "runs": "5",
+          "warmups": "2",
+          "threads": "4",
+          "flavor": "relaxed",
+          "models": "laya,kev-0.8b",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed x4",
+            "cases": [
+              {
+                "frameGap": 16.800000000000182,
+                "last": {
+                  "batched": 1,
+                  "forward": 152.69999980926514,
+                  "prepare": 0.10000038146972656,
+                  "tokens": 47,
+                  "total": 153.19999980926514
+                },
+                "min": 149.29999923706055,
+                "name": "1 question, ~40 tokens",
+                "p50": 151.4000005722046,
+                "p95": 153.39999961853027,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 151.80000019073486,
+                    "prepare": 0.09999942779541016,
+                    "tokens": 47,
+                    "total": 152.19999980926514,
+                    "wallMs": 152.4000005722046
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 148.80000019073486,
+                    "prepare": 0.19999980926513672,
+                    "tokens": 47,
+                    "total": 149.29999923706055,
+                    "wallMs": 149.29999923706055
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 149.19999980926514,
+                    "prepare": 0.10000038146972656,
+                    "tokens": 47,
+                    "total": 149.69999980926514,
+                    "wallMs": 149.80000019073486
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 150.69999980926514,
+                    "prepare": 0.20000076293945312,
+                    "tokens": 47,
+                    "total": 151.10000038146973,
+                    "wallMs": 151.4000005722046
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 152.69999980926514,
+                    "prepare": 0.10000038146972656,
+                    "tokens": 47,
+                    "total": 153.19999980926514,
+                    "wallMs": 153.39999961853027
+                  }
+                ],
+                "tokens": 47,
+                "wallMs": [
+                  152.4000005722046,
+                  149.29999923706055,
+                  149.80000019073486,
+                  151.4000005722046,
+                  153.39999961853027
+                ]
+              },
+              {
+                "frameGap": 16.800000000000182,
+                "last": {
+                  "batched": 1,
+                  "forward": 422.8999996185303,
+                  "prepare": 0.40000057220458984,
+                  "tokens": 140,
+                  "total": 423.70000076293945
+                },
+                "min": 420.69999980926514,
+                "name": "1 question, ~128 tokens",
+                "p50": 423.5,
+                "p95": 426.3999996185303,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 425.69999980926514,
+                    "prepare": 0.3000001907348633,
+                    "tokens": 140,
+                    "total": 426.30000019073486,
+                    "wallMs": 426.3999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 422.69999980926514,
+                    "prepare": 0.39999961853027344,
+                    "tokens": 140,
+                    "total": 423.5,
+                    "wallMs": 423.5
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 421.8999996185303,
+                    "prepare": 0.3000001907348633,
+                    "tokens": 140,
+                    "total": 422.6000003814697,
+                    "wallMs": 422.8999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 420,
+                    "prepare": 0.3000001907348633,
+                    "tokens": 140,
+                    "total": 420.6000003814697,
+                    "wallMs": 420.69999980926514
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 422.8999996185303,
+                    "prepare": 0.40000057220458984,
+                    "tokens": 140,
+                    "total": 423.70000076293945,
+                    "wallMs": 423.70000076293945
+                  }
+                ],
+                "tokens": 140,
+                "wallMs": [
+                  426.3999996185303,
+                  423.5,
+                  422.8999996185303,
+                  420.69999980926514,
+                  423.70000076293945
+                ]
+              },
+              {
+                "frameGap": 16.80000000000109,
+                "last": {
+                  "batched": 1,
+                  "forward": 1708,
+                  "prepare": 1.1000003814697266,
+                  "tokens": 512,
+                  "total": 1709.5
+                },
+                "min": 1692.7999992370605,
+                "name": "1 question, ~512 tokens",
+                "p50": 1709.8000001907349,
+                "p95": 1782.8000001907349,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 1701.1999998092651,
+                    "prepare": 0.9000005722045898,
+                    "tokens": 512,
+                    "total": 1702.6000003814697,
+                    "wallMs": 1702.8000001907349
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1691.1999998092651,
+                    "prepare": 1.1000003814697266,
+                    "tokens": 512,
+                    "total": 1692.6000003814697,
+                    "wallMs": 1692.7999992370605
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1728.6999998092651,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 1730.1000003814697,
+                    "wallMs": 1730.3000001907349
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1781.0999994277954,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 1782.6999998092651,
+                    "wallMs": 1782.8000001907349
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1708,
+                    "prepare": 1.1000003814697266,
+                    "tokens": 512,
+                    "total": 1709.5,
+                    "wallMs": 1709.8000001907349
+                  }
+                ],
+                "tokens": 512,
+                "wallMs": [
+                  1702.8000001907349,
+                  1692.7999992370605,
+                  1730.3000001907349,
+                  1782.8000001907349,
+                  1709.8000001907349
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.0234000005722046,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 478.602395583376,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              151.4000005722046,
+              423.5,
+              1709.8000001907349
+            ],
+            "runner": {
+              "actualThreads": 4,
+              "browser": "chrome",
+              "browserRequested": "chromium",
+              "browserVersion": "149.0.7827.200",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 4,
+            "unique": true,
+            "warmups": 2
+          },
+          {
+            "arch": "kev",
+            "backend": "wasm-relaxed",
+            "cases": [
+              {
+                "frameGap": 16.800000000000182,
+                "last": {
+                  "batched": 1,
+                  "forward": 568.1999998092651
+                },
+                "min": 568.3000001907349,
+                "name": "1 question, ~40 tokens",
+                "p50": 568.8999996185303,
+                "p95": 568.9000005722046,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 568.3999996185303,
+                    "wallMs": 568.5
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 568.6000003814697,
+                    "wallMs": 568.8999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 568.5999994277954,
+                    "wallMs": 568.8999996185303
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 568.7000007629395,
+                    "wallMs": 568.9000005722046
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 568.1999998092651,
+                    "wallMs": 568.3000001907349
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  568.5,
+                  568.8999996185303,
+                  568.8999996185303,
+                  568.9000005722046,
+                  568.3000001907349
+                ]
+              },
+              {
+                "frameGap": 16.80000000000291,
+                "last": {
+                  "batched": 1,
+                  "forward": 2103.199999809265
+                },
+                "min": 2093.1000003814697,
+                "name": "1 question, ~128 tokens",
+                "p50": 2103.3999996185303,
+                "p95": 2130.5,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 2099.5,
+                    "wallMs": 2099.800000190735
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2130.199999809265,
+                    "wallMs": 2130.5
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2092.8999996185303,
+                    "wallMs": 2093.1000003814697
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2113.0999994277954,
+                    "wallMs": 2113.199999809265
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 2103.199999809265,
+                    "wallMs": 2103.3999996185303
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  2099.800000190735,
+                  2130.5,
+                  2093.1000003814697,
+                  2113.199999809265,
+                  2103.3999996185303
+                ]
+              },
+              {
+                "frameGap": 16.80000000000291,
+                "last": {
+                  "batched": 1,
+                  "forward": 8974.199999809265
+                },
+                "min": 8974.300000190735,
+                "name": "1 question, ~512 tokens",
+                "p50": 9022.599999427795,
+                "p95": 9094.300000190735,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 9022.400000572205,
+                    "wallMs": 9022.599999427795
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9063.800000190735,
+                    "wallMs": 9094.300000190735
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 9062.800000190735,
+                    "wallMs": 9064.60000038147
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 8974,
+                    "wallMs": 8974.300000190735
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 8974.199999809265,
+                    "wallMs": 8974.39999961853
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  9022.599999427795,
+                  9094.300000190735,
+                  9064.60000038147,
+                  8974.300000190735,
+                  8974.39999961853
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.9475,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 2210.191150613626,
+            "model": "kev-0.8b",
+            "p50CaseMediansMs": [
+              568.8999996185303,
+              2103.3999996185303,
+              9022.599999427795
+            ],
+            "runner": {
+              "actualThreads": 1,
+              "browser": "chrome",
+              "browserRequested": "chromium",
+              "browserVersion": "149.0.7827.200",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 5,
+            "selectedFlavor": "relaxed",
+            "threads": 1,
+            "unique": true,
+            "warmups": 2
+          }
+        ]
+      }
+    }
+  },
+  "selectorRegression": {
+    "beforeFix": {
+      "metricMs": 1301.826215341995,
+      "options": {
+        "runs": "5",
+        "warmups": "2",
+        "browser": "firefox",
+        "threads": "4",
+        "flavor": "relaxed",
+        "models": "laya,kev-0.8b",
+        "shapes": "0,1,2"
+      },
+      "models": [
+        {
+          "arch": "laya",
+          "backend": "wasm-relaxed x4",
+          "cases": [
+            {
+              "frameGap": 17.080000000000382,
+              "last": {
+                "batched": 1,
+                "forward": 220,
+                "prepare": 0,
+                "tokens": 47,
+                "total": 220
+              },
+              "min": 220,
+              "name": "1 question, ~40 tokens",
+              "p50": 225,
+              "p95": 229,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 225,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 225,
+                  "wallMs": 225
+                },
+                {
+                  "batched": 1,
+                  "forward": 228,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 228,
+                  "wallMs": 229
+                },
+                {
+                  "batched": 1,
+                  "forward": 225,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 225,
+                  "wallMs": 226
+                },
+                {
+                  "batched": 1,
+                  "forward": 219,
+                  "prepare": 1,
+                  "tokens": 47,
+                  "total": 221,
+                  "wallMs": 220
+                },
+                {
+                  "batched": 1,
+                  "forward": 220,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 220,
+                  "wallMs": 221
+                }
+              ],
+              "tokens": 47,
+              "wallMs": [
+                225,
+                229,
+                226,
+                220,
+                221
+              ]
+            },
+            {
+              "frameGap": 17.080000000000837,
+              "last": {
+                "batched": 1,
+                "forward": 628,
+                "prepare": 1,
+                "tokens": 140,
+                "total": 630
+              },
+              "min": 627,
+              "name": "1 question, ~128 tokens",
+              "p50": 631,
+              "p95": 653,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 628,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 629,
+                  "wallMs": 627
+                },
+                {
+                  "batched": 1,
+                  "forward": 648,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 649,
+                  "wallMs": 650
+                },
+                {
+                  "batched": 1,
+                  "forward": 652,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 652,
+                  "wallMs": 653
+                },
+                {
+                  "batched": 1,
+                  "forward": 630,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 630,
+                  "wallMs": 630
+                },
+                {
+                  "batched": 1,
+                  "forward": 628,
+                  "prepare": 1,
+                  "tokens": 140,
+                  "total": 630,
+                  "wallMs": 631
+                }
+              ],
+              "tokens": 140,
+              "wallMs": [
+                627,
+                650,
+                653,
+                630,
+                631
+              ]
+            },
+            {
+              "frameGap": 17.340000000000146,
+              "last": {
+                "batched": 1,
+                "forward": 2484,
+                "prepare": 1,
+                "tokens": 512,
+                "total": 2485
+              },
+              "min": 2469,
+              "name": "1 question, ~512 tokens",
+              "p50": 2485,
+              "p95": 2499,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 2498,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 2499,
+                  "wallMs": 2499
+                },
+                {
+                  "batched": 1,
+                  "forward": 2467,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 2468,
+                  "wallMs": 2469
+                },
+                {
+                  "batched": 1,
+                  "forward": 2490,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 2491,
+                  "wallMs": 2491
+                },
+                {
+                  "batched": 1,
+                  "forward": 2470,
+                  "prepare": 2,
+                  "tokens": 512,
+                  "total": 2472,
+                  "wallMs": 2473
+                },
+                {
+                  "batched": 1,
+                  "forward": 2484,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 2485,
+                  "wallMs": 2485
+                }
+              ],
+              "tokens": 512,
+              "wallMs": [
+                2499,
+                2469,
+                2491,
+                2473,
+                2485
+              ]
+            }
+          ],
+          "cpuTiles": [
+            1,
+            0,
+            0,
+            0
+          ],
+          "crossOriginIsolated": false,
+          "done": true,
+          "flavor": "relaxed",
+          "gpu": null,
+          "hardwareConcurrency": 32,
+          "load_s": 1.211,
+          "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+          "metricMs": 706.6094210431265,
+          "model": "laya",
+          "p50CaseMediansMs": [
+            225,
+            631,
+            2485
+          ],
+          "runner": {
+            "actualThreads": 4,
+            "browser": "firefox",
+            "browserRequested": "firefox",
+            "browserVersion": "152.0.3",
+            "expectedBackend": "wasm",
+            "headless": true,
+            "vkDriverFiles": null
+          },
+          "runs": 5,
+          "selectedFlavor": "relaxed",
+          "threads": 4,
+          "unique": true,
+          "warmups": 2
+        },
+        {
+          "arch": "kev",
+          "backend": "wasm-relaxed",
+          "cases": [
+            {
+              "frameGap": 17.080000000000382,
+              "last": {
+                "batched": 1,
+                "forward": 652
+              },
+              "min": 648,
+              "name": "1 question, ~40 tokens",
+              "p50": 649,
+              "p95": 675,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 647,
+                  "wallMs": 648
+                },
+                {
+                  "batched": 1,
+                  "forward": 649,
+                  "wallMs": 649
+                },
+                {
+                  "batched": 1,
+                  "forward": 677,
+                  "wallMs": 675
+                },
+                {
+                  "batched": 1,
+                  "forward": 648,
+                  "wallMs": 649
+                },
+                {
+                  "batched": 1,
+                  "forward": 652,
+                  "wallMs": 652
+                }
+              ],
+              "tokens": null,
+              "wallMs": [
+                648,
+                649,
+                675,
+                649,
+                652
+              ]
+            },
+            {
+              "frameGap": 17.080000000001746,
+              "last": {
+                "batched": 1,
+                "forward": 2244
+              },
+              "min": 2245,
+              "name": "1 question, ~128 tokens",
+              "p50": 2263,
+              "p95": 2265,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 2247,
+                  "wallMs": 2247
+                },
+                {
+                  "batched": 1,
+                  "forward": 2265,
+                  "wallMs": 2265
+                },
+                {
+                  "batched": 1,
+                  "forward": 2264,
+                  "wallMs": 2264
+                },
+                {
+                  "batched": 1,
+                  "forward": 2262,
+                  "wallMs": 2263
+                },
+                {
+                  "batched": 1,
+                  "forward": 2244,
+                  "wallMs": 2245
+                }
+              ],
+              "tokens": null,
+              "wallMs": [
+                2247,
+                2265,
+                2264,
+                2263,
+                2245
+              ]
+            },
+            {
+              "frameGap": 17.179999999993015,
+              "last": {
+                "batched": 1,
+                "forward": 9369
+              },
+              "min": 9370,
+              "name": "1 question, ~512 tokens",
+              "p50": 9394,
+              "p95": 9403,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 9401,
+                  "wallMs": 9402
+                },
+                {
+                  "batched": 1,
+                  "forward": 9394,
+                  "wallMs": 9394
+                },
+                {
+                  "batched": 1,
+                  "forward": 9403,
+                  "wallMs": 9403
+                },
+                {
+                  "batched": 1,
+                  "forward": 9376,
+                  "wallMs": 9375
+                },
+                {
+                  "batched": 1,
+                  "forward": 9369,
+                  "wallMs": 9370
+                }
+              ],
+              "tokens": null,
+              "wallMs": [
+                9402,
+                9394,
+                9403,
+                9375,
+                9370
+              ]
+            }
+          ],
+          "cpuTiles": [
+            0
+          ],
+          "crossOriginIsolated": false,
+          "done": true,
+          "flavor": "relaxed",
+          "gpu": null,
+          "hardwareConcurrency": 32,
+          "load_s": 2.023,
+          "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+          "metricMs": 2398.4275392900918,
+          "model": "kev-0.8b",
+          "p50CaseMediansMs": [
+            649,
+            2263,
+            9394
+          ],
+          "runner": {
+            "actualThreads": 1,
+            "browser": "firefox",
+            "browserRequested": "firefox",
+            "browserVersion": "152.0.3",
+            "expectedBackend": "wasm",
+            "headless": true,
+            "vkDriverFiles": null
+          },
+          "runs": 5,
+          "selectedFlavor": "relaxed",
+          "threads": 1,
+          "unique": true,
+          "warmups": 2
+        }
+      ]
+    },
+    "wasmSha256": "1612be2e339d2abeb20af2ebc7933f13882fe2b0cc54d414b58a32b4eefdc3b4",
+    "note": "Identical WASM bytes to trial12. Local Laya worker selected tile1; corrected run selected tile0 everywhere."
+  },
+  "workerScaling": {
+    "final": {
+      "one": {
+        "metricMs": 1824.953755755718,
+        "options": {
+          "models": "laya",
+          "threads": "1",
+          "browser": "firefox",
+          "flavor": "relaxed",
+          "runs": "3",
+          "warmups": "1",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed",
+            "cases": [
+              {
+                "frameGap": 17.080000000000382,
+                "last": {
+                  "batched": 1,
+                  "forward": 594
+                },
+                "min": 594,
+                "name": "1 question, ~40 tokens",
+                "p50": 595,
+                "p95": 597,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 597,
+                    "wallMs": 597
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 596,
+                    "wallMs": 595
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 594,
+                    "wallMs": 594
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  597,
+                  595,
+                  594
+                ]
+              },
+              {
+                "frameGap": 17.080000000000837,
+                "last": {
+                  "batched": 1,
+                  "forward": 1614
+                },
+                "min": 1609,
+                "name": "1 question, ~128 tokens",
+                "p50": 1614,
+                "p95": 1633,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 1633,
+                    "wallMs": 1633
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1608,
+                    "wallMs": 1609
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1614,
+                    "wallMs": 1614
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  1633,
+                  1609,
+                  1614
+                ]
+              },
+              {
+                "frameGap": 17.239999999997963,
+                "last": {
+                  "batched": 1,
+                  "forward": 6299
+                },
+                "min": 6301,
+                "name": "1 question, ~512 tokens",
+                "p50": 6329,
+                "p95": 6372,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 6371,
+                    "wallMs": 6372
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 6329,
+                    "wallMs": 6329
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 6299,
+                    "wallMs": 6301
+                  }
+                ],
+                "tokens": null,
+                "wallMs": [
+                  6372,
+                  6329,
+                  6301
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.38,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 1824.953755755718,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              595,
+              1614,
+              6329
+            ],
+            "runner": {
+              "actualThreads": 1,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 3,
+            "selectedFlavor": "relaxed",
+            "threads": 1,
+            "unique": true,
+            "warmups": 1
+          }
+        ]
+      },
+      "two": {
+        "metricMs": 1008.0580599273392,
+        "options": {
+          "models": "laya",
+          "threads": "2",
+          "browser": "firefox",
+          "flavor": "relaxed",
+          "runs": "3",
+          "warmups": "1",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed x2",
+            "cases": [
+              {
+                "frameGap": 17.0600000000004,
+                "last": {
+                  "batched": 1,
+                  "forward": 331,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 332
+                },
+                "min": 329,
+                "name": "1 question, ~40 tokens",
+                "p50": 330,
+                "p95": 332,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 328,
+                    "prepare": 1,
+                    "tokens": 47,
+                    "total": 331,
+                    "wallMs": 330
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 328,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 328,
+                    "wallMs": 329
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 331,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 332,
+                    "wallMs": 332
+                  }
+                ],
+                "tokens": 47,
+                "wallMs": [
+                  330,
+                  329,
+                  332
+                ]
+              },
+              {
+                "frameGap": 17.080000000000382,
+                "last": {
+                  "batched": 1,
+                  "forward": 904,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 904
+                },
+                "min": 891,
+                "name": "1 question, ~128 tokens",
+                "p50": 905,
+                "p95": 909,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 890,
+                    "prepare": 1,
+                    "tokens": 140,
+                    "total": 891,
+                    "wallMs": 891
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 909,
+                    "prepare": 1,
+                    "tokens": 140,
+                    "total": 911,
+                    "wallMs": 909
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 904,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 904,
+                    "wallMs": 905
+                  }
+                ],
+                "tokens": 140,
+                "wallMs": [
+                  891,
+                  909,
+                  905
+                ]
+              },
+              {
+                "frameGap": 17.100000000000364,
+                "last": {
+                  "batched": 1,
+                  "forward": 3435,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 3437
+                },
+                "min": 3423,
+                "name": "1 question, ~512 tokens",
+                "p50": 3430,
+                "p95": 3437,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 3428,
+                    "prepare": 2,
+                    "tokens": 512,
+                    "total": 3430,
+                    "wallMs": 3430
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 3420,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 3421,
+                    "wallMs": 3423
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 3435,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 3437,
+                    "wallMs": 3437
+                  }
+                ],
+                "tokens": 512,
+                "wallMs": [
+                  3430,
+                  3423,
+                  3437
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0,
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.247,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 1008.0580599273392,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              330,
+              905,
+              3430
+            ],
+            "runner": {
+              "actualThreads": 2,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 3,
+            "selectedFlavor": "relaxed",
+            "threads": 2,
+            "unique": true,
+            "warmups": 1
+          }
+        ]
+      },
+      "four": {
+        "arch": "laya",
+        "backend": "wasm-relaxed x4",
+        "cases": [
+          {
+            "frameGap": 17.079999999999927,
+            "last": {
+              "batched": 1,
+              "forward": 198,
+              "prepare": 0,
+              "tokens": 47,
+              "total": 199
+            },
+            "min": 194,
+            "name": "1 question, ~40 tokens",
+            "p50": 202,
+            "p95": 203,
+            "samples": [
+              {
+                "batched": 1,
+                "forward": 201,
+                "prepare": 0,
+                "tokens": 47,
+                "total": 201,
+                "wallMs": 202
+              },
+              {
+                "batched": 1,
+                "forward": 201,
+                "prepare": 1,
+                "tokens": 47,
+                "total": 203,
+                "wallMs": 203
+              },
+              {
+                "batched": 1,
+                "forward": 201,
+                "prepare": 0,
+                "tokens": 47,
+                "total": 202,
+                "wallMs": 202
+              },
+              {
+                "batched": 1,
+                "forward": 195,
+                "prepare": 0,
+                "tokens": 47,
+                "total": 195,
+                "wallMs": 194
+              },
+              {
+                "batched": 1,
+                "forward": 198,
+                "prepare": 0,
+                "tokens": 47,
+                "total": 199,
+                "wallMs": 199
+              }
+            ],
+            "tokens": 47,
+            "wallMs": [
+              202,
+              203,
+              202,
+              194,
+              199
+            ]
+          },
+          {
+            "frameGap": 17.0600000000004,
+            "last": {
+              "batched": 1,
+              "forward": 530,
+              "prepare": 1,
+              "tokens": 140,
+              "total": 531
+            },
+            "min": 509,
+            "name": "1 question, ~128 tokens",
+            "p50": 532,
+            "p95": 565,
+            "samples": [
+              {
+                "batched": 1,
+                "forward": 525,
+                "prepare": 1,
+                "tokens": 140,
+                "total": 527,
+                "wallMs": 525
+              },
+              {
+                "batched": 1,
+                "forward": 564,
+                "prepare": 0,
+                "tokens": 140,
+                "total": 564,
+                "wallMs": 565
+              },
+              {
+                "batched": 1,
+                "forward": 545,
+                "prepare": 0,
+                "tokens": 140,
+                "total": 545,
+                "wallMs": 546
+              },
+              {
+                "batched": 1,
+                "forward": 510,
+                "prepare": 0,
+                "tokens": 140,
+                "total": 510,
+                "wallMs": 509
+              },
+              {
+                "batched": 1,
+                "forward": 530,
+                "prepare": 1,
+                "tokens": 140,
+                "total": 531,
+                "wallMs": 532
+              }
+            ],
+            "tokens": 140,
+            "wallMs": [
+              525,
+              565,
+              546,
+              509,
+              532
+            ]
+          },
+          {
+            "frameGap": 17.280000000000655,
+            "last": {
+              "batched": 1,
+              "forward": 2032,
+              "prepare": 1,
+              "tokens": 512,
+              "total": 2033
+            },
+            "min": 2008,
+            "name": "1 question, ~512 tokens",
+            "p50": 2021,
+            "p95": 2035,
+            "samples": [
+              {
+                "batched": 1,
+                "forward": 2007,
+                "prepare": 1,
+                "tokens": 512,
+                "total": 2008,
+                "wallMs": 2008
+              },
+              {
+                "batched": 1,
+                "forward": 2007,
+                "prepare": 1,
+                "tokens": 512,
+                "total": 2009,
+                "wallMs": 2009
+              },
+              {
+                "batched": 1,
+                "forward": 2019,
+                "prepare": 1,
+                "tokens": 512,
+                "total": 2020,
+                "wallMs": 2021
+              },
+              {
+                "batched": 1,
+                "forward": 2033,
+                "prepare": 2,
+                "tokens": 512,
+                "total": 2035,
+                "wallMs": 2035
+              },
+              {
+                "batched": 1,
+                "forward": 2032,
+                "prepare": 1,
+                "tokens": 512,
+                "total": 2033,
+                "wallMs": 2033
+              }
+            ],
+            "tokens": 512,
+            "wallMs": [
+              2008,
+              2009,
+              2021,
+              2035,
+              2033
+            ]
+          }
+        ],
+        "cpuTiles": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "crossOriginIsolated": false,
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": null,
+        "hardwareConcurrency": 32,
+        "load_s": 1.759,
+        "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+        "metricMs": 601.0949856469437,
+        "model": "laya",
+        "p50CaseMediansMs": [
+          202,
+          532,
+          2021
+        ],
+        "runner": {
+          "actualThreads": 4,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        },
+        "runs": 5,
+        "selectedFlavor": "relaxed",
+        "threads": 4,
+        "unique": true,
+        "warmups": 2
+      },
+      "eight": {
+        "metricMs": 478.32171697668366,
+        "options": {
+          "models": "laya",
+          "threads": "8",
+          "browser": "firefox",
+          "flavor": "relaxed",
+          "runs": "3",
+          "warmups": "1",
+          "shapes": "0,1,2"
+        },
+        "models": [
+          {
+            "arch": "laya",
+            "backend": "wasm-relaxed x8",
+            "cases": [
+              {
+                "frameGap": 17.080000000000155,
+                "last": {
+                  "batched": 1,
+                  "forward": 162,
+                  "prepare": 1,
+                  "tokens": 47,
+                  "total": 164
+                },
+                "min": 156,
+                "name": "1 question, ~40 tokens",
+                "p50": 162,
+                "p95": 163,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 160,
+                    "prepare": 1,
+                    "tokens": 47,
+                    "total": 161,
+                    "wallMs": 162
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 155,
+                    "prepare": 0,
+                    "tokens": 47,
+                    "total": 155,
+                    "wallMs": 156
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 162,
+                    "prepare": 1,
+                    "tokens": 47,
+                    "total": 164,
+                    "wallMs": 163
+                  }
+                ],
+                "tokens": 47,
+                "wallMs": [
+                  162,
+                  156,
+                  163
+                ]
+              },
+              {
+                "frameGap": 17.100000000000364,
+                "last": {
+                  "batched": 1,
+                  "forward": 412,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 412
+                },
+                "min": 413,
+                "name": "1 question, ~128 tokens",
+                "p50": 423,
+                "p95": 446,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 446,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 446,
+                    "wallMs": 446
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 422,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 422,
+                    "wallMs": 423
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 412,
+                    "prepare": 0,
+                    "tokens": 140,
+                    "total": 412,
+                    "wallMs": 413
+                  }
+                ],
+                "tokens": 140,
+                "wallMs": [
+                  446,
+                  423,
+                  413
+                ]
+              },
+              {
+                "frameGap": 17.599999999998545,
+                "last": {
+                  "batched": 1,
+                  "forward": 1551,
+                  "prepare": 2,
+                  "tokens": 512,
+                  "total": 1554
+                },
+                "min": 1554,
+                "name": "1 question, ~512 tokens",
+                "p50": 1597,
+                "p95": 1622,
+                "samples": [
+                  {
+                    "batched": 1,
+                    "forward": 1620,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 1621,
+                    "wallMs": 1622
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1595,
+                    "prepare": 1,
+                    "tokens": 512,
+                    "total": 1596,
+                    "wallMs": 1597
+                  },
+                  {
+                    "batched": 1,
+                    "forward": 1551,
+                    "prepare": 2,
+                    "tokens": 512,
+                    "total": 1554,
+                    "wallMs": 1554
+                  }
+                ],
+                "tokens": 512,
+                "wallMs": [
+                  1622,
+                  1597,
+                  1554
+                ]
+              }
+            ],
+            "cpuTiles": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "crossOriginIsolated": false,
+            "done": true,
+            "flavor": "relaxed",
+            "gpu": null,
+            "hardwareConcurrency": 32,
+            "load_s": 1.236,
+            "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+            "metricMs": 478.32171697668366,
+            "model": "laya",
+            "p50CaseMediansMs": [
+              162,
+              423,
+              1597
+            ],
+            "runner": {
+              "actualThreads": 8,
+              "browser": "firefox",
+              "browserRequested": "firefox",
+              "browserVersion": "152.0.3",
+              "expectedBackend": "wasm",
+              "headless": true,
+              "vkDriverFiles": null
+            },
+            "runs": 3,
+            "selectedFlavor": "relaxed",
+            "threads": 8,
+            "unique": true,
+            "warmups": 1
+          }
+        ]
+      }
+    },
+    "originalEight": {
+      "metricMs": 587.4598213657547,
+      "options": {
+        "models": "laya",
+        "threads": "8",
+        "browser": "firefox",
+        "flavor": "relaxed",
+        "runs": "3",
+        "warmups": "1",
+        "shapes": "0,1,2"
+      },
+      "models": [
+        {
+          "arch": "laya",
+          "backend": "wasm-relaxed x8",
+          "cases": [
+            {
+              "frameGap": 17.080000000000155,
+              "last": {
+                "batched": 1,
+                "forward": 196,
+                "prepare": 0,
+                "tokens": 47,
+                "total": 197
+              },
+              "min": 185,
+              "name": "1 question, ~40 tokens",
+              "p50": 196,
+              "p95": 198,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 196,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 197,
+                  "wallMs": 198
+                },
+                {
+                  "batched": 1,
+                  "forward": 184,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 185,
+                  "wallMs": 185
+                },
+                {
+                  "batched": 1,
+                  "forward": 196,
+                  "prepare": 0,
+                  "tokens": 47,
+                  "total": 197,
+                  "wallMs": 196
+                }
+              ],
+              "tokens": 47,
+              "wallMs": [
+                198,
+                185,
+                196
+              ]
+            },
+            {
+              "frameGap": 17.080000000000382,
+              "last": {
+                "batched": 1,
+                "forward": 527,
+                "prepare": 0,
+                "tokens": 140,
+                "total": 528
+              },
+              "min": 521,
+              "name": "1 question, ~128 tokens",
+              "p50": 524,
+              "p95": 528,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 518,
+                  "prepare": 2,
+                  "tokens": 140,
+                  "total": 521,
+                  "wallMs": 521
+                },
+                {
+                  "batched": 1,
+                  "forward": 523,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 523,
+                  "wallMs": 524
+                },
+                {
+                  "batched": 1,
+                  "forward": 527,
+                  "prepare": 0,
+                  "tokens": 140,
+                  "total": 528,
+                  "wallMs": 528
+                }
+              ],
+              "tokens": 140,
+              "wallMs": [
+                521,
+                524,
+                528
+              ]
+            },
+            {
+              "frameGap": 17.26000000000022,
+              "last": {
+                "batched": 1,
+                "forward": 1973,
+                "prepare": 1,
+                "tokens": 512,
+                "total": 1975
+              },
+              "min": 1908,
+              "name": "1 question, ~512 tokens",
+              "p50": 1974,
+              "p95": 2018,
+              "samples": [
+                {
+                  "batched": 1,
+                  "forward": 1906,
+                  "prepare": 2,
+                  "tokens": 512,
+                  "total": 1908,
+                  "wallMs": 1908
+                },
+                {
+                  "batched": 1,
+                  "forward": 2015,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 2017,
+                  "wallMs": 2018
+                },
+                {
+                  "batched": 1,
+                  "forward": 1973,
+                  "prepare": 1,
+                  "tokens": 512,
+                  "total": 1975,
+                  "wallMs": 1974
+                }
+              ],
+              "tokens": 512,
+              "wallMs": [
+                1908,
+                2018,
+                1974
+              ]
+            }
+          ],
+          "cpuTiles": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "crossOriginIsolated": false,
+          "done": true,
+          "flavor": "relaxed",
+          "gpu": null,
+          "hardwareConcurrency": 32,
+          "load_s": 1.218,
+          "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+          "metricMs": 587.4598213657547,
+          "model": "laya",
+          "p50CaseMediansMs": [
+            196,
+            524,
+            1974
+          ],
+          "runner": {
+            "actualThreads": 8,
+            "browser": "firefox",
+            "browserRequested": "firefox",
+            "browserVersion": "152.0.3",
+            "expectedBackend": "wasm",
+            "headless": true,
+            "vkDriverFiles": null
+          },
+          "runs": 3,
+          "selectedFlavor": "relaxed",
+          "threads": 8,
+          "unique": true,
+          "warmups": 1
+        }
+      ]
+    },
+    "note": "1/2/8workers:1warmup+3samples;4workers:2warmups+5samples. Original8worker baseline chose tile1 on one worker."
+  },
+  "profiles": {
+    "laya": {
+      "profiler": "Node inspector Profiler",
+      "requestCount": 4,
+      "shapes": {
+        "medium": {
+          "requests": 2,
+          "inputTokens": [
+            138,
+            138
+          ]
+        },
+        "long": {
+          "requests": 2,
+          "inputTokens": [
+            512,
+            512
+          ]
+        }
+      },
+      "durationMs": 17262.611,
+      "sampleCount": 16393,
+      "topFunctions": [
+        {
+          "functionName": "_ZN6kevala7kernels6linear17hc98f2b3a09bfb002E",
+          "sampledTimeMs": 13505.446,
+          "sampleCount": 12828,
+          "percent": 78.23524494643365
+        },
+        {
+          "functionName": "_RNvNtNtNtCs5zM4GgcuceN_17compiler_builtins4math9libm_math4expf4expf",
+          "sampledTimeMs": 1742.921,
+          "sampleCount": 1656,
+          "percent": 10.09650857567259
+        },
+        {
+          "functionName": "_ZN6kevala5model5Trunk6attend17h76a193b3c8499a15E",
+          "sampledTimeMs": 1482.235,
+          "sampleCount": 1408,
+          "percent": 8.586389393817655
+        },
+        {
+          "functionName": "_ZN6kevala7kernels3erf17hf8452c4a77a88891E",
+          "sampledTimeMs": 296.01,
+          "sampleCount": 281,
+          "percent": 1.7147463961274454
+        },
+        {
+          "functionName": "_ZN6kevala5model5Trunk4step17h373f8cd132483e7fE",
+          "sampledTimeMs": 204.553,
+          "sampleCount": 194,
+          "percent": 1.184948209746486
+        },
+        {
+          "functionName": "_ZN65_$LT$kevala..engine..Engine$u20$as$u20$kevala..runtime..Model$GT$6decide17hb8992cc15c0b0915E",
+          "sampledTimeMs": 12.657,
+          "sampleCount": 12,
+          "percent": 0.07332031058337583
+        },
+        {
+          "functionName": "post",
+          "sampledTimeMs": 4.502,
+          "sampleCount": 1,
+          "percent": 0.02607948473148123
+        },
+        {
+          "functionName": "_RNvCsfLfy6EI15iL_7___rustc13___rdl_realloc",
+          "sampledTimeMs": 4.204,
+          "sampleCount": 4,
+          "percent": 0.024353210531129963
+        },
+        {
+          "functionName": "(garbage collector)",
+          "sampledTimeMs": 3.172,
+          "sampleCount": 3,
+          "percent": 0.018374972360785977
+        },
+        {
+          "functionName": "_ZN6kevala5model5Store3row17hbe2e2ed9e8019a30E",
+          "sampledTimeMs": 2.113,
+          "sampleCount": 2,
+          "percent": 0.012240326796450433
+        }
+      ]
+    },
+    "kev": {
+      "profiler": "Node inspector Profiler",
+      "requestCount": 4,
+      "shapes": {
+        "medium": {
+          "requests": 2,
+          "inputTokens": [
+            121,
+            121
+          ]
+        },
+        "long": {
+          "requests": 2,
+          "inputTokens": [
+            495,
+            495
+          ]
+        }
+      },
+      "durationMs": 21501.312,
+      "sampleCount": 20424,
+      "topFunctions": [
+        {
+          "functionName": "_ZN6kevala7kernels6linear17hc98f2b3a09bfb002E",
+          "sampledTimeMs": 17617.814,
+          "sampleCount": 16738,
+          "percent": 81.9383207871222
+        },
+        {
+          "functionName": "_ZN6kevala3kev8KevModel3run17h901416e330c65739E",
+          "sampledTimeMs": 2497.735,
+          "sampleCount": 2373,
+          "percent": 11.616663206412706
+        },
+        {
+          "functionName": "_RNvNtNtNtCs5zM4GgcuceN_17compiler_builtins4math9libm_math4expf4expf",
+          "sampledTimeMs": 1304.542,
+          "sampleCount": 1239,
+          "percent": 6.067266964918233
+        },
+        {
+          "functionName": "_ZN62_$LT$T$u20$as$u20$alloc..vec..spec_from_elem..SpecFromElem$GT$9from_elem17h45ddae59509def41E",
+          "sampledTimeMs": 32.678,
+          "sampleCount": 31,
+          "percent": 0.1519814232731472
+        },
+        {
+          "functionName": "_ZN6kevala3kev9KevEngine6decide17hd51a6d561e49011aE",
+          "sampledTimeMs": 13.69,
+          "sampleCount": 13,
+          "percent": 0.06367053322141457
+        },
+        {
+          "functionName": "_ZN6kevala3kev8rms_norm17h714fa51a95f6531cE",
+          "sampledTimeMs": 9.493,
+          "sampleCount": 9,
+          "percent": 0.044150794146887405
+        },
+        {
+          "functionName": "fmaxf",
+          "sampledTimeMs": 8.434,
+          "sampleCount": 8,
+          "percent": 0.03922551330821114
+        },
+        {
+          "functionName": "(garbage collector)",
+          "sampledTimeMs": 5.263,
+          "sampleCount": 5,
+          "percent": 0.02447757606605587
+        },
+        {
+          "functionName": "post",
+          "sampledTimeMs": 5.215,
+          "sampleCount": 1,
+          "percent": 0.024254333875067716
+        },
+        {
+          "functionName": "_ZN6kevala5model5Store3row17hbe2e2ed9e8019a30E",
+          "sampledTimeMs": 2.108,
+          "sampleCount": 2,
+          "percent": 0.009804052887563326
+        }
+      ]
+    }
+  },
+  "validation": {
+    "cpuKernels": {
+      "relaxed": {
+        "passed": 1408,
+        "tolerance": {
+          "abs": 0.0002,
+          "relative": 0.0001
+        },
+        "maxAbsoluteError": 0.0000010132789611816406,
+        "blockBoundaryCases": [
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": false,
+            "bias": true,
+            "tile": 0,
+            "checksum": 3293.315603494644,
+            "maxAbs": 1.1920928955078125e-7,
+            "maxRel": 0.000021816436503261558,
+            "worst": 1247
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": false,
+            "bias": true,
+            "tile": 1,
+            "checksum": 3293.315603494644,
+            "maxAbs": 1.1920928955078125e-7,
+            "maxRel": 0.000021816436503261558,
+            "worst": 1247
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": true,
+            "bias": true,
+            "tile": 0,
+            "checksum": 2362.497092038393,
+            "maxAbs": 2.2351741790771484e-7,
+            "maxRel": 0.00033054092917792155,
+            "worst": 208
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": true,
+            "bias": true,
+            "tile": 1,
+            "checksum": 2362.497092038393,
+            "maxAbs": 2.2351741790771484e-7,
+            "maxRel": 0.00033054092917792155,
+            "worst": 208
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": false,
+            "bias": true,
+            "tile": 0,
+            "checksum": 1674.3246091008186,
+            "maxAbs": 0.0000010132789611816406,
+            "maxRel": 0.000022163267929529672,
+            "worst": 352
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": false,
+            "bias": true,
+            "tile": 1,
+            "checksum": 1674.3246091008186,
+            "maxAbs": 0.0000010132789611816406,
+            "maxRel": 0.000022163267929529672,
+            "worst": 352
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": true,
+            "bias": true,
+            "tile": 0,
+            "checksum": 1107.0601039715111,
+            "maxAbs": 6.556510925292969e-7,
+            "maxRel": 0.00008304858885249105,
+            "worst": 60
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": true,
+            "bias": true,
+            "tile": 1,
+            "checksum": 1107.0601039715111,
+            "maxAbs": 6.556510925292969e-7,
+            "maxRel": 0.00008304858885249105,
+            "worst": 60
+          }
+        ]
+      },
+      "simd": {
+        "passed": 1408,
+        "tolerance": {
+          "abs": 0.0002,
+          "relative": 0.0001
+        },
+        "maxAbsoluteError": 0.0000010132789611816406,
+        "blockBoundaryCases": [
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": false,
+            "bias": true,
+            "tile": 0,
+            "checksum": 3293.315603494644,
+            "maxAbs": 1.1920928955078125e-7,
+            "maxRel": 0.000021816436503261558,
+            "worst": 1247
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": false,
+            "bias": true,
+            "tile": 1,
+            "checksum": 3293.315603494644,
+            "maxAbs": 1.1920928955078125e-7,
+            "maxRel": 0.000021816436503261558,
+            "worst": 1247
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": true,
+            "bias": true,
+            "tile": 0,
+            "checksum": 2362.4970971904695,
+            "maxAbs": 2.5331974029541016e-7,
+            "maxRel": 0.00042036946194814225,
+            "worst": 538
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": true,
+            "bias": true,
+            "tile": 1,
+            "checksum": 2362.4970971904695,
+            "maxAbs": 2.5331974029541016e-7,
+            "maxRel": 0.00042036946194814225,
+            "worst": 538
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": false,
+            "bias": true,
+            "tile": 0,
+            "checksum": 1674.3246091008186,
+            "maxAbs": 0.0000010132789611816406,
+            "maxRel": 0.000022163267929529672,
+            "worst": 352
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": false,
+            "bias": true,
+            "tile": 1,
+            "checksum": 1674.3246091008186,
+            "maxAbs": 0.0000010132789611816406,
+            "maxRel": 0.000022163267929529672,
+            "worst": 352
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": true,
+            "bias": true,
+            "tile": 0,
+            "checksum": 1107.060145188123,
+            "maxAbs": 7.748603820800781e-7,
+            "maxRel": 0.00010476063822569132,
+            "worst": 60
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": true,
+            "bias": true,
+            "tile": 1,
+            "checksum": 1107.060145188123,
+            "maxAbs": 7.748603820800781e-7,
+            "maxRel": 0.00010476063822569132,
+            "worst": 60
+          }
+        ]
+      },
+      "base": {
+        "passed": 1408,
+        "tolerance": {
+          "abs": 0.0002,
+          "relative": 0.0001
+        },
+        "maxAbsoluteError": 0.0000010132789611816406,
+        "blockBoundaryCases": [
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": false,
+            "bias": true,
+            "tile": 0,
+            "checksum": 3293.315603494644,
+            "maxAbs": 1.1920928955078125e-7,
+            "maxRel": 0.000021816436503261558,
+            "worst": 1247
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": false,
+            "bias": true,
+            "tile": 1,
+            "checksum": 3293.315603494644,
+            "maxAbs": 1.1920928955078125e-7,
+            "maxRel": 0.000021816436503261558,
+            "worst": 1247
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": true,
+            "bias": true,
+            "tile": 0,
+            "checksum": 2362.4970971904695,
+            "maxAbs": 2.5331974029541016e-7,
+            "maxRel": 0.00042036946194814225,
+            "worst": 538
+          },
+          {
+            "t": 257,
+            "n": 5,
+            "k": 1024,
+            "q8": true,
+            "bias": true,
+            "tile": 1,
+            "checksum": 2362.4970971904695,
+            "maxAbs": 2.5331974029541016e-7,
+            "maxRel": 0.00042036946194814225,
+            "worst": 538
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": false,
+            "bias": true,
+            "tile": 0,
+            "checksum": 1674.3246091008186,
+            "maxAbs": 0.0000010132789611816406,
+            "maxRel": 0.000022163267929529672,
+            "worst": 352
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": false,
+            "bias": true,
+            "tile": 1,
+            "checksum": 1674.3246091008186,
+            "maxAbs": 0.0000010132789611816406,
+            "maxRel": 0.000022163267929529672,
+            "worst": 352
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": true,
+            "bias": true,
+            "tile": 0,
+            "checksum": 1107.060145188123,
+            "maxAbs": 7.748603820800781e-7,
+            "maxRel": 0.00010476063822569132,
+            "worst": 60
+          },
+          {
+            "t": 75,
+            "n": 5,
+            "k": 3584,
+            "q8": true,
+            "bias": true,
+            "tile": 1,
+            "checksum": 1107.060145188123,
+            "maxAbs": 7.748603820800781e-7,
+            "maxRel": 0.00010476063822569132,
+            "worst": 60
+          }
+        ]
+      }
+    },
+    "chromeModelsAndCache": {
+      "laya": {
+        "argmax": 41,
+        "backend": "wasm-relaxed x4",
+        "crossOriginIsolated": false,
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": null,
+        "hardwareConcurrency": 32,
+        "maxDp": 0.024006444195624588,
+        "maxDpLimit": 0.03,
+        "p50": 167,
+        "p95": 1181.8000001907349,
+        "questions": 41,
+        "runner": {
+          "actualThreads": 4,
+          "browser": "chrome",
+          "browserRequested": "chromium",
+          "browserVersion": "149.0.7827.200",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 4
+      },
+      "kev": {
+        "argmax": 13,
+        "backend": "wasm-relaxed",
+        "crossOriginIsolated": false,
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": null,
+        "hardwareConcurrency": 32,
+        "max": 7004.799999237061,
+        "maxDp": 0.00968518853187561,
+        "maxDpLimit": 0.011,
+        "p50": 1183.3999996185303,
+        "questions": 13,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "chrome",
+          "browserRequested": "chromium",
+          "browserVersion": "149.0.7827.200",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "cache": {
+        "backend": "wasm-relaxed",
+        "cacheCountersVerified": false,
+        "crossOriginIsolated": false,
+        "done": true,
+        "extVsFresh": 0,
+        "flavor": "relaxed",
+        "hardwareConcurrency": 32,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 972,
+          "hit": 601,
+          "miss": 1294
+        },
+        "requestedBackend": "wasm",
+        "runner": {
+          "actualThreads": 1,
+          "browser": "chrome",
+          "browserRequested": "chromium",
+          "browserVersion": "149.0.7827.200",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        },
+        "stats": null,
+        "threads": 1
+      }
+    },
+    "firefoxSimdLaya": {
+      "argmax": 41,
+      "backend": "wasm-simd x4",
+      "crossOriginIsolated": false,
+      "done": true,
+      "flavor": "simd",
+      "gpu": null,
+      "hardwareConcurrency": 32,
+      "maxDp": 0.024006444195624588,
+      "maxDpLimit": 0.03,
+      "p50": 238,
+      "p95": 1611,
+      "questions": 41,
+      "runner": {
+        "actualThreads": 4,
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "wasm",
+        "headless": true,
+        "vkDriverFiles": null
+      },
+      "selectedFlavor": "simd",
+      "threads": 4
+    },
+    "firefoxScalarLaya": {
+      "argmax": 41,
+      "backend": "wasm-base x4",
+      "crossOriginIsolated": false,
+      "done": true,
+      "flavor": "base",
+      "gpu": null,
+      "hardwareConcurrency": 32,
+      "maxDp": 0.024006444195624588,
+      "maxDpLimit": 0.03,
+      "p50": 944,
+      "p95": 6617,
+      "questions": 41,
+      "runner": {
+        "actualThreads": 4,
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "wasm",
+        "headless": true,
+        "vkDriverFiles": null
+      },
+      "selectedFlavor": "base",
+      "threads": 4
+    },
+    "nvidiaGpu": {
+      "tiles": {
+        "adapter": {
+          "architecture": null,
+          "description": null,
+          "device": null,
+          "features": [
+            "core-features-and-limits",
+            "shader-f16",
+            "timestamp-query"
+          ],
+          "isFallbackAdapter": false,
+          "limits": {
+            "maxBufferSize": 1073741824,
+            "maxComputeWorkgroupStorageSize": 32768,
+            "maxStorageBufferBindingSize": 1073741824
+          },
+          "name": "WebGPU",
+          "powerPreference": "high-performance",
+          "vendor": null
+        },
+        "backend": "webgpu",
+        "cases": [
+          {
+            "K": 96,
+            "N": 132,
+            "T": 7,
+            "medianMs": 0.006354,
+            "shape": "7x132x96",
+            "timings": [
+              {
+                "groups": 1,
+                "kernel": "runtime",
+                "medianMs": 0.006354,
+                "reps": 32,
+                "rows": 1,
+                "samples": [
+                  0.006357,
+                  0.006354,
+                  0.006334
+                ],
+                "splitTarget": 256,
+                "splits": 1
+              }
+            ]
+          },
+          {
+            "K": 96,
+            "N": 132,
+            "T": 17,
+            "medianMs": 0.007243,
+            "shape": "17x132x96",
+            "timings": [
+              {
+                "groups": 1,
+                "kernel": "runtime",
+                "medianMs": 0.007243,
+                "reps": 32,
+                "rows": 2,
+                "samples": [
+                  0.007235,
+                  0.007253,
+                  0.007243
+                ],
+                "splitTarget": 256,
+                "splits": 1
+              }
+            ]
+          },
+          {
+            "K": 96,
+            "N": 132,
+            "T": 45,
+            "medianMs": 0.009678,
+            "shape": "45x132x96",
+            "timings": [
+              {
+                "groups": 1,
+                "kernel": "runtime",
+                "medianMs": 0.009678,
+                "reps": 32,
+                "rows": 3,
+                "samples": [
+                  0.009681,
+                  0.009678,
+                  0.009668
+                ],
+                "splitTarget": 256,
+                "splits": 1
+              }
+            ]
+          },
+          {
+            "K": 1024,
+            "N": 132,
+            "T": 45,
+            "medianMs": 0.01489,
+            "shape": "45x132x1024",
+            "timings": [
+              {
+                "groups": 1,
+                "kernel": "runtime",
+                "medianMs": 0.01489,
+                "reps": 32,
+                "rows": 3,
+                "samples": [
+                  0.014851,
+                  0.01489,
+                  0.014913
+                ],
+                "splitTarget": 256,
+                "splits": 8
+              }
+            ]
+          }
+        ],
+        "correctness": {
+          "cpu": [
+            {
+              "bias": false,
+              "kernel": "runtime",
+              "maxAbs": 0.0019284486770629885,
+              "maxRelative": 0.0014182329177856443,
+              "mode": 0,
+              "ok": true,
+              "samples": 924,
+              "shape": "7x132x96",
+              "worst": {
+                "actual": 1.5002987384796145,
+                "col": 81,
+                "expected": 1.5022271871566772,
+                "row": 3
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.0019284486770629885,
+              "maxRelative": 0.0014182329177856443,
+              "mode": 1,
+              "ok": true,
+              "samples": 924,
+              "shape": "7x132x96",
+              "worst": {
+                "actual": 1.5681904554367063,
+                "col": 81,
+                "expected": 1.5701189041137695,
+                "row": 3
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.0019284486770629885,
+              "maxRelative": 0.0014013350009918213,
+              "mode": 2,
+              "ok": true,
+              "samples": 924,
+              "shape": "7x132x96",
+              "worst": {
+                "actual": 1.542271614074707,
+                "col": 81,
+                "expected": 1.54420006275177,
+                "row": 3
+              }
+            },
+            {
+              "bias": false,
+              "kernel": "runtime",
+              "maxAbs": 0.002480506896972656,
+              "maxRelative": 0.002280116081237793,
+              "mode": 0,
+              "ok": true,
+              "samples": 2244,
+              "shape": "17x132x96",
+              "worst": {
+                "actual": 4.893547058105469,
+                "col": 68,
+                "expected": 4.896027565002441,
+                "row": 8
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.002480506896972656,
+              "maxRelative": 0.002280101180076599,
+              "mode": 1,
+              "ok": true,
+              "samples": 2244,
+              "shape": "17x132x96",
+              "worst": {
+                "actual": 4.8014326095581055,
+                "col": 68,
+                "expected": 4.803913116455078,
+                "row": 8
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.002480506896972656,
+              "maxRelative": 0.00170782208442688,
+              "mode": 2,
+              "ok": true,
+              "samples": 2244,
+              "shape": "17x132x96",
+              "worst": {
+                "actual": 4.897918224334717,
+                "col": 68,
+                "expected": 4.9003987312316895,
+                "row": 8
+              }
+            },
+            {
+              "bias": false,
+              "kernel": "runtime",
+              "maxAbs": 0.00221109390258789,
+              "maxRelative": 0.0021153688430786133,
+              "mode": 0,
+              "ok": true,
+              "samples": 5940,
+              "shape": "45x132x96",
+              "worst": {
+                "actual": -5.641815662384033,
+                "col": 21,
+                "expected": -5.639604568481445,
+                "row": 25
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.00221109390258789,
+              "maxRelative": 0.0021153688430786133,
+              "mode": 1,
+              "ok": true,
+              "samples": 5940,
+              "shape": "45x132x96",
+              "worst": {
+                "actual": -5.670379161834717,
+                "col": 21,
+                "expected": -5.668168067932129,
+                "row": 25
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.0021153688430786133,
+              "maxRelative": 0.0021153688430786133,
+              "mode": 2,
+              "ok": true,
+              "samples": 5940,
+              "shape": "45x132x96",
+              "worst": {
+                "actual": 0.3573395907878876,
+                "col": 44,
+                "expected": 0.35522422194480896,
+                "row": 15
+              }
+            },
+            {
+              "bias": false,
+              "kernel": "runtime",
+              "maxAbs": 0.006958961486816406,
+              "maxRelative": 0.005915999412536621,
+              "mode": 0,
+              "ok": true,
+              "samples": 5940,
+              "shape": "45x132x1024",
+              "worst": {
+                "actual": -8.657785415649414,
+                "col": 14,
+                "expected": -8.650826454162598,
+                "row": 26
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.006958961486816406,
+              "maxRelative": 0.005915999412536621,
+              "mode": 1,
+              "ok": true,
+              "samples": 5940,
+              "shape": "45x132x1024",
+              "worst": {
+                "actual": -8.698349952697754,
+                "col": 14,
+                "expected": -8.691390991210938,
+                "row": 26
+              }
+            },
+            {
+              "bias": true,
+              "kernel": "runtime",
+              "maxAbs": 0.006463527679443359,
+              "maxRelative": 0.005915999412536621,
+              "mode": 2,
+              "ok": true,
+              "samples": 5940,
+              "shape": "45x132x1024",
+              "worst": {
+                "actual": 5.410539150238037,
+                "col": 38,
+                "expected": 5.4170026779174805,
+                "row": 24
+              }
+            }
+          ],
+          "errors": [],
+          "ok": true,
+          "variants": [
+            {
+              "maxAbs": 0,
+              "maxRelative": 0,
+              "ok": true,
+              "samples": 0,
+              "shape": "7x132x96"
+            },
+            {
+              "maxAbs": 0,
+              "maxRelative": 0,
+              "ok": true,
+              "samples": 0,
+              "shape": "17x132x96"
+            },
+            {
+              "maxAbs": 0,
+              "maxRelative": 0,
+              "ok": true,
+              "samples": 0,
+              "shape": "45x132x96"
+            },
+            {
+              "maxAbs": 0,
+              "maxRelative": 0,
+              "ok": true,
+              "samples": 0,
+              "shape": "45x132x1024"
+            }
+          ]
+        },
+        "kernels": [
+          "runtime"
+        ],
+        "method": "WebGPU timestamp-query",
+        "metric": "geometric mean of per-shape median GPU milliseconds",
+        "metricMs": 0.009024257993316211,
+        "runner": {
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "samples": 3,
+        "seed": 1262835265,
+        "status": "done",
+        "warmups": 1
+      },
+      "kernels": {
+        "attention_w0": 7.450580596923828e-8,
+        "attention_w64": 8.940696716308595e-8,
+        "done": true,
+        "geglu": 9.96515154838562e-7,
+        "matmul_k1024": 0.00000947713851928711,
+        "matmul_k96": 0.0000023245811462402344,
+        "maxError": 0.00000947713851928711,
+        "norm": 2.239924595178428e-7,
+        "rope": 1.1321161424365133e-7,
+        "runner": {
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "laya": {
+        "argmax": 41,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "maxDp": 0.023906444195624543,
+        "maxDpLimit": 0.024,
+        "p50": 99,
+        "p95": 600,
+        "questions": 41,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "kev": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 707,
+        "maxDp": 0.010029852390289308,
+        "maxDpLimit": 0.011,
+        "p50": 99,
+        "questions": 13,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "cache": {
+        "backend": "webgpu",
+        "cacheCountersVerified": true,
+        "crossOriginIsolated": false,
+        "done": true,
+        "extVsFresh": 0,
+        "flavor": "relaxed",
+        "hardwareConcurrency": 32,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 100,
+          "hit": 100,
+          "miss": 92
+        },
+        "requestedBackend": "webgpu",
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "stats": {
+          "extensions": 1,
+          "hits": 1,
+          "misses": 1,
+          "tokensSaved": 80
+        },
+        "threads": 1
+      }
+    },
+    "native": {
+      "exercisedTests": 28,
+      "optionalSkippedTests": [
+        "qwen_base_file_with_marks_regex: missing tmp/qwen35/tokenizer.json"
+      ],
+      "kevCacheCounters": {
+        "misses": 1,
+        "hits": 1,
+        "extensions": 1
+      }
+    },
+    "javascript": {
+      "passed": 26,
+      "failed": 0
+    },
+    "evenSampleMedian": {
+      "arch": "laya",
+      "backend": "wasm-relaxed x4",
+      "cases": [
+        {
+          "frameGap": 17.060000000000173,
+          "last": {
+            "batched": 1,
+            "forward": 198,
+            "prepare": 0,
+            "tokens": 47,
+            "total": 199
+          },
+          "min": 193,
+          "name": "1 question, ~40 tokens",
+          "p50": 196.5,
+          "p95": 200,
+          "samples": [
+            {
+              "batched": 1,
+              "forward": 192,
+              "prepare": 0,
+              "tokens": 47,
+              "total": 193,
+              "wallMs": 193
+            },
+            {
+              "batched": 1,
+              "forward": 198,
+              "prepare": 0,
+              "tokens": 47,
+              "total": 199,
+              "wallMs": 200
+            }
+          ],
+          "tokens": 47,
+          "wallMs": [
+            193,
+            200
+          ]
+        }
+      ],
+      "cpuTiles": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "crossOriginIsolated": false,
+      "done": true,
+      "flavor": "relaxed",
+      "gpu": null,
+      "hardwareConcurrency": 32,
+      "load_s": 1.212,
+      "metric": "geometric mean of per-case wall-clock p50 milliseconds",
+      "metricMs": 196.49999999999997,
+      "model": "laya",
+      "p50CaseMediansMs": [
+        196.5
+      ],
+      "runner": {
+        "actualThreads": 4,
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "wasm",
+        "headless": true,
+        "vkDriverFiles": null
+      },
+      "runs": 2,
+      "selectedFlavor": "relaxed",
+      "threads": 4,
+      "unique": true,
+      "warmups": 1
+    },
+    "packageSmoke": {
+      "source": "pnpm-packed package",
+      "cpuTiles": [
+        0
+      ],
+      "answers": {
+        "refund": {
+          "type": "noul",
+          "noul": 0.9068,
+          "confidence": 0.9068,
+          "action": {
+            "act_probability": 1
+          }
+        }
+      }
+    }
+  },
+  "limits": [
+    "One workstation; no native x86 or ARM performance comparison.",
+    "Node single-instance sampling is not a Firefox profile.",
+    "Browser CPU cache checks prove probability equality; native integration checks prove counters.",
+    "No claim of universally optimal kernels or state-of-the-art performance."
+  ]
+}
