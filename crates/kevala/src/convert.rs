@@ -20,6 +20,23 @@ pub(crate) fn text_tensor_prefix(has: impl Fn(&str) -> bool) -> Result<&'static 
     Ok(prefix)
 }
 
+pub(crate) fn validate_tokenizer_vocab(tokens: usize, configured: usize, embedding_rows: usize) -> Result<(), String> {
+    if tokens > configured || tokens > embedding_rows {
+        return Err(format!("tokenizer ID range 0..{tokens} exceeds the configured vocabulary ({configured}) or embedding rows ({embedding_rows})"));
+    }
+    Ok(())
+}
+
+pub(crate) fn require_prompt_tokens(tokenizer: &Tokenizer, tokens: &[&str]) -> Result<(), String> {
+    for &token in tokens {
+        let id = tokenizer.token_id(token).ok_or_else(|| format!("tokenizer has no required prompt token {token}"))?;
+        if tokenizer.encode(token) != [id] {
+            return Err(format!("required prompt token {token} does not encode to its exact token ID"));
+        }
+    }
+    Ok(())
+}
+
 pub struct Checkpoint<'a> {
     pub safetensors: &'a [u8],
     pub encoder_config: &'a str,
@@ -176,6 +193,11 @@ pub fn plan(
 
     let u = |k: &str| enc.get(k).and_then(Value::as_usize).ok_or_else(|| format!("encoder config: no {k}"));
     let hidden = u("hidden_size")?;
+    let embedding = st.shape("encoder.embeddings.tok_embeddings.weight")?;
+    if embedding != [u("vocab_size")?, hidden] {
+        return Err(format!("encoder embedding shape {embedding:?} does not match [vocab_size, hidden_size]"));
+    }
+    validate_tokenizer_vocab(tok.vocab_size(), u("vocab_size")?, embedding[0])?;
     let layers = u("num_hidden_layers")?;
     let inter = u("intermediate_size")?;
     let head_layers = agent.get("head_layers").and_then(Value::as_usize).unwrap_or(2);
@@ -392,5 +414,12 @@ mod prefix_tests {
         }
         assert!(text_tensor_prefix(|_| false).unwrap_err().contains("no supported"));
         assert!(text_tensor_prefix(|_| true).unwrap_err().contains("ambiguous"));
+    }
+
+    #[test]
+    fn tokenizer_bounds_allow_padded_embeddings_and_reject_out_of_range_ids() {
+        assert!(super::validate_tokenizer_vocab(248077, 248320, 248320).is_ok());
+        assert!(super::validate_tokenizer_vocab(248321, 248320, 248320).is_err());
+        assert!(super::validate_tokenizer_vocab(248077, 248320, 248076).is_err());
     }
 }

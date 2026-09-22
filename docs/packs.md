@@ -97,7 +97,8 @@ kevala=target/release/kevala
 # Laya (843 MB)
 uvx --from huggingface-hub hf download convaiinnovations/laya model.safetensors encoder/config.json rl_agent_config.json \
   tokenizer/tokenizer.json --revision 1c5edc17a7acd8701df6fc341c0d179f1c62c982 --local-dir ckpt/laya
-$kevala convert ckpt/laya -o packs/laya-q8.kevala --revision 1c5edc17a7acd8701df6fc341c0d179f1c62c982
+$kevala convert ckpt/laya -o packs/laya-q8.kevala --name laya --source convaiinnovations/laya \
+  --revision 1c5edc17a7acd8701df6fc341c0d179f1c62c982 --author "Nandakishor M, Convai Innovations" --license apache-2.0
 
 # Kev-0.8B: its LoRA adapter and pointer head, and the Qwen3.5 base they apply to
 uvx --from huggingface-hub hf download jaredpalmer/kev-0.8b adapter_config.json adapter_model.safetensors head.pt tokenizer.json \
@@ -105,18 +106,23 @@ uvx --from huggingface-hub hf download jaredpalmer/kev-0.8b adapter_config.json 
 uvx --from huggingface-hub hf download Qwen/Qwen3.5-0.8B-Base config.json model.safetensors-00001-of-00001.safetensors \
   --revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 --local-dir ckpt/qwen3.5-0.8b-base
 $kevala convert ckpt/qwen3.5-0.8b-base --adapter ckpt/kev-0.8b -o packs/kev-0.8b-q8.kevala \
-  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+  --name kev-0.8b --source jaredpalmer/kev-0.8b --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 \
+  --base-source Qwen/Qwen3.5-0.8B-Base --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 \
+  --author "Jared Palmer" --license apache-2.0
 ```
 
 An adapter directory can also be the positional checkpoint when the base is supplied separately:
 
 ```sh
 $kevala convert ckpt/kev-0.8b --base ckpt/qwen3.5-0.8b-base -o packs/kev-0.8b-q8.kevala \
-  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
+  --name kev-0.8b --source jaredpalmer/kev-0.8b --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 \
+  --base-source Qwen/Qwen3.5-0.8B-Base --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 \
+  --author "Jared Palmer" --license apache-2.0
 ```
 
-The revision flags label the pack header; the weights are whatever the directories hold, so download
-them at the same revisions. Plain Qwen3.5 and Gemma 4 text checkpoints default to the
+The source, revision, author and license flags label the pack header. Unknown provenance is not
+guessed. The weights are whatever the directories hold, so download them at the same revisions.
+Plain Qwen3.5 and Gemma 4 text checkpoints default to the
 `direct-options` readout, a complete Qwen3.5 adapter plus pointer head uses `pointer`, and Laya uses
 `encoder-head`. Pass `--readout` only when it matches that inferred layout.
 

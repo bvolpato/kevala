@@ -312,6 +312,8 @@ impl GemmaConvert {
         let ple_proj = format!("{text_prefix}per_layer_model_projection.weight");
         let ple_norm = format!("{text_prefix}per_layer_projection_norm.weight");
         require_shape(&catalog, &embed, &[vocab, hidden])?;
+        crate::convert::validate_tokenizer_vocab(tok.vocab_size(), vocab, vocab)?;
+        crate::convert::require_prompt_tokens(&tok, &["<bos>", "<|turn>", "<turn|>"])?;
         require_shape(&catalog, &ple_embed, &[vocab, layers * ple_dim])?;
         require_shape(&catalog, &norm, &[hidden])?;
         require_shape(&catalog, &ple_proj, &[layers * ple_dim, hidden])?;

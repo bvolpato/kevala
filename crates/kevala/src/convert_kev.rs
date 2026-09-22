@@ -30,6 +30,53 @@ pub const SPECIAL: [&str; 5] = ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start
 /// SemIf's direct readout accepts up to sixteen options, represented by these answer slots.
 pub const SEMIF_LABELS: &str = "ABCDEFGHIJKLMNOP";
 
+fn pointer_dimension(root: &Py, hidden: usize) -> Result<usize, String> {
+    let Some(Py::Dict(tensors)) = root.get("head") else { return Err("head.pt has no head tensor dictionary".into()) };
+    let dimension = match root.get("head").and_then(|head| head.get("q.weight")) {
+        Some(Py::Tensor(tensor)) if tensor.shape.len() == 2 && tensor.shape[0] > 0 => tensor.shape[0],
+        _ => return Err("head.pt has no rank-2 head q.weight".into()),
+    };
+    for (key, value) in tensors {
+        let Py::Str(name) = key else { return Err("head.pt: head tensor names must be strings".into()) };
+        let expected = match name.as_str() {
+            "q.weight" | "k.weight" => vec![dimension, hidden],
+            "q.bias" | "k.bias" => vec![dimension],
+            _ => return Err(format!("head.pt: unsupported head tensor {name}")),
+        };
+        let Py::Tensor(tensor) = value else { return Err(format!("head.pt: {name} is not a tensor")) };
+        if tensor.shape != expected {
+            return Err(format!("head.pt: {name} must have shape {expected:?}, got {:?}", tensor.shape));
+        }
+    }
+    for name in ["q.weight", "k.weight", "q.bias", "k.bias"] {
+        if root.get("head").and_then(|head| head.get(name)).is_none() {
+            return Err(format!("head.pt: missing {name}"));
+        }
+    }
+    if let Py::Dict(entries) = root {
+        for (name, value) in entries {
+            if matches!(value, Py::Tensor(_)) && !matches!(name, Py::Str(name) if name == "temperature") {
+                return Err(format!("head.pt: unconsumed top-level tensor {name:?}"));
+            }
+        }
+    }
+    Ok(dimension)
+}
+
+fn pointer_temperature(head: &TorchFile<'_>) -> Result<f64, String> {
+    let temperature = match head.root.get("temperature") {
+        None => 1.0,
+        Some(Py::Tensor(tensor)) if tensor.shape.is_empty() || tensor.shape == [1] => {
+            *head.f32(tensor)?.first().ok_or("head.pt: empty temperature tensor")? as f64
+        }
+        Some(value) => value.as_f64().ok_or("head.pt: temperature must be a scalar")?,
+    };
+    if !temperature.is_finite() || temperature <= 0.0 {
+        return Err("head.pt: temperature must be finite and positive".into());
+    }
+    Ok(temperature)
+}
+
 /// A safetensors file whose tensors arrive one by one: the header up front, each tensor's bytes
 /// when the stream reaches it (or all at once for a file already in memory).
 struct St {
@@ -323,12 +370,7 @@ impl KevConvert {
             return Err("base config: DeltaNet dimensions must be positive".into());
         }
         let (temperature, ptr_dim) = if let Some(head) = head.as_ref() {
-            let temperature = head.root.get("temperature").and_then(Py::as_f64).unwrap_or(1.0);
-            let ptr_dim = match head.root.get("head").and_then(|h| h.get("q.weight")) {
-                Some(Py::Tensor(t)) if t.shape.len() == 2 && t.shape[0] > 0 => t.shape[0],
-                _ => return Err("head.pt has no head q.weight".into()),
-            };
-            (temperature, ptr_dim)
+            (pointer_temperature(head)?, pointer_dimension(&head.root, hidden)?)
         } else {
             (1.0, 0)
         };
@@ -417,6 +459,14 @@ impl KevConvert {
         let mut w = Writer::new(model, config, tok.to_bytes());
         let pre = crate::convert::text_tensor_prefix(|name| base_index.contains_key(name))?;
         let src = Sources { base, base_index, adapter, head: head_tensors, scaling, pre: pre.to_string() };
+        let embedding = src.base_shape(&format!("{pre}embed_tokens.weight"))?;
+        if embedding != [u("vocab_size")?, hidden] {
+            return Err(format!("text embedding shape {embedding:?} does not match [vocab_size, hidden_size]"));
+        }
+        crate::convert::validate_tokenizer_vocab(tok.vocab_size(), u("vocab_size")?, embedding[0])?;
+        if semif {
+            crate::convert::require_prompt_tokens(&tok, &["<|im_start|>", "<|im_end|>", "<think>", "</think>"])?;
+        }
         // What each pack tensor is made of, in stream order.
         let mut plan: Vec<(String, Spec)> = vec![
             ("emb".into(), Spec::Embed(format!("{pre}embed_tokens.weight"))),
@@ -867,6 +917,45 @@ impl Sources {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pointer_heads_require_all_four_exact_shapes_and_consume_every_tensor() {
+        let tensor = |shape: Vec<usize>| {
+            Py::Tensor(crate::torchpt::TensorRef {
+                key: "0".into(),
+                dtype: "FloatStorage".into(),
+                offset: 0,
+                stride: Vec::new(),
+                shape,
+            })
+        };
+        let head = vec![
+            (Py::Str("q.weight".into()), tensor(vec![16, 32])),
+            (Py::Str("k.weight".into()), tensor(vec![16, 32])),
+            (Py::Str("q.bias".into()), tensor(vec![16])),
+            (Py::Str("k.bias".into()), tensor(vec![16])),
+        ];
+        let root = |head: Vec<(Py, Py)>| {
+            Py::Dict(vec![(Py::Str("head".into()), Py::Dict(head)), (Py::Str("temperature".into()), tensor(vec![]))])
+        };
+        assert_eq!(pointer_dimension(&root(head.clone()), 32).unwrap(), 16);
+        assert!(pointer_dimension(&root(head.clone()), 64).unwrap_err().contains("q.weight"));
+        for (index, shape) in [(1, vec![15, 32]), (2, vec![17]), (3, vec![16, 1])] {
+            let mut invalid = head.clone();
+            invalid[index].1 = tensor(shape);
+            assert!(pointer_dimension(&root(invalid), 32).unwrap_err().contains("must have shape"));
+        }
+        let mut missing = head.clone();
+        missing.pop();
+        assert!(pointer_dimension(&root(missing), 32).unwrap_err().contains("missing k.bias"));
+        let mut extra = head.clone();
+        extra.push((Py::Str("unconsumed.weight".into()), tensor(vec![16, 32])));
+        assert!(pointer_dimension(&root(extra), 32).unwrap_err().contains("unsupported head tensor"));
+        let mut extra = root(head);
+        let Py::Dict(entries) = &mut extra else { unreachable!() };
+        entries.push((Py::Str("unconsumed".into()), tensor(vec![1])));
+        assert!(pointer_dimension(&extra, 32).unwrap_err().contains("unconsumed top-level tensor"));
+    }
 
     fn tiny_header(name: &str, start: usize, end: usize) -> Vec<u8> {
         let json = format!(r#"{{"{name}":{{"dtype":"F32","shape":[1],"data_offsets":[{start},{end}]}}}}"#);

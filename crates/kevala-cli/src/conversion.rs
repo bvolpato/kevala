@@ -195,12 +195,19 @@ impl Readout {
 struct Options {
     checkpoint: String,
     values: std::collections::BTreeMap<String, String>,
-    alias: Option<Architecture>,
+    alias: Option<(Architecture, Readout)>,
 }
 
 impl Options {
     fn get(&self, key: &str) -> Option<&str> {
         self.values.get(key).map(String::as_str)
+    }
+
+    fn validate_alias(&self, architecture: Architecture, readout: Readout) -> Result<(), String> {
+        if self.alias.is_some_and(|expected| expected != (architecture, readout)) {
+            return Err("legacy conversion command does not match this checkpoint's architecture/readout; use kevala convert for automatic detection".into());
+        }
+        Ok(())
     }
 
     fn parse(command: &str, args: &[String]) -> Result<Self, String> {
@@ -238,10 +245,10 @@ impl Options {
                 if !values.contains_key("--adapter") {
                     return Err("convert-kev needs --kev <adapter-dir> (or --adapter)".into());
                 }
-                Some(Architecture::Qwen35)
+                Some((Architecture::Qwen35, Readout::Pointer))
             }
-            "convert-semif" => Some(Architecture::Qwen35),
-            "convert-gemma" => Some(Architecture::Gemma4),
+            "convert-semif" => Some((Architecture::Qwen35, Readout::DirectOptions)),
+            "convert-gemma" => Some((Architecture::Gemma4, Readout::DirectOptions)),
             _ => None,
         };
         Ok(Self { checkpoint, values, alias })
@@ -404,9 +411,48 @@ fn declared_source(config: &Value) -> Option<&str> {
     })
 }
 
+fn repository_identity(value: &str) -> Option<&str> {
+    if Path::new(value).exists() {
+        return None;
+    }
+    let value = value.trim_end_matches('/');
+    let value = value
+        .strip_prefix("https://huggingface.co/")
+        .or_else(|| value.strip_prefix("http://huggingface.co/"))
+        .unwrap_or(value);
+    let mut parts = value.split('/');
+    let (Some(owner), Some(repo), None) = (parts.next(), parts.next(), parts.next()) else { return None };
+    let valid = |part: &str| {
+        !part.is_empty()
+            && !part.starts_with('.')
+            && part.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c))
+    };
+    (valid(owner) && valid(repo)).then_some(value)
+}
+
+fn validate_adapter_provenance(options: &Options, adapter: &Value) -> Result<(), String> {
+    if let (Some(supplied), Some(declared)) = (
+        options.get("--base-source").and_then(repository_identity),
+        adapter.get("base_model_name_or_path").and_then(Value::as_str).and_then(repository_identity),
+    ) {
+        if !supplied.eq_ignore_ascii_case(declared) {
+            return Err(format!("--base-source {supplied:?} contradicts adapter base_model_name_or_path {declared:?}"));
+        }
+    }
+    if let (Some(supplied), Some(declared)) =
+        (options.get("--base-revision"), adapter.get("revision").and_then(Value::as_str))
+    {
+        let commit = |value: &str| value.len() == 40 && value.bytes().all(|byte| byte.is_ascii_hexdigit());
+        if commit(supplied) && commit(declared) && !supplied.eq_ignore_ascii_case(declared) {
+            return Err(format!("--base-revision {supplied:?} contradicts adapter revision {declared:?}"));
+        }
+    }
+    Ok(())
+}
+
 fn metadata(options: &Options, config: &Value, readout: Readout, block: usize) -> Value {
     let name = options.get("--name").map(str::to_string).unwrap_or_else(|| {
-        Path::new(declared_source(config).unwrap_or(&options.checkpoint))
+        Path::new(options.get("--adapter").unwrap_or(&options.checkpoint))
             .file_name()
             .and_then(|name| name.to_str())
             .unwrap_or("checkpoint")
@@ -427,9 +473,13 @@ fn metadata(options: &Options, config: &Value, readout: Readout, block: usize) -
     for (field, value) in [
         (
             "source",
-            options
-                .get("--source")
-                .or_else(|| if readout == Readout::Pointer { None } else { declared_source(config) }),
+            options.get("--source").or_else(|| {
+                if readout == Readout::DirectOptions {
+                    declared_source(config)
+                } else {
+                    None
+                }
+            }),
         ),
         (
             "revision",
@@ -520,10 +570,8 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
     if encoder_layout != (arch == Architecture::Encoder) {
         return Err("ModernBERT conversion requires the encoder decision-head checkpoint layout".into());
     }
-    if options.alias.is_some_and(|expected| expected != arch) {
-        return Err(format!("{command} does not match this checkpoint's architecture; use kevala convert"));
-    }
     let readout = check_readout(arch, adapter.is_some(), options.get("--readout"))?;
+    options.validate_alias(arch, readout)?;
     if options.get("--keep-f32").is_some() && readout != Readout::EncoderHead {
         return Err("--keep-f32 is currently supported only by encoder-head conversion".into());
     }
@@ -533,7 +581,9 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
         );
     }
     if let Some(dir) = adapter {
-        validate_adapter(&json_file(&dir.join("adapter_config.json"))?)?;
+        let adapter_config = json_file(&dir.join("adapter_config.json"))?;
+        validate_adapter(&adapter_config)?;
+        validate_adapter_provenance(&options, &adapter_config)?;
         for file in ["adapter_model.safetensors", "head.pt"] {
             if !dir.join(file).is_file() {
                 return Err(format!("pointer adapter is missing {file}"));
@@ -686,6 +736,13 @@ mod tests {
         .unwrap();
         assert_eq!(legacy.values, current.values);
         assert_eq!(legacy.checkpoint, current.checkpoint);
+        assert!(legacy.validate_alias(Architecture::Qwen35, Readout::Pointer).is_ok());
+        assert!(legacy.validate_alias(Architecture::Qwen35, Readout::DirectOptions).is_err());
+        let direct = Options::parse("convert-semif", &args(&["base", "--adapter", "adapter", "-o", "out"])).unwrap();
+        assert!(direct.validate_alias(Architecture::Qwen35, Readout::Pointer).is_err());
+        assert!(direct.validate_alias(Architecture::Qwen35, Readout::DirectOptions).is_ok());
+        assert!(current.validate_alias(Architecture::Qwen35, Readout::Pointer).is_ok());
+        assert!(current.validate_alias(Architecture::Qwen35, Readout::DirectOptions).is_ok());
         for input in [
             &["base", "-o", "out", "--typo", "x"][..],
             &["base", "-o", "out", "--name"],
@@ -730,6 +787,53 @@ mod tests {
         assert_eq!(model.get("base").and_then(Value::as_str), Some("/tmp/local-base"));
         assert_eq!(model.get("revision").and_then(Value::as_str), Some("pinned"));
         assert_eq!(model.get("license").and_then(Value::as_str), Some("mit"));
+        let options = Options::parse("convert", &args(&["/tmp/renamed-decision-checkpoint", "-o", "out"])).unwrap();
+        let model = metadata(&options, &json(r#"{"_name_or_path":"vendor/encoder-base"}"#), Readout::EncoderHead, 32);
+        assert_eq!(model.get("name").and_then(Value::as_str), Some("renamed-decision-checkpoint"));
+        assert!(model.get("source").is_none());
+        assert_eq!(model.get("base").and_then(Value::as_str), Some("vendor/encoder-base"));
+    }
+
+    #[test]
+    fn adapter_provenance_rejects_only_contradictory_known_identities() {
+        let options = Options::parse(
+            "convert",
+            &args(&[
+                "/tmp/renamed-base",
+                "-o",
+                "out",
+                "--base-source",
+                "https://huggingface.co/vendor/base",
+                "--base-revision",
+                "1111111111111111111111111111111111111111",
+            ]),
+        )
+        .unwrap();
+        assert!(validate_adapter_provenance(
+            &options,
+            &json(r#"{"base_model_name_or_path":"vendor/base","revision":"1111111111111111111111111111111111111111"}"#)
+        )
+        .is_ok());
+        assert!(validate_adapter_provenance(&options, &json(r#"{"base_model_name_or_path":"vendor/other-base"}"#))
+            .unwrap_err()
+            .contains("base-source"));
+        assert!(validate_adapter_provenance(
+            &options,
+            &json(r#"{"revision":"2222222222222222222222222222222222222222"}"#)
+        )
+        .unwrap_err()
+        .contains("base-revision"));
+        for config in [
+            r#"{}"#,
+            r#"{"base_model_name_or_path":"/tmp/original-local-base","revision":null}"#,
+            r#"{"base_model_name_or_path":"vendor/base","revision":"main"}"#,
+        ] {
+            assert!(validate_adapter_provenance(&options, &json(config)).is_ok());
+        }
+        let local =
+            Options::parse("convert", &args(&["/tmp/renamed-base", "-o", "out", "--base-source", "/tmp/renamed-base"]))
+                .unwrap();
+        assert!(validate_adapter_provenance(&local, &json(r#"{"base_model_name_or_path":"vendor/base"}"#)).is_ok());
     }
 
     #[test]

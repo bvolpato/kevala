@@ -93,6 +93,9 @@ larger packs. WebGPU needs sufficient GPU memory and per-buffer limits. Large pa
 and are not downloaded by routine CI. Caching avoids later downloads, but loading still transfers
 weights to the GPU and needs working memory.
 
+Use a Kevala runtime that supports the pack's architecture. Older published packages can reject
+newer packs; the current source and hosted demo include the architectures listed here.
+
 The Gemma backend accepts at most 4096 input tokens per question. Overlong requests fail instead of silently
 dropping evidence. This runtime limit is smaller than the upstream model context limits.
 
