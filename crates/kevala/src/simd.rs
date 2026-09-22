@@ -89,34 +89,6 @@ mod imp {
             core::ptr::write_unaligned(dst.add(i * 4) as *mut v128, f32x4_mul(f32x4_convert_i32x4(p), s));
         }
     }
-
-    /// Transpose four four-lane rows into four output vectors. `dst_stride` is in f32s.
-    #[inline(always)]
-    pub unsafe fn transpose4x4(
-        a0: *const f32,
-        a1: *const f32,
-        a2: *const f32,
-        a3: *const f32,
-        dst: *mut f32,
-        dst_stride: usize,
-    ) {
-        let r0 = core::ptr::read_unaligned(a0 as *const v128);
-        let r1 = core::ptr::read_unaligned(a1 as *const v128);
-        let r2 = core::ptr::read_unaligned(a2 as *const v128);
-        let r3 = core::ptr::read_unaligned(a3 as *const v128);
-        let t0 = i32x4_shuffle::<0, 4, 1, 5>(r0, r1);
-        let t1 = i32x4_shuffle::<2, 6, 3, 7>(r0, r1);
-        let t2 = i32x4_shuffle::<0, 4, 1, 5>(r2, r3);
-        let t3 = i32x4_shuffle::<2, 6, 3, 7>(r2, r3);
-        let o0 = i32x4_shuffle::<0, 1, 4, 5>(t0, t2);
-        let o1 = i32x4_shuffle::<2, 3, 6, 7>(t0, t2);
-        let o2 = i32x4_shuffle::<0, 1, 4, 5>(t1, t3);
-        let o3 = i32x4_shuffle::<2, 3, 6, 7>(t1, t3);
-        core::ptr::write_unaligned(dst as *mut v128, o0);
-        core::ptr::write_unaligned(dst.add(dst_stride) as *mut v128, o1);
-        core::ptr::write_unaligned(dst.add(2 * dst_stride) as *mut v128, o2);
-        core::ptr::write_unaligned(dst.add(3 * dst_stride) as *mut v128, o3);
-    }
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -184,34 +156,6 @@ mod imp {
         vst1q_f32(dst.add(8), vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_low_s16(hi))), s));
         vst1q_f32(dst.add(12), vmulq_f32(vcvtq_f32_s32(vmovl_s16(vget_high_s16(hi))), s));
     }
-
-    /// Transpose four four-lane rows into four output vectors. `dst_stride` is in f32s.
-    #[inline(always)]
-    pub unsafe fn transpose4x4(
-        a0: *const f32,
-        a1: *const f32,
-        a2: *const f32,
-        a3: *const f32,
-        dst: *mut f32,
-        dst_stride: usize,
-    ) {
-        let r0 = vld1q_f32(a0);
-        let r1 = vld1q_f32(a1);
-        let r2 = vld1q_f32(a2);
-        let r3 = vld1q_f32(a3);
-        let t0 = vtrn1q_f32(r0, r1);
-        let t1 = vtrn2q_f32(r0, r1);
-        let t2 = vtrn1q_f32(r2, r3);
-        let t3 = vtrn2q_f32(r2, r3);
-        let o0 = vcombine_f32(vget_low_f32(t0), vget_low_f32(t2));
-        let o1 = vcombine_f32(vget_low_f32(t1), vget_low_f32(t3));
-        let o2 = vcombine_f32(vget_high_f32(t0), vget_high_f32(t2));
-        let o3 = vcombine_f32(vget_high_f32(t1), vget_high_f32(t3));
-        vst1q_f32(dst, o0);
-        vst1q_f32(dst.add(dst_stride), o1);
-        vst1q_f32(dst.add(2 * dst_stride), o2);
-        vst1q_f32(dst.add(3 * dst_stride), o3);
-    }
 }
 
 #[cfg(not(any(all(target_arch = "wasm32", target_feature = "simd128"), target_arch = "aarch64")))]
@@ -276,29 +220,9 @@ mod imp {
             *dst.add(i) = *src.add(i) as f32 * scale;
         }
     }
-
-    /// Transpose four four-lane rows into four output vectors. `dst_stride` is in f32s.
-    #[inline(always)]
-    pub unsafe fn transpose4x4(
-        a0: *const f32,
-        a1: *const f32,
-        a2: *const f32,
-        a3: *const f32,
-        dst: *mut f32,
-        dst_stride: usize,
-    ) {
-        let r0 = core::ptr::read_unaligned(a0 as *const [f32; 4]);
-        let r1 = core::ptr::read_unaligned(a1 as *const [f32; 4]);
-        let r2 = core::ptr::read_unaligned(a2 as *const [f32; 4]);
-        let r3 = core::ptr::read_unaligned(a3 as *const [f32; 4]);
-        for i in 0..4 {
-            let row = [r0[i], r1[i], r2[i], r3[i]];
-            core::ptr::write_unaligned(dst.add(i * dst_stride) as *mut [f32; 4], row);
-        }
-    }
 }
 
-pub use imp::{dequant16, transpose4x4, F4};
+pub use imp::{dequant16, F4};
 
 /// Dot product of two equal-length slices whose length is a multiple of 16.
 #[inline(always)]
