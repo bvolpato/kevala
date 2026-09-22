@@ -52,6 +52,12 @@ test("reporter accepts matching full-pack evidence and committed summary", async
   const result = await runReporter(archivedResults, output, committedSummary);
   assert.equal(result.code, 0, result.stderr);
   const report = JSON.parse(await readFile(output, "utf8"));
+  for (const [model, { metrics }] of Object.entries(report.models)) {
+    for (const [dataset, metric] of Object.entries({ all: metrics, ...metrics.perDataset })) {
+      assert.equal(metric.accuracy, metric.correct / metric.total, `${model}/${dataset} accuracy`);
+      assert.equal(metric.groupBootstrap.estimate, metric.accuracy, `${model}/${dataset} bootstrap estimate`);
+    }
+  }
   const verification = report.models["kev-0.8b"].pack.verification;
   assert.equal(verification.status, "verified");
   assert.equal(verification.expectedCatalogHash, "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2");

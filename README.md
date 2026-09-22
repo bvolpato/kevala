@@ -270,10 +270,10 @@ cargo build --release -p kevala-cli            # target/release/kevala
 
 kevala convert <checkpoint-dir> -o model.kevala
 kevala convert <qwen3.5-dir> --adapter <adapter-dir> -o model.kevala
-# The config selects Laya, Qwen3.5, or Gemma 4 and validates the matching readout.
-kevala decide laya-q8.kevala --state "..." --questions '{"q": {"type": "noul", "instructions": "..."}}'
-kevala parity laya-q8.kevala tests/fixtures/golden.json
-kevala bench kev-0.8b-q8.kevala --tokens 128
+# The config selects a supported architecture and validates its decision readout.
+kevala decide model.kevala --state "..." --questions '{"q": {"type": "noul", "instructions": "..."}}'
+kevala parity model.kevala reference.json    # use the reference for this checkpoint
+kevala bench model.kevala --tokens 128
 kevala wgsl matmul --f16 --rows 3                  # a GPU kernel, specialized
 
 pnpm serve                                 # static server at http://127.0.0.1:8080

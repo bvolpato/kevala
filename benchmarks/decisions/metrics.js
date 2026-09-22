@@ -290,7 +290,7 @@ function percentile(sorted, fraction) {
   return sorted[index];
 }
 
-function groupBootstrap(aligned, samples, seed) {
+function groupBootstrap(aligned, samples, seed, estimate) {
   if (!Number.isInteger(samples) || samples < 1) throw new Error("bootstrap samples must be a positive integer");
   const groups = new Map();
   for (const row of aligned) {
@@ -299,13 +299,13 @@ function groupBootstrap(aligned, samples, seed) {
   }
   const units = [...groups.values()];
   if (!units.length) {
-    return {
+    return Object.freeze({
       groups: 0,
       samples,
       seed,
       estimate: null,
       confidence95: [null, null],
-    };
+    });
   }
   const random = seededRandom(seed);
   const draws = [];
@@ -320,22 +320,24 @@ function groupBootstrap(aligned, samples, seed) {
     draws.push(total ? correct / total : 0);
   }
   draws.sort((a, b) => a - b);
-  return {
+  // Freezing avoids estimate aliasing observed across datasets in optimized Node 24.21.0.
+  return Object.freeze({
     groups: units.length,
     samples,
     seed,
-    estimate: summaryFor(aligned).accuracy,
+    estimate,
     confidence95: [percentile(draws, 0.025), percentile(draws, 0.975)],
-  };
+  });
 }
 
 function metricSummary(aligned, bootstrapSamples, bootstrapSeed) {
+  const summary = summaryFor(aligned);
   return {
-    ...summaryFor(aligned),
+    ...summary,
     perFamily: familySummary(aligned),
     semanticPermutationFlip: permutationFlips(aligned),
     selectedPositionBias: positionBias(aligned),
-    groupBootstrap: groupBootstrap(aligned, bootstrapSamples, bootstrapSeed),
+    groupBootstrap: groupBootstrap(aligned, bootstrapSamples, bootstrapSeed, summary.accuracy),
   };
 }
 
