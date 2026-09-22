@@ -62,6 +62,7 @@ export class GpuKev {
       GNORM: ["kev_gnorm"],
       APREP: ["kev_aprep"],
       SAVE_KV: ["kev_save_kv"],
+      KEYS: ["kev_attention_keys"],
       ATTN: ["kev_attention", { subgroups: this.subgroup32 }],
       SILUMUL: ["kev_silumul"],
       GATHER: ["gather"],
@@ -285,8 +286,9 @@ export class GpuKev {
         const kv = this.carry[i].kv;
         both(mm(n("qkv"), this.h, this.proj, 0));
         both({ k: "aprep", group: bg(this.p.APREP, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("q_norm")).buf, W(n("k_norm")).buf, this.tok, this.rope]) });
+        both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
         one.push({ k: "savekv", group: bg(this.p.SAVE_KV, [this.g, this.proj, kv, this.tok, this.segs]) });
-        both({ k: "attn", group: bg(this.p.ATTN, [this.g, this.proj, kv, this.tok, this.segs, this.core]) });
+        both({ k: "attn", group: bg(this.p.ATTN, [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv]) });
         both(mm(n("o"), this.core, this.x, 1));
       } else {
         const { state, tail } = this.carry[i];
@@ -353,6 +355,10 @@ export class GpuKev {
         case "savekv":
           pass.setPipeline(this.p.SAVE_KV);
           pass.dispatchWorkgroups(T, 4);
+          break;
+        case "keys":
+          pass.setPipeline(this.p.KEYS);
+          pass.dispatchWorkgroups(Math.ceil(T / 16), 32);
           break;
         case "attn":
           pass.setPipeline(this.p.ATTN);

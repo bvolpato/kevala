@@ -39,6 +39,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("kev_gnorm", include_str!("wgsl/kev_gnorm.wgsl")),
     ("kev_aprep", include_str!("wgsl/kev_aprep.wgsl")),
     ("kev_save_kv", include_str!("wgsl/kev_save_kv.wgsl")),
+    ("kev_attention_keys", include_str!("wgsl/kev_attention_keys.wgsl")),
     ("kev_attention", include_str!("wgsl/kev_attention.wgsl")),
     ("kev_silumul", include_str!("wgsl/kev_silumul.wgsl")),
 ];
@@ -63,6 +64,7 @@ pub const KERNELS: &[&str] = &[
     "kev_gnorm",
     "kev_aprep",
     "kev_save_kv",
+    "kev_attention_keys",
     "kev_attention",
     "kev_silumul",
 ];
