@@ -1,0 +1,124 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>kevala GPU kernel tests</title>
+<pre id="log" style="font: 13px ui-monospace, monospace"></pre>
+<script type="module">
+import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH } from "../../js/src/gpu.js";
+const log = (s) => (document.getElementById("log").textContent += s + "\n");
+const results = {};
+window.kernelResults = results;
+
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32) * 2 - 1; }
+
+async function main() {
+  const gpu = await requestDevice();
+  if (!gpu) { log("no WebGPU"); results.error = "no webgpu"; return; }
+  const d = gpu.device;
+  log("device: " + gpu.name);
+  d.onuncapturederror = (e) => log("GPU ERROR " + e.error.message);
+  const buf = (arr, usage = GPUBufferUsage.STORAGE) => { const b = d.createBuffer({ size: Math.max(16, arr.byteLength), usage: usage | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC }); d.queue.writeBuffer(b, 0, arr); return b; };
+  const read = async (b, n) => { const r = d.createBuffer({ size: n * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST }); const e = d.createCommandEncoder(); e.copyBufferToBuffer(b, 0, r, 0, n * 4); d.queue.submit([e.finish()]); await r.mapAsync(GPUMapMode.READ); const out = new Float32Array(r.getMappedRange().slice(0)); r.unmap(); return out; };
+  const pipe = async (code, label) => { const m = d.createShaderModule({ code }); const info = await m.getCompilationInfo(); for (const x of info.messages) log(`${label} ${x.type} ${x.lineNum}:${x.linePos} ${x.message}`); return d.createComputePipelineAsync({ layout: "auto", compute: { module: m, entryPoint: "main" } }); };
+  const run = (p, bufs, x, y = 1) => { const e = d.createCommandEncoder(); const pass = e.beginComputePass(); pass.setPipeline(p); pass.setBindGroup(0, d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: bufs.map((b, i) => ({ binding: i, resource: { buffer: b } })) })); pass.dispatchWorkgroups(x, y); pass.end(); d.queue.submit([e.finish()]); };
+  const uni = (vals) => { const a = new ArrayBuffer(16); const u = new Uint32Array(a), f = new Float32Array(a); vals.forEach((v, i) => typeof v === "object" ? (f[i] = v.f) : (u[i] = v)); return buf(new Uint8Array(a), GPUBufferUsage.UNIFORM); };
+  const maxErr = (a, b) => { let m = 0; for (let i = 0; i < a.length; i++) m = Math.max(m, Math.abs(a[i] - b[i]) / Math.max(1, Math.abs(b[i]))); return m; };
+
+  // matmul, unsplit (K=96) and split-K (K=1024), residual mode with bias
+  for (const K of [96, 1024]) {
+    const T = 70, N = 192, r = rng(1 + K);
+    const X = new Float32Array(T * K).map(r);
+    const q = new Int8Array(N * K).map(() => Math.round(r() * 127));
+    const S = new Float32Array(N * (K / 32)).map(() => 0.01 + Math.abs(r()) * 0.02);
+    const B = new Float32Array(N).map(r);
+    const Y0 = new Float32Array(T * N).map(r);
+    const want = new Float32Array(T * N);
+    for (let t = 0; t < T; t++) for (let n = 0; n < N; n++) { let s = 0; for (let k = 0; k < K; k++) s += X[t * K + k] * q[n * K + k] * S[n * (K / 32) + (k >> 5)]; want[t * N + n] = Y0[t * N + n] + s + B[n]; }
+    const p = await pipe(SHADERS.matmul, "matmul");
+    const pr = await pipe(SHADERS.reduce, "reduce");
+    const Yb = buf(Y0);
+    const part = buf(new Float32Array(SPLIT_SCRATCH));
+    const g = uni([T, 0, 0, 0]), pu = uni([N, K, 1, 1]), Bb = buf(B);
+    const splits = mmSplits(T, N, K);
+    const e = d.createCommandEncoder();
+    const pass = e.beginComputePass();
+    pass.setPipeline(p);
+    pass.setBindGroup(0, d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: [g, pu, buf(X), buf(new Uint8Array(q.buffer)), buf(S), Bb, Yb, part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }));
+    pass.dispatchWorkgroups(N / 64, Math.ceil(T / 64), splits);
+    if (splits > 1) {
+      pass.setPipeline(pr);
+      pass.setBindGroup(0, d.createBindGroup({ layout: pr.getBindGroupLayout(0), entries: [g, pu, part, Bb, Yb].map((b, i) => ({ binding: i, resource: { buffer: b } })) }));
+      pass.dispatchWorkgroups(Math.ceil((T * N) / 256));
+    }
+    pass.end();
+    d.queue.submit([e.finish()]);
+    const got = await read(Yb, T * N);
+    results["matmul_k" + K] = maxErr(got, want);
+    log(`matmul K=${K} splits=${splits} max rel err ` + results["matmul_k" + K].toExponential(2));
+  }
+  // layer norm with bias and with type embedding
+  {
+    const T = 5, D = 1024, r = rng(2);
+    const X = new Float32Array(T * D).map(() => r() * 3 + 0.5);
+    const W = new Float32Array(D).map(r), Bs = new Float32Array(D).map(r), TE = new Float32Array(3 * D).map(r);
+    const tok = new Uint32Array(T * 4); for (let t = 0; t < T; t++) tok.set([0, T, t, t % 3], t * 4);
+    const want = new Float32Array(T * D);
+    for (let t = 0; t < T; t++) { let m = 0; for (let c = 0; c < D; c++) m += X[t * D + c]; m /= D; let v = 0; for (let c = 0; c < D; c++) v += (X[t * D + c] - m) ** 2; v /= D; const inv = 1 / Math.sqrt(v + 1e-5); for (let c = 0; c < D; c++) want[t * D + c] = (X[t * D + c] - m) * inv * W[c] + Bs[c] + TE[(t % 3) * D + c]; }
+    const p = await pipe(SHADERS.norm, "norm");
+    const Y = buf(new Float32Array(T * D));
+    run(p, [uni([T, 0, 0, 0]), uni([D, 1, 1, { f: 1e-5 }]), buf(X), buf(W), buf(Bs), Y, buf(tok), buf(TE)], T);
+    results.norm = maxErr(await read(Y, T * D), want);
+    log("norm max rel err " + results.norm.toExponential(2));
+  }
+  // attention: two segments (lengths 150 and 40), 2 heads, window 64 and global
+  for (const window of [0, 64]) {
+    const heads = 2, hd = 64, W = heads * hd, stride = 3 * W, lens = [150, 40], T = 190, r = rng(3 + window);
+    const qkv = new Float32Array(T * stride).map(r);
+    const tok = new Uint32Array(T * 4); let st = 0;
+    for (const L of lens) { for (let p = 0; p < L; p++) tok.set([st, L, p, 0], (st + p) * 4); st += L; }
+    const want = new Float32Array(T * W);
+    for (let i = 0; i < T; i++) { const [s0, L, pos] = tok.subarray(i * 4, i * 4 + 3); for (let h = 0; h < heads; h++) {
+      const lo = window ? Math.max(0, pos - window) : 0, hi = window ? Math.min(L, pos + window + 1) : L;
+      const sc = []; for (let j = lo; j < hi; j++) { let s = 0; for (let c = 0; c < hd; c++) s += qkv[i * stride + h * hd + c] * qkv[(s0 + j) * stride + W + h * hd + c]; sc.push(s / 8); }
+      const m = Math.max(...sc); const e = sc.map((v) => Math.exp(v - m)); const z = e.reduce((a, b) => a + b, 0);
+      for (let c = 0; c < hd; c++) { let o = 0; for (let j = lo; j < hi; j++) o += e[j - lo] * qkv[(s0 + j) * stride + 2 * W + h * hd + c]; want[i * W + h * hd + c] = o / z; }
+    } }
+    const p = await pipe(SHADERS.attention_block, "attention");
+    const blocks = [];
+    st = 0;
+    for (const L of lens) { for (let q0 = 0; q0 < L; q0 += 16) blocks.push(st, L, q0, 0); st += L; }
+    const C = buf(new Float32Array(T * W));
+    run(p, [uni([T, 0, blocks.length / 4, 0]), uni([W, stride, window, 0]), buf(qkv), buf(new Uint32Array(blocks)), C], blocks.length / 4, heads);
+    results["attention_w" + window] = maxErr(await read(C, T * W), want);
+    log(`attention window=${window} max rel err ` + results["attention_w" + window].toExponential(2));
+  }
+  // geglu
+  {
+    const T = 3, I = 2624, r = rng(9);
+    const Uu = new Float32Array(T * 2 * I).map(() => r() * 4);
+    const erf = (x) => { let s = x, t = x; for (let n = 1; n < 60; n++) { t *= -x * x / n; s += t / (2 * n + 1); } return (2 / Math.sqrt(Math.PI)) * s; };
+    const want = new Float32Array(T * I);
+    for (let t = 0; t < T; t++) for (let i = 0; i < I; i++) { const u = Uu[t * 2 * I + i]; want[t * I + i] = 0.5 * u * (1 + erf(u / Math.SQRT2)) * Uu[t * 2 * I + I + i]; }
+    const p = await pipe(SHADERS.geglu, "geglu");
+    const A = buf(new Float32Array(T * I));
+    run(p, [uni([T, 0, 0, 0]), uni([I, 0, 0, 0]), buf(Uu), A], Math.ceil((T * I) / 256));
+    results.geglu = maxErr(await read(A, T * I), want);
+    log("geglu max rel err " + results.geglu.toExponential(2));
+  }
+  // rope
+  {
+    const T = 4, heads = 2, stride = 3 * heads * 64, r = rng(11);
+    const qkv = new Float32Array(T * stride).map(r);
+    const cs = new Float32Array(2 * 512 * 32 * 2).map(r);
+    const tok = new Uint32Array(T * 4); for (let t = 0; t < T; t++) tok.set([0, T, t + 5, 0], t * 4);
+    const want = qkv.slice();
+    for (let t = 0; t < T; t++) for (let h = 0; h < 2 * heads; h++) for (let i = 0; i < 32; i++) { const o = ((1 * 512 + t + 5) * 32 + i) * 2; const c = cs[o], s = cs[o + 1]; const b = t * stride + h * 64; const x1 = qkv[b + i], x2 = qkv[b + i + 32]; want[b + i] = x1 * c - x2 * s; want[b + i + 32] = x2 * c + x1 * s; }
+    const p = await pipe(SHADERS.rope, "rope");
+    const Q = buf(qkv);
+    run(p, [uni([T, 0, 0, 0]), uni([heads, stride, 1, 0]), Q, buf(tok), buf(cs)], T, 2 * heads);
+    results.rope = maxErr(await read(Q, T * stride), want);
+    log("rope max rel err " + results.rope.toExponential(2));
+  }
+  results.done = true;
+}
+main().catch((e) => { log("ERROR " + e.stack); results.error = e.message; });
+</script>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala example: moderation gate on a comment form</title>
+<link rel="icon" href="data:,">
+<style>
+  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 680px; margin: 40px auto; padding: 0 20px; background: #0b0d12; color: #e7ecf3; }
+  textarea { width: 100%; min-height: 80px; font: inherit; background: #11151d; color: inherit; border: 1px solid #2c3749; border-radius: 8px; padding: 10px; box-sizing: border-box; }
+  button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #2c3749; background: #1a2130; color: inherit; cursor: pointer; }
+  button:disabled { opacity: 0.5; }
+  .msg { margin: 10px 0; padding: 10px 12px; border-radius: 8px; font-size: 14px; }
+  .block { background: #3a1820; border: 1px solid #ff6b7d; }
+  .review { background: #3a2c14; border: 1px solid #f6b85a; }
+  .ok { background: #12301f; border: 1px solid #4fdc8e; }
+  .comment { border-top: 1px solid #212a39; padding: 10px 0; }
+  .muted { color: #8591a5; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Comment form with a moderation gate</h1>
+<p class="muted">On submit, the comment is checked locally with three moderation questions (toxic, harassment, threat). Clearly toxic comments are blocked, borderline ones held for review, the rest posted. Nothing is sent to a server.</p>
+
+<form id="form">
+  <textarea id="comment" required placeholder="Write a comment…">Thanks for the write-up, the benchmark section was really useful.</textarea>
+  <p><button id="submit" type="submit" disabled>Post comment</button> <span id="status" class="muted">Loading the model…</span></p>
+</form>
+<div id="result"></div>
+<h3>Comments</h3>
+<div id="comments"></div>
+
+<script type="module">
+import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
+
+
+// Thresholds on P(yes). Pick them on your own labelled comments: they trade missed abuse against
+// false blocks. Between REVIEW and BLOCK the comment waits for a human instead of guessing.
+const BLOCK = 0.75;
+const REVIEW = 0.45;
+
+// Three questions from the laya SDK's moderation set. They ask about `post`, so the state is
+// { post: text }.
+const questions = {
+  toxic: {
+    type: "noul",
+    instructions: "Is `post` toxic: rude, disrespectful or likely to make someone leave the discussion?",
+  },
+  harassment: {
+    type: "noul",
+    instructions: "Does `post` target or harass a specific person?",
+  },
+  threat: {
+    type: "noul",
+    instructions: "Does `post` threaten violence, harm or intimidation?",
+  },
+};
+
+const kevala = await Kevala.load({ model: "laya" });
+const submit = document.getElementById("submit");
+submit.disabled = false;
+document.getElementById("status").textContent = `Moderation runs locally on ${kevala.info.backend}.`;
+
+document.getElementById("form").addEventListener("submit", async (e) => {
+  e.preventDefault(); // decide first, post later
+  const text = document.getElementById("comment").value.trim();
+  if (!text) return;
+  submit.disabled = true;
+  const { answers } = await kevala.decide({ post: text }, questions);
+  submit.disabled = false;
+
+  // the worst of the three checks decides
+  const [worstId, worst] = Object.entries(answers).reduce((a, b) => (b[1].noul > a[1].noul ? b : a));
+  const p = worst.noul;
+  const result = document.getElementById("result");
+  if (p >= BLOCK) {
+    result.innerHTML = `<div class="msg block">Blocked: this looks like <b>${worstId}</b> (P = ${p.toFixed(2)}). Please rephrase.</div>`;
+  } else if (p >= REVIEW) {
+    result.innerHTML = `<div class="msg review">Held for review: possible <b>${worstId}</b> (P = ${p.toFixed(2)}). A moderator will look at it.</div>`;
+  } else {
+    result.innerHTML = `<div class="msg ok">Posted (highest risk: ${worstId}, P = ${p.toFixed(2)}).</div>`;
+    const div = document.createElement("div");
+    div.className = "comment";
+    div.textContent = text;
+    document.getElementById("comments").prepend(div);
+    document.getElementById("comment").value = "";
+  }
+});
+</script>
+</body>
+</html>

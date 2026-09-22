@@ -1,0 +1,67 @@
+/* how view: architecture, benchmarks, fidelity, limits */
+
+.view-how { padding: 0 0 36px; }
+.view-how [id] { scroll-margin-top: 16px; }
+
+.view-how .how-toc { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 18px; }
+.view-how .how-toc a {
+  font: 500 0.82rem/1 var(--sans); color: var(--text-2); background: var(--surface-2);
+  border: 1px solid var(--border-2); border-radius: 999px; padding: 7px 11px; transition: color 0.15s, border-color 0.15s;
+}
+.view-how .how-toc a:hover { color: var(--text); border-color: #3a475d; text-decoration: none; }
+
+.view-how .how-sec { padding: 56px 0 0; }
+.view-how .how-sec.first { padding-top: 8px; }
+.view-how .how-sec + .how-sec { border-top: 1px solid var(--border); margin-top: 56px; }
+
+.view-how .arch { margin: 0 0 26px; padding: 10px; overflow: hidden; }
+.view-how .arch img { display: block; width: 100%; height: auto; border-radius: 10px; }
+.view-how .how-points > div { position: relative; }
+.view-how .how-points .n {
+  display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 8px; margin-bottom: 10px;
+  font: 700 0.76rem var(--mono); color: var(--accent-2); background: rgba(69, 224, 192, 0.08); border: 1px solid rgba(69, 224, 192, 0.3);
+}
+.view-how .how-points h3 { font-size: 1rem; margin-bottom: 6px; }
+.view-how .how-points p { margin: 0; }
+.view-how .plug { margin: 24px 0 0; }
+
+.view-how .bench-card { overflow: hidden; margin-top: 18px; }
+.view-how .bench-card .scroll-x { padding: 4px 8px; }
+.view-how .bench-card tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
+.view-how .bench-card tbody tr:last-child td { border-bottom: 0; }
+.view-how .bench-empty { padding: 30px; display: grid; gap: 8px; justify-items: start; }
+.view-how .bench-empty h3 { margin: 0; }
+.view-how .bench-note { margin: 10px 0 0; }
+.view-how .ibar { display: inline-block; vertical-align: middle; height: 6px; border-radius: 4px; background: var(--accent); margin-right: 8px; min-width: 2px; }
+
+.view-how .tiles { margin: 26px 0 18px; }
+.view-how .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: grid; gap: 4px; }
+.view-how .tile .tl { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }
+.view-how .tile b { font: 700 1.9rem/1.1 var(--sans); letter-spacing: -0.03em; }
+.view-how .tile b small { font-size: 1.1rem; color: var(--text-2); font-weight: 600; }
+.view-how .tile .ts { font-size: 0.8rem; color: var(--muted); }
+.view-how .parity-links { display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; }
+
+.view-how .limit-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.view-how .limit-list li { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; color: var(--muted); font-size: 0.9rem; }
+.view-how .limit-list b { color: var(--text); }
+
+.view-how .more { margin-top: 22px; }
+.view-how .link-card { color: inherit; display: grid; align-content: start; gap: 4px; transition: border-color 0.2s; }
+.view-how .link-card:hover { text-decoration: none; border-color: var(--border-2); }
+.view-how .link-card h3 { margin: 0; }
+.view-how .link-card p { margin: 0; }
+.view-how .link-card .go { margin-top: 6px; color: var(--accent); font: 600 0.8rem var(--mono); overflow-wrap: anywhere; }
+
+@media (max-width: 680px) {
+  .view-how .how-sec { padding-top: 40px; }
+  .view-how .how-sec + .how-sec { margin-top: 40px; }
+  .view-how .tiles { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .view-how .tile { padding: 14px; }
+  .view-how .tile b { font-size: 1.5rem; }
+  .view-how .tile b small { font-size: 0.9rem; }
+}
+@media (max-width: 760px) {
+  /* the header wraps to two rows here */
+  .view-how [id] { scroll-margin-top: 72px; }
+}

@@ -1,0 +1,6 @@
+/tmp/
+/target/
+node_modules/
+*.kevala
+.DS_Store
+/js/dist/wasm-build/

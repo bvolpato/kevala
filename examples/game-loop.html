@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala example: a game loop that asks a decision model</title>
+<link rel="icon" href="data:,">
+<style>
+  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 760px; margin: 40px auto; padding: 0 20px; background: #0b0d12; color: #e7ecf3; }
+  .row { display: flex; gap: 24px; align-items: flex-start; flex-wrap: wrap; }
+  canvas { background: #080a10; border: 1px solid #2c3749; border-radius: 10px; }
+  pre { background: #11151d; border: 1px solid #2c3749; border-radius: 8px; padding: 10px; font-size: 12px; white-space: pre-wrap; flex: 1; min-width: 260px; margin: 0; }
+  .muted { color: #8591a5; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Game loop: describe the state, act on a probability</h1>
+<p class="muted">A ship dodges falling rocks in three lanes. Each tick the code describes what each move would lead to, in words, and asks one yes/no question for all moves in one batch. The ship takes the move with the highest P(safe). <span id="score"></span></p>
+<div class="row">
+  <canvas id="c" width="180" height="320"></canvas>
+  <pre id="log">Loading the model…</pre>
+</div>
+
+<script type="module">
+import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
+
+const kevala = await Kevala.load({ model: "laya" });
+
+const LANES = 3, ROWS = 8, TICK = 700;
+let ship = 1, rocks = [], dodged = 0, crashes = 0, thinking = false;
+const QUESTION = {
+  safe: {
+    type: "noul",
+    instructions: "Is the ship safe after this move?",
+    criteria: { true: "no rock is about to reach the ship's lane", false: "a rock is right above the ship or very close in its lane" },
+  },
+};
+
+// Numbers stay in code; the model gets words.
+function describeLane(lane) {
+  const above = rocks.filter((r) => r.lane === lane).map((r) => ROWS - 1 - r.row).filter((d) => d > 0);
+  if (!above.length) return "The lane is empty: no rock is coming.";
+  const d = Math.min(...above);
+  if (d === 1) return "A rock is directly above the ship and will hit it on the next step.";
+  if (d === 2) return "A rock is close, two rows above the ship.";
+  if (d <= 4) return "A rock is a few rows above the ship.";
+  return "A rock is far away at the top of the lane.";
+}
+function options() {
+  return [["stay", 0], ["left", -1], ["right", 1]]
+    .filter(([, dx]) => ship + dx >= 0 && ship + dx < LANES)
+    .map(([name, dx]) => ({ name, lane: ship + dx, state: `If the ship moves ${name === "stay" ? "nowhere and stays" : name}: ${describeLane(ship + dx)}` }));
+}
+
+async function decide() {
+  if (thinking) return; // at most one request in flight; the game never waits for the model
+  thinking = true;
+  const opts = options();
+  const t0 = performance.now();
+  const res = await kevala.decideMany(opts.map((o) => ({ state: o.state, questions: QUESTION })));
+  const ms = performance.now() - t0;
+  opts.forEach((o, i) => (o.p = res[i].answers.safe.noul));
+  const best = opts.reduce((a, b) => (b.p > a.p ? b : a));
+  ship = best.lane;
+  document.getElementById("log").textContent = opts.map((o) => `${o === best ? "→" : " "} ${o.name.padEnd(5)} P(safe)=${o.p.toFixed(3)}  ${o.state}`).join("\n") + `\n\n${ms.toFixed(0)} ms for ${opts.length} states in one pass (${kevala.info.backend})`;
+  thinking = false;
+}
+
+function tick() {
+  for (const r of rocks) r.row++;
+  const hit = rocks.some((r) => r.row === ROWS - 1 && r.lane === ship);
+  if (hit) crashes++;
+  dodged += rocks.filter((r) => r.row === ROWS - 1 && r.lane !== ship).length;
+  rocks = rocks.filter((r) => r.row < ROWS - 1);
+  if (Math.random() < 0.55) rocks.push({ lane: Math.floor(Math.random() * LANES), row: 0 });
+  document.getElementById("score").textContent = `Dodged ${dodged}, hit ${crashes}.`;
+  decide();
+}
+
+const g = document.getElementById("c").getContext("2d");
+function draw() {
+  const w = 60, h = 40;
+  g.clearRect(0, 0, 180, 320);
+  for (const r of rocks) { g.fillStyle = "#8591a5"; g.beginPath(); g.arc(r.lane * w + w / 2, r.row * h + h / 2, 13, 0, 7); g.fill(); }
+  g.fillStyle = "#45e0c0";
+  g.beginPath(); g.moveTo(ship * w + w / 2, (ROWS - 1) * h + 6); g.lineTo(ship * w + 12, ROWS * h - 6); g.lineTo(ship * w + w - 12, ROWS * h - 6); g.fill();
+  requestAnimationFrame(draw);
+}
+draw();
+setInterval(() => !document.hidden && tick(), TICK); // pause while the tab is hidden
+</script>
+</body>
+</html>

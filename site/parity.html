@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala parity check</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  h1 { font-size: 1.1rem; }
+  table { border-collapse: collapse; margin-top: 1rem; }
+  td, th { padding: 2px 10px; text-align: right; border-bottom: 1px solid #1f2630; }
+  td:first-child, th:first-child { text-align: left; }
+  .bad { color: #ff6b6b; } .ok { color: #7ee787; }
+  select, button { font: inherit; background: #161b22; color: inherit; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>kevala parity: every golden fixture against the PyTorch reference</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  threads <select id="threads"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
+  pack <select id="pack"><option value="upstream">upstream (convert in browser)</option><option value="local">local /tmp/laya-q8.kevala</option></select>
+  <button id="run">run</button>
+</p>
+<pre id="log"></pre>
+<table id="out"></table>
+<script type="module">
+import { Kevala } from "../js/src/index.js";
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+window.parity = null;
+
+async function run() {
+  $("log").textContent = "";
+  $("out").innerHTML = "";
+  const backend = $("backend").value;
+  const threads = Number($("threads").value);
+  const model = $("pack").value === "local" ? "../tmp/laya-q8.kevala" : undefined;
+  const t0 = performance.now();
+  let last = "";
+  const kevala = await Kevala.load({ backend, threads, model, onProgress: (p) => {
+    const s = p.phase + (p.total ? ` ${Math.round((100 * p.loaded) / p.total)}%` : "") + (p.message ? ` ${p.message}` : "");
+    if (s !== last) { last = s; if (!p.total || p.loaded === p.total || p.phase !== "download") log(s); }
+  } });
+  log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${JSON.stringify(kevala.info)}`);
+  const golden = await (await fetch("../tests/fixtures/golden.json")).json();
+  const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
+  let worst = 0, agree = 0, n = 0;
+  const times = [];
+  for (const c of golden.cases) {
+    const r = await kevala.decide(c.state, c.questions);
+    times.push(r.timing.forward);
+    for (const [qid, e] of Object.entries(c.expect)) {
+      const a = r.answers[qid];
+      const T = { choice: 0, score: 1, noul: 2 }[c.questions[qid].type];
+      const k = e.logits.length;
+      const size = k <= 2 ? "2" : k <= 5 ? "3-5" : k <= 10 ? "6-10" : "11+";
+      const key = `${c.questions[qid].type}:${size}`;
+      const clamp = (t) => Math.min(5, Math.max(0.5, t));
+      const temp = clamp(golden.temperature_by_options[key] ?? golden.temperature[T]);
+      const m = Math.max(...e.logits);
+      const ez = e.logits.map((v) => Math.exp((v - m) / temp));
+      const z = ez.reduce((x, y) => x + y, 0);
+      const want = ez.map((v) => v / z);
+      const got = a.type === "noul" ? [1 - a.noul, a.noul] : Object.values(a.probabilities);
+      const dp = Math.max(...want.map((v, i) => Math.abs(v - got[i])));
+      const am = (v) => v.indexOf(Math.max(...v));
+      const ok = am(want) === am(got);
+      n++; agree += ok; worst = Math.max(worst, dp);
+      rows.push([c.id, qid, e.input_ids.length, ok ? "ok" : "MISS", dp.toFixed(4), r.timing.forward.toFixed(1)]);
+    }
+  }
+  times.sort((a, b) => a - b);
+  const summary = { backend: kevala.info.backend, gpu: kevala.info.gpu, questions: n, argmax: agree, maxDp: worst, p50: times[times.length >> 1], p95: times[Math.floor(times.length * 0.95)] };
+  window.parity = summary;
+  log(JSON.stringify(summary));
+  $("out").innerHTML = rows.map((r, i) => `<tr>${r.map((v) => (i ? `<td class="${v === "MISS" || Number(v) > 0.02 ? "bad" : ""}">${v}</td>` : `<th>${v}</th>`)).join("")}</tr>`).join("");
+  kevala.dispose();
+}
+$("run").onclick = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { error: e.message }; });
+if (location.hash.includes("auto")) {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get("backend")) $("backend").value = q.get("backend");
+  if (q.get("threads")) $("threads").value = q.get("threads");
+  if (q.get("pack")) $("pack").value = q.get("pack");
+  $("run").click();
+}
+</script>
+</body>
+</html>

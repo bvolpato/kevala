@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 660" width="1120" height="660" role="img" aria-labelledby="t d">
+  <title id="t">How kevala works</title>
+  <desc id="d">Pinned Hugging Face checkpoints stream into an in-browser int8 converter that produces a .kevala pack kept in the Cache API. A dependency-free Rust core, compiled to WebAssembly, runs Laya (ModernBERT-large encoder plus decision head) and Kev (Qwen3.5-0.8B hybrid DeltaNet decoder plus pointer head) on WebGPU or on tensor-parallel WebAssembly workers, and your page gets typed answers with probabilities.</desc>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#7aa2ff"/>
+      <stop offset="0.55" stop-color="#45e0c0"/>
+      <stop offset="1" stop-color="#c592ff"/>
+    </linearGradient>
+    <linearGradient id="gv" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7aa2ff"/>
+      <stop offset="1" stop-color="#45e0c0"/>
+    </linearGradient>
+    <marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#45e0c0"/>
+    </marker>
+    <style>
+      .bg { fill: #07090d; }
+      .box { fill: #0f131b; stroke: #2c3749; stroke-width: 1.2; }
+      .box2 { fill: #141925; stroke: #2c3749; stroke-width: 1.2; }
+      .hl { fill: #0f131b; stroke: url(#g); stroke-width: 1.6; }
+      .t { font: 700 15px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #e7ecf3; }
+      .t2 { font: 700 13px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #e7ecf3; }
+      .s { font: 12px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #8591a5; }
+      .m { font: 11.5px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #b8c2d1; }
+      .k { font: 700 10.5px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 1.6px; fill: #45e0c0; }
+      .arrow { stroke: #45e0c0; stroke-width: 1.6; fill: none; marker-end: url(#a); }
+      .dash { stroke-dasharray: 5 5; }
+      .lbl { font: 600 11px ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; fill: #45e0c0; }
+    </style>
+  </defs>
+  <rect class="bg" width="1120" height="660" rx="18"/>
+
+  <!-- row 1: where weights come from -->
+  <text class="k" x="34" y="40">WEIGHTS</text>
+  <rect class="box" x="30" y="54" width="318" height="112" rx="12"/>
+  <text class="t" x="50" y="84">Hugging Face, pinned revisions</text>
+  <text class="m" x="50" y="110">convaiinnovations/laya</text>
+  <text class="m" x="50" y="130">jaredpalmer/kev-0.8b</text>
+  <text class="m" x="50" y="150">Qwen/Qwen3.5-0.8B-Base</text>
+
+  <path class="arrow" d="M352 110 H 396"/>
+  <text class="lbl" x="356" y="100">stream</text>
+
+  <rect class="box" x="400" y="54" width="318" height="112" rx="12"/>
+  <text class="t" x="420" y="84">In-browser converter</text>
+  <text class="s" x="420" y="108">Weights stream through, never held twice.</text>
+  <text class="s" x="420" y="128">int8 symmetric absmax, one f32 scale</text>
+  <text class="s" x="420" y="146">per 32 weights; norms and heads in f32.</text>
+
+  <path class="arrow" d="M722 110 H 766"/>
+
+  <rect class="hl" x="770" y="54" width="320" height="112" rx="12"/>
+  <text class="t" x="790" y="84">.kevala pack</text>
+  <text class="s" x="790" y="108">Laya 479 MB · Kev-0.8B 857 MB</text>
+  <text class="s" x="790" y="128">Stored in the browser (OPFS) after first load,</text>
+  <text class="s" x="790" y="146">or self-hosted: <tspan class="m">kevala convert</tspan></text>
+
+  <path class="arrow" d="M930 170 V 204"/>
+
+  <!-- row 2: the core -->
+  <text class="k" x="34" y="228">ENGINE</text>
+  <rect class="hl" x="30" y="208" width="1060" height="196" rx="14"/>
+  <text class="t" x="52" y="240">kevala core · Rust, zero dependencies, compiled to WebAssembly</text>
+  <text class="s" x="52" y="262">Tokenizers, packing of many states into one pass, int8 matmul kernels, calibrated scoring. The same binary runs in Node.</text>
+
+  <rect class="box2" x="52" y="280" width="494" height="106" rx="11"/>
+  <text class="t2" x="70" y="306">Laya · encoder + decision head</text>
+  <text class="s" x="70" y="328">ModernBERT-large, 28 layers (local + global attention),</text>
+  <text class="s" x="70" y="346">then a 2-layer decision head over each question's markers.</text>
+  <text class="m" x="70" y="370">noul · choice · score  +  confidence, act</text>
+
+  <rect class="box2" x="574" y="280" width="494" height="106" rx="11"/>
+  <text class="t2" x="592" y="306">Kev-0.8B · hybrid decoder + pointer head</text>
+  <text class="s" x="592" y="328">Qwen3.5-0.8B: 18 Gated DeltaNet + 6 full-attention layers,</text>
+  <text class="s" x="592" y="346">LoRA merged; a pointer head reads the option tokens.</text>
+  <text class="m" x="592" y="370">noul · choice · score  +  raw probabilities</text>
+
+  <path class="arrow" d="M200 408 V 444"/>
+  <path class="arrow" d="M560 408 V 444"/>
+  <path class="arrow" d="M920 408 V 444"/>
+
+  <!-- row 3: backends -->
+  <text class="k" x="34" y="438">BACKENDS</text>
+  <rect class="box" x="30" y="448" width="340" height="104" rx="12"/>
+  <text class="t" x="50" y="478">WebGPU</text>
+  <text class="s" x="50" y="502">WGSL kernels run every transformer layer;</text>
+  <text class="s" x="50" y="520">WebAssembly tokenizes, embeds and scores.</text>
+  <text class="m" x="50" y="540">tens of ms per short request</text>
+
+  <rect class="box" x="390" y="448" width="340" height="104" rx="12"/>
+  <text class="t" x="410" y="478">WebAssembly SIMD</text>
+  <text class="s" x="410" y="502">relaxed-SIMD, SIMD128 or baseline build,</text>
+  <text class="s" x="410" y="520">picked by feature probe. Works everywhere.</text>
+  <text class="m" x="410" y="540">no GPU needed</text>
+
+  <rect class="box" x="750" y="448" width="340" height="104" rx="12"/>
+  <text class="t" x="770" y="478">Tensor-parallel workers</text>
+  <text class="s" x="770" y="502">Laya's attention heads and FFN split across</text>
+  <text class="s" x="770" y="520">N workers, two exchanges per layer.</text>
+  <text class="m" x="770" y="540">no SharedArrayBuffer required</text>
+
+  <!-- row 4: your page -->
+  <path class="arrow dash" d="M560 556 V 588"/>
+  <rect x="30" y="592" width="1060" height="50" rx="12" fill="url(#g)" opacity="0.1"/>
+  <rect x="30" y="592" width="1060" height="50" rx="12" fill="none" stroke="url(#g)" stroke-width="1.4"/>
+  <text class="t2" x="52" y="622">Your page</text>
+  <text class="m" x="140" y="622">await kevala.decide(state, { urgent: { type: "noul", instructions: "…" } })  →  { answers: { urgent: { noul: 0.93 } } }</text>
+</svg>

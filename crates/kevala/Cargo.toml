@@ -1,0 +1,10 @@
+[package]
+name = "kevala"
+description = "A dependency-free Rust engine for Laya System 1 decision models, built for WebAssembly."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]

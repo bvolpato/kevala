@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>kevala matmul benchmark</title>
+<pre id="log" style="font: 13px ui-monospace, monospace"></pre>
+<script type="module">
+// Times every matmul kernel on Laya's shapes and checks they agree with each other.
+// ?kernels=matmul,matmul_h  ?shapes=44x3072x1024,1472x1024x2624
+import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH, dispatchMatmul, matmulLayout, rowsPerThread } from "../../js/src/gpu.js";
+const log = (s) => (document.getElementById("log").textContent += s + "\n");
+window.mm = null;
+async function main() {
+  const q = new URLSearchParams(location.search);
+  const kernels = (q.get("kernels") || "matmul,matmul_h").split(",");
+  const shapes = (q.get("shapes") || "44x3072x1024,44x5248x1024,44x1024x2624,140x3072x1024,512x3072x1024,512x5248x1024,1472x3072x1024,1472x5248x1024,1472x1024x2624,1472x1024x1024").split(",").map((s) => s.split("x").map(Number));
+  const gpu = await requestDevice();
+  const d = gpu.device;
+  const U = GPUBufferUsage;
+  const buf = (bytes, usage = U.STORAGE) => d.createBuffer({ size: Math.max(16, bytes), usage: usage | U.COPY_DST | U.COPY_SRC });
+  const layout = matmulLayout(d);
+  const pl = d.createPipelineLayout({ bindGroupLayouts: [layout] });
+  const mk = (code) => d.createComputePipelineAsync({ layout: pl, compute: { module: d.createShaderModule({ code }), entryPoint: "main" } });
+  // "matmul_h@256" = the f16 kernel with a split-K target of 256 workgroups; "matmul_h:2" uses
+  // 2 rows per thread (32-row tiles); "matmul_h:auto" picks the rows from T like the trunks do
+  const spec = (k, T) => { const m = k.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?$/); const R = m[3] === "auto" ? rowsPerThread(T) : m[3] ? Number(m[3]) : 4; return { name: m[1], target: m[2] ? Number(m[2]) : 128, R }; };
+  const code = (k, T) => { const { name, target, R } = spec(k, T); return name === "matmul_h" ? SHADERS.matmulKernel(true, target, R) : SHADERS.matmulKernel(false, target, R); };
+  const cache = new Map();
+  const pipesFor = async (k, T) => {
+    const { target, R } = spec(k, T);
+    const key = `${k}|${R}`;
+    if (!cache.has(key)) cache.set(key, [await mk(code(k, T)), await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code: SHADERS.reduceKernel(target, 16 * R) }), entryPoint: "main" } })]);
+    return cache.get(key);
+  };
+  const part = buf(SPLIT_SCRATCH * 4);
+  const res = [];
+  for (const [T, N, K] of shapes) {
+    const X = buf(T * K * 4), W = buf(N * K), S = buf(N * (K / 32) * 4), B = buf(N * 4);
+    // random data, so disagreement between kernels shows
+    const xs = new Float32Array(T * K).map(() => Math.random() - 0.5);
+    const ws = new Uint8Array(N * K).map(() => (Math.random() * 256) | 0);
+    const ss = new Float32Array(N * (K / 32)).map(() => 0.01 + Math.random() * 0.01);
+    d.queue.writeBuffer(X, 0, xs);
+    d.queue.writeBuffer(W, 0, ws);
+    d.queue.writeBuffer(S, 0, ss);
+    const g = buf(16, U.UNIFORM), pp = buf(16, U.UNIFORM);
+    d.queue.writeBuffer(g, 0, new Uint32Array([T, 0, 0, 0]));
+    d.queue.writeBuffer(pp, 0, new Uint32Array([N, K, 0, 0]));
+    const outs = {};
+    for (const k of kernels) {
+      const [pk, pr] = await pipesFor(k, T);
+      const { target, R } = spec(k, T);
+      const Y = buf(T * N * 4);
+      const group = d.createBindGroup({ layout, entries: [g, pp, X, W, S, B, Y, part].map((b, i) => ({ binding: i, resource: { buffer: b } })) });
+      const op = { N, K, group, reduce: d.createBindGroup({ layout: pr.getBindGroupLayout(0), entries: [g, pp, part, B, Y].map((b, i) => ({ binding: i, resource: { buffer: b } })) }) };
+      const one = (pass) => dispatchMatmul(pass, pk, pr, op, T, target, R);
+      const go = async (n) => {
+        const e = d.createCommandEncoder();
+        const pass = e.beginComputePass();
+        for (let i = 0; i < n; i++) one(pass);
+        pass.end();
+        d.queue.submit([e.finish()]);
+        await d.queue.onSubmittedWorkDone();
+      };
+      await go(1);
+      const rb = d.createBuffer({ size: T * N * 4, usage: U.MAP_READ | U.COPY_DST });
+      const e = d.createCommandEncoder();
+      e.copyBufferToBuffer(Y, 0, rb, 0, T * N * 4);
+      d.queue.submit([e.finish()]);
+      await rb.mapAsync(GPUMapMode.READ);
+      outs[k] = new Float32Array(rb.getMappedRange().slice(0));
+      rb.destroy();
+      await go(3);
+      // best of several trials: other GPU users (other tabs, other apps) cause random spikes
+      const reps = Math.max(3, Math.min(40, Math.round(5e9 / (2 * T * N * K))));
+      let ms = Infinity;
+      for (let trial = 0; trial < 7; trial++) {
+        const t = performance.now();
+        await go(reps);
+        ms = Math.min(ms, (performance.now() - t) / reps);
+      }
+      const tflops = (2 * T * N * K) / (ms / 1e3) / 1e12;
+      res.push({ kernel: k, T, N, K, ms, tflops });
+      log(`${k.padEnd(13)} T=${String(T).padStart(4)} N=${String(N).padStart(4)} K=${String(K).padStart(4)} R=${R} splits=${mmSplits(T, N, K, target, 16 * R)}: ${ms.toFixed(3).padStart(7)} ms  ${tflops.toFixed(2)} TFLOP/s`);
+      Y.destroy();
+    }
+    for (const k of kernels.slice(1)) {
+      const [a, b] = [outs[kernels[0]], outs[k]];
+      let err = 0, mag = 0;
+      for (let i = 0; i < a.length; i++) {
+        err = Math.max(err, Math.abs(a[i] - b[i]));
+        mag = Math.max(mag, Math.abs(a[i]));
+      }
+      log(`  ${k} vs ${kernels[0]}: max |diff| ${err.toExponential(2)} (max |y| ${mag.toFixed(2)})`);
+      res.push({ T, N, K, diff: err, mag });
+    }
+    for (const b of [X, W, S, B, g, pp]) b.destroy();
+  }
+  window.mm = res;
+}
+main().catch((e) => { log("ERROR " + e.stack); window.mm = { error: e.message }; });
+</script>

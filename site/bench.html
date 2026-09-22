@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala benchmark</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  select, button { font: inherit; background: #161b22; color: inherit; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>kevala benchmark</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  threads <select id="threads"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
+  <button id="run">run</button>
+</p>
+<pre id="log"></pre>
+<script type="module">
+import { Kevala } from "../js/src/index.js";
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+window.bench = null;
+
+const words = "the customer wrote in about a recurring charge they did not recognise and wants a refund today ";
+const Q = { type: "noul", instructions: "Is the customer asking for money back?" };
+
+async function run() {
+  $("log").textContent = "";
+  const q = new URLSearchParams(location.hash.slice(1));
+  const backend = $("backend").value;
+  const threads = Number($("threads").value);
+  const name = q.get("model") || "laya";
+  const model = q.get("pack") === "local" ? { laya: "../tmp/laya-q8.kevala", "kev-0.8b": "../tmp/kev-0.8b-q8.kevala" }[name] : name;
+  const runs = Number(q.get("runs") || 10);
+  const t0 = performance.now();
+  const kevala = await Kevala.load({ backend, threads, model, profile: q.get("profile") === "1", submit: q.get("submit") || undefined });
+  log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+  const results = { model: name, arch: kevala.info.arch, backend: kevala.info.backend, gpu: kevala.info.gpu, threads: kevala.info.threads, flavor: kevala.info.flavor, load_s: (performance.now() - t0) / 1000, cases: [] };
+  // shapes: one short question, one long state, several questions, a batch of states
+  const shapes = [
+    { name: "1 question, ~40 tokens", reqs: [{ state: "Refund the duplicate charge today or we cancel.", questions: { q: Q } }] },
+    { name: "1 question, ~128 tokens", reqs: [{ state: words.repeat(6), questions: { q: Q } }] },
+    { name: "1 question, ~512 tokens", reqs: [{ state: words.repeat(30), questions: { q: Q } }] },
+    { name: "5 questions, ~60 tokens each", reqs: [{ state: words.repeat(2), questions: Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`q${i}`, Q])) }] },
+    { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
+  ];
+  const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
+  for (const s of shapes.filter((_, i) => pick.includes(i))) {
+    // the longest gap between animation frames while this shape runs: how much it stalls the page
+    let gap = 0, lastF = performance.now(), on = true;
+    const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+    const ms = [];
+    let tokens = 0;
+    let last = null;
+    for (let i = 0; i < runs + 2; i++) {
+      const t = performance.now();
+      // unique=1 gives every run new states, so caches cannot help (cold numbers)
+      const reqs = q.get("unique") === "1" ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+      const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
+      if (i >= 2) ms.push(performance.now() - t);
+      tokens = r[0].timing.tokens;
+      last = r[0].timing;
+    }
+    on = false;
+    ms.sort((a, b) => a - b);
+    const c = { name: s.name, frameGap: gap, tokens, p50: ms[ms.length >> 1], p95: ms[Math.min(ms.length - 1, Math.floor(ms.length * 0.95))], min: ms[0] };
+    c.last = last;
+    results.cases.push(c);
+    log(`${s.name.padEnd(38)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
+  }
+  window.bench = results;
+  kevala.dispose();
+}
+$("run").onclick = () => run().catch((e) => { log("ERROR " + e.message); window.bench = { error: e.message }; });
+if (location.hash.includes("auto")) {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get("backend")) $("backend").value = q.get("backend");
+  if (q.get("threads")) $("threads").value = q.get("threads");
+  $("run").click();
+}
+</script>
+</body>
+</html>

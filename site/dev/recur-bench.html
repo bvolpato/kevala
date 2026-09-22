@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>DeltaNet recurrence A/B</title>
+<pre id="log" style="font: 13px ui-monospace, monospace"></pre>
+<script type="module">
+import { KEV_SHADERS } from "../../js/src/gpu-kev.js";
+import { requestDevice } from "../../js/src/gpu.js";
+const log = (s) => (document.getElementById("log").textContent += s + "\n");
+window.rb = null;
+const gpu = await requestDevice();
+const d = gpu.device;
+const T = 528;
+const buf = (bytes, usage = GPUBufferUsage.STORAGE) => d.createBuffer({ size: Math.max(16, bytes), usage: usage | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC });
+const C = buf(T * 6144 * 4), AB = buf(T * 32 * 4), segs = buf(32), STATE = buf(16 * 16384 * 4), CORE = buf(T * 2048 * 4), g = buf(16, GPUBufferUsage.UNIFORM);
+d.queue.writeBuffer(C, 0, new Float32Array(T * 6144).map(() => Math.random() * 0.1));
+d.queue.writeBuffer(AB, 0, new Float32Array(T * 32).fill(0.9));
+d.queue.writeBuffer(segs, 0, new Uint32Array([0, T, 0xffffffff, 0, 0, 0, 0, 0]));
+d.queue.writeBuffer(g, 0, new Uint32Array([T, 0, 1, 1]));
+const res = {};
+const pipes = {};
+for (const [k, code] of Object.entries(KEV_SHADERS)) pipes[k] = await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code }), entryPoint: "main" } });
+for (let round = 0; round < 3; round++) {
+  for (const [k, p] of Object.entries(pipes)) {
+    const bg = d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: [g, C, AB, segs, STATE, CORE].map((b, i) => ({ binding: i, resource: { buffer: b } })) });
+    const go = async (n) => {
+      const e = d.createCommandEncoder();
+      const pass = e.beginComputePass();
+      pass.setPipeline(p);
+      pass.setBindGroup(0, bg);
+      for (let i = 0; i < n; i++) pass.dispatchWorkgroups(1, 16);
+      pass.end();
+      d.queue.submit([e.finish()]);
+      await d.queue.onSubmittedWorkDone();
+    };
+    await go(2);
+    const t = performance.now();
+    await go(10);
+    const ms = (performance.now() - t) / 10;
+    (res[k] ||= []).push(ms);
+    log(`${k}: ${ms.toFixed(2)} ms for ${T} tokens x 16 heads (${((ms * 1000) / T).toFixed(1)} us/token)`);
+  }
+}
+window.rb = res;
+</script>

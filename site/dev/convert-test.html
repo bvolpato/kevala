@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>kevala in-browser conversion test</title>
+<pre id="log" style="font: 13px ui-monospace, monospace"></pre>
+<script type="module">
+import { Kevala, cacheInfo } from "../../js/src/index.js";
+const log = (s) => (document.getElementById("log").textContent += s + "\n");
+const q = new URLSearchParams(location.search);
+window.conv = { phase: "start" };
+const t0 = performance.now();
+let last = 0;
+try {
+  const w = await Kevala.load({
+    model: q.get("model") || "laya",
+    backend: q.get("backend") || "webgpu",
+    cache: q.get("cache") !== "0",
+    onProgress: (p) => {
+      window.conv = { ...p, t: (performance.now() - t0) / 1000 };
+      if (performance.now() - last > 2000 || p.phase !== "download") {
+        last = performance.now();
+        log(`${window.conv.t.toFixed(1)}s ${p.phase} ${p.file || ""} ${p.total ? ((100 * p.loaded) / p.total).toFixed(1) + "%" : p.loaded ?? ""} ${p.message || ""}`);
+      }
+    },
+  });
+  const r = await w.decide("I was charged twice for March. Please refund the duplicate today.", { refund: { type: "noul", instructions: "Does the customer ask for money back?" } });
+  window.conv = { done: true, seconds: (performance.now() - t0) / 1000, info: w.info, answer: r.answers, cache: await cacheInfo() };
+  log(JSON.stringify(window.conv));
+  w.dispose();
+} catch (e) {
+  window.conv = { error: e.message, seconds: (performance.now() - t0) / 1000 };
+  log("ERROR " + e.stack);
+}
+</script>

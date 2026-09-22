@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala parity check: Kev</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  td, th { padding: 2px 10px; text-align: right; border-bottom: 1px solid #1f2630; } td:first-child { text-align: left; }
+  .bad { color: #ff6b6b; }
+</style>
+</head>
+<body>
+<h1>kevala parity: Kev-0.8B against Kev's own PyTorch code</h1>
+<pre id="log"></pre>
+<table id="out"></table>
+<script type="module">
+import { Kevala } from "../js/src/index.js";
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+window.parity = null;
+async function run() {
+  const q = new URLSearchParams(location.hash.slice(1));
+  const backend = q.get("backend") || "auto";
+  const t0 = performance.now();
+  const kevala = await Kevala.load({ model: q.get("pack") === "local" || !q.get("pack") ? "../tmp/kev-0.8b-q8.kevala" : q.get("pack"), backend });
+  log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+  const golden = await (await fetch("../tests/fixtures/golden-kev.json")).json();
+  const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
+  let worst = 0, agree = 0, n = 0;
+  const times = [];
+  for (const c of golden.cases) {
+    const r = await kevala.decide(c.state, c.questions);
+    times.push(r.timing.forward);
+    Object.keys(c.questions).forEach((qid, i) => {
+      const want = c.probs[i];
+      const got = r.raw_probabilities[qid];
+      const dp = Math.max(...want.map((v, k) => Math.abs(v - got[k])));
+      const am = (v) => v.indexOf(Math.max(...v));
+      const ok = am(want) === am(got);
+      n++; agree += ok; worst = Math.max(worst, dp);
+      rows.push([c.id, qid, r.usage.input_tokens, ok ? "ok" : "MISS", dp.toFixed(4), r.timing.forward.toFixed(1)]);
+    });
+  }
+  times.sort((a, b) => a - b);
+  window.parity = { backend: kevala.info.backend, gpu: kevala.info.gpu, questions: n, argmax: agree, maxDp: worst, p50: times[times.length >> 1], max: times[times.length - 1] };
+  log(JSON.stringify(window.parity));
+  $("out").innerHTML = rows.map((r, i) => `<tr>${r.map((v) => (i ? `<td class="${v === "MISS" || Number(v) > 0.02 ? "bad" : ""}">${v}</td>` : `<th>${v}</th>`)).join("")}</tr>`).join("");
+  kevala.dispose();
+}
+run().catch((e) => { log("ERROR " + e.message); window.parity = { error: e.message }; });
+</script>
+</body>
+</html>

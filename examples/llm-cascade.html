@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala example: answer locally when confident, else escalate to an LLM</title>
+<link rel="icon" href="data:,">
+<style>
+  body { font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; background: #0b0d12; color: #e7ecf3; }
+  input { width: 100%; font: inherit; background: #11151d; color: inherit; border: 1px solid #2c3749; border-radius: 8px; padding: 10px; box-sizing: border-box; }
+  button { font: inherit; padding: 6px 11px; border-radius: 8px; border: 1px solid #2c3749; background: #1a2130; color: inherit; cursor: pointer; margin: 4px 4px 0 0; }
+  .turn { border-top: 1px solid #212a39; padding: 10px 0; }
+  .path { font-size: 12px; color: #8591a5; font-family: ui-monospace, Menlo, monospace; }
+  .fast { color: #4fdc8e; } .slow { color: #f6b85a; }
+  .muted { color: #8591a5; font-size: 13px; }
+</style>
+</head>
+<body>
+<h1>Cascade: kevala first, LLM only when unsure</h1>
+<p class="muted">A support widget. kevala reads the intent in tens of milliseconds. When it is confident and a canned answer exists, the user gets it at once; otherwise the message goes to a (fake, slow) LLM. <span id="stats"></span></p>
+<form id="form"><input id="q" autocomplete="off" placeholder="Ask support something…" value="How do I reset my password?"></form>
+<div id="samples"></div>
+<div id="log"></div>
+
+<script type="module">
+import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
+
+
+// Stand-in for your real LLM call: slow, and it costs money. Replace with fetch() to your API.
+async function askLLM(message) {
+  await new Promise((r) => setTimeout(r, 1500));
+  return `(LLM) Thanks for the details. I looked into "${message.slice(0, 60)}" and here is a tailored answer…`;
+}
+
+// Intents that have a canned answer. Describe every option so the model knows what each means.
+const CANNED = {
+  password_reset: "Go to Settings → Security → Reset password. You'll get an email within a minute.",
+  opening_hours: "Support is open Monday to Friday, 9:00 to 18:00 CET.",
+  cancel_plan: "You can cancel any time under Billing → Plan → Cancel. You keep access until the period ends.",
+};
+const questions = {
+  intent: {
+    type: "choice",
+    instructions: "What does the user ask for in `message`?",
+    criteria: {
+      password_reset: "how to reset or change a password, or a locked login",
+      opening_hours: "when support or the office is open",
+      cancel_plan: "how to cancel or stop a subscription",
+      other: "anything else, including complaints, bugs, or several requests at once",
+    },
+  },
+};
+const CONFIDENT = 0.9; // act locally only above this probability
+
+const kevala = await Kevala.load({ model: "laya" });
+let local = 0, escalated = 0;
+
+async function handle(message) {
+  const t0 = performance.now();
+  const { answers } = await kevala.decide({ message }, questions);
+  const a = answers.intent;
+  const p = a.probabilities[a.choice];
+  const act = a.action?.act_probability ?? 1; // Laya's own "safe to act" estimate
+  const ms = performance.now() - t0;
+  let reply, path;
+  if (CANNED[a.choice] && p >= CONFIDENT && act >= 0.5) {
+    local++;
+    reply = CANNED[a.choice];
+    path = `<span class="fast">answered locally</span> · intent ${a.choice} P=${p.toFixed(2)} · ${ms.toFixed(0)} ms`;
+  } else {
+    escalated++;
+    const t1 = performance.now();
+    reply = await askLLM(message);
+    path = `<span class="slow">escalated to LLM</span> · intent ${a.choice} P=${p.toFixed(2)} · kevala ${ms.toFixed(0)} ms + LLM ${(performance.now() - t1).toFixed(0)} ms`;
+  }
+  const div = document.createElement("div");
+  div.className = "turn";
+  div.innerHTML = `<div><b>You:</b> ${escapeHtml(message)}</div><div><b>Support:</b> ${escapeHtml(reply)}</div><div class="path">${path}</div>`;
+  document.getElementById("log").prepend(div);
+  document.getElementById("stats").textContent = `So far: ${local} answered locally, ${escalated} escalated.`;
+}
+
+const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+document.getElementById("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const q = document.getElementById("q");
+  if (q.value.trim()) handle(q.value.trim());
+  q.value = "";
+});
+for (const s of ["When are you open?", "I want to cancel my subscription", "The export button crashes the app and I was double charged", "How do I reset my password?"]) {
+  const b = document.createElement("button");
+  b.textContent = s;
+  b.onclick = () => handle(s);
+  document.getElementById("samples").appendChild(b);
+}
+handle(document.getElementById("q").value);
+</script>
+</body>
+</html>

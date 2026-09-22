@@ -1,0 +1,424 @@
+// Where packs come from: the Cache API, the network with progress, or an upstream Hugging Face
+// checkpoint converted in the browser. Everything streams, so no stage holds a second copy of
+// the weights in JavaScript memory.
+
+export const CACHE_NAME = "kevala-v1";
+
+/**
+ * Known models, by name. Each converts in the browser from its upstream Hugging Face repos at a
+ * pinned revision (nothing is re-hosted), or loads from a `.kevala` pack you host yourself.
+ */
+export const MODELS = {
+  laya: {
+    arch: "laya",
+    label: "Laya (English), ModernBERT-large encoder, 421M",
+    repo: "convaiinnovations/laya",
+    revision: "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+    license: "apache-2.0",
+    // true when load() can convert it in the browser from upstream files (no pack to host)
+    browserConvert: true,
+    download: 842609210,
+    pack: 478786688,
+    block: 32,
+  },
+  "kev-0.8b": {
+    arch: "kev",
+    label: "Kev-0.8B, Qwen3.5-0.8B decoder with a pointer head",
+    repo: "jaredpalmer/kev-0.8b",
+    revision: "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+    base: { repo: "Qwen/Qwen3.5-0.8B-Base", revision: "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68" },
+    license: "apache-2.0",
+    browserConvert: true,
+    download: 1620000000,
+    pack: 857300000,
+    block: 32,
+  },
+};
+
+export const UPSTREAM = MODELS.laya;
+
+/** Resolves a model option to `{ url }` for a pack or `{ spec }` for an upstream checkpoint. */
+export function resolveModel(model) {
+  if (model == null) return { spec: MODELS.laya };
+  if (typeof model === "string") {
+    if (MODELS[model]) return { spec: MODELS[model] };
+    return { url: model };
+  }
+  if (model.url) return { url: model.url };
+  if (model.name && MODELS[model.name]) return { spec: { ...MODELS[model.name], ...model } };
+  return { spec: { ...MODELS.laya, ...model } };
+}
+
+/**
+ * Pack storage. The Origin Private File System takes multi-hundred-megabyte files as streamed
+ * writes (the Cache API rejects entries that large in some browsers); the Cache API is the
+ * fallback where OPFS is missing. Both expose match(key) -> Response | null, put(key, Response),
+ * keys() and remove(key).
+ */
+function fileName(key) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 0x01000193) >>> 0;
+  return `${h.toString(16).padStart(8, "0")}-${key.split("/").pop().replace(/[^A-Za-z0-9._-]/g, "_")}`;
+}
+
+async function opfsStore() {
+  if (typeof navigator === "undefined" || !navigator.storage?.getDirectory) return null;
+  const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle(CACHE_NAME, { create: true });
+  const readIndex = async () => {
+    try {
+      return JSON.parse(await (await (await dir.getFileHandle("index.json")).getFile()).text());
+    } catch {
+      return {};
+    }
+  };
+  const writeFile = async (name, chunks) => {
+    const fh = await dir.getFileHandle(name, { create: true });
+    let n = 0;
+    if (fh.createWritable) {
+      const out = await fh.createWritable();
+      for await (const c of chunks) {
+        await out.write(c);
+        n += c.byteLength;
+      }
+      await out.close();
+    } else {
+      // Safari workers: synchronous access handles only
+      const h = await fh.createSyncAccessHandle();
+      h.truncate(0);
+      for await (const c of chunks) n += h.write(c, { at: n });
+      h.flush();
+      h.close();
+    }
+    return n;
+  };
+  // entries are only listed in the index once their file is complete
+  let lock = Promise.resolve();
+  const updateIndex = (fn) => (lock = lock.then(async () => {
+    const idx = await readIndex();
+    fn(idx);
+    await writeFile("index.json", [new TextEncoder().encode(JSON.stringify(idx))]);
+  }));
+  return {
+    kind: "opfs",
+    async match(key) {
+      const e = (await readIndex())[key];
+      if (!e) return null;
+      try {
+        const f = await (await dir.getFileHandle(e.name)).getFile();
+        if (f.size !== e.bytes) return null;
+        return new Response(f.stream(), { headers: { "content-length": String(f.size), "x-kevala-size": String(f.size) } });
+      } catch {
+        return null;
+      }
+    },
+    async put(key, res) {
+      const name = fileName(key);
+      const reader = res.body.getReader();
+      const chunks = {
+        async *[Symbol.asyncIterator]() {
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (done) return;
+            yield value;
+          }
+        },
+      };
+      const bytes = await writeFile(name, chunks);
+      await updateIndex((idx) => (idx[key] = { name, bytes }));
+    },
+    async keys() {
+      return Object.entries(await readIndex()).map(([key, e]) => ({ key, bytes: e.bytes }));
+    },
+    async remove(key) {
+      const idx = await readIndex();
+      const e = idx[key];
+      if (e) await dir.removeEntry(e.name).catch(() => {});
+      await updateIndex((i) => delete i[key]);
+    },
+  };
+}
+
+async function cacheStore() {
+  if (typeof caches === "undefined") return null;
+  const c = await caches.open(CACHE_NAME);
+  return {
+    kind: "cache",
+    match: (key) => c.match(key).then((r) => r || null),
+    put: (key, res) => c.put(key, res),
+    async keys() {
+      const out = [];
+      for (const req of await c.keys()) {
+        const r = await c.match(req);
+        out.push({ key: req.url, bytes: Number(r?.headers.get("x-kevala-size")) || Number(r?.headers.get("content-length")) || 0 });
+      }
+      return out;
+    },
+    remove: (key) => c.delete(key),
+  };
+}
+
+async function openCache(enabled) {
+  if (!enabled) return null;
+  for (const make of [opfsStore, cacheStore]) {
+    try {
+      const s = await make();
+      if (s) return s;
+    } catch {}
+  }
+  return null;
+}
+
+/** Cache key for a converted upstream checkpoint: revision and quantization both matter. */
+export function upstreamKey(up) {
+  const base = up.base ? `+${up.base.repo}@${up.base.revision}` : "";
+  return `https://kevala.cache/${up.repo}/${up.revision}${base}/q8-b${up.block}.kevala`;
+}
+
+function hfUrl(up, file) {
+  return `https://huggingface.co/${up.repo}/resolve/${up.revision}/${file}`;
+}
+
+async function checked(res, url) {
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  return res;
+}
+
+/** Yields the body of `res` as chunks, reporting progress. */
+async function* body(res, file, total, onProgress, signal) {
+  const reader = res.body.getReader();
+  let loaded = 0;
+  try {
+    for (;;) {
+      if (signal?.aborted) throw signal.reason ?? new DOMException("aborted", "AbortError");
+      const { done, value } = await reader.read();
+      if (done) break;
+      loaded += value.byteLength;
+      onProgress?.({ phase: "download", file, loaded, total });
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Resolves a pack source to `{ size, chunks(), cached, key }`.
+ * `model` is a URL string, an ArrayBuffer / Uint8Array / Blob, or `{ repo, revision, block }`
+ * naming an upstream checkpoint (the default).
+ */
+export async function openPack(model, { cache = true, signal, onProgress, convert } = {}) {
+  if (model instanceof ArrayBuffer || ArrayBuffer.isView(model)) {
+    const bytes = model instanceof ArrayBuffer ? new Uint8Array(model) : new Uint8Array(model.buffer, model.byteOffset, model.byteLength);
+    return { size: bytes.byteLength, cached: false, key: null, async *chunks() { yield bytes; } };
+  }
+  if (typeof Blob !== "undefined" && model instanceof Blob) {
+    return fromResponse(new Response(model), "pack", model.size, false, null, onProgress, signal);
+  }
+  const store = await openCache(cache);
+  const which = resolveModel(model);
+  const key = which.url ? new URL(which.url, self.location?.href).href : upstreamKey(which.spec);
+  if (store) {
+    const hit = await store.match(key).catch(() => null);
+    if (hit) {
+      const size = Number(hit.headers.get("content-length")) || Number(hit.headers.get("x-kevala-size")) || 0;
+      onProgress?.({ phase: "cache", file: key, loaded: size, total: size });
+      return fromResponse(hit, "cache", size, true, key, null, signal);
+    }
+  }
+  if (which.url) {
+    const res = await checked(await fetch(key, { signal }), key);
+    const size = Number(res.headers.get("content-length")) || 0;
+    if (store) {
+      // tee: one branch fills the cache while the other feeds the loader
+      const [a, b] = res.body.tee();
+      const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
+      const saving = store.put(key, new Response(b, { headers })).catch((e) => onProgress?.({ phase: "cache-failed", message: String(e?.message || e) }));
+      return { ...fromResponse(new Response(a), key.split("/").pop(), size, false, key, onProgress, signal), saving };
+    }
+    return fromResponse(res, key.split("/").pop(), size, false, key, onProgress, signal);
+  }
+  // upstream checkpoint: convert, cache, and hand back the finished bytes
+  const up = which.spec;
+  const made = await convert(up, { signal, onProgress });
+  if (!(made instanceof Uint8Array)) {
+    // a converter that streams its pack out ({ size, chunks() }): tee it into the cache
+    const size = made.size;
+    const it = made.chunks();
+    let stream = new ReadableStream({
+      async pull(ctl) {
+        const { done, value } = await it.next();
+        if (done) ctl.close();
+        else ctl.enqueue(value);
+      },
+    });
+    let saving = null;
+    if (store) {
+      const [a, b] = stream.tee();
+      stream = b;
+      const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
+      saving = store.put(key, new Response(a, { headers })).catch((e) => onProgress?.({ phase: "cache-failed", message: String(e?.message || e) }));
+    }
+    return { ...fromResponse(new Response(stream), "converted pack", size, false, key, null, signal), saving };
+  }
+  const bytes = made;
+  if (store) {
+    onProgress?.({ phase: "cache", file: key, loaded: 0, total: bytes.byteLength });
+    try {
+      await store.put(key, new Response(bytes, { headers: { "content-type": "application/octet-stream", "x-kevala-size": String(bytes.byteLength) } }));
+    } catch (e) {
+      onProgress?.({ phase: "cache-failed", message: String(e?.message || e) });
+    }
+  }
+  return { size: bytes.byteLength, cached: false, key, async *chunks() { yield bytes; } };
+}
+
+function fromResponse(res, file, size, cached, key, onProgress, signal) {
+  return {
+    size,
+    cached,
+    key,
+    chunks: () => body(res, file, size, onProgress, signal),
+  };
+}
+
+/** Fetches the upstream files a conversion needs, reporting progress. */
+export async function fetchUpstream(up, { signal, onProgress }) {
+  const text = async (file) => (await checked(await fetch(hfUrl(up, file), { signal }), file)).text();
+  const [enc, agent, tok] = await Promise.all([text("encoder/config.json"), text("rl_agent_config.json"), text("tokenizer/tokenizer.json")]);
+  const url = hfUrl(up, "model.safetensors");
+  const res = await checked(await fetch(url, { signal }), url);
+  const total = Number(res.headers.get("content-length")) || Number(res.headers.get("x-linked-size")) || 0;
+  return { enc, agent, tok, total, chunks: () => body(res, "model.safetensors", total, onProgress, signal) };
+}
+
+/** Lists stored packs with their sizes. */
+export async function cacheInfo() {
+  const store = await openCache(true);
+  if (!store) return { available: false, entries: [], bytes: 0 };
+  const entries = await store.keys();
+  return { available: true, storage: store.kind, entries, bytes: entries.reduce((a, e) => a + e.bytes, 0) };
+}
+
+/** Whether a model (a MODELS name, a spec, or a pack URL) is already stored locally. */
+export async function isCached(model) {
+  const store = await openCache(true);
+  if (!store) return false;
+  const which = resolveModel(model);
+  const key = which.url ? new URL(which.url, self.location?.href).href : upstreamKey(which.spec);
+  return (await store.keys()).some((e) => e.key === key);
+}
+
+/** Deletes every stored pack. */
+export async function clearCache() {
+  const store = await openCache(true);
+  for (const e of (await store?.keys()) || []) await store.remove(e.key);
+  if (typeof caches !== "undefined") await caches.delete(CACHE_NAME).catch(() => {});
+  return true;
+}
+
+/**
+ * Applies a layout (from `kevala_layouts`) to a pack streaming by. `write(dst, bytes)` receives
+ * fragments in increasing destination order; the layout prefix is written first.
+ */
+export class PieceSink {
+  constructor(layout, write) {
+    this.write = write;
+    this.total = layout.total;
+    const p = layout.pieces;
+    this.pieces = [];
+    for (let i = 0; i < p.length; i += 5) {
+      const [src, dst, len, rows, stride] = [p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4]];
+      if (rows && len) this.pieces.push({ src, dst, len, rows, stride, row: 0 });
+    }
+    this.pieces.sort((a, b) => a.src - b.src);
+    this.next = 0;
+    write(0, layout.prefix);
+  }
+
+  /** Feeds bytes `[at, at + chunk.length)` of the source. */
+  push(chunk, at) {
+    const end = at + chunk.byteLength;
+    for (let i = this.next; i < this.pieces.length; i++) {
+      const pc = this.pieces[i];
+      if (pc.src >= end) break;
+      while (pc.row < pc.rows) {
+        const s = pc.src + pc.row * pc.stride;
+        if (s >= end) break;
+        const lo = Math.max(s, at);
+        const hi = Math.min(s + pc.len, end);
+        if (hi > lo) this.write(pc.dst + pc.row * pc.len + (lo - s), chunk.subarray(lo - at, hi - at));
+        if (s + pc.len <= end) pc.row++;
+        else break;
+      }
+    }
+    while (this.next < this.pieces.length && this.pieces[this.next].row === this.pieces[this.next].rows) this.next++;
+  }
+
+  get done() {
+    return this.next >= this.pieces.length;
+  }
+}
+
+/** Collects destination fragments into ~4 MB messages for a remote worker. */
+export class Batcher {
+  constructor(send, capacity = 4 << 20) {
+    this.send = send;
+    this.capacity = capacity;
+    this.buf = null;
+    this.base = 0;
+    this.used = 0;
+  }
+
+  write(dst, bytes) {
+    let off = 0;
+    while (off < bytes.byteLength) {
+      if (!this.buf || dst + off < this.base || dst + off >= this.base + this.capacity) {
+        this.flush();
+        this.buf = new Uint8Array(this.capacity);
+        this.base = dst + off;
+        this.used = 0;
+      }
+      const at = dst + off - this.base;
+      const n = Math.min(bytes.byteLength - off, this.capacity - at);
+      this.buf.set(bytes.subarray(off, off + n), at);
+      this.used = Math.max(this.used, at + n);
+      off += n;
+    }
+  }
+
+  flush() {
+    if (this.buf && this.used) this.send(this.base, this.buf.subarray(0, this.used));
+    this.buf = null;
+  }
+}
+
+/** A pinned Hugging Face file URL. */
+export function hfFile(repo, revision, file) {
+  return `https://huggingface.co/${repo}/resolve/${revision}/${file}`;
+}
+
+/** Fetches a whole file with download progress. */
+export async function fetchBytes(url, file, { signal, onProgress } = {}) {
+  const res = await checked(await fetch(url, { signal }), url);
+  const total = Number(res.headers.get("content-length")) || 0;
+  const parts = [];
+  let n = 0;
+  for await (const c of body(res, file, total, onProgress, signal)) {
+    parts.push(c);
+    n += c.byteLength;
+  }
+  const out = new Uint8Array(n);
+  let at = 0;
+  for (const c of parts) {
+    out.set(c, at);
+    at += c.byteLength;
+  }
+  return out;
+}
+
+/** Streams bytes `[start, end)` of a file as chunks, with progress. */
+export async function fetchRange(url, start, end, file, { signal, onProgress } = {}) {
+  const res = await checked(await fetch(url, { signal, headers: { range: `bytes=${start}-${end - 1}` } }), url);
+  if (res.status !== 206 && start > 0) throw new Error(`${url}: the server ignored the byte range`);
+  return body(res, file, end - start, onProgress, signal);
+}

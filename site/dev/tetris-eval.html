@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>kevala dev: Tetris player evaluation</title>
+<style>body { font: 13px/1.5 ui-monospace, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }</style>
+</head>
+<body>
+<h1>Tetris player evaluation</h1>
+<p>Plays seeded games without gravity: score every landing spot, play the best one. <code>#model=laya&amp;pieces=60&amp;seeds=1,2,3</code></p>
+<pre id="log"></pre>
+<script type="module">
+import { Kevala } from "../../js/src/index.js";
+import { Game, countHoles, columnHeights } from "../app/tetris/engine.js";
+import { candidates, QUESTION } from "../app/tetris/ai.js";
+
+const q = new URLSearchParams(location.hash.slice(1));
+const log = (s) => (document.getElementById("log").textContent += s + "\n");
+const name = q.get("model") || "laya";
+const pieces = Number(q.get("pieces") || 60);
+const seeds = (q.get("seeds") || "3").split(",").map(Number);
+const policy = q.get("policy") || "placement";
+const verbose = q.get("verbose") === "1";
+const style = {};
+const packs = { laya: "../../tmp/laya-q8.kevala", "kev-0.8b": "../../tmp/kev-0.8b-q8.kevala" };
+window.evalResult = null;
+try {
+  const kevala = policy !== "drop" ? await Kevala.load({ model: packs[name], backend: q.get("backend") || "auto" }) : null;
+  const games = [];
+  let ms = [];
+  let tokens = [];
+  for (const seed of seeds) {
+    const g = new Game(seed);
+    let keys = 0;
+    let stalls = 0;
+    const counts = { left: 0, right: 0, rotate: 0, drop: 0 };
+    while (!g.over && g.pieces < pieces && policy === "placement") {
+      const c = candidates(g.board, g.piece);
+      const t = performance.now();
+      const rs = await kevala.decideMany(c.texts.map((state) => ({ state, questions: QUESTION })));
+      ms.push(performance.now() - t);
+      tokens.push(rs[0].timing?.tokens || 0);
+      let best = 0;
+      rs.forEach((r, i) => { if (r.answers.clean.noul > rs[best].answers.clean.noul) best = i; });
+      const pick = c.groups.get(c.texts[best])[0];
+      for (const d of pick.rotations) { g.rotate(d); counts.rotate++; keys++; }
+      while (g.piece.x !== pick.target.x) { const ok = g.move(g.piece.x < pick.target.x ? 1 : -1); counts[g.piece.x < pick.target.x ? "right" : "left"]++; keys++; if (!ok) break; }
+      g.hardDrop(); counts.drop++; keys++;
+    }
+    const res = { seed, pieces: g.pieces, lines: g.lines, score: g.score, over: g.over, holes: countHoles(g.board), height: Math.max(...columnHeights(g.board)), keysPerPiece: +(keys / Math.max(1, g.pieces)).toFixed(2), stalls, counts };
+    games.push(res);
+    log(JSON.stringify(res));
+  }
+  ms.sort((a, b) => a - b);
+  const summary = { model: name, policy, style, backend: kevala?.info.backend, pieces, lines: games.reduce((a, g) => a + g.lines, 0), survived: games.filter((g) => !g.over).length, games: games.length, p50ms: ms[ms.length >> 1], tokens: tokens.length ? Math.round(tokens.reduce((a, b) => a + b, 0) / tokens.length) : 0 };
+  log(JSON.stringify(summary));
+  window.evalResult = { summary, games };
+  kevala?.dispose();
+} catch (e) {
+  log("ERROR " + e.stack);
+  window.evalResult = { error: e.message };
+}
+</script>
+</body>
+</html>
