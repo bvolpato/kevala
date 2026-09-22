@@ -53,6 +53,7 @@ async function run() {
     const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
     requestAnimationFrame(tick);
     const ms = [];
+    const samples = [];
     let tokens = 0;
     let last = null;
     for (let i = 0; i < runs + 2; i++) {
@@ -60,7 +61,10 @@ async function run() {
       // unique=1 gives every run new states, so caches cannot help (cold numbers)
       const reqs = q.get("unique") === "1" ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
       const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
-      if (i >= 2) ms.push(performance.now() - t);
+      if (i >= 2) {
+        ms.push(performance.now() - t);
+        samples.push(r[0].timing);
+      }
       tokens = r[0].timing.tokens;
       last = r[0].timing;
     }
@@ -68,6 +72,7 @@ async function run() {
     ms.sort((a, b) => a - b);
     const c = { name: s.name, frameGap: gap, tokens, p50: ms[ms.length >> 1], p95: ms[Math.min(ms.length - 1, Math.floor(ms.length * 0.95))], min: ms[0] };
     c.last = last;
+    c.samples = samples;
     results.cases.push(c);
     log(`${s.name.padEnd(38)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
   }
