@@ -5,11 +5,11 @@
 import { session, MODELS, MODEL_NOTES, LOCAL, SHOT, FROM } from "./session.js";
 import { esc, fmtBytes, fmtMs, backendLabel, cpuReason, logo, REPO } from "./ui.js";
 
-/** A view with a tab in the header; without a label it has no tab. */
+/** A view and its tab in the header. */
 const defineRoute = (id, label, title) => ({ id, label, title, load: () => import(`./views/${id}.js`) });
 
 const ROUTES = [
-  defineRoute("home", null, "kevala · decision models that run in the page"),
+  defineRoute("home", "Home", "kevala · decision models that run in the page"),
   defineRoute("playground", "Playground", "Playground · kevala"),
   defineRoute("tetris", "Tetris", "Tetris played by a decision model · kevala"),
   defineRoute("guardrail", "Guardrail", "Prompt guardrail · kevala"),
@@ -27,7 +27,7 @@ const CARET =
 
 const header = document.querySelector("header.nav");
 const navLinks = ROUTES.filter((r) => r.label)
-  .map((r) => `<a href="#/${r.id}" data-route="${r.id}">${esc(r.label)}</a>`)
+  .map((r) => `<a href="#/${r.id === "home" ? "" : r.id}" data-route="${r.id}">${esc(r.label)}</a>`)
   .join("");
 const devBadge = LOCAL && !SHOT ? `<span class="badge warn" title="Loading packs from this server's tmp/">dev packs</span>` : "";
 const chipParts = `<span class="mc-dot"></span><span class="mc-name"></span><span class="mc-state"></span>${CARET}`;
@@ -243,6 +243,13 @@ async function mountView(route) {
   return entry;
 }
 
+// on narrow screens the tabs scroll sideways: fade the right edge while more tabs are hidden there
+const tabs = header.querySelector(".tabs-nav");
+const markHiddenTabs = () => tabs.classList.toggle("more", tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 2);
+tabs.addEventListener("scroll", markHiddenTabs, { passive: true });
+addEventListener("resize", markHiddenTabs);
+markHiddenTabs();
+
 let showCount = 0;
 async function show() {
   const { route, anchor } = parseHash();
@@ -250,6 +257,7 @@ async function show() {
   document.title = route.title;
   for (const link of header.querySelectorAll("[data-route]")) {
     link.toggleAttribute("aria-current", link.dataset.route === route.id);
+    if (link.dataset.route === route.id && link.closest(".tabs-nav")) link.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
   const entry = views.get(route.id) ?? (await mountView(route));
   if (ticket !== showCount) return; // another route was picked while this one loaded

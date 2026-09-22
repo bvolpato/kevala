@@ -76,6 +76,7 @@
   .nav .wrap { height: auto; min-height: 58px; flex-wrap: wrap; padding: 8px 0; }
   .tabs-nav { order: 10; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .tabs-nav a[aria-current]::after { bottom: -4px; }
+  .tabs-nav.more { mask-image: linear-gradient(90deg, #000 calc(100% - 40px), transparent); }
   .brand span { display: none; }
 }
 
