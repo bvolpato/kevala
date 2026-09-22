@@ -5,11 +5,14 @@
 //
 // Keys are how the choice shows up on screen: each key's value is the best P(yes) among the
 // spots that key leads toward from where the piece is now (turn first, then slide, then drop).
-// The code measures and describes; it never scores a spot. Asking the model for one key at a
+// The code measures and describes; it never scores a spot. While a piece moves, the next piece's
+// spots are already being scored on the board it will land on, so answers are usually ready
+// the moment a piece appears; they are used only if that board and piece are exactly the ones
+// asked about. Asking the model for one key at a
 // time was tried and played far worse (no lines in 40 pieces): a decision model reads outcomes
 // well, but a single key press says little about where the piece ends up.
 
-import { enumeratePlacements, measure, rotated, shifted } from "./engine.js";
+import { enumeratePlacements, measure, rotated, shifted, place, spawnPiece, pieceFits } from "./engine.js";
 
 export const KEYS = ["left", "right", "rotate", "drop"];
 export const GLYPH = { left: "←", right: "→", rotate: "↻", drop: "⤓" };
@@ -130,6 +133,16 @@ function pTrue(r) {
   return Math.abs(raw[1] - p) <= Math.abs(raw[0] - p) ? raw[1] : raw[0];
 }
 
+/** Where a new piece of `type` appears on `board`, as Game.spawn places it; null on a top-out. */
+function spawnPose(board, type) {
+  const p = spawnPiece(type);
+  if (!pieceFits(board, p)) return null;
+  return shifted(board, p, 0, 1) || p;
+}
+
+/** Identifies a moment of the game: the settled board plus the falling piece's pose. */
+const momentKey = (board, p) => `${board.join("")}|${p.type}${p.rot}:${p.x},${p.y}`;
+
 export const SPEEDS = {
   chill: { label: "Chill", gap: 260 },
   normal: { label: "Normal", gap: 110 },
@@ -154,10 +167,15 @@ export class AutoPlayer {
     this.enabled = false;
     this.epoch = 0;
     this.inflight = null;
+    this.ahead = null; // the next piece's question, asked while this one moves
     this.plan = null;
     this.speed = "normal";
     this.timer = 0;
-    this.stats = { decisions: 0, dropped: 0, ms: [], states: 0, spots: 0 };
+    this.stats = AutoPlayer.#freshStats();
+  }
+
+  static #freshStats() {
+    return { decisions: 0, dropped: 0, ahead: 0, ms: [], states: 0, spots: 0 };
   }
 
   get busy() {
@@ -169,6 +187,7 @@ export class AutoPlayer {
     this.enabled = on;
     this.epoch++;
     this.plan = null;
+    this.ahead = null;
     this.game.softDrop = false;
     this.onStatus?.();
     if (on) this.request();
@@ -185,8 +204,9 @@ export class AutoPlayer {
   reset() {
     this.epoch++;
     this.plan = null;
+    this.ahead = null;
     this.game.softDrop = false;
-    this.stats = { decisions: 0, dropped: 0, ms: [], states: 0, spots: 0 };
+    this.stats = AutoPlayer.#freshStats();
     this.onStatus?.();
   }
 
@@ -196,47 +216,84 @@ export class AutoPlayer {
     if (this.enabled) this.request();
   }
 
+  /**
+   * Gets the model's answer for the current piece. When the answer was already asked for while
+   * the previous piece was moving, and the board and piece are exactly the ones it was asked
+   * about, that answer is used; otherwise the model is asked now.
+   */
   request() {
     const g = this.game;
     const kevala = this.getModel();
     if (!this.enabled || this.inflight || !kevala || g.over || g.paused || !g.piece) return;
-    const tag = { epoch: this.epoch, pieceId: g.pieceId };
-    const c = candidates(g.board, g.piece);
-    if (!c.texts.length) return;
-    const t0 = performance.now();
+    const ahead = this.ahead;
+    this.ahead = null;
+    const fits = ahead && ahead.epoch === this.epoch && ahead.key === momentKey(g.board, g.piece);
+    const job = fits ? ahead : this.#ask(kevala, g.board, g.piece);
+    this.#settle(kevala, job, { epoch: this.epoch, pieceId: g.pieceId }, fits);
+  }
+
+  /** Starts one batched question: every landing spot of `piece` on `board`. */
+  #ask(kevala, board, piece) {
+    const c = candidates(board, piece);
+    const job = { key: momentKey(board, piece), epoch: this.epoch, c, t0: performance.now(), ms: 0 };
+    job.answer = kevala.decideMany(c.texts.map((state) => ({ state, questions: QUESTION }))).then((res) => {
+      job.ms = performance.now() - job.t0;
+      return res;
+    });
+    job.answer.catch(() => {}); // a job that is never used must not report an unhandled error
+    return job;
+  }
+
+  /** Waits for a job's answer, turns it into the plan for the current piece, and looks ahead. */
+  #settle(kevala, job, tag, ahead) {
     this.inflight = tag;
     this.onStatus?.();
-    kevala
-      .decideMany(c.texts.map((state) => ({ state, questions: QUESTION })))
+    job.answer
       .then((res) => {
         this.inflight = null;
-        const ms = performance.now() - t0;
-        if (tag.epoch !== this.epoch || tag.pieceId !== this.game.pieceId || !this.enabled || this.game.over) {
+        const g = this.game;
+        if (tag.epoch !== this.epoch || tag.pieceId !== g.pieceId || !this.enabled || g.over) {
           this.stats.dropped++;
           this.onStatus?.();
           this.request(); // the piece changed while the model thought: ask about the current one
           return;
         }
+        const { c } = job;
         const scored = c.texts.map((text, i) => ({ text, p: pTrue(res[i]), group: c.groups.get(text) }));
         scored.sort((a, b) => b.p - a.p);
         const best = scored[0];
-        const p = this.game.piece;
         const spot = best.group[0];
-        this.plan = { pieceId: tag.pieceId, best, spot, scored, keys: keysTo(this.game.board, p, spot), pressed: 0, fails: 0 };
+        this.plan = { pieceId: tag.pieceId, best, spot, scored, keys: keysTo(g.board, g.piece, spot), pressed: 0, fails: 0 };
         this.timer = 0;
-        this.stats.decisions++;
-        this.stats.ms.push(ms);
-        if (this.stats.ms.length > 200) this.stats.ms.shift();
-        this.stats.states += c.texts.length;
-        this.stats.spots += c.items.length;
-        this.onDecision?.({ piece: p.type, ms, timing: res[0].timing, spots: c.items.length, states: c.texts.length, scored, best, keys: this.plan.keys });
+        const st = this.stats;
+        st.decisions++;
+        if (ahead) st.ahead++;
+        st.ms.push(job.ms);
+        if (st.ms.length > 200) st.ms.shift();
+        st.states += c.texts.length;
+        st.spots += c.items.length;
+        this.onDecision?.({ piece: g.piece.type, ms: job.ms, ahead, timing: res[0].timing, spots: c.items.length, states: c.texts.length, scored, best, keys: this.plan.keys });
         this.onStatus?.();
+        this.#lookAhead(kevala);
       })
       .catch((e) => {
         this.inflight = null;
         this.setEnabled(false);
         this.onError?.(e);
       });
+  }
+
+  /**
+   * The chosen spot fixes the board the next piece will fall on, and the queue says which piece
+   * it is: ask about it now, while this piece moves, so its answer is ready when it appears.
+   */
+  #lookAhead(kevala) {
+    const g = this.game;
+    const next = g.queue[0];
+    if (!this.plan || !next) return;
+    const { board } = place(g.board, this.plan.spot.final);
+    const pose = spawnPose(board, next);
+    if (pose) this.ahead = this.#ask(kevala, board, pose);
   }
 
   /** The key values from where the piece is now, or null before the model has answered. */

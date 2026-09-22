@@ -18,29 +18,45 @@ const LOCAL_PACKS = {
 /** `?shot=1` hides dev-only chrome, for README screenshots taken with dev packs. */
 export const SHOT = params.get("shot") === "1";
 
-/** What the site says about each model. */
+/** What the model menu says about each model. */
 export const MODEL_NOTES = {
   laya: {
     name: "Laya",
     short: "ModernBERT-large encoder + decision head, 421M",
-    note: "WebGPU: tens of ms per decision. CPU fallback everywhere.",
   },
   "kev-0.8b": {
     name: "Kev-0.8B",
     short: "Qwen3.5-0.8B hybrid decoder + pointer head",
-    note: "WebGPU: tens of ms per request, less for repeated states. The CPU fallback takes seconds.",
   },
 };
 
-const KEY = "kevala.session";
+const BACKENDS = ["auto", "webgpu", "wasm"];
+const SESSION_KEY = "kevala.session";
+const PREF_KEY = "kevala.pref";
+
+/** The choice of this browser session, or else the last one made in this browser. */
 function readSaved() {
   try {
-    return JSON.parse(sessionStorage.getItem(KEY)) || JSON.parse(localStorage.getItem("kevala.pref")) || {};
+    return JSON.parse(sessionStorage.getItem(SESSION_KEY)) || JSON.parse(localStorage.getItem(PREF_KEY)) || {};
   } catch {
     return {};
   }
 }
 
+/** The URL's `?model=` wins, then the saved choice, then Laya. */
+function initialModel(saved) {
+  const fromUrl = params.get("model");
+  if (MODELS[fromUrl]) return fromUrl;
+  if (MODEL_NOTES[saved.model] || saved.model === "custom") return saved.model;
+  return "laya";
+}
+
+function initialBackend(saved) {
+  const fromUrl = params.get("backend");
+  return BACKENDS.includes(fromUrl) ? fromUrl : saved.backend || "auto";
+}
+
+// a copy of ui.js's fmtBytes: ui.js imports this module, so this one cannot import it back
 function fmtBytes(n) {
   if (!n) return "0 B";
   if (n >= 1e9) return `${(n / 1e9).toFixed(2)} GB`;
@@ -48,14 +64,41 @@ function fmtBytes(n) {
   return `${Math.round(n / 1e3)} KB`;
 }
 
+/** The progress line for one `onProgress` event of Kevala.load, or null to leave it as is. */
+function progressOf(event, { startedAt, convertNote, downloadTotal }) {
+  const { phase, loaded, total } = event;
+  if (phase === "download" && total) {
+    const secs = (performance.now() - startedAt) / 1000;
+    const rate = secs > 0.5 ? ` · ${fmtBytes(loaded / secs)}/s` : "";
+    const label = `Downloading ${fmtBytes(loaded)} of ${fmtBytes(total)}${rate}${convertNote}`;
+    return { frac: loaded / total, indet: false, label };
+  }
+  if (phase === "download") return { frac: 0, indet: true, label: `Fetching ${event.file || "files"}…` };
+  if (phase === "convert") {
+    // conversion runs while the download streams; it gets its own bar only when nothing downloads
+    if (downloadTotal) return null;
+    return { frac: loaded / total, indet: false, label: `Converting to int8: ${loaded}/${total} tensors` };
+  }
+  if (phase === "cache") {
+    const label = loaded ? `Reading ${fmtBytes(total)} from browser storage…` : "Saving the pack to browser storage…";
+    return { frac: 1, indet: !total, label };
+  }
+  if (phase === "init") return { frac: 1, indet: true, label: event.message || "Initializing…" };
+  if (phase === "warmup") return { frac: 1, indet: true, label: "Warming up…" };
+  return null;
+}
+
 class Session extends EventTarget {
+  #saved;
+  #abort = null;
+  #waiters = [];
+
   constructor() {
     super();
-    const saved = readSaved();
-    this.saved = saved;
-    this.model = MODELS[params.get("model")] ? params.get("model") : MODEL_NOTES[saved.model] || saved.model === "custom" ? saved.model : "laya";
-    this.backend = ["auto", "webgpu", "wasm"].includes(params.get("backend")) ? params.get("backend") : saved.backend || "auto";
-    this.customUrl = saved.customUrl || "";
+    this.#saved = readSaved();
+    this.model = initialModel(this.#saved);
+    this.backend = initialBackend(this.#saved);
+    this.customUrl = this.#saved.customUrl || "";
     /** idle | loading | ready | error */
     this.status = "idle";
     /** { frac, indet, label } while loading */
@@ -63,8 +106,6 @@ class Session extends EventTarget {
     this.kevala = null;
     this.error = null;
     this.cached = {};
-    this.ctrl = null;
-    this.waiters = [];
   }
 
   get ready() {
@@ -75,174 +116,164 @@ class Session extends EventTarget {
     return this.kevala?.info || null;
   }
 
-  nameOf(m = this.model) {
-    return MODEL_NOTES[m]?.name || "Custom pack";
+  nameOf(model = this.model) {
+    return MODEL_NOTES[model]?.name || "Custom pack";
   }
 
   /** Calls `fn(session)` on every change; returns the unsubscribe function. */
   on(fn) {
-    const h = () => fn(this);
-    this.addEventListener("change", h);
-    return () => this.removeEventListener("change", h);
+    const handler = () => fn(this);
+    this.addEventListener("change", handler);
+    return () => this.removeEventListener("change", handler);
   }
 
-  emit() {
+  #emit() {
     this.dispatchEvent(new Event("change"));
   }
 
-  persist() {
-    const v = JSON.stringify({ model: this.model, backend: this.backend, customUrl: this.customUrl, active: this.status === "ready" || this.status === "loading" });
+  #persist() {
+    const choice = { model: this.model, backend: this.backend, customUrl: this.customUrl };
+    const active = this.status === "ready" || this.status === "loading";
     try {
-      sessionStorage.setItem(KEY, v);
-      localStorage.setItem("kevala.pref", JSON.stringify({ model: this.model, backend: this.backend, customUrl: this.customUrl }));
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...choice, active }));
+      localStorage.setItem(PREF_KEY, JSON.stringify(choice));
     } catch {}
   }
 
   /** The value to pass as `model` to Kevala.load. */
-  source(m = this.model) {
-    if (m === "custom") return this.customUrl || null;
-    if (LOCAL && LOCAL_PACKS[m]) return LOCAL_PACKS[m];
-    return m;
+  source(model = this.model) {
+    if (model === "custom") return this.customUrl || null;
+    if (LOCAL && LOCAL_PACKS[model]) return LOCAL_PACKS[model];
+    return model;
   }
 
   async refreshCache() {
-    for (const m of Object.keys(MODEL_NOTES)) this.cached[m] = await isCached(this.source(m)).catch(() => false);
-    const info = await cacheInfo().catch(() => ({ available: false, bytes: 0, entries: [] }));
-    this.storage = info;
-    this.emit();
+    for (const model of Object.keys(MODEL_NOTES)) {
+      this.cached[model] = await isCached(this.source(model)).catch(() => false);
+    }
+    this.storage = await cacheInfo().catch(() => ({ available: false, bytes: 0, entries: [] }));
+    this.#emit();
   }
 
   /** Reloads the model of the last visit when it was loaded and is cached (or local). */
   async boot() {
     await this.refreshCache();
-    if (params.get("autoload") === "1" || (this.saved.active && (LOCAL || this.cached[this.model]))) this.load();
+    const wasActive = this.#saved.active && (LOCAL || this.cached[this.model]);
+    if (params.get("autoload") === "1" || wasActive) this.load();
   }
 
   /** Resolves with the loaded Kevala, or null when loading fails or is cancelled. */
   whenReady() {
     if (this.status === "ready") return Promise.resolve(this.kevala);
     if (this.status !== "loading") return Promise.resolve(null);
-    return new Promise((r) => this.waiters.push(r));
+    return new Promise((resolve) => this.#waiters.push(resolve));
   }
 
-  settle(v) {
-    for (const r of this.waiters.splice(0)) r(v);
+  #settle(kevala) {
+    for (const resolve of this.#waiters.splice(0)) resolve(kevala);
   }
 
-  select(m) {
-    if (m === this.model) return;
+  select(model) {
+    if (model === this.model) return;
     this.cancel();
     this.unload();
-    this.model = m;
+    this.model = model;
     this.error = null;
-    this.persist();
-    this.emit();
+    this.#persist();
+    this.#emit();
   }
 
-  setBackend(b) {
-    if (b === this.backend) return;
-    const was = this.status;
-    this.backend = b;
-    this.persist();
-    if (was === "ready" || was === "loading") {
-      this.cancel();
+  /**
+   * Switching backend never downloads again: a loaded model reopens from browser storage in about
+   * a second, and a model still downloading finishes first (its pack is stored), then reopens.
+   */
+  setBackend(backend) {
+    if (backend === this.backend) return;
+    this.backend = backend;
+    this.#persist();
+    if (this.status === "ready") {
       this.unload();
       this.load();
-    } else this.emit();
+    } else this.#emit();
   }
 
-  setCustomUrl(u) {
-    this.customUrl = u.trim();
-    this.persist();
-    this.emit();
+  setCustomUrl(url) {
+    this.customUrl = url.trim();
+    this.#persist();
+    this.#emit();
   }
 
-  async load(m) {
-    if (m && m !== this.model) this.select(m);
-    if (this.kevala || this.ctrl) return this.whenReady();
+  async load(model) {
+    if (model && model !== this.model) this.select(model);
+    if (this.kevala || this.#abort) return this.whenReady();
     const src = this.source();
     if (!src) {
       this.status = "error";
       this.error = "Paste the URL of a .kevala pack first.";
-      this.emit();
+      this.#emit();
       return null;
     }
-    const ctrl = new AbortController();
-    this.ctrl = ctrl;
+    const abort = new AbortController();
+    this.#abort = abort;
     this.status = "loading";
     this.error = null;
     this.progress = { frac: 0, indet: true, label: "Starting…" };
-    this.persist();
-    this.emit();
-    const t0 = performance.now();
-    let conv = "";
-    let dl = 0;
-    const set = (frac, indet, label) => {
-      this.progress = { frac, indet, label };
-      this.emit();
+    this.#persist();
+    this.#emit();
+    const tracking = { startedAt: performance.now(), convertNote: "", downloadTotal: 0 };
+    const onProgress = (event) => {
+      if (abort.signal.aborted) return;
+      if (event.phase === "download" && event.total) tracking.downloadTotal = event.total;
+      if (event.phase === "convert") tracking.convertNote = ` · ${event.loaded}/${event.total} tensors converted`;
+      const progress = progressOf(event, tracking);
+      if (!progress) return;
+      this.progress = progress;
+      this.#emit();
     };
+    const backend = this.backend;
     try {
-      const kevala = await Kevala.load({
-        model: src,
-        backend: this.backend,
-        signal: ctrl.signal,
-        onProgress: (p) => {
-          if (ctrl.signal.aborted) return;
-          if (p.phase === "download" && p.total) {
-            dl = p.total;
-            const secs = (performance.now() - t0) / 1000;
-            const rate = secs > 0.5 ? ` · ${fmtBytes(p.loaded / secs)}/s` : "";
-            set(p.loaded / p.total, false, `Downloading ${fmtBytes(p.loaded)} of ${fmtBytes(p.total)}${rate}${conv}`);
-          } else if (p.phase === "download") {
-            set(0, true, `Fetching ${p.file || "files"}…`);
-          } else if (p.phase === "convert") {
-            conv = ` · ${p.loaded}/${p.total} tensors converted`;
-            if (!dl) set(p.loaded / p.total, false, `Converting to int8: ${p.loaded}/${p.total} tensors`);
-          } else if (p.phase === "cache") {
-            set(1, !p.total, p.loaded ? `Reading ${fmtBytes(p.total)} from browser storage…` : "Saving the pack to browser storage…");
-          } else if (p.phase === "init") {
-            set(1, true, p.message || "Initializing…");
-          } else if (p.phase === "warmup") {
-            set(1, true, "Warming up…");
-          }
-        },
-      });
-      if (this.ctrl !== ctrl) {
+      const kevala = await Kevala.load({ model: src, backend, signal: abort.signal, onProgress });
+      if (this.#abort !== abort) {
         kevala.dispose();
         return null;
       }
-      this.ctrl = null;
+      this.#abort = null;
+      if (this.backend !== backend) {
+        // the backend changed while the pack downloaded: it is stored now, so reopen from disk
+        kevala.dispose();
+        return this.load();
+      }
       this.kevala = kevala;
       this.status = "ready";
       this.progress = null;
-      this.persist();
-      this.emit();
-      this.settle(kevala);
+      this.#persist();
+      this.#emit();
+      this.#settle(kevala);
       this.refreshCache();
       return kevala;
     } catch (e) {
-      if (this.ctrl !== ctrl) return null;
-      this.ctrl = null;
+      if (this.#abort !== abort) return null;
+      this.#abort = null;
       const aborted = e?.name === "AbortError" || /abort|cancel/i.test(e?.message || "");
       this.status = aborted ? "idle" : "error";
       this.error = aborted ? null : e?.message || String(e);
       this.progress = null;
-      this.persist();
-      this.emit();
-      this.settle(null);
+      this.#persist();
+      this.#emit();
+      this.#settle(null);
       return null;
     }
   }
 
   cancel() {
-    if (!this.ctrl) return;
-    this.ctrl.abort();
-    this.ctrl = null;
+    if (!this.#abort) return;
+    this.#abort.abort();
+    this.#abort = null;
     this.status = "idle";
     this.progress = null;
-    this.persist();
-    this.emit();
-    this.settle(null);
+    this.#persist();
+    this.#emit();
+    this.#settle(null);
   }
 
   unload() {
@@ -250,8 +281,8 @@ class Session extends EventTarget {
     this.kevala.dispose();
     this.kevala = null;
     this.status = "idle";
-    this.persist();
-    this.emit();
+    this.#persist();
+    this.#emit();
   }
 
   async clearCache() {
@@ -260,10 +291,10 @@ class Session extends EventTarget {
   }
 
   /** A one-line description of what loading the current choice costs. */
-  costLine(m = this.model) {
-    const spec = MODELS[m];
+  costLine(model = this.model) {
+    const spec = MODELS[model];
     if (LOCAL && !SHOT) return "Dev mode: loads the local pack from this server.";
-    if (this.cached[m]) return "Cached in this browser: loads in about a second.";
+    if (this.cached[model]) return "Cached in this browser: loads in about a second.";
     if (!spec) return "Loads the pack from its URL and caches it.";
     return `First load: ${fmtBytes(spec.download)} from Hugging Face, converted to a ${fmtBytes(spec.pack)} int8 pack and cached.`;
   }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>kevala · decision models that run in the page</title>
-<meta name="description" content="kevala runs the Laya and Kev-0.8B decision models inside a web page, on WebGPU or WebAssembly. Ask typed questions about text; get a probability for every option in about 10 ms, with no server.">
+<meta name="description" content="kevala runs the Laya and Kev-0.8B decision models inside a web page, on WebGPU or WebAssembly. It answers typed questions about text with a probability for every option, in about 10 ms on WebGPU and without a server.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='1' y='1' width='30' height='30' rx='9' fill='%230f131b' stroke='%237aa2ff' stroke-width='2'/%3E%3Cpath d='M11.5 7.5v17M21 12.5l-9 6.5M15.6 16.4l5.9 8.1' fill='none' stroke='%2345e0c0' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/kevala.css">
 <link rel="stylesheet" href="app/app.css">
@@ -13,8 +13,17 @@
 <body>
 <header class="nav"></header>
 <main id="app"></main>
-<footer class="site"><div class="wrap"><span>kevala · <a href="https://github.com/bvolpato/kevala">source</a> · Apache-2.0</span><span><a href="#/playground">Playground</a> · <a href="#/tetris">Tetris</a> · <a href="#/guardrail">Guardrail</a> · <a href="#/inbox">Inbox</a> · <a href="#/how">How it works</a> · <a href="bench.html">Bench</a> · <a href="parity.html">Parity</a></span></div></footer>
-<noscript><div class="wrap"><p class="notice" style="margin:40px 0">kevala runs models in your browser with JavaScript and WebAssembly. Please enable JavaScript.</p></div></noscript>
+<footer class="site">
+  <div class="wrap">
+    <span>kevala · <a href="https://github.com/bvolpato/kevala">source</a> · Apache-2.0</span>
+    <span>
+      <a href="#/playground">Playground</a> · <a href="#/tetris">Tetris</a> · <a href="#/guardrail">Guardrail</a> ·
+      <a href="#/inbox">Inbox</a> · <a href="#/how">How it works</a> · <a href="bench.html">Bench</a> ·
+      <a href="parity.html">Parity</a>
+    </span>
+  </div>
+</footer>
+<noscript><div class="wrap"><p class="notice" style="margin:40px 0">kevala runs models in your browser with JavaScript and WebAssembly. Enable JavaScript to use this site.</p></div></noscript>
 <script type="module" src="app/main.js"></script>
 </body>
 </html>

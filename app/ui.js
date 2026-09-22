@@ -6,8 +6,10 @@ import { session, MODELS } from "./session.js";
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
+const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
 export function esc(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  return String(s).replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
 }
 
 export function fmtBytes(n) {
@@ -27,13 +29,13 @@ export function fmtMs(ms) {
 }
 
 export function debounce(fn, ms) {
-  let t = 0;
-  const d = (...a) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...a), ms);
+  let timer = 0;
+  const debounced = (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
   };
-  d.cancel = () => clearTimeout(t);
-  return d;
+  debounced.cancel = () => clearTimeout(timer);
+  return debounced;
 }
 
 export function backendLabel(info) {
@@ -44,218 +46,285 @@ export function backendLabel(info) {
 
 export function backendBadge(info) {
   if (!info) return `<span class="badge"><span class="dot"></span>not loaded</span>`;
-  const gpu = info.backend === "webgpu";
-  return `<span class="badge ${gpu ? "gpu" : "cpu"}" title="${esc(info.backend)}${info.gpu ? ` · ${esc(info.gpu)}` : ""}"><span class="dot"></span>${esc(backendLabel(info))}</span>`;
+  const kind = info.backend === "webgpu" ? "gpu" : "cpu";
+  const title = `${esc(info.backend)}${info.gpu ? ` · ${esc(info.gpu)}` : ""}`;
+  return `<span class="badge ${kind}" title="${title}"><span class="dot"></span>${esc(backendLabel(info))}</span>`;
 }
 
-// ---------------------------------------------------------------------------------------------
-// syntax highlighting
+// Syntax highlighting
+
+// groups: 1 a string (a key when group 2, its colon, follows), 3 a number, 4 a literal, 5 punctuation
+const JSON_TOKENS = /("(?:[^"\\\n]|\\.)*"?)(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],])/g;
 
 /**
  * Highlights JSON (or JSON-like text being typed). Every character of the input is kept, so the
  * result can sit under a textarea as its highlighted twin.
  */
 export function highlightJSON(text) {
-  const re = /("(?:[^"\\\n]|\\.)*"?)(\s*:)?|(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)|\b(true|false|null)\b|([{}[\],])/g;
   let out = "";
   let last = 0;
-  let m;
-  while ((m = re.exec(text))) {
-    out += esc(text.slice(last, m.index));
-    if (m[1] !== undefined) out += m[2] ? `<span class="j-k">${esc(m[1])}</span>${esc(m[2])}` : `<span class="j-s">${esc(m[1])}</span>`;
-    else if (m[3] !== undefined) out += `<span class="j-n">${m[3]}</span>`;
-    else if (m[4] !== undefined) out += `<span class="j-b">${m[4]}</span>`;
-    else out += `<span class="j-p">${esc(m[5])}</span>`;
-    last = m.index + m[0].length;
+  for (const match of text.matchAll(JSON_TOKENS)) {
+    const [token, string, colon, number, literal, punct] = match;
+    out += esc(text.slice(last, match.index));
+    if (string !== undefined) {
+      out += colon ? `<span class="j-k">${esc(string)}</span>${esc(colon)}` : `<span class="j-s">${esc(string)}</span>`;
+    } else if (number !== undefined) out += `<span class="j-n">${number}</span>`;
+    else if (literal !== undefined) out += `<span class="j-b">${literal}</span>`;
+    else out += `<span class="j-p">${esc(punct)}</span>`;
+    last = match.index + token.length;
   }
   return out + esc(text.slice(last));
 }
 
-/** Tiny highlighter for the JS snippets on the site (keywords, strings, comments). */
+const JS_TOKENS = new RegExp(
+  [
+    /(\/\/[^\n]*)/.source,
+    /("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)/.source,
+    /\b(import|from|const|let|await|async|return|if|else|new|export|function|for|of)\b/.source,
+    /\b(\d+(?:\.\d+)?)\b/.source,
+    /\b([A-Za-z_$][\w$]*)(?=\()/.source,
+  ].join("|"),
+  "g",
+);
+
+/** Tiny highlighter for the JS snippets on the site: comments, strings, keywords, numbers, calls. */
 export function highlight(code) {
-  const out = [];
-  const re = /(\/\/[^\n]*)|("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|`(?:[^`\\]|\\.)*`)|\b(import|from|const|let|await|async|return|if|else|new|export|function|for|of)\b|\b(\d+(?:\.\d+)?)\b|\b([A-Za-z_$][\w$]*)(?=\()/g;
+  let out = "";
   let last = 0;
-  let m;
-  while ((m = re.exec(code))) {
-    out.push(esc(code.slice(last, m.index)));
-    const cls = m[1] ? "c" : m[2] ? "s" : m[3] ? "k" : m[4] ? "n" : "f";
-    out.push(`<span class="tok-${cls}">${esc(m[0])}</span>`);
-    last = m.index + m[0].length;
+  for (const match of code.matchAll(JS_TOKENS)) {
+    const [token, comment, string, keyword, number] = match;
+    out += esc(code.slice(last, match.index));
+    const kind = comment ? "c" : string ? "s" : keyword ? "k" : number ? "n" : "f";
+    out += `<span class="tok-${kind}">${esc(token)}</span>`;
+    last = match.index + token.length;
   }
-  out.push(esc(code.slice(last)));
-  return out.join("");
+  return out + esc(code.slice(last));
 }
 
 /** Adds copy buttons to every `.code` block under `root`. */
 export function wireCopy(root = document) {
   for (const block of root.querySelectorAll(".code")) {
     if (block.querySelector(".copy")) continue;
-    const b = document.createElement("button");
-    b.className = "btn small ghost copy";
-    b.type = "button";
-    b.textContent = "Copy";
-    b.addEventListener("click", async () => {
+    const button = document.createElement("button");
+    button.className = "btn small ghost copy";
+    button.type = "button";
+    button.textContent = "Copy";
+    button.addEventListener("click", async () => {
       const text = block.querySelector("pre").innerText;
       try {
         await navigator.clipboard.writeText(text);
-        b.textContent = "Copied";
+        button.textContent = "Copied";
       } catch {
-        b.textContent = "Select and copy";
+        button.textContent = "Select and copy";
       }
-      setTimeout(() => (b.textContent = "Copy"), 1400);
+      setTimeout(() => (button.textContent = "Copy"), 1400);
     });
-    block.appendChild(b);
+    block.appendChild(button);
   }
 }
 
-// ---------------------------------------------------------------------------------------------
-// answers: one card per question, bars keyed by option so updates animate in place
+// Answers: one card per question, with bars keyed by option so updates animate in place
 
-function optionsOf(a) {
-  if (a.type === "noul") return [["true", a.noul], ["false", 1 - a.noul]];
-  return Object.entries(a.probabilities || {});
+function optionsOf(answer) {
+  if (answer.type === "noul") {
+    return [
+      ["true", answer.noul],
+      ["false", 1 - answer.noul],
+    ];
+  }
+  return Object.entries(answer.probabilities || {});
 }
 
 function argmax(probs) {
   let best = null;
-  for (const [k, p] of Object.entries(probs || {})) if (best === null || p > probs[best]) best = k;
+  for (const [key, p] of Object.entries(probs || {})) if (best === null || p > probs[best]) best = key;
   return best;
 }
 
-function verdictOf(a) {
-  if (a.type === "noul") return a.noul >= 0.5 ? "yes" : "no";
-  if (a.type === "choice") return a.choice;
-  if (a.type === "score") {
-    const k = argmax(a.probabilities);
-    const label = a.legend && typeof a.legend === "object" ? a.legend[k] : a.legend;
-    return `${label ?? k}${typeof a.score === "number" ? `  ·  ${a.score.toFixed(2)}` : ""}`;
+function verdictOf(answer) {
+  if (answer.type === "noul") return answer.noul >= 0.5 ? "yes" : "no";
+  if (answer.type === "choice") return answer.choice;
+  if (answer.type === "score") {
+    const key = argmax(answer.probabilities);
+    const { legend, score } = answer;
+    const label = legend && typeof legend === "object" ? legend[key] : legend;
+    return `${label ?? key}${typeof score === "number" ? `  ·  ${score.toFixed(2)}` : ""}`;
   }
   return "";
 }
 
-/** Renders or updates answers into `el`. `labels` can rename options per question. */
+/** The label of one option: a score's legend names its levels. */
+function optionLabel(answer, key) {
+  const { legend } = answer;
+  if (answer.type === "score" && legend && typeof legend === "object") return legend[key] ?? key;
+  return key;
+}
+
+const ANSWER_CARD = [
+  `<div class="head"><span class="qid"></span><span class="qtype"></span></div>`,
+  `<div class="instr"></div>`,
+  `<div class="row" style="justify-content:space-between"><span class="verdict"></span></div>`,
+  `<div class="bars"></div>`,
+  `<div class="meta"></div>`,
+].join("");
+
+const ANSWER_BAR = `<span class="k"></span><span class="track"><span class="fill"></span></span><span class="v"></span>`;
+
+function answerCard(el, id) {
+  let card = el.querySelector(`[data-q="${CSS.escape(id)}"]`);
+  if (!card) {
+    card = document.createElement("div");
+    card.className = "answer";
+    card.dataset.q = id;
+    card.innerHTML = ANSWER_CARD;
+    el.appendChild(card);
+  }
+  return card;
+}
+
+function answerBar(bars, key) {
+  let bar = bars.querySelector(`[data-k="${CSS.escape(key)}"]`);
+  if (!bar) {
+    bar = document.createElement("div");
+    bar.className = "bar";
+    bar.dataset.k = key;
+    bar.innerHTML = ANSWER_BAR;
+    bars.appendChild(bar);
+  }
+  return bar;
+}
+
+/**
+ * Renders or updates answers into `el`. `labels` can rename options per question; `max` caps the
+ * bars per question to the most likely options.
+ */
 export function renderAnswers(el, response, questions = {}, { labels = {}, max = 0 } = {}) {
   el.classList.add("answers");
   const answers = response?.answers || {};
-  const seen = new Set();
-  for (const id of Object.keys(answers)) {
-    seen.add(id);
-    const a = answers[id];
-    let card = el.querySelector(`[data-q="${CSS.escape(id)}"]`);
-    if (!card) {
-      card = document.createElement("div");
-      card.className = "answer";
-      card.dataset.q = id;
-      card.innerHTML = `<div class="head"><span class="qid"></span><span class="qtype"></span></div><div class="instr"></div><div class="row" style="justify-content:space-between"><span class="verdict"></span></div><div class="bars"></div><div class="meta"></div>`;
-      el.appendChild(card);
-    }
+  for (const [id, answer] of Object.entries(answers)) {
+    const card = answerCard(el, id);
     card.querySelector(".qid").textContent = id;
-    card.querySelector(".qtype").textContent = a.type;
+    card.querySelector(".qtype").textContent = answer.type;
     card.querySelector(".instr").textContent = questions[id]?.instructions || "";
-    let opts = optionsOf(a);
-    const top = opts.reduce((b, o) => (o[1] > b[1] ? o : b), opts[0] || ["", 0]);
-    const hidden = max && opts.length > max ? opts.length - max : 0;
-    if (hidden) opts = opts.slice().sort((x, y) => y[1] - x[1]).slice(0, max);
-    const v = card.querySelector(".verdict");
-    v.textContent = verdictOf(a);
-    v.style.color = a.type === "noul" ? (a.noul >= 0.5 ? "var(--accent-2)" : "var(--text-2)") : "var(--text)";
+
+    let options = optionsOf(answer);
+    const [topKey] = options.reduce((best, o) => (o[1] > best[1] ? o : best), options[0] || ["", 0]);
+    const hidden = max && options.length > max ? options.length - max : 0;
+    if (hidden) options = [...options].sort((x, y) => y[1] - x[1]).slice(0, max);
+
+    const verdict = card.querySelector(".verdict");
+    verdict.textContent = verdictOf(answer);
+    if (answer.type === "noul") verdict.style.color = answer.noul >= 0.5 ? "var(--accent-2)" : "var(--text-2)";
+    else verdict.style.color = "var(--text)";
+
     const bars = card.querySelector(".bars");
-    const keep = new Set();
-    for (const [k, p] of opts) {
-      keep.add(k);
-      let b = bars.querySelector(`[data-k="${CSS.escape(k)}"]`);
-      if (!b) {
-        b = document.createElement("div");
-        b.className = "bar";
-        b.dataset.k = k;
-        b.innerHTML = `<span class="k"></span><span class="track"><span class="fill"></span></span><span class="v"></span>`;
-        bars.appendChild(b);
-      }
-      const label = labels[id]?.[k] ?? (a.type === "score" && a.legend && typeof a.legend === "object" ? a.legend[k] ?? k : k);
-      b.querySelector(".k").textContent = label;
-      b.querySelector(".k").title = label;
-      b.querySelector(".v").textContent = `${(p * 100).toFixed(p >= 0.995 || p < 0.005 ? 0 : 1)}%`;
-      b.classList.toggle("top", k === top[0]);
-      requestAnimationFrame(() => (b.querySelector(".fill").style.width = `${(p * 100).toFixed(2)}%`));
+    const shown = new Set();
+    for (const [key, p] of options) {
+      shown.add(key);
+      const bar = answerBar(bars, key);
+      const label = labels[id]?.[key] ?? optionLabel(answer, key);
+      const name = bar.querySelector(".k");
+      name.textContent = label;
+      name.title = label;
+      bar.querySelector(".v").textContent = `${(p * 100).toFixed(p >= 0.995 || p < 0.005 ? 0 : 1)}%`;
+      bar.classList.toggle("top", key === topKey);
+      requestAnimationFrame(() => (bar.querySelector(".fill").style.width = `${(p * 100).toFixed(2)}%`));
     }
-    for (const b of [...bars.children]) if (!keep.has(b.dataset.k)) b.remove();
-    if (hidden) for (const [k] of opts) bars.appendChild(bars.querySelector(`[data-k="${CSS.escape(k)}"]`));
+    for (const bar of [...bars.children]) if (!shown.has(bar.dataset.k)) bar.remove();
+    // a capped list is ordered by probability
+    if (hidden) for (const [key] of options) bars.appendChild(bars.querySelector(`[data-k="${CSS.escape(key)}"]`));
+
     const meta = [];
     if (hidden) meta.push(`+${hidden} more`);
-    if (a.confidence != null) meta.push(`confidence ${a.confidence.toFixed(2)}`);
-    if (a.action?.act_probability != null) meta.push(`act ${a.action.act_probability.toFixed(2)}`);
+    if (answer.confidence != null) meta.push(`confidence ${answer.confidence.toFixed(2)}`);
+    if (answer.action?.act_probability != null) meta.push(`act ${answer.action.act_probability.toFixed(2)}`);
     card.querySelector(".meta").textContent = meta.join("  ·  ");
   }
-  for (const c of [...el.children]) if (c.dataset.q && !seen.has(c.dataset.q)) c.remove();
+  for (const card of [...el.children]) if (card.dataset.q && !Object.hasOwn(answers, card.dataset.q)) card.remove();
 }
 
 /**
  * Runs `items` ({ state, questions }) in growing batches (1, 2, 4, 8, ...) and calls
  * `onEach(response, index)` as soon as each batch returns, so the first answers show within
- * one short pass instead of after the whole set. Resolves to all responses in order.
+ * one short pass instead of after the whole set; `onBatch(done)` follows each batch. Resolves
+ * to all responses in order, or null once `isStale()` says the run is no longer wanted.
  */
-export async function decideStream(kevala, items, onEach, { isStale = () => false } = {}) {
+export async function decideStream(kevala, items, onEach, { isStale = () => false, onBatch } = {}) {
   const out = new Array(items.length);
-  let i = 0;
-  let n = 1;
-  while (i < items.length) {
+  let start = 0;
+  let batchSize = 1;
+  while (start < items.length) {
     if (isStale()) return null;
-    const part = items.slice(i, i + n);
-    const rs = part.length === 1 ? [await kevala.decide(part[0].state, part[0].questions)] : await kevala.decideMany(part);
+    const batch = items.slice(start, start + batchSize);
+    const responses =
+      batch.length === 1 ? [await kevala.decide(batch[0].state, batch[0].questions)] : await kevala.decideMany(batch);
     if (isStale()) return null;
-    rs.forEach((r, j) => {
-      out[i + j] = r;
-      onEach?.(r, i + j);
+    responses.forEach((response, j) => {
+      out[start + j] = response;
+      onEach?.(response, start + j);
     });
-    i += part.length;
-    n *= 2;
+    start += batch.length;
+    onBatch?.(start);
+    batchSize *= 2;
   }
   return out;
 }
 
-// ---------------------------------------------------------------------------------------------
-// the model gate: shown in a view until the session's model is ready
+// The model gate: shown in a view until the session's model is ready
+
+function gateLoadingHTML(name) {
+  return [
+    `<div class="gate-row">`,
+    `<span class="spin"></span>`,
+    `<div class="gate-t"><b>Loading ${name}…</b><span data-f="label"></span></div>`,
+    `<button type="button" class="btn small ghost" data-act="cancel">Cancel</button>`,
+    `</div>`,
+    `<div class="progress"><i></i></div>`,
+    `<p class="tiny faint">The download continues if you switch to another page of this site.</p>`,
+  ].join("");
+}
+
+function gateIdleHTML(s, name, what) {
+  const failed = s.status === "error";
+  return [
+    `<div class="gate-row">`,
+    `<div class="gate-t"><b>Load ${name} to ${esc(what)}</b><span>${esc(s.costLine())}</span></div>`,
+    `<button type="button" class="btn primary" data-act="load">${failed ? "Retry" : `Load ${name}`}</button>`,
+    `</div>`,
+    failed ? `<p class="gate-err">Could not load: ${esc(s.error || "unknown error")}</p>` : "",
+  ].join("");
+}
 
 /**
  * Fills `el` with a compact "load the model" card that follows the session: a load button,
  * then live progress, then it hides itself. `what` says what the model is needed for.
+ * Returns the unsubscribe function.
  */
 export function modelGate(el, what = "run this demo") {
   el.classList.add("gate");
-  let mode = "";
-  const build = (s) => {
-    const name = esc(s.nameOf());
-    if (s.status === "loading") {
-      el.innerHTML = `<div class="gate-row"><span class="spin"></span><div class="gate-t"><b>Loading ${name}…</b><span data-f="label"></span></div><button type="button" class="btn small ghost" data-act="cancel">Cancel</button></div>
-        <div class="progress"><i></i></div>
-        <p class="tiny faint">Keep browsing: the download continues when you switch tabs.</p>`;
-    } else {
-      const err = s.status === "error" ? `<p class="gate-err">Could not load: ${esc(s.error || "unknown error")}</p>` : "";
-      el.innerHTML = `<div class="gate-row"><div class="gate-t"><b>Load ${name} to ${esc(what)}</b><span>${esc(s.costLine())}</span></div><button type="button" class="btn primary" data-act="load">${s.status === "error" ? "Retry" : `Load ${name}`}</button></div>${err}`;
-    }
-  };
+  let builtFor = "";
   const render = (s) => {
     el.classList.toggle("hidden", s.ready);
-    if (s.ready) return (mode = "ready");
-    const m = `${s.status}|${s.model}|${s.cached[s.model]}|${s.error}`;
-    if (m !== mode) {
-      mode = m;
-      build(s);
+    if (s.ready) return (builtFor = "ready");
+    // rebuild only when the card's content changes, so progress updates do not flicker
+    const key = `${s.status}|${s.model}|${s.cached[s.model]}|${s.error}`;
+    if (key !== builtFor) {
+      builtFor = key;
+      const name = esc(s.nameOf());
+      el.innerHTML = s.status === "loading" ? gateLoadingHTML(name) : gateIdleHTML(s, name, what);
     }
     if (s.status === "loading") {
-      const p = s.progress || {};
-      el.querySelector('[data-f="label"]').textContent = p.label || "";
+      const progress = s.progress || {};
+      el.querySelector('[data-f="label"]').textContent = progress.label || "";
       const bar = el.querySelector(".progress");
-      bar.classList.toggle("indet", !!p.indet);
-      bar.firstElementChild.style.width = `${Math.round((p.frac || 0) * 100)}%`;
+      bar.classList.toggle("indet", !!progress.indet);
+      bar.firstElementChild.style.width = `${Math.round((progress.frac || 0) * 100)}%`;
     }
   };
   el.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-act]");
-    if (!b) return;
-    if (b.dataset.act === "load") session.load();
-    if (b.dataset.act === "cancel") session.cancel();
+    const action = e.target.closest("[data-act]")?.dataset.act;
+    if (action === "load") session.load();
+    if (action === "cancel") session.cancel();
   });
   render(session);
   return session.on(render);
@@ -264,11 +333,11 @@ export function modelGate(el, what = "run this demo") {
 /** Adds a stylesheet (resolved against the calling module's URL) once. */
 export function css(href) {
   if (document.querySelector(`link[data-css="${href}"]`)) return;
-  const l = document.createElement("link");
-  l.rel = "stylesheet";
-  l.href = href;
-  l.dataset.css = href;
-  document.head.appendChild(l);
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = href;
+  link.dataset.css = href;
+  document.head.appendChild(link);
 }
 
 export const REPO = "https://github.com/bvolpato/kevala";
@@ -280,18 +349,21 @@ export const CDN = "https://cdn.jsdelivr.net/npm/kevala@0.1/js/src/index.js";
  * Formats a value as JavaScript source for the code snippets on the site: unquoted keys where
  * they are identifiers, short arrays and objects on one line, 2-space indentation.
  */
-export function js(v, indent = "") {
+export function js(value, indent = "") {
   const inner = indent + "  ";
-  if (Array.isArray(v)) {
-    const one = `[${v.map((x) => js(x, inner)).join(", ")}]`;
-    return one.length < 80 && !one.includes("\n") ? one : `[\n${v.map((x) => inner + js(x, inner)).join(",\n")},\n${indent}]`;
+  const fitsOneLine = (s) => s.length < 80 && !s.includes("\n");
+  if (Array.isArray(value)) {
+    const items = value.map((x) => js(x, inner));
+    const oneLine = `[${items.join(", ")}]`;
+    return fitsOneLine(oneLine) ? oneLine : `[\n${items.map((x) => inner + x).join(",\n")},\n${indent}]`;
   }
-  if (v && typeof v === "object") {
+  if (value && typeof value === "object") {
     const key = (k) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k));
-    const parts = Object.entries(v).map(([k, x]) => `${key(k)}: ${js(x, inner)}`);
-    const one = `{ ${parts.join(", ")} }`;
-    return one.length < 80 && !one.includes("\n") ? one : `{\n${parts.map((x) => inner + x).join(",\n")},\n${indent}}`;
+    const entries = Object.entries(value).map(([k, x]) => `${key(k)}: ${js(x, inner)}`);
+    const oneLine = `{ ${entries.join(", ")} }`;
+    return fitsOneLine(oneLine) ? oneLine : `{\n${entries.map((x) => inner + x).join(",\n")},\n${indent}}`;
   }
-  return JSON.stringify(v);
+  return JSON.stringify(value);
 }
+
 export { session, MODELS };

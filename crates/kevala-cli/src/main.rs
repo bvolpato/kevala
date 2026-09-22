@@ -16,6 +16,7 @@ usage:
   kevala parity-kev <pack.kevala> <golden-kev.json>
   kevala bench <pack.kevala> [--tokens 64] [--questions 1] [--runs 5] [--shards N] [--warm]
   kevala inspect <pack.kevala>
+  kevala wgsl <kernel> [--f16] [--subgroups] [--rows 1-4] [--groups 1-2] [--n N --k K]
 ";
 
 fn main() {
@@ -28,6 +29,7 @@ fn main() {
         Some("parity-kev") => parity_kev(&args[1..]),
         Some("bench") => bench(&args[1..]),
         Some("inspect") => inspect(&args[1..]),
+        Some("wgsl") => wgsl(&args[1..]),
         Some("kbench") => kbench(),
         _ => {
             eprint!("{USAGE}");
@@ -467,5 +469,32 @@ fn kbench() -> Result<(), String> {
             );
         }
     }
+    Ok(())
+}
+
+/// Prints a GPU kernel as the browser runtime would compile it.
+fn wgsl(args: &[String]) -> Result<(), String> {
+    let kernel = args
+        .first()
+        .filter(|a| !a.starts_with("--"))
+        .ok_or_else(|| format!("which kernel? one of: {}", kevala::gpu::KERNELS.join(", ")))?;
+    let number = |name: &str| -> Result<Option<u32>, String> {
+        flag(args, name).map(|v| v.parse().map_err(|_| format!("bad {name}"))).transpose()
+    };
+    let mut spec = kevala::gpu::Spec {
+        f16: args.iter().any(|a| a == "--f16"),
+        subgroups: args.iter().any(|a| a == "--subgroups"),
+        ..Default::default()
+    };
+    if let Some(r) = number("--rows")? {
+        spec.rows = r;
+    }
+    if let Some(g) = number("--groups")? {
+        spec.groups = g;
+    }
+    if let (Some(n), Some(k)) = (number("--n")?, number("--k")?) {
+        spec.shape = Some((n, k));
+    }
+    print!("{}", kevala::gpu::wgsl(kernel, &spec)?);
     Ok(())
 }

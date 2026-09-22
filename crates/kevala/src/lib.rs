@@ -4,6 +4,7 @@ pub mod content;
 pub mod convert;
 pub mod convert_kev;
 pub mod engine;
+pub mod gpu;
 pub mod json;
 pub mod kernels;
 pub mod kev;

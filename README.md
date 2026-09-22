@@ -77,11 +77,12 @@ On an Apple M4 Max, with WebGPU in Chrome:
 
 | | Laya | Kev-0.8B |
 |---|---:|---:|
-| short request (one question, 30 to 45 tokens) | **11 ms** | **13 ms** |
+| short request (one question, 30 to 45 tokens) | **11 ms** | **11 ms** |
 | the same state asked again (cache hit) | | **10 ms** |
 
-Laya scores 32 states in one pass in 186 ms. Without WebGPU, a short request takes about 0.4 s on
-one CPU core. [`bench.html`](https://bvolpato.github.io/kevala/bench.html) measures your own machine.
+Laya scores 32 states in one pass in 186 ms, and Kev answers a 533-token state in 116 ms. Without
+WebGPU, a short request takes about 0.4 s on one CPU core. The Playground's Profile tab (or
+`kevala.profile(true)`) shows the time of every GPU kernel for any request. [`bench.html`](https://bvolpato.github.io/kevala/bench.html) measures your own machine.
 
 Kev reuses its KV cache: all questions about a state share one pass over it, and the carries of recent
 states stay resident, so a repeated state only runs its question tokens and a state that extends a
@@ -137,6 +138,7 @@ const kevala = await Kevala.load({
 await kevala.decide(state, questions, { parts });  // one request, one forward pass
 await kevala.decideMany([{ state, questions }]);   // many states, still one pass
 kevala.info;      // { arch, backend, gpu, threads, modalities, model, config, pack, loadMs }
+await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
 ```
 
@@ -169,6 +171,9 @@ page ─► index.js ─► engine worker ─► coordinator (Rust → WebAssemb
   templates, both model families, the `.kevala` pack format and the checkpoint converters (safetensors,
   LoRA adapters, `torch.save` files) are all in `crates/kevala`, and the same code runs natively for the
   CLI and tests.
+- **GPU kernels in the crate too.** WebGPU only runs WGSL, so the kernels are `.wgsl` sources in
+  `crates/kevala/src/wgsl`, specialized by Rust (f16 tiles, tile rows for the input length, subgroup
+  variants) and served by the WebAssembly binary. The JavaScript only builds pipelines and dispatches.
 - **`.kevala` packs** hold int8 weights with a scale per 32 weights, 64-byte aligned, and can be split
   while they stream: the coordinator, the GPU and each CPU shard receive only the bytes they keep.
 - **Pluggable families.** A pack's `config.arch` picks a family from a registry in Rust and an
@@ -188,6 +193,7 @@ kevala convert-kev --base <qwen3.5-dir> --kev <kev-dir> -o kev-0.8b-q8.kevala
 kevala decide laya-q8.kevala --state "..." --questions '{"q": {"type": "noul", "instructions": "..."}}'
 kevala parity laya-q8.kevala tests/fixtures/golden.json
 kevala bench kev-0.8b-q8.kevala --tokens 128
+kevala wgsl matmul --f16 --rows 3                  # a GPU kernel, specialized
 
 node scripts/serve.mjs . --port=8080         # static server for the site and examples
 cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)

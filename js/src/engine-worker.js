@@ -138,6 +138,8 @@ async function load(o) {
   const threads = Math.max(1, Math.min(o.threads || Math.min(hw, 8), maxShards));
 
   const coord = await Wasm.create(module);
+  // the GPU kernels are WGSL sources in the Rust crate; the binary hands them out specialized
+  if (gpu) gpu.wgsl = (kernel, spec = {}) => coord.withInput(JSON.stringify({ kernel, ...spec }), (p, l) => (coord.check(coord.x.kevala_wgsl(p, l)), coord.outText()));
   const external = gpu || threads > 1;
   const layouts = external ? parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice()))) : [];
   const sinks = [];

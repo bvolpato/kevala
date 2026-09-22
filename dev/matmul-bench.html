@@ -5,7 +5,8 @@
 <script type="module">
 // Times every matmul kernel on Laya's shapes and checks they agree with each other.
 // ?kernels=matmul,matmul_h  ?shapes=44x3072x1024,1472x1024x2624
-import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH, dispatchMatmul, matmulLayout, rowsPerThread } from "../js/src/gpu.js";
+import { requestDevice, mmSplits, SPLIT_SCRATCH, dispatchMatmul, matmulLayout, rowsPerThread } from "../js/src/gpu.js";
+import { kernelSource } from "./wgsl.js";
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 window.mm = null;
 async function main() {
@@ -13,6 +14,7 @@ async function main() {
   const kernels = (q.get("kernels") || "matmul,matmul_h").split(",");
   const shapes = (q.get("shapes") || "44x3072x1024,44x5248x1024,44x1024x2624,140x3072x1024,512x3072x1024,512x5248x1024,1472x3072x1024,1472x5248x1024,1472x1024x2624,1472x1024x1024").split(",").map((s) => s.split("x").map(Number));
   const gpu = await requestDevice();
+  const wgsl = await kernelSource();
   const d = gpu.device;
   const U = GPUBufferUsage;
   const buf = (bytes, usage = U.STORAGE) => d.createBuffer({ size: Math.max(16, bytes), usage: usage | U.COPY_DST | U.COPY_SRC });
@@ -29,13 +31,13 @@ async function main() {
   };
   const code = (k, T) => {
     const { name, target, R, J } = spec(k, T);
-    return SHADERS.matmulKernel(name !== "matmul", target, R, J);
+    return wgsl("matmul", { f16: name !== "matmul", splitTarget: target, rows: R, groups: J });
   };
   const cache = new Map();
   const pipesFor = async (k, T) => {
     const { target, R, J } = spec(k, T);
     const key = `${k}|${R}`;
-    if (!cache.has(key)) cache.set(key, [await mk(code(k, T)), await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code: SHADERS.reduceKernel(target, 16 * R, 64 * J) }), entryPoint: "main" } })]);
+    if (!cache.has(key)) cache.set(key, [await mk(code(k, T)), await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code: wgsl("reduce", { splitTarget: target, rows: R, groups: J }) }), entryPoint: "main" } })]);
     return cache.get(key);
   };
   const part = buf(SPLIT_SCRATCH * 4);

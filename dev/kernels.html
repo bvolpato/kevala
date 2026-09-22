@@ -3,7 +3,9 @@
 <title>kevala GPU kernel tests</title>
 <pre id="log" style="font: 13px ui-monospace, monospace"></pre>
 <script type="module">
-import { SHADERS, requestDevice, mmSplits, SPLIT_SCRATCH } from "../js/src/gpu.js";
+import { requestDevice, mmSplits, SPLIT_SCRATCH } from "../js/src/gpu.js";
+import { kernelSource } from "./wgsl.js";
+const wgsl = await kernelSource();
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 const results = {};
 window.kernelResults = results;
@@ -33,8 +35,8 @@ async function main() {
     const Y0 = new Float32Array(T * N).map(r);
     const want = new Float32Array(T * N);
     for (let t = 0; t < T; t++) for (let n = 0; n < N; n++) { let s = 0; for (let k = 0; k < K; k++) s += X[t * K + k] * q[n * K + k] * S[n * (K / 32) + (k >> 5)]; want[t * N + n] = Y0[t * N + n] + s + B[n]; }
-    const p = await pipe(SHADERS.matmul, "matmul");
-    const pr = await pipe(SHADERS.reduce, "reduce");
+    const p = await pipe(wgsl("matmul"), "matmul");
+    const pr = await pipe(wgsl("reduce"), "reduce");
     const Yb = buf(Y0);
     const part = buf(new Float32Array(SPLIT_SCRATCH));
     const g = uni([T, 0, 0, 0]), pu = uni([N, K, 1, 1]), Bb = buf(B);
@@ -63,7 +65,7 @@ async function main() {
     const tok = new Uint32Array(T * 4); for (let t = 0; t < T; t++) tok.set([0, T, t, t % 3], t * 4);
     const want = new Float32Array(T * D);
     for (let t = 0; t < T; t++) { let m = 0; for (let c = 0; c < D; c++) m += X[t * D + c]; m /= D; let v = 0; for (let c = 0; c < D; c++) v += (X[t * D + c] - m) ** 2; v /= D; const inv = 1 / Math.sqrt(v + 1e-5); for (let c = 0; c < D; c++) want[t * D + c] = (X[t * D + c] - m) * inv * W[c] + Bs[c] + TE[(t % 3) * D + c]; }
-    const p = await pipe(SHADERS.norm, "norm");
+    const p = await pipe(wgsl("norm"), "norm");
     const Y = buf(new Float32Array(T * D));
     run(p, [uni([T, 0, 0, 0]), uni([D, 1, 1, { f: 1e-5 }]), buf(X), buf(W), buf(Bs), Y, buf(tok), buf(TE)], T);
     results.norm = maxErr(await read(Y, T * D), want);
@@ -82,7 +84,7 @@ async function main() {
       const m = Math.max(...sc); const e = sc.map((v) => Math.exp(v - m)); const z = e.reduce((a, b) => a + b, 0);
       for (let c = 0; c < hd; c++) { let o = 0; for (let j = lo; j < hi; j++) o += e[j - lo] * qkv[(s0 + j) * stride + 2 * W + h * hd + c]; want[i * W + h * hd + c] = o / z; }
     } }
-    const p = await pipe(SHADERS.attention_block, "attention");
+    const p = await pipe(wgsl("attention"), "attention");
     const blocks = [];
     st = 0;
     for (const L of lens) { for (let q0 = 0; q0 < L; q0 += 16) blocks.push(st, L, q0, 0); st += L; }
@@ -98,7 +100,7 @@ async function main() {
     const erf = (x) => { let s = x, t = x; for (let n = 1; n < 60; n++) { t *= -x * x / n; s += t / (2 * n + 1); } return (2 / Math.sqrt(Math.PI)) * s; };
     const want = new Float32Array(T * I);
     for (let t = 0; t < T; t++) for (let i = 0; i < I; i++) { const u = Uu[t * 2 * I + i]; want[t * I + i] = 0.5 * u * (1 + erf(u / Math.SQRT2)) * Uu[t * 2 * I + I + i]; }
-    const p = await pipe(SHADERS.geglu, "geglu");
+    const p = await pipe(wgsl("geglu"), "geglu");
     const A = buf(new Float32Array(T * I));
     run(p, [uni([T, 0, 0, 0]), uni([I, 0, 0, 0]), buf(Uu), A], Math.ceil((T * I) / 256));
     results.geglu = maxErr(await read(A, T * I), want);
@@ -112,7 +114,7 @@ async function main() {
     const tok = new Uint32Array(T * 4); for (let t = 0; t < T; t++) tok.set([0, T, t + 5, 0], t * 4);
     const want = qkv.slice();
     for (let t = 0; t < T; t++) for (let h = 0; h < 2 * heads; h++) for (let i = 0; i < 32; i++) { const o = ((1 * 512 + t + 5) * 32 + i) * 2; const c = cs[o], s = cs[o + 1]; const b = t * stride + h * 64; const x1 = qkv[b + i], x2 = qkv[b + i + 32]; want[b + i] = x1 * c - x2 * s; want[b + i + 32] = x2 * c + x1 * s; }
-    const p = await pipe(SHADERS.rope, "rope");
+    const p = await pipe(wgsl("rope"), "rope");
     const Q = buf(qkv);
     run(p, [uni([T, 0, 0, 0]), uni([heads, stride, 1, 0]), Q, buf(tok), buf(cs)], T, 2 * heads);
     results.rope = maxErr(await read(Q, T * stride), want);

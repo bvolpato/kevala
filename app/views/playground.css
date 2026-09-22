@@ -40,3 +40,10 @@
   .view-playground [data-pane] { max-height: none; }
   .view-playground .timing { grid-template-columns: repeat(2, 1fr); }
 }
+
+.view-playground [data-pane="profile"] { display: grid; gap: 10px; align-content: start; }
+.view-playground [data-pane="profile"].hidden { display: none; }
+.view-playground .pg-prof-sum { margin: 0; color: var(--text-2); }
+.view-playground .pg-prof td, .view-playground .pg-prof th { padding: 6px 10px; }
+.view-playground .pg-bar { display: inline-block; vertical-align: middle; width: 120px; height: 6px; border-radius: 4px; background: var(--surface-3); overflow: hidden; margin-right: 6px; }
+.view-playground .pg-bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; }

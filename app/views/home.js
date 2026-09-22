@@ -1,12 +1,11 @@
-// Home: the hero with a live mini demo on the shared session, the embed snippet, the demo cards
-// (with a small animated board on the Tetris card), the models and the credits. How it works,
-// the benchmarks, fidelity and limits live in the How view.
+// Home: the hero with a live mini demo on the shared session, the embed snippet, the agent
+// prompt, the demo cards (with a small animated board on the Tetris card), the models and the
+// credits. How it works, the benchmarks, fidelity and limits live in the How view.
 
 import { esc, fmtMs, debounce, backendBadge, renderAnswers, highlight, wireCopy, modelGate, css, REPO, CDN } from "../ui.js";
 
-// ---------------------------------------------------------------------------------------------
-// question sets: four questions from each of the laya SDK's question sets, written out, and the
-// field of the state their instructions name
+// Four questions from each of the laya SDK's question sets, written out, and the field of the
+// state their instructions name.
 const SETS = {
   triage: {
     label: "Triage",
@@ -180,29 +179,34 @@ const { answers } = await kevala.decide("Can you refund the duplicate charge by 
 });
 console.log(answers.urgent.noul); // P(yes), for example 0.94`;
 
-const PROMPT_INTRO = `I want to add kevala (${REPO}) to this project. kevala runs small decision models in the browser: given a piece of text or JSON and typed questions, it returns a probability for every option, with no server. Read the guide below, then help me pick the decision this project needs, write the questions, wire it into the UI with a loading state, and check it on real examples from the project.`;
+const INSTALL = `npm install kevala
+
+import { Kevala } from "kevala";`;
+
+const PROMPT_INTRO = `I want to add kevala (${REPO}) to this project. kevala runs small decision models in the browser: given a piece of text or JSON and typed questions, it returns a probability for every option, without a server. Read the guide below, then help me pick the decision this project needs, write the questions, wire it into the UI with a loading state, and check it on real examples from the project.`;
 
 /** Joins the hard-wrapped lines of each paragraph and list item; code blocks stay as they are. */
 function unwrap(md) {
   const out = [];
-  let code = false;
+  let inCode = false;
   for (const line of md.split("\n")) {
     if (line.startsWith("```")) {
-      code = !code;
+      inCode = !inCode;
       out.push(line);
       continue;
     }
-    const prev = out[out.length - 1];
-    const joins = !code && line.trim() && prev?.trim() && !/^(#|\||```)/.test(prev) && !/^\s*(-|\d+\.|#|\||```)/.test(line);
-    if (joins) out[out.length - 1] = `${prev} ${line.trim()}`;
+    const prev = out.at(-1);
+    const continues =
+      !inCode &&
+      line.trim() &&
+      prev?.trim() &&
+      !/^(#|\||```)/.test(prev) &&
+      !/^\s*(-|\d+\.|#|\||```)/.test(line);
+    if (continues) out[out.length - 1] = `${prev} ${line.trim()}`;
     else out.push(line);
   }
   return out.join("\n");
 }
-
-const INSTALL = `npm install kevala
-
-import { Kevala } from "kevala";`;
 
 const KEYS = [
   ["left", "←"],
@@ -211,14 +215,13 @@ const KEYS = [
   ["drop", "↓"],
 ];
 
-const TEMPLATE = `
-<section class="hero">
+const HERO = `<section class="hero">
   <div class="glow" aria-hidden="true"></div>
   <div class="wrap hero-grid">
     <div class="hero-copy">
       <div class="eyebrow">Open source · Apache-2.0</div>
       <h1>Ask questions about text, <span class="grad-text">answered on the user's own GPU</span></h1>
-      <p class="lede">kevala runs the <b>Laya</b> and <b>Kev-0.8B</b> decision models inside a web page. Give it a message, an email or a JSON record, ask typed questions (yes or no, pick one, rate it), and it returns a probability for every option in about 10 ms on WebGPU. There is no server to run, and the text stays on the device.</p>
+      <p class="lede">kevala runs the <b>Laya</b> and <b>Kev-0.8B</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a probability for every option in about 10 ms on WebGPU. There is no server to run, and the text stays on the device.</p>
       <div class="row cta">
         <a class="btn primary" href="#/playground">Open the playground</a>
         <a class="btn" href="#/tetris">Watch it play Tetris</a>
@@ -234,8 +237,8 @@ const TEMPLATE = `
 
     <div class="card demo" id="try">
       <div class="demo-head">
-        <span class="demo-title"><span class="live-dot"></span>Live in this tab</span>
-        <span class="tiny faint">your text never leaves the browser</span>
+        <span class="demo-title"><span class="live-dot"></span>Running in this tab</span>
+        <span class="tiny faint">the text stays in this browser</span>
       </div>
       <div data-f="gate"></div>
       <div class="presets" role="group" aria-label="Question sets"></div>
@@ -252,27 +255,27 @@ const TEMPLATE = `
       </div>
     </div>
   </div>
-</section>
+</section>`;
 
-<section class="tight" id="embed">
+const EMBED = `<section class="tight" id="embed">
   <div class="wrap embed-grid">
     <div>
       <div class="eyebrow">Embed</div>
       <h2>Add it to a page</h2>
-      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package from npm. No build step and no special headers: any static host works. The first call downloads the pinned Hugging Face checkpoint, converts it in the browser and caches it.</p>
+      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package from npm. It needs no build step and no special headers, so any static host works. The first call downloads the pinned Hugging Face checkpoint, converts it in the browser and caches it.</p>
       <div class="code"><pre data-f="install"></pre></div>
-      <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words; describe every option.</p>
+      <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words, and describe every option.</p>
     </div>
     <div class="code"><pre data-f="snippet"></pre></div>
   </div>
-</section>
+</section>`;
 
-<section class="tight" id="agent">
+const AGENT = `<section class="tight" id="agent">
   <div class="wrap agent-grid">
     <div>
-      <div class="eyebrow">Build with an agent</div>
-      <h2>A prompt for your coding agent</h2>
-      <p class="muted">Paste this into Claude Code, Cursor, Codex or any coding agent. It covers loading, the question types, how to write questions that work, the response format and the pitfalls, so the agent can add kevala to your project on its own.</p>
+      <div class="eyebrow">Coding agents</div>
+      <h2>A prompt for coding agents</h2>
+      <p class="muted">Paste this into Claude Code, Cursor, Codex or another coding agent. It covers loading a model, the question types, how to phrase questions, the response format and common mistakes, which is enough for the agent to add kevala to a project.</p>
       <div class="row">
         <button type="button" class="btn primary" data-act="copy-prompt">Copy prompt</button>
         <a class="btn ghost" href="skills/kevala/SKILL.md" download="SKILL.md">Download as a skill</a>
@@ -281,22 +284,26 @@ const TEMPLATE = `
     </div>
     <textarea class="agent-prompt" data-f="prompt" readonly spellcheck="false" aria-label="Prompt for a coding agent">Loading the prompt…</textarea>
   </div>
-</section>
+</section>`;
 
-<section id="demos">
+const TETRIS_KEYS = KEYS.map(
+  ([key, glyph]) => `<li data-k="${key}"><kbd>${glyph}</kbd><span>${key}</span><i><b></b></i></li>`,
+).join("");
+
+const DEMOS = `<section id="demos">
   <div class="wrap">
     <div class="eyebrow">Demos</div>
-    <h2>What it can do</h2>
-    <p class="lede">Every demo runs real inference in your browser, with the same API you would ship.</p>
+    <h2>Try it in this browser</h2>
+    <p class="lede">Each demo runs the model in this tab, through the same API a page would use.</p>
     <div class="grid-3 demos">
       <a class="card demo-card" href="#/tetris">
         <div class="art art-tetris" aria-hidden="true">
           <canvas data-f="board" width="140" height="168"></canvas>
-          <ul class="keys" data-f="keys">${KEYS.map(([k, g]) => `<li data-k="${k}"><kbd>${g}</kbd><span>${k}</span><i><b></b></i></li>`).join("")}</ul>
+          <ul class="keys" data-f="keys">${TETRIS_KEYS}</ul>
         </div>
         <div class="dc-body">
           <h3>Tetris</h3>
-          <p>The model plays by pressing keys. Each moment it picks left, right, rotate or drop from one <code>choice</code> question whose options say, in words, where each key would lead.</p>
+          <p>For every new piece, the code describes each place it can land and the model scores all of them in one batched pass. The piece then moves to the best spot, one key at a time.</p>
           <span class="go">Watch it play →</span>
         </div>
       </a>
@@ -309,7 +316,7 @@ const TEMPLATE = `
         </div>
         <div class="dc-body">
           <h3>Prompt guardrail</h3>
-          <p>Gate prompts before they reach an LLM. Act on confident answers, escalate the unsure ones.</p>
+          <p>Checks a prompt before it reaches an LLM. Confident answers block or allow it, and unsure ones go to a slower check.</p>
           <span class="go">Open →</span>
         </div>
       </a>
@@ -322,27 +329,36 @@ const TEMPLATE = `
         </div>
         <div class="dc-body">
           <h3>Inbox triage</h3>
-          <p>A dozen emails routed, scored for urgency and screened for phishing in a single forward pass.</p>
+          <p>Routes twelve emails to a team, rates their urgency and checks them for phishing. Rows fill in as each batch of answers returns.</p>
           <span class="go">Open →</span>
         </div>
       </a>
     </div>
     <div class="grid-3 demos small-cards">
-      <a class="card pad mini-card" href="#/playground"><h3>Playground</h3><p class="muted small">Edit any request as JSON, pick model and backend, see the raw response and timing.</p></a>
-      <a class="card pad mini-card" href="examples/basic.html"><h3>Examples</h3><p class="muted small">Copy-paste integrations: a basic call, a moderation gate on a form, an LLM cascade, a game loop.</p></a>
-      <a class="card pad mini-card" href="parity.html"><h3>Parity check</h3><p class="muted small">Run the golden fixtures against the PyTorch reference, in your browser.</p></a>
+      <a class="card pad mini-card" href="#/playground">
+        <h3>Playground</h3>
+        <p class="muted small">Edit a request as JSON, choose the model and backend, and see the raw response and timings.</p>
+      </a>
+      <a class="card pad mini-card" href="examples/basic.html">
+        <h3>Examples</h3>
+        <p class="muted small">Small pages to copy from: a basic call, a moderation gate on a form, an LLM cascade and a game loop.</p>
+      </a>
+      <a class="card pad mini-card" href="parity.html">
+        <h3>Parity check</h3>
+        <p class="muted small">Replay the golden fixtures against the PyTorch reference in this browser.</p>
+      </a>
     </div>
   </div>
-</section>
+</section>`;
 
-<section class="tight" id="models">
+const MODEL_CARDS = `<section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Two models to choose from</h2>
+    <h2>Laya and Kev-0.8B</h2>
     <div class="grid-2">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
-        <p class="muted small">ModernBERT-large encoder (28 layers, 1024 wide, local and global attention) with a 2-layer decision head. Answers yes/no (<code>noul</code>), <code>choice</code> and <code>score</code> questions with confidence and an act probability.</p>
+        <p class="muted small">ModernBERT-large encoder (28 layers, 1024 wide, local and global attention) with a 2-layer decision head. It answers yes/no (<code>noul</code>), <code>choice</code> and <code>score</code> questions, with a confidence and an act probability for each.</p>
         <dl class="specs">
           <div><dt>Parameters</dt><dd>421M</dd></div>
           <div><dt>First download</dt><dd>about 850 MB (fp32, converted in the browser)</dd></div>
@@ -353,73 +369,111 @@ const TEMPLATE = `
       </div>
       <div class="card pad model-card">
         <div class="row"><h3>Kev-0.8B</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
-        <p class="muted small">Qwen3.5-0.8B hybrid decoder (18 Gated DeltaNet and 6 full-attention layers) with Kev's LoRA merged and a pointer head that reads the answer options. Same question types, Kev's own response format.</p>
+        <p class="muted small">Qwen3.5-0.8B hybrid decoder (18 Gated DeltaNet and 6 full-attention layers) with Kev's LoRA merged and a pointer head that reads the answer options. It takes the same question types and returns Kev's own response format.</p>
         <dl class="specs">
           <div><dt>Parameters</dt><dd>0.8B</dd></div>
-          <div><dt>First download</dt><dd>about 1.6 GB (Kev adapter and head + only the language-model weights of the Qwen3.5 base), converted in the browser in about a minute</dd></div>
-          <div><dt>Stored pack</dt><dd>857 MB int8, reloads in under a second; or self-host one from <code>kevala convert-kev</code></dd></div>
-          <div><dt>Speed</dt><dd>WebGPU: about 45-50 ms per request of 30-120 tokens (M4 Max); CPU fallback: seconds</dd></div>
-          <div><dt>State cache</dt><dd>KV and DeltaNet states of the 4 latest states stay resident: a repeated state takes about half the time, an extended one runs only its new tokens</dd></div>
+          <div><dt>First download</dt><dd>about 1.6 GB (the Kev adapter and head, plus only the language-model weights of the Qwen3.5 base), converted in the browser in about a minute</dd></div>
+          <div><dt>Stored pack</dt><dd>857 MB int8, reloads in under a second. You can also self-host a pack made with <code>kevala convert-kev</code>.</dd></div>
+          <div><dt>Speed</dt><dd>WebGPU on an M4 Max: 11 ms for a short request, 32 ms at 125 tokens, 116 ms at 533 tokens. The CPU fallback takes seconds.</dd></div>
+          <div><dt>State cache</dt><dd>The KV and DeltaNet states of the 4 latest states stay in memory. A repeated state takes about half the time, and an extended one runs only its new tokens.</dd></div>
           <div><dt>By</dt><dd>Jared Palmer · base by the Qwen team · Apache-2.0</dd></div>
         </dl>
       </div>
     </div>
   </div>
-</section>
+</section>`;
 
-<section class="tight" id="under-the-hood">
+const HOOD = `<section class="tight" id="under-the-hood">
   <div class="wrap">
     <div class="eyebrow">Under the hood</div>
     <h2>How it works</h2>
     <div class="grid-4 hood">
-      <a class="card pad mini-card" href="#/how"><h3>Architecture</h3><p class="muted small">A Rust core in WebAssembly, WGSL kernels on WebGPU, int8 packs converted in the tab.</p><span class="go">Read →</span></a>
-      <a class="card pad mini-card" href="#/how/bench"><h3>Benchmarks</h3><p class="muted small">Latency per request on WebGPU, WebAssembly and native, measured in real browsers.</p><span class="go">See the numbers →</span></a>
-      <a class="card pad mini-card" href="#/how/fidelity"><h3>Fidelity</h3><p class="muted small">Exact token ids, and the same argmax as the PyTorch reference on every fixture.</p><span class="go">Check →</span></a>
-      <a class="card pad mini-card" href="#/how/limits"><h3>Honest limits</h3><p class="muted small">A big first download, WebGPU not everywhere, perception rather than reasoning.</p><span class="go">Know the edges →</span></a>
+      <a class="card pad mini-card" href="#/how">
+        <h3>Architecture</h3>
+        <p class="muted small">A Rust core compiled to WebAssembly, WGSL kernels on WebGPU, and int8 packs converted in the tab.</p>
+        <span class="go">Read →</span>
+      </a>
+      <a class="card pad mini-card" href="#/how/bench">
+        <h3>Benchmarks</h3>
+        <p class="muted small">Latency per request on WebGPU, WebAssembly and native, measured in real browsers.</p>
+        <span class="go">See the numbers →</span>
+      </a>
+      <a class="card pad mini-card" href="#/how/fidelity">
+        <h3>Fidelity</h3>
+        <p class="muted small">Token ids match exactly, and the argmax matches the PyTorch reference on every fixture.</p>
+        <span class="go">See the results →</span>
+      </a>
+      <a class="card pad mini-card" href="#/how/limits">
+        <h3>Limits</h3>
+        <p class="muted small">A large first download, no WebGPU in some browsers, and no multi-step reasoning.</p>
+        <span class="go">Read →</span>
+      </a>
     </div>
   </div>
-</section>
+</section>`;
 
-<section class="tight" id="credits">
+const CREDITS = `<section class="tight" id="credits">
   <div class="wrap">
     <div class="eyebrow">Credits and licenses</div>
     <div class="grid-3">
-      <div class="card pad"><h3>Laya</h3><p class="muted small">By Nandakishor M, Convai Innovations. <a href="https://huggingface.co/convaiinnovations/laya">convaiinnovations/laya</a> · Apache-2.0.</p></div>
-      <div class="card pad"><h3>Kev-0.8B</h3><p class="muted small">By Jared Palmer. <a href="https://huggingface.co/jaredpalmer/kev-0.8b">jaredpalmer/kev-0.8b</a> · Apache-2.0.</p></div>
-      <div class="card pad"><h3>Qwen3.5-0.8B</h3><p class="muted small">Base model for Kev, by the Qwen team. <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">Qwen/Qwen3.5-0.8B-Base</a> · Apache-2.0.</p></div>
+      <div class="card pad">
+        <h3>Laya</h3>
+        <p class="muted small">By Nandakishor M, Convai Innovations. <a href="https://huggingface.co/convaiinnovations/laya">convaiinnovations/laya</a> · Apache-2.0.</p>
+      </div>
+      <div class="card pad">
+        <h3>Kev-0.8B</h3>
+        <p class="muted small">By Jared Palmer. <a href="https://huggingface.co/jaredpalmer/kev-0.8b">jaredpalmer/kev-0.8b</a> · Apache-2.0.</p>
+      </div>
+      <div class="card pad">
+        <h3>Qwen3.5-0.8B</h3>
+        <p class="muted small">Base model for Kev, by the Qwen team. <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">Qwen/Qwen3.5-0.8B-Base</a> · Apache-2.0.</p>
+      </div>
     </div>
     <p class="tiny faint credits-note">kevala re-hosts no weights: packs are converted in your browser from the authors' repositories at pinned revisions. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>
   </div>
 </section>`;
 
+const TEMPLATE = [HERO, EMBED, AGENT, DEMOS, MODEL_CARDS, HOOD, CREDITS].join("\n\n");
+
+/** The latency line under the demo, e.g. "round trip · forward 9.1 ms · 41 tokens". */
+function latencyNote(response) {
+  const { timing } = response;
+  const tokens = response.usage?.input_tokens ?? timing?.tokens;
+  const parts = ["round trip"];
+  if (timing?.forward != null) parts.push(`forward ${fmtMs(timing.forward)}`);
+  if (tokens) parts.push(`${tokens} tokens`);
+  return parts.join(" · ");
+}
+
 export function mount(el, { session }) {
   css(new URL("./home.css", import.meta.url).href);
   el.innerHTML = TEMPLATE;
   const $ = (f) => el.querySelector(`[data-f="${f}"]`);
-  const ta = el.querySelector("#home-state");
+  const input = el.querySelector("#home-state");
   const answersEl = $("answers");
   const emptyEl = $("empty");
   const presetsEl = el.querySelector(".presets");
 
   modelGate($("gate"), "try it live");
   $("snippet").innerHTML = highlight(SNIPPET);
+  $("install").innerHTML = highlight(INSTALL);
+
   // the agent prompt is the skill file (one source for both), without its front matter
+  const promptEl = $("prompt");
   fetch("skills/kevala/SKILL.md")
-    .then((r) => (r.ok ? r.text() : Promise.reject(new Error(`HTTP ${r.status}`))))
-    .then((md) => ($("prompt").value = `${PROMPT_INTRO}\n\n${unwrap(md.replace(/^---[\s\S]*?---\s*/, ""))}`))
-    .catch(() => ($("prompt").value = `${PROMPT_INTRO}\n\nThe full guide is at ${REPO}/blob/main/skills/kevala/SKILL.md`));
+    .then((res) => (res.ok ? res.text() : Promise.reject(new Error(`HTTP ${res.status}`))))
+    .then((md) => (promptEl.value = `${PROMPT_INTRO}\n\n${unwrap(md.replace(/^---[\s\S]*?---\s*/, ""))}`))
+    .catch(() => (promptEl.value = `${PROMPT_INTRO}\n\nThe full guide is at ${REPO}/blob/main/skills/kevala/SKILL.md`));
   el.querySelector('[data-act="copy-prompt"]').addEventListener("click", async () => {
-    const ta = $("prompt");
     try {
-      await navigator.clipboard.writeText(ta.value);
+      await navigator.clipboard.writeText(promptEl.value);
       $("copied").textContent = "Copied. Paste it into your agent.";
     } catch {
-      ta.select();
+      promptEl.select();
       $("copied").textContent = "Selected: press Ctrl+C or ⌘C to copy.";
     }
     setTimeout(() => ($("copied").textContent = ""), 3000);
   });
-  $("install").innerHTML = highlight(INSTALL);
   wireCopy(el);
 
   // the router only scrolls on a hash change; clicking the link while already there must too
@@ -429,37 +483,39 @@ export function mount(el, { session }) {
     el.querySelector(`#${e.currentTarget.dataset.anchor}`).scrollIntoView({ behavior: "smooth", block: "start" });
   });
 
-  // -------------------------------------------------------------------------------------------
-  // presets and text
+  // Question sets and the text; each set keeps its own edited text
 
-  let set = "triage";
-  const texts = Object.fromEntries(Object.entries(SETS).map(([k, v]) => [k, v.sample]));
+  let activeSet = "triage";
+  const texts = Object.fromEntries(Object.entries(SETS).map(([id, set]) => [id, set.sample]));
   presetsEl.innerHTML = Object.entries(SETS)
-    .map(([k, v]) => `<button type="button" class="chip" data-set="${k}" aria-pressed="${k === set}">${esc(v.label)}</button>`)
+    .map(([id, set]) => {
+      const pressed = id === activeSet;
+      return `<button type="button" class="chip" data-set="${id}" aria-pressed="${pressed}">${esc(set.label)}</button>`;
+    })
     .join("");
   presetsEl.addEventListener("click", (e) => {
-    const b = e.target.closest("[data-set]");
-    if (!b || b.dataset.set === set) return;
-    texts[set] = ta.value;
-    set = b.dataset.set;
-    for (const x of presetsEl.querySelectorAll("[data-set]")) x.setAttribute("aria-pressed", String(x === b));
-    ta.value = texts[set];
+    const button = e.target.closest("[data-set]");
+    if (!button || button.dataset.set === activeSet) return;
+    texts[activeSet] = input.value;
+    activeSet = button.dataset.set;
+    for (const b of presetsEl.querySelectorAll("[data-set]")) b.setAttribute("aria-pressed", String(b === button));
+    input.value = texts[activeSet];
     answersEl.innerHTML = "";
     showSet();
     request();
   });
 
   function showSet() {
-    const s = SETS[set];
-    const ids = Object.keys(s.questions);
-    $("hint").textContent = `state = { ${s.field}: "…" } · ${ids.length} questions, one forward pass`;
-    emptyEl.innerHTML = `<p>Answers to these questions appear here, all from one forward pass.</p><div class="qids">${ids.map((q) => `<code>${esc(q)}</code>`).join("")}</div>`;
+    const { field, questions } = SETS[activeSet];
+    const ids = Object.keys(questions);
+    $("hint").textContent = `state = { ${field}: "…" } · ${ids.length} questions, one forward pass`;
+    const idList = ids.map((id) => `<code>${esc(id)}</code>`).join("");
+    emptyEl.innerHTML = `<p>Answers to these questions appear here, all from one forward pass.</p><div class="qids">${idList}</div>`;
   }
-  ta.value = texts[set];
+  input.value = texts[activeSet];
   showSet();
 
-  // -------------------------------------------------------------------------------------------
-  // one request in flight; the latest text wins. `dirty` means the answers are behind the text,
+  // One request in flight; the latest text wins. `dirty` means the answers are behind the text,
   // so work that arrives while hidden waits for show() instead of running in the background.
 
   let kevala = null;
@@ -479,22 +535,21 @@ export function mount(el, { session }) {
     dirty = false;
     running = true;
     answersEl.classList.add("busy");
-    const w = kevala;
-    const s = SETS[set];
-    const current = set;
+    const model = kevala;
+    const setId = activeSet;
+    const { field, questions } = SETS[setId];
     try {
       const t0 = performance.now();
-      const r = await w.decide({ [s.field]: ta.value }, s.questions);
+      const response = await model.decide({ [field]: input.value }, questions);
       const wall = performance.now() - t0;
-      if (w === kevala && current === set) {
-        renderAnswers(answersEl, r, s.questions, { max: 3 });
+      if (model === kevala && setId === activeSet) {
+        renderAnswers(answersEl, response, questions, { max: 3 });
         emptyEl.classList.add("hidden");
         $("lat").textContent = fmtMs(wall);
-        const tok = r.usage?.input_tokens ?? r.timing?.tokens;
-        $("lat-sub").textContent = `round trip${r.timing?.forward != null ? ` · forward ${fmtMs(r.timing.forward)}` : ""}${tok ? ` · ${tok} tokens` : ""}`;
+        $("lat-sub").textContent = latencyNote(response);
       }
     } catch (e) {
-      if (w === kevala) {
+      if (model === kevala) {
         $("lat").textContent = "error";
         $("lat-sub").textContent = e.message;
       }
@@ -505,11 +560,12 @@ export function mount(el, { session }) {
     }
   }
 
-  const fast = debounce(request, 220);
-  const slow = debounce(request, 1200);
-  ta.addEventListener("input", () => {
+  // the CPU backend takes longer per request, so it waits for a longer pause in typing
+  const soon = debounce(request, 220);
+  const later = debounce(request, 1200);
+  input.addEventListener("input", () => {
     typed = true;
-    (kevala?.info?.backend === "webgpu" ? fast : slow)();
+    (kevala?.info?.backend === "webgpu" ? soon : later)();
   });
 
   function reset() {
@@ -521,12 +577,12 @@ export function mount(el, { session }) {
   }
 
   const sync = (s) => {
-    const w = s.ready ? s.kevala : null;
-    if (w === kevala) return;
-    kevala = w;
+    const model = s.ready ? s.kevala : null;
+    if (model === kevala) return;
+    kevala = model;
     reset();
-    if (w) {
-      $("backend").innerHTML = backendBadge(w.info);
+    if (model) {
+      $("backend").innerHTML = backendBadge(model.info);
       request();
     }
   };
@@ -543,26 +599,36 @@ export function mount(el, { session }) {
     },
     hide() {
       visible = false;
-      fast.cancel();
-      slow.cancel();
+      soon.cancel();
+      later.cancel();
       if (typed) dirty = true;
       board.active(false);
     },
   };
 }
 
-// ---------------------------------------------------------------------------------------------
-// the decorative board on the Tetris card: a scripted T piece that the "model" steers with
-// rotate, left, left and drop, completing a line. Frames are drawn only while the view is shown
-// and the canvas is on screen.
+// The decorative board on the Tetris card: a scripted T piece steered with rotate, left, left
+// and drop, completing a line. Frames are drawn only while the view is shown and the canvas is
+// on screen.
 
 const COLS = 10;
 const ROWS = 12;
 const COLORS = ["#45e0c0", "#f6c453", "#b48cff", "#8be36b", "#ff7a8a", "#7aa2ff", "#ff9f5a"];
 const PIECE = 2;
-const STACK = ["..........", "..........", "..........", "..........", "..........", "..........", "..........", "..........", "1........5", "11..3...55", "116333.444", "666332214."].map((r) =>
-  [...r].map((c) => (c === "." ? -1 : Number(c))),
-);
+const STACK = [
+  "..........",
+  "..........",
+  "..........",
+  "..........",
+  "..........",
+  "..........",
+  "..........",
+  "..........",
+  "1........5",
+  "11..3...55",
+  "116333.444",
+  "666332214.",
+].map((row) => [...row].map((c) => (c === "." ? -1 : Number(c))));
 // T offsets around the pivot, clockwise
 const T = {
   right: [[0, -1], [0, 0], [0, 1], [1, 0]],
@@ -576,81 +642,83 @@ const STEPS = [
   [1950, "left", { o: "down", x: 6, y: 4 }, [0.63, 0.05, 0.04, 0.28]],
   [2600, "drop", { o: "down", x: 6, y: 4 }, [0.03, 0.02, 0.01, 0.94]],
 ];
+const DROP_STEP = 4;
 const DROP_MS = 200;
-const FLASH_AT = STEPS[4][0] + DROP_MS;
+const FLASH_AT = STEPS[DROP_STEP][0] + DROP_MS;
 const CLEAR_AT = FLASH_AT + 560;
 const PERIOD = CLEAR_AT + 1100;
 
-function cellsOf(p) {
-  return T[p.o].map(([dx, dy]) => [p.x + dx, p.y + dy]);
+function cellsOf(pose) {
+  return T[pose.o].map(([dx, dy]) => [pose.x + dx, pose.y + dy]);
 }
 
-function landY(p) {
-  let y = p.y;
-  const fits = (yy) => cellsOf({ ...p, y: yy }).every(([x, cy]) => cy < ROWS && STACK[cy]?.[x] === -1);
+function landY(pose) {
+  const fits = (y) => cellsOf({ ...pose, y }).every(([x, cy]) => cy < ROWS && STACK[cy]?.[x] === -1);
+  let y = pose.y;
   while (fits(y + 1)) y++;
   return y;
 }
 
 function miniBoard(canvas, keysEl) {
-  const g = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d");
   const dpr = Math.min(2, devicePixelRatio || 1);
-  const C = 14 * dpr;
-  canvas.width = COLS * C;
-  canvas.height = ROWS * C;
+  const cellPx = 14 * dpr;
+  canvas.width = COLS * cellPx;
+  canvas.height = ROWS * cellPx;
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const rows = Object.fromEntries(KEYS.map(([k], i) => [k, keysEl.children[i]]));
-  const land = landY(STEPS[4][2]);
+  const keyRows = Object.fromEntries(KEYS.map(([key], i) => [key, keysEl.children[i]]));
+  const dropPose = STEPS[DROP_STEP][2];
+  const land = landY(dropPose);
   // the stack after the line clear: the piece joins it, full rows go, the rest falls
-  const merged = STACK.map((r) => r.slice());
-  for (const [x, y] of cellsOf({ ...STEPS[4][2], y: land })) merged[y][x] = PIECE;
-  const full = merged.map((r) => r.every((v) => v >= 0));
+  const merged = STACK.map((row) => row.slice());
+  for (const [x, y] of cellsOf({ ...dropPose, y: land })) merged[y][x] = PIECE;
+  const full = merged.map((row) => row.every((v) => v >= 0));
   const cleared = merged.filter((_, y) => !full[y]);
   while (cleared.length < ROWS) cleared.unshift(Array(COLS).fill(-1));
 
-  const cell = (x, y, col, a = 1) => {
-    g.globalAlpha = a;
-    g.fillStyle = col;
-    g.beginPath();
-    g.roundRect(x * C + dpr, y * C + dpr, C - 2 * dpr, C - 2 * dpr, 3 * dpr);
-    g.fill();
+  const cell = (x, y, color, alpha = 1) => {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.roundRect(x * cellPx + dpr, y * cellPx + dpr, cellPx - 2 * dpr, cellPx - 2 * dpr, 3 * dpr);
+    ctx.fill();
   };
 
   let shownStep = -1;
-  function showKeys(i) {
-    if (i === shownStep) return;
-    shownStep = i;
-    const [, key, , probs] = STEPS[i];
-    KEYS.forEach(([k], j) => {
-      rows[k].classList.toggle("on", k === key);
-      rows[k].querySelector("b").style.width = `${Math.round((probs ? probs[j] : 0) * 100)}%`;
+  function showKeys(step) {
+    if (step === shownStep) return;
+    shownStep = step;
+    const [, pressed, , probs] = STEPS[step];
+    KEYS.forEach(([key], j) => {
+      keyRows[key].classList.toggle("on", key === pressed);
+      keyRows[key].querySelector("b").style.width = `${Math.round((probs ? probs[j] : 0) * 100)}%`;
     });
   }
 
   function draw(t) {
-    g.globalAlpha = 1;
-    g.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) cell(x, y, "#ffffff", 0.025);
     const fade = Math.min(1, t / 200, (PERIOD - t) / 300);
-    const after = t >= CLEAR_AT;
-    const stack = after ? cleared : STACK;
-    stack.forEach((r, y) => r.forEach((v, x) => v >= 0 && cell(x, y, COLORS[v], 0.9 * fade)));
-    if (after) return;
-    let i = 0;
-    while (i + 1 < STEPS.length && t >= STEPS[i + 1][0]) i++;
-    showKeys(i);
-    const pose = STEPS[i][2];
+    const afterClear = t >= CLEAR_AT;
+    const stack = afterClear ? cleared : STACK;
+    stack.forEach((row, y) => row.forEach((v, x) => v >= 0 && cell(x, y, COLORS[v], 0.9 * fade)));
+    if (afterClear) return;
+    let step = 0;
+    while (step + 1 < STEPS.length && t >= STEPS[step + 1][0]) step++;
+    showKeys(step);
+    const pose = STEPS[step][2];
     let y = pose.y;
-    if (i === 4) {
-      const k = Math.min(1, (t - STEPS[4][0]) / DROP_MS);
+    if (step === DROP_STEP) {
+      const k = Math.min(1, (t - STEPS[DROP_STEP][0]) / DROP_MS);
       y = pose.y + (land - pose.y) * k * k;
     }
     const landed = t >= FLASH_AT;
     for (const [dx, dy] of T[pose.o]) cell(pose.x + dx, (landed ? land : y) + dy, COLORS[PIECE], fade);
     if (landed && Math.floor((t - FLASH_AT) / 140) % 2 === 0) {
-      g.globalAlpha = 0.75;
-      g.fillStyle = "#e7ecf3";
-      full.forEach((f, fy) => f && g.fillRect(0, fy * C, canvas.width, C));
+      ctx.globalAlpha = 0.75;
+      ctx.fillStyle = "#e7ecf3";
+      full.forEach((isFull, row) => isFull && ctx.fillRect(0, row * cellPx, canvas.width, cellPx));
     }
   }
 
@@ -668,23 +736,23 @@ function miniBoard(canvas, keysEl) {
     raf = requestAnimationFrame(frame);
   }
   function update() {
-    const go = shown && onScreen && !reduced;
-    if (go && !raf) {
+    const animate = shown && onScreen && !reduced;
+    if (animate && !raf) {
       prev = 0;
       raf = requestAnimationFrame(frame);
-    } else if (!go && raf) {
+    } else if (!animate && raf) {
       cancelAnimationFrame(raf);
       raf = 0;
     }
   }
-  new IntersectionObserver((e) => {
-    onScreen = e[e.length - 1].isIntersecting;
+  new IntersectionObserver((entries) => {
+    onScreen = entries.at(-1).isIntersecting;
     update();
   }).observe(canvas);
   draw(STILL);
   return {
-    active(v) {
-      shown = v;
+    active(on) {
+      shown = on;
       update();
     },
   };

@@ -73,8 +73,11 @@ const kevala = await Kevala.load({ model: "https://example.com/my.kevala", plugi
 ```
 
 `gpu.js` exports the building blocks: `GpuWeights` (streams trunk tensors into GPU buffers),
-`pipeline()` (compiles WGSL with readable errors), the shared kernels in `SHADERS`, and
-`dispatchMatmul` (int8 matmul with automatic split-K).
+`pipeline()` (compiles WGSL with readable errors), `matmulPipelines` / `encodeMatmul` (the int8
+matmul with length-sized tiles and automatic split-K), and the `gpu.wgsl(kernel, spec)` function
+the worker passes to `createGpu`, which returns any kernel from the binary. New kernels go in
+`crates/kevala/src/wgsl/` as `.wgsl` files, listed in `crates/kevala/src/gpu.rs`; the
+`tests/wgsl.rs` test renders each one for every specialization.
 
 ## 4. The model registry
 

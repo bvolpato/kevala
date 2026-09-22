@@ -333,6 +333,16 @@ pub extern "C" fn kevala_shard_step(step: usize) -> *const f32 {
 }
 
 /// Token ids for `text`, as a JSON array (debugging and tests).
+/// The WGSL source of a GPU kernel specialized as asked: `{ kernel, f16, subgroups, rows, groups, n, k }`.
+#[no_mangle]
+pub extern "C" fn kevala_wgsl(ptr: *const u8, len: usize) -> u32 {
+    done((|| {
+        let request = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
+        st().out = kevala::gpu::wgsl_json(&request)?.into_bytes();
+        Ok(())
+    })())
+}
+
 #[no_mangle]
 pub extern "C" fn kevala_tokenize(ptr: *const u8, len: usize) -> u32 {
     done((|| {

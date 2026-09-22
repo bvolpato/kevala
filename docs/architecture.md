@@ -25,6 +25,10 @@ compiles for native targets and `wasm32-unknown-unknown` alike:
 - `runtime.rs`: the family registry (`Model` trait, `FAMILIES`), keyed by the pack's `config.arch`.
 - Families: `engine.rs` + `sequence.rs` + `model.rs` (Laya), `kev.rs` (Kev). Each owns its template,
   backbone and head.
+- `gpu.rs` and `wgsl/*.wgsl`: the WebGPU kernels. WebGPU only runs WGSL, so the kernels are WGSL
+  sources compiled into the crate; `gpu.rs` specializes them (f16 tiles, rows and column groups per
+  workgroup, subgroup use, optionally the matrix shape) and the WebAssembly binary hands the result
+  to the browser runtime (`kevala_wgsl`). `kevala wgsl <kernel>` prints one from the command line.
 - `kernels.rs`, `simd.rs`: CPU kernels over a four-lane vector type that maps to WebAssembly SIMD128
   (with relaxed-SIMD fused multiply-add when available), NEON natively, or plain arrays.
 - `pack.rs`, `convert.rs`, `convert_kev.rs`, `torchpt.rs`: the `.kevala` format and converters from
@@ -41,7 +45,8 @@ relaxed-simd), `simd`, and `base`; the runtime picks the best one the browser va
   backend, and packs concurrent requests into shared forward passes.
 - `archs/*.js`: architecture plugins. Each says how its family runs on the GPU or across shards, and
   how to convert its upstream checkpoint in the browser.
-- `gpu.js`, `gpu-kev.js`: WebGPU kernels and trunks.
+- `gpu.js`, `gpu-kev.js`: the WebGPU trunks: buffers, pipelines built from the binary's kernels,
+  bind groups and dispatches. No kernel code lives here.
 - `source.js`: model registry, downloads with progress, OPFS/Cache API storage, and the streaming
   layout applier.
 
