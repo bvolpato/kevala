@@ -39,10 +39,19 @@
     "README.md"
   ],
   "sideEffects": false,
+  "packageManager": "pnpm@12.5.1",
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "24.21.0",
+      "onFail": "download"
+    }
+  },
   "scripts": {
+    "check": "node scripts/check-js.mjs",
     "test": "node --test tests/*.test.mjs",
     "build": "scripts/build-wasm.sh",
-    "serve": "node scripts/serve.mjs . --port=8080",
+    "serve": "node scripts/serve.mjs .",
     "smoke": "node scripts/node-smoke.mjs"
   },
   "dependencies": {},

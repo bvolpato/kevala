@@ -180,7 +180,7 @@ const { answers } = await kevala.decide("Can you refund the duplicate charge by 
 });
 console.log(answers.urgent.noul); // P(yes), for example 0.94`;
 
-const INSTALL = `npm install kevala
+const INSTALL = `pnpm add kevala
 
 import { Kevala } from "kevala";`;
 
@@ -263,7 +263,7 @@ const EMBED = `<section class="tight" id="embed">
     <div>
       <div class="eyebrow">Embed</div>
       <h2>Add it to a page</h2>
-      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package from npm. It needs no build step and no special headers, so any static host works. The first call downloads the model's int8 pack from Hugging Face and keeps it in the browser.</p>
+      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package with pnpm. It needs no build step and no special headers, so any static host works. The first call downloads the model's int8 pack from Hugging Face and keeps it in the browser.</p>
       <div class="code"><pre data-f="install"></pre></div>
       <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words, and describe every option.</p>
     </div>

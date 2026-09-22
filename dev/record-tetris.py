@@ -5,7 +5,7 @@
 # ///
 """Records the model playing Tetris on the clip stage and renders the social video and README GIF.
 
-Needs the dev server (`node scripts/serve.mjs . --port=8123`), the dev packs in tmp/, ffmpeg, and
+Needs the dev server (`pnpm serve --port=8123`), the dev packs in tmp/, ffmpeg, and
 the shared agent Chrome on port 9333 (the script opens its own context there and closes it).
 
     uv run dev/record-tetris.py                 # 50 s capture, then tmp/tetris.mp4 and tmp/tetris.gif
