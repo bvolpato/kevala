@@ -65,8 +65,8 @@ const TEMPLATE = `<div class="wrap">
 
   <section class="how-sec" id="fidelity">
     <div class="eyebrow">Fidelity</div>
-    <h2>Same answers as the PyTorch reference</h2>
-    <p class="lede">Golden fixtures are generated with each model's own reference code and replayed through kevala. At int8 the argmax matches on every checked Laya, Kev, SemIf, and Gemma 4 fixture; the score differences below are fixture fidelity measurements, not general decision quality or calibration.</p>
+    <h2>Conversion fidelity</h2>
+    <p class="lede">The dedicated parity fixtures below are generated with each model's reference code and replayed through kevala. Their decisions match at int8. The broader <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark</a> found one changed E2B answer across 108 option orders, with a material probability shift. These measurements do not establish calibrated confidence.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Token ids</span><b>tracked</b><span class="ts">Laya, Qwen, and Gemma reference tokenizers used by the fixtures</span></div>
       <div class="tile"><span class="tl">Laya argmax</span><b>41 / 41</b><span class="ts">questions agree with PyTorch</span></div>
@@ -96,7 +96,7 @@ const TEMPLATE = `<div class="wrap">
         <li><b>WebGPU is not available in every browser.</b> For compatible packs, kevala falls back to WebAssembly, which gives the same answers several times slower: a short Laya request takes about 160 ms on 8 CPU workers, against tens of ms on WebGPU. Large Gemma packs require WebGPU in the browser or native 64-bit CPU.</li>
         <li><b>No multi-step reasoning.</b> These are System 1 models: they score or read what a text says in one pass. SemIf scores are conditional on the listed options and are not calibrated decision confidence. Compute facts in code and state them in words, and do not ask the model to do arithmetic or plan.</li>
         <li><b>Context limits.</b> Laya reads up to 512 tokens per state and is trained on English. Gemma 4 accepts up to 4096 input tokens in Kevala.</li>
-        <li><b>int8 shifts probabilities slightly.</b> They can differ from fp32 by up to 0.024 (Laya), so leave a margin around thresholds near a decision boundary.</li>
+        <li><b>Quantization changes probabilities.</b> Differences depend on the model and input. The decision benchmark includes an E2B difference of 0.53 against BF16 on one case. Validate decisions and thresholds on your own data; see the <a href="${DOCS}/quantization.md">precision comparison</a>.</li>
       </ul>
     </div>
   </section>

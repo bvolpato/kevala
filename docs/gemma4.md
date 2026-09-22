@@ -68,6 +68,11 @@ Tokenization must match exactly. Native and browser comparisons must report prob
 differences and decision agreement separately from timing. Fixture agreement alone does not
 establish general model quality or state-of-the-art performance.
 
+The broader [decision benchmark](../BENCHMARK.md) compares 108 option orders against the
+original weights. E2B matches 107/108 BF16 decisions and E4B matches 108/108, but E2B has a
+maximum probability difference of 0.53 on one case. Native Q8 and original-weight FP32
+diagnostics are included there. The smaller parity fixture limits below do not bound all inputs.
+
 On September 22, 2026, Firefox 152.0.3 on Ubuntu passed these checks against
 Transformers 5.17.0 running the original BF16 checkpoints on an RTX 5070 Ti:
 

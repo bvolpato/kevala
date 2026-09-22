@@ -426,7 +426,7 @@ const HOOD = `<section class="tight" id="under-the-hood">
       </a>
       <a class="card pad mini-card" href="#/how/fidelity">
         <h3>Fidelity</h3>
-        <p class="muted small">Token ids match exactly, and the argmax matches the PyTorch reference on every fixture.</p>
+        <p class="muted small">Compare tokenization, decisions, and score differences against the upstream references.</p>
         <span class="go">See the results →</span>
       </a>
       <a class="card pad mini-card" href="#/how/limits">
