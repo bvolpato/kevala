@@ -10,6 +10,7 @@ const checks = [
   ["kernels", "kernels", "/dev/kernels.html"],
   ["laya", "parity", "/parity.html#auto&backend=webgpu&pack=local", "0.024"],
   ["kev", "parity", "/parity-kev.html#backend=webgpu&pack=local", "0.011"],
+  ["cache", "cache", "/dev/cache-test.html?backend=webgpu"],
 ];
 for (const [name, kind, path, tolerance] of checks) {
   const args = ["run", "scripts/bench-gpu.py", "--result", kind, "--timeout", "600", "--url", base + path, "--output", resolve(out, `${name}.json`)];

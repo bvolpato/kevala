@@ -32,7 +32,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--result",
-        choices=("gpu", "bench", "latency", "parity", "kernels"),
+        choices=("gpu", "bench", "latency", "parity", "kernels", "cache"),
         default="gpu",
         help="page result contract to validate",
     )
@@ -54,6 +54,7 @@ DEFAULT_URLS = {
     "latency": "http://127.0.0.1:18086/bench.html#auto&backend=webgpu&pack=local&model=laya&profile=0&runs=10&unique=1",
     "parity": "http://127.0.0.1:18086/parity.html#auto&backend=webgpu&pack=local",
     "kernels": "http://127.0.0.1:18086/dev/kernels.html",
+    "cache": "http://127.0.0.1:18086/dev/cache-test.html?backend=webgpu",
 }
 
 
@@ -63,6 +64,7 @@ RESULT_GLOBALS = {
     "latency": "bench",
     "parity": "parity",
     "kernels": "kernelResults",
+    "cache": "ct",
 }
 
 
@@ -167,6 +169,18 @@ def kernels_metric(result: dict) -> float:
     return max(errors)
 
 
+def cache_metric(result: dict) -> float:
+    if result.get("backend") != "webgpu":
+        raise ValueError("cache check did not use WebGPU")
+    for key in ("hitVsMiss", "extVsFresh"):
+        if not finite_number(result.get(key)) or result[key] != 0:
+            raise ValueError(f"cache {key} must be exactly zero, got {result.get(key)!r}")
+    stats = result.get("stats", {})
+    if any(stats.get(key) != 1 for key in ("hits", "misses", "extensions")):
+        raise ValueError(f"cache check did not exercise a hit, miss and extension: {stats}")
+    return 0.0
+
+
 def main() -> int:
     args = parse_args()
     url = args.url or DEFAULT_URLS[args.result]
@@ -203,6 +217,7 @@ def main() -> int:
     runner = {
         "browser": capabilities.get("browserName"),
         "browserVersion": capabilities.get("browserVersion"),
+        "headless": not args.headed,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
     }
     result["runner"] = runner
@@ -233,6 +248,8 @@ def main() -> int:
             metric = latency_metric(result)
         elif args.result == "parity":
             metric = parity_metric(result, args.max_dp)
+        elif args.result == "cache":
+            metric = cache_metric(result)
         else:
             metric = kernels_metric(result)
     except ValueError as error:
@@ -241,7 +258,7 @@ def main() -> int:
     if args.output:
         args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if args.result in {"gpu", "bench", "latency"}:
-        print(json.dumps({"backend": result.get("backend"), "method": result.get("method"), "metricMs": metric}, sort_keys=True), file=sys.stderr)
+        print(json.dumps({"backend": result.get("backend"), "method": result.get("method") or result.get("metric"), "metricMs": metric}, sort_keys=True), file=sys.stderr)
     elif args.result == "parity":
         print(json.dumps({"backend": result.get("backend"), "argmax": result.get("argmax"), "questions": result.get("questions"), "maxDp": metric}, sort_keys=True), file=sys.stderr)
     else:
