@@ -130,7 +130,7 @@ def parity_metric(result: dict, max_dp: float) -> float:
 def kernels_metric(result: dict) -> float:
     if result.get("done") is not True:
         raise ValueError("kernel test page did not finish")
-    numeric = {key: value for key, value in result.items() if key != "done"}
+    numeric = {key: value for key, value in result.items() if key not in {"done", "runner"}}
     if not numeric:
         raise ValueError("kernel test page returned no numeric errors")
     errors: list[float] = []
