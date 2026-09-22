@@ -3,6 +3,8 @@
 <head>
 <meta charset="utf-8">
 <title>kevala</title>
+<!-- keep the route (#/tetris) and flags (?pack=local) when forwarding to the site -->
+<script>location.replace("site/" + location.search + location.hash);</script>
 <meta http-equiv="refresh" content="0; url=site/">
 <link rel="canonical" href="site/">
 </head>
