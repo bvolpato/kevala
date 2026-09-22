@@ -1,5 +1,5 @@
 import { kernelSource } from "./wgsl.js";
-import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, SPLIT_SCRATCH, pipeline } from "../js/src/gpu.js";
+import { dispatchMatmul, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, SPLIT_SCRATCH, pipeline } from "../js/src/gpu.js";
 
 const logNode = document.getElementById("log");
 const log = (line) => {
@@ -38,10 +38,9 @@ function parseCases(query) {
   return parsed;
 }
 
-function parseKernel(raw, T, config) {
-  const f16Available = config.f16;
+function parseKernel(raw, T, f16Available) {
   if (raw === "runtime") {
-    return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups };
+    return { label: raw, name: "matmul", f16: f16Available, target: 128, rows: rowsPerThread(T), groups: 1 };
   }
   const match = raw.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
   if (!match || !["matmul", "matmul_h"].includes(match[1])) {
@@ -305,7 +304,7 @@ async function main() {
     const [pMatmul, pReduce] = await pipelineCache.get(key);
     return { pMatmul, pReduce };
   };
-  const variantsFor = (T) => requestedKernels.map((name) => parseKernel(name, T, matmulConfig(device)));
+  const variantsFor = (T) => requestedKernels.map((name) => parseKernel(name, T, device.features.has("shader-f16")));
   const allVariants = variantsFor(shapes[0][0]);
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
