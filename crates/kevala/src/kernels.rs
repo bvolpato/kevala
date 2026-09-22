@@ -73,38 +73,6 @@ unsafe fn micro_2x4(a0: *const f32, a1: *const f32, w: *const f32, k: usize) -> 
     ([c[0].hsum(), c[1].hsum(), c[2].hsum(), c[3].hsum()], [c[4].hsum(), c[5].hsum(), c[6].hsum(), c[7].hsum()])
 }
 
-/// Three rows of x against three weight rows: nine accumulators. Reusing each
-/// weight vector across three input rows reduces weight loads while keeping the
-/// tile below the register pressure of the 3x4 and 4x4 variants.
-#[inline(always)]
-unsafe fn micro_3x3(a: *const f32, w: *const f32, k: usize) -> [[f32; 3]; 3] {
-    let (a0, a1, a2) = (a, a.add(k), a.add(2 * k));
-    let (w0, w1, w2) = (w, w.add(k), w.add(2 * k));
-    let (mut c00, mut c01, mut c02) = (F4::zero(), F4::zero(), F4::zero());
-    let (mut c10, mut c11, mut c12) = (F4::zero(), F4::zero(), F4::zero());
-    let (mut c20, mut c21, mut c22) = (F4::zero(), F4::zero(), F4::zero());
-    let mut i = 0;
-    while i < k {
-        let x0 = F4::load(a0.add(i));
-        let x1 = F4::load(a1.add(i));
-        let x2 = F4::load(a2.add(i));
-        let v0 = F4::load(w0.add(i));
-        c00 = c00.fma(x0, v0);
-        c10 = c10.fma(x1, v0);
-        c20 = c20.fma(x2, v0);
-        let v1 = F4::load(w1.add(i));
-        c01 = c01.fma(x0, v1);
-        c11 = c11.fma(x1, v1);
-        c21 = c21.fma(x2, v1);
-        let v2 = F4::load(w2.add(i));
-        c02 = c02.fma(x0, v2);
-        c12 = c12.fma(x1, v2);
-        c22 = c22.fma(x2, v2);
-        i += 4;
-    }
-    [[c00.hsum(), c01.hsum(), c02.hsum()], [c10.hsum(), c11.hsum(), c12.hsum()], [c20.hsum(), c21.hsum(), c22.hsum()]]
-}
-
 /// Four rows of x against four weight rows: sixteen accumulators, half the loads per
 /// multiply-add of `micro_2x4`. Needs 32 vector registers (ARM); on x86 it spills.
 #[inline(always)]
@@ -190,10 +158,6 @@ unsafe fn dot4(a: *const f32, w: *const f32, k: usize) -> f32 {
 pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
     let (n, k) = (m.n(), m.k());
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
-    // A 3x3 tile is useful only when both dimensions can fill it. Keep the
-    // original 4-column panel and 2x4 tile for smaller calls and tails.
-    let use_3x3 = tile() == 0 && t >= 3 && n >= 3;
-    let panel_n = if use_3x3 { 3 } else { NR };
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
     let tb = ((256 * 1024) / (k * 4)).clamp(8, 512) & !1;
     if let Mat::Q8 { .. } = m {
@@ -206,7 +170,7 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
         let t1 = (t0 + tb).min(t);
         let mut n0 = 0;
         while n0 < n {
-            let rows = panel_n.min(n - n0);
+            let rows = NR.min(n - n0);
             let wp: *const f32 = match m {
                 Mat::Q8 { q, scales, block, .. } => {
                     dequant_panel(q, scales, k, block, n0, rows, panel);
@@ -228,17 +192,6 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
                         r += 4;
                     }
                 }
-                if use_3x3 && rows == 3 {
-                    while r + 3 <= t1 {
-                        let o = micro_3x3(x.as_ptr().add(r * k), wp, k);
-                        for (i, row) in o.iter().enumerate() {
-                            for j in 0..3 {
-                                out[(r + i) * n + n0 + j] = row[j] + b(j);
-                            }
-                        }
-                        r += 3;
-                    }
-                }
                 if rows == NR {
                     while r + 2 <= t1 {
                         let (o0, o1) = micro_2x4(x.as_ptr().add(r * k), x.as_ptr().add((r + 1) * k), wp, k);
@@ -256,7 +209,7 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
                     r += 1;
                 }
             }
-            n0 += panel_n;
+            n0 += NR;
         }
         t0 = t1;
     }
