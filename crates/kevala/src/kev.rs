@@ -565,8 +565,6 @@ impl KevModel {
                             // r counts from the segment start; negative rows come from the tail
                             proj[(seg.start + r) * pw + c]
                         };
-                        let mut kv = vec![0.0; dv];
-                        let mut delta = vec![0.0; dv];
                         for r in 0..seg.len {
                             for c in 0..cd {
                                 let mut s = 0.0;
@@ -597,29 +595,87 @@ impl KevModel {
                                 let decay = ab[row * 2 * nh + hh];
                                 let beta = ab[row * 2 * nh + nh + hh];
                                 let s = &mut state[hh * dk * dv..(hh + 1) * dk * dv];
-                                // kv = (decay * S)^T k
-                                kv.iter_mut().for_each(|x| *x = 0.0);
-                                for i in 0..dk {
-                                    axpy16(&mut kv, k[i], &s[i * dv..(i + 1) * dv]);
-                                }
-                                for j in 0..dv {
-                                    delta[j] = (v[j] - decay * kv[j]) * beta;
-                                }
-                                // S = decay * S + k delta^T, and o = S^T q in the same sweep
                                 let o = &mut core[row * vd + hh * dv..row * vd + (hh + 1) * dv];
-                                o.iter_mut().for_each(|x| *x = 0.0);
                                 let dvec = F4::splat(decay);
-                                for i in 0..dk {
-                                    let srow = &mut s[i * dv..(i + 1) * dv];
-                                    let ki = F4::splat(k[i]);
-                                    let qi = F4::splat(q[i]);
-                                    for jj in (0..dv).step_by(4) {
+                                let bvec = F4::splat(beta);
+                                let full = dv - dv % 16;
+                                for j0 in (0..full).step_by(16) {
+                                    // Keep one cache line of each S row in four vectors while
+                                    // scanning key rows in the same order as the scalar recurrence.
+                                    let (mut kv0, mut kv1, mut kv2, mut kv3) =
+                                        (F4::zero(), F4::zero(), F4::zero(), F4::zero());
+                                    for i in 0..dk {
+                                        let srow = &s[i * dv..(i + 1) * dv];
+                                        let ki = F4::splat(k[i]);
                                         unsafe {
-                                            let sv = F4::load(srow.as_ptr().add(jj))
-                                                .mul(dvec)
-                                                .fma(ki, F4::load(delta.as_ptr().add(jj)));
-                                            sv.store(srow.as_mut_ptr().add(jj));
-                                            F4::load(o.as_ptr().add(jj)).fma(qi, sv).store(o.as_mut_ptr().add(jj));
+                                            kv0 = kv0.fma(ki, F4::load(srow.as_ptr().add(j0)));
+                                            kv1 = kv1.fma(ki, F4::load(srow.as_ptr().add(j0 + 4)));
+                                            kv2 = kv2.fma(ki, F4::load(srow.as_ptr().add(j0 + 8)));
+                                            kv3 = kv3.fma(ki, F4::load(srow.as_ptr().add(j0 + 12)));
+                                        }
+                                    }
+                                    // Keep decay, subtraction, and beta as separate operations.
+                                    let (delta0, delta1, delta2, delta3) = unsafe {
+                                        (
+                                            F4::load(v.as_ptr().add(j0)).sub(dvec.mul(kv0)).mul(bvec),
+                                            F4::load(v.as_ptr().add(j0 + 4)).sub(dvec.mul(kv1)).mul(bvec),
+                                            F4::load(v.as_ptr().add(j0 + 8)).sub(dvec.mul(kv2)).mul(bvec),
+                                            F4::load(v.as_ptr().add(j0 + 12)).sub(dvec.mul(kv3)).mul(bvec),
+                                        )
+                                    };
+                                    let (mut o0, mut o1, mut o2, mut o3) =
+                                        (F4::zero(), F4::zero(), F4::zero(), F4::zero());
+                                    for i in 0..dk {
+                                        let srow = &mut s[i * dv..(i + 1) * dv];
+                                        let ki = F4::splat(k[i]);
+                                        let qi = F4::splat(q[i]);
+                                        unsafe {
+                                            let sv0 = F4::load(srow.as_ptr().add(j0)).mul(dvec).fma(ki, delta0);
+                                            let sv1 = F4::load(srow.as_ptr().add(j0 + 4)).mul(dvec).fma(ki, delta1);
+                                            let sv2 = F4::load(srow.as_ptr().add(j0 + 8)).mul(dvec).fma(ki, delta2);
+                                            let sv3 = F4::load(srow.as_ptr().add(j0 + 12)).mul(dvec).fma(ki, delta3);
+                                            sv0.store(srow.as_mut_ptr().add(j0));
+                                            sv1.store(srow.as_mut_ptr().add(j0 + 4));
+                                            sv2.store(srow.as_mut_ptr().add(j0 + 8));
+                                            sv3.store(srow.as_mut_ptr().add(j0 + 12));
+                                            o0 = o0.fma(qi, sv0);
+                                            o1 = o1.fma(qi, sv1);
+                                            o2 = o2.fma(qi, sv2);
+                                            o3 = o3.fma(qi, sv3);
+                                        }
+                                    }
+                                    unsafe {
+                                        o0.store(o.as_mut_ptr().add(j0));
+                                        o1.store(o.as_mut_ptr().add(j0 + 4));
+                                        o2.store(o.as_mut_ptr().add(j0 + 8));
+                                        o3.store(o.as_mut_ptr().add(j0 + 12));
+                                    }
+                                }
+                                if full < dv {
+                                    // Finish a non-16 tail with the same four-lane recurrence.
+                                    for j0 in (full..dv).step_by(4) {
+                                        let mut kv = F4::zero();
+                                        for i in 0..dk {
+                                            let srow = &s[i * dv..(i + 1) * dv];
+                                            let ki = F4::splat(k[i]);
+                                            unsafe {
+                                                kv = kv.fma(ki, F4::load(srow.as_ptr().add(j0)));
+                                            }
+                                        }
+                                        let delta = unsafe { F4::load(v.as_ptr().add(j0)).sub(dvec.mul(kv)).mul(bvec) };
+                                        let mut out = F4::zero();
+                                        for i in 0..dk {
+                                            let srow = &mut s[i * dv..(i + 1) * dv];
+                                            let ki = F4::splat(k[i]);
+                                            let qi = F4::splat(q[i]);
+                                            unsafe {
+                                                let sv = F4::load(srow.as_ptr().add(j0)).mul(dvec).fma(ki, delta);
+                                                sv.store(srow.as_mut_ptr().add(j0));
+                                                out = out.fma(qi, sv);
+                                            }
+                                        }
+                                        unsafe {
+                                            out.store(o.as_mut_ptr().add(j0));
                                         }
                                     }
                                 }
