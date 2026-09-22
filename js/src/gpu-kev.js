@@ -8,7 +8,7 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, encodeMatmul, matmulPipelines, repackMatmulWeights, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, encodeMatmul, matmulPipelines, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 
 
 let U;
@@ -102,26 +102,7 @@ export class GpuKev {
     };
     const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
-    this.mm = await matmulPipelines(d, this.wgsl, d.features.has("shader-f16") ? "matmul_packed" : "matmul");
-    if (d.features.has("shader-f16")) {
-      const pack = await pipeline(d, this.wgsl("matmul_pack"), "matmul_pack");
-      let pendingBytes = 0;
-      for (const [name, e] of this.weights.tensors) {
-        if (!/\.(qkvz|qkv|o|out|gate_up|down)$/.test(name)) continue;
-        const [N, K] = e.info.shape;
-        const packed = repackMatmulWeights(d, pack, e.buf, e.sbuf, N, K);
-        e.buf.destroy();
-        e.sbuf.destroy();
-        e.buf = packed.buf;
-        e.sbuf = packed.sbuf;
-        pendingBytes += packed.bytes;
-        if (pendingBytes >= 256 * 1024 * 1024) {
-          await d.queue.onSubmittedWorkDone();
-          pendingBytes = 0;
-        }
-      }
-      await d.queue.onSubmittedWorkDone();
-    }
+    this.mm = await matmulPipelines(d, this.wgsl, d.features.has("shader-f16") ? "matmul_wide" : "matmul");
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const f32buf = (arr) => {

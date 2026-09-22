@@ -91,29 +91,6 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
 /** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */
 export const SPLIT_SCRATCH = 8 * 96 * 64 * 64;
 
-export function repackMatmulWeights(device, pack, W, S, N, K) {
-  const usage = GPUBufferUsage;
-  const paddedN = Math.ceil(N / 64) * 64;
-  const sizes = [paddedN * K, paddedN * (K / 32) * 4];
-  const limit = Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize);
-  if (sizes.some((size) => !Number.isSafeInteger(size) || size > limit)) throw new Error("Packed matmul exceeds GPU buffer limits");
-  const [buf, sbuf] = sizes.map((size) => device.createBuffer({ label: "packed matmul weights", size, usage: usage.STORAGE }));
-  const params = device.createBuffer({ size: 16, usage: usage.UNIFORM | usage.COPY_DST });
-  device.queue.writeBuffer(params, 0, new Uint32Array([N, K, 0, 0]));
-  const group = device.createBindGroup({ layout: pack.getBindGroupLayout(0), entries: [params, W, S, buf, sbuf].map((buffer, binding) => ({ binding, resource: { buffer } })) });
-  const encoder = device.createCommandEncoder();
-  const pass = encoder.beginComputePass();
-  pass.setPipeline(pack);
-  pass.setBindGroup(0, group);
-  const count = Math.ceil(sizes[0] / 4 / 256);
-  const width = Math.min(count, device.limits.maxComputeWorkgroupsPerDimension);
-  pass.dispatchWorkgroups(width, Math.ceil(count / width));
-  pass.end();
-  device.queue.submit([encoder.finish()]);
-  params.destroy();
-  return { buf, sbuf, bytes: sizes[0] + sizes[1] };
-}
-
 function parseSubpackHeader(prefix) {
   const dv = new DataView(prefix.buffer, prefix.byteOffset, prefix.byteLength);
   const n = dv.getUint32(8, true);
