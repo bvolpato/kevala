@@ -16,7 +16,7 @@ reasoning; keep an LLM for those and put kevala in front as a cheap first pass.
 
 ## Load once, reuse
 
-Import from the CDN in a plain page, or `npm install kevala` and `import { Kevala } from "kevala"`
+Import from the CDN in a plain page, or `pnpm add kevala` and `import { Kevala } from "kevala"`
 with a bundler.
 
 ```js
@@ -89,7 +89,7 @@ pack file: download one from [bvolpato/kevala-packs](https://huggingface.co/bvol
 (`hf download bvolpato/kevala-packs laya-q8.kevala`) or convert one with the CLI.
 
 ```js
-import { loadFile } from "kevala/node"; // npm install kevala
+import { loadFile } from "kevala/node"; // pnpm add kevala
 const kevala = await loadFile("laya-q8.kevala");
 const r = kevala.decide("I want my money back.", { refund: { type: "noul", instructions: "Does the customer ask for money back?" } });
 ```

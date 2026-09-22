@@ -61,7 +61,7 @@ The default remains `"await"`. Headless frame callbacks stayed near 17 ms in the
 that is not a substitute for testing a rendered application under GPU load.
 
 ```sh
-node scripts/gpu-suite.mjs tmp/gpu-wall-split --wall --submit=split
+pnpm exec node scripts/gpu-suite.mjs tmp/gpu-wall-split --wall --submit=split
 ```
 
 ## What changed
@@ -136,16 +136,17 @@ reference. The corrected NVIDIA baseline already measured 0.010123 for Kev, abov
 
 ## Reproduce
 
-Install Rust with the `wasm32-unknown-unknown` target, Node.js, Firefox, and `uv`. The Python
+Install Rust with the `wasm32-unknown-unknown` target, pnpm, Firefox, and `uv`. The Python
 runner declares Selenium as a script dependency, which `uv` installs in isolation.
 
 ```sh
 mkdir -p tmp
+pnpm install --frozen-lockfile
 rev=e75a06d9329e19fe879f44cfcce33914fb96dade
 curl -fL "https://huggingface.co/bvolpato/kevala-packs/resolve/$rev/laya-q8.kevala" -o tmp/laya-q8.kevala
 curl -fL "https://huggingface.co/bvolpato/kevala-packs/resolve/$rev/kev-0.8b-q8.kevala" -o tmp/kev-0.8b-q8.kevala
-scripts/build-wasm.sh
-node scripts/serve.mjs . --port=18086
+pnpm build
+pnpm serve --port=18086
 ```
 
 In another terminal, select the intended GPU. ICD paths vary by distribution.
@@ -153,10 +154,10 @@ In another terminal, select the intended GPU. ICD paths vary by distribution.
 ```sh
 export VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json
 # AMD: /usr/share/vulkan/icd.d/radeon_icd.json
-node scripts/gpu-suite.mjs tmp/gpu-profile
-node scripts/gpu-suite.mjs tmp/gpu-wall --wall
-node scripts/gpu-guard.mjs tmp/gpu-guard
-npm test
+pnpm exec node scripts/gpu-suite.mjs tmp/gpu-profile
+pnpm exec node scripts/gpu-suite.mjs tmp/gpu-wall --wall
+pnpm exec node scripts/gpu-guard.mjs tmp/gpu-guard
+pnpm test
 ```
 
 The suite writes both model results and `summary.json`, with a scalar metric on the last stdout

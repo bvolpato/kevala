@@ -45,10 +45,10 @@ From a CDN, in any page:
 </script>
 ```
 
-Or from npm, with any bundler (Vite, webpack, esbuild) or none:
+Or install from the npm registry with pnpm, with any bundler (Vite, webpack, esbuild) or none:
 
 ```sh
-npm install kevala
+pnpm add kevala
 ```
 
 ```js
@@ -191,8 +191,15 @@ Details: [docs/architecture.md](docs/architecture.md). Packs, and how to convert
 
 ## Command line and building from source
 
+Use [pnpm](https://pnpm.io/installation) for development. `package.json` pins pnpm 12.5.1
+and Node.js 24.21.0 LTS. `pnpm install` downloads the project Node runtime, and pnpm scripts
+use it automatically. CI uses the same pins and requires the committed lockfile.
+
 ```sh
-scripts/build-wasm.sh                        # js/src/kevala-{relaxed,simd,base}.wasm
+pnpm install --frozen-lockfile
+pnpm check                                  # JavaScript syntax
+pnpm test                                   # JavaScript regression tests
+pnpm build                                  # js/src/kevala-{relaxed,simd,base}.wasm
 cargo build --release -p kevala-cli            # target/release/kevala
 
 kevala convert <laya-checkpoint-dir> -o laya-q8.kevala
@@ -202,7 +209,7 @@ kevala parity laya-q8.kevala tests/fixtures/golden.json
 kevala bench kev-0.8b-q8.kevala --tokens 128
 kevala wgsl matmul --f16 --rows 3                  # a GPU kernel, specialized
 
-node scripts/serve.mjs . --port=8080         # static server for the site and examples
+pnpm serve                                 # static server at http://127.0.0.1:8080
 uv run dev/record-tetris.py                  # re-record docs/tetris.gif and docs/tetris.mp4 (needs port 8123)
 cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)
 ```

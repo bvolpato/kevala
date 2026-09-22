@@ -9,7 +9,8 @@ works. No build step and no dependencies.
 Open a file from any static server (a `file://` page cannot start the workers):
 
 ```sh
-node scripts/serve.mjs . --port=8080
+pnpm install --frozen-lockfile
+pnpm serve
 open http://127.0.0.1:8080/examples/basic.html
 ```
 
@@ -123,7 +124,7 @@ The same WebAssembly engine runs on a server or in a script, in one instance, wi
 GPU. It reads a pack converted by the CLI (or one exported from a browser's storage).
 
 ```sh
-npm install kevala
+pnpm add kevala
 ```
 
 ```js
@@ -140,7 +141,7 @@ const rs = kevala.decideMany(tickets.map((state) => ({ state, questions })));
 ```
 
 `decide` is synchronous here and returns the same response shape as in the browser. One core
-answers a short Laya request in about 0.4 s; `node scripts/bench-node.mjs <pack>` times your machine.
+answers a short Laya request in about 0.4 s; `pnpm exec node scripts/bench-node.mjs <pack>` times your machine.
 
 ## Licenses
 
