@@ -102,7 +102,7 @@ export class GpuKev {
     };
     const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
-    this.mm = await matmulPipelines(d, this.wgsl, d.features.has("shader-f16") ? "matmul_wide" : "matmul");
+    this.mm = await matmulPipelines(d, this.wgsl, d.features.has("shader-f16") ? "matmul_outer" : "matmul");
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const f32buf = (arr) => {
