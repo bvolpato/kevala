@@ -18,6 +18,8 @@ const KERNELS = {
   attention: { queries: 16 },
   attention_subgroup: { queries: 16, subgroup32: true },
   attention_tile: { queries: 64, subgroup32: true },
+  // the tiled kernel without subgroups: row statistics through workgroup memory
+  attention_tile_shared: { kernel: "attention_tile", spec: { subgroups: false }, queries: 64 },
 };
 
 const query = new URLSearchParams(location.search);
@@ -71,7 +73,8 @@ async function main() {
   });
   const pipes = {};
   for (const name of usable) {
-    const module = d.createShaderModule({ code: wgsl(name, { subgroups: !!KERNELS[name].subgroup32 }) });
+    const k = KERNELS[name];
+    const module = d.createShaderModule({ code: wgsl(k.kernel || name, k.spec || { subgroups: !!k.subgroup32 }) });
     pipes[name] = await d.createComputePipelineAsync({ layout: d.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: "main" } });
   }
   const querySet = timestamps ? d.createQuerySet({ type: "timestamp", count: 2 }) : null;

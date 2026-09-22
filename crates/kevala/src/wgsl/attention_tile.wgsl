@@ -1,13 +1,17 @@
-// Laya attention with register tiles, for GPUs with subgroups of 16 or more lanes and f16
-// (FlashAttention-2's work split, without matrix units). A workgroup of 256 threads takes 64
+// Laya attention with register tiles, for GPUs with f16 (FlashAttention-2's work split, without
+// matrix units). A workgroup of 256 threads takes 64
 // queries of one head and walks the keys 32 at a time. Thread t owns queries 4 (t / 16) .. + 3:
 // first it scores them against keys 2 (t % 16) and 2 (t % 16) + 1, then it accumulates output
-// dimensions 4 (t % 16) .. + 3 for them. The 16 threads sharing those queries are consecutive
-// lanes of one subgroup, so the running max and sum of each query come from lane shuffles and
-// stay in registers, and so does the output. Q, K and V tiles are f16 in workgroup memory (the
-// math is f32); rows are padded so the lanes of a subgroup read different banks.
+// dimensions 4 (t % 16) .. + 3 for them, so the running max, sum and output of each query stay
+// with the same 16 threads. With subgroups of 16 or more lanes those threads are lanes of one
+// subgroup and combine row statistics with shuffles; without, each posts its partial maxima to
+// workgroup memory (one more barrier per step), and each keeps its own share of the sums until
+// the end. Q, K and V tiles are f16 in workgroup memory (the math is f32); rows are padded so
+// neighbouring threads read different banks.
 enable f16;
+//#if SUBGROUPS
 enable subgroups;
+//#endif
 
 //#include common
 
@@ -26,6 +30,7 @@ var<workgroup> vs: array<vec4<f16>, 512>;  // [32 keys][16]
 var<workgroup> ps: array<f32, 2112>;       // [64 queries][PROW]: probabilities of this step
 var<workgroup> info: vec4<u32>;
 
+//#if SUBGROUPS
 // max and sum over the 16 lanes that share a query
 fn row_max(x: f32) -> f32 {
   var m = max(x, subgroupShuffleXor(x, 1u));
@@ -39,6 +44,9 @@ fn row_sum(x: f32) -> f32 {
   s += subgroupShuffleXor(s, 4u);
   return s + subgroupShuffleXor(s, 8u);
 }
+//#else
+var<workgroup> red: array<f32, 1088>; // [64 queries][17]: the 16 partial maxima or sums of a query
+//#endif
 
 @compute @workgroup_size(256)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t: u32) {
@@ -99,23 +107,43 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
         s[c] += vec2<f32>(dot(q, k0), dot(q, k1));
       }
     }
-    // online softmax: every lane of a query's 16 gets the same statistics
+    // online softmax: every lane of a query's 16 gets the same running max
     var scale = vec4<f32>(1.0);
+    var ea: vec4<f32>;
+    var eb: vec4<f32>;
+    var local: vec4<f32>;
     for (var c = 0u; c < 4u; c++) {
       let i = q0 + 4u * tq + c;
       let j = j0 + 2u * tk;
       let v0 = 4u * tq + c < nq && j < hi && (w == 0u || max(i, j) - min(i, j) <= w);
       let v1 = 4u * tq + c < nq && j + 1u < hi && (w == 0u || max(i, j + 1u) - min(i, j + 1u) <= w);
-      let a = select(-3.0e38, s[c].x * 0.125, v0);
-      let b = select(-3.0e38, s[c].y * 0.125, v1);
-      let top = max(mx[c], row_max(max(a, b)));
-      let ea = select(0.0, exp(a - top), v0);
-      let eb = select(0.0, exp(b - top), v1);
-      scale[c] = exp(mx[c] - top);
-      sum[c] = sum[c] * scale[c] + row_sum(ea + eb);
-      mx[c] = top;
-      ps[(4u * tq + c) * PROW + 2u * tk] = ea;
-      ps[(4u * tq + c) * PROW + 2u * tk + 1u] = eb;
+      ea[c] = select(-3.0e38, s[c].x * 0.125, v0);
+      eb[c] = select(-3.0e38, s[c].y * 0.125, v1);
+      local[c] = max(ea[c], eb[c]);
+    }
+//#if SUBGROUPS
+    var top: vec4<f32>;
+    for (var c = 0u; c < 4u; c++) { top[c] = max(mx[c], row_max(local[c])); }
+//#else
+    for (var c = 0u; c < 4u; c++) { red[(4u * tq + c) * 17u + tk] = local[c]; }
+    workgroupBarrier();
+    var top = mx;
+    for (var c = 0u; c < 4u; c++) {
+      for (var x = 0u; x < 16u; x++) { top[c] = max(top[c], red[(4u * tq + c) * 17u + x]); }
+    }
+//#endif
+    for (var c = 0u; c < 4u; c++) {
+      let pa = select(0.0, exp(ea[c] - top[c]), ea[c] > -1.0e38);
+      let pb = select(0.0, exp(eb[c] - top[c]), eb[c] > -1.0e38);
+      scale[c] = exp(mx[c] - top[c]);
+//#if SUBGROUPS
+      sum[c] = sum[c] * scale[c] + row_sum(pa + pb);
+//#else
+      sum[c] = sum[c] * scale[c] + pa + pb; // this thread's share; added up at the end
+//#endif
+      mx[c] = top[c];
+      ps[(4u * tq + c) * PROW + 2u * tk] = pa;
+      ps[(4u * tq + c) * PROW + 2u * tk + 1u] = pb;
     }
     for (var c = 0u; c < 4u; c++) { o[c] *= scale[c]; }
     workgroupBarrier();
@@ -127,6 +155,16 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
     }
   }
 
+//#if SUBGROUPS
+//#else
+  workgroupBarrier();
+  for (var c = 0u; c < 4u; c++) { red[(4u * tq + c) * 17u + tk] = sum[c]; }
+  workgroupBarrier();
+  for (var c = 0u; c < 4u; c++) {
+    sum[c] = 0.0;
+    for (var x = 0u; x < 16u; x++) { sum[c] += red[(4u * tq + c) * 17u + x]; }
+  }
+//#endif
   for (var c = 0u; c < 4u; c++) {
     let qi = 4u * tq + c;
     if (qi < nq) { CTX[(s0 + q0 + qi) * kv + hv + tk] = o[c] / sum[c]; }

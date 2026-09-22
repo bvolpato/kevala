@@ -36,7 +36,9 @@ async function run() {
   const runs = Number(q.get("runs") || 10);
   const t0 = performance.now();
   // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs
-  const kevala = await Kevala.load({ backend, threads, model, profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1" });
+  // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
+  const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
+  const kevala = await Kevala.load({ backend, threads, model, profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
   try {
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const results = { model: name, arch: kevala.info.arch, backend: kevala.info.backend, gpu: kevala.info.gpu, threads: kevala.info.threads, flavor: kevala.info.flavor, load_s: (performance.now() - t0) / 1000, cases: [] };
