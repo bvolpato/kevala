@@ -19,7 +19,9 @@ d.queue.writeBuffer(g, 0, new Uint32Array([T, 0, 1, 1]));
 const res = {};
 const pipes = {};
 const wgsl = await kernelSource();
-const KEV_SHADERS = { RECUR: wgsl("kev_recur"), RECUR_LANES: wgsl("kev_recur_lanes") };
+// the lane-split recurrence, combining its four lanes per column with shuffles or through memory
+const KEV_SHADERS = { RECUR_SHARED: wgsl("kev_recur_lanes", { subgroups: false }) };
+if (d.features.has("subgroups")) KEV_SHADERS.RECUR_SHUFFLE = wgsl("kev_recur_lanes", { subgroups: true });
 for (const [k, code] of Object.entries(KEV_SHADERS)) pipes[k] = await d.createComputePipelineAsync({ layout: "auto", compute: { module: d.createShaderModule({ code }), entryPoint: "main" } });
 for (let round = 0; round < 3; round++) {
   for (const [k, p] of Object.entries(pipes)) {
@@ -29,7 +31,7 @@ for (let round = 0; round < 3; round++) {
       const pass = e.beginComputePass();
       pass.setPipeline(p);
       pass.setBindGroup(0, bg);
-      for (let i = 0; i < n; i++) pass.dispatchWorkgroups(1, 16);
+      for (let i = 0; i < n; i++) pass.dispatchWorkgroups(1, 16, 2); // z: the two halves of a head's columns
       pass.end();
       d.queue.submit([e.finish()]);
       await d.queue.onSubmittedWorkDone();
