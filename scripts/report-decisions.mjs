@@ -33,7 +33,7 @@ const MODEL_ALIASES = Object.freeze({
   "semif-2b": "semif-qwen3.5-2b",
   "semif-4b": "semif-qwen3.5-4b",
 });
-const DEFAULT_REFERENCES = ["gemma-it-reference.json", "gemma-base-reference.json"];
+const DEFAULT_REFERENCES = ["gemma-base-vs-it.json"];
 const DEFAULT_PROBABILITY_TOLERANCE = 1e-3;
 const ARGMAX_TOLERANCE = 1e-3;
 const TYPED_OPTION_RENDERING = Object.freeze({
@@ -737,7 +737,7 @@ async function processReference(path, expected, tolerance) {
   }
   return {
     report: {
-      status: datasetValidation.ok && Object.values(reports).some((item) => item.status === "ok") ? "ok" : "invalid",
+      status: datasetValidation.ok && Object.keys(reports).length > 0 && Object.values(reports).every((item) => item.status === "ok") ? "ok" : "invalid",
       file: { path: relative(ROOT, path), sha256: await sha256(path) },
       dataset,
       datasetMetadata: data.dataset ?? null,
@@ -858,6 +858,9 @@ async function main() {
     report.references[relative(ROOT, path)] = checked.report;
     for (const [name, variant] of checked.variants) referenceData.set(name, variant);
   }
+  for (const variant of ["e2b-base", "e2b-it", "e4b-base", "e4b-it"]) {
+    if (!referenceData.has(variant)) report.missing.push(`reference variant: ${variant}`);
+  }
   const kevalaRows = canonical.byDataset.get("kevala-authored36") ?? [];
   report.comparisons.push(compareQ8WithReference(modelData.get("gemma-4-e2b"), referenceData, kevalaRows, "gemma-4-e2b", "e2b-it"));
   report.comparisons.push(compareQ8WithReference(modelData.get("gemma-4-e4b"), referenceData, kevalaRows, "gemma-4-e4b", "e4b-it"));
@@ -871,6 +874,13 @@ async function main() {
   if (args.markdown) {
     await mkdir(dirname(args.markdown), { recursive: true });
     await writeFile(args.markdown, markdown(report));
+  }
+  if (report.missing.length
+      || Object.values(report.models).some((item) => item.status !== "ok")
+      || Object.values(report.references).some((item) => item.status !== "ok")
+      || report.comparisons.some((item) => item.status !== "ok")) {
+    console.error("Decision report contains missing or invalid inputs; inspect the saved validation results.");
+    process.exitCode = 1;
   }
 }
 
