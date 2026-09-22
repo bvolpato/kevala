@@ -200,6 +200,10 @@ pnpm install --frozen-lockfile
 pnpm check                                  # JavaScript syntax
 pnpm test                                   # JavaScript regression tests
 pnpm build                                  # js/src/kevala-{relaxed,simd,base}.wasm
+pnpm check:wasm                             # validate all three generated modules
+pnpm pack --pack-destination dist/package   # prepack rebuilds modules, then creates a tarball
+pnpm check:package dist/package/kevala-*.tgz
+pnpm stage:site                             # stage the allowlisted Pages tree in dist/site
 cargo build --release -p kevala-cli            # target/release/kevala
 
 kevala convert <laya-checkpoint-dir> -o laya-q8.kevala
@@ -214,8 +218,18 @@ uv run dev/record-tetris.py                  # re-record docs/tetris.gif and doc
 cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)
 ```
 
-The core needs Rust 1.85 or newer. Python helpers generate reference fixtures and automate
+The repository pins Rust 1.95.0 in [`rust-toolchain.toml`](rust-toolchain.toml), including the
+`wasm32-unknown-unknown` target and `rustfmt`. Python helpers generate reference fixtures and automate
 browser GPU benchmarks through `uv`.
+
+The three generated WebAssembly modules live in `js/src/` during this migration so a fresh checkout,
+the static site, and local Node imports work immediately. `pnpm build` and the package `prepack` hook
+rebuild them from the locked Rust dependency graph. CI validates all three modules, validates the packed
+tarball, and stages Pages from an explicit public asset allowlist. Before removing the tracked copies,
+set GitHub's Pages source to **GitHub Actions** in repository Settings → Pages → Build and deployment,
+then verify one successful `main` deployment and its package artifact checks (the workflow also supports
+`workflow_dispatch` on `main` for this verification). A follow-up change can then remove the tracked
+copies; keeping them checked in until that point makes source checkouts safe and makes drift reviewable.
 
 For reproducible GPU timing, model parity checks, and Firefox/Linux measurements, see
 [docs/gpu-benchmarks.md](docs/gpu-benchmarks.md). The benchmark distinguishes GPU kernel time
