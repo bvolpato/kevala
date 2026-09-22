@@ -2,8 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
-#   "playwright>=1.50",
 #   "selenium>=4.25,<5",
+#   "websockets>=13",
 # ]
 # ///
 """Run the deterministic WebGPU benchmark in an isolated headless Firefox, or in a running Chrome.
@@ -188,34 +188,59 @@ def cache_metric(result: dict) -> float:
 
 
 def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float) -> tuple[object, dict]:
-    """Loads `url` in a fresh context of a running Chrome and polls `expression` until it is done."""
-    from playwright.sync_api import sync_playwright
+    """Loads `url` in a fresh context of a running Chrome and polls `expression` until it is done.
 
-    with sync_playwright() as pw:
-        browser = pw.chromium.connect_over_cdp(cdp)
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
+    This speaks the DevTools protocol directly: Playwright's attach step asserts on target types
+    it does not know, which some Chrome builds add for their own UI.
+    """
+    import urllib.request
+
+    from websockets.sync.client import connect
+
+    endpoint = json.load(urllib.request.urlopen(f"{cdp}/json/version"))
+    ids = iter(range(1, 1 << 30))
+
+    with connect(endpoint["webSocketDebuggerUrl"], max_size=None, open_timeout=30) as ws:
+
+        def send(method: str, params: dict | None = None, session: str | None = None) -> dict:
+            msg_id = next(ids)
+            message = {"id": msg_id, "method": method, "params": params or {}}
+            if session:
+                message["sessionId"] = session
+            ws.send(json.dumps(message))
+            while True:
+                reply = json.loads(ws.recv(timeout=timeout))
+                if reply.get("id") == msg_id:
+                    if "error" in reply:
+                        raise RuntimeError(f"{method}: {reply['error'].get('message')}")
+                    return reply.get("result", {})
+
+        context = send("Target.createBrowserContext", {"disposeOnDetach": True})["browserContextId"]
         result: object = None
         try:
-            page = context.new_page()
+            target = send("Target.createTarget", {"url": "about:blank", "browserContextId": context, "newWindow": True})["targetId"]
+            session = send("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
             # Chrome slows covered windows: size this one and bring it to the front
-            cdp_session = context.new_cdp_session(page)
-            window = cdp_session.send("Browser.getWindowForTarget")
-            cdp_session.send("Browser.setWindowBounds", {"windowId": window["windowId"], "bounds": {"width": 1280, "height": 900, "windowState": "normal"}})
-            page.bring_to_front()
-            page.goto(url, timeout=timeout * 1000)
+            window = send("Browser.getWindowForTarget", {"targetId": target})["windowId"]
+            send("Browser.setWindowBounds", {"windowId": window, "bounds": {"width": 1280, "height": 900, "windowState": "normal"}})
+            send("Page.bringToFront", session=session)
+            send("Page.navigate", {"url": url}, session=session)
             deadline = time.monotonic() + timeout
             while time.monotonic() < deadline:
-                result = page.evaluate(f"() => {{ {expression} }}")
+                try:
+                    evaluated = send("Runtime.evaluate", {"expression": f"(() => {{ {expression} }})()", "returnByValue": True}, session=session)
+                except RuntimeError:  # no execution context yet, while the page navigates
+                    time.sleep(0.25)
+                    continue
+                result = evaluated.get("result", {}).get("value")
                 if result_is_done(result, kind):
                     break
                 time.sleep(0.25)
         except Exception as error:
             result = {"error": f"browser runner: {error}"}
         finally:
-            context.close()
-            version = browser.version
-            browser.close()  # over CDP this only disconnects
-    return result, {"browserName": "chrome", "browserVersion": version}
+            send("Target.disposeBrowserContext", {"browserContextId": context})
+    return result, {"browserName": "chrome", "browserVersion": endpoint.get("Browser")}
 
 
 def main() -> int:
