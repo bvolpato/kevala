@@ -222,8 +222,8 @@ were measured here by loading with only some features (`gpuFeatures`, `baseline=
   one more barrier per token. With no optional features: 37.7 to 11.2 ms at 532 tokens, and Kev's
   GPU time falls 14%.
 
-These variants were not measured in Firefox. Laya's parity with f16 and no subgroups is 41/41 at
-max |dp| 0.0235, close to the 0.024 tuning guard: check it on NVIDIA and AMD before relying on it.
+These variants were not measured in Firefox during the M4 sweep. The subsequent Linux integration
+check below found and repaired a shared-attention correctness regression before accepting that path.
 
 ## Tried and dropped
 
@@ -249,3 +249,46 @@ uv run scripts/bench-gpu.py --result gpu --url 'http://127.0.0.1:8123/dev/attn-b
 Build the WebAssembly first (`pnpm build`, with the Rust 1.95.0 that `rust-toolchain.toml` pins).
 `dev/gpu-bench.html` now times its variants in turns and in batches of about 20 GFLOP: before,
 identical settings could differ by 4x on this GPU.
+
+## Linux integration correctness repair
+
+A fresh check of merged revision `4cc970e` found a Laya regression on Firefox 152.0.3 with the
+NVIDIA RTX 5070 Ti: **24/41** decisions matched, with maximum probability difference **0.878**.
+The existing matrix and portable attention guards passed. They did not execute the new tiled
+attention variant that Firefox selects with f16 and no usable subgroups.
+
+Synthetic inputs isolated the failure to the second 32-key tile. Inputs through 32 keys passed;
+longer inputs produced attention errors as high as 1.164 against the CPU reference. Explicitly
+zeroing the four score accumulators at each key tile repairs the output. [WGSL specifies
+implicit zero initialization](https://www.w3.org/TR/WGSL/#var-declarations) here; the compiler or driver stage responsible for the observed
+behavior has not been isolated. The optimized path remains enabled.
+
+[Before/after correctness results](benchmarks/laya-attention-correctness-linux-2026-09-22.json):
+
+| Check | Result |
+| --- | --- |
+| NVIDIA, portable and shared tiled attention | 17 shapes, three verification passes each; maximum error 0.000488, below 0.002 |
+| AMD integrated GPU, portable and shared tiled attention | Five shapes, three verification passes each; below 0.002 |
+| Laya, Firefox WebGPU on NVIDIA and AMD | 41/41 each, max probability difference 0.02350645 |
+| Kev 0.8B, Firefox WebGPU on NVIDIA | 13/13, max probability difference 0.01021368 |
+| GPU cache hit and extension | Exact probability agreement with fresh inference |
+| Laya, Firefox CPU with four workers | 41/41, max probability difference 0.02400645 |
+| Kev 0.8B, Firefox CPU | 13/13, max probability difference 0.00968519 |
+| CPU matrices | 1,408 cases per WASM flavor: relaxed SIMD, SIMD, and scalar |
+
+The GPU guard now runs feature-compatible attention variants, including query/key tile boundaries,
+partial blocks, multiple segments, and windowed attention. It checks every output through 65 tokens,
+samples query/head rows for larger inputs, explicitly checks segment and query-block boundaries,
+and scans all outputs for finiteness. Unsupported variants are reported as skipped. This Linux run
+did not execute the subgroup plus f16 variant; the earlier M4 measurements predate this repair.
+These checks establish correctness on the tested devices, not a speed claim.
+
+The website size picker has a separate weight-free browser check:
+
+```sh
+uv run scripts/check-model-picker.py
+```
+
+It verifies both families, their smallest defaults, saved and URL-selected sizes, keyboard focus,
+switching from loaded/cached models, explicit loading, and mobile width. GPU and CPU guards remain
+serial model checks; the picker test does not fetch model weights.

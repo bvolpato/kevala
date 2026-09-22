@@ -17,9 +17,9 @@ const DIM = 64;
 const KERNELS = {
   attention: { queries: 16 },
   attention_subgroup: { queries: 16, subgroup32: true },
-  attention_tile: { queries: 64, subgroup32: true },
+  attention_tile: { queries: 64, capability: "attentionTile", spec: { subgroups: true } },
   // the tiled kernel without subgroups: row statistics through workgroup memory
-  attention_tile_shared: { kernel: "attention_tile", spec: { subgroups: false }, queries: 64 },
+  attention_tile_shared: { kernel: "attention_tile", spec: { subgroups: false }, queries: 64, f16: true, storage: 29968 },
 };
 
 const query = new URLSearchParams(location.search);
@@ -66,8 +66,16 @@ async function main() {
   const names = (query.get("kernels") || "attention,attention_subgroup").split(",");
   const samples = Number(query.get("samples") || 7);
   const warmups = Number(query.get("warmups") || 2);
-  const usable = names.filter((n) => !KERNELS[n].subgroup32 || gpu.subgroup32);
-  log(`device: ${gpu.name}; kernels ${usable.join(", ")}${usable.length < names.length ? " (others need 32-lane subgroups)" : ""}`);
+  const repeats = Number(query.get("checks") || 1);
+  if (!Number.isInteger(repeats) || repeats < 1) throw new Error("checks must be a positive integer");
+  const usable = names.filter((name) => {
+    const k = KERNELS[name];
+    if (!k) throw new Error(`unknown attention kernel: ${name}`);
+    return (!k.subgroup32 || gpu.subgroup32) && (!k.capability || gpu[k.capability]) &&
+      (!k.f16 || d.features.has("shader-f16")) && (!k.storage || d.limits.maxComputeWorkgroupStorageSize >= k.storage);
+  });
+  if (!usable.length) throw new Error("none of the requested attention kernels are supported");
+  log(`device: ${gpu.name}; kernels ${usable.join(", ")}${usable.length < names.length ? " (unsupported variants skipped)" : ""}`);
   const layout = d.createBindGroupLayout({
     entries: ["uniform", "uniform", "read-only-storage", "read-only-storage", "storage"].map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })),
   });
@@ -104,9 +112,23 @@ async function main() {
     const params = buffer(new Uint32Array([W, stride, c.window, 0]), GPUBufferUsage.UNIFORM);
     // query samples for the CPU check: every query of small cases, a spread of them otherwise
     const checks = [];
-    const step = Math.max(1, Math.floor((T * HEADS) / 96));
+    const step = T <= 65 ? 1 : Math.max(1, Math.floor((T * HEADS) / 96));
     for (let n = 0; n < T * HEADS; n += step) checks.push([Math.floor(n / HEADS), n % HEADS]);
     checks.push([T - 1, HEADS - 1]);
+    const checked = new Set(checks.map(([i, h]) => i * HEADS + h));
+    let offset = 0;
+    for (const L of c.lens) {
+      for (let block = 0; block < L; block += 64) {
+        for (const pos of [block - 1, block, block + 1, L - 1]) {
+          if (pos < 0 || pos >= L) continue;
+          for (let h = 0; h < HEADS; h++) {
+            const key = (offset + pos) * HEADS + h;
+            if (!checked.has(key)) { checks.push([offset + pos, h]); checked.add(key); }
+          }
+        }
+      }
+      offset += L;
+    }
     const want = checks.map(([i, h]) => reference(qkv, tok, i, h, c.window, W, stride));
 
     const runs = usable.map((name) => {
@@ -154,29 +176,32 @@ async function main() {
     const timings = [];
     const errors = {};
     for (const run of runs) {
-      d.queue.writeBuffer(CTX, 0, new Float32Array(T * W));
-      const e = d.createCommandEncoder();
-      const pass = e.beginComputePass();
-      pass.setPipeline(pipes[run.name]);
-      pass.setBindGroup(0, run.group);
-      pass.dispatchWorkgroups(run.blocks, HEADS);
-      pass.end();
-      const out = d.createBuffer({ size: T * W * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
-      e.copyBufferToBuffer(CTX, 0, out, 0, T * W * 4);
-      d.queue.submit([e.finish()]);
-      await out.mapAsync(GPUMapMode.READ);
-      const got = new Float32Array(out.getMappedRange().slice(0));
-      out.destroy();
       let err = 0;
-      checks.forEach(([i, h], k) => {
-        for (let x = 0; x < DIM; x++) err = Math.max(err, Math.abs(got[i * W + h * DIM + x] - want[k][x]));
-      });
+      for (let repeat = 0; repeat < repeats; repeat++) {
+        d.queue.writeBuffer(CTX, 0, new Float32Array(T * W));
+        const e = d.createCommandEncoder();
+        const pass = e.beginComputePass();
+        pass.setPipeline(pipes[run.name]);
+        pass.setBindGroup(0, run.group);
+        pass.dispatchWorkgroups(run.blocks, HEADS);
+        pass.end();
+        const out = d.createBuffer({ size: T * W * 4, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
+        e.copyBufferToBuffer(CTX, 0, out, 0, T * W * 4);
+        d.queue.submit([e.finish()]);
+        await out.mapAsync(GPUMapMode.READ);
+        const got = new Float32Array(out.getMappedRange().slice(0));
+        out.destroy();
+        if (!got.every(Number.isFinite)) err = Infinity;
+        checks.forEach(([i, h], k) => {
+          for (let x = 0; x < DIM; x++) err = Math.max(err, Math.abs(got[i * W + h * DIM + x] - want[k][x]));
+        });
+      }
       if (!(err < 2e-3)) ok = false;
       errors[run.name] = err;
       const sorted = [...run.samples].sort((a, b) => a - b);
       timings.push({ kernel: run.name, reps: run.reps, samples: run.samples, medianMs: sorted[sorted.length >> 1] });
     }
-    cases.push({ shape: c.label, T, window: c.window, timings, errors, medianMs: timings[0].medianMs });
+    cases.push({ shape: c.label, T, window: c.window, checkedQueryHeads: checks.length, timings, errors, medianMs: timings[0].medianMs });
     log(`${c.label}: ${timings.map((t) => `${t.kernel}=${t.medianMs.toFixed(3)}ms (err ${errors[t.kernel].toExponential(1)})`).join(", ")}`);
   }
   const metricMs = Math.exp(cases.reduce((s, c) => s + Math.log(c.medianMs), 0) / cases.length);
@@ -187,6 +212,9 @@ async function main() {
     metricMs,
     method: timestamps ? "WebGPU timestamp-query" : "wall clock",
     kernels: usable,
+    skippedKernels: names.filter((name) => !usable.includes(name)),
+    verificationRepeats: repeats,
+    features: [...d.features],
     cases,
     adapter: { vendor: info.vendor, architecture: info.architecture, isFallbackAdapter: !!info.isFallbackAdapter },
     correctness: { ok, limit: 2e-3 },

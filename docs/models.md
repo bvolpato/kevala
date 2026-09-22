@@ -1,7 +1,9 @@
 # Choosing and running models
 
-Laya is the demo default. Kev-0.8B is the small decoder option. Larger Kev models and the
-SemIf-style Qwen models are additional choices, loaded only when selected. Their weights are
+Laya is the demo default. Select Kev in the model menu to reveal its 0.8B, 4B, and 9B size slider.
+SemIf-style Qwen3.5 is under **More models**, with 0.8B, 2B, and 4B sizes. Switching families starts
+at the smallest size; saved choices and explicit model URLs retain their selected size. Changing
+the slider updates the download size and waits for **Load** before fetching weights. Their weights are
 distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs).
 
 The catalog pins the [verified pack revision](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).

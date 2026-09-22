@@ -66,34 +66,106 @@ function renderChip(s) {
   }
 }
 
+const MODEL_FAMILIES = {
+  kev: {
+    name: "Kev",
+    short: "Qwen3.5 hybrid decoder + trained pointer head",
+    models: [["kev-0.8b", "0.8B"], ["kev-4b", "4B"], ["kev-9b", "9B"]],
+  },
+  semif: {
+    name: "SemIf-style Qwen3.5",
+    short: "Frozen Qwen3.5 model with direct option scoring",
+    models: [["semif-qwen3.5-0.8b", "0.8B"], ["semif-qwen3.5-2b", "2B"], ["semif-qwen3.5-4b", "4B"]],
+  },
+};
+
+const FAMILY_BY_MODEL = Object.fromEntries(
+  Object.entries(MODEL_FAMILIES).flatMap(([family, spec]) => spec.models.map(([id]) => [id, family])),
+);
+
+function familyModels(family) {
+  return MODEL_FAMILIES[family].models.filter(([id]) => MODELS[id] &&
+    (LOCAL || (FROM === "checkpoint" ? MODELS[id].browserConvert : MODELS[id].hosted || MODELS[id].browserConvert)));
+}
+
+function modelPackBytes(id) {
+  const spec = MODELS[id];
+  return spec && (LOCAL || FROM === "pack") ? spec.pack : spec?.download;
+}
+
+function modelSizeLabel(id) {
+  const bytes = modelPackBytes(id);
+  return bytes ? `${fmtBytes(bytes)} ${!LOCAL && FROM === "checkpoint" ? "checkpoint" : "int8 pack"}` : "Pack size unavailable";
+}
+
+function modelBadge(s, id) {
+  if (s.model === id && s.status === "ready") return `<span class="badge good">loaded</span>`;
+  if (s.cached[id]) return `<span class="badge">cached</span>`;
+  const bytes = modelPackBytes(id);
+  return bytes ? `<span class="badge faint-b">${fmtBytes(bytes)} download</span>` : "";
+}
+
+function modelStateLine(s, id) {
+  if (s.model === id && s.status === "ready" && s.info) {
+    return `${backendLabel(s.info)} · ready in ${fmtMs(s.info.loadMs)}`;
+  }
+  return s.costLine(id);
+}
+
+function familyValueText(s, id) {
+  const note = MODEL_NOTES[id];
+  const state = s.model === id && s.status === "ready" ? "loaded" : s.cached[id] ? "cached" : "available to download";
+  return `${note?.name || id}; ${modelSizeLabel(id)}; ${state}`;
+}
+
 function modelOption(s, id) {
   const note = MODEL_NOTES[id];
   const spec = MODELS[id];
   if (!note || !spec) return "";
   const active = s.model === id;
-  const { hosted, pack, download } = spec;
-  const bytes = hosted && FROM === "pack" ? pack : download;
-  let badge = bytes ? `<span class="badge faint-b">${fmtBytes(bytes)} download</span>` : "";
-  if (active && s.status === "ready") badge = `<span class="badge good">loaded</span>`;
-  else if (s.cached[id]) badge = `<span class="badge">cached</span>`;
   return [
     `<button type="button" class="mopt" data-model="${id}" aria-pressed="${active}">`,
-    `<span class="mo-t"><b>${esc(note.name)}</b>${badge}</span>`,
+    `<span class="mo-t"><b>${esc(note.name)}</b><span data-model-status>${modelBadge(s, id)}</span></span>`,
     `<span class="mo-d">${esc(note.short)}</span>`,
-    `<span class="mo-d">${esc(s.costLine(id))}</span>`,
+    `<span class="mo-d" data-model-cost>${esc(modelStateLine(s, id))}</span>`,
     `</button>`,
   ].join("");
 }
 
-const PRIMARY_MODELS = ["laya", "kev-0.8b"];
+function familyOption(s, family) {
+  const spec = MODEL_FAMILIES[family];
+  const models = familyModels(family);
+  if (!spec || !models.length) return "";
+  const active = FAMILY_BY_MODEL[s.model] === family;
+  const selected = active && models.some(([id]) => id === s.model) ? s.model : models[0][0];
+  const selectedIndex = Math.max(0, models.findIndex(([id]) => id === selected));
+  const infoId = `mf-info-${family}`;
+  const ticks = models.map(([, label]) => `<span>${esc(label)}</span>`).join("");
+  return [
+    `<div class="mfamily" data-family-card="${family}">`,
+    `<button type="button" class="mopt mf-select" data-family="${family}" aria-pressed="${active}">`,
+    `<span class="mo-t"><b>${esc(spec.name)}</b><span data-family-status>${modelBadge(s, selected)}</span></span>`,
+    `<span class="mo-d">${esc(spec.short)}</span>`,
+    `</button>`,
+    `<div class="mf-control">`,
+    `<div class="mf-size-line"><span class="tiny muted">Model size</span><b data-family-size>${esc(MODEL_NOTES[selected]?.name || selected)}</b></div>`,
+    `<input type="range" class="mf-slider" data-family-slider="${family}" min="0" max="${models.length - 1}" step="1" value="${selectedIndex}" aria-label="${esc(spec.name)} model size" aria-valuetext="${esc(familyValueText(s, selected))}" aria-describedby="${infoId}">`,
+    `<div class="mf-ticks" aria-hidden="true">${ticks}</div>`,
+    `<span class="tiny mf-pack" data-family-pack>${esc(modelSizeLabel(selected))}</span>`,
+    `<p class="tiny mf-info" id="${infoId}" data-family-info>${esc(modelStateLine(s, selected))}</p>`,
+    `</div>`,
+    `</div>`,
+  ].join("");
+}
 
 function modelChoices(s) {
   // a model without a published pack is offered only in dev mode, which loads packs from tmp/
   const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || LOCAL));
-  const primary = PRIMARY_MODELS.filter((id) => known.includes(id));
-  const more = known.filter((id) => !PRIMARY_MODELS.includes(id));
-  const render = (ids) => `<div class="mp-models">${ids.map((id) => modelOption(s, id)).join("")}</div>`;
-  return render(primary) + (more.length ? `<details class="mp-more"${more.includes(s.model) ? " open" : ""}><summary class="tiny faint">More models</summary>${render(more)}</details>` : "");
+  const renderLaya = known.includes("laya") ? modelOption(s, "laya") : "";
+  const renderFamily = (family) => familyModels(family).some(([id]) => known.includes(id)) ? familyOption(s, family) : "";
+  const primary = [renderLaya, renderFamily("kev")].filter(Boolean).join("");
+  const more = renderFamily("semif");
+  return `<div class="mp-models">${primary}</div>` + (more ? `<details class="mp-more"${FAMILY_BY_MODEL[s.model] === "semif" ? " open" : ""}><summary class="tiny faint">More models</summary><div class="mp-models">${more}</div></details>` : "");
 }
 
 const BACKEND_CHOICES = [
@@ -145,10 +217,78 @@ function panelAction(s) {
 }
 
 let panelKey = "";
+let sliderPointerActive = false;
+let panelRenderPending = false;
+
+function panelFocus() {
+  const active = document.activeElement;
+  if (active?.matches("[data-family-slider]")) return { slider: active.dataset.familySlider };
+  if (active?.matches("[data-model], [data-family]")) {
+    return { model: active.dataset.model, family: active.dataset.family };
+  }
+  return null;
+}
+
+function restorePanelFocus(focus) {
+  if (!focus) return;
+  let target = null;
+  if (focus.slider) target = panel.querySelector(`[data-family-slider="${CSS.escape(focus.slider)}"]`);
+  else if (focus.family) target = panel.querySelector(`[data-family="${CSS.escape(focus.family)}"]`);
+  else if (focus.model) target = panel.querySelector(`[data-model="${CSS.escape(focus.model)}"]`);
+  target?.focus({ preventScroll: true });
+}
+
+function syncPanelSelection(s) {
+  for (const option of panel.querySelectorAll("[data-model]")) {
+    const id = option.dataset.model;
+    option.setAttribute("aria-pressed", String(s.model === id));
+    const status = option.querySelector("[data-model-status]");
+    const cost = option.querySelector("[data-model-cost]");
+    if (status) status.innerHTML = modelBadge(s, id);
+    if (cost) cost.textContent = modelStateLine(s, id);
+  }
+  for (const card of panel.querySelectorAll("[data-family-card]")) {
+    const family = card.dataset.familyCard;
+    const spec = MODEL_FAMILIES[family];
+    const models = familyModels(family);
+    if (!spec || !models.length) continue;
+    const active = FAMILY_BY_MODEL[s.model] === family;
+    const selected = active && models.some(([id]) => id === s.model) ? s.model : models[0][0];
+    const selectedIndex = Math.max(0, models.findIndex(([id]) => id === selected));
+    const select = card.querySelector("[data-family]");
+    const slider = card.querySelector("[data-family-slider]");
+    if (select) select.setAttribute("aria-pressed", String(active));
+    card.classList.toggle("active", active);
+    // Keep the native range element and its focus during a model selection. This also keeps a
+    // pointer drag alive while session.select() emits its unload/selection changes.
+    if (slider && document.activeElement !== slider && !sliderPointerActive) slider.value = String(selectedIndex);
+    if (slider) slider.setAttribute("aria-valuetext", familyValueText(s, selected));
+    const status = card.querySelector("[data-family-status]");
+    const size = card.querySelector("[data-family-size]");
+    const pack = card.querySelector("[data-family-pack]");
+    const info = card.querySelector("[data-family-info]");
+    if (status) status.innerHTML = modelBadge(s, selected);
+    if (size) size.textContent = MODEL_NOTES[selected]?.name || selected;
+    if (pack) pack.textContent = modelSizeLabel(selected);
+    if (info) info.textContent = modelStateLine(s, selected);
+  }
+  const more = panel.querySelector(".mp-more");
+  if (more && FAMILY_BY_MODEL[s.model] === "semif") more.open = true;
+  const loadButton = panel.querySelector('[data-act="load"]');
+  if (loadButton && s.status !== "error") loadButton.textContent = `Load ${s.nameOf()}`;
+}
+
 function renderPanel(s) {
   // rebuild only when what the panel shows changes; progress updates below touch the bar alone
-  const key = `${s.status}|${s.model}|${s.backend}|${JSON.stringify(s.cached)}|${s.error}|${s.storageError}|${s.storage?.bytes}`;
+  const key = `${s.status}|${s.backend}|${s.error}|${s.storageError}|${s.storage?.bytes}`;
+  let focus = null;
   if (key !== panelKey) {
+    if (sliderPointerActive && panel.childElementCount) {
+      panelRenderPending = true;
+      syncPanelSelection(s);
+      return;
+    }
+    focus = panelFocus();
     panelKey = key;
     const stored = s.storage?.available ? `Stored packs: ${fmtBytes(s.storage.bytes)}` : "No persistent storage";
     panel.innerHTML = `<div class="mp-h">Model <span class="tiny faint">shared by every page, kept for this session</span></div>
@@ -160,6 +300,8 @@ function renderPanel(s) {
         <button type="button" class="linkbtn" data-act="clear">Clear stored packs</button>
       </div>`;
   }
+  syncPanelSelection(s);
+  restorePanelFocus(focus);
   if (s.status === "loading") {
     panel.querySelector('[data-f="label"]').textContent = s.progress?.label || "";
     const bar = panel.querySelector(".mp-load .progress");
@@ -177,16 +319,40 @@ chip.addEventListener("click", () => openPanel(panel.classList.contains("hidden"
 document.addEventListener("pointerdown", (e) => {
   if (!panel.classList.contains("hidden") && !e.target.closest(".mm")) openPanel(false);
 });
+panel.addEventListener("pointerdown", (e) => {
+  if (e.target.closest("[data-family-slider]")) sliderPointerActive = true;
+});
+const finishSliderPointer = () => {
+  if (!sliderPointerActive) return;
+  sliderPointerActive = false;
+  if (panelRenderPending) {
+    panelRenderPending = false;
+    renderPanel(session);
+  }
+};
+document.addEventListener("pointerup", finishSliderPointer);
+document.addEventListener("pointercancel", finishSliderPointer);
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !panel.classList.contains("hidden")) openPanel(false);
+});
+panel.addEventListener("input", (e) => {
+  const slider = e.target.closest("[data-family-slider]");
+  if (!slider) return;
+  const models = familyModels(slider.dataset.familySlider);
+  const id = models[Number(slider.value)]?.[0];
+  if (id && id !== session.model) session.select(id);
 });
 panel.addEventListener("click", async (e) => {
   const model = e.target.closest("[data-model]")?.dataset.model;
   if (model) {
-    const wasActive = session.status === "ready" || session.status === "loading";
     session.select(model);
-    // switching while a model is loaded or loading means "use this one instead"
-    if (wasActive || session.cached[model]) session.load();
+    return;
+  }
+  const family = e.target.closest("[data-family]")?.dataset.family;
+  if (family) {
+    const models = familyModels(family);
+    const defaultModel = models[0]?.[0];
+    if (defaultModel && FAMILY_BY_MODEL[session.model] !== family) session.select(defaultModel);
     return;
   }
   const backend = e.target.closest("[data-be]")?.dataset.be;

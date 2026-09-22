@@ -76,7 +76,9 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
 `Kevala.load({ model: "kev-0.8b" })`, or pass a `.kevala` URL you host.
 
-The demo keeps additional models under **More models**; Laya remains the default.
+Laya remains the demo default. Select **Kev** to choose 0.8B, 4B, or 9B with the size slider.
+**More models** offers SemIf-style Qwen3.5 at 0.8B, 2B, or 4B. Selecting either family starts
+at its smallest size; changing sizes waits for **Load** before downloading.
 
 <details>
 <summary>Additional model packs</summary>

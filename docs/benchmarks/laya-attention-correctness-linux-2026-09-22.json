@@ -1,0 +1,476 @@
+{
+  "date": "2026-09-22",
+  "baselineCommit": "4cc970e546e07f1456f7147d5c06c827541e774c",
+  "shader": "crates/kevala/src/wgsl/attention_tile.wgsl",
+  "shaderSha256": "fca0dbfec8f38a6f0fe430f9a7f3a3a2a636305425076f9ca79e3a2c327f8194",
+  "fix": "Explicitly reset score accumulators for every 32-key tile.",
+  "hardware": {
+    "nvidia": "RTX 5070 Ti, driver 595.71.05",
+    "amd": "Ryzen 9950X3D integrated GPU, RADV Mesa 25.2.8"
+  },
+  "before": {
+    "laya": {
+      "backend": "webgpu",
+      "argmax": 24,
+      "questions": 41,
+      "maxDp": 0.8779999999972129,
+      "runner": {
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      }
+    },
+    "attention": {
+      "kernels": [
+        "attention",
+        "attention_tile_shared"
+      ],
+      "adapter": {
+        "architecture": "",
+        "isFallbackAdapter": false,
+        "vendor": ""
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "correctness": {
+        "limit": 0.002,
+        "ok": false
+      },
+      "cases": [
+        {
+          "shape": "47:0",
+          "errors": {
+            "attention": 1.3847242535947046e-7,
+            "attention_tile_shared": 0.4374183119827283
+          }
+        },
+        {
+          "shape": "150/40:64",
+          "errors": {
+            "attention": 1.622915629662103e-7,
+            "attention_tile_shared": 0.9681224215824276
+          }
+        },
+        {
+          "shape": "512:0",
+          "errors": {
+            "attention": 1.3415214147882717e-7,
+            "attention_tile_shared": 1.1640170785319723
+          }
+        },
+        {
+          "shape": "512:64",
+          "errors": {
+            "attention": 1.766680295944845e-7,
+            "attention_tile_shared": 0.7524814023541485
+          }
+        }
+      ]
+    }
+  },
+  "after": {
+    "nvidia": {
+      "laya": {
+        "backend": "webgpu",
+        "argmax": 41,
+        "questions": 41,
+        "maxDp": 0.023506444195624587,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "kev": {
+        "backend": "webgpu",
+        "argmax": 13,
+        "questions": 13,
+        "maxDp": 0.010213673114776611,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        }
+      },
+      "attention": {
+        "kernels": [
+          "attention",
+          "attention_tile_shared"
+        ],
+        "skippedKernels": [
+          "attention_subgroup",
+          "attention_tile"
+        ],
+        "verificationRepeats": 3,
+        "features": [
+          "timestamp-query",
+          "shader-f16",
+          "core-features-and-limits"
+        ],
+        "adapter": {
+          "architecture": "",
+          "isFallbackAdapter": false,
+          "vendor": ""
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "correctness": {
+          "limit": 0.002,
+          "ok": true
+        },
+        "cases": [
+          {
+            "shape": "1:0",
+            "checkedQueryHeads": 17,
+            "errors": {
+              "attention": 0,
+              "attention_tile_shared": 0.00048732757568359375
+            }
+          },
+          {
+            "shape": "15:0",
+            "checkedQueryHeads": 241,
+            "errors": {
+              "attention": 2.863775786510203e-7,
+              "attention_tile_shared": 0.0004449303867348764
+            }
+          },
+          {
+            "shape": "16:0",
+            "checkedQueryHeads": 257,
+            "errors": {
+              "attention": 2.065802090500668e-7,
+              "attention_tile_shared": 0.0003877439173780584
+            }
+          },
+          {
+            "shape": "17:0",
+            "checkedQueryHeads": 273,
+            "errors": {
+              "attention": 2.1017650697618961e-7,
+              "attention_tile_shared": 0.00037572350963580026
+            }
+          },
+          {
+            "shape": "31:0",
+            "checkedQueryHeads": 497,
+            "errors": {
+              "attention": 2.501646458874518e-7,
+              "attention_tile_shared": 0.000332534978268878
+            }
+          },
+          {
+            "shape": "32:0",
+            "checkedQueryHeads": 513,
+            "errors": {
+              "attention": 2.475431891135749e-7,
+              "attention_tile_shared": 0.00039258188275126393
+            }
+          },
+          {
+            "shape": "33:0",
+            "checkedQueryHeads": 529,
+            "errors": {
+              "attention": 2.0209166856632876e-7,
+              "attention_tile_shared": 0.00031214622443143103
+            }
+          },
+          {
+            "shape": "63:0",
+            "checkedQueryHeads": 1009,
+            "errors": {
+              "attention": 2.756747874421706e-7,
+              "attention_tile_shared": 0.0002612552328751794
+            }
+          },
+          {
+            "shape": "64:0",
+            "checkedQueryHeads": 1025,
+            "errors": {
+              "attention": 2.0578574116969506e-7,
+              "attention_tile_shared": 0.000255563109188936
+            }
+          },
+          {
+            "shape": "65:0",
+            "checkedQueryHeads": 1041,
+            "errors": {
+              "attention": 2.046337259642428e-7,
+              "attention_tile_shared": 0.0003547082213503777
+            }
+          },
+          {
+            "shape": "127:0",
+            "checkedQueryHeads": 187,
+            "errors": {
+              "attention": 1.954417359617544e-7,
+              "attention_tile_shared": 0.0001778330174680709
+            }
+          },
+          {
+            "shape": "128:0",
+            "checkedQueryHeads": 188,
+            "errors": {
+              "attention": 1.9930026373682352e-7,
+              "attention_tile_shared": 0.00019748611339668289
+            }
+          },
+          {
+            "shape": "129:0",
+            "checkedQueryHeads": 204,
+            "errors": {
+              "attention": 1.46332167855201e-7,
+              "attention_tile_shared": 0.00014088081603087085
+            }
+          },
+          {
+            "shape": "47:0",
+            "checkedQueryHeads": 753,
+            "errors": {
+              "attention": 2.591644069349641e-7,
+              "attention_tile_shared": 0.00024213064020264796
+            }
+          },
+          {
+            "shape": "512:0",
+            "checkedQueryHeads": 476,
+            "errors": {
+              "attention": 1.8940881552076405e-7,
+              "attention_tile_shared": 0.00012082126046769616
+            }
+          },
+          {
+            "shape": "512:64",
+            "checkedQueryHeads": 476,
+            "errors": {
+              "attention": 1.9311423637979885e-7,
+              "attention_tile_shared": 0.000184558943188598
+            }
+          },
+          {
+            "shape": "150/40:64",
+            "checkedQueryHeads": 282,
+            "errors": {
+              "attention": 2.2830578616517275e-7,
+              "attention_tile_shared": 0.00023662619563032117
+            }
+          }
+        ]
+      },
+      "cache": {
+        "backend": "webgpu",
+        "cacheCountersVerified": true,
+        "crossOriginIsolated": false,
+        "done": true,
+        "extVsFresh": 0,
+        "flavor": "relaxed",
+        "hardwareConcurrency": 32,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 100,
+          "hit": 100,
+          "miss": 100
+        },
+        "requestedBackend": "webgpu",
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "stats": {
+          "extensions": 1,
+          "hits": 1,
+          "misses": 1,
+          "tokensSaved": 80
+        },
+        "threads": 1
+      }
+    },
+    "amd": {
+      "laya": {
+        "backend": "webgpu",
+        "argmax": 41,
+        "questions": 41,
+        "maxDp": 0.023506444195624587,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        }
+      },
+      "attention": {
+        "kernels": [
+          "attention",
+          "attention_tile_shared"
+        ],
+        "skippedKernels": [],
+        "verificationRepeats": 3,
+        "features": [
+          "timestamp-query",
+          "shader-f16",
+          "core-features-and-limits"
+        ],
+        "adapter": {
+          "architecture": "",
+          "isFallbackAdapter": false,
+          "vendor": ""
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/radeon_icd.json"
+        },
+        "correctness": {
+          "limit": 0.002,
+          "ok": true
+        },
+        "cases": [
+          {
+            "shape": "33:0",
+            "checkedQueryHeads": 529,
+            "errors": {
+              "attention": 2.3361315182324205e-7,
+              "attention_tile_shared": 0.00028772801693094374
+            }
+          },
+          {
+            "shape": "47:0",
+            "checkedQueryHeads": 753,
+            "errors": {
+              "attention": 2.0408939366278747e-7,
+              "attention_tile_shared": 0.00023646277089256484
+            }
+          },
+          {
+            "shape": "150/40:64",
+            "checkedQueryHeads": 282,
+            "errors": {
+              "attention": 1.7822482090146252e-7,
+              "attention_tile_shared": 0.00021502505501666547
+            }
+          },
+          {
+            "shape": "512:0",
+            "checkedQueryHeads": 476,
+            "errors": {
+              "attention": 1.8135802484775534e-7,
+              "attention_tile_shared": 0.0001162350475076568
+            }
+          },
+          {
+            "shape": "512:64",
+            "checkedQueryHeads": 476,
+            "errors": {
+              "attention": 2.3943598481679373e-7,
+              "attention_tile_shared": 0.00021402055062207104
+            }
+          }
+        ]
+      }
+    },
+    "cpu": {
+      "laya": {
+        "backend": "wasm-relaxed x4",
+        "argmax": 41,
+        "questions": 41,
+        "maxDp": 0.024006444195624588,
+        "runner": {
+          "actualThreads": 4,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        }
+      },
+      "kev": {
+        "backend": "wasm-relaxed",
+        "argmax": 13,
+        "questions": 13,
+        "maxDp": 0.00968518853187561,
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        }
+      },
+      "cache": {
+        "backend": "wasm-relaxed",
+        "cacheCountersVerified": false,
+        "crossOriginIsolated": false,
+        "done": true,
+        "extVsFresh": 0,
+        "flavor": "relaxed",
+        "hardwareConcurrency": 32,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 1146,
+          "hit": 691,
+          "miss": 1481
+        },
+        "requestedBackend": "wasm",
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "wasm",
+          "headless": true,
+          "vkDriverFiles": null
+        },
+        "stats": null,
+        "threads": 1
+      },
+      "matrixCasesPerFlavor": 1408,
+      "flavors": [
+        "relaxed",
+        "simd",
+        "base"
+      ]
+    }
+  },
+  "limitations": [
+    "Subgroup+f16 path not re-executed on this Linux host; prior M4 evidence remains separate.",
+    "Synthetic attention checks every output through 65 tokens, explicit segment/query-block boundary rows, and sampled query/head rows for larger cases; all outputs are scanned for finiteness.",
+    "The compiler or driver stage responsible for implicit-initialization behavior is not isolated."
+  ]
+}
