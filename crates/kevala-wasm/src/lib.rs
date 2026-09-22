@@ -14,6 +14,12 @@ use kevala::json::Value;
 use kevala::kev::KevEngine;
 use kevala::model::{self, AlignedBuf, Batch, Scratch, Seg, ShardPlan, Trunk};
 use kevala::runtime::{self, Model};
+use kevala::simd::F4;
+
+#[cfg(feature = "cpu-bench")]
+mod cpu_bench;
+
+mod cpu_tune;
 
 #[derive(Default)]
 struct State {
@@ -23,6 +29,7 @@ struct State {
     batch: Batch,
     x: Vec<f32>,
     partial: Vec<f32>,
+    reduce_scratch: Vec<f32>,
     scratch: Scratch,
     out: Vec<u8>,
     err: String,
@@ -107,6 +114,24 @@ pub extern "C" fn kevala_error_len() -> usize {
 
 fn put_u32(out: &mut Vec<u8>, v: usize) {
     out.extend_from_slice(&(v as u32).to_le_bytes());
+}
+
+/// Adds shard partials in their original order, preserving f32 rounding.
+#[inline]
+fn add_f32(dst: &mut [f32], src: &[f32]) {
+    debug_assert_eq!(dst.len(), src.len());
+    let n = dst.len();
+    let mut i = 0;
+    unsafe {
+        while i + 4 <= n {
+            F4::load(dst.as_ptr().add(i)).add(F4::load(src.as_ptr().add(i))).store(dst.as_mut_ptr().add(i));
+            i += 4;
+        }
+    }
+    while i < n {
+        dst[i] += src[i];
+        i += 1;
+    }
 }
 
 fn write_layout(out: &mut Vec<u8>, l: &kevala::pack::Layout) {
@@ -330,6 +355,50 @@ pub extern "C" fn kevala_shard_step(step: usize) -> *const f32 {
         }
         None => std::ptr::null(),
     }
+}
+
+/// Reserves the coordinator-side reduction buffers for one tensor-parallel batch.
+///
+/// The returned buffer is the accumulator. The caller fills it with the local shard partial,
+/// then copies each remote partial into `kevala_reduce_partial_ptr` in shard order.
+#[no_mangle]
+pub extern "C" fn kevala_reduce_prepare(len: usize) -> *mut f32 {
+    let s = st();
+    s.partial.resize(len, 0.0);
+    s.reduce_scratch.resize(len, 0.0);
+    s.partial.as_mut_ptr()
+}
+
+/// Returns the staging buffer prepared by `kevala_reduce_prepare`.
+#[no_mangle]
+pub extern "C" fn kevala_reduce_partial_ptr() -> *mut f32 {
+    st().reduce_scratch.as_mut_ptr()
+}
+
+/// Adds the staged remote shard partial to the accumulator.
+#[no_mangle]
+pub extern "C" fn kevala_reduce_add_partial() -> u32 {
+    done((|| {
+        let s = st();
+        if s.partial.len() != s.reduce_scratch.len() {
+            return Err("reduction buffers are not prepared".to_string());
+        }
+        add_f32(&mut s.partial, &s.reduce_scratch);
+        Ok(())
+    })())
+}
+
+/// Adds the ordered reduction result to the coordinator residual buffer.
+#[no_mangle]
+pub extern "C" fn kevala_reduce_finish() -> u32 {
+    done((|| {
+        let s = st();
+        if s.x.len() != s.partial.len() {
+            return Err("reduction length does not match residual buffer".to_string());
+        }
+        add_f32(&mut s.x, &s.partial);
+        Ok(())
+    })())
 }
 
 /// Token ids for `text`, as a JSON array (debugging and tests).

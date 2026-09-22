@@ -8,28 +8,23 @@
 
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { selectCpuTile } from "./cpu-tune.js";
+import { CPU_KERNELS, cpuOptions } from "./cpu-policy.js";
 import { wasmFlavor } from "./wasm.js";
 
 const enc = new TextEncoder();
 const dec = new TextDecoder();
 
-export async function loadFile(path, { flavor } = {}) {
+export async function loadFile(path, { flavor, cpuKernel = "auto", threads = "auto" } = {}) {
+  cpuOptions({ cpuKernel, threads });
+  if (threads !== "auto" && threads !== 1) throw new Error("kevala/node supports one CPU thread");
   const f = wasmFlavor(flavor);
   const wasm = await readFile(fileURLToPath(new URL(`kevala-${f}.wasm`, import.meta.url)));
   const { instance } = await WebAssembly.instantiate(wasm, {});
   const x = instance.exports;
   x.kevala_init();
-  // the 4x4 CPU tile needs 32 vector registers (ARM): time both and keep the faster
-  const time = (t) => {
-    x.kevala_set_tile(t);
-    // warm up first: timings taken before the engine's optimizing tier kicks in mislead
-    for (let i = 0; i < 4; i++) x.kevala_tile_probe();
-    const t0 = performance.now();
-    for (let i = 0; i < 2; i++) x.kevala_tile_probe();
-    return performance.now() - t0;
-  };
-  time(0);
-  x.kevala_set_tile(time(1) < time(0) ? 1 : 0);
+  const tile = cpuKernel === "auto" ? selectCpuTile(x) : CPU_KERNELS.indexOf(cpuKernel);
+  x.kevala_set_tile(tile);
   const mem = () => new Uint8Array(x.memory.buffer);
   const text = (p, n) => dec.decode(mem().subarray(p, p + n));
   const check = (rc) => {
@@ -52,7 +47,7 @@ export async function loadFile(path, { flavor } = {}) {
     return JSON.parse(text(x.kevala_out_ptr(), x.kevala_out_len()));
   };
   return {
-    info: { ...meta, flavor: f },
+    info: { ...meta, flavor: f, threads: 1, cpuTiles: [tile], cpuTuning: { kernel: CPU_KERNELS[tile], threads: 1, kernelSource: cpuKernel === "auto" ? "measured" : "override", threadSource: "model-limit" } },
     decide: (state, questions, { parts } = {}) => run([{ state, questions, ...(parts ? { parts } : {}) }])[0],
     decideMany: (items) => run(items),
   };

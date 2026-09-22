@@ -39,12 +39,14 @@ async function run() {
   $("log").textContent = "";
   $("out").innerHTML = "";
   const backend = $("backend").value;
+  const threads = Number(q.get("threads") || 1);
+  const flavor = q.get("flavor") || undefined;
   const choice = $("pack").value;
   const url = q.get("pack")?.includes("/") ? q.get("pack") : null;
   const model = url || (choice === "local" ? "./tmp/kev-0.8b-q8.kevala" : "kev-0.8b");
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
-  const kevala = await Kevala.load({ model, from, backend, gpuBaseline: q.get("baseline") === "1" });
+  const kevala = await Kevala.load({ model, from, backend, threads, flavor, gpuBaseline: q.get("baseline") === "1" });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
   const golden = await (await fetch("./tests/fixtures/golden-kev.json")).json();
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
@@ -64,12 +66,26 @@ async function run() {
     });
   }
   times.sort((a, b) => a - b);
-  window.parity = { backend: kevala.info.backend, gpu: kevala.info.gpu, questions: n, argmax: agree, maxDp: worst, p50: times[times.length >> 1], max: times[times.length - 1] };
+  window.parity = {
+    backend: kevala.info.backend,
+    gpu: kevala.info.gpu,
+    threads: kevala.info.threads,
+    flavor: kevala.info.flavor,
+    selectedFlavor: kevala.info.flavor || null,
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    crossOriginIsolated: globalThis.crossOriginIsolated === true,
+    questions: n,
+    argmax: agree,
+    maxDp: worst,
+    p50: times[times.length >> 1],
+    max: times[times.length - 1],
+    done: true,
+  };
   log(JSON.stringify(window.parity));
   $("out").innerHTML = rows.map((r, i) => `<tr>${r.map((v) => (i ? `<td class="${v === "MISS" || Number(v) > 0.02 ? "bad" : ""}">${v}</td>` : `<th>${v}</th>`)).join("")}</tr>`).join("");
   kevala.dispose();
 }
-const start = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { error: e.message }; });
+const start = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { done: true, error: e.message }; });
 $("run").addEventListener("click", start);
 if (q.get("pack") || q.get("backend")) start();
 </script>

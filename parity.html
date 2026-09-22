@@ -33,12 +33,14 @@ import { Kevala } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.parity = null;
+const q = new URLSearchParams(location.hash.slice(1));
 
 async function run() {
   $("log").textContent = "";
   $("out").innerHTML = "";
   const backend = $("backend").value;
   const threads = Number($("threads").value);
+  const flavor = q.get("flavor") || undefined;
   const choice = $("pack").value;
   const model = choice === "local" ? "./tmp/laya-q8.kevala" : "laya";
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
@@ -49,7 +51,7 @@ async function run() {
   const hash = new URLSearchParams(location.hash.slice(1));
   const gpuBaseline = hash.get("baseline") === "1";
   const gpuFeatures = hash.get("features") ? hash.get("features").split(",") : undefined;
-  const kevala = await Kevala.load({ backend, threads, model, from, gpuBaseline, gpuFeatures, onProgress: (p) => {
+  const kevala = await Kevala.load({ backend, threads, flavor, model, from, gpuBaseline, gpuFeatures, onProgress: (p) => {
     const s = p.phase + (p.total ? ` ${Math.round((100 * p.loaded) / p.total)}%` : "") + (p.message ? ` ${p.message}` : "");
     if (s !== last) { last = s; if (!p.total || p.loaded === p.total || p.phase !== "download") log(s); }
   } });
@@ -82,15 +84,28 @@ async function run() {
     }
   }
   times.sort((a, b) => a - b);
-  const summary = { backend: kevala.info.backend, gpu: kevala.info.gpu, questions: n, argmax: agree, maxDp: worst, p50: times[times.length >> 1], p95: times[Math.floor(times.length * 0.95)] };
+  const summary = {
+    backend: kevala.info.backend,
+    gpu: kevala.info.gpu,
+    threads: kevala.info.threads,
+    flavor: kevala.info.flavor,
+    selectedFlavor: kevala.info.flavor || null,
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    crossOriginIsolated: globalThis.crossOriginIsolated === true,
+    questions: n,
+    argmax: agree,
+    maxDp: worst,
+    p50: times[times.length >> 1],
+    p95: times[Math.floor(times.length * 0.95)],
+    done: true,
+  };
   window.parity = summary;
   log(JSON.stringify(summary));
   $("out").innerHTML = rows.map((r, i) => `<tr>${r.map((v) => (i ? `<td class="${v === "MISS" || Number(v) > 0.02 ? "bad" : ""}">${v}</td>` : `<th>${v}</th>`)).join("")}</tr>`).join("");
   kevala.dispose();
 }
-$("run").onclick = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { error: e.message }; });
+$("run").onclick = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { done: true, error: e.message }; });
 if (location.hash.includes("auto")) {
-  const q = new URLSearchParams(location.hash.slice(1));
   if (q.get("backend")) $("backend").value = q.get("backend");
   if (q.get("threads")) $("threads").value = q.get("threads");
   if (q.get("pack")) $("pack").value = q.get("pack");

@@ -82,7 +82,7 @@ export default {
       converter: "kevala (in-browser)",
       quantization: `LoRA merged in f32, then int8 symmetric absmax, one f32 scale per ${spec.block} weights; norms, gates, conv, pointer head in f32`,
     });
-    const w = await Wasm.create(module);
+    const w = await Wasm.create(module, 0);
     const args = [stHead, cfg, tok, adapter, acfg, head, model].map((d) => w.put(typeof d === "string" ? enc.encode(d) : d));
     w.call(() => w.check(w.x.kevala_kev_convert_plan(...args.flat(), spec.block)));
     for (const [p, l] of args) w.x.kevala_free(p, l);

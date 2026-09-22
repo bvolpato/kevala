@@ -246,6 +246,6 @@ KEVALA_BENCH_URL=http://127.0.0.1:8123 node scripts/gpu-suite.mjs tmp/gpu-portab
 uv run scripts/bench-gpu.py --result gpu --url 'http://127.0.0.1:8123/dev/attn-bench.html?cases=512:0,512:64&kernels=attention,attention_tile_shared,attention_tile'
 ```
 
-Build the WebAssembly with Rust 1.95.0 (`RUSTUP_TOOLCHAIN=1.95.0 scripts/build-wasm.sh`), which
-reproduces the committed binaries byte for byte. `dev/gpu-bench.html` now times its variants in
-turns and in batches of about 20 GFLOP: before, identical settings could differ by 4x on this GPU.
+Build the WebAssembly first (`pnpm build`, with the Rust 1.95.0 that `rust-toolchain.toml` pins).
+`dev/gpu-bench.html` now times its variants in turns and in batches of about 20 GFLOP: before,
+identical settings could differ by 4x on this GPU.

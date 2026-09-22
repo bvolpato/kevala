@@ -8,6 +8,7 @@
 //   r.answers.churn.noul; // P(true)
 
 import { MODELS } from "./source.js";
+import { cpuOptions } from "./cpu-policy.js";
 export { cacheInfo, clearCache, isCached, MODELS } from "./source.js";
 export * as presets from "./presets.js";
 
@@ -76,7 +77,9 @@ export class Kevala {
    *   backend     "auto" (WebGPU when available, else WebAssembly), "webgpu", or "wasm"
    *   onPage      run the engine on the page instead of in a worker (default: only when the
    *               browser offers WebGPU to pages but not to workers)
-   *   threads     WebAssembly workers for the wasm backend (default: cores, at most 8)
+   *   threads     "auto" measures CPU worker counts (default); 1..16 overrides, capped by model
+   *   cpuKernel   "auto" measures CPU register tiles (default), or "2x4" / "4x4"
+   *   retune      ignore the cached CPU tuning profile and measure again (default false)
    *   submit      WebGPU scheduling: "await" drains each long-pass chunk (default);
    *               "split" queues separate chunks without waiting, reducing latency at a
    *               possible cost to UI responsiveness; "none" uses one command buffer
@@ -87,6 +90,7 @@ export class Kevala {
    *   plugins     URLs of extra architecture plugin modules (see js/src/archs/index.js)
    */
   static async load(options = {}) {
+    cpuOptions(options);
     const w = new Kevala();
     await w.#start(options);
     return w;
@@ -189,16 +193,28 @@ export class Kevala {
         break;
       case "need-shards": {
         const ports = [];
-        for (let i = 0; i < m.n; i++) {
-          const w = spawn("./shard-worker.js");
-          const ch = new MessageChannel();
-          w.postMessage({ type: "port", port: ch.port1 }, [ch.port1]);
-          ports.push(ch.port2);
-          this.#shards.push(w);
+        try {
+          for (let i = 0; i < m.n; i++) {
+            const w = spawn("./shard-worker.js");
+            this.#shards.push(w);
+            w.onerror = (ev) => {
+              if (this.#shards.includes(w)) this.dispose(new Error(ev.message || "kevala shard worker failed to start"));
+            };
+            const ch = new MessageChannel();
+            ports.push(ch.port2);
+            w.postMessage({ type: "port", port: ch.port1 }, [ch.port1]);
+          }
+          this.#worker.postMessage({ type: "shards", ports, generation: m.generation }, ports);
+        } catch (error) {
+          for (const p of ports) p.close();
+          this.dispose(error);
         }
-        this.#worker.postMessage({ type: "shards", ports }, ports);
         break;
       }
+      case "release-shards":
+        for (const w of this.#shards) w.terminate();
+        this.#shards = [];
+        break;
       case "ready":
         this.#ready?.resolve(m.info);
         this.#ready = null;

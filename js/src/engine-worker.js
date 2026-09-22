@@ -16,6 +16,9 @@ import { Wasm, compile, parseLayouts, wasmFlavor } from "./wasm.js";
 import { openPack, PieceSink, Batcher } from "./source.js";
 import { Profiler, requestDevice, SUBMIT, withGpuErrors } from "./gpu.js";
 import { archPlugin, registerArch } from "./archs/index.js";
+import { RemoteShard } from "./shard-client.js";
+import { CPU_KERNELS, cpuOptions, readTuning, threadCandidates, tuningKey, writeTuning } from "./cpu-policy.js";
+import { calibrateThreads } from "./cpu-calibrate.js";
 
 const enc = new TextEncoder();
 let E = null; // the loaded engine
@@ -25,7 +28,9 @@ let loadController = null;
 let activeGpu = null;
 let packIterator = null;
 const shardPorts = [];
+const shardClients = [];
 let shardWaiters = null;
+let shardGeneration = 0;
 
 // the page on the other end: this worker's scope, or the port serve() was given
 let port = self;
@@ -40,6 +45,10 @@ async function onMessage(ev) {
     else if (m.type === "decide") enqueue(m);
     else if (m.type === "profile") setProfiling(m);
     else if (m.type === "shards") {
+      if (m.generation !== shardGeneration) {
+        for (const p of m.ports) p.close();
+        return;
+      }
       shardPorts.push(...m.ports);
       shardWaiters?.();
     }
@@ -62,8 +71,7 @@ export function dispose() {
   activeGpu = null;
   packIterator?.return?.().catch(() => {});
   packIterator = null;
-  for (const p of shardPorts) p.close();
-  shardPorts.length = 0;
+  releaseShards();
   E = null;
   queue = [];
 }
@@ -95,37 +103,95 @@ async function readHead(iter) {
   return { head: buf, header, headerBytes: buf.subarray(0, 16 + hlen) };
 }
 
-async function waitShards(n) {
+function releaseShards() {
+  shardGeneration++;
+  for (const r of shardClients.splice(0)) r.close();
+  for (const p of shardPorts.splice(0)) p.close();
+  post({ type: "release-shards" });
+}
+
+async function waitShards(n, signal) {
+  signal.throwIfAborted();
   if (shardPorts.length >= n) return shardPorts.slice(0, n);
-  post({ type: "need-shards", n: n - shardPorts.length });
-  await new Promise((r) => (shardWaiters = () => shardPorts.length >= n && r()));
+  await new Promise((resolve, reject) => {
+    const finish = (error) => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", abort);
+      shardWaiters = null;
+      if (error) reject(error);
+      else resolve();
+    };
+    const abort = () => finish(signal.reason);
+    const timer = setTimeout(() => finish(new Error("CPU shard workers failed to start")), 10000);
+    signal.addEventListener("abort", abort, { once: true });
+    shardWaiters = () => shardPorts.length >= n && finish();
+    post({ type: "need-shards", n: n - shardPorts.length, generation: shardGeneration });
+  });
   return shardPorts.slice(0, n);
 }
 
-class RemoteShard {
-  constructor(port) {
-    this.port = port;
-    this.waits = new Map();
-    this.seq = 0;
-    port.onmessage = (ev) => {
-      const m = ev.data;
-      const w = this.waits.get(m.seq);
-      if (!w) return;
-      this.waits.delete(m.seq);
-      if (m.type === "error") w.reject(new Error(m.message));
-      else w.resolve(m);
-    };
+function remoteShard(port) {
+  const client = new RemoteShard(port);
+  shardClients.push(client);
+  return client;
+}
+
+async function tuneCpu(coord, module, header, headerBytes, plugin, flavor, base, o, signal) {
+  const started = now();
+  const options = cpuOptions(o);
+  const hardware = navigator.hardwareConcurrency || 4;
+  const maxShards = plugin?.run ? Math.max(1, Math.min(16, plugin.maxShards?.(header) || 1)) : 1;
+  let counts = options.threads === "auto" ? threadCandidates(hardware, maxShards) : [Math.min(options.threads, maxShards)];
+  if (options.threads === "auto" && counts.length > 1) {
+    // Custom packs can impose alignment constraints beyond their attention-head count.
+    counts = coord.withInput(headerBytes, (p, l) => counts.filter((n) => n === 1 || coord.x.kevala_layouts(p, l, n) === 0));
   }
-  call(msg, transfer) {
-    const seq = ++this.seq;
-    return new Promise((resolve, reject) => {
-      this.waits.set(seq, { resolve, reject });
-      this.port.postMessage({ ...msg, seq }, transfer || []);
-    });
+  let key;
+  if (o.cache !== false) {
+    try {
+      key = await tuningKey({ flavor, base, config: header.config, options, hardware, userAgent: navigator.userAgent });
+    } catch {} // A non-secure context can run WASM without persistent tuning.
   }
-  send(msg, transfer) {
-    this.port.postMessage(msg, transfer || []);
+  if (key && !options.retune) {
+    const cached = await readTuning(key, counts, options);
+    signal.throwIfAborted();
+    if (cached) {
+      coord.tile = CPU_KERNELS.indexOf(cached.kernel);
+      coord.x.kevala_set_tile(coord.tile);
+      return { ...cached, source: "cache", tuningMs: now() - started };
+    }
   }
+  progress({ phase: "init", message: "selecting CPU kernel and worker count" });
+  coord.tile = options.cpuKernel === "auto" ? coord.tune() : CPU_KERNELS.indexOf(options.cpuKernel);
+  coord.x.kevala_set_tile(coord.tile);
+  signal.throwIfAborted();
+  const profile = {
+    kernel: CPU_KERNELS[coord.tile], threads: counts.at(-1), source: options.cpuKernel !== "auto" && options.threads !== "auto" ? "override" : "measured",
+    kernelSource: options.cpuKernel === "auto" ? "measured" : "override",
+    threadSource: options.threads !== "auto" ? "override" : counts.length === 1 ? "model-limit" : "measured",
+    measurements: [], complete: true,
+  };
+  const config = plugin?.cpuProbe?.(header);
+  if (options.threads === "auto" && counts.length > 1) {
+    if (config) {
+      try {
+        const remotes = (await waitShards(counts.at(-1) - 1, signal)).map(remoteShard);
+        Object.assign(profile, await calibrateThreads(coord, remotes, module, config, counts, signal));
+      } catch (error) {
+        signal.throwIfAborted();
+        Object.assign(profile, { threads: 1, threadSource: "fallback", complete: false, reason: String(error.message || error) });
+      } finally {
+        // Throw away synthetic allocations and ports before loading the production shards.
+        releaseShards();
+      }
+    } else {
+      Object.assign(profile, { threads: counts.filter((n) => n <= 8).at(-1), threadSource: "hardware-limit", complete: false });
+    }
+  }
+  profile.tuningMs = now() - started;
+  if (key && profile.complete) await writeTuning(key, profile);
+  signal.throwIfAborted();
+  return profile;
 }
 
 function subHeader(prefix) {
@@ -180,11 +246,9 @@ async function load(o) {
     }
   }
   if (!gpu && o.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
-  const hw = Math.max(1, Math.min(16, navigator.hardwareConcurrency || 4));
-  const maxShards = gpu || !plugin?.run ? 1 : plugin.maxShards?.(header) || 1;
-  const threads = Math.max(1, Math.min(o.threads || Math.min(hw, 8), maxShards));
-
-  const coord = await Wasm.create(module);
+  const coord = await Wasm.create(module, 0);
+  const cpuTuning = gpu ? null : await tuneCpu(coord, module, header, headerBytes, plugin, flavor, base, o, signal);
+  const threads = cpuTuning?.threads || 1;
   checkCancelled();
   // the GPU kernels are WGSL sources in the Rust crate; the binary hands them out specialized
   if (gpu) gpu.wgsl = (kernel, spec = {}) => coord.withInput(JSON.stringify({ kernel, ...spec }), (p, l) => (coord.check(coord.x.kevala_wgsl(p, l)), coord.outText()));
@@ -216,17 +280,18 @@ async function load(o) {
       checkCancelled();
       sinks.push(new PieceSink(layouts[1], (dst, bytes) => engine.gpu.write(dst, bytes)));
     } else {
-      const ports = await waitShards(threads - 1);
+      const ports = await waitShards(threads - 1, signal);
       // shard 0 lives here, next to the coordinator
-      const local = await Wasm.create(module);
+      const local = await Wasm.create(module, coord.tile);
       const l0 = layouts[1];
       const p0 = local.alloc(l0.total);
       engine.local = { w: local, ptr: p0, total: l0.total };
       sinks.push(new PieceSink(l0, (dst, bytes) => local.bytes(p0 + dst, bytes.byteLength).set(bytes)));
       for (let i = 1; i < threads; i++) {
-        const r = new RemoteShard(ports[i - 1]);
+        const r = remoteShard(ports[i - 1]);
         const l = layouts[i + 1];
-        await r.call({ type: "init", module, base, total: l.total });
+        const init = await r.call({ type: "init", module, tile: coord.tile, total: l.total }, [], { signal, timeout: 10000 });
+        r.tile = init.tile;
         const b = new Batcher((dst, view) => r.send({ type: "data", dst, bytes: view }, [view.buffer]));
         const sink = new PieceSink(l, (dst, bytes) => b.write(dst, bytes));
         sink.batcher = b;
@@ -288,6 +353,7 @@ async function load(o) {
   else await warmup();
   checkCancelled();
   const warm = now() - tw;
+  const cpuTiles = engine.gpu ? null : engine.local ? [engine.local.w.tile, ...engine.shards.map((r) => r.tile)] : [coord.tile];
   post({
     type: "ready",
     info: {
@@ -298,6 +364,8 @@ async function load(o) {
       gpuUnavailable: engine.gpu ? null : gpuUnavailable,
       threads,
       flavor,
+      cpuTiles,
+      cpuTuning,
       modalities: meta.modalities,
       model: header.model,
       config: header.config,

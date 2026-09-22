@@ -132,10 +132,12 @@ const kevala = await Kevala.load({
   model: "laya",         // a MODELS name, a .kevala URL, or an ArrayBuffer/Blob
   backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU, then CPU if GPU loading fails)
   onPage: false,         // run on the page, not in a worker (automatic when only pages get WebGPU)
-  threads: 8,            // WebAssembly workers for the CPU backend
+  threads: "auto",       // measure CPU worker counts; 1..16 overrides, capped by the model
+  cpuKernel: "auto",     // measure CPU register tiles; "2x4" or "4x4" overrides
+  retune: false,         // reuse the browser's CPU tuning profile; true measures again
   submit: "await",       // GPU chunks: "await" favors responsiveness; "split" reduces queue waits
   from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
-  cache: true,           // keep the pack in origin storage
+  cache: true,           // keep the pack and CPU tuning profile in origin storage
   onProgress: (p) => {}, // { phase: download | convert | cache | init | warmup, loaded, total }
   signal,                // AbortSignal
   plugins: [],           // URLs of extra architecture plugins
@@ -143,10 +145,13 @@ const kevala = await Kevala.load({
 
 await kevala.decide(state, questions, { parts });  // one request, one forward pass
 await kevala.decideMany([{ state, questions }]);   // many states, still one pass
-kevala.info;      // { arch, backend, gpu, gpuPowerPreference, gpuUnavailable, threads, modalities, model, config, pack, loadMs }
+kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, cpuTiles, cpuTuning, modalities, model, config, pack, loadMs }
 await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
 ```
+
+CPU tuning runs automatically and caches its result for the browser and model. See
+[CPU tuning and API overrides](docs/cpu-tuning.md) for the measurements, limits, and diagnostics.
 
 Questions use the System One request shape (`type`, `instructions`, `criteria`), and each family
 answers in its own reference format: Laya like `laya` 0.3.5 (`action.act_probability`, 4 decimals),
@@ -200,6 +205,10 @@ pnpm install --frozen-lockfile
 pnpm check                                  # JavaScript syntax
 pnpm test                                   # JavaScript regression tests
 pnpm build                                  # js/src/kevala-{relaxed,simd,base}.wasm
+pnpm check:wasm                             # validate all three generated modules
+pnpm pack --pack-destination dist/package   # prepack rebuilds modules, then creates a tarball
+pnpm check:package dist/package/kevala-*.tgz
+pnpm stage:site                             # stage the allowlisted Pages tree in dist/site
 cargo build --release -p kevala-cli            # target/release/kevala
 
 kevala convert <laya-checkpoint-dir> -o laya-q8.kevala
@@ -214,12 +223,26 @@ uv run dev/record-tetris.py                  # re-record docs/tetris.gif and doc
 cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)
 ```
 
-The core needs Rust 1.85 or newer. Python helpers generate reference fixtures and automate
+The repository pins Rust 1.95.0 in [`rust-toolchain.toml`](rust-toolchain.toml), including the
+`wasm32-unknown-unknown` target and `rustfmt`. Python helpers generate reference fixtures and automate
 browser GPU benchmarks through `uv`.
+
+WebAssembly binaries are generated artifacts and are not tracked in Git. After cloning, run
+`pnpm build` before serving the site or using local Node imports. The modules are written beside the
+runtime in `js/src/` and ignored by Git. Rust source, `Cargo.lock`, and the pinned toolchain define the
+build; CI builds and validates all three flavors on every PR.
+
+`pnpm pack` rebuilds the modules through `prepack`, then includes them in the package. Registry and
+CDN users receive ready-to-use binaries and do not need Rust. Pages deploys the validated site artifact
+from CI, with its generated modules included. The repository's Pages source must be **GitHub Actions**.
+Keep build outputs in CI artifacts, deployed sites, and published packages; review source changes in Git.
 
 For reproducible GPU timing, model parity checks, and Firefox/Linux measurements, see
 [docs/gpu-benchmarks.md](docs/gpu-benchmarks.md). The benchmark distinguishes GPU kernel time
 from end-to-end browser latency.
+
+For CPU profiles, worker scaling, SIMD validation, and retained optimization results, see
+[docs/cpu-benchmarks.md](docs/cpu-benchmarks.md).
 
 ## Limits
 
