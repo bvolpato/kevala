@@ -23,9 +23,12 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 var<workgroup> xs: array<vec4<{{TILE}}>, 512>; // [m][k/4]
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WS_LEN}}>; // [n][(k/4) ^ (n & 7)], swizzled
 
-// four int8 weights, sign-extended
+// four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
+// xor makes each byte b + 128, and a byte in the low mantissa bits of 2^23 reads as 2^23 + b + 128
 fn sx(w: u32) -> vec4<f32> {
-  return vec4<f32>(vec4<i32>(bitcast<i32>(w << 24u), bitcast<i32>(w << 16u), bitcast<i32>(w << 8u), bitcast<i32>(w)) >> vec4<u32>(24u));
+  let u = w ^ 0x80808080u;
+  let bytes = vec4<u32>(u, u >> 8u, u >> 16u, u >> 24u) & vec4<u32>(0xFFu);
+  return bitcast<vec4<f32>>(bytes | vec4<u32>(0x4B000000u)) - vec4<f32>(8388736.0);
 }
 
 //#include splits
