@@ -70,15 +70,6 @@ mod imp {
             let s = f32x4_pmax(s, i32x4_shuffle::<1, 0, 3, 2>(s, s));
             f32x4_extract_lane::<0>(s)
         }
-        #[inline(always)]
-        pub(super) fn exp_reduction(self) -> Option<(F4, F4)> {
-            if !i32x4_all_true(f32x4_le(f32x4_abs(self.0), f32x4_splat(80.0))) {
-                return None;
-            }
-            let k = f32x4_nearest(f32x4_mul(self.0, f32x4_splat(core::f32::consts::LOG2_E)));
-            let exponent = i32x4_shl(i32x4_add(i32x4_trunc_sat_f32x4(k), i32x4_splat(127)), 23);
-            Some((F4(k), F4(exponent)))
-        }
     }
 
     /// dst[0..16] = src[0..16] as f32 * scale
@@ -152,17 +143,6 @@ mod imp {
         pub fn hmax(self) -> f32 {
             unsafe { vmaxvq_f32(self.0) }
         }
-        #[inline(always)]
-        pub(super) fn exp_reduction(self) -> Option<(F4, F4)> {
-            unsafe {
-                if vminvq_u32(vcleq_f32(vabsq_f32(self.0), vdupq_n_f32(80.0))) != u32::MAX {
-                    return None;
-                }
-                let k = vrndnq_f32(vmulq_f32(self.0, vdupq_n_f32(core::f32::consts::LOG2_E)));
-                let exponent = vshlq_n_s32::<23>(vaddq_s32(vcvtq_s32_f32(k), vdupq_n_s32(127)));
-                Some((F4(k), F4(vreinterpretq_f32_s32(exponent))))
-            }
-        }
     }
 
     #[inline(always)]
@@ -232,15 +212,6 @@ mod imp {
         pub fn hmax(self) -> f32 {
             self.0.iter().copied().fold(f32::NEG_INFINITY, f32::max)
         }
-        #[inline(always)]
-        pub(super) fn exp_reduction(self) -> Option<(F4, F4)> {
-            if !self.0.iter().all(|x| x.abs() <= 80.0) {
-                return None;
-            }
-            let k = self.0.map(|x| (x * core::f32::consts::LOG2_E).round_ties_even());
-            let scale = k.map(|k| f32::from_bits(((k as i32 + 127) as u32) << 23));
-            Some((F4(k), F4(scale)))
-        }
     }
 
     #[inline(always)]
@@ -252,29 +223,6 @@ mod imp {
 }
 
 pub use imp::{dequant16, F4};
-
-impl F4 {
-    /// Exponentials of four lanes, with scalar handling outside [-80, 80].
-    #[inline(always)]
-    pub fn exp(self) -> F4 {
-        let Some((k, scale)) = self.exp_reduction() else {
-            let mut lanes = [0.0; 4];
-            unsafe { self.store(lanes.as_mut_ptr()) };
-            for x in &mut lanes {
-                *x = x.exp();
-            }
-            return unsafe { F4::load(lanes.as_ptr()) };
-        };
-        // The first ln(2) part makes k * hi exact here. For |r| < 0.3466,
-        // the degree-7 Taylor truncation error is < 7.4e-9 before f32 rounding.
-        let r = self.sub(k.mul(F4::splat(0.693359375))).sub(k.mul(F4::splat(-2.1219444e-4)));
-        let mut p = F4::splat(1.0 / 5040.0);
-        for c in [1.0 / 720.0, 1.0 / 120.0, 1.0 / 24.0, 1.0 / 6.0, 0.5, 1.0, 1.0] {
-            p = p.mul(r).add(F4::splat(c));
-        }
-        p.mul(scale)
-    }
-}
 
 /// Dot product of two equal-length slices whose length is a multiple of 16.
 #[inline(always)]
@@ -308,61 +256,6 @@ pub fn axpy16(y: &mut [f32], a: f32, x: &[f32]) {
                 F4::load(py.add(i + o)).fma(av, F4::load(px.add(i + o))).store(py.add(i + o));
             }
             i += 16;
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::F4;
-
-    fn exp_lanes(input: [f32; 4]) -> [f32; 4] {
-        let mut output = [0.0; 4];
-        unsafe { F4::load(input.as_ptr()).exp().store(output.as_mut_ptr()) };
-        output
-    }
-
-    #[test]
-    fn exp_matches_scalar_across_range_and_reduction_boundaries() {
-        let mut inputs: Vec<f32> = (0..=80_000).map(|i| -80.0 + i as f32 / 500.0).collect();
-        for k in -115..=115 {
-            for center in [k as f64, k as f64 + 0.5] {
-                let bits = ((center * core::f64::consts::LN_2) as f32).to_bits();
-                for offset in -8i32..=8 {
-                    let x = f32::from_bits(bits.wrapping_add_signed(offset));
-                    if x.abs() <= 80.0 {
-                        inputs.push(x);
-                    }
-                }
-            }
-        }
-        for chunk in inputs.chunks(4) {
-            let mut lanes = [0.0; 4];
-            lanes[..chunk.len()].copy_from_slice(chunk);
-            for (x, actual) in lanes.into_iter().zip(exp_lanes(lanes)) {
-                let expected = x.exp();
-                let ulps = actual.to_bits().abs_diff(expected.to_bits());
-                let relative = ((actual - expected) / expected).abs();
-                assert!(ulps <= 4 && relative <= 5e-7, "exp({x}): {actual} vs {expected}, {ulps} ulp");
-            }
-        }
-    }
-
-    #[test]
-    fn exp_preserves_extreme_and_special_values() {
-        for lanes in [
-            [f32::NEG_INFINITY, f32::INFINITY, f32::NAN, 0.0],
-            [-104.0, -90.0, 88.0, 90.0],
-            [-f32::from_bits(80.0f32.to_bits() + 1), f32::from_bits(80.0f32.to_bits() + 1), -0.0, 0.125],
-        ] {
-            for (x, actual) in lanes.into_iter().zip(exp_lanes(lanes)) {
-                let expected = x.exp();
-                if expected.is_nan() {
-                    assert!(actual.is_nan());
-                } else {
-                    assert_eq!(actual.to_bits(), expected.to_bits(), "exp({x})");
-                }
-            }
         }
     }
 }

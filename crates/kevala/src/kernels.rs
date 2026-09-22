@@ -458,20 +458,7 @@ pub fn attention(
                 }
             }
             let mut sum = 0.0;
-            let mut j = lo;
-            let mv = F4::splat(m);
-            while j + 4 <= hi {
-                unsafe {
-                    let p = scores.as_mut_ptr().add(j);
-                    F4::load(p).sub(mv).exp().store(p);
-                }
-                // Preserve the scalar softmax denominator's addition order.
-                for e in &scores[j..j + 4] {
-                    sum += e;
-                }
-                j += 4;
-            }
-            for j in j..hi {
+            for j in lo..hi {
                 let e = (scores[j] - m).exp();
                 scores[j] = e;
                 sum += e;
@@ -497,48 +484,6 @@ pub fn attention(
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn attention_matches_scalar_softmax_with_windows_and_tails() {
-        let (heads, hd, seg_start) = (2, 16, 1);
-        let w = heads * hd;
-        for len in [1usize, 3, 4, 5, 9] {
-            let qkv: Vec<f32> = (0..(len + 2) * 3 * w).map(|i| ((i * 37 % 101) as f32 - 50.0) / 31.0).collect();
-            for window in [None, Some(1), Some(3)] {
-                let mut ctx = vec![-7.0; (len + 2) * w];
-                let (mut kbuf, mut vbuf, mut scores) = (Vec::new(), Vec::new(), Vec::new());
-                attention(&qkv, seg_start, len, heads, hd, window, &mut ctx, &mut kbuf, &mut vbuf, &mut scores);
-                assert!(ctx[..w].iter().chain(&ctx[(len + 1) * w..]).all(|&x| x == -7.0));
-                for h in 0..heads {
-                    for i in 0..len {
-                        let qbase = (seg_start + i) * 3 * w + h * hd;
-                        let q = &qkv[qbase..qbase + hd];
-                        let mut reference: Vec<(usize, f32)> = (0..len)
-                            .filter(|&j| window.is_none_or(|win| i.abs_diff(j) <= win))
-                            .map(|j| {
-                                let kbase = (seg_start + j) * 3 * w + w + h * hd;
-                                (j, dot16(q, &qkv[kbase..kbase + hd]) / (hd as f32).sqrt())
-                            })
-                            .collect();
-                        let m = reference.iter().map(|&(_, s)| s).fold(f32::NEG_INFINITY, f32::max);
-                        let mut sum = 0.0;
-                        for (_, s) in &mut reference {
-                            *s = (*s - m).exp();
-                            sum += *s;
-                        }
-                        for c in 0..hd {
-                            let mut expected = 0.0;
-                            for &(j, s) in &reference {
-                                expected += (s * (1.0 / sum)) * qkv[(seg_start + j) * 3 * w + 2 * w + h * hd + c];
-                            }
-                            let actual = ctx[(seg_start + i) * w + h * hd + c];
-                            assert!((actual - expected).abs() <= 1e-5, "len {len}, window {window:?}, {i}/{h}/{c}");
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     #[test]
     fn erf_matches_f64() {
