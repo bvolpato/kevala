@@ -81,9 +81,8 @@ The demo keeps additional models under **More models**; Laya remains the default
 <details>
 <summary>Additional model packs</summary>
 
-The additional packs below are converted and validated locally. Their Hugging Face publication
-and immutable download pin are still pending. Until then, use the conversion helper and load a
-local `.kevala` URL; the named hosted downloads are not available.
+The additional packs are published on Hugging Face and pinned to a verified revision.
+Load them by name, for example `Kevala.load({ model: "semif-qwen3.5-0.8b" })`.
 
 | name | readout | pack download |
 |---|---|---:|

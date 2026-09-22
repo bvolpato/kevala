@@ -7840,5 +7840,2316 @@
       },
       "threads": 1
     }
+  },
+  "integrationValidation": {
+    "baseCommit": "5867706",
+    "runtimeCommit": "e88b730b9c40b45147bae05221d9b55391f9f1a2",
+    "note": "Repeated parity after integrating the latest main gate, recurrence, and attention optimizations. Earlier Tetris timings precede this integration.",
+    "firefox": {
+      "kev-0.8b": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.38641759753227234,
+              0.38107118010520935,
+              0.23251128196716309
+            ],
+            "argmax": true,
+            "expected": [
+              0.3852511942386627,
+              0.37784525752067566,
+              0.2369035929441452
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.004392310976982117,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.41384121775627136,
+              0.5861587524414062
+            ],
+            "argmax": true,
+            "expected": [
+              0.4099005162715912,
+              0.5900994539260864
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.003940701484680176,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.04263455793261528,
+              0.6267080903053284,
+              0.33065739274024963
+            ],
+            "argmax": true,
+            "expected": [
+              0.04155740514397621,
+              0.6291330456733704,
+              0.3293095827102661
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.002424955368041992,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.1751948595046997,
+              0.8248051404953003
+            ],
+            "argmax": true,
+            "expected": [
+              0.1767793595790863,
+              0.8232206106185913
+            ],
+            "id": "email_object_state",
+            "maxDp": 0.0015845298767089844,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.059379301965236664,
+              0.9406207203865052
+            ],
+            "argmax": true,
+            "expected": [
+              0.05892271175980568,
+              0.9410773515701294
+            ],
+            "id": "email_object_state",
+            "maxDp": 0.0004566311836242676,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              1
+            ],
+            "argmax": true,
+            "expected": [
+              1
+            ],
+            "id": "choice_one_option",
+            "maxDp": 0,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.7131038308143616,
+              0.2868961989879608
+            ],
+            "argmax": true,
+            "expected": [
+              0.7168720960617065,
+              0.28312793374061584
+            ],
+            "id": "injection",
+            "maxDp": 0.0037682652473449703,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.12542878091335297,
+              0.2325926572084427,
+              0.2904864251613617,
+              0.35149213671684265
+            ],
+            "argmax": true,
+            "expected": [
+              0.12507525086402893,
+              0.2344855964183807,
+              0.28827574849128723,
+              0.3521634340286255
+            ],
+            "id": "list_state_numbers",
+            "maxDp": 0.002210676670074463,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.2850257158279419,
+              0.7149742841720581
+            ],
+            "argmax": true,
+            "expected": [
+              0.2952393889427185,
+              0.7047606110572815
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.010213673114776611,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.7940219640731812,
+              0.11946966499090196,
+              0.08650830388069153
+            ],
+            "argmax": true,
+            "expected": [
+              0.7920860648155212,
+              0.1206740215420723,
+              0.08723996579647064
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.001935899257659912,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.03997590392827988,
+              0.9350879788398744,
+              0.024936076253652573
+            ],
+            "argmax": true,
+            "expected": [
+              0.03793666884303093,
+              0.9384472370147704,
+              0.02361607365310192
+            ],
+            "id": "multilingual_marks",
+            "maxDp": 0.00335925817489624,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.09249737858772278,
+              0.9075026512145996
+            ],
+            "argmax": true,
+            "expected": [
+              0.091979518532753,
+              0.9080204367637634
+            ],
+            "id": "long_state",
+            "maxDp": 0.0005178600549697876,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.8936153054237366,
+              0.1063847467303276
+            ],
+            "argmax": true,
+            "expected": [
+              0.8897170424461365,
+              0.1102830022573471
+            ],
+            "id": "long_state",
+            "maxDp": 0.0038982629776000977,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 698,
+        "maxDp": 0.010213673114776611,
+        "maxDpLimit": 0.03,
+        "model": {
+          "author": "Jared Palmer (Kev); Qwen team (base)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B-Base",
+          "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "converter": "kevala 0.1.0",
+          "license": "apache-2.0",
+          "name": "kev-0.8b",
+          "quantization": "LoRA merged in f32, then int8 symmetric absmax, one f32 scale per 32 weights; norms, gates, conv, pointer head in f32",
+          "revision": "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+          "source": "https://huggingface.co/jaredpalmer/kev-0.8b"
+        },
+        "p50": 98,
+        "questions": 13,
+        "reference": "./tests/fixtures/golden-kev.json",
+        "referenceSource": {
+          "base": "Qwen/Qwen3.5-0.8B-Base",
+          "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "kev_commit": "35566d73bea14cc417df016f6044d5cd311f697b",
+          "precision": "float32, LoRA merged",
+          "run": "jaredpalmer/kev-0.8b@54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+          "temperature": 2.406050072164233,
+          "torch": "2.14.0"
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "kev-4b": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.3799941837787628,
+              0.3886049389839173,
+              0.23140093684196472
+            ],
+            "argmax": true,
+            "expected": [
+              0.3756910264492035,
+              0.39195117354393005,
+              0.23235780000686648
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.004303157329559326,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.20592106878757477,
+              0.7940788865089417
+            ],
+            "argmax": true,
+            "expected": [
+              0.19597671926021576,
+              0.804023265838623
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.009944379329681396,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.01933147758245468,
+              0.5103370547294617,
+              0.4703315198421478
+            ],
+            "argmax": true,
+            "expected": [
+              0.019082266837358475,
+              0.505578875541687,
+              0.4753388464450836
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.005007326602935791,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.013086621649563313,
+              0.9869133830070496
+            ],
+            "argmax": true,
+            "expected": [
+              0.013791751116514206,
+              0.986208200454712
+            ],
+            "id": "email_object_state",
+            "maxDp": 0.0007051825523376465,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.01457685139030218,
+              0.98542320728302
+            ],
+            "argmax": true,
+            "expected": [
+              0.014615347608923912,
+              0.9853846430778505
+            ],
+            "id": "email_object_state",
+            "maxDp": 0.000038564205169677734,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              1
+            ],
+            "argmax": true,
+            "expected": [
+              1
+            ],
+            "id": "choice_one_option",
+            "maxDp": 0,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.08951310813426971,
+              0.9104868769645692
+            ],
+            "argmax": true,
+            "expected": [
+              0.08756399154663086,
+              0.9124360084533693
+            ],
+            "id": "injection",
+            "maxDp": 0.0019491314888000488,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.09667129069566728,
+              0.686802327632904,
+              0.13688385486602783,
+              0.07964250445365906
+            ],
+            "argmax": true,
+            "expected": [
+              0.09641154855489732,
+              0.6872775554656982,
+              0.13640199601650238,
+              0.07990890741348267
+            ],
+            "id": "list_state_numbers",
+            "maxDp": 0.00048185884952545166,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.3925243020057678,
+              0.6074756979942322
+            ],
+            "argmax": true,
+            "expected": [
+              0.4016637206077576,
+              0.5983362793922424
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.009139418601989746,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.9721717834472656,
+              0.01593419723212719,
+              0.01189403235912323
+            ],
+            "argmax": true,
+            "expected": [
+              0.9726077914237976,
+              0.01546112447977066,
+              0.011931040324270724
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.0004730727523565293,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.14329099655151367,
+              0.772240936756134,
+              0.0844680517911911
+            ],
+            "argmax": true,
+            "expected": [
+              0.1409713476896286,
+              0.7768322825431824,
+              0.08219633251428604
+            ],
+            "id": "multilingual_marks",
+            "maxDp": 0.00459134578704834,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.039578165858983994,
+              0.960421860218048
+            ],
+            "argmax": true,
+            "expected": [
+              0.03907867148518562,
+              0.960921347141266
+            ],
+            "id": "long_state",
+            "maxDp": 0.0004994943737983704,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.861496090888977,
+              0.13850387930870056
+            ],
+            "argmax": true,
+            "expected": [
+              0.8610538840293884,
+              0.13894614577293396
+            ],
+            "id": "long_state",
+            "maxDp": 0.0004422664642333984,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 705,
+        "maxDp": 0.009944379329681396,
+        "maxDpLimit": 0.03,
+        "model": {
+          "author": "Jared Palmer (Kev); Qwen team (base)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "converter": "kevala 0.1.3",
+          "license": "apache-2.0",
+          "name": "kev-4b",
+          "quantization": "LoRA merged in f32, then int8 symmetric absmax, one f32 scale per 32 weights; norms, gates, conv, pointer head in f32",
+          "revision": "485ace8703592fcf405488b262449990824cfed1",
+          "source": "https://huggingface.co/jaredpalmer/kev-4b"
+        },
+        "p50": 103,
+        "questions": 13,
+        "reference": "./tests/fixtures/golden-kev-4b.json",
+        "referenceSource": {
+          "base": "Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "device": "cuda",
+          "kev_commit": "3e04f90f21004afcff77c3472ea5402562d29c6b",
+          "precision": "bfloat16, LoRA merged in float32 before casting",
+          "run": "jaredpalmer/kev-4b@485ace8703592fcf405488b262449990824cfed1",
+          "temperature": 2.1435469250725863,
+          "torch": "2.14.0+cu130"
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "kev-9b": {
+        "argmax": 5,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.5369840264320374,
+              0.25892922282218933,
+              0.2040867060422897
+            ],
+            "argmax": true,
+            "expected": [
+              0.534045398235321,
+              0.26344144344329834,
+              0.20251312851905823
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.004512220621109009,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.46775516867637634,
+              0.5322448015213013
+            ],
+            "argmax": true,
+            "expected": [
+              0.46827301383018494,
+              0.5317270159721375
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.0005178451538085938,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.037017516791820526,
+              0.6125698685646057,
+              0.35041263699531555
+            ],
+            "argmax": true,
+            "expected": [
+              0.03698660060763359,
+              0.6141510605812073,
+              0.34886229038238525
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.0015811920166015625,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.25356748700141907,
+              0.7464324831962585
+            ],
+            "argmax": true,
+            "expected": [
+              0.25825974345207214,
+              0.7417402863502502
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.004692256450653076,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.9577459096908568,
+              0.030299367383122444,
+              0.01195476111024618
+            ],
+            "argmax": true,
+            "expected": [
+              0.9570522308349608,
+              0.030701452866196632,
+              0.012246260419487951
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.0006936788558959961,
+            "question": "where"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 294,
+        "maxDp": 0.004692256450653076,
+        "maxDpLimit": 0.03,
+        "model": {
+          "author": "Jared Palmer (Kev); Qwen team (base)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-9B-Base",
+          "base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+          "converter": "kevala 0.1.3",
+          "license": "apache-2.0",
+          "name": "kev-9b",
+          "quantization": "LoRA merged in f32, then int8 symmetric absmax, one f32 scale per 32 weights; norms, gates, conv, pointer head in f32",
+          "revision": "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+          "source": "https://huggingface.co/jaredpalmer/kev-9b"
+        },
+        "p50": 294,
+        "questions": 5,
+        "reference": "./tests/fixtures/golden-kev-9b.json",
+        "referenceSource": {
+          "base": "Qwen/Qwen3.5-9B-Base",
+          "base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+          "device": "cpu",
+          "kev_commit": "3e04f90f21004afcff77c3472ea5402562d29c6b",
+          "precision": "float32, LoRA merged in float32 before casting",
+          "run": "jaredpalmer/kev-9b@2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+          "temperature": 2.2973967099940698,
+          "torch": "2.14.0+cu130"
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "semif-qwen3.5-0.8b": {
+        "argmax": 12,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.28885236382484436,
+              0.016562284901738167,
+              0.694585382938385
+            ],
+            "argmax": true,
+            "expected": [
+              0.26214390993118286,
+              0.015057843178510666,
+              0.722798228263855
+            ],
+            "id": "readme_ticket::department",
+            "maxDp": 0.02821284532546997,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.2073005735874176,
+              0.79269939661026
+            ],
+            "argmax": true,
+            "expected": [
+              0.20559540390968323,
+              0.7944045662879944
+            ],
+            "id": "readme_ticket::escalate",
+            "maxDp": 0.001705169677734375,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.058920372277498245,
+              0.920510232448578,
+              0.020569419488310817
+            ],
+            "argmax": true,
+            "expected": [
+              0.05424409359693527,
+              0.9222995042800904,
+              0.023456498980522156
+            ],
+            "id": "readme_ticket::frustration",
+            "maxDp": 0.004676278680562973,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.19700054824352264,
+              0.8029994964599609
+            ],
+            "argmax": true,
+            "expected": [
+              0.1928277462720871,
+              0.8071722388267517
+            ],
+            "id": "email_object_state::churn",
+            "maxDp": 0.004172801971435547,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.04300029203295708,
+              0.9569997191429138
+            ],
+            "argmax": true,
+            "expected": [
+              0.03883706778287888,
+              0.9611629247665404
+            ],
+            "id": "email_object_state::refund",
+            "maxDp": 0.004163224250078201,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              0.31972840428352356,
+              0.680271565914154
+            ],
+            "argmax": true,
+            "expected": [
+              0.31211891770362854,
+              0.6878811120986938
+            ],
+            "id": "injection::q",
+            "maxDp": 0.007609546184539795,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.27035924792289734,
+              0.35511693358421326,
+              0.27414578199386597,
+              0.10037800669670104
+            ],
+            "argmax": true,
+            "expected": [
+              0.25476783514022827,
+              0.349653959274292,
+              0.28729018568992615,
+              0.1082880049943924
+            ],
+            "id": "list_state_numbers::q",
+            "maxDp": 0.015591412782669067,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.2523106336593628,
+              0.7476893663406372
+            ],
+            "argmax": true,
+            "expected": [
+              0.2438386231660843,
+              0.7561613917350769
+            ],
+            "id": "game_candidates::clean",
+            "maxDp": 0.008472025394439697,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.6589313745498657,
+              0.07067882269620895,
+              0.2703897953033447
+            ],
+            "argmax": true,
+            "expected": [
+              0.6281015276908875,
+              0.0811614990234375,
+              0.29073700308799744
+            ],
+            "id": "game_candidates::where",
+            "maxDp": 0.03082984685897827,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.48822712898254395,
+              0.23216864466667175,
+              0.2796042561531067
+            ],
+            "argmax": true,
+            "expected": [
+              0.4798126518726349,
+              0.23524761199951172,
+              0.284939706325531
+            ],
+            "id": "multilingual_marks::q",
+            "maxDp": 0.008414477109909058,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.053007859736680984,
+              0.9469921588897704
+            ],
+            "argmax": true,
+            "expected": [
+              0.047262080013751984,
+              0.9527379274368286
+            ],
+            "id": "long_state::q",
+            "maxDp": 0.005745779722929001,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.28345778584480286,
+              0.7165421843528748
+            ],
+            "argmax": true,
+            "expected": [
+              0.27404770255088806,
+              0.7259522676467896
+            ],
+            "id": "long_state::r",
+            "maxDp": 0.009410083293914797,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 599,
+        "maxDp": 0.03082984685897827,
+        "maxDpLimit": 0.05,
+        "model": {
+          "author": "Qwen team (weights); SemIf (decision method)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+          "base_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "converter": "kevala 0.1.3",
+          "inspiration": "SemIf direct-options-v1 readout",
+          "license": "apache-2.0",
+          "method_license": "mit",
+          "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+          "method_source": "https://github.com/TheoLeeCJ/SemIf",
+          "name": "semif-qwen3.5-0.8b",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+        },
+        "p50": 99,
+        "questions": 12,
+        "reference": "./tests/fixtures/golden-semif.json",
+        "referenceSource": {
+          "device": "cuda:0",
+          "dtype": "float32",
+          "hidden_size": 1024,
+          "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+          "torch_version": "2.14.0+cu130",
+          "transformers_version": "5.17.0",
+          "vocab_size": 248320
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "semif-qwen3.5-2b": {
+        "argmax": 12,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.015940912067890167,
+              0.10065113008022308,
+              0.8834079504013062
+            ],
+            "argmax": true,
+            "expected": [
+              0.015892066061496735,
+              0.0942159965634346,
+              0.8898919224739075
+            ],
+            "id": "readme_ticket::department",
+            "maxDp": 0.006483972072601318,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.2775299549102783,
+              0.7224699854850769
+            ],
+            "argmax": true,
+            "expected": [
+              0.2790834307670593,
+              0.7209166288375854
+            ],
+            "id": "readme_ticket::escalate",
+            "maxDp": 0.001553475856781006,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.0010474268347024918,
+              0.9972467422485352,
+              0.0017058291705325246
+            ],
+            "argmax": true,
+            "expected": [
+              0.000947678810916841,
+              0.9973594546318054,
+              0.0016928393160924315
+            ],
+            "id": "readme_ticket::frustration",
+            "maxDp": 0.00011271238327026369,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.033016182482242584,
+              0.9669838547706604
+            ],
+            "argmax": true,
+            "expected": [
+              0.0327487513422966,
+              0.967251181602478
+            ],
+            "id": "email_object_state::churn",
+            "maxDp": 0.0002674311399459839,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.005322444252669811,
+              0.9946775436401368
+            ],
+            "argmax": true,
+            "expected": [
+              0.004650516901165247,
+              0.9953494668006896
+            ],
+            "id": "email_object_state::refund",
+            "maxDp": 0.0006719273515045643,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              0.2651023864746094,
+              0.7348976135253906
+            ],
+            "argmax": true,
+            "expected": [
+              0.25961950421333313,
+              0.7403804063796997
+            ],
+            "id": "injection::q",
+            "maxDp": 0.005482882261276245,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.15835948288440704,
+              0.27274686098098755,
+              0.5346044898033142,
+              0.03428921103477478
+            ],
+            "argmax": true,
+            "expected": [
+              0.15297232568264008,
+              0.2481229305267334,
+              0.5635896921157837,
+              0.03531504049897194
+            ],
+            "id": "list_state_numbers::q",
+            "maxDp": 0.02898520231246948,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.43677452206611633,
+              0.5632254481315613
+            ],
+            "argmax": true,
+            "expected": [
+              0.4307225048542022,
+              0.5692775249481201
+            ],
+            "id": "game_candidates::clean",
+            "maxDp": 0.006052076816558838,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.9865569472312928,
+              0.005894659087061882,
+              0.007548362016677856
+            ],
+            "argmax": true,
+            "expected": [
+              0.9845494031906128,
+              0.006559544708579779,
+              0.008891023695468903
+            ],
+            "id": "game_candidates::where",
+            "maxDp": 0.0020075440406799316,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.7245551943778992,
+              0.11354538053274156,
+              0.1618993878364563
+            ],
+            "argmax": true,
+            "expected": [
+              0.7201607823371887,
+              0.10936320573091508,
+              0.170476034283638
+            ],
+            "id": "multilingual_marks::q",
+            "maxDp": 0.008576646447181702,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.1423855423927307,
+              0.8576143980026245
+            ],
+            "argmax": true,
+            "expected": [
+              0.1354713886976242,
+              0.8645286560058594
+            ],
+            "id": "long_state::q",
+            "maxDp": 0.006914258003234863,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.989640176296234,
+              0.01035982370376587
+            ],
+            "argmax": true,
+            "expected": [
+              0.9896143078804016,
+              0.010385727509856224
+            ],
+            "id": "long_state::r",
+            "maxDp": 0.00002590380609035492,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 597,
+        "maxDp": 0.02898520231246948,
+        "maxDpLimit": 0.05,
+        "model": {
+          "author": "Qwen team (weights); SemIf (decision method)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-2B",
+          "base_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "converter": "kevala 0.1.3",
+          "inspiration": "SemIf direct-options-v1 readout",
+          "license": "apache-2.0",
+          "method_license": "mit",
+          "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+          "method_source": "https://github.com/TheoLeeCJ/SemIf",
+          "name": "semif-qwen3.5-2b",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "source": "https://huggingface.co/Qwen/Qwen3.5-2B"
+        },
+        "p50": 100,
+        "questions": 12,
+        "reference": "./tests/fixtures/golden-semif-2b.json",
+        "referenceSource": {
+          "device": "cuda:0",
+          "dtype": "float32",
+          "hidden_size": 2048,
+          "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-2B/snapshots/15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "torch_version": "2.14.0+cu130",
+          "transformers_version": "5.17.0",
+          "vocab_size": 248320
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "semif-qwen3.5-4b": {
+        "argmax": 12,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.6082098484039307,
+              0.27944841980934143,
+              0.1123417541384697
+            ],
+            "argmax": true,
+            "expected": [
+              0.6286793351173401,
+              0.26207253336906433,
+              0.109248086810112
+            ],
+            "id": "readme_ticket::department",
+            "maxDp": 0.020469486713409424,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.02956290543079376,
+              0.9704371094703674
+            ],
+            "argmax": true,
+            "expected": [
+              0.02595735527575016,
+              0.9740425944328308
+            ],
+            "id": "readme_ticket::escalate",
+            "maxDp": 0.003605550155043602,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.056049544364213943,
+              0.9401641488075256,
+              0.003786298679187894
+            ],
+            "argmax": true,
+            "expected": [
+              0.05982624366879463,
+              0.9358399510383606,
+              0.00433379877358675
+            ],
+            "id": "readme_ticket::frustration",
+            "maxDp": 0.004324197769165039,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.006458142306655645,
+              0.9935418367385864
+            ],
+            "argmax": true,
+            "expected": [
+              0.006692850962281227,
+              0.9933071732521056
+            ],
+            "id": "email_object_state::churn",
+            "maxDp": 0.00023470865562558177,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.027149628847837448,
+              0.9728504419326782
+            ],
+            "argmax": true,
+            "expected": [
+              0.02595735527575016,
+              0.9740425944328308
+            ],
+            "id": "email_object_state::refund",
+            "maxDp": 0.001192273572087288,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              0.26614412665367126,
+              0.7338558435440063
+            ],
+            "argmax": true,
+            "expected": [
+              0.2689414322376251,
+              0.7310585975646973
+            ],
+            "id": "injection::q",
+            "maxDp": 0.0027973055839538574,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.25283491611480713,
+              0.6805183291435242,
+              0.0575251504778862,
+              0.009121508337557316
+            ],
+            "argmax": true,
+            "expected": [
+              0.2496667504310608,
+              0.6786645650863647,
+              0.06312564015388489,
+              0.008543126285076141
+            ],
+            "id": "list_state_numbers::q",
+            "maxDp": 0.005600489675998688,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.12731295824050903,
+              0.872687041759491
+            ],
+            "argmax": true,
+            "expected": [
+              0.13296423852443695,
+              0.8670357465744019
+            ],
+            "id": "game_candidates::clean",
+            "maxDp": 0.005651295185089111,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.999816358089447,
+              0.00012432830408215523,
+              0.00005932454951107502
+            ],
+            "argmax": true,
+            "expected": [
+              0.9998584985733032,
+              0.00009609805420041084,
+              0.00004539350629784167
+            ],
+            "id": "game_candidates::where",
+            "maxDp": 0.00004214048385620117,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.3082152307033539,
+              0.5984939336776733,
+              0.09329087287187576
+            ],
+            "argmax": true,
+            "expected": [
+              0.3169822692871094,
+              0.5922008156776428,
+              0.0908169373869896
+            ],
+            "id": "multilingual_marks::q",
+            "maxDp": 0.008767038583755493,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.003716945182532072,
+              0.9962831139564514
+            ],
+            "argmax": true,
+            "expected": [
+              0.0031726828310638666,
+              0.9968273043632508
+            ],
+            "id": "long_state::q",
+            "maxDp": 0.0005442623514682055,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.9836257100105286,
+              0.016374222934246063
+            ],
+            "argmax": true,
+            "expected": [
+              0.9796676635742188,
+              0.020332353189587593
+            ],
+            "id": "long_state::r",
+            "maxDp": 0.00395813025534153,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "WebGPU",
+        "hardwareConcurrency": 32,
+        "max": 596,
+        "maxDp": 0.020469486713409424,
+        "maxDpLimit": 0.05,
+        "model": {
+          "author": "Qwen team (weights); SemIf (decision method)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+          "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "converter": "kevala 0.1.3",
+          "inspiration": "SemIf direct-options-v1 readout",
+          "license": "apache-2.0",
+          "method_license": "mit",
+          "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+          "method_source": "https://github.com/TheoLeeCJ/SemIf",
+          "name": "semif-qwen3.5-4b",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "source": "https://huggingface.co/Qwen/Qwen3.5-4B"
+        },
+        "p50": 198,
+        "questions": 12,
+        "reference": "./tests/fixtures/golden-semif-4b.json",
+        "referenceSource": {
+          "device": "cuda:0",
+          "dtype": "bfloat16",
+          "hidden_size": 2560,
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-4B/snapshots/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "torch_version": "2.14.0+cu130",
+          "transformers_version": "5.17.0",
+          "vocab_size": 248320
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      }
+    },
+    "chromium": {
+      "kev-4b": {
+        "argmax": 13,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.3797013461589813,
+              0.38878172636032104,
+              0.23151694238185883
+            ],
+            "argmax": true,
+            "expected": [
+              0.3756910264492035,
+              0.39195117354393005,
+              0.23235780000686646
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.004010319709777832,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.20593883097171783,
+              0.7940611243247986
+            ],
+            "argmax": true,
+            "expected": [
+              0.19597671926021576,
+              0.804023265838623
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.009962141513824463,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.019348613917827606,
+              0.5104163289070129,
+              0.47023507952690125
+            ],
+            "argmax": true,
+            "expected": [
+              0.019082266837358475,
+              0.505578875541687,
+              0.4753388464450836
+            ],
+            "id": "readme_ticket",
+            "maxDp": 0.005103766918182373,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.013099966570734978,
+              0.9869000315666199
+            ],
+            "argmax": true,
+            "expected": [
+              0.013791751116514206,
+              0.9862082004547119
+            ],
+            "id": "email_object_state",
+            "maxDp": 0.000691831111907959,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.014568716287612915,
+              0.9854313135147095
+            ],
+            "argmax": true,
+            "expected": [
+              0.014615347608923912,
+              0.9853846430778503
+            ],
+            "id": "email_object_state",
+            "maxDp": 0.00004667043685913086,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              1
+            ],
+            "argmax": true,
+            "expected": [
+              1
+            ],
+            "id": "choice_one_option",
+            "maxDp": 0,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.08955633640289307,
+              0.9104437232017517
+            ],
+            "argmax": true,
+            "expected": [
+              0.08756399154663086,
+              0.9124360084533691
+            ],
+            "id": "injection",
+            "maxDp": 0.001992344856262207,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.09662655740976334,
+              0.6871644854545593,
+              0.1366526037454605,
+              0.07955634593963623
+            ],
+            "argmax": true,
+            "expected": [
+              0.09641154855489731,
+              0.6872775554656982,
+              0.13640199601650238,
+              0.07990890741348267
+            ],
+            "id": "list_state_numbers",
+            "maxDp": 0.00035256147384643555,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.39262422919273376,
+              0.6073758006095886
+            ],
+            "argmax": true,
+            "expected": [
+              0.40166372060775757,
+              0.5983362793922424
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.009039521217346191,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.9721609950065613,
+              0.01594037376344204,
+              0.01189858466386795
+            ],
+            "argmax": true,
+            "expected": [
+              0.9726077914237976,
+              0.01546112447977066,
+              0.011931040324270725
+            ],
+            "id": "game_candidates",
+            "maxDp": 0.0004792492836713791,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.14342156052589417,
+              0.7720269560813904,
+              0.08455147594213486
+            ],
+            "argmax": true,
+            "expected": [
+              0.1409713476896286,
+              0.7768322825431824,
+              0.08219633251428604
+            ],
+            "id": "multilingual_marks",
+            "maxDp": 0.004805326461791992,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.0395757295191288,
+              0.9604243040084839
+            ],
+            "argmax": true,
+            "expected": [
+              0.03907867148518562,
+              0.9609213471412659
+            ],
+            "id": "long_state",
+            "maxDp": 0.0004970580339431763,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.8615572452545166,
+              0.1384427845478058
+            ],
+            "argmax": true,
+            "expected": [
+              0.8610538840293884,
+              0.13894614577293396
+            ],
+            "id": "long_state",
+            "maxDp": 0.0005033612251281738,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "nvidia blackwell",
+        "hardwareConcurrency": 32,
+        "max": 286.70000076293945,
+        "maxDp": 0.009962141513824463,
+        "maxDpLimit": 0.03,
+        "model": {
+          "author": "Jared Palmer (Kev); Qwen team (base)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "converter": "kevala 0.1.3",
+          "license": "apache-2.0",
+          "name": "kev-4b",
+          "quantization": "LoRA merged in f32, then int8 symmetric absmax, one f32 scale per 32 weights; norms, gates, conv, pointer head in f32",
+          "revision": "485ace8703592fcf405488b262449990824cfed1",
+          "source": "https://huggingface.co/jaredpalmer/kev-4b"
+        },
+        "p50": 62.80000019073486,
+        "questions": 13,
+        "reference": "./tests/fixtures/golden-kev-4b.json",
+        "referenceSource": {
+          "base": "Qwen/Qwen3.5-4B-Base",
+          "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+          "device": "cuda",
+          "kev_commit": "3e04f90f21004afcff77c3472ea5402562d29c6b",
+          "precision": "bfloat16, LoRA merged in float32 before casting",
+          "run": "jaredpalmer/kev-4b@485ace8703592fcf405488b262449990824cfed1",
+          "temperature": 2.1435469250725863,
+          "torch": "2.14.0+cu130"
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "chrome",
+          "browserRequested": "chromium",
+          "browserVersion": "149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "semif-qwen3.5-0.8b": {
+        "argmax": 12,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.2888035774230957,
+              0.016533641144633293,
+              0.6946628093719482
+            ],
+            "argmax": true,
+            "expected": [
+              0.26214390993118286,
+              0.015057843178510666,
+              0.722798228263855
+            ],
+            "id": "readme_ticket::department",
+            "maxDp": 0.02813541889190674,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.2076421082019806,
+              0.792357861995697
+            ],
+            "argmax": true,
+            "expected": [
+              0.20559540390968323,
+              0.7944045662879944
+            ],
+            "id": "readme_ticket::escalate",
+            "maxDp": 0.0020467042922973633,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.05887535586953163,
+              0.9204632639884949,
+              0.02066143974661827
+            ],
+            "argmax": true,
+            "expected": [
+              0.05424409359693527,
+              0.9222995042800903,
+              0.023456498980522156
+            ],
+            "id": "readme_ticket::frustration",
+            "maxDp": 0.004631262272596359,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.19654051959514618,
+              0.8034594655036926
+            ],
+            "argmax": true,
+            "expected": [
+              0.1928277462720871,
+              0.8071722388267517
+            ],
+            "id": "email_object_state::churn",
+            "maxDp": 0.003712773323059082,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.04286579787731171,
+              0.9571341276168823
+            ],
+            "argmax": true,
+            "expected": [
+              0.038837067782878876,
+              0.9611629247665405
+            ],
+            "id": "email_object_state::refund",
+            "maxDp": 0.004028797149658203,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              0.3195425868034363,
+              0.6804574131965637
+            ],
+            "argmax": true,
+            "expected": [
+              0.31211891770362854,
+              0.6878811120986938
+            ],
+            "id": "injection::q",
+            "maxDp": 0.007423698902130127,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.2700898349285126,
+              0.3553583323955536,
+              0.27423638105392456,
+              0.10031547397375107
+            ],
+            "argmax": true,
+            "expected": [
+              0.25476783514022827,
+              0.349653959274292,
+              0.28729018568992615,
+              0.1082880049943924
+            ],
+            "id": "list_state_numbers::q",
+            "maxDp": 0.015321999788284302,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.2525806128978729,
+              0.7474194169044495
+            ],
+            "argmax": true,
+            "expected": [
+              0.2438386231660843,
+              0.7561613917350769
+            ],
+            "id": "game_candidates::clean",
+            "maxDp": 0.008741989731788635,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.6589192152023315,
+              0.07067428529262543,
+              0.27040648460388184
+            ],
+            "argmax": true,
+            "expected": [
+              0.6281015276908875,
+              0.0811614990234375,
+              0.29073700308799744
+            ],
+            "id": "game_candidates::where",
+            "maxDp": 0.030817687511444092,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.4882180690765381,
+              0.23247011005878448,
+              0.27931180596351624
+            ],
+            "argmax": true,
+            "expected": [
+              0.4798126518726349,
+              0.23524761199951172,
+              0.284939706325531
+            ],
+            "id": "multilingual_marks::q",
+            "maxDp": 0.008405417203903198,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.05282604321837425,
+              0.9471739530563354
+            ],
+            "argmax": true,
+            "expected": [
+              0.047262080013751984,
+              0.9527379274368286
+            ],
+            "id": "long_state::q",
+            "maxDp": 0.005563974380493164,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.2834709882736206,
+              0.7165290117263794
+            ],
+            "argmax": true,
+            "expected": [
+              0.27404770255088806,
+              0.7259522676467896
+            ],
+            "id": "long_state::r",
+            "maxDp": 0.009423285722732544,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "nvidia blackwell",
+        "hardwareConcurrency": 32,
+        "max": 68.69999980926514,
+        "maxDp": 0.030817687511444092,
+        "maxDpLimit": 0.05,
+        "model": {
+          "author": "Qwen team (weights); SemIf (decision method)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+          "base_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "converter": "kevala 0.1.3",
+          "inspiration": "SemIf direct-options-v1 readout",
+          "license": "apache-2.0",
+          "method_license": "mit",
+          "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+          "method_source": "https://github.com/TheoLeeCJ/SemIf",
+          "name": "semif-qwen3.5-0.8b",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+        },
+        "p50": 19.90000057220459,
+        "questions": 12,
+        "reference": "./tests/fixtures/golden-semif.json",
+        "referenceSource": {
+          "device": "cuda:0",
+          "dtype": "float32",
+          "hidden_size": 1024,
+          "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+          "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+          "torch_version": "2.14.0+cu130",
+          "transformers_version": "5.17.0",
+          "vocab_size": 248320
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "chrome",
+          "browserRequested": "chromium",
+          "browserVersion": "149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      },
+      "semif-qwen3.5-4b": {
+        "argmax": 12,
+        "backend": "webgpu",
+        "crossOriginIsolated": false,
+        "details": [
+          {
+            "actual": [
+              0.6081938147544861,
+              0.2789367437362671,
+              0.1128695011138916
+            ],
+            "argmax": true,
+            "expected": [
+              0.6286793351173401,
+              0.26207253336906433,
+              0.109248086810112
+            ],
+            "id": "readme_ticket::department",
+            "maxDp": 0.020485520362854004,
+            "question": "department"
+          },
+          {
+            "actual": [
+              0.029772214591503143,
+              0.9702277779579163
+            ],
+            "argmax": true,
+            "expected": [
+              0.02595735527575016,
+              0.9740425944328308
+            ],
+            "id": "readme_ticket::escalate",
+            "maxDp": 0.003814859315752983,
+            "question": "escalate"
+          },
+          {
+            "actual": [
+              0.05653795599937439,
+              0.9396296143531799,
+              0.0038325658533722162
+            ],
+            "argmax": true,
+            "expected": [
+              0.05982624366879463,
+              0.9358399510383606,
+              0.00433379877358675
+            ],
+            "id": "readme_ticket::frustration",
+            "maxDp": 0.003789663314819336,
+            "question": "frustration"
+          },
+          {
+            "actual": [
+              0.006526965647935867,
+              0.9934729933738708
+            ],
+            "argmax": true,
+            "expected": [
+              0.006692850962281227,
+              0.9933071732521057
+            ],
+            "id": "email_object_state::churn",
+            "maxDp": 0.0001658853143453598,
+            "question": "churn"
+          },
+          {
+            "actual": [
+              0.027136581018567085,
+              0.9728633761405945
+            ],
+            "argmax": true,
+            "expected": [
+              0.02595735527575016,
+              0.9740425944328308
+            ],
+            "id": "email_object_state::refund",
+            "maxDp": 0.001179225742816925,
+            "question": "refund"
+          },
+          {
+            "actual": [
+              0.266823410987854,
+              0.7331765294075012
+            ],
+            "argmax": true,
+            "expected": [
+              0.2689414322376251,
+              0.7310585975646973
+            ],
+            "id": "injection::q",
+            "maxDp": 0.002118021249771118,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.25258004665374756,
+              0.6808653473854065,
+              0.057486895471811295,
+              0.009067756123840809
+            ],
+            "argmax": true,
+            "expected": [
+              0.2496667504310608,
+              0.6786645650863647,
+              0.06312564015388489,
+              0.008543126285076141
+            ],
+            "id": "list_state_numbers::q",
+            "maxDp": 0.005638744682073593,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.1279258131980896,
+              0.8720741868019104
+            ],
+            "argmax": true,
+            "expected": [
+              0.13296423852443695,
+              0.8670357465744019
+            ],
+            "id": "game_candidates::clean",
+            "maxDp": 0.005038440227508545,
+            "question": "clean"
+          },
+          {
+            "actual": [
+              0.9998152852058411,
+              0.00012508337385952473,
+              0.00005968927507638
+            ],
+            "argmax": true,
+            "expected": [
+              0.9998584985733032,
+              0.00009609805420041084,
+              0.00004539350629784167
+            ],
+            "id": "game_candidates::where",
+            "maxDp": 0.0000432133674621582,
+            "question": "where"
+          },
+          {
+            "actual": [
+              0.3080562949180603,
+              0.5986018776893616,
+              0.0933418795466423
+            ],
+            "argmax": true,
+            "expected": [
+              0.3169822692871094,
+              0.5922008156776428,
+              0.0908169373869896
+            ],
+            "id": "multilingual_marks::q",
+            "maxDp": 0.008925974369049072,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.0036603647749871016,
+              0.9963396787643433
+            ],
+            "argmax": true,
+            "expected": [
+              0.0031726828310638666,
+              0.9968273043632507
+            ],
+            "id": "long_state::q",
+            "maxDp": 0.00048768194392323494,
+            "question": "q"
+          },
+          {
+            "actual": [
+              0.9834480285644531,
+              0.016552021726965904
+            ],
+            "argmax": true,
+            "expected": [
+              0.9796676635742188,
+              0.020332353189587593
+            ],
+            "id": "long_state::r",
+            "maxDp": 0.003780364990234375,
+            "question": "r"
+          }
+        ],
+        "done": true,
+        "flavor": "relaxed",
+        "gpu": "nvidia blackwell",
+        "hardwareConcurrency": 32,
+        "max": 298.5,
+        "maxDp": 0.020485520362854004,
+        "maxDpLimit": 0.05,
+        "model": {
+          "author": "Qwen team (weights); SemIf (decision method)",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+          "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "converter": "kevala 0.1.3",
+          "inspiration": "SemIf direct-options-v1 readout",
+          "license": "apache-2.0",
+          "method_license": "mit",
+          "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+          "method_source": "https://github.com/TheoLeeCJ/SemIf",
+          "name": "semif-qwen3.5-4b",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "source": "https://huggingface.co/Qwen/Qwen3.5-4B"
+        },
+        "p50": 83.10000038146973,
+        "questions": 12,
+        "reference": "./tests/fixtures/golden-semif-4b.json",
+        "referenceSource": {
+          "device": "cuda:0",
+          "dtype": "bfloat16",
+          "hidden_size": 2560,
+          "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-4B/snapshots/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "torch_version": "2.14.0+cu130",
+          "transformers_version": "5.17.0",
+          "vocab_size": 248320
+        },
+        "runner": {
+          "actualThreads": 1,
+          "browser": "chrome",
+          "browserRequested": "chromium",
+          "browserVersion": "149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "selectedFlavor": "relaxed",
+        "threads": 1
+      }
+    },
+    "chromiumDevice": {
+      "attentionTile": false,
+      "features": [
+        "core-features-and-limits",
+        "subgroups",
+        "timestamp-query"
+      ],
+      "name": "nvidia blackwell",
+      "subgroup32": true,
+      "subgroup4": true
+    },
+    "chromiumFlags": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan",
+      "--disable-vulkan-surface"
+    ],
+    "limitations": "Default headless Chrome exposed no adapter. The flags enabled the NVIDIA hardware adapter and subgroup path. This adapter did not expose shader-f16, so its tiled f16 attention path was not executed."
+  },
+  "publication": {
+    "repository": "bvolpato/kevala-packs",
+    "revision": "45da41504c6c117eca940103e49dd5eb1c3eab4f",
+    "verified": [
+      {
+        "file": "kev-4b-q8.kevala",
+        "bytes": 4756384192,
+        "sha256": "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+        "httpRange": 206
+      },
+      {
+        "file": "kev-9b-q8.kevala",
+        "bytes": 8963899968,
+        "sha256": "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+        "httpRange": 206
+      },
+      {
+        "file": "semif-qwen3.5-0.8b-q8.kevala",
+        "bytes": 855225984,
+        "sha256": "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a",
+        "httpRange": 206
+      },
+      {
+        "file": "semif-qwen3.5-2b-q8.kevala",
+        "bytes": 2127742976,
+        "sha256": "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2",
+        "httpRange": 206
+      },
+      {
+        "file": "semif-qwen3.5-4b-q8.kevala",
+        "bytes": 4751303104,
+        "sha256": "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e",
+        "httpRange": 206
+      }
+    ],
+    "modelCardAndLicensesMatch": true,
+    "existingPacksUnchanged": true,
+    "hostedParity": {
+      "argmax": 12,
+      "backend": "webgpu",
+      "crossOriginIsolated": false,
+      "details": [
+        {
+          "actual": [
+            0.28885236382484436,
+            0.016562284901738167,
+            0.694585382938385
+          ],
+          "argmax": true,
+          "expected": [
+            0.26214390993118286,
+            0.015057843178510666,
+            0.722798228263855
+          ],
+          "id": "readme_ticket::department",
+          "maxDp": 0.02821284532546997,
+          "question": "department"
+        },
+        {
+          "actual": [
+            0.2073005735874176,
+            0.79269939661026
+          ],
+          "argmax": true,
+          "expected": [
+            0.20559540390968323,
+            0.7944045662879944
+          ],
+          "id": "readme_ticket::escalate",
+          "maxDp": 0.001705169677734375,
+          "question": "escalate"
+        },
+        {
+          "actual": [
+            0.058920372277498245,
+            0.920510232448578,
+            0.020569419488310817
+          ],
+          "argmax": true,
+          "expected": [
+            0.05424409359693527,
+            0.9222995042800904,
+            0.023456498980522156
+          ],
+          "id": "readme_ticket::frustration",
+          "maxDp": 0.004676278680562973,
+          "question": "frustration"
+        },
+        {
+          "actual": [
+            0.19700054824352264,
+            0.8029994964599609
+          ],
+          "argmax": true,
+          "expected": [
+            0.1928277462720871,
+            0.8071722388267517
+          ],
+          "id": "email_object_state::churn",
+          "maxDp": 0.004172801971435547,
+          "question": "churn"
+        },
+        {
+          "actual": [
+            0.04300029203295708,
+            0.9569997191429138
+          ],
+          "argmax": true,
+          "expected": [
+            0.03883706778287888,
+            0.9611629247665404
+          ],
+          "id": "email_object_state::refund",
+          "maxDp": 0.004163224250078201,
+          "question": "refund"
+        },
+        {
+          "actual": [
+            0.31972840428352356,
+            0.680271565914154
+          ],
+          "argmax": true,
+          "expected": [
+            0.31211891770362854,
+            0.6878811120986938
+          ],
+          "id": "injection::q",
+          "maxDp": 0.007609546184539795,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.27035924792289734,
+            0.35511693358421326,
+            0.27414578199386597,
+            0.10037800669670104
+          ],
+          "argmax": true,
+          "expected": [
+            0.25476783514022827,
+            0.349653959274292,
+            0.28729018568992615,
+            0.1082880049943924
+          ],
+          "id": "list_state_numbers::q",
+          "maxDp": 0.015591412782669067,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.2523106336593628,
+            0.7476893663406372
+          ],
+          "argmax": true,
+          "expected": [
+            0.2438386231660843,
+            0.7561613917350769
+          ],
+          "id": "game_candidates::clean",
+          "maxDp": 0.008472025394439697,
+          "question": "clean"
+        },
+        {
+          "actual": [
+            0.6589313745498657,
+            0.07067882269620895,
+            0.2703897953033447
+          ],
+          "argmax": true,
+          "expected": [
+            0.6281015276908875,
+            0.0811614990234375,
+            0.29073700308799744
+          ],
+          "id": "game_candidates::where",
+          "maxDp": 0.03082984685897827,
+          "question": "where"
+        },
+        {
+          "actual": [
+            0.48822712898254395,
+            0.23216864466667175,
+            0.2796042561531067
+          ],
+          "argmax": true,
+          "expected": [
+            0.4798126518726349,
+            0.23524761199951172,
+            0.284939706325531
+          ],
+          "id": "multilingual_marks::q",
+          "maxDp": 0.008414477109909058,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.053007859736680984,
+            0.9469921588897704
+          ],
+          "argmax": true,
+          "expected": [
+            0.047262080013751984,
+            0.9527379274368286
+          ],
+          "id": "long_state::q",
+          "maxDp": 0.005745779722929001,
+          "question": "q"
+        },
+        {
+          "actual": [
+            0.28345778584480286,
+            0.7165421843528748
+          ],
+          "argmax": true,
+          "expected": [
+            0.27404770255088806,
+            0.7259522676467896
+          ],
+          "id": "long_state::r",
+          "maxDp": 0.009410083293914797,
+          "question": "r"
+        }
+      ],
+      "done": true,
+      "flavor": "relaxed",
+      "gpu": "WebGPU",
+      "hardwareConcurrency": 32,
+      "max": 598,
+      "maxDp": 0.03082984685897827,
+      "maxDpLimit": 0.05,
+      "model": {
+        "author": "Qwen team (weights); SemIf (decision method)",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+        "base_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "semif-qwen3.5-0.8b",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+        "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+      },
+      "p50": 99,
+      "questions": 12,
+      "reference": "./tests/fixtures/golden-semif.json",
+      "referenceSource": {
+        "device": "cuda:0",
+        "dtype": "float32",
+        "hidden_size": 1024,
+        "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "source": "/home/bruno/.cache/huggingface/hub/models--Qwen--Qwen3.5-0.8B/snapshots/2fc06364715b967f1860aea9cf38778875588b17",
+        "torch_version": "2.14.0+cu130",
+        "transformers_version": "5.17.0",
+        "vocab_size": 248320
+      },
+      "runner": {
+        "actualThreads": 1,
+        "browser": "firefox",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "selectedFlavor": "relaxed",
+      "threads": 1,
+      "packSource": "Hugging Face, named model, cache disabled"
+    }
   }
 }

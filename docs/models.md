@@ -4,9 +4,9 @@ Laya is the demo default. Kev-0.8B is the small decoder option. Larger Kev model
 SemIf-style Qwen models are additional choices, loaded only when selected. Their weights are
 distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs).
 
-**Publication status:** the five additional packs have been converted and validated locally.
-Their Hugging Face upload and final catalog pin are pending. Use a local pack URL until that
-publication is complete. With the development server, `?pack=local#/tetris` loads files from `tmp/`.
+The catalog pins the [verified pack revision](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).
+Load any model below by name. With the development server, `?pack=local#/tetris` loads local files
+from `tmp/` instead.
 
 | Model name | Weights | Decision readout | Pack download |
 |---|---|---|---:|

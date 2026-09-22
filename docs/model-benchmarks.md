@@ -7,6 +7,35 @@ outcomes, and every selected placement are in [the results JSON](benchmarks/mode
 Hardware: RTX 5070 Ti, 16 GB, NVIDIA 595.71.05, Ryzen 9 9950X3D, Ubuntu, Firefox 152.0.3.
 Browser inference used hardware WebGPU through Vulkan. Runs were serialized.
 
+## Published packs
+
+All five new packs, their manifests, the model card, and license notices are published at
+[Hugging Face revision `45da415`](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).
+Public metadata confirms every new pack's byte count and SHA-256, and each public range request
+returns its valid pack header. Remote manifests and notices match the local files. The existing
+Laya and Kev-0.8B pack hashes are unchanged.
+
+Loading `semif-qwen3.5-0.8b` by name from this hosted revision, with browser caching disabled,
+also passed all 12 Firefox GPU reference decisions (maximum score difference 0.03083).
+The results JSON records the publication checks and hosted run under `publication`.
+
+## Integration with the latest kernels
+
+After integrating `main` at `5867706`, Firefox parity passed again for all six decoder packs:
+Kev-0.8B 13/13, Kev-4B 13/13, Kev-9B 5/5, and each SemIf size 12/12. Maximum score differences
+were 0.01022, 0.00995, 0.00470, 0.03083, 0.02899, and 0.02047, respectively.
+
+Chrome 149 on the NVIDIA adapter also passed Kev-4B 13/13 and SemIf 0.8B/4B 12/12 each, with
+maximum differences 0.00997, 0.03082, and 0.02049. Default headless Chrome exposed no adapter;
+these runs used its [documented Linux Vulkan flags](https://developer.chrome.com/blog/supercharge-web-ai-testing).
+The adapter exposed subgroups but not `shader-f16`, so these checks exercised the subgroup
+recurrence and attention paths, not tiled f16 attention. The results JSON records the flags,
+device features, and complete scores under `integrationValidation`.
+
+The integration preserves the 256-thread gate reduction and both lane recurrence variants.
+Tiled attention offsets and dispatch counts now use the larger model dimensions. The Tetris
+timings below were captured before this kernel integration and have not been rerun.
+
 ## Conversion fidelity
 
 | Pack | Original reference | Matching decisions | Maximum absolute score difference |
