@@ -46,7 +46,8 @@ export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TAR
 /** Encodes a matmul with the kernel variant for T. `pipes` comes from `matmulPipelines`. */
 export function encodeMatmul(pass, pipes, op, T) {
   const R = rowsPerThread(T);
-  dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
+  const mm = pipes.shapes.get(`${op.N}x${op.K}`) || pipes.mm;
+  dispatchMatmul(pass, mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
 }
 
 /** The matmul bind group layout, explicit so every kernel variant shares one bind group. */
@@ -71,7 +72,7 @@ export function reduceLayout(device) {
  * limits this kernel (1.6-1.75x faster on Apple GPUs); products and sums stay f32, and the
  * rounding (about 3e-4 relative) is far below the int8 weight quantization.
  */
-export async function matmulPipelines(device, wgsl) {
+export async function matmulPipelines(device, wgsl, shapes = []) {
   const layout = matmulLayout(device);
   const rlayout = reduceLayout(device);
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
@@ -79,13 +80,21 @@ export async function matmulPipelines(device, wgsl) {
   const config = matmulConfig(device);
   const mm = [];
   const reduce = [];
+  const specialized = new Map();
   await Promise.all(
     [1, 2, 3, 4].flatMap((rows) => [
       pipeline(device, wgsl("matmul", { ...config, rows }), `matmul_r${rows}`, pl).then((p) => (mm[rows] = p)),
       pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
   );
-  return { layout, reduceLayout: rlayout, mm, reduce, ...config };
+  await Promise.all(shapes.map(async ([n, k]) => {
+    const variants = [];
+    await Promise.all([1, 2, 3, 4].map(async (rows) => {
+      variants[rows] = await pipeline(device, wgsl("matmul", { ...config, rows, n, k }), `matmul_${n}x${k}_r${rows}`, pl);
+    }));
+    specialized.set(`${n}x${k}`, variants);
+  }));
+  return { layout, reduceLayout: rlayout, mm, reduce, shapes: specialized, ...config };
 }
 
 /** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */
