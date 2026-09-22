@@ -82,15 +82,26 @@ export default {
       for (let s = 0; s < cfg.steps; s++) {
         if (s === 2 * cfg.layers) c.check(c.x.kevala_bridge());
         const x = c.f32(c.x.kevala_x_ptr(), tokens * D);
-        const pending = e.shards.map((r) => {
-          const copy = x.slice();
+        const expected = tokens * D;
+        const buffers = e.layaShardBuffers || (e.layaShardBuffers = []);
+        const pending = e.shards.map((r, i) => {
+          // A returned partial is detached when sent back to its worker. Refill that
+          // same allocation for the next step, or allocate once for a new batch shape.
+          let copy = buffers[i];
+          buffers[i] = null;
+          if (copy?.length === expected) copy.set(x);
+          else copy = x.slice();
           return r.call({ type: "step", s, x: copy }, [copy.buffer]);
         });
         w.f32(xptr, tokens * D).set(x);
         const pp = w.call(() => w.x.kevala_shard_step(s));
         const acc = new Float32Array(w.f32(pp, tokens * D));
-        for (const m of await Promise.all(pending)) {
+        for (const [i, m] of (await Promise.all(pending)).entries()) {
           const p = m.p;
+          if (!(p instanceof Float32Array) || p.length !== expected) {
+            throw new Error(`invalid Laya shard partial: expected ${expected} f32 values`);
+          }
+          buffers[i] = p;
           for (let i = 0; i < acc.length; i++) acc[i] += p[i];
         }
         const xv = c.f32(c.x.kevala_x_ptr(), tokens * D);
