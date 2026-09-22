@@ -108,11 +108,12 @@ async function compiles(device, code) {
  * saying why there is none. `baseline` asks for no optional feature and the default limits, the
  * way the weakest WebGPU device runs (for testing those kernel paths on a strong one).
  */
-export async function requestDevice({ baseline = false } = {}) {
+export async function requestDevice({ baseline = false, powerPreference = "high-performance" } = {}) {
   const where = typeof window === "undefined" ? "worker" : "page";
   if (typeof navigator === "undefined" || !navigator.gpu) throw new Error(`this browser has no WebGPU in a ${where} (navigator.gpu is missing)`);
-  const adapter = (await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })) || (await navigator.gpu.requestAdapter());
+  const adapter = (await navigator.gpu.requestAdapter({ powerPreference })) || (await navigator.gpu.requestAdapter());
   if (!adapter) throw new Error("the browser offers no WebGPU adapter: WebGPU may be turned off, or the GPU or its driver blocklisted");
+  if (adapter.info?.isFallbackAdapter || adapter.isFallbackAdapter) throw new Error("the browser selected a software WebGPU adapter instead of a hardware GPU");
   const want = baseline
     ? {}
     : {
@@ -124,14 +125,48 @@ export async function requestDevice({ baseline = false } = {}) {
   const optional = baseline ? [] : ["timestamp-query", "shader-f16", "subgroups"];
   const requiredFeatures = optional.filter((f) => adapter.features.has(f));
   const device = await adapter.requestDevice({ requiredLimits: want, requiredFeatures });
+  const gpu = { device, adapter, powerPreference, lost: null };
+  device.lost.then((info) => (gpu.lost = info));
   const info = adapter.info || {};
-  const subgroups = device.features.has("subgroups") && (await compiles(device, SUBGROUP_PROBE));
+  let subgroups;
+  try {
+    subgroups = device.features.has("subgroups") && (await compiles(device, SUBGROUP_PROBE));
+  } catch (e) {
+    device.destroy();
+    throw e;
+  }
   // some kernels map one lane to each of 32 keys: they need subgroups of exactly 32 lanes, and
   // the attention one more workgroup memory than the 16 KB every device has
   const subgroup32 = subgroups && info.subgroupMinSize === 32 && info.subgroupMaxSize === 32 && device.limits.maxComputeWorkgroupStorageSize >= 24576;
   // others add across groups of 4 lanes, so any subgroup of at least 4 will do
   const subgroup4 = subgroups && info.subgroupMinSize >= 4;
-  return { device, adapter, subgroup32, subgroup4, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" };
+  return Object.assign(gpu, { subgroup32, subgroup4, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" });
+}
+
+/** Preserve allocation errors before a later write or readback reports an invalid buffer. */
+export async function withGpuErrors(gpu, operation, phase) {
+  const d = gpu.device;
+  d.pushErrorScope("validation");
+  d.pushErrorScope("internal");
+  d.pushErrorScope("out-of-memory");
+  let value, failure;
+  try {
+    value = await operation();
+  } catch (e) {
+    failure = e;
+  }
+  const scopes = await Promise.allSettled([d.popErrorScope(), d.popErrorScope(), d.popErrorScope()]);
+  const [oom, internal, invalid] = scopes.map((s) => (s.status === "fulfilled" ? s.value : null));
+  const scoped = oom || internal || invalid;
+  let message;
+  if (oom) message = `out of GPU memory while ${phase}: ${oom.message}`;
+  else if (gpu.lost) message = `device lost while ${phase}: ${gpu.lost.message || gpu.lost.reason}`;
+  else if (scoped) message = `${phase}: ${scoped.message}`;
+  if (message) throw Object.assign(new Error(`WebGPU: ${message}`), { code: "WEBGPU_INIT" });
+  if (failure) throw failure;
+  const rejected = scopes.find((s) => s.status === "rejected");
+  if (rejected) throw Object.assign(new Error(`WebGPU: ${phase}: ${rejected.reason?.message || rejected.reason}`), { code: "WEBGPU_INIT" });
+  return value;
 }
 
 let U;
@@ -185,14 +220,14 @@ export class GpuWeights {
   }
 
   upload(e) {
-    const mk = (bytes) => {
+    const mk = (bytes, label) => {
       const size = Math.max(16, Math.ceil(bytes.byteLength / 16) * 16);
-      const b = this.device.createBuffer({ size, usage: U.STORAGE | U.COPY_DST });
+      const b = this.device.createBuffer({ label, size, usage: U.STORAGE | U.COPY_DST });
       this.device.queue.writeBuffer(b, 0, bytes.buffer, bytes.byteOffset, bytes.byteLength & ~3);
       return b;
     };
-    e.buf = mk(e.data);
-    if (e.scales) e.sbuf = mk(e.scales);
+    e.buf = mk(e.data, e.info.name);
+    if (e.scales) e.sbuf = mk(e.scales, `${e.info.name}.scales`);
     // small f32 tensors some kernels combine on the host (Kev's gate projections)
     if (this.keepHost.has(e.info.name)) e.host = new Float32Array(e.data.buffer, e.data.byteOffset, e.data.byteLength / 4);
     e.data = e.scales = null;
@@ -287,8 +322,12 @@ export async function pipeline(device, code, label, layout = "auto") {
   const m = device.createShaderModule({ code, label });
   const info = await m.getCompilationInfo?.();
   const errs = (info?.messages || []).filter((x) => x.type === "error");
-  if (errs.length) throw new Error(`${label}: ${errs.map((x) => `${x.lineNum}:${x.linePos} ${x.message}`).join("; ")}`);
-  return device.createComputePipelineAsync({ layout, compute: { module: m, entryPoint: "main" }, label });
+  if (errs.length) throw Object.assign(new Error(`${label}: ${errs.map((x) => `${x.lineNum}:${x.linePos} ${x.message}`).join("; ")}`), { code: "WEBGPU_INIT" });
+  try {
+    return await device.createComputePipelineAsync({ layout, compute: { module: m, entryPoint: "main" }, label });
+  } catch (e) {
+    throw Object.assign(new Error(`${label}: ${e.message}`), { code: "WEBGPU_INIT" });
+  }
 }
 
 export class GpuTrunk {
@@ -551,7 +590,7 @@ export class GpuTrunk {
     if (prof) this.lastProfile = await prof.collect();
     if (checking) {
       const [oom, invalid] = [await d.popErrorScope(), await d.popErrorScope()];
-      if (oom || invalid) throw new Error(`WebGPU: ${(oom || invalid).message}`);
+      if (oom || invalid) throw Object.assign(new Error(`WebGPU: ${(oom || invalid).message}`), { code: "WEBGPU_INIT" });
     }
     await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
     const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));

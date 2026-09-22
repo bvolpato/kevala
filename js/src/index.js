@@ -21,12 +21,26 @@ function spawn(file) {
   return new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })), { type: "module" });
 }
 
-/** Whether WebGPU is available inside `worker`; a worker that fails to start says yes, so the load reports why. */
-function workerHasGpu(worker) {
-  return new Promise((resolve) => {
-    worker.onmessage = (ev) => ev.data.type === "probe" && resolve(ev.data.gpu);
-    worker.onerror = () => resolve(true);
-    worker.postMessage({ type: "probe" });
+/** Whether WebGPU is available inside `worker`; startup errors reject the load immediately. */
+function workerHasGpu(worker, signal) {
+  return new Promise((resolve, reject) => {
+    const fail = (error) => {
+      signal?.removeEventListener("abort", abort);
+      reject(error);
+    };
+    const abort = () => fail(signal.reason ?? new DOMException("Loading was cancelled", "AbortError"));
+    const done = (gpu) => {
+      signal?.removeEventListener("abort", abort);
+      resolve(gpu);
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    worker.onmessage = (ev) => ev.data.type === "probe" && done(ev.data.gpu);
+    worker.onerror = (ev) => fail(new Error(ev.message || "kevala worker failed to start"));
+    try {
+      worker.postMessage({ type: "probe" });
+    } catch (e) {
+      fail(e);
+    }
   });
 }
 
@@ -90,10 +104,7 @@ export class Kevala {
     if (opts.cache !== false && typeof document !== "undefined") navigator.storage?.persist?.()?.catch(() => {});
     const cancelled = () => signal.reason ?? new DOMException("Loading was cancelled", "AbortError");
     if (signal?.aborted) throw cancelled();
-    const abort = () => {
-      this.dispose();
-      this.#ready?.reject(cancelled());
-    };
+    const abort = () => this.dispose(cancelled());
     signal?.addEventListener("abort", abort, { once: true });
     // a relative pack URL means relative to the page, not to the worker script
     const model = typeof opts.model === "string" && !MODELS[opts.model] && typeof document !== "undefined" ? new URL(opts.model, document.baseURI).href : opts.model;
@@ -101,28 +112,45 @@ export class Kevala {
     const options = { ...opts, model, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
     try {
       let worker = spawn("./engine-worker.js");
+      this.#worker = worker;
       const pageGpu = typeof navigator !== "undefined" && !!navigator.gpu && opts.backend !== "wasm";
-      if (pageGpu && (opts.onPage || !(await workerHasGpu(worker)))) {
-        // WebGPU only on the page: run the engine here, and fall back to a CPU worker if it fails
+      const onPage = pageGpu && (opts.onPage || !(await workerHasGpu(worker, signal)));
+      if (onPage) {
         worker.terminate();
+        this.#worker = worker = null;
+      }
+      const failures = [];
+      for (const gpuPowerPreference of ["high-performance", "low-power"]) {
         if (signal?.aborted) throw cancelled();
+        const engine = onPage ? await pageEngine() : worker || spawn("./engine-worker.js");
+        worker = null;
+        if (signal?.aborted) {
+          engine.terminate();
+          throw cancelled();
+        }
         try {
-          this.info = { ...(await this.#connect(await pageEngine(), { ...options, backend: "webgpu" }, onProgress)), onPage: true };
+          this.info = await this.#connect(engine, { ...options, ...(onPage ? { backend: "webgpu" } : {}), gpuPowerPreference }, onProgress);
+          if (signal?.aborted) throw cancelled();
+          if (onPage) this.info.onPage = true;
           return;
         } catch (e) {
-          if (opts.backend === "webgpu" || signal?.aborted) throw e;
           this.dispose();
-          worker = spawn("./engine-worker.js");
-          const gpuUnavailable = String(e.message).replace(/^WebGPU: /, "");
-          this.info = { ...(await this.#connect(worker, { ...options, backend: "wasm" }, onProgress)), gpuUnavailable };
-          return;
+          if (signal?.aborted) throw cancelled();
+          if (e.code !== "WEBGPU_INIT" || opts.backend === "wasm") throw e;
+          failures.push(`${gpuPowerPreference}: ${String(e.message).replace(/^WebGPU: /, "")}`);
+          if (gpuPowerPreference === "high-performance") onProgress?.({ phase: "init", message: "WebGPU failed; trying the low-power adapter" });
         }
       }
-      if (signal?.aborted) {
-        worker.terminate();
-        throw cancelled();
-      }
-      this.info = await this.#connect(worker, options, onProgress);
+      if (signal?.aborted) throw cancelled();
+      const gpuUnavailable = failures.join("; ");
+      if (opts.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
+      onProgress?.({ phase: "init", message: "WebGPU unavailable; loading on the CPU" });
+      if (signal?.aborted) throw cancelled();
+      this.info = { ...(await this.#connect(spawn("./engine-worker.js"), { ...options, backend: "wasm" }, onProgress)), gpuUnavailable };
+      if (signal?.aborted) throw cancelled();
+    } catch (e) {
+      this.dispose();
+      throw e;
     } finally {
       signal?.removeEventListener("abort", abort);
     }
@@ -134,13 +162,20 @@ export class Kevala {
     const ready = new Promise((resolve, reject) => {
       this.#ready = { resolve, reject };
     });
-    engine.onmessage = (ev) => this.#onMessage(ev.data, onProgress);
+    engine.onmessage = (ev) => {
+      if (this.#worker === engine) this.#onMessage(ev.data, onProgress);
+    };
     engine.onerror = (ev) => {
+      if (this.#worker !== engine) return;
       const err = new Error(ev.message || "kevala worker failed to start");
       this.#ready?.reject(err);
       for (const p of this.#pending.values()) p.reject(err);
     };
-    engine.postMessage({ type: "load", options });
+    try {
+      engine.postMessage({ type: "load", options });
+    } catch (e) {
+      this.#ready.reject(e);
+    }
     return ready;
   }
 
@@ -162,7 +197,7 @@ export class Kevala {
         break;
       }
       case "ready":
-        this.#ready.resolve(m.info);
+        this.#ready?.resolve(m.info);
         this.#ready = null;
         break;
       case "result": {
@@ -173,14 +208,15 @@ export class Kevala {
         break;
       }
       case "error": {
+        const err = Object.assign(new Error(m.message), { code: m.code });
         if (m.id === undefined && this.#ready) {
-          this.#ready.reject(new Error(m.message));
+          this.#ready.reject(err);
           this.#ready = null;
           break;
         }
         const p = this.#pending.get(m.id);
         this.#pending.delete(m.id);
-        p?.reject(new Error(m.message));
+        p?.reject(err);
         break;
       }
     }
@@ -229,12 +265,14 @@ export class Kevala {
   }
 
   /** Stops every worker and frees the model. */
-  dispose() {
+  dispose(reason = new Error("kevala was disposed")) {
     this.#worker?.terminate();
     for (const s of this.#shards) s.terminate();
     this.#worker = null;
     this.#shards = [];
-    for (const p of this.#pending.values()) p.reject(new Error("kevala was disposed"));
+    this.#ready?.reject(reason);
+    this.#ready = null;
+    for (const p of this.#pending.values()) p.reject(reason);
     this.#pending.clear();
   }
 }

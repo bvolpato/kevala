@@ -396,7 +396,7 @@ export class GpuKev {
     d.pushErrorScope("validation");
     this.ensure(T1, T2, Math.max(P, 1), Math.max(P, B), rows.length);
     const setup = await d.popErrorScope();
-    if (setup) throw new Error(`WebGPU setup: ${setup.message}`);
+    if (setup) throw Object.assign(new Error(`WebGPU setup: ${setup.message}`), { code: "WEBGPU_INIT" });
     const q = d.queue;
     // stage 1: the planned segments, their embedded rows gathered from the full state rows
     const seg1 = new Uint32Array(this.cap.S * 8);
@@ -473,7 +473,7 @@ export class GpuKev {
     if (this.profiler) this.lastProfile = await this.profiler.collect();
     if (checking) {
       const [oom, invalid] = [await d.popErrorScope(), await d.popErrorScope()];
-      if (oom || invalid) throw new Error(`WebGPU: ${(oom || invalid).message}`);
+      if (oom || invalid) throw Object.assign(new Error(`WebGPU: ${(oom || invalid).message}`), { code: "WEBGPU_INIT" });
     }
     await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
     const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
