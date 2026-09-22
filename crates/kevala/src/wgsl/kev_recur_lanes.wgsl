@@ -1,9 +1,12 @@
 // The same recurrence with four lanes per value column, each holding a quarter of the key
-// dimension (32 of 128). Partial dot products are combined with subgroup shuffles, so each
-// token's serial chain is 32 multiply-adds instead of 128, and a thread keeps 32 state values in
-// registers instead of 128. A workgroup covers half of a head's 128 columns (z picks which).
-// Needs the `subgroups` feature and lanes numbered consecutively within a subgroup.
+// dimension (32 of 128), so each token's serial chain is 32 multiply-adds instead of 128, and a
+// thread keeps 32 state values in registers instead of 128. A workgroup covers half of a head's
+// 128 columns (z picks which). With subgroups (lanes numbered consecutively within one) the four
+// partial dot products combine with shuffles; without, through workgroup memory: one more barrier
+// per token for k.S, while a column's output sums after the barrier that ends its token.
+//#if SUBGROUPS
 enable subgroups;
+//#endif
 
 //#include kev_common
 
@@ -15,10 +18,14 @@ enable subgroups;
 var<workgroup> qs: array<array<f32, 128>, 2>;
 var<workgroup> ks: array<array<f32, 128>, 2>;
 var<workgroup> info: vec4<u32>;
+//#if SUBGROUPS
+//#else
+var<workgroup> kvs: array<f32, 256>; // partial k.S of each thread
+var<workgroup> os: array<f32, 256>;  // partial outputs of the token before
+//#endif
 
-// the token's q and k into buffer b: threads 0..127 copy q, 128..255 copy k
-fn stage(t: u32, h: u32, b: u32, li: u32) {
-  let kh = h / (LIN_HEADS / LIN_KEY_HEADS);
+// the token's q and k (key head kh) into buffer b: threads 0..127 copy q, 128..255 copy k
+fn stage(t: u32, kh: u32, b: u32, li: u32) {
   if (li < 128u) {
     qs[b][li] = C[t * LIN_DIM + kh * 128u + li];
   } else {
@@ -30,6 +37,11 @@ fn stage(t: u32, h: u32, b: u32, li: u32) {
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
   let s = wg.x;
   let h = wg.y;
+//#if KEV_GROUPED
+  let kh = h / (LIN_HEADS / LIN_KEY_HEADS); // value heads share key heads in groups
+//#else
+  let kh = h;
+//#endif
   if (s >= g.S) { return; }
   let column = wg.z * 64u + li / 4u;
   let k0 = (li % 4u) * 32u;
@@ -49,7 +61,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var decay = 0.0;
   var beta = 0.0;
   if (sp.y > 0u) {
-    stage(sp.x, h, 0u, li);
+    stage(sp.x, kh, 0u, li);
     v = C[sp.x * LIN_DIM + 2u * LIN_QK + h * 128u + column];
     decay = AB[sp.x * (2u * LIN_HEADS) + h];
     beta = AB[sp.x * (2u * LIN_HEADS) + LIN_HEADS + h];
@@ -63,15 +75,25 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     var nd = 0.0;
     var nb = 0.0;
     if (r + 1u < sp.y) {
-      stage(t + 1u, h, cur ^ 1u, li);
+      stage(t + 1u, kh, cur ^ 1u, li);
       nv = C[(t + 1u) * LIN_DIM + 2u * LIN_QK + h * 128u + column];
       nd = AB[(t + 1u) * (2u * LIN_HEADS) + h];
       nb = AB[(t + 1u) * (2u * LIN_HEADS) + LIN_HEADS + h];
     }
     var kv = 0.0;
     for (var i = 0u; i < 32u; i++) { kv += col[i] * ks[cur][k0 + i]; }
+//#if SUBGROUPS
     kv += subgroupShuffleXor(kv, 1u);
     kv += subgroupShuffleXor(kv, 2u);
+//#else
+    // the previous token's output, summed by its column's first lane before anyone overwrites it
+    if (r > 0u && k0 == 0u) { CORE[(t - 1u) * LIN_OUT + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
+    kvs[li] = kv;
+    workgroupBarrier();
+    let q4 = li & ~3u;
+    // paired as the shuffles pair them, so both variants give the same bits
+    kv = (kvs[q4] + kvs[q4 + 1u]) + (kvs[q4 + 2u] + kvs[q4 + 3u]);
+//#endif
     let delta = (v - decay * kv) * beta;
     var o = 0.0;
     for (var i = 0u; i < 32u; i++) {
@@ -79,14 +101,22 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
       col[i] = x;
       o += x * qs[cur][k0 + i];
     }
+//#if SUBGROUPS
     o += subgroupShuffleXor(o, 1u);
     o += subgroupShuffleXor(o, 2u);
     if (k0 == 0u) { CORE[t * LIN_OUT + h * 128u + column] = o; }
+//#else
+    os[li] = o;
+//#endif
     v = nv;
     decay = nd;
     beta = nb;
     workgroupBarrier();
   }
+//#if SUBGROUPS
+//#else
+  if (sp.y > 0u && k0 == 0u) { CORE[(sp.x + sp.y - 1u) * LIN_OUT + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
+//#endif
   if (g.stage == 1u) {
     let base = (sp.w * LIN_HEADS + h) * 16384u + column;
     for (var i = 0u; i < 32u; i++) { STATE[base + (k0 + i) * 128u] = col[i]; }

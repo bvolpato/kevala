@@ -242,7 +242,7 @@ async function load(o) {
       gpuUnavailable = "this browser has no WebGPU in a worker (navigator.gpu is missing)";
     } else {
       try {
-        gpu = await requestDevice({ baseline: o.gpuBaseline, powerPreference: o.gpuPowerPreference });
+        gpu = await requestDevice({ baseline: o.gpuBaseline, features: o.gpuFeatures, powerPreference: o.gpuPowerPreference });
         activeGpu = gpu;
       } catch (e) {
         throw Object.assign(new Error(`WebGPU: ${e.message}`, { cause: e }), { code: "WEBGPU_INIT" });

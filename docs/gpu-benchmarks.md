@@ -176,3 +176,76 @@ uses f16 tiles with f32 accumulation. `@256` selects the split target, `:3` the 
 and `/2` two groups of 64 columns. The default `runtime` follows the engine's selected settings.
 Small cases compare every output to a CPU dequantized reference, including bias, residual, and
 ReLU epilogues. Larger cases check sampled positions and scan all output values for finiteness.
+
+# Apple M4 Max, Chrome
+
+Measured on September 22, 2026, with Chrome for Testing 151 on macOS and an Apple M4 Max (Metal,
+32-lane subgroups, `shader-f16`). Before is `5f1a710` (the Firefox sweep merged); after is the
+`bvolpato/kernel-research` branch. Same packs and method as above: GPU time is the sum of
+per-kernel timestamps, the median of five requests per shape, then the geometric mean.
+
+| Model | Tokens | Before, ms | After, ms | Change |
+| --- | ---: | ---: | ---: | ---: |
+| Laya | 47 / 140 / 512 | 9.3 / 25.1 / 67.6 | 8.9 / 23.2 / 57.0 | -4% / -7% / -16% |
+| Kev 0.8B | 31 / 124 / 532 | 9.4 / 30.6 / 105.6 | 8.7 / 28.8 / 97.4 | -7% / -6% / -8% |
+
+All six cases improved: the suite fell from 27.95 to 25.68 ms of GPU time (-8.1%), and from
+29.9 to 27.6 ms of wall-clock p50 (-7.8%). The Firefox sweep's own changes were neutral on this
+GPU (28.5 vs 28.6 ms), since it takes the subgroup kernels those changes did not touch.
+
+## What changed
+
+- **Laya attention in register tiles** (`attention_tile.wgsl`), FlashAttention-2's work split
+  without matrix units: 64 queries per workgroup, 32 keys per step, each thread 4 queries x 2 keys
+  for scores and 4 queries x 4 dimensions for the output, so a query's statistics stay with the
+  same 16 threads. Q, K and V tiles are f16 in workgroup memory; the math is f32. At 512 tokens a
+  global layer went from 0.82 to 0.18 ms and a windowed one from 0.24 to 0.07 ms; attention's
+  share of Laya at 512 tokens fell from 14.3 to 3.5 ms.
+- **Kev attention in query tiles** (`kev_attention_tile.wgsl`): 8 tokens x the 4 query heads that
+  share a key/value head per workgroup, 8 lanes per row with the row's query and output slices in
+  registers, keys and values staged once per 16 keys. 11.7 to 4.9 ms at 532 tokens.
+- **Kev gates** split the 1024-long dot product over 8 slices of 32 threads: 0.98 to 0.26 ms at 31
+  tokens.
+- **Int8 widening** without int-to-float conversions (Marlin's exponent trick), bit for bit the
+  same: about 1% of matmul time.
+
+## For GPUs without subgroups
+
+Firefox exposes `shader-f16` but no subgroups on the GPUs above, where attention and the
+recurrence are a quarter to a third of the time. Two kernels gained variants for such GPUs, and
+were measured here by loading with only some features (`gpuFeatures`, `baseline=1`):
+
+- `attention_tile` without subgroups trades row statistics through workgroup memory (30 KB). With
+  only f16 and timestamps, Laya's attention at 512 tokens takes 4.1 ms instead of about 21 ms
+  with the portable kernel; per layer, 1.28 to 0.21 ms (global) and 0.31 to 0.08 ms (windowed).
+- The lane-split recurrence without subgroups combines its four lanes through workgroup memory,
+  one more barrier per token. With no optional features: 37.7 to 11.2 ms at 532 tokens, and Kev's
+  GPU time falls 14%.
+
+These variants were not measured in Firefox. Laya's parity with f16 and no subgroups is 41/41 at
+max |dp| 0.0235, close to the 0.024 tuning guard: check it on NVIDIA and AMD before relying on it.
+
+## Tried and dropped
+
+On this GPU the matmul did not get faster with any of: a square 8 x 4 subgroup footprint, 8 rows
+x 4 columns per thread (128 threads), two quantization blocks per step, or swizzling the input
+tile. Each was 1-15% slower or within noise. The attention agent's tuning of the tiled kernel (P
+stored key-major, keys at a stride of 16, a deferred row sum, exp2) was also up to 9% slower. The
+next step for the matmul is Chrome's `chromium-experimental-subgroup-matrix`, available only
+behind a flag.
+
+## Reproduce
+
+Serve the checkout and use a Chrome that listens for DevTools; the runner opens its own context
+there, raises and sizes its window (Chrome slows covered windows), and closes it.
+
+```sh
+export KEVALA_BENCH_CDP=http://127.0.0.1:9333
+KEVALA_BENCH_URL=http://127.0.0.1:8123 node scripts/gpu-suite.mjs tmp/gpu-profile
+KEVALA_BENCH_URL=http://127.0.0.1:8123 node scripts/gpu-suite.mjs tmp/gpu-portable --baseline
+uv run scripts/bench-gpu.py --result gpu --url 'http://127.0.0.1:8123/dev/attn-bench.html?cases=512:0,512:64&kernels=attention,attention_tile_shared,attention_tile'
+```
+
+Build the WebAssembly first (`pnpm build`, with the Rust 1.95.0 that `rust-toolchain.toml` pins).
+`dev/gpu-bench.html` now times its variants in turns and in batches of about 20 GFLOP: before,
+identical settings could differ by 4x on this GPU.

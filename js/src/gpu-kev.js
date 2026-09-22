@@ -21,12 +21,26 @@ const EXTEND_MIN = 16;
 
 /** Kev's own kernels, exported for the kernel benchmarks. */
 
+/** The tiled attention's block table for segments of these lengths: blocks of up to 8 tokens. */
+function attnBlocks(lengths, cap) {
+  const table = new Uint32Array(cap * 4);
+  let n = 0;
+  lengths.forEach((len, seg) => {
+    for (let r0 = 0; r0 < len; r0 += 8) table.set([seg, r0, Math.min(8, len - r0), 0], 4 * (1 + n++));
+  });
+  table[0] = n;
+  return table;
+}
+
 export class GpuKev {
   constructor(gpu, layout, cfg) {
     U = GPUBufferUsage;
     this.device = gpu.device;
     this.subgroup32 = !!gpu.subgroup32;
     this.subgroup4 = !!gpu.subgroup4;
+    // query-tiled attention where the GPU has the tiled Laya kernel: its rows are 8 tokens x the 4
+    // query heads of one key/value head, which every Qwen3.5 size has
+    this.attnTile = !!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads;
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.cfg = cfg;
@@ -69,19 +83,20 @@ export class GpuKev {
     const miss = this.missing();
     if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
-    // the lane-split recurrence when the GPU has subgroups of 4 or more, one thread per column otherwise
-    this.lanes = this.subgroup4;
+    // the lane-split recurrence: its four lanes per column combine with shuffles when the GPU has
+    // subgroups of 4 or more, through workgroup memory otherwise
+    this.lanes = true;
     const kernels = {
       RMS: ["kev_rms"],
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],
-      RECUR: [this.lanes ? "kev_recur_lanes" : "kev_recur"],
+      RECUR: ["kev_recur_lanes", { subgroups: this.subgroup4 }],
       GNORM: ["kev_gnorm"],
       APREP: ["kev_aprep"],
       SAVE_KV: ["kev_save_kv"],
       KEYS: ["kev_attention_keys"],
-      ATTN: ["kev_attention", { subgroups: this.subgroup32 }],
+      ATTN: this.attnTile ? ["kev_attention_tile"] : ["kev_attention", { subgroups: this.subgroup32 }],
       SILUMUL: ["kev_silumul"],
       GATHER: ["kev_gather"],
     };
@@ -193,6 +208,10 @@ export class GpuKev {
     this.tok2 = buf(this.cap.T2 * 4, U.COPY_DST | U.COPY_SRC);
     this.segs = buf(this.cap.S * 8, U.COPY_DST);
     this.segs2 = buf(this.cap.S * 8, U.COPY_DST | U.COPY_SRC);
+    // tiled attention blocks per stage: a count, then (segment, first position, tokens) per block
+    this.blockCap = Math.ceil(Math.max(T, this.cap.T2) / 8) + this.cap.S + 1;
+    this.ablocks = buf(this.blockCap * 4, U.COPY_DST);
+    this.ablocks2 = buf(this.blockCap * 4, U.COPY_DST | U.COPY_SRC);
     this.rows = buf(this.cap.R, U.COPY_DST);
     this.gathered = buf(this.cap.R * D, U.COPY_SRC);
     this.part = buf(SPLIT_SCRATCH);
@@ -339,9 +358,10 @@ export class GpuKev {
         const kv = this.carry[i].kv;
         both(mm(n("qkv"), this.h, this.proj, 0));
         both({ k: "aprep", group: bg(this.p.APREP, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("q_norm")).buf, W(n("k_norm")).buf, this.tok, this.rope]) });
-        both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
+        if (!this.attnTile) both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
         one.push({ k: "savekv", group: bg(this.p.SAVE_KV, [this.g, this.proj, kv, this.tok, this.segs]) });
-        both({ k: "attn", group: bg(this.p.ATTN, [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv]) });
+        const attn = this.attnTile ? [this.g, this.proj, kv, this.ablocks, this.segs, this.core] : [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv];
+        both({ k: "attn", group: bg(this.p.ATTN, attn) });
         both(mm(n("o"), this.core, this.x, 1));
       } else {
         const { state, tail } = this.carry[i];
@@ -410,7 +430,9 @@ export class GpuKev {
           break;
         case "attn":
           pass.setPipeline(this.p.ATTN);
-          pass.dispatchWorkgroups(T, this.cfg.heads);
+          // tiled: at most one partial block per segment beyond T / 8 full ones; spares return at once
+          if (this.attnTile) pass.dispatchWorkgroups(Math.ceil(T / 8) + S, this.cfg.kv_heads);
+          else pass.dispatchWorkgroups(T, this.cfg.heads);
           break;
         case "silumul": {
           pass.setPipeline(this.p.SILUMUL);
@@ -505,6 +527,10 @@ export class GpuKev {
     q.writeBuffer(this.tok2, 0, tok2);
     q.writeBuffer(this.segs, 0, seg1);
     q.writeBuffer(this.segs2, 0, seg2);
+    if (this.attnTile) {
+      q.writeBuffer(this.ablocks, 0, attnBlocks(plan.segs.map((g) => g.len), this.blockCap));
+      q.writeBuffer(this.ablocks2, 0, attnBlocks(branches.map(([, len]) => len), this.blockCap));
+    }
     q.writeBuffer(this.rows, 0, new Uint32Array(rows));
     let enc = d.createCommandEncoder();
     // long passes go out in chunks so the page keeps rendering (see YIELD_TOKENS)
@@ -535,6 +561,7 @@ export class GpuKev {
     enc.copyBufferToBuffer(this.x2, 0, this.x, 0, T2 * D * 4);
     enc.copyBufferToBuffer(this.tok2, 0, this.tok, 0, T2 * 16);
     enc.copyBufferToBuffer(this.segs2, 0, this.segs, 0, this.cap.S * 32);
+    if (this.attnTile) enc.copyBufferToBuffer(this.ablocks2, 0, this.ablocks, 0, this.blockCap * 16);
     enc.copyBufferToBuffer(this.g2, 0, this.g, 0, 16);
     const parts2 = yieldable ? chunks(this.ops[1], Math.max(1, Math.round((YIELD_CHUNKS * T2) / (T1 + T2)))) : [this.ops[1]];
     for (let i = 0; i < parts2.length; i++) {

@@ -3,9 +3,10 @@
 # requires-python = ">=3.12"
 # dependencies = [
 #   "selenium>=4.25,<5",
+#   "websockets>=13",
 # ]
 # ///
-"""Run a deterministic browser benchmark in an isolated headless browser.
+"""Run a deterministic browser benchmark in an isolated headless browser, or in a running Chrome (--cdp).
 
 The page owns timing and correctness checks. This wrapper only controls the
 browser, validates the requested backend, saves the structured result, and
@@ -68,6 +69,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, help="write the structured page result to this JSON file")
     parser.add_argument("--max-dp", type=float, default=0.024, help="maximum parity probability difference")
     parser.add_argument("--headed", action="store_true", help="show the selected browser instead of using headless mode")
+    parser.add_argument(
+        "--cdp",
+        default=os.environ.get("KEVALA_BENCH_CDP"),
+        help="run in the Chrome listening at this DevTools URL (a fresh context of it) instead of launching a browser",
+    )
     return parser.parse_args()
 
 
@@ -338,6 +344,62 @@ def create_browser(args: argparse.Namespace):
     return webdriver.Firefox(options=options, service=Service(log_output=os.devnull))
 
 
+def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float) -> tuple[object, dict]:
+    """Loads `url` in a fresh context of a running Chrome and polls `expression` until it is done.
+
+    This speaks the DevTools protocol directly: Playwright's attach step asserts on target types
+    it does not know, which some Chrome builds add for their own UI.
+    """
+    import urllib.request
+
+    from websockets.sync.client import connect
+
+    endpoint = json.load(urllib.request.urlopen(f"{cdp}/json/version"))
+    ids = iter(range(1, 1 << 30))
+
+    with connect(endpoint["webSocketDebuggerUrl"], max_size=None, open_timeout=30) as ws:
+
+        def send(method: str, params: dict | None = None, session: str | None = None) -> dict:
+            msg_id = next(ids)
+            message = {"id": msg_id, "method": method, "params": params or {}}
+            if session:
+                message["sessionId"] = session
+            ws.send(json.dumps(message))
+            while True:
+                reply = json.loads(ws.recv(timeout=timeout))
+                if reply.get("id") == msg_id:
+                    if "error" in reply:
+                        raise RuntimeError(f"{method}: {reply['error'].get('message')}")
+                    return reply.get("result", {})
+
+        context = send("Target.createBrowserContext", {"disposeOnDetach": True})["browserContextId"]
+        result: object = None
+        try:
+            target = send("Target.createTarget", {"url": "about:blank", "browserContextId": context, "newWindow": True})["targetId"]
+            session = send("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
+            # Chrome slows covered windows: size this one and bring it to the front
+            window = send("Browser.getWindowForTarget", {"targetId": target})["windowId"]
+            send("Browser.setWindowBounds", {"windowId": window, "bounds": {"width": 1280, "height": 900, "windowState": "normal"}})
+            send("Page.bringToFront", session=session)
+            send("Page.navigate", {"url": url}, session=session)
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                try:
+                    evaluated = send("Runtime.evaluate", {"expression": f"(() => {{ {expression} }})()", "returnByValue": True}, session=session)
+                except RuntimeError:  # no execution context yet, while the page navigates
+                    time.sleep(0.25)
+                    continue
+                result = evaluated.get("result", {}).get("value")
+                if result_is_done(result, kind):
+                    break
+                time.sleep(0.25)
+        except Exception as error:
+            result = {"error": f"browser runner: {error}"}
+        finally:
+            send("Target.disposeBrowserContext", {"browserContextId": context})
+    return result, {"browserName": "chrome", "browserVersion": endpoint.get("Browser")}
+
+
 def main() -> int:
     args = parse_args()
     if args.result in {"gpu", "kernels"} and args.backend != "webgpu":
@@ -353,31 +415,34 @@ def main() -> int:
     result: object = None
     result_global = RESULT_GLOBALS[args.result]
     result_expression = f"return window.{result_global} || null;"
-    try:
-        browser = create_browser(args)
-        browser.set_page_load_timeout(args.timeout)
-        browser.set_script_timeout(args.timeout)
-        capabilities = dict(browser.capabilities)
-        deadline = time.monotonic() + args.timeout
-        browser.get(url)
-        while time.monotonic() < deadline:
-            result = browser.execute_script(result_expression)
-            if result_is_done(result, args.result):
-                break
-            time.sleep(0.25)
-    except Exception as error:
-        result = {"error": f"browser runner: {error}"}
-    finally:
-        if browser is not None:
-            browser.quit()
+    if args.cdp:
+        result, capabilities = poll_chrome(args.cdp, url, result_expression, args.result, args.timeout)
+    else:
+        try:
+            browser = create_browser(args)
+            browser.set_page_load_timeout(args.timeout)
+            browser.set_script_timeout(args.timeout)
+            capabilities = dict(browser.capabilities)
+            deadline = time.monotonic() + args.timeout
+            browser.get(url)
+            while time.monotonic() < deadline:
+                result = browser.execute_script(result_expression)
+                if result_is_done(result, args.result):
+                    break
+                time.sleep(0.25)
+        except Exception as error:
+            result = {"error": f"browser runner: {error}"}
+        finally:
+            if browser is not None:
+                browser.quit()
 
     if not isinstance(result, dict) or not result_is_done(result, args.result):
         result = {"error": f"{args.result} page did not expose a completed result before timeout"}
     runner = {
         "browser": capabilities.get("browserName"),
-        "browserRequested": args.browser,
+        "browserRequested": "chrome (cdp)" if args.cdp else args.browser,
         "browserVersion": capabilities.get("browserVersion"),
-        "headless": not args.headed,
+        "headless": not args.headed and not args.cdp,
         "expectedBackend": args.backend,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
     }

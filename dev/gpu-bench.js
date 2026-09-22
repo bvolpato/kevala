@@ -358,18 +358,30 @@ async function main() {
     const outputs = {};
     const timings = [];
     const shouldCheckEpilogues = T * N <= 8192;
+    const runs = [];
     for (const variant of variantObjects) {
       const pipes = await getPipelines(variant, T);
       const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, W, S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const reduce = device.createBindGroup({ layout: layouts.reduce, entries: [globals, params, part, B, Y].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const op = { N, K, group, reduce, pMatmul: pipes.pMatmul, pReduce: pipes.pReduce };
       const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
-      const reps = Math.max(1, Math.min(32, Math.round(2e9 / Math.max(1, 2 * T * N * K))));
-      for (let i = 0; i < warmups; i++) await timedBatch(device, timer, op, T, reps, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} ${variant.label} warmup`);
-      const samplesForKernel = [];
-      for (let i = 0; i < samples; i++) {
-        samplesForKernel.push(await timedBatch(device, timer, op, T, reps, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} ${variant.label} sample`));
+      // about 20 GFLOP per timed batch, so the timestamp resolution (tens of microseconds on some
+      // browsers) stays small against it
+      const reps = Math.max(1, Math.min(512, Math.round(2e10 / Math.max(1, 2 * T * N * K))));
+      runs.push({ variant, op, splits, reps, samples: [] });
+    }
+    // variants take turns in every round, starting from a different one each time, so GPU clock
+    // ramps and thermal drift fall on all of them alike
+    const turn = (round) => runs.map((_, i) => runs[(i + round) % runs.length]);
+    for (let i = 0; i < warmups; i++) {
+      for (const run of turn(i)) await timedBatch(device, timer, run.op, T, run.reps, run.variant.target, run.variant.rows, run.variant.groups, uncaptured, `${caseLabel(shape)} ${run.variant.label} warmup`);
+    }
+    for (let i = 0; i < samples; i++) {
+      for (const run of turn(i)) {
+        run.samples.push(await timedBatch(device, timer, run.op, T, run.reps, run.variant.target, run.variant.rows, run.variant.groups, uncaptured, `${caseLabel(shape)} ${run.variant.label} sample`));
       }
+    }
+    for (const { variant, op, splits, reps, samples: samplesForKernel } of runs) {
       const sorted = [...samplesForKernel].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)];
       timings.push({ kernel: variant.label, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, splits, reps, samples: samplesForKernel, medianMs: median });

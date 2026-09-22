@@ -49,7 +49,10 @@ async function run() {
     const requestedFlavor = q.get("flavor") || undefined;
     const unique = q.get("unique") === "1";
     const t0 = performance.now();
-    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined });
+    // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
+    // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
+    const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const results = {
       model: name,

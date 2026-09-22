@@ -26,6 +26,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("rope", include_str!("wgsl/rope.wgsl")),
     ("attention", include_str!("wgsl/attention.wgsl")),
     ("attention_subgroup", include_str!("wgsl/attention_subgroup.wgsl")),
+    ("attention_tile", include_str!("wgsl/attention_tile.wgsl")),
     ("geglu", include_str!("wgsl/geglu.wgsl")),
     ("gather", include_str!("wgsl/gather.wgsl")),
     ("kev_common", include_str!("wgsl/kev_common.wgsl")),
@@ -35,13 +36,13 @@ const SOURCES: &[(&str, &str)] = &[
     ("kev_conv", include_str!("wgsl/kev_conv.wgsl")),
     ("kev_save_tail", include_str!("wgsl/kev_save_tail.wgsl")),
     ("kev_qknorm", include_str!("wgsl/kev_qknorm.wgsl")),
-    ("kev_recur", include_str!("wgsl/kev_recur.wgsl")),
     ("kev_recur_lanes", include_str!("wgsl/kev_recur_lanes.wgsl")),
     ("kev_gnorm", include_str!("wgsl/kev_gnorm.wgsl")),
     ("kev_aprep", include_str!("wgsl/kev_aprep.wgsl")),
     ("kev_save_kv", include_str!("wgsl/kev_save_kv.wgsl")),
     ("kev_attention_keys", include_str!("wgsl/kev_attention_keys.wgsl")),
     ("kev_attention", include_str!("wgsl/kev_attention.wgsl")),
+    ("kev_attention_tile", include_str!("wgsl/kev_attention_tile.wgsl")),
     ("kev_silumul", include_str!("wgsl/kev_silumul.wgsl")),
 ];
 
@@ -53,6 +54,7 @@ pub const KERNELS: &[&str] = &[
     "rope",
     "attention",
     "attention_subgroup",
+    "attention_tile",
     "geglu",
     "gather",
     "kev_rms",
@@ -61,13 +63,13 @@ pub const KERNELS: &[&str] = &[
     "kev_conv",
     "kev_save_tail",
     "kev_qknorm",
-    "kev_recur",
     "kev_recur_lanes",
     "kev_gnorm",
     "kev_aprep",
     "kev_save_kv",
     "kev_attention_keys",
     "kev_attention",
+    "kev_attention_tile",
     "kev_silumul",
 ];
 
@@ -217,6 +219,8 @@ impl Spec {
             ("KEV_LIN_KEY_HEADS", self.kev.lin_key_heads.to_string()),
             ("KEV_LIN_HEADS", self.kev.lin_heads.to_string()),
             ("KEV_ROTARY", self.kev.rotary.to_string()),
+            // linear-attention value heads that share key heads (Kev-4B and 9B), not one each
+            ("KEV_GROUPED", flag(self.kev.lin_heads != self.kev.lin_key_heads)),
         ]
     }
 }
