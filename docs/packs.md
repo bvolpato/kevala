@@ -21,7 +21,7 @@ const fromCheckpoint = await Kevala.load({ model: "laya", from: "checkpoint" });
 const own = await Kevala.load({ model: "https://example.com/laya-q8.kevala" });
 ```
 
-Both ways of loading by name store the pack under one key per revision and quantization, so later
+Both ways of loading by name store the pack under one key per revision and block size, so later
 visits read it from disk whichever way it arrived. To convert again when a pack is already stored,
 clear it first (`clearCache()`, or "Clear stored packs" on the site) or pass `cache: false`. The
 site takes `?from=checkpoint` to do the same, for example
@@ -111,7 +111,8 @@ Then point the runtime at that commit:
    and each model's `pack` to the byte size of its file.
 2. Load each model on the site with its stored pack cleared, and check that the progress shows the
    pack downloading, not a conversion.
-3. Release a new version, so the CDN and npm serve the new pin.
+3. Release a new version, so npm and the CDN serve the new pin. jsDelivr caches `kevala@latest`, so
+   purge each file after publishing: `https://purge.jsdelivr.net/npm/kevala@latest/js/src/<file>`.
 
 A pack is pinned by commit, never by `main`, so a later upload never changes what an existing
 release loads. Browsers store a pack under its model's revision and block size (`upstreamKey` in

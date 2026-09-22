@@ -38,8 +38,9 @@ async function run() {
   $("log").textContent = "";
   $("out").innerHTML = "";
   const backend = $("backend").value;
-  const choice = q.get("pack")?.includes("/") ? q.get("pack") : $("pack").value;
-  const model = choice === "local" ? "./tmp/kev-0.8b-q8.kevala" : choice.includes("/") ? choice : "kev-0.8b";
+  const choice = $("pack").value;
+  const url = q.get("pack")?.includes("/") ? q.get("pack") : null;
+  const model = url || (choice === "local" ? "./tmp/kev-0.8b-q8.kevala" : "kev-0.8b");
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
   const kevala = await Kevala.load({ model, from, backend });

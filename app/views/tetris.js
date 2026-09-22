@@ -116,7 +116,7 @@ const HTML = `<div class="wrap">
   <section class="explain grid-3">
     <div><h3>1 · List</h3><p>Every turn and column the piece can reach, found with the game's own collision code.</p></div>
     <div><h3>2 · Describe</h3><p>Each outcome in plain words: holes left, rows cleared, a flatter or bumpier surface.</p></div>
-    <div><h3>3 · Score</h3><p>One pass asks <em>“Does the stack look clean?”</em> about every spot. The piece heads for the likeliest yes. Laya never saw Tetris in training.</p></div>
+    <div><h3>3 · Score</h3><p>One pass asks <em>“Does the stack look clean?”</em> about every spot. The piece heads for the likeliest yes. Laya was never trained to play Tetris.</p></div>
   </section>
 </div>`;
 

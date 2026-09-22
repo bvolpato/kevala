@@ -3,20 +3,19 @@
 // histogram of its levels with a marker at the expected value. Rendering the same questions again
 // updates the cards in place, so bars and columns move to their new values instead of redrawing.
 
+import { esc } from "./ui.js";
+
 const TYPE_LABEL = { noul: "yes / no", choice: "pick one", score: "scale" };
 
 /** A choice folds options under this probability behind a "more" toggle. */
 const FOLD_BELOW = 0.01;
-
-const escapeHTML = (text) =>
-  String(text).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
 /** 0.904 -> "90.4%"; the extremes lose their decimal (100%, 0%). */
 const percent = (p) => `${(p * 100).toFixed(p >= 0.995 || p < 0.005 ? 0 : 1)}%`;
 
 /** The question as a title: `field` names in backticks become code. */
 function questionHTML(text) {
-  return escapeHTML(text || "").replace(/`([^`]+)`/g, "<code>$1</code>");
+  return esc(text || "").replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 
 function optionLabel(answer, key, labels) {
@@ -30,13 +29,13 @@ function optionLabel(answer, key, labels) {
 // card skeletons: built once per question shape, then only updated
 
 function headHTML(id, answer, question) {
-  const title = question.instructions ? questionHTML(question.instructions) : `<code>${escapeHTML(id)}</code>`;
+  const title = question.instructions ? questionHTML(question.instructions) : `<code>${esc(id)}</code>`;
   return [
     `<div class="a-head">`,
     `<p class="a-question">${title}</p>`,
-    `<span class="a-type">${TYPE_LABEL[answer.type] || escapeHTML(answer.type)}</span>`,
+    `<span class="a-type">${TYPE_LABEL[answer.type] || esc(answer.type)}</span>`,
     `</div>`,
-    question.instructions ? `<div class="a-id">${escapeHTML(id)}</div>` : "",
+    question.instructions ? `<div class="a-id">${esc(id)}</div>` : "",
     `<div class="a-verdict"><b class="a-word"></b><span class="a-prob"></span></div>`,
   ].join("");
 }
@@ -51,13 +50,13 @@ function noulHTML() {
 function choiceHTML(keys) {
   const rows = keys.map(
     (key) =>
-      `<li class="a-row" data-k="${escapeHTML(key)}"><span class="a-name"></span><span class="a-track"><i></i></span><span class="a-value"></span></li>`,
+      `<li class="a-row" data-k="${esc(key)}"><span class="a-name"></span><span class="a-track"><i></i></span><span class="a-value"></span></li>`,
   );
   return `<ol class="a-rank">${rows.join("")}</ol><button type="button" class="a-more hidden"></button>`;
 }
 
 function scoreHTML(keys) {
-  const cells = (make) => keys.map((key) => make(escapeHTML(key))).join("");
+  const cells = (make) => keys.map((key) => make(esc(key))).join("");
   return [
     `<div class="a-scale" style="--levels: ${keys.length}">`,
     cells((k) => `<span class="a-col-value" data-k="${k}"></span>`),
