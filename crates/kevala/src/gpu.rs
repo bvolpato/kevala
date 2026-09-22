@@ -22,7 +22,6 @@ const SOURCES: &[(&str, &str)] = &[
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
-    ("matmul_deep", include_str!("wgsl/matmul_deep.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
     ("rope", include_str!("wgsl/rope.wgsl")),
@@ -52,7 +51,6 @@ const SOURCES: &[(&str, &str)] = &[
 pub const KERNELS: &[&str] = &[
     "matmul",
     "matmul_wide",
-    "matmul_deep",
     "reduce",
     "norm",
     "rope",
@@ -214,7 +212,6 @@ impl Spec {
             ("SPLIT_TARGET", self.split_target.to_string()),
             ("WS_LEN", (8 * bn).to_string()),
             ("WIDE_WS_LEN", (16 * bn).to_string()),
-            ("DEEP_WS_LEN", (32 * bn).to_string()),
             ("ACC_LEN", (self.rows * self.groups).to_string()),
             ("WV_LEN", (2 * self.groups).to_string()),
             ("N", n.to_string()),
