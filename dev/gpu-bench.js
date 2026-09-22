@@ -1,5 +1,5 @@
 import { kernelSource } from "./wgsl.js";
-import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, pipeline } from "../js/src/gpu.js";
+import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, pipeline, repackMatmulWeights } from "../js/src/gpu.js";
 
 const logNode = document.getElementById("log");
 const log = (line) => {
@@ -49,7 +49,7 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups };
   }
   const match = raw.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_packed", "matmul_packed_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
@@ -295,6 +295,7 @@ async function main() {
   device.addEventListener("uncapturederror", onError);
   const provenance = adapterInfo(gpu);
   const source = await kernelSource();
+  const packPipeline = requestedKernels.some((name) => name.startsWith("matmul_packed")) ? await pipeline(device, source("matmul_pack"), "matmul_pack") : null;
   const timestampAvailable = device.features.has("timestamp-query");
   const timer = makeTimer(device, timestampAvailable);
   const layouts = { matmul: matmulLayout(device), reduce: reduceLayout(device) };
@@ -356,12 +357,14 @@ async function main() {
     }, `${caseLabel(shape)} input upload`, uncaptured);
 
     const outputs = {};
+    const packed = packPipeline ? repackMatmulWeights(device, packPipeline, W, S, N, K) : null;
     const timings = [];
     const shouldCheckEpilogues = T * N <= 8192;
     const runs = [];
     for (const variant of variantObjects) {
       const pipes = await getPipelines(variant, T);
-      const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, W, S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
+      const packedVariant = variant.name === "matmul_packed";
+      const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, packedVariant ? packed.buf : W, packedVariant ? packed.sbuf : S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const reduce = device.createBindGroup({ layout: layouts.reduce, entries: [globals, params, part, B, Y].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const op = { N, K, group, reduce, pMatmul: pipes.pMatmul, pReduce: pipes.pReduce };
       const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
@@ -427,6 +430,8 @@ async function main() {
     cases.push({ shape: caseLabel(shape), T, N, K, timings, medianMs: shapeMedian });
     log(`${caseLabel(shape)}: ${timings.map((item) => `${item.kernel}=${item.medianMs.toFixed(3)}ms`).join(", ")} splits=${timings[0].splits}`);
     for (const buffer of [X, W, S, B, Y, part, globals, params]) buffer.destroy();
+    packed?.buf.destroy();
+    packed?.sbuf.destroy();
   }
   const metricMs = Math.exp(medians.reduce((sum, value) => sum + Math.log(value), 0) / medians.length);
   const result = {
