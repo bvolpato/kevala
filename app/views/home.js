@@ -538,9 +538,9 @@ export function mount(el, { session }) {
   function showSet() {
     const { field, questions } = SETS[activeSet];
     const ids = Object.keys(questions);
-    $("hint").textContent = `state = { ${field}: "…" } · ${ids.length} questions, one forward pass`;
+    $("hint").textContent = `state = { ${field}: "…" } · ${ids.length} questions in one request`;
     const idList = ids.map((id) => `<code>${esc(id)}</code>`).join("");
-    emptyEl.innerHTML = `<p>Answers to these questions appear here, all from one forward pass.</p><div class="qids">${idList}</div>`;
+    emptyEl.innerHTML = `<p>Answers to these questions appear here.</p><div class="qids">${idList}</div>`;
   }
   input.value = texts[activeSet];
   showSet();
