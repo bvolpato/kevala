@@ -8,7 +8,7 @@ mkdirSync(out, { recursive: true });
 const checks = [
   ["tiles", "gpu", "/dev/gpu-bench.html?cases=7x132x96,17x132x96,45x132x96,45x132x1024&samples=3&warmups=1"],
   ["kernels", "kernels", "/dev/kernels.html"],
-  ["laya", "parity", "/parity.html#backend=webgpu&pack=local", "0.024"],
+  ["laya", "parity", "/parity.html#auto&backend=webgpu&pack=local", "0.024"],
   ["kev", "parity", "/parity-kev.html#backend=webgpu&pack=local", "0.010"],
 ];
 for (const [name, kind, path, tolerance] of checks) {
