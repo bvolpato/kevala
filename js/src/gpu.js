@@ -128,8 +128,9 @@ export async function requestDevice({ baseline = false, powerPreference = "high-
         maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1 << 30),
         maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
       };
-  // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`)
-  const optional = baseline ? [] : ["timestamp-query", "shader-f16", "subgroups"];
+  // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`), so the baseline
+  // keeps them: they change no kernel
+  const optional = baseline ? ["timestamp-query"] : ["timestamp-query", "shader-f16", "subgroups"];
   const requiredFeatures = optional.filter((f) => adapter.features.has(f));
   const device = await adapter.requestDevice({ requiredLimits: want, requiredFeatures });
   const gpu = { device, adapter, powerPreference, lost: null };
