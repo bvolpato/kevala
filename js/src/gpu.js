@@ -20,6 +20,10 @@ export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
 /** Rows per thread for an input of T tokens: a short input gets a shorter tile (16 R rows). */
 export const rowsPerThread = (T) => (T >= 64 ? 4 : Math.max(1, Math.ceil(T / 16)));
 
+export function matmulConfig(device) {
+  return { f16: device.features.has("shader-f16"), groups: 1, splitTarget: 256 };
+}
+
 /**
  * Encodes a matmul op (bind groups `group` and `reduce`), splitting K when it helps. The kernel
  * variant covers 16 R rows and 64 J columns per workgroup.
@@ -42,7 +46,7 @@ export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TAR
 /** Encodes a matmul with the kernel variant for T. `pipes` comes from `matmulPipelines`. */
 export function encodeMatmul(pass, pipes, op, T) {
   const R = rowsPerThread(T);
-  dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, SPLIT_TARGET, R);
+  dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
 }
 
 /** The matmul bind group layout, explicit so every kernel variant shares one bind group. */
@@ -72,16 +76,16 @@ export async function matmulPipelines(device, wgsl) {
   const rlayout = reduceLayout(device);
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
   const rpl = device.createPipelineLayout({ bindGroupLayouts: [rlayout] });
-  const f16 = device.features.has("shader-f16");
+  const config = matmulConfig(device);
   const mm = [];
   const reduce = [];
   await Promise.all(
     [1, 2, 3, 4].flatMap((rows) => [
-      pipeline(device, wgsl("matmul", { f16, rows }), `matmul_r${rows}`, pl).then((p) => (mm[rows] = p)),
-      pipeline(device, wgsl("reduce", { rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
+      pipeline(device, wgsl("matmul", { ...config, rows }), `matmul_r${rows}`, pl).then((p) => (mm[rows] = p)),
+      pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
   );
-  return { layout, reduceLayout: rlayout, mm, reduce, f16 };
+  return { layout, reduceLayout: rlayout, mm, reduce, ...config };
 }
 
 /** Floats of scratch the split-K partials need at most (tiles < 96, at most 8 splits). */
