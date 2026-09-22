@@ -127,6 +127,7 @@ function panelAction(s) {
       `<span class="spacer"></span>`,
       `<button type="button" class="btn small ghost" data-act="unload">Unload</button>`,
       `</div>`,
+      s.storageError ? `<p class="tiny gate-err">Not stored for next time (${esc(s.storageError)}). Free some disk space or clear stored packs, and the next load will keep it.</p>` : "",
     ].join("");
   }
   const failed = s.status === "error";
@@ -139,7 +140,7 @@ function panelAction(s) {
 let panelKey = "";
 function renderPanel(s) {
   // rebuild only when what the panel shows changes; progress updates below touch the bar alone
-  const key = `${s.status}|${s.model}|${s.backend}|${JSON.stringify(s.cached)}|${s.error}|${s.storage?.bytes}`;
+  const key = `${s.status}|${s.model}|${s.backend}|${JSON.stringify(s.cached)}|${s.error}|${s.storageError}|${s.storage?.bytes}`;
   if (key !== panelKey) {
     panelKey = key;
     const options = Object.keys(MODEL_NOTES).map((id) => modelOption(s, id));

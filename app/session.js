@@ -221,8 +221,14 @@ class Session extends EventTarget {
     this.#persist();
     this.#emit();
     const tracking = { startedAt: performance.now(), convertNote: "", downloadTotal: 0 };
+    this.storageError = null;
     const onProgress = (event) => {
       if (abort.signal.aborted) return;
+      if (event.phase === "cache-failed") {
+        // the model still loads; the next visit will have to download it again
+        this.storageError = event.message;
+        return;
+      }
       if (event.phase === "download" && event.total) tracking.downloadTotal = event.total;
       if (event.phase === "convert") tracking.convertNote = ` · ${event.loaded}/${event.total} tensors converted`;
       const progress = progressOf(event, tracking);

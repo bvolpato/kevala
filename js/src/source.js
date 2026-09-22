@@ -113,6 +113,11 @@ async function opfsStore() {
     },
     async put(key, res) {
       const name = fileName(key);
+      // files the index does not list are leftovers of interrupted writes: free their space first
+      const listed = new Set(Object.values(await readIndex()).map((e) => e.name));
+      for await (const [file] of dir.entries()) {
+        if (file !== "index.json" && file !== name && !listed.has(file)) await dir.removeEntry(file).catch(() => {});
+      }
       const reader = res.body.getReader();
       const chunks = {
         async *[Symbol.asyncIterator]() {
@@ -123,8 +128,13 @@ async function opfsStore() {
           }
         },
       };
-      const bytes = await writeFile(name, chunks);
-      await updateIndex((idx) => (idx[key] = { name, bytes }));
+      try {
+        const bytes = await writeFile(name, chunks);
+        await updateIndex((idx) => (idx[key] = { name, bytes }));
+      } catch (e) {
+        await dir.removeEntry(name).catch(() => {}); // a partial file would only hold quota
+        throw e;
+      }
     },
     async keys() {
       return Object.entries(await readIndex()).map(([key, e]) => ({ key, bytes: e.bytes }));
@@ -228,23 +238,23 @@ export async function openPack(model, { cache = true, signal, onProgress, conver
   if (which.url) {
     const size = await remoteSize(key, signal).catch(() => 0);
     if (size && (await acceptsRanges(key, signal))) {
-      return streamIntoCache(store, key, size, fetchRange(key, 0, size, key.split("/").pop(), { signal, onProgress }), signal);
+      return streamIntoCache(store, key, size, fetchRange(key, 0, size, key.split("/").pop(), { signal, onProgress }), { signal, onProgress });
     }
     // a server without byte ranges (or without HEAD): one plain stream
     const res = await checked(await fetch(key, { signal }), key);
     const length = Number(res.headers.get("content-length")) || 0;
-    return streamIntoCache(store, key, length, body(res, key.split("/").pop(), length, onProgress, signal), signal);
+    return streamIntoCache(store, key, length, body(res, key.split("/").pop(), length, onProgress, signal), { signal, onProgress });
   }
   const up = which.spec;
   // a model with a hosted int8 pack downloads that (about half the bytes of the checkpoint and no
   // conversion); if it is missing or unreachable, convert from the upstream checkpoint instead
   if (up.hosted) {
     const size = await remoteSize(up.hosted, signal).catch((e) => (signal?.aborted ? Promise.reject(e) : 0));
-    if (size) return streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), signal);
+    if (size) return streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress });
   }
   // upstream checkpoint: convert, cache, and hand back the finished bytes
   const made = await convert(up, { signal, onProgress });
-  if (!(made instanceof Uint8Array)) return streamIntoCache(store, key, made.size, made.chunks(), signal, "converted pack");
+  if (!(made instanceof Uint8Array)) return streamIntoCache(store, key, made.size, made.chunks(), { signal, onProgress, file: "converted pack" });
   const bytes = made;
   if (store) {
     onProgress?.({ phase: "cache", file: key, loaded: 0, total: bytes.byteLength });
@@ -261,7 +271,7 @@ export async function openPack(model, { cache = true, signal, onProgress, conver
  * A pack arriving as chunks (an async iterator), copied into the cache under `key` while the
  * loader reads it. `saving` settles when the cached copy is complete.
  */
-function streamIntoCache(store, key, size, chunks, signal, file = "pack") {
+function streamIntoCache(store, key, size, chunks, { signal, onProgress, file = "pack" } = {}) {
   let stream = new ReadableStream({
     async pull(controller) {
       const { done, value } = await chunks.next();
@@ -274,7 +284,8 @@ function streamIntoCache(store, key, size, chunks, signal, file = "pack") {
     const [toCache, toLoader] = stream.tee();
     stream = toLoader;
     const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
-    saving = store.put(key, new Response(toCache, { headers })).catch(() => {});
+    // a pack that cannot be stored still loads; say why, so a full disk does not look like a hang
+    saving = store.put(key, new Response(toCache, { headers })).catch((e) => onProgress?.({ phase: "cache-failed", message: String(e?.message || e) }));
   }
   return { ...fromResponse(new Response(stream), file, size, false, key, null, signal), saving };
 }

@@ -11,7 +11,7 @@ import { MODELS } from "./source.js";
 export { cacheInfo, clearCache, isCached, MODELS } from "./source.js";
 export * as presets from "./presets.js";
 
-export const VERSION = "0.1.1";
+export const VERSION = "0.1.2";
 
 function spawn(file) {
   const url = new URL(file, import.meta.url);
@@ -54,6 +54,9 @@ export class Kevala {
 
   async #start(o) {
     const { onProgress, signal, ...opts } = o;
+    // persistent storage is not evicted under disk pressure; browsers grant or ignore the request
+    // (only pages can ask, not the worker that stores the pack)
+    if (opts.cache !== false && typeof document !== "undefined") navigator.storage?.persist?.()?.catch(() => {});
     this.#worker = spawn("./engine-worker.js");
     const ready = new Promise((resolve, reject) => {
       this.#ready = { resolve, reject };
