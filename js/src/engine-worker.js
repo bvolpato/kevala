@@ -226,7 +226,8 @@ async function load(o) {
       for (let i = 1; i < threads; i++) {
         const r = new RemoteShard(ports[i - 1]);
         const l = layouts[i + 1];
-        await r.call({ type: "init", module, base, total: l.total });
+        const init = await r.call({ type: "init", module, base, total: l.total });
+        r.tile = init.tile;
         const b = new Batcher((dst, view) => r.send({ type: "data", dst, bytes: view }, [view.buffer]));
         const sink = new PieceSink(l, (dst, bytes) => b.write(dst, bytes));
         sink.batcher = b;
@@ -288,6 +289,7 @@ async function load(o) {
   else await warmup();
   checkCancelled();
   const warm = now() - tw;
+  const cpuTiles = engine.gpu ? null : engine.local ? [engine.local.w.tile, ...engine.shards.map((r) => r.tile)] : [coord.tile];
   post({
     type: "ready",
     info: {
@@ -298,6 +300,7 @@ async function load(o) {
       gpuUnavailable: engine.gpu ? null : gpuUnavailable,
       threads,
       flavor,
+      cpuTiles,
       modalities: meta.modalities,
       model: header.model,
       config: header.config,

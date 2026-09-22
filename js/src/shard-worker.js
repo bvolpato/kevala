@@ -21,7 +21,7 @@ async function handle(port, m) {
         w = await Wasm.create(m.module);
         total = m.total;
         ptr = w.alloc(total);
-        port.postMessage({ seq: m.seq, type: "ok" });
+        port.postMessage({ seq: m.seq, type: "ok", tile: w.tile });
         break;
       case "data":
         w.bytes(ptr + m.dst, m.bytes.byteLength).set(m.bytes);
