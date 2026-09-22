@@ -14,7 +14,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let dim = wg.y * 16u + lx;
   tile[ly][lx] = 0.0;
   if (token < g.T) {
-    tile[ly][lx] = PROJ[token * 5120u + 4096u + dim];
+    tile[ly][lx] = PROJ[token * ATTN_WIDTH + 2u * ATTN_Q + dim];
   }
   workgroupBarrier();
   let out_token = wg.x * 16u + lx;

@@ -4,6 +4,9 @@
 use kevala::engine::Engine;
 use kevala::json::Value;
 use kevala::model::{build_shard, AlignedBuf, Scratch, ShardPlan, Trunk};
+use std::fs::File;
+use std::io::{Read, Seek, SeekFrom, Write};
+use std::path::{Component, Path, PathBuf};
 use std::time::Instant;
 
 const USAGE: &str = "kevala: System 1 decision models (Laya, Kev) without Python
@@ -11,9 +14,11 @@ const USAGE: &str = "kevala: System 1 decision models (Laya, Kev) without Python
 usage:
   kevala convert <checkpoint-dir> -o <out.kevala> [--block 32] [--keep-f32 head.,emb] [--revision <sha>]
   kevala decide <pack.kevala> --state <json|text> --questions <json>
-  kevala convert-kev --base <qwen-dir> --kev <kev-dir> -o <out.kevala> [--block 32] [--kev-revision <sha>] [--base-revision <sha>]
+  kevala convert-kev --base <qwen-dir> --kev <kev-dir> -o <out.kevala> [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--kev-revision <sha>] [--base-revision <sha>]
+  kevala convert-semif --base <qwen-dir> --tokenizer <tokenizer.json> -o <out.kevala> [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--base-revision <sha>] [--method-revision <sha>]
   kevala parity <pack.kevala> <golden.json> [--shards N]
   kevala parity-kev <pack.kevala> <golden-kev.json>
+  kevala parity-semif <pack.kevala> <golden-semif.json> [--max-dp 0.05]
   kevala bench <pack.kevala> [--tokens 64] [--questions 1] [--runs 5] [--shards N] [--warm]
   kevala inspect <pack.kevala>
   kevala wgsl <kernel> [--f16] [--subgroups] [--rows 1-4] [--groups 1-2] [--n N --k K]
@@ -26,7 +31,9 @@ fn main() {
         Some("decide") => decide(&args[1..]),
         Some("parity") => parity(&args[1..]),
         Some("convert-kev") => convert_kev(&args[1..]),
+        Some("convert-semif") => convert_semif(&args[1..]),
         Some("parity-kev") => parity_kev(&args[1..]),
+        Some("parity-semif") => parity_semif(&args[1..]),
         Some("bench") => bench(&args[1..]),
         Some("inspect") => inspect(&args[1..]),
         Some("wgsl") => wgsl(&args[1..]),
@@ -67,11 +74,21 @@ fn read(path: &str) -> Result<Vec<u8>, String> {
     std::fs::read(path).map_err(|e| format!("{path}: {e}"))
 }
 
+fn read_pack(path: &str) -> Result<AlignedBuf, String> {
+    let mut file = File::open(path).map_err(|e| format!("{path}: {e}"))?;
+    let len = file.metadata().map_err(|e| format!("{path}: {e}"))?.len();
+    let len = usize::try_from(len).map_err(|_| format!("{path}: pack exceeds this platform's address space"))?;
+    let mut pack = AlignedBuf::new(len);
+    file.read_exact(pack.as_mut_slice()).map_err(|e| format!("{path}: {e}"))?;
+    Ok(pack)
+}
+
 fn load(path: &str) -> Result<Engine, String> {
     let t = Instant::now();
-    let bytes = read(path)?;
-    let e = Engine::load(AlignedBuf::from_slice(&bytes))?;
-    eprintln!("loaded {path} ({:.0} MB) in {:.2}s", bytes.len() as f64 / 1e6, t.elapsed().as_secs_f64());
+    let bytes = read_pack(path)?;
+    let len = bytes.len();
+    let e = Engine::load(bytes)?;
+    eprintln!("loaded {path} ({:.0} MB) in {:.2}s", len as f64 / 1e6, t.elapsed().as_secs_f64());
     Ok(e)
 }
 
@@ -121,9 +138,10 @@ fn state_arg(s: &str) -> Value {
 fn decide(args: &[String]) -> Result<(), String> {
     let path = positional(args, 0)?;
     let t = Instant::now();
-    let bytes = read(path)?;
-    let mut m = kevala::runtime::load(AlignedBuf::from_slice(&bytes))?;
-    eprintln!("loaded {path} ({}, {:.0} MB) in {:.2}s", m.arch(), bytes.len() as f64 / 1e6, t.elapsed().as_secs_f64());
+    let bytes = read_pack(path)?;
+    let len = bytes.len();
+    let mut m = kevala::runtime::load(bytes)?;
+    eprintln!("loaded {path} ({}, {:.0} MB) in {:.2}s", m.arch(), len as f64 / 1e6, t.elapsed().as_secs_f64());
     let state = state_arg(flag(args, "--state").ok_or("decide needs --state")?);
     let qs = Value::parse(flag(args, "--questions").ok_or("decide needs --questions")?).map_err(|e| e.to_string())?;
     let t = Instant::now();
@@ -273,8 +291,7 @@ fn bench(args: &[String]) -> Result<(), String> {
     let nq: usize = flag(args, "--questions").unwrap_or("1").parse().map_err(|_| "bad --questions")?;
     let runs: usize = flag(args, "--runs").unwrap_or("5").parse().map_err(|_| "bad --runs")?;
     let shards: usize = flag(args, "--shards").unwrap_or("1").parse().map_err(|_| "bad --shards")?;
-    let bytes = read(path)?;
-    let mut m = kevala::runtime::load(AlignedBuf::from_slice(&bytes))?;
+    let mut m = kevala::runtime::load(read_pack(path)?)?;
     if let Some(k) = m.as_any().downcast_mut::<kevala::kev::KevEngine>() {
         // every run repeats the same state: without --warm, time the full pass, not a cache hit
         if !args.iter().any(|a| a == "--warm") {
@@ -327,56 +344,258 @@ fn bench(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
+fn safetensors_header(path: &Path) -> Result<(Vec<u8>, usize), String> {
+    let mut file = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut prefix = [0u8; 8];
+    file.read_exact(&mut prefix).map_err(|e| format!("{}: {e}", path.display()))?;
+    let n = usize::try_from(u64::from_le_bytes(prefix))
+        .map_err(|_| format!("{}: header length does not fit usize", path.display()))?;
+    let total = 8usize.checked_add(n).ok_or_else(|| format!("{}: header length overflows usize", path.display()))?;
+    let mut head = Vec::with_capacity(total);
+    head.extend_from_slice(&prefix);
+    head.resize(total, 0);
+    file.read_exact(&mut head[8..]).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok((head, total))
+}
+
+fn indexed_shards(dir: &str) -> Result<Vec<PathBuf>, String> {
+    let root = Path::new(dir);
+    let index_path = root.join("model.safetensors.index.json");
+    if index_path.exists() {
+        let index_bytes = std::fs::read(&index_path).map_err(|e| format!("{}: {e}", index_path.display()))?;
+        let index_text =
+            String::from_utf8(index_bytes).map_err(|_| format!("{} is not UTF-8", index_path.display()))?;
+        let index = Value::parse(&index_text).map_err(|e| format!("{}: {e}", index_path.display()))?;
+        let mut names = Vec::new();
+        for (_, value) in index
+            .get("weight_map")
+            .and_then(Value::as_object)
+            .ok_or_else(|| format!("{}: missing weight_map", index_path.display()))?
+        {
+            let name = value
+                .as_str()
+                .ok_or_else(|| format!("{}: weight_map value is not a filename", index_path.display()))?;
+            if !names.iter().any(|seen| seen == name) {
+                names.push(name.to_string());
+            }
+        }
+        if names.is_empty() {
+            return Err(format!("{}: weight_map is empty", index_path.display()));
+        }
+        return names.into_iter().map(|name| safe_join(root, &name)).collect();
+    }
+    let single = root.join("model.safetensors");
+    if single.exists() {
+        return Ok(vec![single]);
+    }
+    let mut files: Vec<PathBuf> = std::fs::read_dir(root)
+        .map_err(|e| format!("{dir}: {e}"))?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .filter(|path| path.extension().is_some_and(|ext| ext == "safetensors"))
+        .collect();
+    files.sort();
+    match files.len() {
+        0 => Err(format!("{dir}: no safetensors checkpoint or model.safetensors.index.json")),
+        1 => Ok(files),
+        _ => {
+            Err(format!("{dir}: {} safetensors shards found but model.safetensors.index.json is missing", files.len()))
+        }
+    }
+}
+
+fn safe_join(root: &Path, relative: &str) -> Result<PathBuf, String> {
+    let path = Path::new(relative);
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
+    {
+        return Err(format!("checkpoint shard path is not relative: {relative}"));
+    }
+    Ok(root.join(path))
+}
+
+fn repo_url(value: &str) -> String {
+    if value.starts_with("http://") || value.starts_with("https://") {
+        value.to_string()
+    } else {
+        format!("https://huggingface.co/{value}")
+    }
+}
+
+fn config_repo(config: &Value, fallback_dir: &str) -> String {
+    let text_config = config.get("text_config").unwrap_or(config);
+    [config, text_config]
+        .into_iter()
+        .flat_map(|source| {
+            ["_name_or_path", "name_or_path", "base_model_name_or_path"]
+                .iter()
+                .filter_map(move |key| source.get(key).and_then(Value::as_str))
+        })
+        .find(|value| !value.is_empty() && *value != "Qwen/Qwen3.5")
+        .map(repo_url)
+        .unwrap_or_else(|| {
+            let fallback = Path::new(fallback_dir).file_name().and_then(|name| name.to_str()).unwrap_or("qwen3.5");
+            repo_url(fallback)
+        })
+}
+
+fn output_pack(path: &str, pack: &[u8], started: Instant) -> Result<(), String> {
+    let mut file = File::create(path).map_err(|e| format!("{path}: {e}"))?;
+    file.write_all(pack).map_err(|e| format!("{path}: {e}"))?;
+    file.flush().map_err(|e| format!("{path}: {e}"))?;
+    eprintln!("wrote {path}: {:.1} MB in {:.1}s", pack.len() as f64 / 1e6, started.elapsed().as_secs_f64());
+    Ok(())
+}
+
+enum StreamMode {
+    Kev { adapter: Vec<u8>, adapter_config: String, head: Vec<u8> },
+    Semif,
+}
+
+fn convert_sharded(
+    shards: &[PathBuf],
+    base_config: &str,
+    base_tokenizer: &str,
+    block: usize,
+    model: Value,
+    mode: StreamMode,
+) -> Result<Vec<u8>, String> {
+    let headers: Vec<Vec<u8>> =
+        shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
+    let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
+    let mut converter = match mode {
+        StreamMode::Kev { adapter, adapter_config, head } => kevala::convert_kev::KevConvert::new_sharded(
+            &refs,
+            base_config,
+            base_tokenizer,
+            &adapter,
+            &adapter_config,
+            &head,
+            block,
+            model,
+        )?,
+        StreamMode::Semif => {
+            kevala::convert_kev::KevConvert::new_semif_sharded(&refs, base_config, base_tokenizer, block, model)?
+        }
+    };
+    let mut out = vec![0u8; converter.total];
+    converter.begin(&mut out)?;
+    let mut files: Vec<File> = shards
+        .iter()
+        .map(|path| File::open(path).map_err(|e| format!("{}: {e}", path.display())))
+        .collect::<Result<_, _>>()?;
+    for (shard, name, offset, len) in converter.source_ranges()? {
+        let file = files.get_mut(shard).ok_or("converter returned an invalid shard index")?;
+        file.seek(SeekFrom::Start(offset as u64)).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
+        let mut bytes = vec![0u8; len];
+        file.read_exact(&mut bytes).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
+        converter.add_source(&name, bytes, &mut out)?;
+    }
+    if !converter.finished() {
+        return Err("conversion ended with tensors still missing".into());
+    }
+    Ok(out)
+}
+
+fn model_name(args: &[String], default: &str) -> String {
+    flag(args, "--name").unwrap_or(default).to_string()
+}
+
 fn convert_kev(args: &[String]) -> Result<(), String> {
     let base = flag(args, "--base").ok_or("convert-kev needs --base <dir>")?;
     let kev = flag(args, "--kev").ok_or("convert-kev needs --kev <dir>")?;
     let out = flag(args, "-o").ok_or("convert-kev needs -o <out.kevala>")?;
     let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
-    let t = Instant::now();
-    let text = |p: String| String::from_utf8(read(&p)?).map_err(|_| format!("{p} is not UTF-8"));
-    let st = std::fs::read_dir(base)
-        .map_err(|e| format!("{base}: {e}"))?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .find(|p| p.extension().is_some_and(|x| x == "safetensors"))
-        .ok_or("no .safetensors in --base")?;
-    let weights = read(st.to_str().unwrap())?;
-    let provenance = |k: &str| flag(args, k).unwrap_or("unknown").to_string();
+    let started = Instant::now();
+    let text = |path: String| String::from_utf8(read(&path)?).map_err(|_| format!("{path} is not UTF-8"));
+    let base_config = text(format!("{base}/config.json"))?;
+    let base_value = Value::parse(&base_config).map_err(|e| format!("{base}/config.json: {e}"))?;
+    let adapter_config = text(format!("{kev}/adapter_config.json"))?;
+    let shards = indexed_shards(base)?;
+    let tokenizer = text(format!("{kev}/tokenizer.json")).or_else(|_| text(format!("{base}/tokenizer.json")))?;
+    let adapter = read(&format!("{kev}/adapter_model.safetensors"))?;
+    let head = read(&format!("{kev}/head.pt"))?;
+    let name = model_name(args, "kev-0.8b");
+    let source = flag(args, "--source")
+        .map(str::to_string)
+        .unwrap_or_else(|| format!("https://huggingface.co/jaredpalmer/{name}"));
+    let base_source = flag(args, "--base-source").map(str::to_string).unwrap_or_else(|| config_repo(&base_value, base));
+    let kev_revision = flag(args, "--kev-revision").unwrap_or("unknown");
+    let base_revision = flag(args, "--base-revision").unwrap_or("unknown");
     let model = Value::Object(vec![
-        ("name".into(), Value::Str("kev-0.8b".into())),
-        ("source".into(), Value::Str("https://huggingface.co/jaredpalmer/kev-0.8b".into())),
-        ("revision".into(), Value::Str(provenance("--kev-revision"))),
-        ("base".into(), Value::Str("https://huggingface.co/Qwen/Qwen3.5-0.8B-Base".into())),
-        ("base_revision".into(), Value::Str(provenance("--base-revision"))),
+        ("name".into(), Value::Str(name)),
+        ("source".into(), Value::Str(repo_url(&source))),
+        ("revision".into(), Value::Str(kev_revision.to_string())),
+        ("base".into(), Value::Str(repo_url(&base_source))),
+        ("base_revision".into(), Value::Str(base_revision.to_string())),
         ("author".into(), Value::Str("Jared Palmer (Kev); Qwen team (base)".into())),
         ("license".into(), Value::Str("apache-2.0".into())),
         ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
         ("quantization".into(), Value::Str(format!("LoRA merged in f32, then int8 symmetric absmax, one f32 scale per {block} weights; norms, gates, conv, pointer head in f32"))),
     ]);
-    let pack = kevala::convert_kev::convert(
-        &kevala::convert_kev::KevCheckpoint {
-            base: &weights,
-            base_config: &text(format!("{base}/config.json"))?,
-            // Kev ships the tokenizer AutoTokenizer really builds for the base; the base repo's own
-            // tokenizer.json has a different pre-tokenizer regex and fewer added tokens
-            base_tokenizer: &text(format!("{kev}/tokenizer.json"))
-                .or_else(|_| text(format!("{base}/tokenizer.json")))?,
-            adapter: &read(&format!("{kev}/adapter_model.safetensors"))?,
-            adapter_config: &text(format!("{kev}/adapter_config.json"))?,
-            head: &read(&format!("{kev}/head.pt"))?,
-        },
+    let pack = convert_sharded(
+        &shards,
+        &base_config,
+        &tokenizer,
         block,
         model,
+        StreamMode::Kev { adapter, adapter_config, head },
     )?;
-    std::fs::write(out, &pack).map_err(|e| format!("{out}: {e}"))?;
-    eprintln!("wrote {out}: {:.1} MB in {:.1}s", pack.len() as f64 / 1e6, t.elapsed().as_secs_f64());
-    Ok(())
+    output_pack(out, &pack, started)
+}
+
+fn convert_semif(args: &[String]) -> Result<(), String> {
+    let base = flag(args, "--base").ok_or("convert-semif needs --base <dir>")?;
+    let tokenizer_path = flag(args, "--tokenizer").ok_or(
+        "convert-semif needs --tokenizer <tokenizer.json> saved by AutoTokenizer; use tools/convert_models.py",
+    )?;
+    let out = flag(args, "-o").ok_or("convert-semif needs -o <out.kevala>")?;
+    let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
+    let started = Instant::now();
+    let text = |path: String| String::from_utf8(read(&path)?).map_err(|_| format!("{path} is not UTF-8"));
+    let base_config = text(format!("{base}/config.json"))?;
+    let base_value = Value::parse(&base_config).map_err(|e| format!("{base}/config.json: {e}"))?;
+    let base_source = flag(args, "--base-source").map(str::to_string).unwrap_or_else(|| config_repo(&base_value, base));
+    let source = flag(args, "--source").map(str::to_string).unwrap_or_else(|| base_source.clone());
+    let default_name = Path::new(base)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .map(|name| format!("semif-{name}"))
+        .unwrap_or_else(|| "semif-qwen3.5".into());
+    let name = model_name(args, &default_name);
+    let base_revision = flag(args, "--base-revision").unwrap_or("unknown");
+    let method_revision = flag(args, "--method-revision").unwrap_or("1f2dea3e25379f9dfc98cb83c324f00ab5deda37");
+    let tokenizer = text(tokenizer_path.to_string())?;
+    let shards = indexed_shards(base)?;
+    let model = Value::Object(vec![
+        ("name".into(), Value::Str(name)),
+        ("source".into(), Value::Str(repo_url(&source))),
+        ("revision".into(), Value::Str(base_revision.to_string())),
+        ("base".into(), Value::Str(repo_url(&base_source))),
+        ("base_revision".into(), Value::Str(base_revision.to_string())),
+        ("author".into(), Value::Str("Qwen team (weights); SemIf (decision method)".into())),
+        ("license".into(), Value::Str("apache-2.0".into())),
+        ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
+        (
+            "quantization".into(),
+            Value::Str(format!(
+                "int8 symmetric absmax, one f32 scale per {block} weights; norms and SemIf label readout in f32"
+            )),
+        ),
+        ("inspiration".into(), Value::Str("SemIf direct-options-v1 readout".into())),
+        ("method_source".into(), Value::Str("https://github.com/TheoLeeCJ/SemIf".into())),
+        ("method_revision".into(), Value::Str(method_revision.to_string())),
+        ("method_license".into(), Value::Str("mit".into())),
+    ]);
+    let pack = convert_sharded(&shards, &base_config, &tokenizer, block, model, StreamMode::Semif)?;
+    output_pack(out, &pack, started)
 }
 
 fn parity_kev(args: &[String]) -> Result<(), String> {
     use kevala::kev::{Branch, Encoded, KevEngine};
     let t = Instant::now();
-    let bytes = read(positional(args, 0)?)?;
-    let mut e = KevEngine::load(AlignedBuf::from_slice(&bytes))?;
+    let mut e = KevEngine::load(read_pack(positional(args, 0)?)?)?;
     eprintln!("loaded in {:.2}s", t.elapsed().as_secs_f64());
     let golden = Value::parse(&String::from_utf8(read(positional(args, 1)?)?).map_err(|_| "golden is not UTF-8")?)
         .map_err(|e| e.to_string())?;
@@ -405,6 +624,7 @@ fn parity_kev(args: &[String]) -> Result<(), String> {
                 ids: ids[start..end].to_vec(),
                 decide: d - start,
                 opts: opts[k].iter().map(|o| o - start).collect(),
+                labels: 0,
             });
             start = end;
         }
@@ -496,5 +716,78 @@ fn wgsl(args: &[String]) -> Result<(), String> {
         spec.shape = Some((n, k));
     }
     print!("{}", kevala::gpu::wgsl(kernel, &spec)?);
+    Ok(())
+}
+
+fn parity_semif(args: &[String]) -> Result<(), String> {
+    use kevala::kev::KevEngine;
+    let mut engine = KevEngine::load(read_pack(positional(args, 0)?)?)?;
+    if !engine.model.cfg.semif {
+        return Err("parity-semif needs a SemIf pack".into());
+    }
+    let golden = Value::parse(&String::from_utf8(read(positional(args, 1)?)?).map_err(|e| e.to_string())?)
+        .map_err(|e| e.to_string())?;
+    let limit: f64 = flag(args, "--max-dp").unwrap_or("0.05").parse().map_err(|_| "bad --max-dp")?;
+    if !limit.is_finite() || limit < 0.0 {
+        return Err("--max-dp must be finite and nonnegative".into());
+    }
+    let mut worst = 0.0f64;
+    let mut agree = 0;
+    let cases = golden.get("cases").and_then(Value::as_array).ok_or("no reference cases")?;
+    if cases.is_empty() {
+        return Err("no reference cases".into());
+    }
+    for case in cases {
+        let state = case.get("state").ok_or("case has no state")?;
+        let questions = case.get("questions").ok_or("case has no questions")?;
+        let (encoded, qs) = engine.prepare(state, questions)?;
+        if qs.len() != 1 {
+            return Err("SemIf references must have one question per case".into());
+        }
+        let got_ids: Vec<usize> = encoded.state.iter().chain(&encoded.branches[0].ids).map(|&id| id as usize).collect();
+        let want_ids: Vec<usize> = case
+            .get("input_ids")
+            .and_then(Value::as_array)
+            .ok_or("no input_ids")?
+            .iter()
+            .map(|v| v.as_usize().ok_or("invalid token ID"))
+            .collect::<Result<_, _>>()?;
+        let id = case.get("id").and_then(Value::as_str).unwrap_or("?");
+        if got_ids != want_ids {
+            let first = got_ids.iter().zip(&want_ids).position(|(a, b)| a != b);
+            return Err(format!("{id}: token IDs differ ({} vs {}, first {first:?})", got_ids.len(), want_ids.len()));
+        }
+        let responses = engine.decide(&[(state.clone(), questions.clone())])?;
+        let got = responses[0]
+            .get("raw_probabilities")
+            .and_then(|p| p.get(&qs[0].id))
+            .and_then(Value::as_array)
+            .ok_or("no probabilities")?;
+        let want = case
+            .get("probs")
+            .and_then(Value::as_array)
+            .and_then(|p| p.first())
+            .and_then(Value::as_array)
+            .ok_or("no reference probabilities")?;
+        if got.len() != want.len() || got.is_empty() {
+            return Err(format!("{id}: probability count differs"));
+        }
+        let values =
+            |a: &[Value]| a.iter().map(|v| v.as_f64().ok_or("invalid probability")).collect::<Result<Vec<_>, _>>();
+        let (g, w) = (values(got)?, values(want)?);
+        if !g.iter().chain(&w).all(|p| p.is_finite()) {
+            return Err(format!("{id}: nonfinite probability"));
+        }
+        let argmax = |a: &[f64]| a.iter().enumerate().fold(0, |best, (i, &p)| if p > a[best] { i } else { best });
+        let ok = argmax(&g) == argmax(&w);
+        agree += usize::from(ok);
+        let dp = g.iter().zip(w).map(|(a, b)| (a - b).abs()).fold(0.0f64, f64::max);
+        worst = worst.max(dp);
+        println!("{id}: exact tokens, argmax {ok}, max |dp| {dp:.6}");
+    }
+    println!("SemIf: {agree}/{} argmax, max |dp| {worst:.6}", cases.len());
+    if agree != cases.len() || worst > limit {
+        return Err(format!("SemIf parity failed (limit {limit})"));
+    }
     Ok(())
 }

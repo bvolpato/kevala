@@ -9,7 +9,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
 const destination = join(dist, "site");
 // site/index.html redirects the site's old /site/ address to the root
-const publicFiles = [".nojekyll", "LICENSE", "README.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html", "site/index.html"];
+const publicFiles = [".nojekyll", "LICENSE", "THIRD_PARTY_NOTICES", "README.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html", "site/index.html"];
 const publicDirectories = ["app", "assets", "docs", "examples", "js/src", "skills", "tests/fixtures"];
 const publicHarnesses = [
   "dev/attn-bench.html",

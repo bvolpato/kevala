@@ -1,6 +1,6 @@
 // Kev: Qwen3.5 hybrid decoder (Gated DeltaNet + gated attention) + pointer head
 // (jaredpalmer/kev). The coordinator tokenizes, embeds and runs the pointer head; the GPU runs
-// the 24 layers, states first and then every question branch from its state's carry.
+// the transformer layers, states first and then question branches from their state's carry.
 
 import { GpuKev, kevConfig, parseKevBatch } from "../gpu-kev.js";
 import { Wasm } from "../wasm.js";
@@ -28,6 +28,32 @@ export default {
     const t0 = now();
     c.withInput(enc.encode(JSON.stringify({ requests })), (p, l) => c.check(c.x.kevala_kev_prepare(p, l)));
     const batch = parseKevBatch(new Uint32Array(c.out().slice().buffer));
+    const limit = Math.min(e.gpu.device.limits.maxStorageBufferBindingSize, e.gpu.device.limits.maxBufferSize);
+    const width = Math.max(2 * e.header.config.intermediate_size, e.gpu.dims.linearProj, e.gpu.dims.attentionProj);
+    // ensure() rounds capacities up to a power of two. Bound scratch and recurrent carries
+    // before embeddings are allocated, keeping large candidate sets usable on smaller GPUs.
+    const maxTokens = 2 ** Math.floor(Math.log2(Math.min(limit / (4 * width), D > 1024 ? 2048 : Infinity)));
+    if (requests.length > 1 && (Math.max(batch.T1, batch.T2) > maxTokens || (D > 1024 && requests.length > 4))) {
+      const mid = Math.ceil(requests.length / 2);
+      const first = await this.run(e, requests.slice(0, mid));
+      const firstProfile = e.gpu.lastProfile;
+      const second = await this.run(e, requests.slice(mid));
+      if (firstProfile && e.gpu.lastProfile) {
+        const merged = { ...firstProfile };
+        for (const [kernel, ms] of Object.entries(e.gpu.lastProfile)) merged[kernel] = (merged[kernel] || 0) + ms;
+        e.gpu.lastProfile = merged;
+      }
+      return {
+        responses: [...first.responses, ...second.responses],
+        timing: {
+          prepare: first.timing.prepare + second.timing.prepare,
+          forward: first.timing.forward + second.timing.forward,
+          total: now() - t0,
+          tokens: first.timing.tokens + second.timing.tokens,
+          cache: second.timing.cache,
+        },
+      };
+    }
     const x1 = c.f32(c.call(() => c.x.kevala_kev_embed(1)), batch.T1 * D).slice();
     const x2 = c.f32(c.call(() => c.x.kevala_kev_embed(2)), batch.T2 * D).slice();
     const t1 = now();

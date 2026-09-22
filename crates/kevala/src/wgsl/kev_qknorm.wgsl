@@ -7,12 +7,12 @@ var<workgroup> red: array<f32, 128>;
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j: u32) {
   let t = wg.x;
   if (t >= g.T) { return; }
-  let idx = t * 6144u + wg.y * 128u + j;
+  let idx = t * LIN_DIM + wg.y * 128u + j;
   let v = C[idx];
   red[j] = v * v;
   workgroupBarrier();
   for (var k = 64u; k > 0u; k >>= 1u) { if (j < k) { red[j] += red[j + k]; } workgroupBarrier(); }
   var inv = inverseSqrt(red[0] + 1e-6);
-  if (wg.y < 16u) { inv = inv * 0.08838834764831845; }
+  if (wg.y < LIN_KEY_HEADS) { inv = inv * 0.08838834764831845; }
   C[idx] = v * inv;
 }

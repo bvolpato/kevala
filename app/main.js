@@ -68,9 +68,12 @@ function renderChip(s) {
 
 function modelOption(s, id) {
   const note = MODEL_NOTES[id];
+  const spec = MODELS[id];
+  if (!note || !spec) return "";
   const active = s.model === id;
-  const { hosted, pack, download } = MODELS[id];
-  let badge = `<span class="badge faint-b">${fmtBytes(hosted && FROM === "pack" ? pack : download)} download</span>`;
+  const { hosted, pack, download } = spec;
+  const bytes = hosted && FROM === "pack" ? pack : download;
+  let badge = bytes ? `<span class="badge faint-b">${fmtBytes(bytes)} download</span>` : "";
   if (active && s.status === "ready") badge = `<span class="badge good">loaded</span>`;
   else if (s.cached[id]) badge = `<span class="badge">cached</span>`;
   return [
@@ -80,6 +83,17 @@ function modelOption(s, id) {
     `<span class="mo-d">${esc(s.costLine(id))}</span>`,
     `</button>`,
   ].join("");
+}
+
+const PRIMARY_MODELS = ["laya", "kev-0.8b"];
+
+function modelChoices(s) {
+  // a model without a published pack is offered only in dev mode, which loads packs from tmp/
+  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || LOCAL));
+  const primary = PRIMARY_MODELS.filter((id) => known.includes(id));
+  const more = known.filter((id) => !PRIMARY_MODELS.includes(id));
+  const render = (ids) => `<div class="mp-models">${ids.map((id) => modelOption(s, id)).join("")}</div>`;
+  return render(primary) + (more.length ? `<details class="mp-more"${more.includes(s.model) ? " open" : ""}><summary class="tiny faint">More models</summary>${render(more)}</details>` : "");
 }
 
 const BACKEND_CHOICES = [
@@ -136,10 +150,9 @@ function renderPanel(s) {
   const key = `${s.status}|${s.model}|${s.backend}|${JSON.stringify(s.cached)}|${s.error}|${s.storageError}|${s.storage?.bytes}`;
   if (key !== panelKey) {
     panelKey = key;
-    const options = Object.keys(MODEL_NOTES).map((id) => modelOption(s, id));
     const stored = s.storage?.available ? `Stored packs: ${fmtBytes(s.storage.bytes)}` : "No persistent storage";
     panel.innerHTML = `<div class="mp-h">Model <span class="tiny faint">shared by every page, kept for this session</span></div>
-      <div class="mp-models">${options.join("")}</div>
+      ${modelChoices(s)}
       <div class="mp-be"><span class="tiny muted">Backend</span>${backendSwitch(s)}</div>
       ${panelAction(s)}
       <div class="mp-foot">

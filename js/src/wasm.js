@@ -66,15 +66,15 @@ export class Wasm {
   }
 
   bytes(ptr, len) {
-    return new Uint8Array(this.memory, ptr, len);
+    return new Uint8Array(this.memory, ptr >>> 0, len);
   }
 
   f32(ptr, len) {
-    return new Float32Array(this.memory, ptr, len);
+    return new Float32Array(this.memory, ptr >>> 0, len);
   }
 
   u32(ptr, len) {
-    return new Uint32Array(this.memory, ptr, len);
+    return new Uint32Array(this.memory, ptr >>> 0, len);
   }
 
   error() {
@@ -111,7 +111,7 @@ export class Wasm {
   /** Copies `data` (bytes or string) into fresh module memory; returns [ptr, len]. */
   put(data) {
     const b = typeof data === "string" ? enc.encode(data) : data;
-    const ptr = this.x.kevala_alloc(b.length);
+    const ptr = this.alloc(b.length);
     this.bytes(ptr, b.length).set(b);
     return [ptr, b.length];
   }
@@ -126,7 +126,8 @@ export class Wasm {
   }
 
   alloc(len) {
-    return this.x.kevala_alloc(len);
+    // wasm32 pointers cross the JS boundary as signed i32 values, including addresses >= 2 GiB.
+    return this.x.kevala_alloc(len) >>> 0;
   }
 }
 

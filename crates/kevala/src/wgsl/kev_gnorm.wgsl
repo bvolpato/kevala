@@ -11,12 +11,12 @@ var<workgroup> red: array<f32, 128>;
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j: u32) {
   let t = wg.x;
   if (t >= g.T) { return; }
-  let idx = t * 2048u + wg.y * 128u + j;
+  let idx = t * LIN_OUT + wg.y * 128u + j;
   let o = CORE[idx];
   red[j] = o * o;
   workgroupBarrier();
   for (var k = 64u; k > 0u; k >>= 1u) { if (j < k) { red[j] += red[j + k]; } workgroupBarrier(); }
   let inv = inverseSqrt(red[0] / 128.0 + p.eps);
-  let z = PROJ[t * 8192u + 6144u + wg.y * 128u + j];
+  let z = PROJ[t * LIN_WIDTH + LIN_DIM + wg.y * 128u + j];
   CORE[idx] = o * inv * GW[j] * (z / (1.0 + exp(-z)));
 }

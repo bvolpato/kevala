@@ -32,6 +32,7 @@
 
 .mpanel {
   position: absolute; right: 0; top: calc(100% + 10px); width: min(400px, calc(100vw - 24px)); z-index: 80;
+  max-height: calc(100dvh - 74px); overflow-y: auto; overscroll-behavior: contain;
   background: var(--surface); border: 1px solid var(--border-2); border-radius: 14px; padding: 14px;
   box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7); display: grid; gap: 12px;
 }

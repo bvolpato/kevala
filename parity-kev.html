@@ -43,31 +43,41 @@ async function run() {
   const flavor = q.get("flavor") || undefined;
   const choice = $("pack").value;
   const url = q.get("pack")?.includes("/") ? q.get("pack") : null;
-  const model = url || (choice === "local" ? "./tmp/kev-0.8b-q8.kevala" : "kev-0.8b");
+  const name = q.get("model") || "kev-0.8b";
+  const model = url || (choice === "local" ? `./tmp/${name}-q8.kevala` : name);
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
-  const kevala = await Kevala.load({ model, from, backend, threads, flavor, gpuBaseline: q.get("baseline") === "1" });
+  const kevala = await Kevala.load({ model, from, backend, threads, flavor, cache: q.get("cache") !== "0", gpuBaseline: q.get("baseline") === "1" });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
-  const golden = await (await fetch("./tests/fixtures/golden-kev.json")).json();
+  const reference = q.get("reference") || "./tests/fixtures/golden-kev.json";
+  const response = await fetch(reference);
+  if (!response.ok) throw new Error(`reference: HTTP ${response.status}`);
+  const golden = await response.json();
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
   let worst = 0, agree = 0, n = 0;
-  const times = [];
+  const times = [], details = [];
   for (const c of golden.cases) {
     const r = await kevala.decide(c.state, c.questions);
     times.push(r.timing.forward);
     Object.keys(c.questions).forEach((qid, i) => {
       const want = c.probs[i];
       const got = r.raw_probabilities[qid];
+      if (!got || got.length !== want.length || !got.every(Number.isFinite)) throw new Error(`${c.id}/${qid}: invalid probabilities`);
       const dp = Math.max(...want.map((v, k) => Math.abs(v - got[k])));
       const am = (v) => v.indexOf(Math.max(...v));
       const ok = am(want) === am(got);
       n++; agree += ok; worst = Math.max(worst, dp);
+      details.push({ id: c.id, question: qid, expected: want, actual: got, maxDp: dp, argmax: ok });
       rows.push([c.id, qid, r.usage.input_tokens, ok ? "ok" : "MISS", dp.toFixed(4), r.timing.forward.toFixed(1)]);
     });
   }
   times.sort((a, b) => a - b);
   window.parity = {
     backend: kevala.info.backend,
+    model: kevala.info.model,
+    reference,
+    referenceSource: golden.source || golden.model,
+    details,
     gpu: kevala.info.gpu,
     threads: kevala.info.threads,
     flavor: kevala.info.flavor,

@@ -24,12 +24,12 @@ var<workgroup> kvs: array<f32, 256>; // partial k.S of each thread
 var<workgroup> os: array<f32, 256>;  // partial outputs of the token before
 //#endif
 
-// the token's q and k into buffer b: threads 0..127 copy q, 128..255 copy k
-fn stage(t: u32, h: u32, b: u32, li: u32) {
+// the token's q and k (key head kh) into buffer b: threads 0..127 copy q, 128..255 copy k
+fn stage(t: u32, kh: u32, b: u32, li: u32) {
   if (li < 128u) {
-    qs[b][li] = C[t * 6144u + h * 128u + li];
+    qs[b][li] = C[t * LIN_DIM + kh * 128u + li];
   } else {
-    ks[b][li - 128u] = C[t * 6144u + 2048u + h * 128u + li - 128u];
+    ks[b][li - 128u] = C[t * LIN_DIM + LIN_QK + kh * 128u + li - 128u];
   }
 }
 
@@ -37,6 +37,11 @@ fn stage(t: u32, h: u32, b: u32, li: u32) {
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
   let s = wg.x;
   let h = wg.y;
+//#if KEV_GROUPED
+  let kh = h / (LIN_HEADS / LIN_KEY_HEADS); // value heads share key heads in groups
+//#else
+  let kh = h;
+//#endif
   if (s >= g.S) { return; }
   let column = wg.z * 64u + li / 4u;
   let k0 = (li % 4u) * 32u;
@@ -47,7 +52,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let sp = workgroupUniformLoad(&info);
   var col: array<f32, 32>;
   if (sp.z != 0xffffffffu) {
-    let base = (sp.z * 16u + h) * 16384u + column;
+    let base = (sp.z * LIN_HEADS + h) * 16384u + column;
     for (var i = 0u; i < 32u; i++) { col[i] = STATE[base + (k0 + i) * 128u]; }
   } else {
     for (var i = 0u; i < 32u; i++) { col[i] = 0.0; }
@@ -56,10 +61,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var decay = 0.0;
   var beta = 0.0;
   if (sp.y > 0u) {
-    stage(sp.x, h, 0u, li);
-    v = C[sp.x * 6144u + 4096u + h * 128u + column];
-    decay = AB[sp.x * 32u + h];
-    beta = AB[sp.x * 32u + 16u + h];
+    stage(sp.x, kh, 0u, li);
+    v = C[sp.x * LIN_DIM + 2u * LIN_QK + h * 128u + column];
+    decay = AB[sp.x * (2u * LIN_HEADS) + h];
+    beta = AB[sp.x * (2u * LIN_HEADS) + LIN_HEADS + h];
   }
   workgroupBarrier();
   for (var r = 0u; r < sp.y; r++) {
@@ -70,10 +75,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     var nd = 0.0;
     var nb = 0.0;
     if (r + 1u < sp.y) {
-      stage(t + 1u, h, cur ^ 1u, li);
-      nv = C[(t + 1u) * 6144u + 4096u + h * 128u + column];
-      nd = AB[(t + 1u) * 32u + h];
-      nb = AB[(t + 1u) * 32u + 16u + h];
+      stage(t + 1u, kh, cur ^ 1u, li);
+      nv = C[(t + 1u) * LIN_DIM + 2u * LIN_QK + h * 128u + column];
+      nd = AB[(t + 1u) * (2u * LIN_HEADS) + h];
+      nb = AB[(t + 1u) * (2u * LIN_HEADS) + LIN_HEADS + h];
     }
     var kv = 0.0;
     for (var i = 0u; i < 32u; i++) { kv += col[i] * ks[cur][k0 + i]; }
@@ -82,7 +87,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     kv += subgroupShuffleXor(kv, 2u);
 //#else
     // the previous token's output, summed by its column's first lane before anyone overwrites it
-    if (r > 0u && k0 == 0u) { CORE[(t - 1u) * 2048u + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
+    if (r > 0u && k0 == 0u) { CORE[(t - 1u) * LIN_OUT + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
     kvs[li] = kv;
     workgroupBarrier();
     let q4 = li & ~3u;
@@ -99,7 +104,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
 //#if SUBGROUPS
     o += subgroupShuffleXor(o, 1u);
     o += subgroupShuffleXor(o, 2u);
-    if (k0 == 0u) { CORE[t * 2048u + h * 128u + column] = o; }
+    if (k0 == 0u) { CORE[t * LIN_OUT + h * 128u + column] = o; }
 //#else
     os[li] = o;
 //#endif
@@ -110,10 +115,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   }
 //#if SUBGROUPS
 //#else
-  if (sp.y > 0u && k0 == 0u) { CORE[(sp.x + sp.y - 1u) * 2048u + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
+  if (sp.y > 0u && k0 == 0u) { CORE[(sp.x + sp.y - 1u) * LIN_OUT + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
 //#endif
   if (g.stage == 1u) {
-    let base = (sp.w * 16u + h) * 16384u + column;
+    let base = (sp.w * LIN_HEADS + h) * 16384u + column;
     for (var i = 0u; i < 32u; i++) { STATE[base + (k0 + i) * 128u] = col[i]; }
   }
 }

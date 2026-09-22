@@ -12,11 +12,16 @@ enable subgroups;
 
 //#include kev_common
 
-@group(0) @binding(1) var<storage, read> PROJ: array<vec4<f32>>; // [T][1280]: q, gate per head; k; v
-@group(0) @binding(2) var<storage, read> KV: array<vec4<f32>>;   // cache rows [256]: k then v
+@group(0) @binding(1) var<storage, read> PROJ: array<vec4<f32>>; // [T][ATTN_WIDTH / 4]: q, gate per head; k; v
+@group(0) @binding(2) var<storage, read> KV: array<vec4<f32>>;   // cache rows [ATTN_KV / 4]: k then v
 @group(0) @binding(3) var<storage, read> blocks: array<vec4<u32>>; // [0].x: count; then (segment, first position, tokens, 0)
 @group(0) @binding(4) var<storage, read> segs: array<Seg>;
-@group(0) @binding(5) var<storage, read_write> OUT: array<vec4<f32>>; // [T][512]
+@group(0) @binding(5) var<storage, read_write> OUT: array<vec4<f32>>; // [T][ATTN_Q / 4]
+const_assert HEADS == 4u * KV_HEADS; // a workgroup's rows are the 4 query heads of one key/value head
+const PROW = ATTN_WIDTH / 4u; // vec4s per projection row
+const KROW = ATTN_KV / 4u;    // vec4s per cache row
+const KOFF = ATTN_Q / 2u;     // first key vec4 of a projection row (after the q and gate halves)
+const VOFF = KOFF + ATTN_K / 4u;
 var<workgroup> ks: array<vec4<f16>, 1024>; // [16 keys][64]
 var<workgroup> vs: array<vec4<f16>, 1024>; // [16 keys][64]
 var<workgroup> info: vec4<u32>;
@@ -61,7 +66,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let nk = plen + r0 + tl + 1u;         // keys this row sees
   let kmax = plen + r0 + ntok;          // keys any row of the block sees
   var q: array<vec4<f32>, 8>;
-  for (var i = 0u; i < 8u; i++) { q[i] = PROJ[t * 1280u + h * 128u + lane + 8u * i] * 0.0625; }
+  for (var i = 0u; i < 8u; i++) { q[i] = PROJ[t * PROW + h * 128u + lane + 8u * i] * 0.0625; }
   var o: array<vec4<f32>, 8>;
   var m = -3.0e38;
   var l = 0.0;
@@ -74,13 +79,13 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
       var kk = vec4<f32>(0.0);
       var vv = vec4<f32>(0.0);
       if (j < plen) {
-        let row = (pstart + j) * 256u + kvh * 64u + dv;
+        let row = (pstart + j) * KROW + kvh * 64u + dv;
         kk = KV[row];
-        vv = KV[row + 128u];
+        vv = KV[row + ATTN_K / 4u];
       } else if (j < kmax) {
-        let row = (start + j - plen) * 1280u + kvh * 64u + dv;
-        kk = PROJ[row + 1024u];
-        vv = PROJ[row + 1152u];
+        let row = (start + j - plen) * PROW + kvh * 64u + dv;
+        kk = PROJ[row + KOFF];
+        vv = PROJ[row + VOFF];
       }
       ks[e] = vec4<f16>(kk);
       vs[e] = vec4<f16>(vv);
@@ -109,8 +114,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
 
   if (live) {
     for (var i = 0u; i < 8u; i++) {
-      let gate = PROJ[t * 1280u + h * 128u + 64u + lane + 8u * i];
-      OUT[t * 512u + h * 64u + lane + 8u * i] = o[i] / l / (vec4<f32>(1.0) + exp(-gate));
+      let gate = PROJ[t * PROW + h * 128u + 64u + lane + 8u * i];
+      OUT[t * (ATTN_Q / 4u) + h * 64u + lane + 8u * i] = o[i] / l / (vec4<f32>(1.0) + exp(-gate));
     }
   }
 }

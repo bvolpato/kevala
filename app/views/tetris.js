@@ -39,7 +39,7 @@ const HTML = `<div class="wrap">
   <div class="t-head">
     <div>
       <h1>Tetris, played by a decision model</h1>
-      <p>Every place the piece can land, scored in one pass on this device. Then the model presses the keys.</p>
+      <p>The model scores every place the piece can land on this device, then presses the keys.</p>
     </div>
     <div class="t-tools">
       <button type="button" class="btn auto-btn" aria-pressed="false"><span class="led"></span>Auto <kbd>A</kbd></button>
@@ -90,7 +90,7 @@ const HTML = `<div class="wrap">
       </div>
       <div class="ai-metrics">
         <div><b data-m="ms">–</b><span data-m="where">per move</span></div>
-        <div title="The places this piece can land, all scored in one batched pass"><b data-m="spots">–</b><span>moves in one pass</span></div>
+        <div title="The places this piece can land, scored together"><b data-m="spots">–</b><span>placements scored</span></div>
       </div>
       <div class="keys">${KEY_TILES}</div>
       <div class="plan" aria-label="Keys for this piece"></div>
@@ -684,7 +684,7 @@ export function mount(el, { session }) {
     const msEl = el.querySelector('[data-m="ms"]');
     msEl.textContent = fmtMs(median);
     msEl.parentElement.title =
-      `${fmtMs(decision.ms)} for the ${decision.spots} moves of this piece, scored in one pass ` +
+      `${fmtMs(decision.ms)} to score the ${decision.spots} moves of this piece ` +
       `(${decision.states} distinct outcomes, ${decision.timing?.tokens ?? "?"} tokens); median of the last ${msPerMove.length} pieces`;
     el.querySelector('[data-m="spots"]').textContent = String(decision.spots);
     const top = decision.scored.slice(0, 3);

@@ -15,17 +15,18 @@
   <a href="docs/architecture.md">How it works</a>
 </p>
 
-kevala runs System 1 decision models, [Laya](https://huggingface.co/convaiinnovations/laya) and
-[Kev](https://github.com/jaredpalmer/kev) today, inside the browser. You give it a piece of text or
-JSON and typed questions (`noul` for yes/no, `choice`, `score`), and it returns a probability for
-every option of every question in one forward pass. There is no model server, no API key, and no
-data leaving the tab.
+kevala runs [Laya](https://huggingface.co/convaiinnovations/laya),
+[Kev](https://github.com/jaredpalmer/kev), and frozen Qwen3.5 models with
+[SemIf-style option scoring](docs/models.md#how-semif-style-scoring-works) inside the browser.
+You give it text or JSON and typed questions (`noul` for yes/no, `choice`, `score`), and it scores
+the options without generating an answer token by token. There is no model server, no API key,
+and no data leaving the tab.
 
 The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU kernels written for
 these models. The browser runtime is a few plain ES modules. The first load downloads a pinned int8
 pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) and keeps it in
-the browser, so there is nothing to host. If the pack is unreachable, kevala converts the original
-checkpoint in the browser instead.
+the browser, so there is nothing to host. Laya and Kev-0.8B also support conversion from the
+original checkpoint in the browser. Larger Kev models and SemIf-style models require a converted pack.
 
 ## Quick start
 
@@ -58,21 +59,47 @@ import { Kevala } from "kevala";
 Building with a coding agent? The site has [a prompt to paste into it](https://bvolpato.github.io/kevala/#/home/agent),
 and [`skills/kevala/SKILL.md`](skills/kevala/SKILL.md) is the same guide as an agent skill.
 
-The first visit downloads the model's int8 pack from Hugging Face (Laya: 479 MB). It is stored in the
-site's Origin Private File System, so later visits load in under a second. It works from any origin
-and needs no special headers. To load the original weights and convert them in the browser instead,
-pass `from: "checkpoint"`; to serve the weights yourself, pass the URL of a `.kevala` file. See
+The first visit downloads the model's int8 pack from Hugging Face (Laya: 479 MB). Browser storage
+avoids that download on later visits; loading still includes reading the weights, allocating memory,
+and warming up the backend. Time depends on the model and hardware. It works from any origin and
+needs no special headers. For Laya or Kev-0.8B, pass `from: "checkpoint"` to convert the original
+weights in the browser. To serve weights yourself, pass the URL of a `.kevala` file. See
 [Packs](docs/packs.md) for both, and for how the packs are made and published.
 
 ## Models
 
-| name | family | backbone | head | first download | stored pack |
+| name | family | backbone | head | upstream checkpoint | stored pack |
 |---|---|---|---|---|---|
 | `laya` | `laya` | ModernBERT-large encoder (28 layers) | 2-layer transformer + marker scorer + act head | about 850 MB | 479 MB |
 | `kev-0.8b` | `kev` | Qwen3.5-0.8B decoder (18 Gated DeltaNet + 6 gated attention layers), Kev's LoRA merged | pointer head | about 1.6 GB | 857 MB |
 
-Pick with `Kevala.load({ model: "kev-0.8b" })`, or pass the URL of a `.kevala` pack you host. Families are
-pluggable: see [Adding a model family](docs/adding-a-model.md).
+Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
+`Kevala.load({ model: "kev-0.8b" })`, or pass a `.kevala` URL you host.
+
+The demo keeps additional models under **More models**; Laya remains the default.
+
+<details>
+<summary>Additional model packs</summary>
+
+The additional packs below are converted and validated locally. Their Hugging Face publication
+and immutable download pin are still pending. Until then, use the conversion helper and load a
+local `.kevala` URL; the named hosted downloads are not available.
+
+| name | readout | pack download |
+|---|---|---:|
+| `kev-4b` | Trained Kev pointer head | 4.76 GB |
+| `kev-9b` | Trained Kev pointer head | 8.96 GB |
+| `semif-qwen3.5-0.8b` | Native option-label logits | 855 MB |
+| `semif-qwen3.5-2b` | Native option-label logits | 2.13 GB |
+| `semif-qwen3.5-4b` | Native option-label logits | 4.75 GB |
+
+Sizes use decimal MB/GB and describe the pack, not total runtime memory. Load these as pre-converted
+packs; browser checkpoint conversion is unavailable. See [the model guide](docs/models.md) for
+their differences and backend limits.
+
+</details>
+
+Families are pluggable: see [Adding a model family](docs/adding-a-model.md).
 
 ## Speed
 
@@ -94,8 +121,11 @@ cache is impossible; it packs every question of a request into one pass instead.
 
 ## Fidelity
 
-Every number is checked against the upstream PyTorch code (`tools/golden.py` runs the `laya` SDK,
-`tools/golden_kev.py` runs Kev's own code), natively and in the browser.
+Additional model checks and seeded game results: [optional model validation](docs/model-benchmarks.md).
+
+The following Laya and Kev-0.8B fixtures are checked against upstream PyTorch code
+(`tools/golden.py` runs the `laya` SDK, `tools/golden_kev.py` runs Kev's own code), natively and in
+the browser. These results do not establish parity or quality for another model size or readout.
 
 | | token ids | argmax agreement | max probability difference |
 |---|---|---|---|
@@ -112,8 +142,8 @@ your own browser.
 - [Playground](https://bvolpato.github.io/kevala/#/playground): any state, any questions, any model
   and backend, with the response as highlighted JSON and the code to reproduce it.
 - [Tetris](https://bvolpato.github.io/kevala/#/tetris): the model plays. When a piece appears, code
-  lists every spot it can land in and describes each outcome in words; the model scores them all in
-  one batched pass, and the piece presses the keys (turn, left, right, drop) toward the best one.
+  lists every spot it can land in and describes each outcome in words; the model scores the candidates
+  in batches, and the piece presses the keys (turn, left, right, drop) toward the best one.
 - [Guardrail](https://bvolpato.github.io/kevala/#/guardrail): a prompt-injection and jailbreak gate in
   front of an LLM that acts on confident answers and escalates the unsure ones.
 - [Inbox](https://bvolpato.github.io/kevala/#/inbox): triage a mailbox, with rows filling in as each
@@ -136,15 +166,15 @@ const kevala = await Kevala.load({
   cpuKernel: "auto",     // measure CPU register tiles; "2x4" or "4x4" overrides
   retune: false,         // reuse the browser's CPU tuning profile; true measures again
   submit: "await",       // GPU chunks: "await" favors responsiveness; "split" reduces queue waits
-  from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
+  from: "pack",          // "checkpoint" conversion is available for Laya and Kev-0.8B
   cache: true,           // keep the pack and CPU tuning profile in origin storage
   onProgress: (p) => {}, // { phase: download | convert | cache | init | warmup, loaded, total }
   signal,                // AbortSignal
   plugins: [],           // URLs of extra architecture plugins
 });
 
-await kevala.decide(state, questions, { parts });  // one request, one forward pass
-await kevala.decideMany([{ state, questions }]);   // many states, still one pass
+await kevala.decide(state, questions, { parts });  // score a request's questions
+await kevala.decideMany([{ state, questions }]);   // batch requests; GPU work may split to fit
 kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, cpuTiles, cpuTuning, modalities, model, config, pack, loadMs }
 await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
@@ -155,7 +185,9 @@ CPU tuning runs automatically and caches its result for the browser and model. S
 
 Questions use the System One request shape (`type`, `instructions`, `criteria`), and each family
 answers in its own reference format: Laya like `laya` 0.3.5 (`action.act_probability`, 4 decimals),
-Kev like `kev.serve` (2 decimals, plus `raw_probabilities` at full precision). For starting points,
+Kev like `kev.serve` (2 decimals, plus `raw_probabilities` at full precision). SemIf-style packs use
+the Kev response shape and return `probability_status` to identify uncalibrated conditional option
+scores. They support at most 16 options per question. For starting points,
 `import { presets } from "kevala"` has the `laya` SDK's question sets for triage, email,
 guardrails, moderation and routing.
 
@@ -246,10 +278,15 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
 
 ## Limits
 
-- First visits are heavy: a 479 MB pack for Laya, 857 MB for Kev. Later visits read it from disk.
+- First visits are heavy: a 479 MB pack for Laya, 857 MB for Kev-0.8B, and larger downloads for the
+  optional models. Later visits read the cached weights from disk and reload them into memory.
   You can also convert once with the CLI and serve the pack from your own host.
 - Without WebGPU, a request takes about a second on a fast laptop core, more on phones. Laya splits
   across CPU workers; Kev runs in one instance on the CPU for now.
+- Browser and Node WebAssembly cannot allocate a whole pack of 2 GiB or more. Large packs need
+  WebGPU or the native CLI. GPU loading streams the transformer weights separately, while the
+  tokenizer, embeddings, and readout must still fit in a coordinator allocation under 2 GiB.
+  GPU memory and individual buffer limits also apply. See [model limits](docs/models.md#memory-and-backends).
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.
 - WebGPU was verified on Apple Silicon in Chromium, with every optional feature and without any
   (the default limits, as the weakest WebGPU device has). Every kernel also passes naga, the WGSL
@@ -261,7 +298,7 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
   `kevala.info.gpuPowerPreference` reports the successful preference. In `auto` mode, failures during
   allocation, shader compilation or warmup fall back to the CPU; `backend: "webgpu"` reports an error
   if both GPU attempts fail. `kevala.info.gpuUnavailable` preserves the failures when Auto uses the CPU.
-- int8 weights and GPU arithmetic move probabilities by about 0.024 (Laya) and 0.010 (Kev)
+- int8 weights and GPU arithmetic move probabilities by about 0.024 (Laya) and 0.010 (Kev-0.8B)
   on the tested fixtures and Linux GPUs, with no argmax changes. The benchmark report gives
   exact errors, including the f32 path's inherited precision edge. The models themselves have
   their own limits: see the
@@ -280,9 +317,15 @@ browser channel and settings; see Mozilla's [WebGPU support notes](https://devel
 ## Credits and license
 
 - Laya is by Nandakishor M, Convai Innovations (Apache-2.0).
-- Kev is by Jared Palmer (Apache-2.0). Its base, Qwen3.5-0.8B-Base, is by the Qwen team (Apache-2.0).
+- Kev is by Jared Palmer (Apache-2.0). The Qwen3.5 base and instruction models are by the Qwen team (Apache-2.0).
+- [SemIf](https://github.com/TheoLeeCJ/SemIf/tree/1f2dea3e25379f9dfc98cb83c324f00ab5deda37),
+  by TheoLeeCJ (MIT), informed the direct option-token readout, exact prompt contract, and shared
+  evidence prefix used by the `semif-qwen3.5-*` packs. These are conversions of frozen Qwen models,
+  not SemIf fine-tuned checkpoints. The adapted prompt and method retain their
+  [MIT notice](THIRD_PARTY_NOTICES).
 - The Laya parity fixtures reuse cases from [laya-web](https://github.com/nvkudva/laya-web), and the
   question-writing advice follows [brain function collapse](https://brainfunctioncollapse.com/laya).
 
-kevala is licensed under [Apache-2.0](LICENSE). The weights keep their own licenses; kevala downloads them
-from their upstream repositories and does not redistribute them.
+kevala is licensed under [Apache-2.0](LICENSE). Converted packs are distributed separately on
+[Hugging Face](https://huggingface.co/bvolpato/kevala-packs), with pinned source revisions and the
+original model licenses. Model weights and generated WebAssembly binaries are not tracked in Git.
