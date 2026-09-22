@@ -23,7 +23,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
-var<workgroup> xs: array<vec4<{{TILE}}>, 1024>; // [m][k/4], two K blocks
+var<workgroup> xs: array<vec4<{{TILE}}>, 1088>; // [m][k/4], padded stride, two K blocks
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & 7)], two K blocks
 
 // Four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
@@ -94,8 +94,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       }
 
       if (lr < {{BM}}u) {
-        xs[lr * 16u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
-        xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
+        xs[lr * 17u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
+        xs[lr * 17u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
       }
       let r = lr;
       ws[r * 16u + step * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
@@ -113,18 +113,18 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
 
       // Keep the same row and dot-product order as matmul_wide. Each row block
       // is guarded by a compile-time constant so unused registers disappear.
-      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 17u + kq]);
       acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
       if ({{ROWS}}u > 1u) {
-        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 17u + kq]);
         acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
       }
       if ({{ROWS}}u > 2u) {
-        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 17u + kq]);
         acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
       }
       if ({{ROWS}}u > 3u) {
-        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 17u + kq]);
         acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
       }
     }
