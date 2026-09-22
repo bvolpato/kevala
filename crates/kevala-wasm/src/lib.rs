@@ -10,6 +10,7 @@
 
 use kevala::content::Request;
 use kevala::engine::{Engine, Prepared};
+use kevala::gemma4::Gemma4Engine;
 use kevala::json::Value;
 use kevala::kev::KevEngine;
 use kevala::model::{self, AlignedBuf, Batch, Scratch, Seg, ShardPlan, Trunk};
@@ -38,6 +39,7 @@ struct State {
     kev_batch: Option<(Vec<kevala::kev::Encoded>, Vec<Vec<kevala::kev::KevQuestion>>)>,
     kev_convert: Option<(kevala::convert_kev::KevConvert, Vec<String>)>,
     kev_ids: [Vec<u32>; 2],
+    gemma4_prepared: Option<kevala::gemma4::Prepared>,
 }
 
 static mut STATE: Option<State> = None;
@@ -579,6 +581,42 @@ pub extern "C" fn kevala_kev_finish(ptr: *const f32, n: usize) -> u32 {
         let rows = unsafe { std::slice::from_raw_parts(ptr, n) };
         let logits = e.model.readout(rows, &enc);
         s.out = Value::Array(e.respond(&enc, &qs, &logits)).to_json().into_bytes();
+        Ok(())
+    })())
+}
+
+/// Writes Gemma's complete prompts as u32s: sequence count, then (length, token IDs) per sequence.
+#[no_mangle]
+pub extern "C" fn kevala_gemma4_prepare(ptr: *const u8, len: usize) -> u32 {
+    done((|| {
+        st().gemma4_prepared = None;
+        let request = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
+        let requests = Request::parse_many(&request)?;
+        let engine: &Gemma4Engine = family("a gemma4 model")?;
+        let prepared = engine.prepare_all(&requests)?;
+        let mut out = Vec::new();
+        put_u32(&mut out, prepared.sequence_count());
+        for index in 0..prepared.sequence_count() {
+            let ids = prepared.sequence_ids(index);
+            put_u32(&mut out, ids.len());
+            for &id in ids {
+                put_u32(&mut out, id as usize);
+            }
+        }
+        st().out = out;
+        st().gemma4_prepared = Some(prepared);
+        Ok(())
+    })())
+}
+
+/// Scores one normalized final hidden row per prepared Gemma prompt.
+#[no_mangle]
+pub extern "C" fn kevala_gemma4_finish(ptr: *const f32, n: usize) -> u32 {
+    done((|| {
+        let prepared = st().gemma4_prepared.take().ok_or("no Gemma4 batch prepared")?;
+        let engine: &Gemma4Engine = family("a gemma4 model")?;
+        let rows = unsafe { std::slice::from_raw_parts(ptr, n) };
+        st().out = Value::Array(engine.finish(&prepared, rows)?).to_json().into_bytes();
         Ok(())
     })())
 }

@@ -1,4 +1,4 @@
-// kevala: System 1 decision models (Laya, Kev, SemIf, ...) in the browser, no server, no dependencies.
+// kevala: System 1 decision models (Laya, Kev, SemIf, Gemma 4) in the browser, no server, no dependencies.
 //
 //   import { Kevala } from "kevala";
 //   const kevala = await Kevala.load({ onProgress: (p) => console.log(p) });
@@ -70,7 +70,7 @@ export class Kevala {
    *
    * options:
    *   model       a known model name ("laya", "kev-0.8b", "kev-4b", "kev-9b", or a
-   *               "semif-qwen3.5-*" name; see MODELS); or the URL of a .kevala
+   *               "semif-qwen3.5-*" or "gemma-4-e*" name; see MODELS); or the URL of a .kevala
    *               pack; or an ArrayBuffer/Blob of one (default: "laya")
    *   from        for a known model: "pack" downloads its pinned int8 pack from Hugging Face, and
    *               converts the original weights when the pack is unreachable (default);

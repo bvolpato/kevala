@@ -22,3 +22,15 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+Google Gemma 4 weights
+----------------------
+
+The optional Gemma 4 E2B and E4B model weights are distributed by Google under
+the Apache License, Version 2.0. The converted packs retain the source model
+and revision in their metadata. See the source model cards for the terms and
+usage conditions:
+
+https://huggingface.co/google/gemma-4-E2B-it
+https://huggingface.co/google/gemma-4-E4B-it
+https://ai.google.dev/gemma/apache_2

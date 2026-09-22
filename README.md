@@ -1,6 +1,6 @@
 <h1 align="center">kevala</h1>
 
-<p align="center"><b>Ask questions about text with Laya, Kev, and SemIf running on the user's own hardware.</b></p>
+<p align="center"><b>Ask questions about text with Laya, Kev, SemIf, and Gemma 4 running on the user's own hardware.</b></p>
 
 <p align="center">
   <a href="https://bvolpato.github.io/kevala/#/tetris"><img src="docs/tetris.gif" alt="Tetris played live by the Laya decision model on WebGPU: the model scores every landing spot and presses the keys to get there" width="760"></a>
@@ -16,8 +16,9 @@
 </p>
 
 kevala runs [Laya](https://huggingface.co/convaiinnovations/laya),
-[Kev](https://github.com/jaredpalmer/kev), and frozen Qwen3.5 models with
-[SemIf option scoring](docs/models.md#how-semif-scoring-works) inside the browser.
+[Kev](https://github.com/jaredpalmer/kev), frozen Qwen3.5 models, and
+[Gemma 4](docs/gemma4.md) with [SemIf option scoring](docs/models.md#how-semif-scoring-works)
+inside the browser.
 You give it text or JSON and typed questions (`noul` for yes/no, `choice`, `score`), and it scores
 the options without generating an answer token by token. There is no model server, no API key,
 and no data leaving the tab.
@@ -26,7 +27,8 @@ The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU 
 these models. The browser runtime is a few plain ES modules. The first load downloads a pinned int8
 pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) and keeps it in
 the browser, so there is nothing to host. Laya and Kev-0.8B also support conversion from the
-original checkpoint in the browser. Larger Kev models and SemIf models require a converted pack.
+original checkpoint in the browser. Larger Kev models, SemIf models, and Gemma 4 require a converted
+pack.
 
 ## Quick start
 
@@ -77,10 +79,15 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 | SemIf | `semif-qwen3.5-0.8b` | Native option-label logits | 855 MB |
 | SemIf | `semif-qwen3.5-2b` | Native option-label logits | 2.13 GB |
 | SemIf | `semif-qwen3.5-4b` | Native option-label logits | 4.75 GB |
+| Gemma 4 | `gemma-4-e2b` | Native option-label logits | 5.22 GB |
+| Gemma 4 | `gemma-4-e4b` | Native option-label logits | 8.41 GB |
 
 Laya uses a ModernBERT-large encoder. Kev uses Qwen3.5 base models with its merged LoRA adapter
 and trained pointer head. SemIf applies direct option scoring to frozen Qwen3.5 instruction
-models. See [the model guide](docs/models.md) for their differences and backend limits.
+models. Gemma 4 uses Google's frozen E2B and E4B instruction weights with the same direct option
+readout; these are dense text-only packs with Gemma's per-layer embeddings, not MoE models. See
+[the model guide](docs/models.md) and [Gemma 4 notes](docs/gemma4.md) for their differences and
+backend limits.
 
 Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
 `Kevala.load({ model: "kev-4b" })` or `Kevala.load({ model: "semif-qwen3.5-2b" })`,
@@ -88,18 +95,22 @@ or pass a `.kevala` URL you host.
 
 Laya remains the demo default. Select **Kev** to choose 0.8B, 4B, or 9B with the size slider.
 **SemIf** appears alongside Laya and Kev, with 0.8B, 2B, or 4B sizes. Selecting either family starts
-at its smallest size; changing sizes waits for **Load** before downloading.
+at its smallest size; changing sizes waits for **Load** before downloading. **Gemma 4** starts with
+E2B and can be changed to E4B before loading.
 
-Sizes use decimal MB/GB and describe the pack, not total runtime memory. Load these as pre-converted
+Sizes use decimal MB/GB and describe the pack, not total runtime memory. The Gemma packs are exactly
+5,217,421,952 bytes (E2B) and 8,407,043,136 bytes (E4B). Load these as pre-converted
 packs published on Hugging Face at a pinned revision. Browser checkpoint conversion is available
-only for Laya and Kev-0.8B.
+only for Laya and Kev-0.8B. Gemma 4 is text-only here and requires WebGPU in the browser or the
+native 64-bit CPU CLI; its maximum input is 4096 tokens.
 
 Families are pluggable: see [Adding a model family](docs/adding-a-model.md).
 
 ## Speed
 
-For GPU measurements across all seven models on Firefox/Linux, see
-[GPU matrix tuning](docs/semif-matmul.md). Performance depends on the model, request, and hardware.
+For GPU measurements across the seven Laya, Kev, and SemIf models on Firefox/Linux, see
+[GPU matrix tuning](docs/semif-matmul.md). Gemma 4's E2B and E4B checks are in the
+[Gemma 4 notes](docs/gemma4.md). Performance depends on the model, request, and hardware.
 
 On an Apple M4 Max, with WebGPU in Chrome:
 
@@ -119,22 +130,29 @@ cache is impossible; it packs every question of a request into one pass instead.
 
 ## Fidelity
 
-Reference checks for every published model: [GPU validation](docs/semif-matmul.md#correctness-and-feature-fallbacks).
-Conversion fidelity and seeded game results: [model validation](docs/model-benchmarks.md).
+Reference checks for Laya, Kev, and SemIf: [GPU validation](docs/semif-matmul.md#correctness-and-feature-fallbacks).
+Gemma 4 checks: [Gemma 4 notes](docs/gemma4.md#verification). Conversion fidelity and seeded game
+results: [model validation](docs/model-benchmarks.md).
 
-The following Laya and Kev-0.8B fixtures are checked against upstream PyTorch code
-(`tools/golden.py` runs the `laya` SDK, `tools/golden_kev.py` runs Kev's own code), natively and in
-the browser. These results do not establish parity or quality for another model size or readout.
+The following fixtures are checked against upstream reference code
+(`tools/golden.py` runs the `laya` SDK, `tools/golden_kev.py` runs Kev's own code, and
+`tools/golden_gemma.py` runs the Gemma Transformers reference), natively and in
+the browser. These results do not establish parity or quality beyond the listed fixtures.
 
 | | token ids | argmax agreement | max probability difference |
 |---|---|---|---|
 | Laya, f32 weights | 41 / 41 exact | 41 / 41 | < 0.0001 |
 | Laya, int8 pack (CPU, WebAssembly, WebGPU) | 41 / 41 exact | 41 / 41 | 0.024 |
 | Kev-0.8B, int8 pack (CPU, WebAssembly, WebGPU) | 8 / 8 requests exact | 13 / 13 | 0.0097 |
+| Gemma 4 E2B, int8 pack (WebGPU) | shared tokenizer | 12 / 12 | 0.01906186 |
+| Gemma 4 E4B, int8 pack (WebGPU) | shared tokenizer | 12 / 12 | 0.0120864 |
+| Gemma 4 E2B, int8 pack (native CPU) | 12 / 12 exact | 12 / 12 | 0.019120 |
+| Gemma 4 E4B, int8 pack (native CPU, selected cases) | 3 / 3 exact | 3 / 3 | 0.009941 |
 
-The tokenizers also match the Hugging Face `tokenizers` library on the fixture corpora and on about
-ten million fuzzed strings. Open [`parity.html`](https://bvolpato.github.io/kevala/parity.html) to rerun the Laya check in
-your own browser.
+The Laya and Qwen tokenizers match the Hugging Face `tokenizers` library on the fixture corpora and
+on about ten million fuzzed strings. Gemma's pinned tokenizer IDs are recorded by its reference
+generator; see the [Gemma 4 notes](docs/gemma4.md#verification). Open
+[`parity.html`](https://bvolpato.github.io/kevala/parity.html) to rerun the Laya check in your own browser.
 
 ## Demos and examples
 
@@ -183,7 +201,8 @@ kevala.dispose();
 CPU tuning runs automatically and caches its result for the browser and model. See
 [CPU tuning and API overrides](docs/cpu-tuning.md) for the measurements, limits, and diagnostics.
 All model families also select GPU matrix kernels using the loaded model's shapes and GPU timestamps.
-See [GPU matrix tuning](docs/semif-matmul.md) for the results, API overrides, and fallback rules.
+See [GPU matrix tuning](docs/semif-matmul.md) for the Laya, Kev, and SemIf results, and
+[Gemma 4 notes](docs/gemma4.md) for the Gemma checks and backend details.
 
 Questions use the System One request shape (`type`, `instructions`, `criteria`), and each family
 answers in its own reference format: Laya like `laya` 0.3.5 (`action.act_probability`, 4 decimals),
@@ -213,7 +232,7 @@ page ─► index.js ─► engine worker ─► coordinator (Rust → WebAssemb
 ```
 
 - **One Rust core, zero crates.** JSON, Unicode tables, byte-level BPE tokenizers, the request
-  templates, both model families, the `.kevala` pack format and the checkpoint converters (safetensors,
+  templates, the model architectures and readouts for all four product families, the `.kevala` pack format and the checkpoint converters (safetensors,
   LoRA adapters, `torch.save` files) are all in `crates/kevala`, and the same code runs natively for the
   CLI and tests.
 - **GPU kernels in the crate too.** WebGPU only runs WGSL, so the kernels are `.wgsl` sources in
@@ -280,31 +299,37 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
 
 ## Limits
 
-- First visits download 479 MB for Laya, 857 MB to 8.96 GB for Kev, or 855 MB to 4.75 GB for SemIf,
-  depending on size. Later visits read the cached weights from disk and reload them into memory.
+- First visits download 479 MB for Laya, 857 MB to 8.96 GB for Kev, 855 MB to 4.75 GB for SemIf, or
+  5.22 GB to 8.41 GB for Gemma 4, depending on size. Later visits read the cached weights from disk
+  and reload them into memory.
   You can also convert once with the CLI and serve the pack from your own host.
 - Without WebGPU, a request takes about a second on a fast laptop core, more on phones. Laya splits
-  across CPU workers; Kev and SemIf run in one instance on the CPU for now.
+  across CPU workers; Kev, SemIf, and Gemma 4 run in one instance on the CPU for now. Gemma 4's
+  browser CPU path is unavailable for these packs because of the WebAssembly allocation limit; use
+  the native 64-bit CLI for CPU inference.
 - Browser and Node WebAssembly cannot allocate a whole pack of 2 GiB or more. Large packs need
   WebGPU or the native CLI. GPU loading streams the transformer weights separately, while the
-  tokenizer, embeddings, and readout must still fit in a coordinator allocation under 2 GiB.
+  coordinator must fit under 2 GiB. Gemma keeps its large embedding tables on the GPU; its
+  coordinator holds only the tokenizer and answer-label rows.
   GPU memory and individual buffer limits also apply. See [model limits](docs/models.md#memory-and-backends).
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.
 - WebGPU was verified on Apple Silicon in Chromium, with every optional feature and without any
   (the default limits, as the weakest WebGPU device has). Every kernel also passes naga, the WGSL
-  compiler Firefox uses. The Linux kernel sweeps validate Firefox 152 on both NVIDIA and AMD,
-  including reference checks for all seven models on NVIDIA. See [GPU matrix tuning](docs/semif-matmul.md) for the
-  measured features, numerical limits, and performance results.
+  compiler Firefox uses. The Linux kernel sweeps validate Firefox 152 on both NVIDIA and AMD. The
+  seven Laya, Kev, and SemIf models are covered by [GPU matrix tuning](docs/semif-matmul.md); Gemma
+  E2B and E4B are covered by the [Gemma 4 notes](docs/gemma4.md). See those reports for measured
+  features, numerical limits, and performance results.
 - GPU loading first requests the high-performance adapter, then retries with a low-power preference
   if GPU initialization fails. The browser chooses the adapter and may return the same GPU twice.
   `kevala.info.gpuPowerPreference` reports the successful preference. In `auto` mode, failures during
   allocation, shader compilation or warmup fall back to the CPU; `backend: "webgpu"` reports an error
   if both GPU attempts fail. `kevala.info.gpuUnavailable` preserves the failures when Auto uses the CPU.
-- int8 weights and GPU arithmetic change option probabilities. The [validation report](docs/semif-matmul.md#correctness-and-feature-fallbacks)
-  records the differences and matching reference decisions for every model. These fixture checks
-  do not establish general decision quality or confidence calibration. See the
-  [model guide](docs/models.md#interpreting-the-scores) and the upstream Laya, Kev, and Qwen model
-  cards before choosing a threshold.
+- int8 weights and GPU arithmetic change option probabilities. The [GPU validation report](docs/semif-matmul.md#correctness-and-feature-fallbacks)
+  records the differences and matching reference decisions for Laya, Kev, and SemIf; the
+  [Gemma 4 notes](docs/gemma4.md#verification) record the corresponding Gemma checks. These
+  fixture checks do not establish general decision quality or confidence calibration. See the
+  [model guide](docs/models.md#interpreting-the-scores) and the upstream Laya, Kev, Qwen, and Gemma
+  model cards before choosing a threshold.
 - Requests can carry image and audio parts, but no shipped pack reads them yet.
 
 On Linux, Firefox's WebGPU backend uses [Vulkan](https://searchfox.org/firefox-main/source/gfx/wgpu_bindings/Cargo.toml),
@@ -319,10 +344,13 @@ browser channel and settings; see Mozilla's [WebGPU support notes](https://devel
 
 - Laya is by Nandakishor M, Convai Innovations (Apache-2.0).
 - Kev is by Jared Palmer (Apache-2.0). The Qwen3.5 base and instruction models are by the Qwen team (Apache-2.0).
+- Gemma 4 E2B and E4B are by Google DeepMind (Apache-2.0). This integration uses their dense text
+  trunks and leaves the multimodal towers out of the packs.
 - [SemIf](https://github.com/TheoLeeCJ/SemIf/tree/1f2dea3e25379f9dfc98cb83c324f00ab5deda37),
-  by TheoLeeCJ (MIT), informed the direct option-token readout, exact prompt contract, and shared
-  evidence prefix used by the `semif-qwen3.5-*` packs. These are conversions of frozen Qwen models,
-  not SemIf fine-tuned checkpoints. The adapted prompt and method retain their
+  by TheoLeeCJ (MIT), informed the direct option-token readout and scoring method used by the
+  SemIf and Gemma integrations. The SemIf Qwen packs retain SemIf's prompt contract and evidence
+  prefix reuse; Gemma uses Google's own instruction template. These are conversions of frozen
+  instruction models, not SemIf fine-tuned checkpoints. The adapted prompt and method retain their
   [MIT notice](THIRD_PARTY_NOTICES).
 - The Laya parity fixtures reuse cases from [laya-web](https://github.com/nvkudva/laya-web), and the
   question-writing advice follows [brain function collapse](https://brainfunctioncollapse.com/laya).

@@ -19,6 +19,8 @@ const LOCAL_PACKS = {
   "semif-qwen3.5-0.8b": new URL("../tmp/semif-qwen3.5-0.8b-q8.kevala", import.meta.url).href,
   "semif-qwen3.5-2b": new URL("../tmp/semif-qwen3.5-2b-q8.kevala", import.meta.url).href,
   "semif-qwen3.5-4b": new URL("../tmp/semif-qwen3.5-4b-q8.kevala", import.meta.url).href,
+  "gemma-4-e2b": new URL("../tmp/gemma-4-e2b-q8.kevala", import.meta.url).href,
+  "gemma-4-e4b": new URL("../tmp/gemma-4-e4b-q8.kevala", import.meta.url).href,
 };
 /** `?from=checkpoint` converts the original weights in the browser instead of downloading the pack. */
 export const FROM = params.get("from") === "checkpoint" ? "checkpoint" : "pack";
@@ -59,6 +61,18 @@ export const MODEL_NOTES = {
     name: "SemIf-4B",
     short: "Direct option scores from a frozen Qwen3.5-4B model",
     large: true,
+  },
+  "gemma-4-e2b": {
+    name: "Gemma 4 E2B",
+    short: "Direct option scores from Gemma 4 E2B instruction weights; text only",
+    large: true,
+    requiresWebGPU: true,
+  },
+  "gemma-4-e4b": {
+    name: "Gemma 4 E4B",
+    short: "Direct option scores from Gemma 4 E4B instruction weights; text only",
+    large: true,
+    requiresWebGPU: true,
   },
 };
 
@@ -130,6 +144,7 @@ class Session extends EventTarget {
     this.#saved = readSaved();
     this.model = initialModel(this.#saved);
     this.backend = initialBackend(this.#saved);
+    if (this.backend === "wasm" && MODEL_NOTES[this.model]?.requiresWebGPU) this.backend = "auto";
     this.customUrl = this.#saved.customUrl || "";
     /** idle | loading | ready | error */
     this.status = "idle";
@@ -210,6 +225,7 @@ class Session extends EventTarget {
     this.cancel();
     this.unload();
     this.model = model;
+    if (this.backend === "wasm" && MODEL_NOTES[model]?.requiresWebGPU) this.backend = "auto";
     this.error = null;
     this.#persist();
     this.#emit();
@@ -220,6 +236,7 @@ class Session extends EventTarget {
    * a second, and a model still downloading finishes first (its pack is stored), then reopens.
    */
   setBackend(backend) {
+    if (backend === "wasm" && MODEL_NOTES[this.model]?.requiresWebGPU) return;
     if (backend === this.backend) return;
     this.backend = backend;
     this.#persist();

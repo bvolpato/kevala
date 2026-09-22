@@ -2,8 +2,10 @@
 //! WebAssembly and WebGPU.
 pub mod content;
 pub mod convert;
+pub mod convert_gemma;
 pub mod convert_kev;
 pub mod engine;
+pub mod gemma4;
 pub mod gpu;
 pub mod json;
 pub mod kernels;

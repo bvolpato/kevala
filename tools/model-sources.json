@@ -46,5 +46,25 @@
       "revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
       "prompt": "direct-options-v1"
     }
+  },
+  "gemma-4-e2b": {
+    "kind": "gemma",
+    "repo": "google/gemma-4-E2B-it",
+    "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+    "method": {
+      "repo": "https://github.com/TheoLeeCJ/SemIf",
+      "revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "prompt": "direct-options-v1"
+    }
+  },
+  "gemma-4-e4b": {
+    "kind": "gemma",
+    "repo": "google/gemma-4-E4B-it",
+    "revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+    "method": {
+      "repo": "https://github.com/TheoLeeCJ/SemIf",
+      "revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "prompt": "direct-options-v1"
+    }
   }
 }

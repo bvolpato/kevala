@@ -29,9 +29,11 @@ jobs:
           install: false
       - name: Tokenizers for the parity tests (pinned revisions)
         run: |
-          mkdir -p tmp/laya/tokenizer tmp/kev
+          mkdir -p tmp/laya/tokenizer tmp/kev tmp/gemma4/E2B tmp/gemma4/E4B
           curl -sfL https://huggingface.co/convaiinnovations/laya/resolve/1c5edc17a7acd8701df6fc341c0d179f1c62c982/tokenizer/tokenizer.json -o tmp/laya/tokenizer/tokenizer.json
           curl -sfL https://huggingface.co/jaredpalmer/kev-0.8b/resolve/54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8/tokenizer.json -o tmp/kev/tokenizer.json
+          curl -sfL https://huggingface.co/google/gemma-4-E2B-it/resolve/3e22461f65e89153144f8adb70e3b8c2cc9845a7/tokenizer.json -o tmp/gemma4/E2B/tokenizer.json
+          curl -sfL https://huggingface.co/google/gemma-4-E4B-it/resolve/ee0ef6023621cff504d758262d4e04895a5af4a2/tokenizer.json -o tmp/gemma4/E4B/tokenizer.json
       - run: cargo fmt --all --check
       - run: cargo test --release --workspace
       - name: Build WebAssembly flavors

@@ -1,7 +1,8 @@
 # Choosing and running models
 
 Laya is the demo default. Select Kev in the model menu to reveal its 0.8B, 4B, and 9B size slider.
-SemIf appears alongside Laya and Kev, with 0.8B, 2B, and 4B sizes. Switching families starts
+SemIf appears alongside Laya and Kev, with 0.8B, 2B, and 4B sizes. Gemma 4 appears as a fourth
+family with E2B and E4B dense text models. Switching families starts
 at the smallest size; saved choices and explicit model URLs retain their selected size. Changing
 the slider updates the download size and waits for **Load** before fetching weights. Their weights are
 distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs).
@@ -19,18 +20,21 @@ from `tmp/` instead.
 | `semif-qwen3.5-0.8b` | Frozen Qwen3.5-0.8B instruction model | Native option-label logits | 855 MB |
 | `semif-qwen3.5-2b` | Frozen Qwen3.5-2B instruction model | Native option-label logits | 2.13 GB |
 | `semif-qwen3.5-4b` | Frozen Qwen3.5-4B instruction model | Native option-label logits | 4.75 GB |
+| `gemma-4-e2b` | Frozen Gemma 4 E2B instruction model, text-only | Native option-label logits | 5.22 GB |
+| `gemma-4-e4b` | Frozen Gemma 4 E4B instruction model, text-only | Native option-label logits | 8.41 GB |
 
 Pack sizes above use decimal MB/GB; runtime memory is higher. Model names describe parameter sizes,
 not download sizes or memory requirements. The runtime's [`MODELS`](../js/src/source.js) catalog
 records pack bytes; conversion also writes a manifest with
-the byte count, SHA-256, source revisions, and configuration. Only Laya and Kev-0.8B support
+the byte count, SHA-256, source revisions, and configuration. The Gemma packs are exactly
+5,217,421,952 bytes (E2B) and 8,407,043,136 bytes (E4B). Only Laya and Kev-0.8B support
 `from: "checkpoint"` in the browser. All other choices load a previously converted pack.
 
 ```js
 import { Kevala } from "kevala";
 
 const model = await Kevala.load({
-  model: "kev-4b", // or "semif-qwen3.5-2b"
+  model: "kev-4b", // or "semif-qwen3.5-2b" or "gemma-4-e2b"
   backend: "webgpu",
   onProgress: console.log,
 });
@@ -42,6 +46,7 @@ model.dispose();
 ```
 
 <a id="how-semif-style-scoring-works"></a>
+<a id="how-semif-scoring-works"></a>
 
 ## How SemIf scoring works
 
@@ -57,11 +62,17 @@ adapter or additional training step. SemIf's upstream Qwen3.5 reference uses the
 0.8B and 2B choices extend the method to smaller models in Kevala. They need their own evaluation.
 Kev uses a different checkpoint: its LoRA adapter and pointer head are trained for decisions.
 
+Gemma 4 uses Google's frozen E2B or E4B instruction weights with the same direct option readout,
+but renders Gemma's own instruction chat template with thinking disabled. E2B and E4B are dense
+text models with per-layer embeddings, not MoE models. Their packs omit the source checkpoint's
+vision and audio towers. There is no SemIf adapter or additional decision training.
+
 Kevala quantizes the backbone to int8 and preserves the selected label rows in f32. It computes
-only those output rows rather than materializing logits for the full vocabulary. The shared
-evidence prefix runs once for a request's questions, and recent prefixes can be reused across
-requests. Prefix reuse compares exact token IDs from complete prompts, so splitting the prompt
-does not change its tokenization. Model caches are separate from the browser's stored pack files.
+only those output rows rather than materializing logits for the full vocabulary. For SemIf Qwen
+packs, the shared evidence prefix runs once for a request's questions, and recent prefixes can be
+reused across requests. Prefix reuse compares exact token IDs from complete prompts, so splitting
+the prompt does not change its tokenization. Model caches are separate from the browser's stored
+pack files.
 
 ### Interpreting the scores
 
@@ -83,16 +94,17 @@ Kevala also accepts a single-option choice and arbitrary JSON states; upstream S
 requires 2-16 options and a nonempty string, object, or list state. The checked compatibility is
 the prompt and numerical scoring method for inputs accepted by both.
 
-The prompt, direct option-logit readout, and evidence-prefix approach are adapted from SemIf's MIT
-code. The full notice is retained in [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES). Qwen and Kev
-weights retain their own model licenses and pinned provenance.
+The prompt and direct option-logit readout are adapted from SemIf's MIT code. Its evidence-prefix
+approach applies to the SemIf Qwen packs. The full notice is retained in
+[THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES). Qwen and Kev weights retain their own model licenses
+and pinned provenance.
 
 ## Memory and backends
 
 | Backend | What must fit |
 |---|---|
 | Browser WebGPU | Transformer weights and working buffers on the GPU; tokenizer, embeddings, and readout in a WASM coordinator |
-| Browser WASM / `kevala/node` | The whole Kev or SemIf pack in one WASM allocation, plus working memory |
+| Browser WASM / `kevala/node` | The whole Kev or SemIf pack in one WASM allocation, plus working memory; Gemma 4 packs exceed this limit |
 | Native 64-bit CLI | Pack weights and working memory in system RAM; the loader reads directly into aligned storage |
 
 Rust's aligned allocations in wasm32 must be under 2 GiB. Browser CPU and Node loading reject
@@ -118,13 +130,16 @@ It uses pinned revisions in [`tools/model-sources.json`](../tools/model-sources.
 the required checkpoints, and invokes the native converter serially. SemIf conversion
 first saves a tokenizer materialized by Transformers `AutoTokenizer`; using the raw checkpoint's
 `tokenizer.json` can change tokenization. See [Packs](packs.md#optional-kev-and-semif-models)
-for conversion and publication commands.
+for conversion and publication commands. Gemma conversion extracts the dense text trunk from the
+multimodal checkpoint and requires WebGPU in the browser or the native 64-bit CLI; its Kevala input
+limit is 4096 tokens.
 
 Weight binaries belong in the Hugging Face repository, not Git. Routine development checks do
 not require downloading or running every large model. Validate a new pack explicitly against its
 own upstream reference and record the source revision, precision, tokenizer, hardware, and backend.
-The README's Laya and Kev-0.8B parity numbers do not apply automatically to these additional models.
-See [the optional-model measurements](model-benchmarks.md) for conversion fidelity and seeded games.
+The README's Laya and Kev-0.8B parity numbers do not apply automatically to these additional models,
+including Gemma 4. See [Gemma 4 notes](gemma4.md) and [the optional-model measurements](model-benchmarks.md)
+for conversion fidelity and seeded games.
 
 For a local Tetris comparison, put the selected packs in `tmp/`, build the WASM modules, and run
 `pnpm serve`. The opt-in evaluation page accepts, for example:
@@ -132,6 +147,7 @@ For a local Tetris comparison, put the selected packs in `tmp/`, build the WASM 
 ```text
 http://127.0.0.1:8080/dev/tetris-eval.html#model=kev-4b&backend=webgpu&pieces=20&seeds=1,2,3&batch=4
 http://127.0.0.1:8080/dev/tetris-eval.html#model=semif-qwen3.5-0.8b&backend=webgpu&pieces=20&seeds=1,2,3&batch=4
+http://127.0.0.1:8080/dev/tetris-eval.html#model=gemma-4-e2b&backend=webgpu&pieces=20&seeds=1,2,3&batch=4
 ```
 
 Use the same seeds, piece limit, candidate descriptions, and batching when comparing models.

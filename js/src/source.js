@@ -68,6 +68,14 @@ export const MODELS = {
     hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala`,
     browserConvert: false, download, pack, packSha256, block: 32,
   }])),
+  ...Object.fromEntries([
+    ["e2b", "E2B", "3e22461f65e89153144f8adb70e3b8c2cc9845a7", 5217421952, "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df"],
+    ["e4b", "E4B", "ee0ef6023621cff504d758262d4e04895a5af4a2", 8407043136, "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be"],
+  ].map(([size, upstream, revision, pack, packSha256]) => [`gemma-4-${size}`, {
+    arch: "gemma4", label: `Gemma 4 ${upstream}, instruction model with direct option scoring`,
+    repo: `google/gemma-4-${upstream}-it`, revision, license: "apache-2.0",
+    browserConvert: false, pack, packSha256, block: 32,
+  }])),
 };
 
 export const UPSTREAM = MODELS.laya;

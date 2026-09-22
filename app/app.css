@@ -59,7 +59,7 @@
 .mf-size-line b { font-size: 0.82rem; color: var(--text-2); text-align: right; }
 .mf-slider { width: 100%; margin: 4px 0 0; accent-color: var(--accent); cursor: pointer; }
 .mf-slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
-.mf-ticks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); color: var(--muted); font: 0.7rem var(--mono); }
+.mf-ticks { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); color: var(--muted); font: 0.7rem var(--mono); }
 .mf-ticks span:nth-child(2) { text-align: center; }
 .mf-ticks span:last-child { text-align: right; }
 .mf-pack { color: var(--text-2); }
@@ -89,7 +89,7 @@
   .nav .wrap { gap: 10px; }
   .mchip .mc-state { display: none; }
 }
-@media (max-width: 760px) {
+@media (max-width: 900px) {
   .nav .wrap { height: auto; min-height: 58px; flex-wrap: wrap; padding: 8px 0; }
   .tabs-nav { order: 10; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .tabs-nav a[aria-current]::after { bottom: -4px; }
