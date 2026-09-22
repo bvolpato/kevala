@@ -5,7 +5,7 @@
 //! dynamic int8), so only the weights are 8-bit and they are widened to f32 in cache-sized
 //! panels right before use.
 
-use crate::simd::{dequant16, dot16, transpose4x4, F4};
+use crate::simd::{dequant16, dot16, F4};
 
 /// A weight matrix `[n, k]` (out features by in features), borrowed from a store.
 #[derive(Clone, Copy)]
@@ -28,10 +28,8 @@ impl Mat<'_> {
 }
 
 const NR: usize = 4;
-const Q8_NR: usize = 8;
-const KC: usize = 256;
 
-/// Widens `rows` rows starting at `n0` of a q8 matrix into `panel` (`rows * k` floats).
+/// Widens rows `n0..n0+NR` of a q8 matrix into `panel` (`NR * k` floats).
 fn dequant_panel(q: &[i8], scales: &[f32], k: usize, block: usize, n0: usize, rows: usize, panel: &mut [f32]) {
     let nb = k / block;
     for r in 0..rows {
@@ -46,59 +44,6 @@ fn dequant_panel(q: &[i8], scales: &[f32], k: usize, block: usize, n0: usize, ro
                 c += 16;
             }
         }
-    }
-}
-
-/// Widens one K chunk of up to eight Q8 rows into the row-major half of `panel`.
-/// Missing rows are zeroed so the same packed kernel handles a short N tail.
-fn dequant_panel8_chunk(
-    q: &[i8],
-    scales: &[f32],
-    full_k: usize,
-    block: usize,
-    n0: usize,
-    rows: usize,
-    k0: usize,
-    kc: usize,
-    panel: &mut [f32],
-) {
-    let nb = full_k / block;
-    let b0 = k0 / block;
-    for r in 0..rows {
-        let src = &q[(n0 + r) * full_k + k0..(n0 + r) * full_k + k0 + kc];
-        let sc = &scales[(n0 + r) * nb + b0..(n0 + r) * nb + b0 + kc / block];
-        let dst = &mut panel[r * kc..(r + 1) * kc];
-        for b in 0..kc / block {
-            let s = sc[b];
-            let mut c = b * block;
-            while c < (b + 1) * block {
-                unsafe { dequant16(src.as_ptr().add(c), s, dst.as_mut_ptr().add(c)) };
-                c += 16;
-            }
-        }
-    }
-    for r in rows..Q8_NR {
-        panel[r * kc..(r + 1) * kc].fill(0.0);
-    }
-}
-
-/// Transposes the dequantized eight-row panel into output-lane vectors. Each pair of calls writes
-/// four columns at a time, with a stride of eight floats between successive k positions.
-#[inline(always)]
-unsafe fn pack_panel8(panel: *const f32, packed: *mut f32, k: usize) {
-    let mut i = 0;
-    while i < k {
-        let dst = packed.add(i * Q8_NR);
-        transpose4x4(panel.add(i), panel.add(k + i), panel.add(2 * k + i), panel.add(3 * k + i), dst, Q8_NR);
-        transpose4x4(
-            panel.add(4 * k + i),
-            panel.add(5 * k + i),
-            panel.add(6 * k + i),
-            panel.add(7 * k + i),
-            dst.add(4),
-            Q8_NR,
-        );
-        i += 4;
     }
 }
 
@@ -155,50 +100,8 @@ unsafe fn micro_4x4(a: *const f32, w: *const f32, k: usize) -> [[f32; 4]; 4] {
     o
 }
 
-/// Adds a K chunk for up to four rows of x against eight output lanes. The packed weights are
-/// `[kc][8]`, so each scalar activation is broadcast across the two four-column vectors and the
-/// tile needs eight accumulators. `a` points at the first row and `stride` is the full activation K.
-#[inline(always)]
-unsafe fn micro_4x8<const ROWS: usize>(
-    a: *const f32,
-    stride: usize,
-    w: *const f32,
-    k0: usize,
-    kc: usize,
-    c: &mut [F4; 8],
-) {
-    let (a0, a1, a2, a3) = (a, a.wrapping_add(stride), a.wrapping_add(2 * stride), a.wrapping_add(3 * stride));
-    let mut i = 0;
-    while i < kc {
-        let wp = w.add(i * Q8_NR);
-        let (v0, v1) = (F4::load(wp), F4::load(wp.add(4)));
-        if ROWS >= 1 {
-            let x0 = F4::splat(*a0.add(k0 + i));
-            c[0] = c[0].fma(x0, v0);
-            c[1] = c[1].fma(x0, v1);
-        }
-        if ROWS >= 2 {
-            let x1 = F4::splat(*a1.add(k0 + i));
-            c[2] = c[2].fma(x1, v0);
-            c[3] = c[3].fma(x1, v1);
-        }
-        if ROWS >= 3 {
-            let x2 = F4::splat(*a2.add(k0 + i));
-            c[4] = c[4].fma(x2, v0);
-            c[5] = c[5].fma(x2, v1);
-        }
-        if ROWS >= 4 {
-            let x3 = F4::splat(*a3.add(k0 + i));
-            c[6] = c[6].fma(x3, v0);
-            c[7] = c[7].fma(x3, v1);
-        }
-        i += 1;
-    }
-}
-
-/// Which register tile `linear` uses: tile 0 is packed 4x8 for Q8 and 2x4 otherwise; tile 1 is
-/// 4x4. Native ARM defaults to 4x4; WebAssembly starts at tile 0 and the host can switch after
-/// timing both (`tune`).
+/// Which register tile `linear` uses: 0 = 2x4, 1 = 4x4. Native ARM defaults to 4x4; WebAssembly
+/// starts at 2x4 and the host can switch after timing both (`tune`).
 static TILE: std::sync::atomic::AtomicU8 =
     std::sync::atomic::AtomicU8::new(if cfg!(target_arch = "aarch64") { 1 } else { 0 });
 
@@ -250,96 +153,11 @@ unsafe fn dot4(a: *const f32, w: *const f32, k: usize) -> f32 {
     s0.add(s1).hsum()
 }
 
-/// Q8 path for tile 0. Eight output rows are widened and transposed one K chunk at a time, so the
-/// packed panel stays small enough for the hot weights and four-row activation tile to share L1.
-fn linear_q8_packed(
-    x: &[f32],
-    t: usize,
-    n: usize,
-    k: usize,
-    block: usize,
-    q: &[i8],
-    scales: &[f32],
-    bias: Option<&[f32]>,
-    out: &mut [f32],
-    panel: &mut Vec<f32>,
-) {
-    let tb = ((256 * 1024) / (k * 4)).clamp(8, 512) & !1;
-    panel.resize(2 * Q8_NR * KC, 0.0);
-    let mut t0 = 0;
-    while t0 < t {
-        let t1 = (t0 + tb).min(t);
-        let mut n0 = 0;
-        while n0 < n {
-            let cols = Q8_NR.min(n - n0);
-            let mut k0 = 0;
-            while k0 < k {
-                let kc = (k - k0).min(KC);
-                dequant_panel8_chunk(q, scales, k, block, n0, cols, k0, kc, &mut panel[..Q8_NR * kc]);
-                let wp = unsafe { panel.as_mut_ptr().add(Q8_NR * kc) };
-                unsafe { pack_panel8(panel.as_ptr(), wp, kc) };
-                let last_k = k0 + kc == k;
-                let mut r = t0;
-                while r < t1 {
-                    let rows = (t1 - r).min(4);
-                    let mut c = [F4::zero(); 8];
-                    if k0 != 0 {
-                        let mut prior = [[0.0; Q8_NR]; 4];
-                        for i in 0..rows {
-                            for j in 0..cols {
-                                prior[i][j] = out[(r + i) * n + n0 + j];
-                            }
-                        }
-                        for i in 0..rows {
-                            c[2 * i] = unsafe { F4::load(prior[i].as_ptr()) };
-                            c[2 * i + 1] = unsafe { F4::load(prior[i].as_ptr().add(4)) };
-                        }
-                    }
-                    unsafe {
-                        match rows {
-                            1 => micro_4x8::<1>(x.as_ptr().add(r * k), k, wp, k0, kc, &mut c),
-                            2 => micro_4x8::<2>(x.as_ptr().add(r * k), k, wp, k0, kc, &mut c),
-                            3 => micro_4x8::<3>(x.as_ptr().add(r * k), k, wp, k0, kc, &mut c),
-                            4 => micro_4x8::<4>(x.as_ptr().add(r * k), k, wp, k0, kc, &mut c),
-                            _ => unreachable!(),
-                        }
-                    }
-                    let mut sums = [[0.0; Q8_NR]; 4];
-                    for i in 0..rows {
-                        unsafe {
-                            c[2 * i].store(sums[i].as_mut_ptr());
-                            c[2 * i + 1].store(sums[i].as_mut_ptr().add(4));
-                        }
-                    }
-                    for i in 0..rows {
-                        for j in 0..cols {
-                            let b = if last_k { bias.map_or(0.0, |b| b[n0 + j]) } else { 0.0 };
-                            out[(r + i) * n + n0 + j] = sums[i][j] + b;
-                        }
-                    }
-                    r += rows;
-                }
-                k0 += kc;
-            }
-            n0 += cols;
-        }
-        t0 = t1;
-    }
-}
-
 /// out[t][n] = sum_k x[t][k] * w[n][k] (+ bias[n]) for t rows. `k % 4 == 0`, and q8 blocks are
 /// multiples of 16. `panel` is scratch, grown as needed.
 pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
     let (n, k) = (m.n(), m.k());
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
-    if tile() == 0 {
-        if let Mat::Q8 { block, q, scales, .. } = m {
-            if block > 0 && KC % block == 0 {
-                linear_q8_packed(x, t, n, k, block, q, scales, bias, out, panel);
-                return;
-            }
-        }
-    }
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
     let tb = ((256 * 1024) / (k * 4)).clamp(8, 512) & !1;
     if let Mat::Q8 { .. } = m {
