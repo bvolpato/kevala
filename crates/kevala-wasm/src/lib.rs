@@ -15,6 +15,9 @@ use kevala::kev::KevEngine;
 use kevala::model::{self, AlignedBuf, Batch, Scratch, Seg, ShardPlan, Trunk};
 use kevala::runtime::{self, Model};
 
+#[cfg(feature = "cpu-bench")]
+mod cpu_bench;
+
 #[derive(Default)]
 struct State {
     model: Option<Box<dyn Model>>,
