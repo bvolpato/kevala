@@ -73,46 +73,6 @@ unsafe fn micro_2x4(a0: *const f32, a1: *const f32, w: *const f32, k: usize) -> 
     ([c[0].hsum(), c[1].hsum(), c[2].hsum(), c[3].hsum()], [c[4].hsum(), c[5].hsum(), c[6].hsum(), c[7].hsum()])
 }
 
-/// Three rows of x against four weight rows: twelve accumulators. This keeps the
-/// four weight vectors live while reusing each for three input rows, without the
-/// register pressure of the 4x4 tile on x86.
-#[inline(always)]
-unsafe fn micro_3x4(a: *const f32, w: *const f32, k: usize) -> [[f32; 4]; 3] {
-    let (a0, a1, a2) = (a, a.add(k), a.add(2 * k));
-    let (w0, w1, w2, w3) = (w, w.add(k), w.add(2 * k), w.add(3 * k));
-    let (mut c00, mut c01, mut c02, mut c03) = (F4::zero(), F4::zero(), F4::zero(), F4::zero());
-    let (mut c10, mut c11, mut c12, mut c13) = (F4::zero(), F4::zero(), F4::zero(), F4::zero());
-    let (mut c20, mut c21, mut c22, mut c23) = (F4::zero(), F4::zero(), F4::zero(), F4::zero());
-    let mut i = 0;
-    while i < k {
-        let x0 = F4::load(a0.add(i));
-        let x1 = F4::load(a1.add(i));
-        let x2 = F4::load(a2.add(i));
-        let v0 = F4::load(w0.add(i));
-        c00 = c00.fma(x0, v0);
-        c10 = c10.fma(x1, v0);
-        c20 = c20.fma(x2, v0);
-        let v1 = F4::load(w1.add(i));
-        c01 = c01.fma(x0, v1);
-        c11 = c11.fma(x1, v1);
-        c21 = c21.fma(x2, v1);
-        let v2 = F4::load(w2.add(i));
-        c02 = c02.fma(x0, v2);
-        c12 = c12.fma(x1, v2);
-        c22 = c22.fma(x2, v2);
-        let v3 = F4::load(w3.add(i));
-        c03 = c03.fma(x0, v3);
-        c13 = c13.fma(x1, v3);
-        c23 = c23.fma(x2, v3);
-        i += 4;
-    }
-    [
-        [c00.hsum(), c01.hsum(), c02.hsum(), c03.hsum()],
-        [c10.hsum(), c11.hsum(), c12.hsum(), c13.hsum()],
-        [c20.hsum(), c21.hsum(), c22.hsum(), c23.hsum()],
-    ]
-}
-
 /// Four rows of x against four weight rows: sixteen accumulators, half the loads per
 /// multiply-add of `micro_2x4`. Needs 32 vector registers (ARM); on x86 it spills.
 #[inline(always)]
@@ -233,17 +193,6 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
                     }
                 }
                 if rows == NR {
-                    if tile() == 0 {
-                        while r + 3 <= t1 {
-                            let o = micro_3x4(x.as_ptr().add(r * k), wp, k);
-                            for (i, row) in o.iter().enumerate() {
-                                for j in 0..NR {
-                                    out[(r + i) * n + n0 + j] = row[j] + b(j);
-                                }
-                            }
-                            r += 3;
-                        }
-                    }
                     while r + 2 <= t1 {
                         let (o0, o1) = micro_2x4(x.as_ptr().add(r * k), x.as_ptr().add((r + 1) * k), wp, k);
                         for j in 0..NR {
