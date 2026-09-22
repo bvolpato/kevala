@@ -2,10 +2,11 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = [
+#   "playwright>=1.50",
 #   "selenium>=4.25,<5",
 # ]
 # ///
-"""Run the deterministic WebGPU benchmark in an isolated headless Firefox.
+"""Run the deterministic WebGPU benchmark in an isolated headless Firefox, or in a running Chrome.
 
 The page owns GPU timing and correctness checks. This wrapper only controls the
 browser, saves the structured result, and prints the scalar metric last so it
@@ -45,6 +46,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, help="write the structured page result to this JSON file")
     parser.add_argument("--max-dp", type=float, default=0.024, help="maximum parity probability difference")
     parser.add_argument("--headed", action="store_true", help="show Firefox instead of using headless mode")
+    parser.add_argument(
+        "--cdp",
+        default=os.environ.get("KEVALA_BENCH_CDP"),
+        help="run in the Chrome listening at this DevTools URL (a fresh context of it) instead of Firefox",
+    )
     return parser.parse_args()
 
 
@@ -181,9 +187,44 @@ def cache_metric(result: dict) -> float:
     return 0.0
 
 
+def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float) -> tuple[object, dict]:
+    """Loads `url` in a fresh context of a running Chrome and polls `expression` until it is done."""
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as pw:
+        browser = pw.chromium.connect_over_cdp(cdp)
+        context = browser.new_context(viewport={"width": 1280, "height": 800})
+        result: object = None
+        try:
+            page = context.new_page()
+            # Chrome slows covered windows: size this one and bring it to the front
+            cdp_session = context.new_cdp_session(page)
+            window = cdp_session.send("Browser.getWindowForTarget")
+            cdp_session.send("Browser.setWindowBounds", {"windowId": window["windowId"], "bounds": {"width": 1280, "height": 900, "windowState": "normal"}})
+            page.bring_to_front()
+            page.goto(url, timeout=timeout * 1000)
+            deadline = time.monotonic() + timeout
+            while time.monotonic() < deadline:
+                result = page.evaluate(f"() => {{ {expression} }}")
+                if result_is_done(result, kind):
+                    break
+                time.sleep(0.25)
+        except Exception as error:
+            result = {"error": f"browser runner: {error}"}
+        finally:
+            context.close()
+            version = browser.version
+            browser.close()  # over CDP this only disconnects
+    return result, {"browserName": "chrome", "browserVersion": version}
+
+
 def main() -> int:
     args = parse_args()
     url = args.url or DEFAULT_URLS[args.result]
+    result_expression = f"return window.{RESULT_GLOBALS[args.result]} || null;"
+    if args.cdp:
+        result, capabilities = poll_chrome(args.cdp, url, result_expression, args.result, args.timeout)
+        return finish(args, result, capabilities)
     options = Options()
     options.binary_location = os.environ.get("FIREFOX_BIN", "/usr/bin/firefox")
     options.set_preference("dom.webgpu.enabled", True)
@@ -198,8 +239,6 @@ def main() -> int:
     deadline = time.monotonic() + args.timeout
     result: object = None
     capabilities = dict(browser.capabilities)
-    result_global = RESULT_GLOBALS[args.result]
-    result_expression = f"return window.{result_global} || null;"
     try:
         browser.get(url)
         while time.monotonic() < deadline:
@@ -211,13 +250,17 @@ def main() -> int:
         result = {"error": f"browser runner: {error}"}
     finally:
         browser.quit()
+    return finish(args, result, capabilities)
 
+
+def finish(args: argparse.Namespace, result: object, capabilities: dict) -> int:
+    """Validates and saves a page result; prints the scalar metric last."""
     if not isinstance(result, dict):
         result = {"error": f"{args.result} page did not expose a completed result before timeout"}
     runner = {
         "browser": capabilities.get("browserName"),
         "browserVersion": capabilities.get("browserVersion"),
-        "headless": not args.headed,
+        "headless": not args.headed and not args.cdp,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
     }
     result["runner"] = runner
