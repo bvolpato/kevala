@@ -13,7 +13,7 @@ const SPLIT_TARGET = 128;
 /** Host side of `mm_splits`. */
 export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
   const tiles = Math.ceil(N / bn) * Math.ceil(T / bm);
-  if (tiles >= 96) return 1;
+  if (tiles >= Math.ceil((target * 3) / 4)) return 1;
   return Math.max(1, Math.min(8, Math.ceil(target / tiles), Math.floor(K / 128)));
 }
 
@@ -88,7 +88,7 @@ export async function matmulPipelines(device, wgsl) {
   return { layout, reduceLayout: rlayout, mm, reduce, ...config };
 }
 
-/** Floats of scratch the split-K partials need at most (tiles < 96, at most 8 splits). */
+/** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */
 export const SPLIT_SCRATCH = 8 * 96 * 64 * 64;
 
 function parseSubpackHeader(prefix) {
