@@ -73,7 +73,8 @@ jobs:
           pnpm exec node scripts/report-decisions.mjs \
             --results benchmarks/results/decisions-linux-2026-09-22 \
             --reference benchmarks/results/decisions-linux-2026-09-22/gemma-base-vs-it.json \
-            --output "$RUNNER_TEMP/decision-summary.json"
+            --output "$RUNNER_TEMP/decision-summary.json" \
+            --check-summary benchmarks/results/decisions-linux-2026-09-22/summary.json
 
   package:
     needs: [rust, js]
