@@ -68,9 +68,14 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
       var sc = -3.0e38;
       let inwin = w == 0u || (max(i, j) - min(i, j)) <= w;
       if (qi < nq && j < hi && inwin) {
-        var acc = 0.0;
-        for (var d = 0u; d < 64u; d++) { acc += qs[qi * 65u + d] * ks[kj * 65u + d]; }
-        sc = acc * 0.125;
+        var acc = vec4<f32>(0.0);
+        for (var d = 0u; d < 64u; d += 4u) {
+          let q = qi * 65u + d;
+          let k = kj * 65u + d;
+          acc += vec4<f32>(qs[q], qs[q + 1u], qs[q + 2u], qs[q + 3u])
+            * vec4<f32>(ks[k], ks[k + 1u], ks[k + 2u], ks[k + 3u]);
+        }
+        sc = (acc.x + acc.y + acc.z + acc.w) * 0.125;
       }
       ps[qi * 16u + kj] = sc;
     }
