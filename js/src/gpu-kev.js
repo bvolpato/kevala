@@ -77,7 +77,7 @@ export class GpuKev {
       d.queue.writeBuffer(b, 0, arr);
       return b;
     };
-    // a and b projections stacked into one [32, D] matrix per DeltaNet layer
+    // Stack a and b, then interleave their vec4 weights so adjacent gate lanes read together.
     this.ab = [];
     for (let i = 0; i < cfg.layers; i++) {
       if (cfg.full[i]) {
@@ -89,7 +89,13 @@ export class GpuKev {
       const both = new Float32Array(a.length + b.length);
       both.set(a);
       both.set(b, a.length);
-      this.ab.push(f32buf(both));
+      const interleaved = new Float32Array(both.length);
+      for (let k = 0; k < 256; k++) {
+        for (let j = 0; j < 32; j++) {
+          for (let c = 0; c < 4; c++) interleaved[(k * 32 + j) * 4 + c] = both[j * 1024 + k * 4 + c];
+        }
+      }
+      this.ab.push(f32buf(interleaved));
     }
     // rotary table [pos][32] of (cos, sin), f32 inverse frequencies and angles as in PyTorch
     const maxPos = cfg.max_state + cfg.max_branch;
