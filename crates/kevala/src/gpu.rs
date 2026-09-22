@@ -22,6 +22,8 @@ const SOURCES: &[(&str, &str)] = &[
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
+    ("matmul_half_pack", include_str!("wgsl/matmul_half_pack.wgsl")),
+    ("matmul_half", include_str!("wgsl/matmul_half.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
     ("rope", include_str!("wgsl/rope.wgsl")),
@@ -51,6 +53,8 @@ const SOURCES: &[(&str, &str)] = &[
 pub const KERNELS: &[&str] = &[
     "matmul",
     "matmul_wide",
+    "matmul_half_pack",
+    "matmul_half",
     "reduce",
     "norm",
     "rope",
