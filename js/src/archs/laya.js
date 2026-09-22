@@ -36,7 +36,10 @@ export default {
   about: "ModernBERT encoder + decision head",
 
   /** Tensor-parallel shards split attention heads, so at most one shard per head. */
-  maxShards: (header) => header.config.num_attention_heads,
+  maxShards: ({ config: c }) => Math.min(c.num_attention_heads, c.head_heads, Math.floor(c.intermediate_size / (c.block || 32)), Math.floor(c.head_ff / (c.block || 32))),
+
+  cpuProbe: ({ config: c }) => (c.block || 32) === 32 && c.hidden_size <= 4096 && c.intermediate_size <= 8192 && c.hidden_size * c.intermediate_size <= 4 * 1024 * 1024 && c.hidden_size % 32 === 0 && c.intermediate_size % 32 === 0
+    ? { hidden_size: c.hidden_size, intermediate_size: c.intermediate_size } : null,
 
   createGpu: (gpu, layout, header) => new GpuTrunk(gpu, layout, trunkConfig(header)),
 
@@ -119,7 +122,7 @@ export default {
   async convert(module, up, { signal, onProgress }) {
     onProgress?.({ phase: "download", file: "tokenizer and configs", loaded: 0, total: 0 });
     const src = await fetchUpstream(up, { signal, onProgress });
-    const w = await Wasm.create(module);
+    const w = await Wasm.create(module, 0);
     const it = src.chunks();
     // gather the safetensors header
     let buf = new Uint8Array(0);

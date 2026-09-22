@@ -19,6 +19,8 @@ use kevala::simd::F4;
 #[cfg(feature = "cpu-bench")]
 mod cpu_bench;
 
+mod cpu_tune;
+
 #[derive(Default)]
 struct State {
     model: Option<Box<dyn Model>>,

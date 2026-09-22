@@ -7,6 +7,9 @@ WebAssembly, so these measurements do not use a GPU.
 [Recorded samples and validation results](benchmarks/cpu-linux-2026-09-22.json) include
 the trial history, actual worker tiles, latency samples, and profile summaries.
 
+This report records the kernel sweep with fixed worker counts. The subsequent
+[automatic CPU selector](cpu-tuning.md) measures worker counts and exposes API overrides.
+
 ## Profile first
 
 Node's inspector sampled the production WebAssembly implementation on two medium and two
@@ -119,8 +122,9 @@ Firefox implementation produced these geometric means across the same three inpu
 
 Eight workers were 3.8× faster than one and 20.4% faster than four on this host. The 1/2/8-worker
 runs use one warmup and three samples per shape; the four-worker row uses the final five-sample run.
-The default already chooses at most eight workers, bounded by available cores and the model's shard
-limit. No hardware-specific worker count was hardcoded. Every final scaling worker selected tile 0.
+At the time of this sweep, the default chose at most eight workers, bounded by available cores and
+the model's shard limit. No hardware-specific worker count was hardcoded. Every final scaling worker
+selected tile 0. The subsequent automatic selector replaces that fixed cap with measured choices.
 
 The original eight-worker runtime measured 587.46 ms in a separate run, with one worker selecting
 tile 1. The final result is 18.6% lower, but that comparison includes the selector fix as well as the

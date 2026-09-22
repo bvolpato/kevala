@@ -2,6 +2,8 @@
 // checkpoint converted in the browser. Everything streams, so no stage holds a second copy of
 // the weights in JavaScript memory.
 
+import { clearTuning } from "./cpu-policy.js";
+
 export const CACHE_NAME = "kevala-v1";
 
 /** Pre-converted int8 packs of the models below, pinned to one commit of their Hugging Face repo. */
@@ -354,11 +356,12 @@ export async function isCached(model) {
   return (await store.keys()).some((e) => e.key === key);
 }
 
-/** Deletes every stored pack. */
+/** Deletes stored packs and CPU tuning profiles. */
 export async function clearCache() {
   const store = await openCache(true);
   for (const e of (await store?.keys()) || []) await store.remove(e.key);
   if (typeof caches !== "undefined") await caches.delete(CACHE_NAME).catch(() => {});
+  await clearTuning();
   return true;
 }
 

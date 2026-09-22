@@ -3,7 +3,9 @@
 import { readFile } from "node:fs/promises";
 
 const requiredExports = ["memory", "kevala_init", "kevala_prepare", "kevala_decide", "kevala_free",
-  "kevala_reduce_prepare", "kevala_reduce_partial_ptr", "kevala_reduce_add_partial", "kevala_reduce_finish"];
+  "kevala_reduce_prepare", "kevala_reduce_partial_ptr", "kevala_reduce_add_partial", "kevala_reduce_finish",
+  "kevala_cpu_tune_prepare", "kevala_cpu_tune_input_ptr", "kevala_cpu_tune_input_len",
+  "kevala_cpu_tune_output_ptr", "kevala_cpu_tune_output_len", "kevala_cpu_tune_run", "kevala_cpu_tune_drop"];
 const flavors = ["relaxed", "simd", "base"];
 
 for (const flavor of flavors) {

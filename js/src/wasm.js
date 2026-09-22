@@ -46,13 +46,12 @@ const dec = new TextDecoder();
 
 /** One instance of the module, in one of its roles (engine, coordinator, shard, converter). */
 export class Wasm {
-  static async create(module) {
+  static async create(module, tile) {
     const w = new Wasm();
     w.instance = await WebAssembly.instantiate(module, {});
     w.x = w.instance.exports;
     w.x.kevala_init();
-    w.tile = Wasm.tile ?? w.tune();
-    Wasm.tile = w.tile;
+    w.tile = tile ?? w.tune();
     w.x.kevala_set_tile(w.tile);
     return w;
   }

@@ -38,6 +38,8 @@ jobs:
         run: scripts/build-wasm.sh
       - name: Validate generated WebAssembly
         run: node scripts/check-wasm.mjs
+      - name: Check CPU calibration ABI
+        run: node scripts/check-cpu-tuning.mjs
       - name: Build CPU numerical harnesses
         run: scripts/build-cpu-bench.sh all
       - name: Check CPU kernels in every WebAssembly flavor
