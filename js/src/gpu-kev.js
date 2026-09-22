@@ -63,6 +63,7 @@ export class GpuKev {
     }
     this.cap = { T1: 0, T2: 0, P: 0, S: 0, R: 0 };
     this.stats = { hits: 0, extensions: 0, misses: 0, tokensSaved: 0 };
+    this.stateCacheEnabled = true;
   }
 
   write(dst, bytes) {
@@ -477,6 +478,7 @@ export class GpuKev {
     const { T2, branches, rows } = batch;
     const B = branches.length;
     this.R = rows.length;
+    if (this.stateCacheEnabled === false) this.lru = [];
     // size carries for the worst case first: growing them drops the cache, and the plan must
     // only reference slots that will still hold their data
     d.pushErrorScope("validation");

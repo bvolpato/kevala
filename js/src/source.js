@@ -28,6 +28,7 @@ export const MODELS = {
     // bytes of the upstream checkpoint and of the int8 pack
     download: 842609210,
     pack: 478886720,
+    packSha256: "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
     block: 32,
   },
   "kev-0.8b": {
@@ -41,6 +42,7 @@ export const MODELS = {
     browserConvert: true,
     download: 1620000000,
     pack: 857259584,
+    packSha256: "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2",
     block: 32,
   },
   "kev-4b": {

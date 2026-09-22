@@ -233,6 +233,7 @@ async function load(o) {
   checkCancelled();
   const arch = header.config.arch || "laya";
   const plugin = archPlugin(arch);
+  const requestedStateCache = o.stateCache !== false;
 
   // backend choice: WebGPU when the family has a GPU trunk, else shards when it can split
   let gpu = null;
@@ -252,6 +253,9 @@ async function load(o) {
     }
   }
   if (!gpu && o.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
+  if (!gpu && arch === "kev" && !requestedStateCache) {
+    throw Object.assign(new Error("stateCache: false requires WebGPU for Kev and SemIf; their WASM backend cannot disable the cache"), { code: "STATE_CACHE" });
+  }
   if (!gpu && (plugin?.maxShards?.(header) || 1) === 1) assertWasmPackSize(fullSize);
   const coord = await Wasm.create(module, 0);
   const cpuTuning = gpu ? null : await tuneCpu(coord, module, header, headerBytes, plugin, flavor, base, o, signal);
@@ -287,6 +291,7 @@ async function load(o) {
     if (gpu) {
       progress({ phase: "init", message: `WebGPU: ${gpu.name}` });
       engine.gpu = await withGpuErrors(gpu, () => plugin.createGpu(gpu, layouts[1], header), "creating the model");
+      engine.gpu.stateCacheEnabled = requestedStateCache;
       checkCancelled();
       sinks.push(new PieceSink(layouts[1], (dst, bytes) => engine.gpu.write(dst, bytes)));
     } else {
@@ -378,6 +383,12 @@ async function load(o) {
   checkCancelled();
   const warm = now() - tw;
   const cpuTiles = engine.gpu ? null : engine.local ? [engine.local.w.tile, ...engine.shards.map((r) => r.tile)] : [coord.tile];
+  const stateCache = {
+    requested: requestedStateCache,
+    supported: arch === "kev",
+    enabled: arch === "kev" ? (engine.gpu ? engine.gpu.stateCacheEnabled : true) : false,
+    backend: arch === "kev" ? (engine.gpu ? "webgpu" : "wasm") : null,
+  };
   post({
     type: "ready",
     info: {
@@ -391,6 +402,7 @@ async function load(o) {
       cpuTiles,
       cpuTuning,
       gpuTuning: engine.gpu?.tuning?.diagnostics || null,
+      stateCache,
       modalities: meta.modalities,
       model: header.model,
       config: header.config,
