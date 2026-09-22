@@ -205,6 +205,14 @@ const benchmarkShapes = [
 
 async function guard(wasm, flavor, outputPath) {
   const cases = [];
+  const check = (spec) => {
+    prepare(wasm, spec);
+    run(wasm, spec);
+    const actual = outputView(wasm);
+    const errors = compareOutput(actual, cpuReference(spec));
+    const checksum = checkChecksum(wasm, actual, spec);
+    cases.push({ ...spec, checksum, ...errors });
+  };
   for (const q8 of [false, true]) {
     const ks = q8 ? guardQ8Ks : guardF32Ks;
     for (const k of ks) {
@@ -212,18 +220,17 @@ async function guard(wasm, flavor, outputPath) {
         for (const n of guardNs) {
           for (const bias of [false, true]) {
             for (const tile of [0, 1]) {
-              const spec = { t, n, k, q8, bias, tile };
-              prepare(wasm, spec);
-              run(wasm, spec);
-              const actual = outputView(wasm);
-              const expected = cpuReference(spec);
-              const errors = compareOutput(actual, expected);
-              const checksum = checkChecksum(wasm, actual, spec);
-              cases.push({ ...spec, checksum, ...errors });
+              check({ t, n, k, q8, bias, tile });
             }
           }
         }
       }
+    }
+  }
+  // Cross the 1 MiB row block with odd row and column tails at model-sized inner dimensions.
+  for (const [t, k] of [[257, 1024], [75, 3584]]) {
+    for (const q8 of [false, true]) {
+      for (const tile of [0, 1]) check({ t, n: 5, k, q8, bias: true, tile });
     }
   }
   const report = {
