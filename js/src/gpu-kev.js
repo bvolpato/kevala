@@ -8,8 +8,8 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, encodeMatmul, matmulPipelines, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
-
+import { GpuWeights, pipeline, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
 
 let U;
 
@@ -43,6 +43,7 @@ export class GpuKev {
     this.attnTile = !!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads;
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
+    this.gpuKernel = gpu.kernel || "auto";
     this.cfg = cfg;
     this.dims = {
       linear: 2 * cfg.lin_key_heads * 128 + cfg.lin_heads * 128,
@@ -102,7 +103,8 @@ export class GpuKev {
     };
     const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
-    this.mm = await matmulPipelines(d, this.wgsl);
+    this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
+    this.mm = this.tuning.pipelines.generic;
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const f32buf = (arr) => {
@@ -389,9 +391,11 @@ export class GpuKev {
       if (prof) pass = prof.pass(enc, op.label || op.k);
       pass.setBindGroup(0, op.group);
       switch (op.k) {
-        case "mm":
-          encodeMatmul(pass, this.mm, op, T);
+        case "mm": {
+          const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, T) : this.gpuKernel;
+          encodeMatmul(pass, this.tuning.pipelines[kernel], op, T);
           break;
+        }
         case "rms":
           pass.setPipeline(this.p.RMS);
           pass.dispatchWorkgroups(T);

@@ -47,7 +47,7 @@ async function run() {
   const model = url || (choice === "local" ? `./tmp/${name}-q8.kevala` : name);
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
-  const kevala = await Kevala.load({ model, from, backend, threads, flavor, cache: q.get("cache") !== "0", gpuBaseline: q.get("baseline") === "1" });
+  const kevala = await Kevala.load({ model, from, backend, threads, flavor, gpuKernel: q.get("gpuKernel") || "auto", cache: q.get("cache") !== "0", gpuBaseline: q.get("baseline") === "1" });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
   const reference = q.get("reference") || "./tests/fixtures/golden-kev.json";
   const response = await fetch(reference);
@@ -79,6 +79,7 @@ async function run() {
     referenceSource: golden.source || golden.model,
     details,
     gpu: kevala.info.gpu,
+    gpuTuning: kevala.info.gpuTuning,
     threads: kevala.info.threads,
     flavor: kevala.info.flavor,
     selectedFlavor: kevala.info.flavor || null,

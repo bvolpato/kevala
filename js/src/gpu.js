@@ -71,7 +71,7 @@ export function reduceLayout(device) {
  * limits this kernel (1.6-1.75x faster on Apple GPUs); products and sums stay f32, and the
  * rounding (about 3e-4 relative) is far below the int8 weight quantization.
  */
-export async function matmulPipelines(device, wgsl) {
+export async function matmulPipelines(device, wgsl, kernel = "matmul") {
   const layout = matmulLayout(device);
   const rlayout = reduceLayout(device);
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
@@ -81,7 +81,7 @@ export async function matmulPipelines(device, wgsl) {
   const reduce = [];
   await Promise.all(
     [1, 2, 3, 4].flatMap((rows) => [
-      pipeline(device, wgsl("matmul", { ...config, rows }), `matmul_r${rows}`, pl).then((p) => (mm[rows] = p)),
+      pipeline(device, wgsl(kernel, { ...config, rows }), `${kernel}_r${rows}`, pl).then((p) => (mm[rows] = p)),
       pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
   );
@@ -132,8 +132,8 @@ export async function requestDevice({ baseline = false, features = null, powerPr
         maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1 << 30),
         maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
       };
-  // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`), so the baseline
-  // keeps them: they change no kernel
+  // Timestamps feed profiling and kernel selection. The baseline keeps them while
+  // omitting f16, so it still uses the generic matrix kernel.
   const optional = baseline ? ["timestamp-query"] : features || ["timestamp-query", "shader-f16", "subgroups"];
   const requiredFeatures = optional.filter((f) => adapter.features.has(f));
   const device = await adapter.requestDevice({ requiredLimits: want, requiredFeatures });
@@ -357,6 +357,7 @@ export class GpuTrunk {
     U = GPUBufferUsage;
     this.device = gpu.device;
     this.name = gpu.name;
+    this.gpuKernel = gpu.kernel || "auto";
     this.subgroup32 = !!gpu.subgroup32;
     // queries per attention workgroup: 64 for the tiled kernel, 16 for the others
     const tile = gpu.attentionTile || gpu.attentionTileShared;
@@ -385,7 +386,7 @@ export class GpuTrunk {
     const cfg = this.cfg;
     const pipe = (code, label) => pipeline(d, code, label);
     const kernel = (name, spec) => pipe(this.wgsl(name, spec), name);
-    [this.mm, this.pNorm, this.pRope, this.pAttn, this.pGeglu, this.pGather] = await Promise.all([
+    const [genericMm, pNorm, pRope, pAttn, pGeglu, pGather] = await Promise.all([
       matmulPipelines(d, this.wgsl),
       kernel("norm"),
       kernel("rope"),
@@ -393,6 +394,15 @@ export class GpuTrunk {
       kernel("geglu"),
       kernel("gather"),
     ]);
+    const { calibrateMatmul, selectedMatmulKernel } = await import("./gpu-tuning.js");
+    this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic: genericMm } });
+    this.selectMatmulKernel = selectedMatmulKernel;
+    this.mm = this.tuning.pipelines.generic;
+    this.pNorm = pNorm;
+    this.pRope = pRope;
+    this.pAttn = pAttn;
+    this.pGeglu = pGeglu;
+    this.pGather = pGather;
     this.globals = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
     const f32buf = (arr, usage = U.STORAGE) => {
       const b = d.createBuffer({ size: Math.max(16, arr.byteLength), usage: usage | U.COPY_DST });
@@ -572,9 +582,11 @@ export class GpuTrunk {
       if (prof) pass = prof.pass(enc, op.label || op.kind);
       pass.setBindGroup(0, op.group);
       switch (op.kind) {
-        case "mm":
-          encodeMatmul(pass, this.mm, op, tokens);
+        case "mm": {
+          const kernel = this.gpuKernel === "auto" ? this.selectMatmulKernel(this.tuning.selection, op.N, op.K, tokens) : this.gpuKernel;
+          encodeMatmul(pass, this.tuning.pipelines[kernel], op, tokens);
           break;
+        }
         case "norm":
           pass.setPipeline(this.pNorm);
           pass.dispatchWorkgroups(tokens);

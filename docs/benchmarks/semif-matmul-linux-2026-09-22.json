@@ -1,0 +1,448 @@
+{
+  "date": "2026-09-22",
+  "environment": {
+    "os": "Ubuntu Linux",
+    "browser": "Firefox 152.0.3",
+    "backend": "WebGPU via Vulkan",
+    "nvidia": "RTX 5070 Ti 16 GB, NVIDIA 595.71.05",
+    "amd": "Ryzen 9950X3D integrated GPU, RADV, Mesa 25.2.8",
+    "softwareAdapters": false,
+    "subgroups": false
+  },
+  "revisions": {
+    "baseline": "c6ab8799ff693fb671c63d5c4bef5648b938aac9",
+    "candidate": "runtime in the delivery commit containing this report",
+    "benchmarkResolverFix": "local resolver maps every model name to its matching local pack"
+  },
+  "method": {
+    "metric": "geometric mean of per-case median summed GPU kernel milliseconds",
+    "tokensByFamily": {
+      "semif": [105, 198, 606],
+      "kev": [31, 124, 532],
+      "laya": [47, 140, 512]
+    },
+    "warmups": 2,
+    "runs": {
+      "default": 5,
+      "nvidia-semif-qwen3.5-0.8b": 7
+    },
+    "uniqueStates": true,
+    "cache": "inference state cache bypassed; pack cache allowed",
+    "serialGpuRuns": true,
+    "tuning": {
+      "pointsPerShape": 5,
+      "tokenPoints": [16, 32, 48, 128, 512],
+      "pairedSamples": 3,
+      "dispatchesPerSample": 4,
+      "wideMinimumMedianBenefit": 0.05,
+      "wideMustWinEveryPair": true,
+      "widePairsMeetingThreshold": 2,
+      "scratchLimitMiB": 128,
+      "softBudgetMs": 1500,
+      "requires": ["shader-f16", "timestamp-query"],
+      "fallback": "generic kernel when optional features are unavailable or measurements are incomplete"
+    },
+    "caveats": [
+      "GPU timestamps exclude browser scheduling, CPU work, queue waits, and readback.",
+      "The 178 ms user profile was a SemIf 2B round trip. It is not directly comparable to this GPU-only aggregate.",
+      "These results describe one Linux workstation and do not establish cross-browser or state-of-the-art performance."
+    ]
+  },
+  "modelBenchmarks": [
+    {
+      "gpu": "nvidia",
+      "model": "semif-qwen3.5-0.8b",
+      "baseline": {
+        "metricMs": 49.58059422534066,
+        "caseMedianGpuMs": [24.857, 44.423, 110.377],
+        "loadS": 2.38,
+        "source": "tmp/semif-mm/baseline-semif.json"
+      },
+      "automatic": {
+        "metricMs": 41.329085234909066,
+        "caseMedianGpuMs": [20.738, 36.363, 93.614],
+        "loadS": 2.645,
+        "tuningMs": 483,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 5,
+        "selectedBuckets": {
+          "7168x1024": ["r1", "r2", "mid", "long"],
+          "8192x1024": ["r1", "r2", "r3", "mid", "long"],
+          "1024x3584": ["r1", "r2", "r3", "mid", "long"],
+          "5120x1024": ["r1", "r2", "r3", "mid", "long"],
+          "1024x2048": ["r1", "r2", "r3", "mid", "long"]
+        },
+        "source": "tmp/semif-mm/final-nvidia-auto08-v2.json"
+      },
+      "reductionPct": 16.642618184302126
+    },
+    {
+      "gpu": "nvidia",
+      "model": "semif-qwen3.5-2b",
+      "baseline": {
+        "metricMs": 103.09238557431075,
+        "caseMedianGpuMs": [50.458, 95.849, 226.549],
+        "loadS": 4.935,
+        "source": "tmp/semif-mm/baseline-semif2b.json"
+      },
+      "automatic": {
+        "metricMs": 80.48542807489665,
+        "caseMedianGpuMs": [39.293, 73.265, 181.109],
+        "loadS": 4.953,
+        "tuningMs": 582,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 5,
+        "selectedBuckets": {
+          "12288x2048": ["r1", "r2", "r3", "mid", "long"],
+          "8192x2048": ["r1", "r2", "r3", "mid", "long"],
+          "2048x6144": ["r1", "r2", "r3", "mid", "long"],
+          "5120x2048": ["mid", "long"],
+          "2048x2048": ["r1", "r2", "r3", "mid", "long"]
+        },
+        "source": "tmp/semif-mm/final-nvidia-auto2b.json"
+      },
+      "forcedWideMetricMs": 80.40169160885004,
+      "reductionPct": 21.928833418175802
+    },
+    {
+      "gpu": "nvidia",
+      "model": "semif-qwen3.5-4b",
+      "baseline": {
+        "metricMs": 246.94450386728278,
+        "caseMedianGpuMs": [119.53, 224.799, 560.437],
+        "loadS": 9.487,
+        "source": "tmp/semif-mm/final-nvidia-baseline-semif-qwen3.5-4b.json"
+      },
+      "automatic": {
+        "metricMs": 189.939614742001,
+        "caseMedianGpuMs": [92.775, 171.59, 430.451],
+        "loadS": 9.539,
+        "tuningMs": 751,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 5,
+        "source": "tmp/semif-mm/final-nvidia-auto-semif-qwen3.5-4b.json"
+      },
+      "reductionPct": 23.084089029136
+    },
+    {
+      "gpu": "nvidia",
+      "model": "kev-0.8b",
+      "baseline": {
+        "metricMs": 28.47399988100511,
+        "caseMedianGpuMs": [7.682, 29.864, 100.629],
+        "loadS": 2.228,
+        "source": "tmp/semif-mm/final-nvidia-baseline-kev-0.8b.json"
+      },
+      "automatic": {
+        "metricMs": 26.047828145071815,
+        "caseMedianGpuMs": [7.943, 26.356, 84.421],
+        "loadS": 2.612,
+        "tuningMs": 481,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 5,
+        "source": "tmp/semif-mm/final-nvidia-auto-kev-0.8b.json"
+      },
+      "reductionPct": 8.520656550089
+    },
+    {
+      "gpu": "nvidia",
+      "model": "kev-4b",
+      "baseline": {
+        "metricMs": 139.89414211712582,
+        "caseMedianGpuMs": [37.292, 141.489, 518.872],
+        "loadS": 8.753,
+        "source": "tmp/semif-mm/final-nvidia-baseline-kev-4b.json"
+      },
+      "automatic": {
+        "metricMs": 112.29814429469391,
+        "caseMedianGpuMs": [32.291, 110.584, 396.592],
+        "loadS": 9.343,
+        "tuningMs": 679,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 5,
+        "source": "tmp/semif-mm/final-nvidia-auto-kev-4b.json"
+      },
+      "reductionPct": 19.726342650808
+    },
+    {
+      "gpu": "nvidia",
+      "model": "kev-9b",
+      "baseline": {
+        "metricMs": 247.72027850571254,
+        "caseMedianGpuMs": [66.707, 250.45, 909.897],
+        "loadS": 17.473,
+        "source": "tmp/semif-mm/final-nvidia-baseline-kev-9b.json"
+      },
+      "automatic": {
+        "metricMs": 196.24619441317466,
+        "caseMedianGpuMs": [56.148, 190.625, 706.138],
+        "loadS": 18.519,
+        "tuningMs": 1182,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 5,
+        "source": "tmp/semif-mm/final-nvidia-auto-kev-9b.json"
+      },
+      "reductionPct": 20.779116026769
+    },
+    {
+      "gpu": "nvidia",
+      "model": "laya",
+      "baseline": {
+        "metricMs": 19.6237007129907,
+        "caseMedianGpuMs": [7.561, 20.38, 49.041],
+        "loadS": 1.731,
+        "source": "tmp/semif-mm/final-nvidia-baseline-laya.json"
+      },
+      "automatic": {
+        "metricMs": 15.5435943775548,
+        "caseMedianGpuMs": [5.901, 16.877, 37.708],
+        "loadS": 2.225,
+        "tuningMs": 595,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": false,
+        "measuredShapes": 6,
+        "source": "tmp/semif-mm/final-nvidia-auto-laya.json"
+      },
+      "reductionPct": 20.791727284828,
+      "integration": "same selected wide matrix path, with Laya's existing non-Qwen layouts"
+    },
+    {
+      "gpu": "amd-integrated",
+      "model": "semif-qwen3.5-0.8b",
+      "baseline": {
+        "metricMs": 1230.069232963367,
+        "caseMedianGpuMs": [546.161, 1094.699, 3112.958],
+        "loadS": 2.533,
+        "source": "tmp/semif-mm/final-amd-baseline08.json"
+      },
+      "automatic": {
+        "metricMs": 1231.5062044045383,
+        "caseMedianGpuMs": [545.047, 1096.945, 3123.856],
+        "loadS": 4.636,
+        "tuningMs": 2174,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": true,
+        "measuredShapes": 2,
+        "selectedBuckets": {
+          "7168x1024": [],
+          "8192x1024": []
+        },
+        "source": "tmp/semif-mm/final-amd-auto08.json"
+      },
+      "reductionPct": -0.11682037097288944,
+      "interpretation": "effectively unchanged within run-to-run variation; generic was selected"
+    },
+    {
+      "gpu": "amd-integrated",
+      "model": "laya",
+      "baseline": {
+        "metricMs": 477.4463300299852,
+        "caseMedianGpuMs": [148.909, 508.206, 1438.179],
+        "loadS": 1.511,
+        "source": "tmp/semif-mm/final-amd-baseline-laya.json"
+      },
+      "automatic": {
+        "metricMs": 475.02522612741126,
+        "caseMedianGpuMs": [147.963, 505.886, 1432.004],
+        "loadS": 3.188,
+        "tuningMs": 1695,
+        "tuningMethod": "timestamp-query",
+        "tuningTruncated": true,
+        "measuredShapes": 3,
+        "selectedKernel": "generic",
+        "source": "tmp/semif-mm/final-amd-auto-laya.json"
+      },
+      "reductionPct": 0.507094462831,
+      "interpretation": "effectively unchanged within run-to-run variation; generic was selected"
+    }
+  ],
+  "caseKernelMs": {
+    "gpu": "nvidia",
+    "unit": "median GPU milliseconds per request",
+    "kernels": [
+      "mm.gate_up",
+      "mm.qkvz",
+      "mm.down",
+      "mm.out",
+      "mm.qkv",
+      "mm.o",
+      "recur",
+      "attn",
+      "gates",
+      "conv",
+      "silumul",
+      "rms",
+      "gnorm",
+      "aprep"
+    ],
+    "semif-qwen3.5-0.8b": [
+      {
+        "tokens": 105,
+        "baseline": [5.063, 4.684, 3.199, 1.514, 1.117, 0.832, 5.589, 0.721, 0.624, 0.373, 0.221, 0.513, 0.181, 0.079],
+        "automatic": [4.159, 3.555, 2.279, 1.089, 0.752, 0.354, 5.329, 0.617, 0.732, 0.378, 0.232, 0.499, 0.178, 0.079]
+      },
+      {
+        "tokens": 198,
+        "baseline": [9.853, 8.454, 5.791, 2.877, 1.916, 0.852, 10.372, 1.493, 0.626, 0.549, 0.234, 0.519, 0.215, 0.105],
+        "automatic": [7.766, 6.362, 4.503, 1.998, 1.414, 0.654, 9.625, 1.432, 0.629, 0.554, 0.257, 0.514, 0.221, 0.103]
+      },
+      {
+        "tokens": 606,
+        "baseline": [22.45, 19.093, 13.813, 6.033, 4.27, 2.294, 30.505, 8.042, 0.736, 1.225, 0.389, 0.633, 0.432, 0.207],
+        "automatic": [16.978, 14.254, 11.195, 4.43, 3.011, 1.465, 29.973, 8.325, 0.747, 1.309, 0.383, 0.637, 0.444, 0.205]
+      }
+    ],
+    "semif-qwen3.5-2b": [
+      {
+        "tokens": 105,
+        "baseline": [17.624, 9.256, 9.707, 2.81, 1.849, 0.834, 5.657, 0.683, 0.501, 0.353, 0.239, 0.538, 0.183, 0.084],
+        "automatic": [12.862, 7.095, 7.099, 1.948, 1.371, 0.612, 5.388, 0.618, 0.528, 0.365, 0.257, 0.525, 0.295, 0.078]
+      },
+      {
+        "tokens": 198,
+        "baseline": [34.391, 18.422, 18.228, 5.399, 4.026, 1.623, 9.793, 1.448, 0.52, 0.533, 0.285, 0.609, 0.22, 0.102],
+        "automatic": [24.541, 12.107, 14.042, 3.973, 3.097, 1.356, 10.117, 1.389, 0.769, 0.533, 0.289, 0.525, 0.213, 0.106]
+      },
+      {
+        "tokens": 606,
+        "baseline": [76.418, 37.943, 46.256, 11.386, 8.135, 4.273, 29.981, 7.608, 0.672, 1.295, 0.926, 0.685, 0.438, 0.202],
+        "automatic": [56.821, 29.183, 34.458, 8.414, 5.899, 3.086, 30.295, 8.564, 0.69, 1.269, 0.811, 0.704, 0.443, 0.208]
+      }
+    ]
+  },
+  "matrixMedians": {
+    "gpu": "nvidia",
+    "unit": "GPU milliseconds; three samples after one warmup",
+    "kernels": ["runtime", "matmul_wide_h@256:auto"],
+    "cases": [
+      {"shape": "7x132x96", "runtime": 0.0065815625, "wide": 0.0049955},
+      {"shape": "31x132x160", "runtime": 0.0119144375, "wide": 0.009785625},
+      {"shape": "45x132x288", "runtime": 0.016735, "wide": 0.0122771875},
+      {"shape": "441x12288x2048", "runtime": 2.221088, "wide": 1.698048},
+      {"shape": "441x2048x6144", "runtime": 1.361648, "wide": 0.99344},
+      {"shape": "441x19456x2560", "runtime": 4.443296, "wide": 3.156704},
+      {"shape": "441x2560x9728", "runtime": 2.27632, "wide": 1.600928}
+    ],
+    "crossKernelAgreement": "all seven runtime/wide variants matched exactly",
+    "source": "tmp/semif-mm/final-nvidia-tiles.json"
+  },
+  "amdMatrixMedians": {
+    "unit": "GPU milliseconds; three samples after one warmup",
+    "cases": [
+      {"shape": "7x132x96", "runtime": 0.0091746875, "wide": 0.0102131640625},
+      {"shape": "31x132x160", "runtime": 0.01717123046875, "wide": 0.01612830078125},
+      {"shape": "45x132x288", "runtime": 0.03085515625, "wide": 0.030045390625},
+      {"shape": "105x7168x1024", "runtime": 6.083271538461539, "wide": 5.959528461538462},
+      {"shape": "441x7168x1024", "runtime": 21.30246, "wide": 20.969746666666666},
+      {"shape": "441x8192x1024", "runtime": 24.369083333333332, "wide": 23.837926666666664},
+      {"shape": "441x1024x3584", "runtime": 10.824978333333334, "wide": 10.597075},
+      {"shape": "441x12288x2048", "runtime": 71.88713, "wide": 70.68907},
+      {"shape": "441x2048x6144", "runtime": 36.270305, "wide": 35.382995}
+    ],
+    "crossKernelAgreement": "all nine runtime/wide variants matched exactly",
+    "source": "tmp/semif-mm/final-amd-tiles.json"
+  },
+  "correctness": {
+    "modelParity": [
+      {"gpu": "nvidia", "model": "semif-qwen3.5-0.8b", "questions": 12, "argmax": "12/12", "maxDp": 0.03082984685897827, "limit": 0.032, "status": "pass"},
+      {"gpu": "nvidia", "model": "semif-qwen3.5-2b", "questions": 12, "argmax": "12/12", "maxDp": 0.02898520231246948, "limit": 0.031, "status": "pass"},
+      {"gpu": "nvidia", "model": "semif-qwen3.5-4b", "questions": 12, "argmax": "12/12", "maxDp": 0.020469486713409424, "limit": 0.022, "status": "pass"},
+      {"gpu": "nvidia", "model": "kev-4b", "questions": 13, "argmax": "13/13", "maxDp": 0.009944379329681396, "limit": 0.011, "status": "pass"},
+      {"gpu": "nvidia", "model": "kev-9b", "questions": 5, "argmax": "5/5", "maxDp": 0.004692256450653076, "limit": 0.005, "status": "pass"},
+      {"gpu": "nvidia", "model": "laya", "questions": 41, "argmax": "41/41", "maxDp": 0.023506444195624587, "limit": 0.024, "status": "pass"},
+      {"gpu": "amd-integrated", "model": "laya", "questions": 41, "argmax": "41/41", "maxDp": 0.023506444195624587, "limit": 0.024, "status": "pass"},
+      {"gpu": "amd-integrated", "model": "semif-qwen3.5-0.8b", "questions": 12, "argmax": "12/12", "maxDp": 0.031412363052368164, "limit": 0.032, "status": "pass"}
+    ],
+    "gpuGuards": {
+      "basicKernels": {"status": "pass", "maxError": 0.00000947713851928711},
+      "attention": {"status": "pass", "shapes": 17, "verificationRepeats": 3, "maxErrors": {"attention": 2.863775786510203e-7, "attention_tile_shared": 0.00048732757568359375}, "limit": 0.002},
+      "matrix": {"status": "pass", "nvidiaShapes": 7, "crossKernelExact": true, "maxAbsVsCpu": 0.014605045318603516, "maxRelativeVsCpu": 0.009383849799633026},
+      "laya": {"status": "pass", "questions": 41, "argmax": "41/41", "maxDp": 0.023506444195624587, "limit": 0.024},
+      "kev-0.8b": {"status": "pass", "questions": 13, "argmax": "13/13", "maxDp": 0.010213673114776611, "limit": 0.011},
+      "cache": {"status": "pass", "misses": 1, "hits": 1, "extensions": 1, "hitVsMissMaxDp": 0, "extensionVsFreshMaxDp": 0}
+    },
+    "baselineComparison": {
+      "model": "semif-qwen3.5-0.8b",
+      "scope": "12 reference questions",
+      "finalDetailsEqualBaseline": true,
+      "note": "The final automatic run's probability arrays and decisions match the baseline parity details byte-for-byte."
+    },
+    "source": "tmp/semif-mm/final-guard and tmp/semif-mm/final-*parity.json"
+  },
+  "featureFallbacks": [
+    {
+      "model": "semif-qwen3.5-0.8b",
+      "gpu": "nvidia",
+      "missing": "shader-f16",
+      "available": ["timestamp-query"],
+      "tuningMethod": "generic",
+      "reason": "no-shader-f16",
+      "metric": "GPU timestamp",
+      "metricMs": 22.457,
+      "loadS": 2.227,
+      "smoke": "pass; one measured case"
+    },
+    {
+      "model": "semif-qwen3.5-0.8b",
+      "gpu": "nvidia",
+      "missing": "timestamp-query",
+      "available": ["shader-f16"],
+      "tuningMethod": "generic",
+      "reason": "no-timestamp-query",
+      "metric": "wall p50",
+      "metricMs": 100,
+      "loadS": 2.014,
+      "smoke": "pass; one measured case"
+    }
+  ],
+  "tetrisSmoke": [
+    {
+      "model": "semif-qwen3.5-2b",
+      "gpu": "nvidia",
+      "pieces": 5,
+      "seeds": [3],
+      "games": 1,
+      "batchSize": 4,
+      "decisionBatches": 14,
+      "decisionsPerSec": 0.5939653124257543,
+      "p50TotalMs": 1800,
+      "survivedGames": 1,
+      "moves": 5,
+      "legalChoices": true,
+      "finiteProbabilities": true,
+      "source": "tmp/semif-mm/final-tetris-semif2b.json"
+    },
+    {
+      "model": "kev-4b",
+      "gpu": "nvidia",
+      "pieces": 5,
+      "seeds": [3],
+      "games": 1,
+      "batchSize": 4,
+      "decisionBatches": 14,
+      "decisionsPerSec": 0.6943480072212194,
+      "p50TotalMs": 1399,
+      "survivedGames": 1,
+      "moves": 5,
+      "legalChoices": true,
+      "finiteProbabilities": true,
+      "source": "tmp/semif-mm/final-tetris-kev4b.json"
+    }
+  ],
+  "references": {
+    "semif": "https://github.com/TheoLeeCJ/SemIf",
+    "deepgemmHeuristics": "https://github.com/deepseek-ai/DeepGEMM/blob/559d79fb6994a58b8a15b4b93bf13ccc16edf247/csrc/jit_kernels/heuristics/sm90.hpp"
+  },
+  "limitations": [
+    "The Firefox adapter name is anonymized as WebGPU; the Vulkan ICD identifies the selected GPU.",
+    "The selector intentionally prefers generic on AMD when the wide kernel does not clear its paired 5% stability gate.",
+    "Tetris entries are short functional smokes with one seed and five pieces, not quality or throughput evaluations.",
+    "The raw benchmark JSON files under tmp/ are local evidence; this curated file contains the reproducible values needed for review without duplicating full logs."
+  ]
+}

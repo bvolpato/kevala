@@ -21,6 +21,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("common", include_str!("wgsl/common.wgsl")),
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
+    ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
     ("rope", include_str!("wgsl/rope.wgsl")),
@@ -49,6 +50,7 @@ const SOURCES: &[(&str, &str)] = &[
 /// The kernels a runtime can ask for (everything but the snippets).
 pub const KERNELS: &[&str] = &[
     "matmul",
+    "matmul_wide",
     "reduce",
     "norm",
     "rope",
@@ -209,6 +211,7 @@ impl Spec {
             ("BN_MINUS_1", (bn - 1).to_string()),
             ("SPLIT_TARGET", self.split_target.to_string()),
             ("WS_LEN", (8 * bn).to_string()),
+            ("WIDE_WS_LEN", (16 * bn).to_string()),
             ("ACC_LEN", (self.rows * self.groups).to_string()),
             ("WV_LEN", (2 * self.groups).to_string()),
             ("N", n.to_string()),
@@ -229,6 +232,9 @@ impl Spec {
 pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     if !KERNELS.contains(&kernel) {
         return Err(format!("no GPU kernel named {kernel:?}"));
+    }
+    if kernel == "matmul_wide" && spec.groups != 1 {
+        return Err("matmul_wide requires groups=1".into());
     }
     let vars = spec.vars();
     let mut out = String::new();

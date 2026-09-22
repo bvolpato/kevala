@@ -243,6 +243,7 @@ async function load(o) {
     } else {
       try {
         gpu = await requestDevice({ baseline: o.gpuBaseline, features: o.gpuFeatures, powerPreference: o.gpuPowerPreference });
+        gpu.kernel = o.gpuKernel || "auto";
         activeGpu = gpu;
       } catch (e) {
         throw Object.assign(new Error(`WebGPU: ${e.message}`, { cause: e }), { code: "WEBGPU_INIT" });
@@ -389,6 +390,7 @@ async function load(o) {
       flavor,
       cpuTiles,
       cpuTuning,
+      gpuTuning: engine.gpu?.tuning?.diagnostics || null,
       modalities: meta.modalities,
       model: header.model,
       config: header.config,
