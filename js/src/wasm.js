@@ -3,6 +3,8 @@
 // Three builds ship side by side and the best one the browser validates is used:
 // relaxed (SIMD128 + relaxed-simd fused multiply-add), simd (SIMD128), base (no SIMD).
 
+import { selectCpuTile } from "./cpu-tune.js";
+
 const PROBES = {
   relaxed: [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 15, 1, 13, 0, 65, 1, 253, 15, 65, 2, 253, 15, 253, 128, 2, 11],
   simd: [0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 123, 3, 2, 1, 0, 10, 10, 1, 8, 0, 65, 0, 253, 15, 253, 98, 11],
@@ -55,18 +57,9 @@ export class Wasm {
     return w;
   }
 
-  /** Times both CPU register tiles once (a few ms) and returns the faster one. */
+  /** Times both CPU register tiles and returns the selected tile. */
   tune() {
-    const time = (t) => {
-      this.x.kevala_set_tile(t);
-      // warm up first: timings taken before the engine's optimizing tier kicks in mislead
-      for (let i = 0; i < 4; i++) this.x.kevala_tile_probe();
-      const t0 = performance.now();
-      for (let i = 0; i < 2; i++) this.x.kevala_tile_probe();
-      return performance.now() - t0;
-    };
-    time(0);
-    return time(1) < time(0) ? 1 : 0;
+    return selectCpuTile(this.x);
   }
 
   get memory() {

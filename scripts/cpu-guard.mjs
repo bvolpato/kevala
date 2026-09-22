@@ -28,4 +28,4 @@ for (const [name, kind, path, tolerance] of checks) {
     process.exit(1);
   }
 }
-console.log("CPU model and cache guards passed");
+console.log("CPU model parity and cache probability checks passed; native kev_cache tests verify cache counters.");

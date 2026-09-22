@@ -101,9 +101,7 @@ def url_with_backend(url: str, backend: str) -> str:
                 pieces[index] = f"backend={backend}"
                 return urlunsplit((parts.scheme, parts.netloc, parts.path, parts.query, "&".join(pieces)))
         return urlunsplit((parts.scheme, parts.netloc, parts.path, parts.query, f"{parts.fragment}&backend={backend}"))
-    field = "query"
-    source = getattr(parts, field)
-    params = parse_qsl(source, keep_blank_values=True)
+    params = parse_qsl(parts.query, keep_blank_values=True)
     replaced = False
     output = []
     for key, value in params:
@@ -116,8 +114,6 @@ def url_with_backend(url: str, backend: str) -> str:
     if not replaced:
         output.append(("backend", backend))
     updated = urlencode(output)
-    if field == "fragment":
-        return urlunsplit((parts.scheme, parts.netloc, parts.path, parts.query, updated))
     return urlunsplit((parts.scheme, parts.netloc, parts.path, updated, parts.fragment))
 
 
@@ -274,6 +270,7 @@ def cache_metric(result: dict, expected_backend: str = "webgpu") -> float:
     if expected_backend == "webgpu" or stats is not None:
         if not isinstance(stats, dict) or any(stats.get(key) != 1 for key in ("hits", "misses", "extensions")):
             raise ValueError(f"cache check did not exercise a hit, miss and extension: {stats}")
+    result["cacheCountersVerified"] = stats is not None
     return 0.0
 
 
