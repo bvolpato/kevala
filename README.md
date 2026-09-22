@@ -222,14 +222,15 @@ The repository pins Rust 1.95.0 in [`rust-toolchain.toml`](rust-toolchain.toml),
 `wasm32-unknown-unknown` target and `rustfmt`. Python helpers generate reference fixtures and automate
 browser GPU benchmarks through `uv`.
 
-The three generated WebAssembly modules live in `js/src/` during this migration so a fresh checkout,
-the static site, and local Node imports work immediately. `pnpm build` and the package `prepack` hook
-rebuild them from the locked Rust dependency graph. CI validates all three modules, validates the packed
-tarball, and stages Pages from an explicit public asset allowlist. Before removing the tracked copies,
-set GitHub's Pages source to **GitHub Actions** in repository Settings → Pages → Build and deployment,
-then verify one successful `main` deployment and its package artifact checks (the workflow also supports
-`workflow_dispatch` on `main` for this verification). A follow-up change can then remove the tracked
-copies; keeping them checked in until that point makes source checkouts safe and makes drift reviewable.
+WebAssembly binaries are generated artifacts and are not tracked in Git. After cloning, run
+`pnpm build` before serving the site or using local Node imports. The modules are written beside the
+runtime in `js/src/` and ignored by Git. Rust source, `Cargo.lock`, and the pinned toolchain define the
+build; CI builds and validates all three flavors on every PR.
+
+`pnpm pack` rebuilds the modules through `prepack`, then includes them in the package. Registry and
+CDN users receive ready-to-use binaries and do not need Rust. Pages deploys the validated site artifact
+from CI, with its generated modules included. The repository's Pages source must be **GitHub Actions**.
+Keep build outputs in CI artifacts, deployed sites, and published packages; review source changes in Git.
 
 For reproducible GPU timing, model parity checks, and Firefox/Linux measurements, see
 [docs/gpu-benchmarks.md](docs/gpu-benchmarks.md). The benchmark distinguishes GPU kernel time
