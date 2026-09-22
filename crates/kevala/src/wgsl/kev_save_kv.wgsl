@@ -11,5 +11,5 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   if (t >= g.T) { return; }
   let c = wg.y * 256u + l;
   let row = segs[tok[t].x].kvdst + tok[t].y;
-  KV[row * 1024u + c] = PROJ[t * 5120u + 4096u + c];
+  KV[row * ATTN_KV + c] = PROJ[t * ATTN_WIDTH + 2u * ATTN_Q + c];
 }

@@ -11,7 +11,7 @@ const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/e75a06d9329e
 
 /**
  * Known models, by name. Each downloads its pre-converted pack (`hosted`); when that is
- * unreachable, it converts in the browser from the upstream Hugging Face repos at a pinned revision.
+ * unreachable, models with browserConvert can convert their pinned upstream checkpoint.
  */
 export const MODELS = {
   laya: {
@@ -41,6 +41,32 @@ export const MODELS = {
     pack: 857259584,
     block: 32,
   },
+  "kev-4b": {
+    arch: "kev", label: "Kev-4B, Qwen3.5 decoder with a trained pointer head",
+    repo: "jaredpalmer/kev-4b", revision: "485ace8703592fcf405488b262449990824cfed1",
+    base: { repo: "Qwen/Qwen3.5-4B-Base", revision: "1001bb4d826a52d1f399e183466143f4da7b741b" },
+    license: "apache-2.0", hosted: `${PACKS}/kev-4b-q8.kevala`,
+    browserConvert: false, download: 9502534940, pack: 4756384192, block: 32,
+    packSha256: "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+  },
+  "kev-9b": {
+    arch: "kev", label: "Kev-9B, Qwen3.5 decoder with a trained pointer head",
+    repo: "jaredpalmer/kev-9b", revision: "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+    base: { repo: "Qwen/Qwen3.5-9B-Base", revision: "68c46c4b3498877f3ef123c856ecfde50c39f404" },
+    license: "apache-2.0", hosted: `${PACKS}/kev-9b-q8.kevala`,
+    browserConvert: false, download: 19530970823, pack: 8963899968, block: 32,
+    packSha256: "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+  },
+  ...Object.fromEntries([
+    ["0.8b", "0.8B", "2fc06364715b967f1860aea9cf38778875588b17", 1769980465, 855225984, "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a"],
+    ["2b", "2B", "15852e8c16360a2fea060d615a32b45270f8a8fc", 4571274023, 2127742976, "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2"],
+    ["4b", "4B", "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a", 9342907469, 4751303104, "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e"],
+  ].map(([size, upstream, revision, download, pack, packSha256]) => [`semif-qwen3.5-${size}`, {
+    arch: "kev", label: `SemIf-style Qwen3.5-${upstream}, frozen model with direct option scoring`,
+    repo: `Qwen/Qwen3.5-${upstream}`, revision, license: "apache-2.0",
+    hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala`,
+    browserConvert: false, download, pack, packSha256, block: 32,
+  }])),
 };
 
 export const UPSTREAM = MODELS.laya;
@@ -74,7 +100,8 @@ async function opfsStore() {
   const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle(CACHE_NAME, { create: true });
   const readIndex = async () => {
     try {
-      return JSON.parse(await (await (await dir.getFileHandle("index.json")).getFile()).text());
+      const index = JSON.parse(await (await (await dir.getFileHandle("index.json")).getFile()).text());
+      return index && typeof index === "object" && !Array.isArray(index) ? index : {};
     } catch {
       return {};
     }
@@ -84,74 +111,130 @@ async function opfsStore() {
     let n = 0;
     if (fh.createWritable) {
       const out = await fh.createWritable();
-      for await (const c of chunks) {
-        await out.write(c);
-        n += c.byteLength;
+      try {
+        for await (const c of chunks) {
+          await out.write(c);
+          n += c.byteLength;
+        }
+        await out.close();
+      } catch (e) {
+        try { await out.abort?.(); } catch {}
+        throw e;
       }
-      await out.close();
     } else {
       // Safari workers: synchronous access handles only
       const h = await fh.createSyncAccessHandle();
-      h.truncate(0);
-      for await (const c of chunks) n += h.write(c, { at: n });
-      h.flush();
-      h.close();
+      try {
+        h.truncate(0);
+        for await (const c of chunks) n += h.write(c, { at: n });
+        h.flush();
+      } finally {
+        try { h.close(); } catch {}
+      }
     }
     return n;
   };
-  // entries are only listed in the index once their file is complete
+  // Entries are only listed in the index once their file is complete. Keep all index and file
+  // mutations in one queue so stale-entry cleanup cannot race a replacement put.
   let lock = Promise.resolve();
-  const updateIndex = (fn) => (lock = lock.then(async () => {
-    const idx = await readIndex();
-    fn(idx);
-    await writeFile("index.json", [new TextEncoder().encode(JSON.stringify(idx))]);
-  }));
+  const withLock = (fn) => {
+    const run = lock.then(fn);
+    lock = run.catch(() => {});
+    return run;
+  };
+  const writeIndex = (idx) => writeFile("index.json", [new TextEncoder().encode(JSON.stringify(idx))]);
+  const validEntry = (e) => e && typeof e.name === "string" && Number.isSafeInteger(e.bytes) && e.bytes >= 0;
   return {
     kind: "opfs",
     async match(key) {
-      const e = (await readIndex())[key];
-      if (!e) return null;
-      try {
-        const f = await (await dir.getFileHandle(e.name)).getFile();
-        if (f.size !== e.bytes) return null;
-        return new Response(f.stream(), { headers: { "content-length": String(f.size), "x-kevala-size": String(f.size) } });
-      } catch {
-        return null;
-      }
+      return withLock(async () => {
+        const idx = await readIndex();
+        const e = idx[key];
+        if (!e) return null;
+        let f;
+        try {
+          if (!validEntry(e)) throw new Error("invalid cache index entry");
+          f = await (await dir.getFileHandle(e.name)).getFile();
+          if (f.size !== e.bytes) throw new Error("stale cache index entry");
+          return new Response(f.stream(), { headers: { "content-length": String(f.size), "x-kevala-size": String(f.size) } });
+        } catch {
+          delete idx[key];
+          await writeIndex(idx).catch(() => {});
+          if (validEntry(e)) await dir.removeEntry(e.name).catch(() => {});
+          return null;
+        }
+      });
     },
     async put(key, res) {
-      const name = fileName(key);
-      // files the index does not list are leftovers of interrupted writes: free their space first
-      const listed = new Set(Object.values(await readIndex()).map((e) => e.name));
-      for await (const [file] of dir.entries()) {
-        if (file !== "index.json" && file !== name && !listed.has(file)) await dir.removeEntry(file).catch(() => {});
-      }
-      const reader = res.body.getReader();
-      const chunks = {
-        async *[Symbol.asyncIterator]() {
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) return;
-            yield value;
-          }
-        },
-      };
-      try {
-        const bytes = await writeFile(name, chunks);
-        await updateIndex((idx) => (idx[key] = { name, bytes }));
-      } catch (e) {
-        await dir.removeEntry(name).catch(() => {}); // a partial file would only hold quota
-        throw e;
-      }
+      return withLock(async () => {
+        const name = fileName(key);
+        // Files the index does not list are leftovers of interrupted writes: free their space first.
+        const listed = new Set(Object.values(await readIndex()).filter(validEntry).map((e) => e.name));
+        for await (const [file] of dir.entries()) {
+          if (file !== "index.json" && file !== name && !listed.has(file)) await dir.removeEntry(file).catch(() => {});
+        }
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("cache put requires a response body");
+        const chunks = {
+          async *[Symbol.asyncIterator]() {
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (done) return;
+              yield value;
+            }
+          },
+        };
+        try {
+          const bytes = await writeFile(name, chunks);
+          const idx = await readIndex();
+          idx[key] = { name, bytes };
+          await writeIndex(idx);
+        } catch (e) {
+          await dir.removeEntry(name).catch(() => {}); // a partial file would only hold quota
+          throw e;
+        } finally {
+          try { void reader.cancel().catch(() => {}); } catch {}
+          try { reader.releaseLock(); } catch {}
+        }
+      });
     },
     async keys() {
-      return Object.entries(await readIndex()).map(([key, e]) => ({ key, bytes: e.bytes }));
+      return withLock(async () => {
+        const idx = await readIndex();
+        const entries = [];
+        let changed = false;
+        for (const [key, e] of Object.entries(idx)) {
+          let valid = validEntry(e);
+          if (valid) {
+            try {
+              const f = await (await dir.getFileHandle(e.name)).getFile();
+              valid = f.size === e.bytes;
+            } catch {
+              valid = false;
+            }
+          }
+          if (!valid) {
+            delete idx[key];
+            changed = true;
+            if (e?.name) await dir.removeEntry(e.name).catch(() => {});
+          } else {
+            entries.push({ key, bytes: e.bytes });
+          }
+        }
+        if (changed) await writeIndex(idx).catch(() => {});
+        return entries;
+      });
     },
     async remove(key) {
-      const idx = await readIndex();
-      const e = idx[key];
-      if (e) await dir.removeEntry(e.name).catch(() => {});
-      await updateIndex((i) => delete i[key]);
+      return withLock(async () => {
+        const idx = await readIndex();
+        const e = idx[key];
+        if (e?.name) await dir.removeEntry(e.name).catch(() => {});
+        if (key in idx) {
+          delete idx[key];
+          await writeIndex(idx);
+        }
+      });
     },
   };
 }
@@ -162,7 +245,14 @@ async function cacheStore() {
   return {
     kind: "cache",
     match: (key) => c.match(key).then((r) => r || null),
-    put: (key, res) => c.put(key, res),
+    async put(key, res) {
+      try {
+        await c.put(key, res);
+      } catch (e) {
+        try { void res.body?.cancel(e).catch(() => {}); } catch {}
+        throw e;
+      }
+    },
     async keys() {
       const out = [];
       for (const req of await c.keys()) {
@@ -189,7 +279,8 @@ async function openCache(enabled) {
 /** Cache key for a converted upstream checkpoint: revision and quantization both matter. */
 export function upstreamKey(up) {
   const base = up.base ? `+${up.base.repo}@${up.base.revision}` : "";
-  return `https://kevala.cache/${up.repo}/${up.revision}${base}/q8-b${up.block}.kevala`;
+  const artifact = up.packSha256 ? `-${up.packSha256}` : "";
+  return `https://kevala.cache/${up.repo}/${up.revision}${base}/q8-b${up.block}${artifact}.kevala`;
 }
 
 function hfUrl(up, file) {
@@ -264,6 +355,11 @@ export async function openPack(model, { cache = true, from = "pack", signal, onP
     if (size) return streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress });
   }
   // upstream checkpoint: convert, cache, and hand back the finished bytes
+  if (up.browserConvert === false) {
+    throw new Error(from === "checkpoint"
+      ? `${up.label || up.repo} requires offline conversion; load its hosted .kevala pack with from: "pack".`
+      : `The hosted pack for ${up.label || up.repo} is unavailable. Retry the download or pass a local .kevala URL.`);
+  }
   const made = await convert(up, { signal, onProgress });
   if (!(made instanceof Uint8Array)) return streamIntoCache(store, key, made.size, made.chunks(), { signal, onProgress, file: "converted pack" });
   const bytes = made;
@@ -296,7 +392,13 @@ function streamIntoCache(store, key, size, chunks, { signal, onProgress, file = 
     stream = toLoader;
     const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
     // a pack that cannot be stored still loads; say why, so a full disk does not look like a hang
-    saving = store.put(key, new Response(toCache, { headers })).catch((e) => onProgress?.({ phase: "cache-failed", message: String(e?.message || e) }));
+    const cacheBody = new Response(toCache, { headers });
+    saving = store.put(key, cacheBody).catch((e) => {
+      // Do not await this: ReadableStream tee cancellation may wait for the loader branch, which
+      // is still consuming the pack. Canceling releases the unread cache queue immediately.
+      void toCache.cancel(e).catch(() => {});
+      onProgress?.({ phase: "cache-failed", message: String(e?.message || e) });
+    });
   }
   return { ...fromResponse(new Response(stream), file, size, false, key, null, signal), saving };
 }

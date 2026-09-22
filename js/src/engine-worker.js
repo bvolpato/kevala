@@ -19,6 +19,7 @@ import { archPlugin, registerArch } from "./archs/index.js";
 import { RemoteShard } from "./shard-client.js";
 import { CPU_KERNELS, cpuOptions, readTuning, threadCandidates, tuningKey, writeTuning } from "./cpu-policy.js";
 import { calibrateThreads } from "./cpu-calibrate.js";
+import { assertWasmPackSize, kevGpuLayouts, packSize } from "./kev-layout.js";
 
 const enc = new TextEncoder();
 let E = null; // the loaded engine
@@ -98,7 +99,10 @@ async function readHead(iter) {
     buf = n;
   }
   if (new TextDecoder().decode(buf.subarray(0, 4)) !== "KVLA") throw new Error("not a .kevala pack");
-  const hlen = new DataView(buf.buffer, buf.byteOffset).getUint32(8, true);
+  const prefix = new DataView(buf.buffer, buf.byteOffset);
+  const version = prefix.getUint32(4, true);
+  if (version !== 1) throw new Error(`unsupported .kevala version ${version}, this build reads 1`);
+  const hlen = prefix.getUint32(8, true);
   const header = JSON.parse(new TextDecoder().decode(buf.subarray(16, 16 + hlen)));
   return { head: buf, header, headerBytes: buf.subarray(0, 16 + hlen) };
 }
@@ -225,6 +229,7 @@ async function load(o) {
   checkCancelled();
   const it = (packIterator = pack.chunks());
   const { head, header, headerBytes } = await readHead(it);
+  const fullSize = packSize(header, headerBytes.byteLength);
   checkCancelled();
   const arch = header.config.arch || "laya";
   const plugin = archPlugin(arch);
@@ -246,6 +251,7 @@ async function load(o) {
     }
   }
   if (!gpu && o.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
+  if (!gpu && arch === "kev") assertWasmPackSize(fullSize);
   const coord = await Wasm.create(module, 0);
   const cpuTuning = gpu ? null : await tuneCpu(coord, module, header, headerBytes, plugin, flavor, base, o, signal);
   const threads = cpuTuning?.threads || 1;
@@ -253,13 +259,16 @@ async function load(o) {
   // the GPU kernels are WGSL sources in the Rust crate; the binary hands them out specialized
   if (gpu) gpu.wgsl = (kernel, spec = {}) => coord.withInput(JSON.stringify({ kernel, ...spec }), (p, l) => (coord.check(coord.x.kevala_wgsl(p, l)), coord.outText()));
   const external = gpu || threads > 1;
-  const layouts = external ? parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice()))) : [];
+  let layouts = [];
+  if (gpu && arch === "kev") layouts = kevGpuLayouts(header, headerBytes.byteLength);
+  else if (external) layouts = parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice())));
   const sinks = [];
   const engine = { arch, plugin, header, coord, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached } };
 
   if (!external) {
     // one instance holds the whole pack
-    const total = header.tensors.reduce((m, t) => Math.max(m, t.offset + t.size, (t.scales_offset || 0) + (t.scales_size || 0)), 0);
+    const total = fullSize;
+    assertWasmPackSize(total);
     engine.fullPtr = coord.alloc(total);
     engine.fullTotal = total;
     sinks.push({
@@ -309,12 +318,26 @@ async function load(o) {
   };
   const upload = async () => {
     feed(head);
+    let pendingBytes = head.byteLength;
+    const drain = async () => {
+      if (!gpu) return;
+      gpu.device.queue.submit([]);
+      await gpu.device.queue.onSubmittedWorkDone();
+      checkCancelled();
+      pendingBytes = 0;
+    };
     for (;;) {
       const { done, value } = await it.next();
       checkCancelled();
       if (done) break;
       feed(value);
+      // Cached/local packs can arrive faster than transfers finish. Bound the staging
+      // allocations so loading a large model does not temporarily double its GPU memory.
+      pendingBytes += value.byteLength;
+      if (gpu && pendingBytes >= 64 * 1024 * 1024) await drain();
     }
+    await drain();
+    if (at < fullSize) throw new Error(`pack is truncated: ${at} of ${fullSize} bytes`);
     packIterator = null;
     for (const s of sinks) s.batcher?.flush();
     // Finish a completed download's cache write before retrying a failed GPU load.

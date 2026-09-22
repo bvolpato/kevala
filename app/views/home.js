@@ -304,7 +304,7 @@ const DEMOS = `<section id="demos">
         </div>
         <div class="dc-body">
           <h3>Tetris</h3>
-          <p>For every new piece, the code describes each place it can land and the model scores all of them in one batched pass. The piece then moves to the best spot, one key at a time.</p>
+          <p>For every new piece, the code describes each place it can land and the model scores all of them. The piece then moves to the best spot, one key at a time.</p>
           <span class="go">Watch it play →</span>
         </div>
       </a>

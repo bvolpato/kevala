@@ -16,6 +16,7 @@ var<workgroup> info: vec4<u32>;
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j: u32) {
   let s = wg.x;
   let h = wg.y;
+  let kh = h / (LIN_HEADS / LIN_KEY_HEADS);
   if (s >= g.S) { return; }
   if (j == 0u) {
     let sg = segs[s];
@@ -24,7 +25,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j
   let sp = workgroupUniformLoad(&info);
   var col: array<vec4<f32>, 32>;
   if (sp.z != 0xffffffffu) {
-    let base = (sp.z * 16u + h) * 16384u + j;
+    let base = (sp.z * LIN_HEADS + h) * 16384u + j;
     for (var i = 0u; i < 32u; i++) {
       let row = base + i * 4u * 128u;
       col[i] = vec4<f32>(
@@ -43,14 +44,14 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j
   if (sp.y > 0u) {
     let t = sp.x;
     if (j < 32u) {
-      let q = t * 6144u + h * 128u + j * 4u;
+      let q = t * LIN_DIM + kh * 128u + j * 4u;
       qs[0][j] = vec4<f32>(C[q], C[q + 1u], C[q + 2u], C[q + 3u]);
-      let k = t * 6144u + 2048u + h * 128u + j * 4u;
+      let k = t * LIN_DIM + LIN_QK + kh * 128u + j * 4u;
       ks[0][j] = vec4<f32>(C[k], C[k + 1u], C[k + 2u], C[k + 3u]);
     }
-    v = C[t * 6144u + 4096u + h * 128u + j];
-    decay = AB[t * 32u + h];
-    beta = AB[t * 32u + 16u + h];
+    v = C[t * LIN_DIM + 2u * LIN_QK + h * 128u + j];
+    decay = AB[t * (2u * LIN_HEADS) + h];
+    beta = AB[t * (2u * LIN_HEADS) + LIN_HEADS + h];
   }
   workgroupBarrier();
   for (var r = 0u; r < sp.y; r++) {
@@ -64,14 +65,14 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j
     if (r + 1u < sp.y) {
       let tn = t + 1u;
       if (j < 32u) {
-        let q = tn * 6144u + h * 128u + j * 4u;
+        let q = tn * LIN_DIM + kh * 128u + j * 4u;
         qs[nxt][j] = vec4<f32>(C[q], C[q + 1u], C[q + 2u], C[q + 3u]);
-        let k = tn * 6144u + 2048u + h * 128u + j * 4u;
+        let k = tn * LIN_DIM + LIN_QK + kh * 128u + j * 4u;
         ks[nxt][j] = vec4<f32>(C[k], C[k + 1u], C[k + 2u], C[k + 3u]);
       }
-      nv = C[tn * 6144u + 4096u + h * 128u + j];
-      nd = AB[tn * 32u + h];
-      nb = AB[tn * 32u + 16u + h];
+      nv = C[tn * LIN_DIM + 2u * LIN_QK + h * 128u + j];
+      nd = AB[tn * (2u * LIN_HEADS) + h];
+      nb = AB[tn * (2u * LIN_HEADS) + LIN_HEADS + h];
     }
     var kv4 = vec4<f32>(0.0);
     for (var i = 0u; i < 32u; i++) { kv4 += col[i] * ks[cur][i]; }
@@ -84,14 +85,14 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j
       o4 += x * qs[cur][i];
     }
     let o = o4.x + o4.y + o4.z + o4.w;
-    CORE[t * 2048u + h * 128u + j] = o;
+    CORE[t * LIN_OUT + h * 128u + j] = o;
     v = nv;
     decay = nd;
     beta = nb;
     workgroupBarrier();
   }
   if (g.stage == 1u) {
-    let base = (sp.w * 16u + h) * 16384u + j;
+    let base = (sp.w * LIN_HEADS + h) * 16384u + j;
     for (var i = 0u; i < 32u; i++) {
       let row = base + i * 4u * 128u;
       let value = col[i];

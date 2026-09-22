@@ -37,7 +37,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--result",
-        choices=("gpu", "bench", "latency", "parity", "kernels", "cache"),
+        choices=("gpu", "bench", "latency", "parity", "kernels", "cache", "tetris"),
         default="gpu",
         help="page result contract to validate",
     )
@@ -78,6 +78,7 @@ DEFAULT_URLS = {
     "parity": "http://127.0.0.1:18086/parity.html#auto&backend=webgpu&pack=local",
     "kernels": "http://127.0.0.1:18086/dev/kernels.html",
     "cache": "http://127.0.0.1:18086/dev/cache-test.html?backend=webgpu",
+    "tetris": "http://127.0.0.1:18086/dev/tetris-eval.html#model=kev-4b&backend=webgpu&pieces=20&seeds=1,2,3",
 }
 
 
@@ -88,6 +89,7 @@ RESULT_GLOBALS = {
     "parity": "parity",
     "kernels": "kernelResults",
     "cache": "ct",
+    "tetris": "evalResult",
 }
 
 
@@ -130,6 +132,8 @@ def result_is_done(result: object, kind: str) -> bool:
         return result.get("status") in {"done", "error"}
     if kind == "kernels":
         return result.get("done") is True
+    if kind == "tetris":
+        return isinstance(result.get("summary"), dict) and isinstance(result.get("games"), list)
     return isinstance(result.get("backend"), str)
 
 
@@ -341,7 +345,7 @@ def main() -> int:
         return 2
     url = args.url or (
         url_with_backend(DEFAULT_URLS[args.result], args.backend)
-        if args.result in {"bench", "latency", "parity", "cache"}
+        if args.result in {"bench", "latency", "parity", "cache", "tetris"}
         else DEFAULT_URLS[args.result]
     )
     browser = None
@@ -411,6 +415,18 @@ def main() -> int:
         elif args.result == "cache":
             actual_threads = validate_backend(result, args.backend)
             metric = cache_metric(result, args.backend)
+        elif args.result == "tetris":
+            summary = result["summary"]
+            games = result["games"]
+            if not games or sum(game.get("moves", 0) for game in games) != summary.get("moves"):
+                raise ValueError("Tetris did not report consistent completed games")
+            metric = summary.get("p50TotalMs")
+            if summary.get("policy") != "drop":
+                actual_threads = validate_backend(summary, args.backend)
+                if not finite_number(metric) or metric <= 0 or not summary.get("selectedPlacements"):
+                    raise ValueError("Tetris did not complete model decisions")
+            elif metric != 0:
+                raise ValueError("drop baseline unexpectedly reports model timing")
         else:
             metric = kernels_metric(result)
     except ValueError as error:
@@ -424,6 +440,8 @@ def main() -> int:
         print(json.dumps({"backend": result.get("backend"), "method": result.get("method") or result.get("metric"), "metricMs": metric}, sort_keys=True), file=sys.stderr)
     elif args.result == "parity":
         print(json.dumps({"backend": result.get("backend"), "argmax": result.get("argmax"), "questions": result.get("questions"), "maxDp": metric}, sort_keys=True), file=sys.stderr)
+    elif args.result == "tetris":
+        print(json.dumps({key: result["summary"].get(key) for key in ("model", "backend", "moves", "lines", "meanHoles", "p50TotalMs")}), file=sys.stderr)
     else:
         print(json.dumps({"maxError": metric}, sort_keys=True), file=sys.stderr)
     print(f"{metric:.9f}")

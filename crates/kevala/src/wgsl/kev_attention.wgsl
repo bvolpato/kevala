@@ -74,9 +74,9 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) d
   let plen = sp.z;
   let pstart = sp.w;
   let n = plen + r + 1u;
-  let kvh = h / 4u;
+  let kvh = h / (HEADS / KV_HEADS);
   if (d < 64u) {
-    let b = t * 5120u + h * 512u + d * 4u;
+    let b = t * ATTN_WIDTH + h * 512u + d * 4u;
     q[d] = vec4<f32>(PROJ[b], PROJ[b + 1u], PROJ[b + 2u], PROJ[b + 3u]);
   }
   workgroupBarrier();
@@ -88,7 +88,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) d
     var s = -3.0e38;
     if (j < n) {
       var kb: u32;
-      if (j < plen) { kb = (pstart + j) * 1024u + kvh * 256u; } else { kb = (start + j - plen) * 5120u + 4096u + kvh * 256u; }
+      if (j < plen) { kb = (pstart + j) * ATTN_KV + kvh * 256u; } else { kb = (start + j - plen) * ATTN_WIDTH + 2u * ATTN_Q + kvh * 256u; }
       var acc = vec4<f32>(0.0);
       if (j < plen) {
         for (var c = 0u; c < 64u; c++) { acc += q[c] * vec4<f32>(KV[kb + c * 4u], KV[kb + c * 4u + 1u], KV[kb + c * 4u + 2u], KV[kb + c * 4u + 3u]); }
@@ -114,12 +114,12 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) d
     for (var jj = 0u; jj < cnt; jj++) {
       let key = j0 + jj;
       var vv: f32;
-      if (key < plen) { vv = KV[(pstart + key) * 1024u + 512u + kvh * 256u + d]; } else { vv = PROJ[(start + key - plen) * 5120u + 4608u + kvh * 256u + d]; }
+      if (key < plen) { vv = KV[(pstart + key) * ATTN_KV + ATTN_K + kvh * 256u + d]; } else { vv = PROJ[(start + key - plen) * ATTN_WIDTH + 2u * ATTN_Q + ATTN_K + kvh * 256u + d]; }
       o += sc[jj] * vv;
     }
     m = mn;
     workgroupBarrier();
   }
-  let gate = PROJ[t * 5120u + h * 512u + 256u + d];
-  OUT[t * 2048u + h * 256u + d] = o / lsum / (1.0 + exp(-gate));
+  let gate = PROJ[t * ATTN_WIDTH + h * 512u + 256u + d];
+  OUT[t * ATTN_Q + h * 256u + d] = o / lsum / (1.0 + exp(-gate));
 }

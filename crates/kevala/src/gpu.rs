@@ -29,6 +29,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("geglu", include_str!("wgsl/geglu.wgsl")),
     ("gather", include_str!("wgsl/gather.wgsl")),
     ("kev_common", include_str!("wgsl/kev_common.wgsl")),
+    ("kev_gather", include_str!("wgsl/kev_gather.wgsl")),
     ("kev_rms", include_str!("wgsl/kev_rms.wgsl")),
     ("kev_gates", include_str!("wgsl/kev_gates.wgsl")),
     ("kev_conv", include_str!("wgsl/kev_conv.wgsl")),
@@ -55,6 +56,7 @@ pub const KERNELS: &[&str] = &[
     "geglu",
     "gather",
     "kev_rms",
+    "kev_gather",
     "kev_gates",
     "kev_conv",
     "kev_save_tail",
@@ -84,11 +86,38 @@ pub struct Spec {
     pub split_target: u32,
     /// Matmul: N and K compiled in as constants instead of read from the uniform.
     pub shape: Option<(u32, u32)>,
+    pub kev: KevSpec,
+}
+
+/// Qwen3.5 text dimensions. The optimized kernels use 256-wide attention heads,
+/// 128-wide linear heads, and a four-token convolution.
+#[derive(Clone, Debug, PartialEq)]
+pub struct KevSpec {
+    pub hidden: u32,
+    pub heads: u32,
+    pub kv_heads: u32,
+    pub lin_key_heads: u32,
+    pub lin_heads: u32,
+    pub rotary: u32,
+}
+
+impl Default for KevSpec {
+    fn default() -> Self {
+        Self { hidden: 1024, heads: 8, kv_heads: 2, lin_key_heads: 16, lin_heads: 16, rotary: 64 }
+    }
 }
 
 impl Default for Spec {
     fn default() -> Spec {
-        Spec { f16: false, subgroups: false, rows: 4, groups: 1, split_target: 128, shape: None }
+        Spec {
+            f16: false,
+            subgroups: false,
+            rows: 4,
+            groups: 1,
+            split_target: 128,
+            shape: None,
+            kev: KevSpec::default(),
+        }
     }
 }
 
@@ -115,6 +144,40 @@ impl Spec {
         }
         if let (Some(n), Some(k)) = (number("n"), number("k")) {
             s.shape = Some((n, k));
+        }
+        if let Some(v) = v.get("kev") {
+            for (key, dst) in [
+                ("hidden", &mut s.kev.hidden),
+                ("heads", &mut s.kev.heads),
+                ("kv_heads", &mut s.kev.kv_heads),
+                ("lin_key_heads", &mut s.kev.lin_key_heads),
+                ("lin_heads", &mut s.kev.lin_heads),
+                ("rotary", &mut s.kev.rotary),
+            ] {
+                if let Some(n) = v.get(key) {
+                    *dst =
+                        n.as_usize().and_then(|n| u32::try_from(n).ok()).ok_or_else(|| format!("invalid Kev {key}"))?;
+                }
+            }
+            let k = &s.kev;
+            if k.hidden == 0
+                || k.hidden > 16384
+                || k.hidden % 256 != 0
+                || k.heads == 0
+                || k.heads > 128
+                || k.kv_heads == 0
+                || k.heads % k.kv_heads != 0
+                || k.lin_key_heads == 0
+                || k.lin_key_heads % 2 != 0
+                || k.lin_heads == 0
+                || k.lin_heads > 128
+                || k.lin_heads % k.lin_key_heads != 0
+                || k.rotary == 0
+                || k.rotary > 256
+                || k.rotary % 2 != 0
+            {
+                return Err("unsupported Qwen3.5 GPU dimensions".into());
+            }
         }
         if !(1..=4).contains(&s.rows) {
             return Err(format!("rows must be 1 to 4, not {}", s.rows));
@@ -148,6 +211,12 @@ impl Spec {
             ("WV_LEN", (2 * self.groups).to_string()),
             ("N", n.to_string()),
             ("K", k.to_string()),
+            ("KEV_HIDDEN", self.kev.hidden.to_string()),
+            ("KEV_HEADS", self.kev.heads.to_string()),
+            ("KEV_KV_HEADS", self.kev.kv_heads.to_string()),
+            ("KEV_LIN_KEY_HEADS", self.kev.lin_key_heads.to_string()),
+            ("KEV_LIN_HEADS", self.kev.lin_heads.to_string()),
+            ("KEV_ROTARY", self.kev.rotary.to_string()),
         ]
     }
 }

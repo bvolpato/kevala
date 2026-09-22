@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
 const destination = join(dist, "site");
-const publicFiles = [".nojekyll", "LICENSE", "README.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html"];
+const publicFiles = [".nojekyll", "LICENSE", "THIRD_PARTY_NOTICES", "README.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html"];
 const publicDirectories = ["app", "assets", "docs", "examples", "js/src", "skills", "tests/fixtures"];
 const publicHarnesses = [
   "dev/cache-test.html",

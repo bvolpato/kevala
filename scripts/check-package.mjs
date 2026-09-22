@@ -13,6 +13,7 @@ const required = [
   "package/package.json",
   "package/README.md",
   "package/LICENSE",
+  "package/THIRD_PARTY_NOTICES",
   "package/js/src/index.js",
   "package/js/src/node.js",
   "package/js/src/kevala-relaxed.wasm",

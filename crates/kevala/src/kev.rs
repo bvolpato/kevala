@@ -28,6 +28,7 @@ pub struct KevConfig {
     pub rotary: usize,
     pub rope_theta: f32,
     pub lin_heads: usize,
+    pub lin_key_heads: usize,
     pub lin_k: usize,
     pub lin_v: usize,
     pub conv: usize,
@@ -37,6 +38,7 @@ pub struct KevConfig {
     pub max_branch: usize,
     /// `<state> <q> <opt> </opt> <decide>`
     pub tokens: [u32; 5],
+    pub semif: bool,
 }
 
 impl KevConfig {
@@ -59,6 +61,11 @@ impl KevConfig {
         for (i, v) in t.iter().take(5).enumerate() {
             tokens[i] = v.as_usize().ok_or("kev config: bad token id")? as u32;
         }
+        let lin_heads = u("linear_num_value_heads")?;
+        let lin_key_heads = u("linear_num_key_heads")?;
+        if lin_key_heads == 0 || lin_heads == 0 || lin_heads % lin_key_heads != 0 {
+            return Err("DeltaNet value heads must be a positive multiple of key heads".into());
+        }
         Ok(KevConfig {
             hidden: u("hidden_size")?,
             layers: full.len(),
@@ -70,7 +77,8 @@ impl KevConfig {
             head_dim: u("head_dim")?,
             rotary: u("rotary_dim")?,
             rope_theta: f("rope_theta")?,
-            lin_heads: u("linear_num_value_heads")?,
+            lin_heads,
+            lin_key_heads,
             lin_k: u("linear_key_head_dim")?,
             lin_v: u("linear_value_head_dim")?,
             conv: u("linear_conv_kernel_dim")?,
@@ -79,10 +87,11 @@ impl KevConfig {
             max_state: u("max_state").unwrap_or(8192),
             max_branch: u("max_branch").unwrap_or(8192),
             tokens,
+            semif: c.get("readout").and_then(Value::as_str) == Some("semif"),
         })
     }
     fn lin_dim(&self) -> usize {
-        self.lin_heads * self.lin_k * 2 + self.lin_heads * self.lin_v
+        self.lin_key_heads * self.lin_k * 2 + self.lin_heads * self.lin_v
     }
 }
 
@@ -250,6 +259,8 @@ pub struct Branch {
     pub ids: Vec<u32>,
     pub decide: usize,
     pub opts: Vec<usize>,
+    /// Native option labels, when this branch uses the SemIf readout.
+    pub labels: usize,
 }
 
 #[derive(Clone, Debug)]
@@ -285,9 +296,58 @@ pub fn encode(tok: &Tokenizer, cfg: &KevConfig, state: &str, qs: &[KevQuestion])
         if ids.len() > cfg.max_branch.saturating_sub(s.len()) {
             return Err(format!("branch too long: {}", ids.len()));
         }
-        branches.push(Branch { decide: ids.len() - 1, ids, opts });
+        branches.push(Branch { decide: ids.len() - 1, ids, opts, labels: 0 });
     }
     Ok(Encoded { state: s, branches })
+}
+
+/// SemIf's direct-options-v1 prompt, using Qwen3.5's non-thinking chat template.
+pub fn encode_semif(tok: &Tokenizer, cfg: &KevConfig, state: &Value, qs: &[KevQuestion]) -> Result<Encoded, String> {
+    const SYSTEM: &str = "Apply the supplied criterion to the supplied evidence. Choose exactly one listed option. Respond with only its uppercase letter, with no explanation or reasoning.";
+    let start = format!("<|im_start|>system\n{SYSTEM}<|im_end|>\n<|im_start|>user\n");
+    let prefix = format!("{start}{{\"evidence\": {}", state.py_dumps(false));
+    let mut shared = tok.encode(&prefix);
+    let mut branches = Vec::new();
+    for q in qs {
+        if q.options.len() > 16 {
+            return Err(format!("SemIf question {:?}: at most 16 options are supported", q.id));
+        }
+        let options = q
+            .options
+            .iter()
+            .enumerate()
+            .map(|(i, o)| {
+                Value::Object(vec![
+                    ("letter".into(), Value::Str(char::from(b'A' + i as u8).to_string())),
+                    ("description".into(), Value::Str(o.clone())),
+                ])
+            })
+            .collect();
+        let payload = Value::Object(vec![
+            ("evidence".into(), state.clone()),
+            ("criterion".into(), Value::Str(q.instructions.clone())),
+            ("options".into(), Value::Array(options)),
+        ]);
+        let prompt =
+            format!("{start}{}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n", payload.py_dumps(false));
+        let ids = tok.encode(&prompt);
+        if ids.len() > cfg.max_branch || ids.is_empty() {
+            return Err(format!(
+                "SemIf prompt has {} tokens; maximum is {} (no truncation)",
+                ids.len(),
+                cfg.max_branch
+            ));
+        }
+        let common = shared.iter().zip(&ids).take_while(|(a, b)| a == b).count();
+        shared.truncate(common);
+        branches.push(Branch { decide: ids.len() - 1, ids, opts: Vec::new(), labels: q.options.len() });
+    }
+    // The prefix is cut only at a boundary shared with each complete tokenization.
+    for b in &mut branches {
+        b.ids.drain(..shared.len());
+        b.decide -= shared.len();
+    }
+    Ok(Encoded { state: shared, branches })
 }
 
 // ------------------------------------------------------------------ kernels
@@ -379,10 +439,7 @@ pub struct KevModel {
     store: Arc<Store>,
     emb: TensorInfo,
     norm: TensorInfo,
-    ptr_q: TensorInfo,
-    ptr_qb: TensorInfo,
-    ptr_k: TensorInfo,
-    ptr_kb: TensorInfo,
+    readout: Readout,
     layers: Vec<Layer>,
     cos: Vec<f32>,
     sin: Vec<f32>,
@@ -392,6 +449,11 @@ pub struct KevModel {
     cache: Vec<(Vec<u32>, Arc<Vec<Carry>>)>,
     pub cache_states: usize,
     pub stats: CacheStats,
+}
+
+enum Readout {
+    Pointer { q: TensorInfo, qb: TensorInfo, k: TensorInfo, kb: TensorInfo },
+    Labels(TensorInfo),
 }
 
 /// How often requests reused a cached state.
@@ -460,10 +522,16 @@ impl KevModel {
         Ok(KevModel {
             emb: t("emb".into())?,
             norm: t("norm".into())?,
-            ptr_q: t("ptr.q".into())?,
-            ptr_qb: t("ptr.q.b".into())?,
-            ptr_k: t("ptr.k".into())?,
-            ptr_kb: t("ptr.k.b".into())?,
+            readout: if cfg.semif {
+                Readout::Labels(t("semif.labels".into())?)
+            } else {
+                Readout::Pointer {
+                    q: t("ptr.q".into())?,
+                    qb: t("ptr.q.b".into())?,
+                    k: t("ptr.k".into())?,
+                    kb: t("ptr.k.b".into())?,
+                }
+            },
             layers,
             cos,
             sin,
@@ -520,7 +588,7 @@ impl KevModel {
                 Layer::Lin(l) => {
                     rms_norm(x, d, st.f32s(&l.in_norm), cfg.eps, &mut h);
                     let (nh, dk, dv) = (cfg.lin_heads, cfg.lin_k, cfg.lin_v);
-                    let (kd, vd) = (nh * dk, nh * dv);
+                    let (kd, vd) = (cfg.lin_key_heads * dk, nh * dv);
                     let cd = cfg.lin_dim();
                     let wz = st.mat(&l.qkvz);
                     let pw = wz.n();
@@ -582,18 +650,24 @@ impl KevModel {
                                 qkv[c] = silu(s);
                             }
                             let row = seg.start + r;
-                            for hh in 0..nh {
+                            // Normalize each key head once before sharing it across value heads.
+                            for kh in 0..cfg.lin_key_heads {
                                 let (qs, rest) = qkv.split_at_mut(kd);
-                                let (ks, vs) = rest.split_at_mut(kd);
-                                let q = &mut qs[hh * dk..(hh + 1) * dk];
-                                let k = &mut ks[hh * dk..(hh + 1) * dk];
-                                let v = &vs[hh * dv..(hh + 1) * dv];
-                                // l2-normalized q and k, q also scaled by 1/sqrt(dk)
+                                let q = &mut qs[kh * dk..(kh + 1) * dk];
+                                let k = &mut rest[kh * dk..(kh + 1) * dk];
                                 let nq =
                                     1.0 / (q.iter().map(|x| x * x).sum::<f32>() + 1e-6).sqrt() / (dk as f32).sqrt();
                                 let nk = 1.0 / (k.iter().map(|x| x * x).sum::<f32>() + 1e-6).sqrt();
                                 q.iter_mut().for_each(|x| *x *= nq);
                                 k.iter_mut().for_each(|x| *x *= nk);
+                            }
+                            for hh in 0..nh {
+                                let kh = hh / (nh / cfg.lin_key_heads);
+                                let (qs, rest) = qkv.split_at(kd);
+                                let (ks, vs) = rest.split_at(kd);
+                                let q = &qs[kh * dk..(kh + 1) * dk];
+                                let k = &ks[kh * dk..(kh + 1) * dk];
+                                let v = &vs[hh * dv..(hh + 1) * dv];
                                 let decay = ab[row * 2 * nh + hh];
                                 let beta = ab[row * 2 * nh + nh + hh];
                                 let s = &mut state[hh * dk * dv..(hh + 1) * dk * dv];
@@ -895,7 +969,6 @@ impl KevModel {
         let d = self.cfg.hidden;
         let st = self.store.clone();
         let dp = self.cfg.ptr_dim;
-        let scale = 1.0 / (dp as f32).sqrt() / self.cfg.temperature;
         let mut out = Vec::new();
         let mut at = 0;
         for e in reqs {
@@ -905,13 +978,23 @@ impl KevModel {
                 let mut hn = vec![0.0; n * d];
                 rms_norm(&rows[at * d..(at + n) * d], d, st.f32s(&self.norm), self.cfg.eps, &mut hn);
                 at += n;
+                if let Readout::Labels(labels) = &self.readout {
+                    let mut logits = vec![0.0; labels.rows()];
+                    linear(&hn, 1, st.mat(labels), None, &mut logits, &mut self.panel);
+                    logits.truncate(b.labels);
+                    logits.iter_mut().for_each(|z| *z /= self.cfg.temperature);
+                    qs.push(logits);
+                    continue;
+                }
+                let Readout::Pointer { q, qb, k, kb } = &self.readout else { unreachable!() };
+                let scale = 1.0 / (dp as f32).sqrt() / self.cfg.temperature;
                 let mut qv = vec![0.0; dp];
-                linear(&hn[..d], 1, st.mat(&self.ptr_q), Some(st.f32s(&self.ptr_qb)), &mut qv, &mut self.panel);
-                let k = b.opts.len();
-                let mut kv = vec![0.0; k * dp];
-                linear(&hn[d..], k, st.mat(&self.ptr_k), Some(st.f32s(&self.ptr_kb)), &mut kv, &mut self.panel);
+                linear(&hn[..d], 1, st.mat(q), Some(st.f32s(qb)), &mut qv, &mut self.panel);
+                let count = b.opts.len();
+                let mut kv = vec![0.0; count * dp];
+                linear(&hn[d..], count, st.mat(k), Some(st.f32s(kb)), &mut kv, &mut self.panel);
                 qs.push(
-                    (0..k)
+                    (0..count)
                         .map(|j| kv[j * dp..(j + 1) * dp].iter().zip(&qv).map(|(a, b)| a * b).sum::<f32>() * scale)
                         .collect(),
                 );
@@ -958,7 +1041,11 @@ impl KevEngine {
 
     pub fn prepare(&self, state: &Value, questions: &Value) -> Result<(Encoded, Vec<KevQuestion>), String> {
         let qs = parse_questions(questions)?;
-        let mut e = encode(&self.tok, &self.model.cfg, &render(state, 0), &qs)?;
+        let mut e = if self.model.cfg.semif {
+            encode_semif(&self.tok, &self.model.cfg, state, &qs)?
+        } else {
+            encode(&self.tok, &self.model.cfg, &render(state, 0), &qs)?
+        };
         // one question about a short state: its row is state + branch, so run it as one segment
         // and skip the state pass (the same causal row, half the dispatches). Longer states keep
         // their own pass so the next request about them can reuse its cache.
@@ -1055,8 +1142,15 @@ impl KevEngine {
             }
             let answers = Value::Object(answers);
             let output_tokens = self.tok.encode(&answers.py_dumps(true)).len();
-            out.push(Value::Object(vec![
-                ("model".into(), Value::Str("kev-latest".into())),
+            let mut response = vec![
+                (
+                    "model".into(),
+                    if self.model.cfg.semif {
+                        self.info.get("name").cloned().unwrap_or(Value::Str("semif-qwen3.5".into()))
+                    } else {
+                        Value::Str("kev-latest".into())
+                    },
+                ),
                 ("answers".into(), answers),
                 (
                     "usage".into(),
@@ -1067,7 +1161,14 @@ impl KevEngine {
                 ),
                 // full-precision probabilities per question, next to the rounded reference answers
                 ("raw_probabilities".into(), Value::Object(qs.iter().map(|q| q.id.clone()).zip(raw).collect())),
-            ]));
+            ];
+            if self.model.cfg.semif {
+                response.push((
+                    "probability_status".into(),
+                    Value::Str("conditional option score; uncalibrated as decision confidence".into()),
+                ));
+            }
+            out.push(Value::Object(response));
         }
         out
     }

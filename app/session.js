@@ -14,6 +14,11 @@ export const LOCAL = params.get("pack") === "local";
 const LOCAL_PACKS = {
   laya: new URL("../tmp/laya-q8.kevala", import.meta.url).href,
   "kev-0.8b": new URL("../tmp/kev-0.8b-q8.kevala", import.meta.url).href,
+  "kev-4b": new URL("../tmp/kev-4b-q8.kevala", import.meta.url).href,
+  "kev-9b": new URL("../tmp/kev-9b-q8.kevala", import.meta.url).href,
+  "semif-qwen3.5-0.8b": new URL("../tmp/semif-qwen3.5-0.8b-q8.kevala", import.meta.url).href,
+  "semif-qwen3.5-2b": new URL("../tmp/semif-qwen3.5-2b-q8.kevala", import.meta.url).href,
+  "semif-qwen3.5-4b": new URL("../tmp/semif-qwen3.5-4b-q8.kevala", import.meta.url).href,
 };
 /** `?from=checkpoint` converts the original weights in the browser instead of downloading the pack. */
 export const FROM = params.get("from") === "checkpoint" ? "checkpoint" : "pack";
@@ -29,6 +34,31 @@ export const MODEL_NOTES = {
   "kev-0.8b": {
     name: "Kev-0.8B",
     short: "Qwen3.5-0.8B hybrid decoder + pointer head",
+  },
+  "kev-4b": {
+    name: "Kev-4B",
+    short: "Qwen3.5-4B hybrid decoder + pointer head",
+    large: true,
+  },
+  "kev-9b": {
+    name: "Kev-9B",
+    short: "Qwen3.5-9B hybrid decoder + pointer head",
+    large: true,
+  },
+  "semif-qwen3.5-0.8b": {
+    name: "SemIf-style Qwen3.5-0.8B",
+    short: "Direct option scores from a frozen Qwen3.5-0.8B model",
+    large: true,
+  },
+  "semif-qwen3.5-2b": {
+    name: "SemIf-style Qwen3.5-2B",
+    short: "Direct option scores from a frozen Qwen3.5-2B model",
+    large: true,
+  },
+  "semif-qwen3.5-4b": {
+    name: "SemIf-style Qwen3.5-4B",
+    short: "Direct option scores from a frozen Qwen3.5-4B model",
+    large: true,
   },
 };
 
@@ -302,9 +332,15 @@ class Session extends EventTarget {
   costLine(model = this.model) {
     const spec = MODELS[model];
     if (LOCAL && !SHOT) return "Dev mode: loads the local pack from this server.";
-    if (this.cached[model]) return "Cached in this browser: loads in about a second.";
+    if (this.cached[model]) {
+      return MODEL_NOTES[model]?.large ? "Cached in this browser: reopens locally." : "Cached in this browser: loads in about a second.";
+    }
     if (!spec) return "Loads the pack from its URL and caches it.";
-    if (spec.hosted && FROM === "pack") return `First load: a ${fmtBytes(spec.pack)} int8 pack from Hugging Face, then cached in this browser.`;
+    if (spec.hosted && FROM === "pack") {
+      return spec.pack
+        ? `First load: a ${fmtBytes(spec.pack)} int8 pack from Hugging Face, then cached in this browser.`
+        : "First load: an int8 pack from Hugging Face, then cached in this browser.";
+    }
     return `First load: ${fmtBytes(spec.download)} from Hugging Face, converted to a ${fmtBytes(spec.pack)} int8 pack and cached.`;
   }
 }

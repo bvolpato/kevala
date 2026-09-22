@@ -2,7 +2,7 @@
 //! placeholder left behind, one compute entry point, and the options actually changing the
 //! source where they should.
 
-use kevala::gpu::{wgsl, Spec, KERNELS};
+use kevala::gpu::{wgsl, KevSpec, Spec, KERNELS};
 
 fn specs() -> Vec<Spec> {
     let mut out = Vec::new();
@@ -16,6 +16,14 @@ fn specs() -> Vec<Spec> {
         }
     }
     out.push(Spec { shape: Some((3072, 1024)), ..Default::default() });
+    for hidden in [2048, 2560, 4096] {
+        let kev = if hidden == 2048 {
+            KevSpec { hidden, ..Default::default() }
+        } else {
+            KevSpec { hidden, heads: 16, kv_heads: 4, lin_heads: 32, ..Default::default() }
+        };
+        out.push(Spec { kev, ..Default::default() });
+    }
     out
 }
 
@@ -61,4 +69,23 @@ fn bad_requests_are_errors() {
     assert!(wgsl("nope", &Spec::default()).is_err());
     let json = kevala::json::Value::parse(r#"{"kernel": "matmul", "rows": 5}"#).unwrap();
     assert!(kevala::gpu::wgsl_json(&json).is_err());
+}
+
+#[test]
+fn qwen_dimensions_validate_grouped_heads() {
+    let parse = |fields: &str| Spec::from_json(&kevala::json::Value::parse(fields).unwrap());
+    let s = parse(r#"{"kev":{"hidden":2560,"heads":16,"kv_heads":4,"lin_key_heads":16,"lin_heads":32,"rotary":64}}"#)
+        .unwrap();
+    assert_eq!(s.kev, KevSpec { hidden: 2560, heads: 16, kv_heads: 4, lin_key_heads: 16, lin_heads: 32, rotary: 64 });
+    for bad in [
+        r#"{"kev":{"hidden":2559}}"#,
+        r#"{"kev":{"kv_heads":0}}"#,
+        r#"{"kev":{"kv_heads":3}}"#,
+        r#"{"kev":{"lin_key_heads":0}}"#,
+        r#"{"kev":{"lin_key_heads":32,"lin_heads":16}}"#,
+        r#"{"kev":{"lin_heads":256}}"#,
+        r#"{"kev":{"rotary":257}}"#,
+    ] {
+        assert!(parse(bad).is_err(), "accepted {bad}");
+    }
 }

@@ -7,8 +7,8 @@
 @group(0) @binding(4) var<storage, read> segs: array<Seg>;
 @group(0) @binding(5) var<storage, read> TAIL: array<f32>;
 @group(0) @binding(6) var<storage, read_write> C: array<f32>;
-const CD = 6144u;
-const PW = 8192u;
+const CD = LIN_DIM;
+const PW = LIN_WIDTH;
 var<workgroup> red: array<f32, 256>;
 @compute @workgroup_size(256)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32) {
@@ -30,7 +30,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     s += w[i] * x;
   }
   var v = s / (1.0 + exp(-s));
-  if (wg.y < 16u) {
+  if (wg.y < LIN_KEY_HEADS) {
     // Each workgroup contains two 128-wide q/k heads.
     let j = l % 128u;
     red[l] = v * v;
@@ -40,7 +40,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
       workgroupBarrier();
     }
     var inv = inverseSqrt(red[l - j] + 1e-6);
-    if (wg.y < 8u) { inv *= 0.08838834764831845; }
+    if (wg.y < LIN_KEY_HEADS / 2u) { inv *= 0.08838834764831845; }
     v *= inv;
   }
   C[t * CD + c] = v;

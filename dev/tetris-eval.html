@@ -7,58 +7,202 @@
 </head>
 <body>
 <h1>Tetris player evaluation</h1>
-<p>Plays seeded games without gravity: score every landing spot, play the best one. <code>#model=laya&amp;pieces=60&amp;seeds=1,2,3</code></p>
+<p>Plays seeded games without gravity: score every landing spot, play the best one. <code>#model=laya&amp;pieces=60&amp;seeds=1,2,3&amp;batch=4</code></p>
 <pre id="log"></pre>
 <script type="module">
-import { Kevala } from "../js/src/index.js";
+import { Kevala, MODELS } from "../js/src/index.js";
 import { Game, countHoles, columnHeights } from "../app/tetris/engine.js";
 import { candidates, QUESTION } from "../app/tetris/ai.js";
 
 const q = new URLSearchParams(location.hash.slice(1));
 const log = (s) => (document.getElementById("log").textContent += s + "\n");
 const name = q.get("model") || "laya";
-const pieces = Number(q.get("pieces") || 60);
-const seeds = (q.get("seeds") || "3").split(",").map(Number);
+const packs = {
+  laya: "../tmp/laya-q8.kevala",
+  "kev-0.8b": "../tmp/kev-0.8b-q8.kevala",
+  "kev-4b": "../tmp/kev-4b-q8.kevala",
+  "kev-9b": "../tmp/kev-9b-q8.kevala",
+  "semif-qwen3.5-0.8b": "../tmp/semif-qwen3.5-0.8b-q8.kevala",
+  "semif-qwen3.5-2b": "../tmp/semif-qwen3.5-2b-q8.kevala",
+  "semif-qwen3.5-4b": "../tmp/semif-qwen3.5-4b-q8.kevala",
+};
+const knownModels = [...new Set([...Object.keys(MODELS), ...Object.keys(packs)])].sort();
+const positiveInt = (raw, fallback, max = 10000) => {
+  const n = Number(raw);
+  return Number.isInteger(n) && n > 0 ? Math.min(n, max) : fallback;
+};
+const pieces = positiveInt(q.get("pieces"), 60);
+const seeds = (q.get("seeds") || "3").split(",").map((raw) => Number(raw.trim())).filter(Number.isFinite).map((seed) => seed >>> 0);
 const policy = q.get("policy") || "placement";
-const verbose = q.get("verbose") === "1";
-const style = {};
-const packs = { laya: "../tmp/laya-q8.kevala", "kev-0.8b": "../tmp/kev-0.8b-q8.kevala" };
+const batchSize = positiveInt(q.get("batch") || q.get("batch-size"), 4, 32);
+const backend = q.get("backend") || "auto";
 window.evalResult = null;
+let kevala = null;
+
+function resolveModel(model) {
+  if (packs[model]) return packs[model];
+  if (MODELS[model]) return model;
+  throw new Error(`Unknown model ${JSON.stringify(model)}. Choose one of: ${knownModels.join(", ")}`);
+}
+
+function median(values) {
+  if (!values.length) return 0;
+  const sorted = values.slice().sort((a, b) => a - b);
+  const middle = sorted.length >> 1;
+  return sorted.length & 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function probability(response) {
+  const rounded = response?.answers?.clean?.noul;
+  if (!Number.isFinite(rounded)) throw new Error("model returned a missing or nonfinite clean probability");
+  const raw = response.raw_probabilities?.clean;
+  if (!Array.isArray(raw)) return rounded;
+  if (raw.length !== 2 || !raw.every(Number.isFinite)) throw new Error("model returned nonfinite raw clean probabilities");
+  return Math.abs(raw[1] - rounded) <= Math.abs(raw[0] - rounded) ? raw[1] : raw[0];
+}
+
+async function scoreCandidates(kevala, texts) {
+  const responses = [];
+  let batches = 0;
+  const startedAt = performance.now();
+  for (let start = 0; start < texts.length; start += batchSize) {
+    const batch = texts.slice(start, start + batchSize).map((state) => ({ state, questions: QUESTION }));
+    const result = batch.length === 1 ? [await kevala.decide(batch[0].state, batch[0].questions)] : await kevala.decideMany(batch);
+    if (result.length !== batch.length) throw new Error(`model returned ${result.length} answers for a batch of ${batch.length}`);
+    responses.push(...result);
+    batches++;
+  }
+  return { responses, ms: performance.now() - startedAt, batches };
+}
+
 try {
-  const kevala = policy !== "drop" ? await Kevala.load({ model: packs[name], backend: q.get("backend") || "auto" }) : null;
+  if (!knownModels.includes(name)) resolveModel(name);
+  if (!seeds.length) throw new Error("seeds must contain at least one number");
+  if (!["placement", "drop"].includes(policy)) throw new Error(`Unknown policy ${JSON.stringify(policy)}. Choose placement or drop.`);
+  if (!["auto", "webgpu", "wasm"].includes(backend)) throw new Error(`Unknown backend ${JSON.stringify(backend)}. Choose auto, webgpu, or wasm.`);
+  const modelSource = resolveModel(name);
+  kevala = policy !== "drop" ? await Kevala.load({ model: modelSource, backend }) : null;
   const games = [];
-  let ms = [];
-  let tokens = [];
+  const moveTimes = [];
+  const selectedPlacements = [];
+  let decisionBatches = 0;
+  const runStartedAt = performance.now();
   for (const seed of seeds) {
     const g = new Game(seed);
     let keys = 0;
     let stalls = 0;
     const counts = { left: 0, right: 0, rotate: 0, drop: 0 };
-    while (!g.over && g.pieces < pieces && policy === "placement") {
+    while (!g.over && g.pieces < pieces) {
+      const move = g.pieces + 1;
+      const before = { ...g.piece };
+      if (policy === "drop") {
+        const landing = g.ghost();
+        const linesBefore = g.lines;
+        if (!landing || !g.hardDrop()) break;
+        counts.drop++;
+        keys++;
+        selectedPlacements.push({
+          seed,
+          move,
+          piece: before.type,
+          policy,
+          landing: { rot: landing.rot, x: landing.x, y: landing.y },
+          lines: g.lines - linesBefore,
+          holes: countHoles(g.board),
+          height: Math.max(...columnHeights(g.board)),
+        });
+        continue;
+      }
       const c = candidates(g.board, g.piece);
-      const t = performance.now();
-      const rs = await kevala.decideMany(c.texts.map((state) => ({ state, questions: QUESTION })));
-      ms.push(performance.now() - t);
-      tokens.push(rs[0].timing?.tokens || 0);
+      if (!c.texts.length) throw new Error(`no landing candidates for seed ${seed}, move ${move}`);
+      const scored = await scoreCandidates(kevala, c.texts);
+      moveTimes.push(scored.ms);
+      decisionBatches += scored.batches;
+      const rs = scored.responses;
+      const scores = rs.map(probability);
       let best = 0;
-      rs.forEach((r, i) => { if (r.answers.clean.noul > rs[best].answers.clean.noul) best = i; });
+      for (let i = 1; i < scores.length; i++) if (scores[i] > scores[best]) best = i;
       const pick = c.groups.get(c.texts[best])[0];
-      for (const d of pick.rotations) { g.rotate(d); counts.rotate++; keys++; }
-      while (g.piece.x !== pick.target.x) { const ok = g.move(g.piece.x < pick.target.x ? 1 : -1); counts[g.piece.x < pick.target.x ? "right" : "left"]++; keys++; if (!ok) break; }
-      g.hardDrop(); counts.drop++; keys++;
+      for (const d of pick.rotations) {
+        if (!g.rotate(d)) throw new Error(`could not rotate seed ${seed}, move ${move} toward ${pick.target.rot}`);
+        counts.rotate++;
+        keys++;
+      }
+      while (g.piece.x !== pick.target.x) {
+        const dir = g.piece.x < pick.target.x ? 1 : -1;
+        if (!g.move(dir)) throw new Error(`could not move seed ${seed}, move ${move} toward x=${pick.target.x}`);
+        counts[dir > 0 ? "right" : "left"]++;
+        keys++;
+      }
+      const landing = g.ghost();
+      if (!landing || landing.rot !== pick.target.rot || landing.x !== pick.target.x) {
+        throw new Error(`unreachable landing for seed ${seed}, move ${move}: got ${landing ? `${landing.rot}@${landing.x}` : "none"}, wanted ${pick.target.rot}@${pick.target.x}`);
+      }
+      const linesBefore = g.lines;
+      if (!g.hardDrop()) throw new Error(`could not drop seed ${seed}, move ${move}`);
+      counts.drop++;
+      keys++;
+      selectedPlacements.push({
+        seed,
+        move,
+        piece: before.type,
+        policy,
+        target: { rot: pick.target.rot, x: pick.target.x },
+        landing: { rot: landing.rot, x: landing.x, y: landing.y },
+        probability: scores[best],
+        lines: g.lines - linesBefore,
+        holes: countHoles(g.board),
+        height: Math.max(...columnHeights(g.board)),
+        description: c.texts[best],
+      });
     }
-    const res = { seed, pieces: g.pieces, lines: g.lines, score: g.score, over: g.over, holes: countHoles(g.board), height: Math.max(...columnHeights(g.board)), keysPerPiece: +(keys / Math.max(1, g.pieces)).toFixed(2), stalls, counts };
+    const res = { seed, moves: g.pieces, pieces: g.pieces, lines: g.lines, score: g.score, over: g.over, holes: countHoles(g.board), height: Math.max(...columnHeights(g.board)), keysPerPiece: +(keys / Math.max(1, g.pieces)).toFixed(2), stalls, counts };
     games.push(res);
     log(JSON.stringify(res));
   }
-  ms.sort((a, b) => a - b);
-  const summary = { model: name, policy, style, backend: kevala?.info.backend, pieces, lines: games.reduce((a, g) => a + g.lines, 0), survived: games.filter((g) => !g.over).length, games: games.length, p50ms: ms[ms.length >> 1], tokens: tokens.length ? Math.round(tokens.reduce((a, b) => a + b, 0) / tokens.length) : 0 };
+  const info = kevala?.info || {};
+  const modelMeta = info.model && typeof info.model === "object" ? info.model : {};
+  const spec = MODELS[name] || {};
+  const moves = games.reduce((sum, game) => sum + game.moves, 0);
+  const lines = games.reduce((sum, game) => sum + game.lines, 0);
+  const holes = games.reduce((sum, game) => sum + game.holes, 0);
+  const height = games.reduce((sum, game) => sum + game.height, 0);
+  const totalMs = moveTimes.reduce((sum, ms) => sum + ms, 0);
+  const summary = {
+    model: name,
+    policy,
+    source: modelSource,
+    modelRevision: modelMeta.revision || spec.revision || null,
+    baseRevision: modelMeta.base_revision || spec.base?.revision || null,
+    quantization: modelMeta.quantization || spec.quantization || null,
+    backend: info.backend || null,
+    gpu: info.gpu || null,
+    gpuPowerPreference: info.gpuPowerPreference || null,
+    seeds,
+    pieces,
+    batchSize,
+    moves,
+    lines,
+    holes,
+    height,
+    meanHoles: games.length ? holes / games.length : 0,
+    meanHeight: games.length ? height / games.length : 0,
+    survived: games.filter((g) => !g.over).length,
+    games: games.length,
+    p50TotalMs: median(moveTimes),
+    totalMs,
+    elapsedMs: performance.now() - runStartedAt,
+    decisionsPerSec: totalMs > 0 ? moves / (totalMs / 1000) : 0,
+    decisionBatches,
+    selectedPlacements,
+  };
   log(JSON.stringify(summary));
   window.evalResult = { summary, games };
-  kevala?.dispose();
 } catch (e) {
   log("ERROR " + e.stack);
   window.evalResult = { error: e.message };
+} finally {
+  kevala?.dispose();
 }
 </script>
 </body>

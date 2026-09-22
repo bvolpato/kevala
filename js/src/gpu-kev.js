@@ -1,4 +1,4 @@
-// Kev's Qwen3.5 trunk on WebGPU: 18 Gated DeltaNet layers and 6 gated attention layers.
+// Qwen3.5's text trunk on WebGPU, shared by Kev and SemIf scoring.
 //
 // A pass runs in two stages inside one command buffer. Stage 1 runs every request's state and
 // keeps what the question branches need: each DeltaNet layer's recurrent state and conv tail,
@@ -30,7 +30,19 @@ export class GpuKev {
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.cfg = cfg;
+    this.dims = {
+      linear: 2 * cfg.lin_key_heads * 128 + cfg.lin_heads * 128,
+      linearOut: cfg.lin_heads * 128,
+      linearProj: 2 * cfg.lin_key_heads * 128 + 2 * cfg.lin_heads * 128,
+      attentionOut: cfg.heads * 256,
+      attentionProj: 2 * (cfg.heads + cfg.kv_heads) * 256,
+      kv: 2 * cfg.kv_heads * 256,
+    };
     this.weights = new GpuWeights(gpu.device, layout);
+    for (const t of this.weights.header.tensors) {
+      this.checkBuffer(t.size, t.name);
+      if (t.scales_size) this.checkBuffer(t.scales_size, `${t.name}.scales`);
+    }
     for (let i = 0; i < cfg.layers; i++) {
       if (!cfg.full[i]) for (const n of ["a", "b"]) this.weights.keepHost.add(`L.${i}.${n}`);
     }
@@ -44,6 +56,13 @@ export class GpuKev {
 
   missing() {
     return this.weights.missing();
+  }
+
+  checkBuffer(size, label) {
+    const limit = Math.min(this.device.limits.maxStorageBufferBindingSize, this.device.limits.maxBufferSize);
+    if (!Number.isSafeInteger(size) || size > limit) {
+      throw Object.assign(new Error(`Qwen WebGPU buffer ${label} needs ${Math.ceil(size / 1048576)} MiB; this device allows ${Math.floor(limit / 1048576)} MiB per buffer. Reduce the batch size or use the native runtime.`), { code: "WEBGPU_INIT" });
+    }
   }
 
   async init() {
@@ -64,15 +83,16 @@ export class GpuKev {
       KEYS: ["kev_attention_keys"],
       ATTN: ["kev_attention", { subgroups: this.subgroup32 }],
       SILUMUL: ["kev_silumul"],
-      GATHER: ["gather"],
+      GATHER: ["kev_gather"],
     };
-    const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, spec), name).then((p) => [key, p])));
+    const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
     this.mm = await matmulPipelines(d, this.wgsl);
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const f32buf = (arr) => {
-      const b = d.createBuffer({ size: Math.max(16, arr.byteLength), usage: U.STORAGE | U.COPY_DST });
+      this.checkBuffer(arr.byteLength, "model constants");
+      const b = d.createBuffer({ label: "Qwen model constants", size: Math.max(16, arr.byteLength), usage: U.STORAGE | U.COPY_DST });
       d.queue.writeBuffer(b, 0, arr);
       return b;
     };
@@ -89,22 +109,23 @@ export class GpuKev {
       both.set(a);
       both.set(b, a.length);
       const interleaved = new Float32Array(both.length);
-      for (let k = 0; k < 256; k++) {
-        for (let j = 0; j < 32; j++) {
-          for (let c = 0; c < 4; c++) interleaved[(k * 32 + j) * 4 + c] = both[j * 1024 + k * 4 + c];
+      for (let k = 0; k < cfg.hidden / 4; k++) {
+        for (let j = 0; j < 2 * cfg.lin_heads; j++) {
+          for (let c = 0; c < 4; c++) interleaved[(k * 2 * cfg.lin_heads + j) * 4 + c] = both[j * cfg.hidden + k * 4 + c];
         }
       }
       this.ab.push(f32buf(interleaved));
     }
-    // rotary table [pos][32] of (cos, sin), f32 inverse frequencies and angles as in PyTorch
+    // Rotary table [pos][rotary/2] of (cos, sin), f32 inverse frequencies and angles as in PyTorch.
     const maxPos = cfg.max_state + cfg.max_branch;
-    const cs = new Float32Array(maxPos * 32 * 2);
-    for (let i = 0; i < 32; i++) {
-      const inv = Math.fround(1 / Math.fround(Math.pow(cfg.rope_theta, (2 * i) / 64)));
+    const half = cfg.rotary / 2;
+    const cs = new Float32Array(maxPos * cfg.rotary);
+    for (let i = 0; i < half; i++) {
+      const inv = Math.fround(1 / Math.fround(Math.pow(cfg.rope_theta, (2 * i) / cfg.rotary)));
       for (let pos = 0; pos < maxPos; pos++) {
         const a = Math.fround(pos * inv);
-        cs[(pos * 32 + i) * 2] = Math.cos(a);
-        cs[(pos * 32 + i) * 2 + 1] = Math.sin(a);
+        cs[(pos * half + i) * 2] = Math.cos(a);
+        cs[(pos * half + i) * 2 + 1] = Math.sin(a);
       }
     }
     this.rope = f32buf(cs);
@@ -117,26 +138,44 @@ export class GpuKev {
     const f = new Float32Array(a);
     values.forEach((v, i) => (typeof v === "object" ? (f[i] = v.f) : (u[i] = v)));
     const b = this.device.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.device.queue.writeBuffer(b, 0, a);
     this.uniforms.push(b);
+    this.device.queue.writeBuffer(b, 0, a);
     return b;
+  }
+
+  resetDynamicBuffers() {
+    for (const b of [...(this.owned || []), ...(this.uniforms || []), ...(this.carryBufs || [])]) b.destroy();
+    this.owned = [];
+    this.uniforms = [];
+    this.carryBufs = [];
+    this.cap = { T1: 0, T2: 0, P: 0, S: 0, R: 0 };
+    this.carrySize = { slots: 0, rows: 0 };
+    this.carry = null;
+    this.kvStage = null;
+    this.ops = null;
+    this.lru = [];
   }
 
   /** Sizes every buffer for a batch and rebuilds the bind groups when it grows. */
   ensure(T1, T2, P, S, R) {
     const c = this.cap;
     if (T1 <= c.T1 && T2 <= c.T2 && P <= c.P && S <= c.S && R <= c.R) return;
-    const up = (n, min) => Math.max(min, 1 << Math.ceil(Math.log2(Math.max(1, n))));
-    this.cap = { T1: up(T1, 64), T2: up(T2, 64), P: up(P, 1), S: up(S, 4), R: up(R, 16) };
+    const up = (n, min) => Math.max(min, 2 ** Math.ceil(Math.log2(Math.max(1, n))));
+    const cap = { T1: up(T1, 64), T2: up(T2, 64), P: up(P, 1), S: up(S, 4), R: up(R, 16) };
+    const T = Math.max(cap.T1, cap.T2);
+    this.checkBuffer(T * Math.max(this.cfg.hidden, this.dims.linearProj, this.dims.attentionProj, 2 * this.cfg.intermediate) * 4, "batch scratch");
+    this.checkBuffer(cap.R * this.cfg.hidden * 4, "scorer rows");
+    this.checkBuffer(cap.S * 32, "segments");
+    this.cap = cap;
     for (const b of this.owned || []) b.destroy();
     this.owned = [];
     for (const b of this.uniforms || []) b.destroy();
     this.uniforms = [];
     const d = this.device;
     const cfg = this.cfg;
-    const T = Math.max(this.cap.T1, this.cap.T2);
-    const buf = (floats, extra = 0) => {
-      const b = d.createBuffer({ size: Math.max(16, floats * 4), usage: U.STORAGE | extra });
+    const buf = (floats, extra = 0, label = "batch scratch") => {
+      this.checkBuffer(floats * 4, label);
+      const b = d.createBuffer({ label: `Qwen ${label}`, size: Math.max(16, floats * 4), usage: U.STORAGE | extra });
       this.owned.push(b);
       return b;
     };
@@ -144,11 +183,11 @@ export class GpuKev {
     this.x = buf(T * D, U.COPY_DST | U.COPY_SRC);
     this.x2 = buf(this.cap.T2 * D, U.COPY_DST | U.COPY_SRC);
     this.h = buf(T * D);
-    this.proj = buf(T * 8192);
-    this.conv = buf(T * 6144);
-    this.core = buf(T * 2048);
-    this.gates = buf(T * 32);
-    this.up = buf(T * 2 * cfg.intermediate);
+    this.proj = buf(T * Math.max(this.dims.linearProj, this.dims.attentionProj), 0, "QKV projection");
+    this.conv = buf(T * Math.max(this.dims.linear, this.dims.kv / 2), 0, "convolution");
+    this.core = buf(T * Math.max(this.dims.linearOut, this.dims.attentionOut), 0, "attention output");
+    this.gates = buf(T * 2 * cfg.lin_heads);
+    this.up = buf(T * 2 * cfg.intermediate, 0, "MLP projection");
     this.act = buf(T * cfg.intermediate);
     this.tok = buf(T * 4, U.COPY_DST);
     this.tok2 = buf(this.cap.T2 * 4, U.COPY_DST | U.COPY_SRC);
@@ -160,8 +199,9 @@ export class GpuKev {
     this.readback = d.createBuffer({ size: this.cap.R * D * 4, usage: U.MAP_READ | U.COPY_DST });
     this.owned.push(this.readback);
     this.g = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.owned.push(this.g);
     this.g2 = d.createBuffer({ size: 16, usage: U.COPY_DST | U.COPY_SRC });
-    this.owned.push(this.g, this.g2);
+    this.owned.push(this.g2);
     if (!this.carry) this.ensureCarries(CACHE_SLOTS + 1, CACHE_SLOTS * SLOT_ROWS + 1024);
     this.build();
   }
@@ -174,19 +214,24 @@ export class GpuKev {
   ensureCarries(slots, rows) {
     const c = this.carrySize || { slots: 0, rows: 0 };
     if (slots <= c.slots && rows <= c.rows && this.carry) return;
-    const up = (n) => 1 << Math.ceil(Math.log2(Math.max(1, n)));
-    this.carrySize = { slots: Math.max(c.slots, up(slots)), rows: Math.max(c.rows, up(rows)) };
+    const up = (n) => 2 ** Math.ceil(Math.log2(Math.max(1, n)));
+    const size = { slots: Math.max(c.slots, up(slots)), rows: Math.max(c.rows, up(rows)) };
+    this.checkBuffer(size.rows * this.dims.kv * 4, "KV cache");
+    this.checkBuffer(size.slots * this.cfg.lin_heads * 16384 * 4, "recurrent state");
+    this.checkBuffer(size.slots * 3 * this.dims.linear * 4, "convolution tail");
+    this.carrySize = size;
     for (const b of this.carryBufs || []) b.destroy();
     this.carryBufs = [];
-    const buf = (floats) => {
-      const b = this.device.createBuffer({ size: Math.max(16, floats * 4), usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+    const buf = (floats, label) => {
+      this.checkBuffer(floats * 4, label);
+      const b = this.device.createBuffer({ label: `Qwen ${label}`, size: Math.max(16, floats * 4), usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
       this.carryBufs.push(b);
       return b;
     };
-    this.kvStage = buf(SLOT_ROWS * 1024);
+    this.kvStage = buf(SLOT_ROWS * this.dims.kv, "KV staging");
     this.carry = [];
     for (let i = 0; i < this.cfg.layers; i++) {
-      this.carry.push(this.cfg.full[i] ? { kv: buf(this.carrySize.rows * 1024) } : { state: buf(this.carrySize.slots * 16 * 16384), tail: buf(this.carrySize.slots * 3 * 6144) });
+      this.carry.push(this.cfg.full[i] ? { kv: buf(this.carrySize.rows * this.dims.kv, "KV cache") } : { state: buf(this.carrySize.slots * this.cfg.lin_heads * 16384, "recurrent state"), tail: buf(this.carrySize.slots * 3 * this.dims.linear, "convolution tail") });
     }
     this.lru = [];
     if (this.cap.T1) this.build();
@@ -200,6 +245,9 @@ export class GpuKev {
     const slotRows = SLOT_ROWS;
     const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
     const starts = (a, p) => p.length < a.length && p.every((v, i) => v === a[i]);
+    // Newly planned states run concurrently. Only retained states from a completed pass
+    // can supply a prefix carry; fresh exact duplicates share their planned destination.
+    const ready = new Set(this.lru);
     const pinned = new Set();
     const carries = [];
     const segs = [];
@@ -220,7 +268,7 @@ export class GpuKev {
         this.stats.tokensSaved += len;
         return carries.push(hit);
       }
-      const ext = this.lru.filter((e) => e.len >= EXTEND_MIN && starts(mine, e.ids)).sort((a, b) => b.len - a.len)[0];
+      const ext = this.lru.filter((e) => ready.has(e) && e.len >= EXTEND_MIN && starts(mine, e.ids)).sort((a, b) => b.len - a.len)[0];
       const from = ext ? ext.len : 0;
       if (ext) {
         pinned.add(ext.slot);
@@ -334,35 +382,35 @@ export class GpuKev {
           break;
         case "conv":
           pass.setPipeline(this.p.CONV);
-          pass.dispatchWorkgroups(T, 24);
+          pass.dispatchWorkgroups(T, this.dims.linear / 256);
           break;
         case "savetail":
           pass.setPipeline(this.p.SAVE_TAIL);
-          pass.dispatchWorkgroups(S, 72);
+          pass.dispatchWorkgroups(S, (3 * this.dims.linear) / 256);
           break;
         case "recur":
           pass.setPipeline(this.p.RECUR);
-          pass.dispatchWorkgroups(S, 16, this.lanes ? 2 : 1);
+          pass.dispatchWorkgroups(S, this.cfg.lin_heads, this.lanes ? 2 : 1);
           break;
         case "gnorm":
           pass.setPipeline(this.p.GNORM);
-          pass.dispatchWorkgroups(T, 16);
+          pass.dispatchWorkgroups(T, this.cfg.lin_heads);
           break;
         case "aprep":
           pass.setPipeline(this.p.APREP);
-          pass.dispatchWorkgroups(T, 10);
+          pass.dispatchWorkgroups(T, this.cfg.heads + this.cfg.kv_heads);
           break;
         case "savekv":
           pass.setPipeline(this.p.SAVE_KV);
-          pass.dispatchWorkgroups(T, 4);
+          pass.dispatchWorkgroups(T, this.dims.kv / 256);
           break;
         case "keys":
           pass.setPipeline(this.p.KEYS);
-          pass.dispatchWorkgroups(Math.ceil(T / 16), 32);
+          pass.dispatchWorkgroups(Math.ceil(T / 16), this.dims.kv / 32);
           break;
         case "attn":
           pass.setPipeline(this.p.ATTN);
-          pass.dispatchWorkgroups(T, 8);
+          pass.dispatchWorkgroups(T, this.cfg.heads);
           break;
         case "silumul": {
           pass.setPipeline(this.p.SILUMUL);
@@ -388,6 +436,16 @@ export class GpuKev {
    * `kevala_kev_prepare`. Resolves to the pointer rows (`rows * hidden` f32).
    */
   async forward(x1, x2, batch, ids) {
+    try {
+      return await this.forwardPass(x1, x2, batch, ids);
+    } catch (e) {
+      // A partial or rejected pass may leave both new and retained carries invalid.
+      this.lru = [];
+      throw e;
+    }
+  }
+
+  async forwardPass(x1, x2, batch, ids) {
     const d = this.device;
     const D = this.cfg.hidden;
     const { T2, branches, rows } = batch;
@@ -395,14 +453,24 @@ export class GpuKev {
     this.R = rows.length;
     // size carries for the worst case first: growing them drops the cache, and the plan must
     // only reference slots that will still hold their data
-    this.ensureCarries(CACHE_SLOTS + batch.states.length, CACHE_SLOTS * SLOT_ROWS + batch.T1);
-    const plan = this.plan(batch, ids);
-    const P = plan.segs.length;
-    const T1 = plan.segs.reduce((a, g) => a + g.len, 0);
     d.pushErrorScope("validation");
-    this.ensure(T1, T2, Math.max(P, 1), Math.max(P, B), rows.length);
+    d.pushErrorScope("out-of-memory");
+    let plan, P, T1, setupError;
+    try {
+      this.ensureCarries(CACHE_SLOTS + batch.states.length, CACHE_SLOTS * SLOT_ROWS + batch.T1);
+      plan = this.plan(batch, ids);
+      P = plan.segs.length;
+      T1 = plan.segs.reduce((a, g) => a + g.len, 0);
+      this.ensure(T1, T2, Math.max(P, 1), Math.max(P, B), rows.length);
+    } catch (e) {
+      setupError = e;
+    }
+    const oom = await d.popErrorScope();
     const setup = await d.popErrorScope();
-    if (setup) throw Object.assign(new Error(`WebGPU setup: ${setup.message}`), { code: "WEBGPU_INIT" });
+    if (setupError || oom || setup) {
+      this.resetDynamicBuffers();
+      throw setupError || Object.assign(new Error(`WebGPU setup: ${(oom || setup).message}`), { code: "WEBGPU_INIT" });
+    }
     const q = d.queue;
     // stage 1: the planned segments, their embedded rows gathered from the full state rows
     const seg1 = new Uint32Array(this.cap.S * 8);
@@ -450,8 +518,9 @@ export class GpuKev {
       if (cp.from === cp.to || !cp.rows) continue;
       for (const c of this.carry) {
         if (!c.kv) continue;
-        enc.copyBufferToBuffer(c.kv, cp.from * 4096, this.kvStage, 0, cp.rows * 4096);
-        enc.copyBufferToBuffer(this.kvStage, 0, c.kv, cp.to * 4096, cp.rows * 4096);
+        const stride = this.dims.kv * 4;
+        enc.copyBufferToBuffer(c.kv, cp.from * stride, this.kvStage, 0, cp.rows * stride);
+        enc.copyBufferToBuffer(this.kvStage, 0, c.kv, cp.to * stride, cp.rows * stride);
       }
     }
     if (T1 > 0) {
@@ -506,6 +575,9 @@ export function parseKevBatch(u) {
 
 export function kevConfig(header) {
   const c = header.config;
+  if (c.head_dim !== 256 || c.linear_key_head_dim !== 128 || c.linear_value_head_dim !== 128 || c.linear_conv_kernel_dim !== 4) {
+    throw new Error("Qwen WebGPU requires 256-wide attention heads, 128-wide linear heads, and a four-token convolution");
+  }
   return {
     hidden: c.hidden_size,
     layers: c.layer_types.length,
@@ -513,6 +585,11 @@ export function kevConfig(header) {
     intermediate: c.intermediate_size,
     eps: c.rms_norm_eps,
     rope_theta: c.rope_theta,
+    rotary: c.rotary_dim,
+    heads: c.num_attention_heads,
+    kv_heads: c.num_key_value_heads,
+    lin_key_heads: c.linear_num_key_heads,
+    lin_heads: c.linear_num_value_heads,
     max_state: c.max_state,
     max_branch: c.max_branch,
   };
