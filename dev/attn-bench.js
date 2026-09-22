@@ -17,6 +17,7 @@ const DIM = 64;
 const KERNELS = {
   attention: { queries: 16 },
   attention_subgroup: { queries: 16, subgroup32: true },
+  attention_tile: { queries: 64, subgroup32: true },
 };
 
 const query = new URLSearchParams(location.search);

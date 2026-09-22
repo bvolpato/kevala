@@ -100,6 +100,9 @@ function parseSubpackHeader(prefix) {
 /** Detects a usable GPU. Returns null when WebGPU is missing or the adapter is too small. */
 // Compilers differ on the directive WGSL requires for subgroups (naga, Firefox's, rejects it in
 // 2026), so the subgroup kernels are used only when this compiles.
+/** Workgroup memory of attention_tile.wgsl: its Q, K, V and probability tiles and the block info. */
+const ATTENTION_TILE_BYTES = 1088 * 8 + 544 * 8 + 512 * 8 + 2112 * 4 + 16;
+
 const SUBGROUP_PROBE = "enable subgroups;\n@compute @workgroup_size(32) fn main() { _ = subgroupAdd(1u); }\n";
 
 async function compiles(device, code) {
@@ -144,7 +147,10 @@ export async function requestDevice({ baseline = false, powerPreference = "high-
   const subgroup32 = subgroups && info.subgroupMinSize === 32 && info.subgroupMaxSize === 32 && device.limits.maxComputeWorkgroupStorageSize >= 24576;
   // others add across groups of 4 lanes, so any subgroup of at least 4 will do
   const subgroup4 = subgroups && info.subgroupMinSize >= 4;
-  return Object.assign(gpu, { subgroup32, subgroup4, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" });
+  // the tiled attention reduces across 16 lanes and keeps f16 tiles in 25 KB of workgroup memory
+  const attentionTile =
+    subgroups && info.subgroupMinSize >= 16 && device.features.has("shader-f16") && device.limits.maxComputeWorkgroupStorageSize >= ATTENTION_TILE_BYTES;
+  return Object.assign(gpu, { subgroup32, subgroup4, attentionTile, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" });
 }
 
 /** Preserve allocation errors before a later write or readback reports an invalid buffer. */
@@ -344,6 +350,9 @@ export class GpuTrunk {
     this.device = gpu.device;
     this.name = gpu.name;
     this.subgroup32 = !!gpu.subgroup32;
+    // queries per attention workgroup: 64 for the tiled kernel, 16 for the others
+    this.attnKernel = gpu.attentionTile ? "attention_tile" : this.subgroup32 ? "attention_subgroup" : "attention";
+    this.attnQueries = gpu.attentionTile ? 64 : 16;
     this.wgsl = gpu.wgsl;
     this.cfg = cfg;
     this.weights = new GpuWeights(gpu.device, layout);
@@ -371,7 +380,7 @@ export class GpuTrunk {
       matmulPipelines(d, this.wgsl),
       kernel("norm"),
       kernel("rope"),
-      kernel(this.subgroup32 ? "attention_subgroup" : "attention"),
+      kernel(this.attnKernel),
       kernel("geglu"),
       kernel("gather"),
     ]);
@@ -529,7 +538,7 @@ export class GpuTrunk {
       d.pushErrorScope("out-of-memory");
     }
     const blocks = [];
-    for (const sg of segs) for (let q0 = 0; q0 < sg.len; q0 += 16) blocks.push(sg.start, sg.len, q0, 0);
+    for (const sg of segs) for (let q0 = 0; q0 < sg.len; q0 += this.attnQueries) blocks.push(sg.start, sg.len, q0, 0);
     const nblocks = blocks.length / 4;
     q.writeBuffer(this.globals, 0, new Uint32Array([tokens, rows.length, nblocks, 0]));
     q.writeBuffer(this.blocks, 0, new Uint32Array(blocks));
