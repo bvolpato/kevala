@@ -37,11 +37,6 @@
 .view-home .state-hint { margin-top: -4px; font-family: var(--mono); }
 .view-home .demo-out { position: relative; min-height: 180px; }
 .view-home .answers.mini { grid-template-columns: 1fr 1fr; gap: 8px; }
-.view-home .answers.mini .answer { padding: 9px 11px; }
-.view-home .answers.mini .instr { display: none; }
-.view-home .answers.mini .bar { grid-template-columns: minmax(60px, 40%) 1fr 42px; }
-.view-home .answers.mini .answer:only-child { grid-column: 1 / -1; }
-.view-home .answers.mini .meta { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
 .view-home .empty-out {
   position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center;
   border: 1px dashed var(--border-2); border-radius: 12px; padding: 18px; color: var(--muted); font-size: 0.86rem;

@@ -166,26 +166,6 @@ label.field { display: grid; gap: 5px; font-size: 0.78rem; color: var(--muted); 
 .progress.indet > i { width: 35% !important; animation: indet 1.2s ease-in-out infinite; }
 @keyframes indet { 0% { left: -35%; } 100% { left: 100%; } }
 
-/* answers */
-.answers { display: grid; gap: 10px; }
-.answer { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 11px 13px; }
-.answer .head { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
-.answer .qid { font: 600 0.84rem var(--mono); color: var(--text); }
-.answer .qtype { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); font-weight: 700; }
-.answer .verdict { font-weight: 700; font-size: 0.92rem; }
-.answer .instr { font-size: 0.78rem; color: var(--muted); margin: 2px 0 8px; line-height: 1.4; }
-.bars { display: grid; gap: 5px; }
-.bar { display: grid; grid-template-columns: minmax(80px, 34%) 1fr 48px; gap: 8px; align-items: center; font-size: 0.78rem; }
-.bar .k { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar .v { text-align: right; font: 0.76rem var(--mono); color: var(--muted); }
-.bar .track { height: 7px; border-radius: 99px; background: var(--surface-3); overflow: hidden; }
-.bar .fill { display: block; height: 100%; width: 0; border-radius: 99px; background: var(--accent); transition: width 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.3s; }
-.bar.top .k { color: var(--text); font-weight: 600; }
-.bar.top .fill { background: var(--accent-2); }
-.bar.top .v { color: var(--text); }
-.answer .meta { display: flex; gap: 12px; margin-top: 7px; font-size: 0.72rem; color: var(--faint); font-family: var(--mono); }
-.answers.busy .answer { opacity: 0.72; transition: opacity 0.2s; }
-
 /* layout helpers */
 section { padding: 76px 0; }
 section.tight { padding: 44px 0; }

@@ -1,7 +1,8 @@
 // Inbox triage: twelve emails and the laya SDK's email questions, sent in growing batches so
 // rows fill in as answers arrive. Sort, filter, open one to see every probability.
 
-import { renderAnswers, fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, decideStream, CDN, js } from "../ui.js";
+import { fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, decideStream, CDN, js } from "../ui.js";
+import { renderAnswers } from "../answers.js";
 
 // the laya SDK's email questions, written out
 const QUESTIONS = {

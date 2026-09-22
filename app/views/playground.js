@@ -3,7 +3,8 @@
 // answers stream in batch by batch.
 
 import { Editor } from "../editor.js";
-import { css, esc, fmtMs, debounce, renderAnswers, highlightJSON, highlight, wireCopy, modelGate, decideStream, backendLabel, CDN, js } from "../ui.js";
+import { css, esc, fmtMs, debounce, highlightJSON, highlight, wireCopy, modelGate, decideStream, backendLabel, CDN, js } from "../ui.js";
+import { renderAnswers } from "../answers.js";
 
 // sample requests; the question sets are the laya SDK's, written out
 const PRESETS = {

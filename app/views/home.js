@@ -2,7 +2,8 @@
 // prompt, the demo cards (with a small animated board on the Tetris card), the models and the
 // credits. How it works, the benchmarks, fidelity and limits live in the How view.
 
-import { esc, fmtMs, debounce, backendBadge, renderAnswers, highlight, wireCopy, modelGate, css, REPO, CDN } from "../ui.js";
+import { esc, fmtMs, debounce, backendBadge, highlight, wireCopy, modelGate, css, REPO, CDN } from "../ui.js";
+import { renderAnswers } from "../answers.js";
 
 // Four questions from each of the laya SDK's question sets, written out, and the field of the
 // state their instructions name.
