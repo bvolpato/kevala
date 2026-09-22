@@ -8,8 +8,8 @@ struct P { width: u32, stride: u32, window: u32, _a: u32 }
 @group(0) @binding(2) var<storage, read> QKV: array<f32>;
 @group(0) @binding(3) var<storage, read> blocks: array<vec4<u32>>;
 @group(0) @binding(4) var<storage, read_write> CTX: array<f32>;
-var<workgroup> qs: array<f32, 1024>;  // [16 queries][64]
-var<workgroup> ks: array<f32, 1024>;  // [16 keys][64]
+var<workgroup> qs: array<f32, 1040>;  // [16 queries][65], padded to spread rows across memory banks
+var<workgroup> ks: array<f32, 1040>;  // [16 keys][65]
 var<workgroup> vs: array<f32, 1024>;  // [16 keys][64]
 var<workgroup> ps: array<f32, 256>;   // [16 queries][16 keys]
 var<workgroup> corr: array<f32, 16>;
@@ -37,7 +37,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
     let d = e % 64u;
     var v = 0.0;
     if (qi < nq) { v = QKV[(s0 + q0 + qi) * p.stride + h * 64u + d]; }
-    qs[e] = v;
+    qs[qi * 65u + d] = v;
   }
   var m = -3.0e38;  // running max, for query t (t < 16)
   var l = 0.0;      // running sum, for query t
@@ -55,7 +55,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
         kv = QKV[row + p.width];
         vv = QKV[row + 2u * p.width];
       }
-      ks[e] = kv;
+      ks[kj * 65u + d] = kv;
       vs[e] = vv;
     }
     workgroupBarrier();
@@ -69,7 +69,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) t
       let inwin = w == 0u || (max(i, j) - min(i, j)) <= w;
       if (qi < nq && j < hi && inwin) {
         var acc = 0.0;
-        for (var d = 0u; d < 64u; d++) { acc += qs[qi * 64u + d] * ks[kj * 64u + d]; }
+        for (var d = 0u; d < 64u; d++) { acc += qs[qi * 65u + d] * ks[kj * 65u + d]; }
         sc = acc * 0.125;
       }
       ps[qi * 16u + kj] = sc;
