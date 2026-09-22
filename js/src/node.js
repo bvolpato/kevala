@@ -8,6 +8,7 @@
 
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { selectCpuTile } from "./cpu-tune.js";
 import { wasmFlavor } from "./wasm.js";
 
 const enc = new TextEncoder();
@@ -19,17 +20,7 @@ export async function loadFile(path, { flavor } = {}) {
   const { instance } = await WebAssembly.instantiate(wasm, {});
   const x = instance.exports;
   x.kevala_init();
-  // the 4x4 CPU tile needs 32 vector registers (ARM): time both and keep the faster
-  const time = (t) => {
-    x.kevala_set_tile(t);
-    // warm up first: timings taken before the engine's optimizing tier kicks in mislead
-    for (let i = 0; i < 4; i++) x.kevala_tile_probe();
-    const t0 = performance.now();
-    for (let i = 0; i < 2; i++) x.kevala_tile_probe();
-    return performance.now() - t0;
-  };
-  time(0);
-  x.kevala_set_tile(time(1) < time(0) ? 1 : 0);
+  const tile = selectCpuTile(x);
   const mem = () => new Uint8Array(x.memory.buffer);
   const text = (p, n) => dec.decode(mem().subarray(p, p + n));
   const check = (rc) => {
@@ -52,7 +43,7 @@ export async function loadFile(path, { flavor } = {}) {
     return JSON.parse(text(x.kevala_out_ptr(), x.kevala_out_len()));
   };
   return {
-    info: { ...meta, flavor: f },
+    info: { ...meta, flavor: f, cpuTiles: [tile] },
     decide: (state, questions, { parts } = {}) => run([{ state, questions, ...(parts ? { parts } : {}) }])[0],
     decideMany: (items) => run(items),
   };

@@ -236,6 +236,9 @@ For reproducible GPU timing, model parity checks, and Firefox/Linux measurements
 [docs/gpu-benchmarks.md](docs/gpu-benchmarks.md). The benchmark distinguishes GPU kernel time
 from end-to-end browser latency.
 
+For CPU profiles, worker scaling, SIMD validation, and retained optimization results, see
+[docs/cpu-benchmarks.md](docs/cpu-benchmarks.md).
+
 ## Limits
 
 - First visits are heavy: a 479 MB pack for Laya, 857 MB for Kev. Later visits read it from disk.

@@ -2,7 +2,8 @@
 // Check the generated WebAssembly contract used by the browser and Node entrypoints.
 import { readFile } from "node:fs/promises";
 
-const requiredExports = ["memory", "kevala_init", "kevala_prepare", "kevala_decide", "kevala_free"];
+const requiredExports = ["memory", "kevala_init", "kevala_prepare", "kevala_decide", "kevala_free",
+  "kevala_reduce_prepare", "kevala_reduce_partial_ptr", "kevala_reduce_add_partial", "kevala_reduce_finish"];
 const flavors = ["relaxed", "simd", "base"];
 
 for (const flavor of flavors) {

@@ -79,22 +79,35 @@ export default {
       const [tp] = w.put(new Uint8Array(table.buffer));
       const xptr = w.call(() => w.x.kevala_shard_batch(tp, table.length));
       w.x.kevala_free(tp, table.byteLength);
+      const accPtr = c.call(() => c.x.kevala_reduce_prepare(tokens * D));
+      const partialPtr = c.x.kevala_reduce_partial_ptr();
       for (let s = 0; s < cfg.steps; s++) {
         if (s === 2 * cfg.layers) c.check(c.x.kevala_bridge());
         const x = c.f32(c.x.kevala_x_ptr(), tokens * D);
-        const pending = e.shards.map((r) => {
-          const copy = x.slice();
+        const expected = tokens * D;
+        const buffers = e.layaShardBuffers || (e.layaShardBuffers = []);
+        const pending = e.shards.map((r, i) => {
+          // A returned partial is detached when sent back to its worker. Refill that
+          // same allocation for the next step, or allocate once for a new batch shape.
+          let copy = buffers[i];
+          buffers[i] = null;
+          if (copy?.length === expected) copy.set(x);
+          else copy = x.slice();
           return r.call({ type: "step", s, x: copy }, [copy.buffer]);
         });
         w.f32(xptr, tokens * D).set(x);
         const pp = w.call(() => w.x.kevala_shard_step(s));
-        const acc = new Float32Array(w.f32(pp, tokens * D));
-        for (const m of await Promise.all(pending)) {
+        c.f32(accPtr, expected).set(w.f32(pp, expected));
+        for (const [i, m] of (await Promise.all(pending)).entries()) {
           const p = m.p;
-          for (let i = 0; i < acc.length; i++) acc[i] += p[i];
+          if (!(p instanceof Float32Array) || p.length !== expected) {
+            throw new Error(`invalid Laya shard partial: expected ${expected} f32 values`);
+          }
+          buffers[i] = p;
+          c.f32(partialPtr, expected).set(p);
+          c.check(c.x.kevala_reduce_add_partial());
         }
-        const xv = c.f32(c.x.kevala_x_ptr(), tokens * D);
-        for (let i = 0; i < acc.length; i++) xv[i] += acc[i];
+        c.check(c.x.kevala_reduce_finish());
       }
     }
     const t2 = now();

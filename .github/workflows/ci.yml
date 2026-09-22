@@ -38,6 +38,13 @@ jobs:
         run: scripts/build-wasm.sh
       - name: Validate generated WebAssembly
         run: node scripts/check-wasm.mjs
+      - name: Build CPU numerical harnesses
+        run: scripts/build-cpu-bench.sh all
+      - name: Check CPU kernels in every WebAssembly flavor
+        run: |
+          for flavor in relaxed simd base; do
+            node scripts/bench-cpu-kernels.mjs guard "$flavor"
+          done
       - name: Upload WebAssembly build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

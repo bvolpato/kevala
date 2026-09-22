@@ -21,7 +21,7 @@ async function handle(port, m) {
         w = await Wasm.create(m.module);
         total = m.total;
         ptr = w.alloc(total);
-        port.postMessage({ seq: m.seq, type: "ok" });
+        port.postMessage({ seq: m.seq, type: "ok", tile: w.tile });
         break;
       case "data":
         w.bytes(ptr + m.dst, m.bytes.byteLength).set(m.bytes);
@@ -44,10 +44,14 @@ async function handle(port, m) {
         break;
       }
       case "step": {
-        w.f32(xptr, tokens * hidden).set(m.x);
+        const expected = tokens * hidden;
+        if (!(m.x instanceof Float32Array) || m.x.length !== expected) {
+          throw new Error(`invalid Laya shard input: expected ${expected} f32 values`);
+        }
+        w.f32(xptr, expected).set(m.x);
         const pp = w.call(() => w.x.kevala_shard_step(m.s));
-        const p = w.f32(pp, tokens * hidden).slice();
-        port.postMessage({ seq: m.seq, type: "partial", p }, [p.buffer]);
+        m.x.set(w.f32(pp, expected));
+        port.postMessage({ seq: m.seq, type: "partial", p: m.x }, [m.x.buffer]);
         break;
       }
     }
