@@ -49,7 +49,7 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups };
   }
   const match = raw.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_outer", "matmul_outer_h"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
