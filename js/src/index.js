@@ -21,6 +21,33 @@ function spawn(file) {
   return new Worker(URL.createObjectURL(new Blob([src], { type: "text/javascript" })), { type: "module" });
 }
 
+/** Whether WebGPU is available inside `worker`; a worker that fails to start says yes, so the load reports why. */
+function workerHasGpu(worker) {
+  return new Promise((resolve) => {
+    worker.onmessage = (ev) => ev.data.type === "probe" && resolve(ev.data.gpu);
+    worker.onerror = () => resolve(true);
+    worker.postMessage({ type: "probe" });
+  });
+}
+
+let pageEngines = 0;
+
+/**
+ * The engine on this thread, behind a MessagePort that stands in for its worker. Each call
+ * imports a fresh module instance, since the engine keeps its model in module state.
+ */
+async function pageEngine() {
+  const engine = await import(new URL(`./engine-worker.js?page=${++pageEngines}`, import.meta.url).href);
+  const { port1, port2 } = new MessageChannel();
+  engine.serve(port2);
+  port1.terminate = () => {
+    engine.dispose();
+    port1.close();
+    port2.close();
+  };
+  return port1;
+}
+
 /** A loaded model. Create with `Kevala.load()`. */
 export class Kevala {
   /**
@@ -33,6 +60,8 @@ export class Kevala {
    *               converts the original weights when the pack is unreachable (default);
    *               "checkpoint" always downloads the original weights and converts them here
    *   backend     "auto" (WebGPU when available, else WebAssembly), "webgpu", or "wasm"
+   *   onPage      run the engine on the page instead of in a worker (default: only when the
+   *               browser offers WebGPU to pages but not to workers)
    *   threads     WebAssembly workers for the wasm backend (default: cores, at most 8)
    *   cache       keep the pack in the Cache API (default true)
    *   onProgress  receives { phase, file, loaded, total, message }
@@ -59,33 +88,60 @@ export class Kevala {
     // persistent storage is not evicted under disk pressure; browsers grant or ignore the request
     // (only pages can ask, not the worker that stores the pack)
     if (opts.cache !== false && typeof document !== "undefined") navigator.storage?.persist?.()?.catch(() => {});
-    this.#worker = spawn("./engine-worker.js");
+    const cancelled = () => signal.reason ?? new DOMException("Loading was cancelled", "AbortError");
+    if (signal?.aborted) throw cancelled();
+    const abort = () => {
+      this.dispose();
+      this.#ready?.reject(cancelled());
+    };
+    signal?.addEventListener("abort", abort, { once: true });
+    // a relative pack URL means relative to the page, not to the worker script
+    const model = typeof opts.model === "string" && !MODELS[opts.model] && typeof document !== "undefined" ? new URL(opts.model, document.baseURI).href : opts.model;
+    const plugins = (opts.plugins || []).map((u) => (typeof document !== "undefined" ? new URL(u, document.baseURI).href : u));
+    const options = { ...opts, model, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
+    try {
+      let worker = spawn("./engine-worker.js");
+      const pageGpu = typeof navigator !== "undefined" && !!navigator.gpu && opts.backend !== "wasm";
+      if (pageGpu && (opts.onPage || !(await workerHasGpu(worker)))) {
+        // WebGPU only on the page: run the engine here, and fall back to a CPU worker if it fails
+        worker.terminate();
+        if (signal?.aborted) throw cancelled();
+        try {
+          this.info = { ...(await this.#connect(await pageEngine(), { ...options, backend: "webgpu" }, onProgress)), onPage: true };
+          return;
+        } catch (e) {
+          if (opts.backend === "webgpu" || signal?.aborted) throw e;
+          this.dispose();
+          worker = spawn("./engine-worker.js");
+          const gpuUnavailable = String(e.message).replace(/^WebGPU: /, "");
+          this.info = { ...(await this.#connect(worker, { ...options, backend: "wasm" }, onProgress)), gpuUnavailable };
+          return;
+        }
+      }
+      if (signal?.aborted) {
+        worker.terminate();
+        throw cancelled();
+      }
+      this.info = await this.#connect(worker, options, onProgress);
+    } finally {
+      signal?.removeEventListener("abort", abort);
+    }
+  }
+
+  /** Talks to an engine (a worker, or a port to one on this page): loads the model, resolves to its info. */
+  #connect(engine, options, onProgress) {
+    this.#worker = engine;
     const ready = new Promise((resolve, reject) => {
       this.#ready = { resolve, reject };
     });
-    this.#worker.onmessage = (ev) => this.#onMessage(ev.data, onProgress);
-    this.#worker.onerror = (ev) => {
+    engine.onmessage = (ev) => this.#onMessage(ev.data, onProgress);
+    engine.onerror = (ev) => {
       const err = new Error(ev.message || "kevala worker failed to start");
       this.#ready?.reject(err);
       for (const p of this.#pending.values()) p.reject(err);
     };
-    const abort = () => {
-      this.dispose();
-      this.#ready?.reject(signal.reason ?? new DOMException("Loading was cancelled", "AbortError"));
-    };
-    if (signal) {
-      if (signal.aborted) abort();
-      signal.addEventListener("abort", abort, { once: true });
-    }
-    // a relative pack URL means relative to the page, not to the worker script
-    const model = typeof opts.model === "string" && !MODELS[opts.model] && typeof document !== "undefined" ? new URL(opts.model, document.baseURI).href : opts.model;
-    const plugins = (opts.plugins || []).map((u) => (typeof document !== "undefined" ? new URL(u, document.baseURI).href : u));
-    this.#worker.postMessage({ type: "load", options: { ...opts, model, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href } });
-    try {
-      this.info = await ready;
-    } finally {
-      signal?.removeEventListener("abort", abort);
-    }
+    engine.postMessage({ type: "load", options });
+    return ready;
   }
 
   #onMessage(m, onProgress) {

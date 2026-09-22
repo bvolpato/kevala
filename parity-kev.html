@@ -29,7 +29,8 @@ const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.parity = null;
 
-// #pack=local&backend=webgpu (or pack=checkpoint, or a pack URL) runs at once, for scripted checks
+// #pack=local&backend=webgpu (or pack=checkpoint, or a pack URL) runs at once, for scripted checks;
+// baseline=1 runs WebGPU without optional features and with default limits, like the weakest device
 const q = new URLSearchParams(location.hash.slice(1));
 if (q.get("backend")) $("backend").value = q.get("backend");
 if (["pack", "checkpoint", "local"].includes(q.get("pack"))) $("pack").value = q.get("pack");
@@ -43,7 +44,7 @@ async function run() {
   const model = url || (choice === "local" ? "./tmp/kev-0.8b-q8.kevala" : "kev-0.8b");
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
-  const kevala = await Kevala.load({ model, from, backend });
+  const kevala = await Kevala.load({ model, from, backend, gpuBaseline: q.get("baseline") === "1" });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
   const golden = await (await fetch("./tests/fixtures/golden-kev.json")).json();
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];

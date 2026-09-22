@@ -26,6 +26,7 @@ export class GpuKev {
     U = GPUBufferUsage;
     this.device = gpu.device;
     this.subgroup32 = !!gpu.subgroup32;
+    this.subgroup4 = !!gpu.subgroup4;
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.cfg = cfg;
@@ -49,8 +50,8 @@ export class GpuKev {
     const miss = this.missing();
     if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
-    // the lane-split recurrence when the GPU has subgroups, the one-thread-per-column one otherwise
-    this.lanes = d.features.has("subgroups");
+    // the lane-split recurrence when the GPU has subgroups of 4 or more, one thread per column otherwise
+    this.lanes = this.subgroup4;
     const kernels = {
       RMS: ["kev_rms"],
       GATES: ["kev_gates"],

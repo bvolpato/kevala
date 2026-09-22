@@ -87,6 +87,16 @@ page reads it back from disk in under a second.
 
 ## Backends
 
+**Choosing one.** With `backend: "auto"`, the engine asks for a WebGPU device with the optional
+features the adapter offers (`shader-f16`, `subgroups`, `timestamp-query`) and its larger limits, and
+falls back to the CPU when there is none, keeping the reason in `info.gpuUnavailable`. Each optional
+feature has a kernel path without it, and those paths fit the default limits every WebGPU device
+has; `gpuBaseline: true` forces them for testing (`parity.html#auto&pack=local&baseline=1`).
+Subgroup kernels also need the browser to accept `enable subgroups;`, which a probe shader checks,
+since naga (Firefox's compiler) rejects that directive. The engine runs in a
+worker; when a browser offers WebGPU to pages but not to workers, `load()` imports it on the page
+instead and talks to it over a `MessagePort`.
+
 **WebGPU.** The coordinator embeds tokens and runs the family's head; the GPU runs every transformer
 layer and returns only the rows the head reads. Kernels:
 

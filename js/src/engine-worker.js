@@ -4,6 +4,9 @@
 // (js/src/archs) that says how the family runs on WebGPU or across shard workers; without one,
 // the family still runs on the CPU in a single WebAssembly instance.
 //
+// It normally runs as a module worker. A browser can offer WebGPU to pages but not to workers;
+// then the page imports this module and talks to it over a MessagePort (serve()).
+//
 // Backends:
 //   webgpu  the coordinator (WebAssembly) tokenizes, embeds and scores; the GPU runs the layers
 //   wasm    one instance runs everything, or the layers are split across N shard workers
@@ -21,13 +24,16 @@ let busy = false;
 const shardPorts = [];
 let shardWaiters = null;
 
-const post = (m, t) => self.postMessage(m, t || []);
+// the page on the other end: this worker's scope, or the port serve() was given
+let port = self;
+const post = (m, t) => port.postMessage(m, t || []);
 const progress = (p) => post({ type: "progress", ...p });
 
-self.onmessage = async (ev) => {
+async function onMessage(ev) {
   const m = ev.data;
   try {
-    if (m.type === "load") await load(m.options);
+    if (m.type === "probe") post({ type: "probe", gpu: typeof navigator !== "undefined" && !!navigator.gpu });
+    else if (m.type === "load") await load(m.options);
     else if (m.type === "decide") enqueue(m);
     else if (m.type === "profile") setProfiling(m);
     else if (m.type === "shards") {
@@ -37,7 +43,22 @@ self.onmessage = async (ev) => {
   } catch (e) {
     post({ type: "error", id: m.id, message: String(e?.message || e), stack: e?.stack });
   }
-};
+}
+
+/** Runs the engine on the importing thread, answering on `p` (a MessagePort) instead of a worker scope. */
+export function serve(p) {
+  port = p;
+  port.onmessage = onMessage;
+}
+
+/** Frees the model; a worker gets the same by being terminated. */
+export function dispose() {
+  E?.gpu?.device?.destroy();
+  E = null;
+  queue = [];
+}
+
+if (typeof WorkerGlobalScope !== "undefined") self.onmessage = onMessage;
 
 function now() {
   return performance.now();
@@ -126,14 +147,15 @@ async function load(o) {
 
   // backend choice: WebGPU when the family has a GPU trunk, else shards when it can split
   let gpu = null;
+  let gpuUnavailable = plugin?.createGpu ? null : `no WebGPU backend for ${arch} yet`;
   if (plugin?.createGpu && (o.backend === "webgpu" || o.backend === "auto" || !o.backend)) {
     try {
-      gpu = await requestDevice();
+      gpu = await requestDevice({ baseline: o.gpuBaseline });
     } catch (e) {
-      if (o.backend === "webgpu") throw e;
+      gpuUnavailable = e.message;
     }
   }
-  if (!gpu && o.backend === "webgpu") throw new Error(plugin?.createGpu ? "WebGPU is not available in this browser" : `no WebGPU backend for ${arch} yet`);
+  if (!gpu && o.backend === "webgpu") throw new Error(`WebGPU: ${gpuUnavailable}`);
   const hw = Math.max(1, Math.min(16, navigator.hardwareConcurrency || 4));
   const maxShards = gpu || !plugin?.run ? 1 : plugin.maxShards?.(header) || 1;
   const threads = Math.max(1, Math.min(o.threads || Math.min(hw, 8), maxShards));
@@ -233,6 +255,7 @@ async function load(o) {
       arch,
       backend,
       gpu: engine.gpu?.name || null,
+      gpuUnavailable: engine.gpu ? null : gpuUnavailable,
       threads,
       flavor,
       modalities: meta.modalities,

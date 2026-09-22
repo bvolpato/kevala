@@ -94,22 +94,44 @@ function parseSubpackHeader(prefix) {
 }
 
 /** Detects a usable GPU. Returns null when WebGPU is missing or the adapter is too small. */
-export async function requestDevice() {
-  if (typeof navigator === "undefined" || !navigator.gpu) return null;
-  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
-  if (!adapter) return null;
-  const want = {
-    maxStorageBufferBindingSize: Math.min(adapter.limits.maxStorageBufferBindingSize, 1 << 30),
-    maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1 << 30),
-    maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
-  };
+// Compilers differ on the directive WGSL requires for subgroups (naga, Firefox's, rejects it in
+// 2026), so the subgroup kernels are used only when this compiles.
+const SUBGROUP_PROBE = "enable subgroups;\n@compute @workgroup_size(32) fn main() { _ = subgroupAdd(1u); }\n";
+
+async function compiles(device, code) {
+  const info = await device.createShaderModule({ code }).getCompilationInfo?.();
+  return !info?.messages.some((m) => m.type === "error");
+}
+
+/**
+ * A WebGPU device with the optional features and larger limits the adapter offers, or an error
+ * saying why there is none. `baseline` asks for no optional feature and the default limits, the
+ * way the weakest WebGPU device runs (for testing those kernel paths on a strong one).
+ */
+export async function requestDevice({ baseline = false } = {}) {
+  const where = typeof window === "undefined" ? "worker" : "page";
+  if (typeof navigator === "undefined" || !navigator.gpu) throw new Error(`this browser has no WebGPU in a ${where} (navigator.gpu is missing)`);
+  const adapter = (await navigator.gpu.requestAdapter({ powerPreference: "high-performance" })) || (await navigator.gpu.requestAdapter());
+  if (!adapter) throw new Error("the browser offers no WebGPU adapter: WebGPU may be turned off, or the GPU or its driver blocklisted");
+  const want = baseline
+    ? {}
+    : {
+        maxStorageBufferBindingSize: Math.min(adapter.limits.maxStorageBufferBindingSize, 1 << 30),
+        maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1 << 30),
+        maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
+      };
   // timestamps only feed the optional profiler (`Kevala.load({ profile: true })`)
-  const requiredFeatures = ["timestamp-query", "shader-f16", "subgroups"].filter((f) => adapter.features.has(f));
+  const optional = baseline ? [] : ["timestamp-query", "shader-f16", "subgroups"];
+  const requiredFeatures = optional.filter((f) => adapter.features.has(f));
   const device = await adapter.requestDevice({ requiredLimits: want, requiredFeatures });
   const info = adapter.info || {};
-  // some kernels map one lane to each of 32 keys: they need subgroups of exactly 32 lanes
-  const subgroup32 = device.features.has("subgroups") && info.subgroupMinSize === 32 && info.subgroupMaxSize === 32;
-  return { device, adapter, subgroup32, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" };
+  const subgroups = device.features.has("subgroups") && (await compiles(device, SUBGROUP_PROBE));
+  // some kernels map one lane to each of 32 keys: they need subgroups of exactly 32 lanes, and
+  // the attention one more workgroup memory than the 16 KB every device has
+  const subgroup32 = subgroups && info.subgroupMinSize === 32 && info.subgroupMaxSize === 32 && device.limits.maxComputeWorkgroupStorageSize >= 24576;
+  // others add across groups of 4 lanes, so any subgroup of at least 4 will do
+  const subgroup4 = subgroups && info.subgroupMinSize >= 4;
+  return { device, adapter, subgroup32, subgroup4, name: [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ") || "WebGPU" };
 }
 
 let U;

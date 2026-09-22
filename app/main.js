@@ -3,7 +3,7 @@
 // and timers stop, and the model keeps loading in the session whatever the tab.
 
 import { session, MODELS, MODEL_NOTES, LOCAL, SHOT, FROM } from "./session.js";
-import { esc, fmtBytes, fmtMs, backendLabel, logo, REPO } from "./ui.js";
+import { esc, fmtBytes, fmtMs, backendLabel, cpuReason, logo, REPO } from "./ui.js";
 
 /** A view with a tab in the header; without a label it has no tab. */
 const defineRoute = (id, label, title) => ({ id, label, title, load: () => import(`./views/${id}.js`) });
@@ -119,6 +119,7 @@ function panelAction(s) {
       `<span class="spacer"></span>`,
       `<button type="button" class="btn small ghost" data-act="unload">Unload</button>`,
       `</div>`,
+      cpuReason(info) ? `<p class="tiny mp-note">${esc(cpuReason(info))}</p>` : "",
       s.storageError ? `<p class="tiny gate-err">Not stored for next time (${esc(s.storageError)}). Free some disk space or clear stored packs, and the next load will keep it.</p>` : "",
     ].join("");
   }

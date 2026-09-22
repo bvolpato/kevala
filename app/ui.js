@@ -44,6 +44,32 @@ export function backendLabel(info) {
   return `CPU · ${info.threads > 1 ? `${info.threads} workers` : "1 thread"}`;
 }
 
+/**
+ * Why a model that could use WebGPU runs on the CPU, and how this browser can turn WebGPU on; ""
+ * when it runs on WebGPU or the CPU was asked for.
+ */
+export function cpuReason(info) {
+  if (!info || info.backend === "webgpu" || !info.gpuUnavailable) return "";
+  const ua = navigator.userAgent;
+  const firefox = /Firefox\//.test(ua);
+  const chrome = /Chrome\//.test(ua);
+  const safari = /Safari\//.test(ua) && !chrome;
+  const linux = /Linux/.test(ua) && !/Android/.test(ua);
+  let fix = "";
+  if (navigator.gpu && /worker/.test(info.gpuUnavailable)) {
+    fix = firefox
+      ? "Firefox has WebGPU on this page but not in workers, where kevala runs: set dom.webgpu.workers.enabled to true in about:config and reload."
+      : "This browser has WebGPU on pages but not in workers, where kevala runs.";
+  } else if (firefox) {
+    fix = "In about:config, set dom.webgpu.enabled and dom.webgpu.workers.enabled to true (and gfx.webgpu.ignore-blocklist if the GPU is blocklisted), then reload.";
+  } else if (chrome && linux) {
+    fix = "Turn on chrome://flags/#enable-unsafe-webgpu and chrome://flags/#enable-vulkan, then restart the browser.";
+  } else if (safari) {
+    fix = "Safari has WebGPU from version 26; before that it is under Develop > Feature Flags.";
+  }
+  return `Running on the CPU because ${info.gpuUnavailable}. ${fix}`.trim();
+}
+
 export function backendBadge(info) {
   if (!info) return `<span class="badge"><span class="dot"></span>not loaded</span>`;
   const kind = info.backend === "webgpu" ? "gpu" : "cpu";
@@ -161,7 +187,6 @@ function gateLoadingHTML(name) {
     `<button type="button" class="btn small ghost" data-act="cancel">Cancel</button>`,
     `</div>`,
     `<div class="progress"><i></i></div>`,
-    `<p class="tiny faint">The download continues if you switch to another page of this site.</p>`,
   ].join("");
 }
 

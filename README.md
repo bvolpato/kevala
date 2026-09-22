@@ -131,6 +131,7 @@ import { Kevala, MODELS, cacheInfo, clearCache } from "kevala";
 const kevala = await Kevala.load({
   model: "laya",         // a MODELS name, a .kevala URL, or an ArrayBuffer/Blob
   backend: "auto",       // "webgpu", "wasm", or "auto" (WebGPU when available)
+  onPage: false,         // run on the page, not in a worker (automatic when only pages get WebGPU)
   threads: 8,            // WebAssembly workers for the CPU backend
   from: "pack",          // "pack": the pinned int8 pack; "checkpoint": convert the original weights
   cache: true,           // keep the pack in origin storage
@@ -141,7 +142,7 @@ const kevala = await Kevala.load({
 
 await kevala.decide(state, questions, { parts });  // one request, one forward pass
 await kevala.decideMany([{ state, questions }]);   // many states, still one pass
-kevala.info;      // { arch, backend, gpu, threads, modalities, model, config, pack, loadMs }
+kevala.info;      // { arch, backend, gpu, gpuUnavailable, threads, modalities, model, config, pack, loadMs }
 await kevala.profile(true); // later responses carry timing.gpu: milliseconds per GPU kernel
 kevala.dispose();
 ```
@@ -214,8 +215,11 @@ Rust 1.85 or newer, and nothing else. Python is only used to generate the refere
 - Without WebGPU, a request takes about a second on a fast laptop core, more on phones. Laya splits
   across CPU workers; Kev runs in one instance on the CPU for now.
 - Browser backgrounding throttles CPU work: benchmarks from a hidden tab are several times slower.
-- WebGPU was verified on Apple Silicon in Chromium. Other GPUs and browsers (Safari 26, Firefox) are
-  expected to work but were not tested for this release.
+- WebGPU was verified on Apple Silicon in Chromium, with every optional feature and without any
+  (the default limits, as the weakest WebGPU device has). Every kernel also passes naga, the WGSL
+  compiler Firefox uses. Other GPUs and browsers were not tested for this release.
+- Browsers without WebGPU run on the CPU. `kevala.info.gpuUnavailable` says why, and the site's model
+  menu says how to turn WebGPU on in that browser.
 - int8 weights move probabilities by up to 0.024 (Laya) and 0.0097 (Kev) on the fixtures, with no
   argmax changes. The models themselves have their own limits: see the
   [Laya](https://huggingface.co/convaiinnovations/laya) and [Kev](https://github.com/jaredpalmer/kev)

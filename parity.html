@@ -44,7 +44,9 @@ async function run() {
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
   const t0 = performance.now();
   let last = "";
-  const kevala = await Kevala.load({ backend, threads, model, from, onProgress: (p) => {
+  // #auto&baseline=1 runs WebGPU without optional features and with default limits, like the weakest device
+  const gpuBaseline = new URLSearchParams(location.hash.slice(1)).get("baseline") === "1";
+  const kevala = await Kevala.load({ backend, threads, model, from, gpuBaseline, onProgress: (p) => {
     const s = p.phase + (p.total ? ` ${Math.round((100 * p.loaded) / p.total)}%` : "") + (p.message ? ` ${p.message}` : "");
     if (s !== last) { last = s; if (!p.total || p.loaded === p.total || p.phase !== "download") log(s); }
   } });
