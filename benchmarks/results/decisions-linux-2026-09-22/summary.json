@@ -1,6 +1,6 @@
 {
   "schema": "kevala-decision-report-v1",
-  "generatedUtc": "2026-09-22T22:56:58.068Z",
+  "generatedUtc": "2026-09-22T23:20:38.490Z",
   "probabilitySumTolerance": 0.001,
   "canonical": {
     "permutations": [
@@ -161,8 +161,19 @@
       "pack": {
         "model": "laya",
         "modelRevision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
-        "hash": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
-        "hashScope": "expected-catalog-pack-sha256",
+        "catalogHash": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+        "catalogHashScope": "expected-catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+          "expectedCatalogBytes": 478886720,
+          "recordedFullPackSha256": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+          "recordedFullPackBytes": 478886720,
+          "verifiedUtc": "2026-09-22T22:47:25.644Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "3ce4b3fffc6dc5db96122e79c475767f5f00252b42ecd1b13f0d8d42458580f6"
+        },
         "modelInfo": {
           "author": "Nandakishor M, Convai Innovations",
           "converter": "kevala 0.1.0",
@@ -735,8 +746,19 @@
       "pack": {
         "model": "kev-0.8b",
         "modelRevision": "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
-        "hash": "aa5303976a72e3a501739f1e208dd6374f3a4f6f0229c1cb5f1c9f7dd62db045",
-        "hashScope": "pack-header-metadata-sha256",
+        "catalogHash": "aa5303976a72e3a501739f1e208dd6374f3a4f6f0229c1cb5f1c9f7dd62db045",
+        "catalogHashScope": "pack-header-metadata-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2",
+          "expectedCatalogBytes": 857259584,
+          "recordedFullPackSha256": "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2",
+          "recordedFullPackBytes": 857259584,
+          "verifiedUtc": "2026-09-22T22:47:25.650Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "eedc630d8bb1111ec55895ad8dd710b39d4b4d1b978d804e232b17c4a0bd458e"
+        },
         "modelInfo": {
           "author": "Jared Palmer (Kev); Qwen team (base)",
           "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B-Base",
@@ -1311,8 +1333,19 @@
       "pack": {
         "model": "kev-4b",
         "modelRevision": "485ace8703592fcf405488b262449990824cfed1",
-        "hash": "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
-        "hashScope": "catalog-pack-sha256",
+        "catalogHash": "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+        "catalogHashScope": "catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+          "expectedCatalogBytes": 4756384192,
+          "recordedFullPackSha256": "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+          "recordedFullPackBytes": 4756384192,
+          "verifiedUtc": "2026-09-22T22:47:25.656Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "03a4bcd233169fbb37bfa0f4e21299ec1c550f2d222afd0a95dd858bb07a1762"
+        },
         "modelInfo": {
           "author": "Jared Palmer (Kev); Qwen team (base)",
           "base": "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
@@ -1887,8 +1920,19 @@
       "pack": {
         "model": "kev-9b",
         "modelRevision": "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
-        "hash": "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
-        "hashScope": "catalog-pack-sha256",
+        "catalogHash": "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+        "catalogHashScope": "catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+          "expectedCatalogBytes": 8963899968,
+          "recordedFullPackSha256": "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+          "recordedFullPackBytes": 8963899968,
+          "verifiedUtc": "2026-09-22T22:47:25.661Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "feb0d126b2480322351ab90ece071efc87bbb008e468484015425d43b8f4016f"
+        },
         "modelInfo": {
           "author": "Jared Palmer (Kev); Qwen team (base)",
           "base": "https://huggingface.co/Qwen/Qwen3.5-9B-Base",
@@ -2467,8 +2511,19 @@
       "pack": {
         "model": "semif-qwen3.5-0.8b",
         "modelRevision": "2fc06364715b967f1860aea9cf38778875588b17",
-        "hash": "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a",
-        "hashScope": "catalog-pack-sha256",
+        "catalogHash": "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a",
+        "catalogHashScope": "catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a",
+          "expectedCatalogBytes": 855225984,
+          "recordedFullPackSha256": "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a",
+          "recordedFullPackBytes": 855225984,
+          "verifiedUtc": "2026-09-22T22:47:25.666Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "38a9a0412d710c0b815c3bad829ad31924ffbb000794b790218fd6ba813be3cb"
+        },
         "modelInfo": {
           "author": "Qwen team (weights); SemIf (decision method)",
           "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
@@ -3051,8 +3106,19 @@
       "pack": {
         "model": "semif-qwen3.5-2b",
         "modelRevision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
-        "hash": "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2",
-        "hashScope": "catalog-pack-sha256",
+        "catalogHash": "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2",
+        "catalogHashScope": "catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2",
+          "expectedCatalogBytes": 2127742976,
+          "recordedFullPackSha256": "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2",
+          "recordedFullPackBytes": 2127742976,
+          "verifiedUtc": "2026-09-22T22:47:25.671Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "cea086503b1945e91bdfd79dcaa6b286629bd753eafc07de993c4302b42fdd61"
+        },
         "modelInfo": {
           "author": "Qwen team (weights); SemIf (decision method)",
           "base": "https://huggingface.co/Qwen/Qwen3.5-2B",
@@ -3635,8 +3701,19 @@
       "pack": {
         "model": "semif-qwen3.5-4b",
         "modelRevision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
-        "hash": "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e",
-        "hashScope": "catalog-pack-sha256",
+        "catalogHash": "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e",
+        "catalogHashScope": "catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e",
+          "expectedCatalogBytes": 4751303104,
+          "recordedFullPackSha256": "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e",
+          "recordedFullPackBytes": 4751303104,
+          "verifiedUtc": "2026-09-22T22:47:25.676Z",
+          "method": "sha256sum over the complete local pack after the sequential GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "4028984dd29b2c86a6593ae08701d2e70b8f95a99c0da23002eebf320e56d72b"
+        },
         "modelInfo": {
           "author": "Qwen team (weights); SemIf (decision method)",
           "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
@@ -4220,8 +4297,19 @@
       "pack": {
         "model": "gemma-4-e2b",
         "modelRevision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
-        "hash": "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df",
-        "hashScope": "expected-catalog-pack-sha256",
+        "catalogHash": "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df",
+        "catalogHashScope": "expected-catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df",
+          "expectedCatalogBytes": 5217421952,
+          "recordedFullPackSha256": "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df",
+          "recordedFullPackBytes": 5217421952,
+          "verifiedUtc": "2026-09-22T22:53:58.618Z",
+          "method": "sha256sum over the complete local pack before this GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "5d118043c96970cf43b6db6005421a986f0791483fe1ad9b88ba2b640abfddfc"
+        },
         "modelInfo": {
           "author": "Google (Gemma team)",
           "base": "https://huggingface.co/google/gemma-4-E2B-it",
@@ -4805,8 +4893,19 @@
       "pack": {
         "model": "gemma-4-e4b",
         "modelRevision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
-        "hash": "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be",
-        "hashScope": "expected-catalog-pack-sha256",
+        "catalogHash": "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be",
+        "catalogHashScope": "expected-catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be",
+          "expectedCatalogBytes": 8407043136,
+          "recordedFullPackSha256": "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be",
+          "recordedFullPackBytes": 8407043136,
+          "verifiedUtc": "2026-09-22T22:56:57.988Z",
+          "method": "sha256sum over the complete local pack before this GPU sweep; matched the pinned catalog digest",
+          "originalOutputSha256": "0c343a43b86b36dfd50b05864c24bef072dddf6be49b2857c4be2427876c83d5"
+        },
         "modelInfo": {
           "author": "Google (Gemma team)",
           "base": "https://huggingface.co/google/gemma-4-E4B-it",

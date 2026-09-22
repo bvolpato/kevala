@@ -48,7 +48,7 @@ const DATASET_FILES = [
 ];
 
 function parseArgs(argv) {
-  const args = { results: resolve(ROOT, "tmp"), fixtures: resolve(ROOT, "benchmarks/decisions"), references: [], output: null, markdown: null, probabilityTolerance: DEFAULT_PROBABILITY_TOLERANCE };
+  const args = { results: resolve(ROOT, "tmp"), fixtures: resolve(ROOT, "benchmarks/decisions"), references: [], output: null, markdown: null, checkSummary: null, probabilityTolerance: DEFAULT_PROBABILITY_TOLERANCE };
   for (let index = 0; index < argv.length; index++) {
     const value = argv[index];
     const next = () => {
@@ -60,9 +60,10 @@ function parseArgs(argv) {
     else if (value === "--reference") args.references.push(resolvePath(next()));
     else if (value === "--output") args.output = resolvePath(next());
     else if (value === "--markdown") args.markdown = resolvePath(next());
+    else if (value === "--check-summary") args.checkSummary = resolvePath(next());
     else if (value === "--probability-tolerance") args.probabilityTolerance = Number(next());
     else if (value === "--help" || value === "-h") {
-      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--reference FILE ...] [--output FILE] [--markdown FILE]");
+      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--reference FILE ...] [--output FILE] [--markdown FILE] [--check-summary FILE]");
       process.exit(0);
     } else throw new Error(`unknown argument ${value}`);
   }
@@ -432,9 +433,55 @@ function probabilitiesAgree(left, right, expectedOptions, issues, label, toleran
   }
 }
 
+function validatePackVerification(data, model, issues) {
+  const expected = MODELS[model] ?? {};
+  const recorded = data.postRunVerification?.pack
+    ?? data.metadata?.postRunVerification?.pack
+    ?? null;
+  const verification = {
+    status: "invalid",
+    source: "postRunVerification.pack",
+    expectedCatalogHash: expected.packSha256 ?? null,
+    expectedCatalogBytes: expected.pack ?? null,
+    recordedFullPackSha256: recorded?.sha256 ?? null,
+    recordedFullPackBytes: recorded?.bytes ?? null,
+    verifiedUtc: data.postRunVerification?.verifiedUtc ?? data.metadata?.postRunVerification?.verifiedUtc ?? null,
+    method: recorded?.method ?? null,
+    originalOutputSha256: data.postRunVerification?.originalOutputSha256
+      ?? data.metadata?.postRunVerification?.originalOutputSha256
+      ?? null,
+  };
+  let valid = true;
+  if (!expected.packSha256 || !Number.isSafeInteger(expected.pack)) {
+    addIssue(issues, `MODELS[${model}] is missing expected full-pack catalog metadata`);
+    valid = false;
+  }
+  if (!recorded || typeof recorded !== "object") {
+    addIssue(issues, `${model}: missing postRunVerification.pack full-pack evidence`);
+    return verification;
+  }
+  if (typeof recorded.sha256 !== "string" || !/^[a-f0-9]{64}$/i.test(recorded.sha256)) {
+    addIssue(issues, `${model}: postRunVerification.pack full-pack sha256 is missing or invalid`);
+    valid = false;
+  } else if (expected.packSha256 && recorded.sha256.toLowerCase() !== expected.packSha256.toLowerCase()) {
+    addIssue(issues, `${model}: postRunVerification.pack full-pack sha256 mismatch with MODELS catalog hash`);
+    valid = false;
+  }
+  if (!Number.isSafeInteger(recorded.bytes) || recorded.bytes <= 0) {
+    addIssue(issues, `${model}: postRunVerification.pack full-pack byte size is missing or invalid`);
+    valid = false;
+  } else if (Number.isSafeInteger(expected.pack) && recorded.bytes !== expected.pack) {
+    addIssue(issues, `${model}: postRunVerification.pack full-pack byte size mismatch with MODELS catalog size`);
+    valid = false;
+  }
+  verification.status = valid ? "verified" : "invalid";
+  return verification;
+}
+
 function validateRawResult(data, expected, tolerance, model) {
   const issues = [];
   const runtimeValidation = validateModelMetadata(data, model, issues);
+  const packVerification = validatePackVerification(data, model, issues);
   const provenanceIssues = [];
   const datasetProvenance = validateDatasetProvenance(data, expected, provenanceIssues);
   for (const issue of provenanceIssues) addIssue(issues, issue);
@@ -486,7 +533,7 @@ function validateRawResult(data, expected, tolerance, model) {
   }
   for (const id of timingById.keys()) if (!expected.byId.has(id)) addIssue(issues, `unexpected timing case ID ${id}`);
   for (const id of probabilityById.keys()) if (!expected.byId.has(id)) addIssue(issues, `unexpected probability case ID ${id}`);
-  return { issues, timingRows, probabilityRows, predictions, probabilitiesById, timingById, probabilityById, runtimeValidation, datasetProvenance };
+  return { issues, timingRows, probabilityRows, predictions, probabilitiesById, timingById, probabilityById, runtimeValidation, packVerification, datasetProvenance };
 }
 
 function runtimeReport(data) {
@@ -500,12 +547,13 @@ function runtimeReport(data) {
   };
 }
 
-function packReport(data) {
+function packReport(data, verification) {
   return {
     model: data.model ?? null,
     modelRevision: data.modelRevision ?? null,
-    hash: data.hash ?? null,
-    hashScope: data.hashScope ?? null,
+    catalogHash: data.catalogHash ?? data.hash ?? null,
+    catalogHashScope: data.catalogHashScope ?? data.hashScope ?? null,
+    verification,
     modelInfo: data.metadata?.modelInfo ?? null,
     datasetModule: data.metadata?.datasetModule ?? null,
     datasetFiles: data.metadata?.datasetFiles ?? null,
@@ -573,7 +621,7 @@ async function processModel(model, path, expected, tolerance) {
     file: { path: relative(ROOT, path), sha256: await sha256(path) },
     validation,
     runtime: { ...runtimeReport(data), validation: checked.runtimeValidation },
-    pack: packReport(data),
+    pack: packReport(data, checked.packVerification),
     runtimeErrors: Array.isArray(data.errors) ? data.errors : [],
     datasetProvenance: checked.datasetProvenance,
     latency: latency(checked.timingRows, "wallMs"),
@@ -754,6 +802,55 @@ async function processReference(path, expected, tolerance) {
   };
 }
 
+function firstDifference(left, right, path = "$") {
+  if (Object.is(left, right)) return null;
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right)) return `${path}: array/object mismatch`;
+    if (left.length !== right.length) return `${path}.length: ${left.length} != ${right.length}`;
+    for (let index = 0; index < left.length; index++) {
+      const difference = firstDifference(left[index], right[index], `${path}[${index}]`);
+      if (difference) return difference;
+    }
+    return null;
+  }
+  if (left && typeof left === "object" || right && typeof right === "object") {
+    if (!left || !right || typeof left !== "object" || typeof right !== "object") return `${path}: ${JSON.stringify(left)} != ${JSON.stringify(right)}`;
+    const keys = [...new Set([...Object.keys(left), ...Object.keys(right)])].sort();
+    for (const key of keys) {
+      if (!Object.hasOwn(left, key)) return `${path}.${key}: missing from regenerated report`;
+      if (!Object.hasOwn(right, key)) return `${path}.${key}: missing from committed summary`;
+      const difference = firstDifference(left[key], right[key], `${path}.${key}`);
+      if (difference) return difference;
+    }
+    return null;
+  }
+  return `${path}: ${JSON.stringify(left)} != ${JSON.stringify(right)}`;
+}
+
+function summaryComparable(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const comparable = { ...value };
+  delete comparable.generatedUtc;
+  return comparable;
+}
+
+async function checkSummary(path, report) {
+  let committed;
+  try {
+    committed = await readJson(path);
+  } catch (error) {
+    console.error(`Decision summary check failed: could not read ${path}: ${error.message}`);
+    return false;
+  }
+  const difference = firstDifference(summaryComparable(report), summaryComparable(committed));
+  if (difference) {
+    console.error(`Decision summary mismatch: ${path}`);
+    console.error(`First difference: ${difference}`);
+    return false;
+  }
+  return true;
+}
+
 function compareQ8WithReference(modelData, referenceData, expectedRows, model, referenceName) {
   const unavailable = (reason) => ({ status: "unavailable", model, reference: referenceName, reason, quantizationOnly: false });
   if (!modelData?.report || modelData.report.status !== "ok") return unavailable("Q8 result is missing or invalid");
@@ -875,7 +972,9 @@ async function main() {
     await mkdir(dirname(args.markdown), { recursive: true });
     await writeFile(args.markdown, markdown(report));
   }
-  if (report.missing.length
+  const summaryMatches = args.checkSummary ? await checkSummary(args.checkSummary, report) : true;
+  if (!summaryMatches
+      || report.missing.length
       || Object.values(report.models).some((item) => item.status !== "ok")
       || Object.values(report.references).some((item) => item.status !== "ok")
       || report.comparisons.some((item) => item.status !== "ok")) {
