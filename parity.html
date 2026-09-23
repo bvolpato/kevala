@@ -60,6 +60,7 @@ async function run() {
   const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
   let worst = 0, agree = 0, n = 0;
   const times = [];
+  const details = [];
   for (const c of golden.cases) {
     const r = await kevala.decide(c.state, c.questions);
     times.push(r.timing.forward);
@@ -79,6 +80,7 @@ async function run() {
       const dp = Math.max(...want.map((v, i) => Math.abs(v - got[i])));
       const am = (v) => v.indexOf(Math.max(...v));
       const ok = am(want) === am(got);
+      details.push({ id: c.id, question: qid, expected: want, actual: got, argmax: ok, maxDp: dp });
       n++; agree += ok; worst = Math.max(worst, dp);
       rows.push([c.id, qid, e.input_ids.length, ok ? "ok" : "MISS", dp.toFixed(4), r.timing.forward.toFixed(1)]);
     }
@@ -95,6 +97,7 @@ async function run() {
     questions: n,
     argmax: agree,
     maxDp: worst,
+    details,
     p50: times[times.length >> 1],
     p95: times[Math.floor(times.length * 0.95)],
     done: true,

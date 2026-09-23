@@ -364,8 +364,11 @@ export class GpuTrunk {
     this.subgroup32 = !!gpu.subgroup32;
     // queries per attention workgroup: 64 for the tiled kernel, 16 for the others
     const tile = gpu.attentionTile || gpu.attentionTileShared;
-    this.attnKernel = tile ? ["attention_tile", { subgroups: !!gpu.attentionTile }] : [this.subgroup32 ? "attention_subgroup" : "attention"];
-    this.attnQueries = tile ? 64 : 16;
+    const tileFp32 = !tile && this.subgroup32 && this.device.limits.maxComputeWorkgroupStorageSize >= 30224 &&
+      !!globalThis.navigator?.gpu?.wgslLanguageFeatures?.has("subgroup_id");
+    this.attnKernel = tile ? ["attention_tile", { subgroups: !!gpu.attentionTile }] : tileFp32 ?
+      ["attention_tile_f32", { subgroups: true }] : [this.subgroup32 ? "attention_subgroup" : "attention"];
+    this.attnQueries = tile || tileFp32 ? 64 : 16;
     this.wgsl = gpu.wgsl;
     this.cfg = cfg;
     this.weights = new GpuWeights(gpu.device, layout);
