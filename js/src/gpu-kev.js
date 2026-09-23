@@ -227,9 +227,6 @@ export class GpuKev {
     this.ablocks2 = buf(this.blockCap * 4, U.COPY_DST | U.COPY_SRC);
     this.rows = buf(this.cap.R, U.COPY_DST);
     this.gathered = buf(this.cap.R * D, U.COPY_SRC);
-    this.tailH = buf(this.cap.R * D, 0, "selected tail norm");
-    this.tailUp = buf(this.cap.R * 2 * cfg.intermediate, 0, "selected tail projection");
-    this.tailAct = buf(this.cap.R * cfg.intermediate, 0, "selected tail activation");
     this.part = buf(SPLIT_SCRATCH);
     this.readback = d.createBuffer({ size: this.cap.R * D * 4, usage: U.MAP_READ | U.COPY_DST });
     this.owned.push(this.readback);
@@ -237,8 +234,6 @@ export class GpuKev {
     this.owned.push(this.g);
     this.g2 = d.createBuffer({ size: 16, usage: U.COPY_DST | U.COPY_SRC });
     this.owned.push(this.g2);
-    this.gTail = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.owned.push(this.gTail);
     if (!this.carry) this.ensureCarries(CACHE_SLOTS + 1, CACHE_SLOTS * SLOT_ROWS + 1024);
     this.build();
   }
@@ -352,20 +347,20 @@ export class GpuKev {
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const bg = (p, list) => d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: list.map((b, i) => ({ binding: i, resource: { buffer: b } })) });
-    const mm = (w, input, output, mode, globals = this.g, label = null) => {
+    const mm = (w, input, output, mode) => {
       const e = W(w);
       const [N, K] = e.info.shape;
       const u = this.uni([N, K, mode, 0]);
       return {
         k: "mm",
-        label: label || "mm." + w.split(".").pop(),
+        label: "mm." + w.split(".").pop(),
         N,
         K,
-        group: d.createBindGroup({ layout: this.mm.layout, entries: [globals, u, input, e.buf, e.sbuf, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
-        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [globals, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.g, u, input, e.buf, e.sbuf, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [this.g, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
-    const rms = (w, input, output, globals = this.g, label = "rms") => ({ k: "rms", label, group: bg(this.p.RMS, [globals, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
+    const rms = (w, input, output) => ({ k: "rms", group: bg(this.p.RMS, [this.g, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
     const one = [];
     const two = [];
     let stateComplete = false;
@@ -380,11 +375,10 @@ export class GpuKev {
         const kv = this.carry[i].kv;
         both(mm(n("qkv"), this.h, this.proj, 0));
         both({ k: "aprep", group: bg(this.p.APREP, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("q_norm")).buf, W(n("k_norm")).buf, this.tok, this.rope]) });
-        const keys = !this.attnTile ? { k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) } : null;
+        if (!this.attnTile) both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
         one.push({ k: "savekv", group: bg(this.p.SAVE_KV, [this.g, this.proj, kv, this.tok, this.segs]) });
         // Stage 1 only supplies carries. Its final hidden rows have no consumer.
         if (i === cfg.layers - 1) stateComplete = true;
-        if (keys) both(keys);
         const attn = this.attnTile ? [this.g, this.proj, kv, this.ablocks, this.segs, this.core] : [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv];
         both({ k: "attn", group: bg(this.p.ATTN, attn) });
         both(mm(n("o"), this.core, this.x, 1));
@@ -399,20 +393,12 @@ export class GpuKev {
         both({ k: "gnorm", group: bg(this.p.GNORM, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("gnorm")).buf, this.core]) });
         both(mm(n("out"), this.core, this.x, 1));
       }
-      if (i === cfg.layers - 1) {
-        const tail = (op) => (op.tail = true, op);
-        two.push(tail({ k: "gather", label: "tail.gather", group: bg(this.p.GATHER, [this.g, this.x, this.rows, this.gathered]) }));
-        two.push(tail(rms(W(n("post_norm")).buf, this.gathered, this.tailH, this.gTail, "tail.rms")));
-        two.push(tail(mm(n("gate_up"), this.tailH, this.tailUp, 0, this.gTail, "tail.mm.gate_up")));
-        two.push(tail({ k: "silumul", label: "tail.silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.gTail, this.uni([cfg.intermediate, 0, 0, 0]), this.tailUp, this.tailAct]) }));
-        two.push(tail(mm(n("down"), this.tailAct, this.gathered, 1, this.gTail, "tail.mm.down")));
-      } else {
-        both(rms(W(n("post_norm")).buf, this.x, this.h));
-        both(mm(n("gate_up"), this.h, this.up, 0));
-        both({ k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) });
-        both(mm(n("down"), this.act, this.x, 1));
-      }
+      both(rms(W(n("post_norm")).buf, this.x, this.h));
+      both(mm(n("gate_up"), this.h, this.up, 0));
+      both({ k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) });
+      both(mm(n("down"), this.act, this.x, 1));
     }
+    two.push({ k: "gather", group: bg(this.p.GATHER, [this.g, this.x, this.rows, this.gathered]) });
     this.ops = [one, two];
   }
 
@@ -420,19 +406,17 @@ export class GpuKev {
     const prof = this.profiler;
     let pass = prof ? null : enc.beginComputePass();
     for (const op of ops) {
-      if (op.tail && this.R === 0) continue;
-      const tokens = op.tail ? this.R : T;
       if (prof) pass = prof.pass(enc, op.label || op.k);
       pass.setBindGroup(0, op.group);
       switch (op.k) {
         case "mm": {
-          const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, tokens) : this.gpuKernel;
-          encodeMatmul(pass, this.tuning.pipelines[kernel], op, tokens);
+          const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, T) : this.gpuKernel;
+          encodeMatmul(pass, this.tuning.pipelines[kernel], op, T);
           break;
         }
         case "rms":
           pass.setPipeline(this.p.RMS);
-          pass.dispatchWorkgroups(tokens);
+          pass.dispatchWorkgroups(T);
           break;
         case "gates":
           pass.setPipeline(this.p.GATES);
@@ -474,7 +458,7 @@ export class GpuKev {
           break;
         case "silumul": {
           pass.setPipeline(this.p.SILUMUL);
-          const n = Math.ceil((tokens * op.I) / 256);
+          const n = Math.ceil((T * op.I) / 256);
           pass.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
           break;
         }
@@ -560,7 +544,6 @@ export class GpuKev {
     d.pushErrorScope("out-of-memory");
     q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
     q.writeBuffer(this.g2, 0, new Uint32Array([T2, rows.length, B, 2]));
-    q.writeBuffer(this.gTail, 0, new Uint32Array([rows.length, rows.length, 0, 3]));
     q.writeBuffer(this.x, 0, x1c);
     q.writeBuffer(this.x2, 0, x2);
     q.writeBuffer(this.tok, 0, tok1);
@@ -610,14 +593,13 @@ export class GpuKev {
     }
     this.profiler?.finish(enc);
     const bytes = rows.length * D * 4;
-    if (bytes) enc.copyBufferToBuffer(this.gathered, 0, this.readback, 0, bytes);
+    enc.copyBufferToBuffer(this.gathered, 0, this.readback, 0, bytes);
     q.submit([enc.finish()]);
     if (this.profiler) this.lastProfile = await this.profiler.collect();
     if (checking) {
       const [oom, invalid] = [await d.popErrorScope(), await d.popErrorScope()];
       if (oom || invalid) throw Object.assign(new Error(`WebGPU: ${(oom || invalid).message}`), { code: "WEBGPU_INIT" });
     }
-    if (!bytes) return new Float32Array(0);
     await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
     const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
     this.readback.unmap();
