@@ -1,6 +1,6 @@
 // Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
 //
-// Qwen projection kernel with 64-value staging and named accumulator vectors.
+// Shared Q8 projection kernel with 64-value staging and named accumulator vectors.
 // Keeping each row in a named vector avoids dynamic private-array indexing.
 // This variant supports one 64-column group per workgroup.
 //
@@ -22,10 +22,12 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
 var<workgroup> xs: array<vec4<{{TILE}}>, 1024>; // [m][k/4], two K blocks
-var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & 7)], two K blocks
+var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & W_SWIZZLE)], two K blocks
 
+// FP16 vectors span two 32-bit banks. Spread full row tiles over all 16 slots;
+// shorter tiles keep the original layout, which wins on some adapters.
 //#if F16
-const W_SWIZZLE: u32 = 15u;
+const W_SWIZZLE: u32 = select(7u, 15u, {{ROWS}}u == 4u);
 //#else
 const W_SWIZZLE: u32 = 7u;
 //#endif
