@@ -604,7 +604,7 @@ async function main() {
     cases,
     adapter: provenance,
     provenance: {
-      sourceBaseCommit: "07e17a9afb2a065493ff4ef5de1c4664b394a474",
+      sourceBaseCommit: query.get("sourceCommit") || "07e17a9afb2a065493ff4ef5de1c4664b394a474",
       sourceTransform: variantName,
       wasmUrl: source.wasmUrl,
       page: location.href,
