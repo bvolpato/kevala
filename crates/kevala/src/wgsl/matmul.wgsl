@@ -8,7 +8,7 @@
 // A workgroup of 32 x 8 threads covers {{BM}} rows and 64 columns. Each thread owns
 // rows y + 8 i for i < 2 * {{ROWS}}, and columns x and x + 32, in named vec2 accumulators.
 //#endif
-// X stays f32; the shared weight tile stores packed Q8 words and one scale per row.
+// The K32 loaders and shared weight swizzle are identical to the 16 x 16 path.
 //#else
 // A workgroup of 16 x 16 threads covers {{BM}} rows ({{ROWS}} per thread) and {{BN}} columns
 // ({{GROUPS}} groups of 64); thread (x, y) owns rows y + 16 i and columns x + 16 j + 64 g, so
@@ -32,12 +32,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
 var<workgroup> xs: array<vec4<{{TILE}}>, 512>; // [m][k/4]
-//#if GENERIC_UNROLL
-var<workgroup> wq: array<u32, 512>; // [n][(k/4) ^ ((n >> 2) & 7)], swizzled
-var<workgroup> wscale: array<f32, 64>;
-//#else
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WS_LEN}}>; // [n][(k/4) ^ (n & 7)], swizzled
-//#endif
 
 // four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
 // xor makes each byte b + 128, and a byte in the low mantissa bits of 2^23 reads as 2^23 + b + 128
@@ -109,18 +104,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let lr = li / 4u;
   let lq = li % 4u;
   let xrow = m0 + lr;
-//#if GENERIC_UNROLL
-  let sw = (lr >> 2u) & 7u;
-//#else
   let sw = lr & 7u;
-//#endif
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
-//#if GENERIC_UNROLL
-  var qv = vec2<u32>(0u);
-//#else
   var wv: array<vec4<f32>, {{WV_LEN}}>;
-//#endif
   for (var kb = kb0; kb < kb1; kb++) {
     xv0 = vec4<f32>(0.0);
     xv1 = vec4<f32>(0.0);
@@ -129,17 +116,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       xv0 = X[base];
       xv1 = X[base + 1u];
     }
-//#if GENERIC_UNROLL
-    let wrow = n0 + lr;
-    qv = vec2<u32>(0u);
-    if (wrow < N) {
-      let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
-      qv = select(v.xy, v.zw, (lq & 1u) == 1u);
-    }
-    if (lq == 0u) {
-      if (wrow < N) { wscale[lr] = S[wrow * nb + kb]; } else { wscale[lr] = 0.0; }
-    }
-//#else
     for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
       let wrow = n0 + lr + 64u * gg;
       wv[2u * gg] = vec4<f32>(0.0);
@@ -152,36 +128,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         wv[2u * gg + 1u] = sx(lo.y) * s;
       }
     }
-//#endif
     if (lr < {{BM}}u) {
       xs[lr * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
       xs[lr * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
     }
-//#if GENERIC_UNROLL
-    wq[lr * 8u + ((lq * 2u) ^ sw)] = qv.x;
-    wq[lr * 8u + ((lq * 2u + 1u) ^ sw)] = qv.y;
-//#else
     for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
       let r = lr + 64u * gg;
       ws[r * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg]);
       ws[r * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg + 1u]);
     }
-//#endif
     workgroupBarrier();
-//#if GENERIC_UNROLL
-    let nx = (lid.x >> 2u) & 7u;
-//#else
     let nx = lid.x & 7u;
-//#endif
 //#if GENERIC_UNROLL
     // Keep the eight K/4 steps explicit, reusing two weight vectors across eight rows.
     let c = lid.x;
-    let s0 = wscale[c];
-    let s1 = wscale[c + 32u];
     {
       let kq = 0u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -207,8 +171,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 1u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -234,8 +198,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 2u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -261,8 +225,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 3u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -288,8 +252,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 4u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -315,8 +279,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 5u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -342,8 +306,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 6u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
@@ -369,8 +333,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     }
     {
       let kq = 7u;
-      let b0 = sx(wq[c * 8u + (kq ^ nx)]) * s0;
-      let b1 = sx(wq[(c + 32u) * 8u + (kq ^ nx)]) * s1;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
