@@ -108,35 +108,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
   var wv: array<vec4<f32>, {{WV_LEN}}>;
-//#if GENERIC_UNROLL
-  var next_w = vec4<u32>(0u);
-  var next_scale = 0.0;
-  if (kb0 < kb1) {
-    let kb = kb0;
-    xv0 = vec4<f32>(0.0);
-    xv1 = vec4<f32>(0.0);
-    if (lr < {{BM}}u && xrow < T) {
-      let base = (xrow * K + kb * 32u) / 4u + lq * 2u;
-      xv0 = X[base];
-      xv1 = X[base + 1u];
-    }
-    for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
-      let wrow = n0 + lr + 64u * gg;
-      wv[2u * gg] = vec4<f32>(0.0);
-      wv[2u * gg + 1u] = vec4<f32>(0.0);
-      if (wrow < N) {
-        let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
-        let s = S[wrow * nb + kb];
-        let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
-        wv[2u * gg] = sx(lo.x) * s;
-        wv[2u * gg + 1u] = sx(lo.y) * s;
-      }
-    }
-  }
-//#endif
   for (var kb = kb0; kb < kb1; kb++) {
-//#if GENERIC_UNROLL
-//#else
     xv0 = vec4<f32>(0.0);
     xv1 = vec4<f32>(0.0);
     if (lr < {{BM}}u && xrow < T) {
@@ -156,7 +128,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         wv[2u * gg + 1u] = sx(lo.y) * s;
       }
     }
-//#endif
     if (lr < {{BM}}u) {
       xs[lr * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
       xs[lr * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
@@ -197,24 +168,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
-    }
-    // Delay decoding the next weights until the current shared tile has been consumed.
-    if (kb + 1u < kb1) {
-      let next_kb = kb + 1u;
-      xv0 = vec4<f32>(0.0);
-      xv1 = vec4<f32>(0.0);
-      if (lr < {{BM}}u && xrow < T) {
-        let base = (xrow * K + next_kb * 32u) / 4u + lq * 2u;
-        xv0 = X[base];
-        xv1 = X[base + 1u];
-      }
-      next_w = vec4<u32>(0u);
-      next_scale = 0.0;
-      let wrow = n0 + lr;
-      if (wrow < N) {
-        next_w = W[(wrow * K + next_kb * 32u) / 16u + lq / 2u];
-        next_scale = S[wrow * nb + next_kb];
-      }
     }
     {
       let kq = 1u;
@@ -419,13 +372,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
           acc[i * {{GROUPS}}u + gg] += vec4<f32>(dot(a, b0), dot(a, b1), dot(a, b2), dot(a, b3));
         }
       }
-    }
-//#endif
-//#if GENERIC_UNROLL
-    if (kb + 1u < kb1) {
-      let lo = select(next_w.xy, next_w.zw, (lq & 1u) == 1u);
-      wv[0u] = sx(lo.x) * next_scale;
-      wv[1u] = sx(lo.y) * next_scale;
     }
 //#endif
     workgroupBarrier();
