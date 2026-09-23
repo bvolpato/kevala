@@ -1,7 +1,7 @@
 // Fused Q8 paired projections followed by a gated activation.
 //
-// A workgroup covers 64 rows and 64 columns with the same 16 x 16 mapping as
-// the generic R4/G1 matmul. X is staged once per K block. The two Q8 weight
+// A 32 x 8 workgroup covers 64 rows and 64 columns. Each thread owns eight
+// rows y + 8 i and two columns x and x + 32. X is staged once per K block. The Q8
 // tiles are staged independently, but their dot products use the same K/4
 // order and FP32 accumulators as matmul.wgsl. This prototype intentionally
 // has no split-K path; the harness rejects cases for which the runtime split
@@ -47,7 +47,7 @@ fn activate(x: f32) -> f32 {
   return 0.5 * x * (1.0 + tanh(c * (x + 0.044715 * x * x * x)));
 }
 
-@compute @workgroup_size(16, 16)
+@compute @workgroup_size(32, 8)
 fn main(
   @builtin(workgroup_id) wid: vec3<u32>,
   @builtin(local_invocation_id) lid: vec3<u32>,
@@ -60,14 +60,22 @@ fn main(
   let m0 = wid.y * 64u;
   let n0 = wid.x * 64u;
 
-  var gate0 = vec4<f32>(0.0);
-  var gate1 = vec4<f32>(0.0);
-  var gate2 = vec4<f32>(0.0);
-  var gate3 = vec4<f32>(0.0);
-  var up0 = vec4<f32>(0.0);
-  var up1 = vec4<f32>(0.0);
-  var up2 = vec4<f32>(0.0);
-  var up3 = vec4<f32>(0.0);
+  var gate0 = vec2<f32>(0.0);
+  var gate1 = vec2<f32>(0.0);
+  var gate2 = vec2<f32>(0.0);
+  var gate3 = vec2<f32>(0.0);
+  var gate4 = vec2<f32>(0.0);
+  var gate5 = vec2<f32>(0.0);
+  var gate6 = vec2<f32>(0.0);
+  var gate7 = vec2<f32>(0.0);
+  var up0 = vec2<f32>(0.0);
+  var up1 = vec2<f32>(0.0);
+  var up2 = vec2<f32>(0.0);
+  var up3 = vec2<f32>(0.0);
+  var up4 = vec2<f32>(0.0);
+  var up5 = vec2<f32>(0.0);
+  var up6 = vec2<f32>(0.0);
+  var up7 = vec2<f32>(0.0);
 
   // Four loaders per row, each bringing two vec4 values from a K=32 block.
   let lr = li / 4u;
@@ -118,209 +126,285 @@ fn main(
     {
       let kq = 0u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 1u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 2u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 3u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 4u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 5u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 6u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     {
       let kq = 7u;
       let bg0 = wg[c * 8u + (kq ^ nx)];
-      let bg1 = wg[(c + 16u) * 8u + (kq ^ nx)];
-      let bg2 = wg[(c + 32u) * 8u + (kq ^ nx)];
-      let bg3 = wg[(c + 48u) * 8u + (kq ^ nx)];
+      let bg1 = wg[(c + 32u) * 8u + (kq ^ nx)];
       let a0 = xs[(lid.y + 0u) * 8u + kq];
-      let a1 = xs[(lid.y + 16u) * 8u + kq];
-      let a2 = xs[(lid.y + 32u) * 8u + kq];
-      let a3 = xs[(lid.y + 48u) * 8u + kq];
-      gate0 += vec4<f32>(dot(a0, bg0), dot(a0, bg1), dot(a0, bg2), dot(a0, bg3));
-      gate1 += vec4<f32>(dot(a1, bg0), dot(a1, bg1), dot(a1, bg2), dot(a1, bg3));
-      gate2 += vec4<f32>(dot(a2, bg0), dot(a2, bg1), dot(a2, bg2), dot(a2, bg3));
-      gate3 += vec4<f32>(dot(a3, bg0), dot(a3, bg1), dot(a3, bg2), dot(a3, bg3));
+      gate0 += vec2<f32>(dot(a0, bg0), dot(a0, bg1));
+      let a1 = xs[(lid.y + 8u) * 8u + kq];
+      gate1 += vec2<f32>(dot(a1, bg0), dot(a1, bg1));
+      let a2 = xs[(lid.y + 16u) * 8u + kq];
+      gate2 += vec2<f32>(dot(a2, bg0), dot(a2, bg1));
+      let a3 = xs[(lid.y + 24u) * 8u + kq];
+      gate3 += vec2<f32>(dot(a3, bg0), dot(a3, bg1));
+      let a4 = xs[(lid.y + 32u) * 8u + kq];
+      gate4 += vec2<f32>(dot(a4, bg0), dot(a4, bg1));
+      let a5 = xs[(lid.y + 40u) * 8u + kq];
+      gate5 += vec2<f32>(dot(a5, bg0), dot(a5, bg1));
+      let a6 = xs[(lid.y + 48u) * 8u + kq];
+      gate6 += vec2<f32>(dot(a6, bg0), dot(a6, bg1));
+      let a7 = xs[(lid.y + 56u) * 8u + kq];
+      gate7 += vec2<f32>(dot(a7, bg0), dot(a7, bg1));
       let bu0 = wu[c * 8u + (kq ^ nx)];
-      let bu1 = wu[(c + 16u) * 8u + (kq ^ nx)];
-      let bu2 = wu[(c + 32u) * 8u + (kq ^ nx)];
-      let bu3 = wu[(c + 48u) * 8u + (kq ^ nx)];
-      up0 += vec4<f32>(dot(a0, bu0), dot(a0, bu1), dot(a0, bu2), dot(a0, bu3));
-      up1 += vec4<f32>(dot(a1, bu0), dot(a1, bu1), dot(a1, bu2), dot(a1, bu3));
-      up2 += vec4<f32>(dot(a2, bu0), dot(a2, bu1), dot(a2, bu2), dot(a2, bu3));
-      up3 += vec4<f32>(dot(a3, bu0), dot(a3, bu1), dot(a3, bu2), dot(a3, bu3));
+      let bu1 = wu[(c + 32u) * 8u + (kq ^ nx)];
+      up0 += vec2<f32>(dot(a0, bu0), dot(a0, bu1));
+      up1 += vec2<f32>(dot(a1, bu0), dot(a1, bu1));
+      up2 += vec2<f32>(dot(a2, bu0), dot(a2, bu1));
+      up3 += vec2<f32>(dot(a3, bu0), dot(a3, bu1));
+      up4 += vec2<f32>(dot(a4, bu0), dot(a4, bu1));
+      up5 += vec2<f32>(dot(a5, bu0), dot(a5, bu1));
+      up6 += vec2<f32>(dot(a6, bu0), dot(a6, bu1));
+      up7 += vec2<f32>(dot(a7, bu0), dot(a7, bu1));
     }
     workgroupBarrier();
   }
 
-  for (var j = 0u; j < 4u; j++) {
-    let col = n0 + lid.x + 16u * j;
+  for (var j = 0u; j < 2u; j++) {
+    let col = n0 + lid.x + 32u * j;
     if (col >= N) { break; }
     let g0 = gate0[j];
     let g1 = gate1[j];
     let g2 = gate2[j];
     let g3 = gate3[j];
+    let g4 = gate4[j];
+    let g5 = gate5[j];
+    let g6 = gate6[j];
+    let g7 = gate7[j];
     let u0 = up0[j];
     let u1 = up1[j];
     let u2 = up2[j];
     let u3 = up3[j];
-    for (var i = 0u; i < 4u; i++) {
-      let row = m0 + lid.y + 16u * i;
+    let u4 = up4[j];
+    let u5 = up5[j];
+    let u6 = up6[j];
+    let u7 = up7[j];
+    for (var i = 0u; i < 8u; i++) {
+      let row = m0 + lid.y + 8u * i;
       if (row >= T) { break; }
       var gate = g0;
       var up = u0;
       if (i == 1u) { gate = g1; up = u1; }
       else if (i == 2u) { gate = g2; up = u2; }
       else if (i == 3u) { gate = g3; up = u3; }
+      else if (i == 4u) { gate = g4; up = u4; }
+      else if (i == 5u) { gate = g5; up = u5; }
+      else if (i == 6u) { gate = g6; up = u6; }
+      else if (i == 7u) { gate = g7; up = u7; }
       Y[row * N + col] = activate(gate) * up;
     }
   }
