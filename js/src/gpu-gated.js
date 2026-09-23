@@ -378,7 +378,7 @@ async function measureShape(device, info, generic, fusedPipeline, fusedLayout, a
       return { points: pairs, elapsedMs: now() - started };
     }
 
-    querySet = device.createQuerySet({ type: "timestamp", count: queryCount, label: "gated.tune.timestamps" });
+    querySet = device.createQuerySet({ type: "timestamp", count: queryBytes / 8, label: "gated.tune.timestamps" });
     const encoder = device.createCommandEncoder({ label: "gated.tune.measure" });
     const meta = [];
     let queryIndex = 0;
