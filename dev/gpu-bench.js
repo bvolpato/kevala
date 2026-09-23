@@ -43,12 +43,22 @@ function parseCases(query) {
   return parsed;
 }
 
+function kernelName(raw) {
+  const end = raw.search(/[@:/]/);
+  return end < 0 ? raw : raw.slice(0, end);
+}
+
 function parseKernel(raw, T, config) {
+  const rawName = kernelName(raw);
+  const tail = raw.slice(rawName.length);
+  const baseline = rawName.endsWith("_baseline");
+  const name = baseline ? rawName.slice(0, -"_baseline".length) : rawName;
+  const normalized = `${name}${tail}`;
   const f16Available = config.f16;
-  if (raw === "runtime") {
-    return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups };
+  if (normalized === "runtime") {
+    return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups, baseline };
   }
-  const match = raw.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
+  const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
   if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
@@ -60,7 +70,7 @@ function parseKernel(raw, T, config) {
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups };
+  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline };
 }
 
 function makeRng(seed) {
@@ -283,6 +293,10 @@ async function main() {
   const warmups = numberParam(query, "warmups", 2, 0, 10);
   const samples = numberParam(query, "samples", 7, 3, 20);
   const requestedKernels = (query.get("kernels") || "runtime").split(",").filter(Boolean);
+  const baselineWasmParam = query.get("baselineWasm");
+  const baselineWasm = baselineWasmParam ? new URL(baselineWasmParam, document.baseURI).href : null;
+  const baselineRequested = requestedKernels.some((raw) => kernelName(raw).endsWith("_baseline"));
+  if (baselineRequested && !baselineWasm) throw new Error("baseline kernel variants require baselineWasm=<url>");
   const shapes = parseCases(query);
   const gpu = await requestDevice();
   U = GPUBufferUsage;
@@ -296,6 +310,7 @@ async function main() {
   device.addEventListener("uncapturederror", onError);
   const provenance = adapterInfo(gpu);
   const source = await kernelSource();
+  const baselineSource = baselineRequested ? await kernelSource(baselineWasm) : null;
   const timestampAvailable = device.features.has("timestamp-query");
   const timer = makeTimer(device, timestampAvailable);
   const layouts = { matmul: matmulLayout(device), reduce: reduceLayout(device) };
@@ -305,10 +320,11 @@ async function main() {
   };
   const pipelineCache = new Map();
   const getPipelines = async (variant, T) => {
-    const key = `${variant.label}|${T}`;
+    const shaderSource = variant.baseline ? baselineSource : source;
+    const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const code = source(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
-      const reduceCode = source("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       pipelineCache.set(key, Promise.all([
         pipeline(device, code, `${variant.label}.matmul`, pipelineLayouts.matmul),
         pipeline(device, reduceCode, `${variant.label}.reduce`, pipelineLayouts.reduce),
@@ -317,7 +333,11 @@ async function main() {
     const [pMatmul, pReduce] = await pipelineCache.get(key);
     return { pMatmul, pReduce };
   };
-  const variantsFor = (T) => requestedKernels.map((name) => parseKernel(name, T, matmulConfig(device)));
+  const variantsFor = (T) => requestedKernels.map((name) => {
+    const variant = parseKernel(name, T, matmulConfig(device));
+    const shaderSource = variant.baseline ? baselineSource : source;
+    return { ...variant, provenance: variant.baseline ? "baseline" : "current", wasmUrl: shaderSource.wasmUrl };
+  });
   const allVariants = variantsFor(shapes[0][0]);
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
@@ -440,6 +460,8 @@ async function main() {
     warmups,
     samples,
     kernels: labels,
+    baselineWasm,
+    variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
     cases,
     adapter: provenance,
     correctness,
