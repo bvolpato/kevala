@@ -2,7 +2,8 @@
 // 64, query blocks of (segment start, segment length, first query), and CTX [T, W]. Each case is
 // checked against a CPU reference and timed with WebGPU timestamps, the variants taking turns.
 //
-//   attn-bench.html?cases=47:0,47:64,140:0,140:64,512:0,512:64,47/140/512:0,47/140/512:64&kernels=attention_subgroup,attention_tile_f32
+//   attn-bench.html?kernels=attention_tile_f32,attention_tile_f32_k8
+//   attn-bench.html?shared=1&kernels=attention_tile_f32,attention_tile_f32_k8
 //
 // A case is T:window, one segment of T tokens (window 0 means global attention); T/T2:window
 // packs several segments, as a batched request does. The result has the same shape as
@@ -22,6 +23,9 @@ const KERNELS = {
   // logical lanes from subgroup IDs; `shared=1` renders the same source without subgroup builtins
   // and exercises its 30,224-byte workgroup-memory fallback.
   attention_tile_f32: { queries: 64, subgroup32: true, subgroupIds: true, shared: true, storage: 30224 },
+  // Microbench-only 8-key-step rendering of attention_tile_f32. Keep this distinct from the
+  // runtime kernel; forceShared=1 also exercises its workgroup-reduction fallback.
+  attention_tile_f32_k8: { kernel: "attention_tile_f32", transform: "k8", queries: 64, subgroup32: true, subgroupIds: true, shared: true, storage: 23952 },
   // the tiled kernel without subgroups: row statistics through workgroup memory
   attention_tile_shared: { kernel: "attention_tile", spec: { subgroups: false }, queries: 64, f16: true, storage: 29968 },
 };
@@ -31,13 +35,56 @@ const log = (s) => (document.getElementById("log").textContent += s + "\n");
 const state = { status: "running" };
 window.gpuBench = state;
 
+function replaceChecked(source, from, to, expected = 1) {
+  let count = 0;
+  let at = 0;
+  while ((at = source.indexOf(from, at)) !== -1) {
+    count++;
+    at += from.length;
+  }
+  if (count !== expected) throw new Error(`attention_tile_f32_k8 transform expected ${expected} occurrence(s), found ${count}: ${from.trim().slice(0, 80)}`);
+  return source.split(from).join(to);
+}
+
+/** Applies checked, compile-time source edits to the rendered baseline WGSL for this benchmark. */
+export function attentionTileF32K8(source) {
+  const replace = (from, to, count = 1) => { source = replaceChecked(source, from, to, count); };
+  replace("walks the keys 16 at a time.", "walks the keys 8 at a time.");
+  replace("one key per lane, then accumulates", "one key per active score lane, then accumulates");
+  replace("30,224-byte tile", "23,952-byte tile");
+  replace("a four-stage workgroup reduction", "a three-stage workgroup reduction");
+  replace("const PROW = 17u; // floats per query row of ps (16 keys and a pad)", "const PROW = 9u; // floats per query row of ps (8 keys and a pad)");
+  replace("array<vec4<f32>, 272>;  // [16 keys][KROW]", "array<vec4<f32>, 136>;  // [8 keys][KROW]");
+  replace("array<vec4<f32>, 256>;  // [16 keys][16]", "array<vec4<f32>, 128>;  // [8 keys][16]");
+  replace("array<f32, 1088>;       // [64 queries][PROW]", "array<f32, 576>;        // [64 queries][PROW]");
+  replace("  ps[base + tk] = x;", "  if (tk < 8u) { ps[base + tk] = x; }", 2);
+  replace("  if (tk < 8u) { ps[base + tk] = max(ps[base + tk], ps[base + tk + 8u]); }\n  workgroupBarrier();\n", "");
+  replace("  if (tk < 8u) { ps[base + tk] += ps[base + tk + 8u]; }\n  workgroupBarrier();\n", "");
+  replace("let tk = t % 16u; // one key per lane; dimensions 4 tk .. + 3 for output", "let tk = t % 16u; // eight active score lanes; all 16 lanes own output dimensions");
+  replace("for (var j0 = lo; j0 < hi; j0 += 16u)", "for (var j0 = lo; j0 < hi; j0 += 8u)");
+  replace("for (var e = t; e < 256u; e += 256u)", "for (var e = t; e < 128u; e += 256u)");
+  const scores = `    for (var d = 0u; d < 16u; d++) {
+      let k = vec4<f32>(ks[tk * KROW + d]);
+      for (var c = 0u; c < 4u; c++) {
+        let q = qs[(4u * tq + c) * QROW + d];
+        s[c] += dot(q, k);
+      }
+    }`;
+  const indentedScores = scores.split("\n").map((line) => `  ${line}`).join("\n");
+  replace(scores, `    if (tk < 8u) {\n${indentedScores}\n    }`);
+  replace("let valid = 4u * tq + c < nq && j < hi &&", "let valid = tk < 8u && 4u * tq + c < nq && j < hi &&");
+  replace("      ps[(4u * tq + c) * PROW + tk] = pa;", "      if (tk < 8u) { ps[(4u * tq + c) * PROW + tk] = pa; }");
+  replace("for (var k = 0u; k < 16u; k++)", "for (var k = 0u; k < 8u; k++)");
+  return source;
+}
+
 function rng(seed) {
   let s = seed >>> 0;
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32) * 2 - 1;
 }
 
 function parseCases() {
-  return (query.get("cases") || "47:0,47:64,140:0,140:64,512:0,512:64,47/140/512:0,47/140/512:64").split(",").map((item) => {
+  return (query.get("cases") || "1:0,15:0,16:0,17:0,31:0,32:0,33:0,47:0,63:0,64:0,65:0,127:0,128:0,129:0,140:0,512:0,47:64,140:64,512:64,47/140/512:0,47/140/512:64,150/40:64").split(",").map((item) => {
     const [lens, window] = item.split(":");
     return { label: item, lens: lens.split("/").map(Number), window: Number(window || 0) };
   });
@@ -67,7 +114,7 @@ async function main() {
   const d = gpu.device;
   const wgsl = await kernelSource();
   const timestamps = d.features.has("timestamp-query");
-  const names = (query.get("kernels") || "attention,attention_subgroup,attention_tile_f32").split(",");
+  const names = (query.get("kernels") || "attention_tile_f32,attention_tile_f32_k8").split(",");
   const forceShared = query.get("shared") === "1";
   const subgroupIds = !!globalThis.navigator?.gpu?.wgslLanguageFeatures?.has?.("subgroup_id");
   const samples = Number(query.get("samples") || 7);
@@ -91,7 +138,9 @@ async function main() {
   for (const name of usable) {
     const k = KERNELS[name];
     const spec = forceShared && k.shared ? { subgroups: false } : (k.spec || { subgroups: !!k.subgroup32 });
-    const module = d.createShaderModule({ code: wgsl(k.kernel || name, spec) });
+    const source = wgsl(k.kernel || name, spec);
+    const code = k.transform === "k8" ? attentionTileF32K8(source) : source;
+    const module = d.createShaderModule({ code });
     pipes[name] = await d.createComputePipelineAsync({ layout: d.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: "main" } });
   }
   const querySet = timestamps ? d.createQuerySet({ type: "timestamp", count: 2 }) : null;
