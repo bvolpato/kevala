@@ -27,24 +27,6 @@ const DEFAULT_CASES = [
   [45, 132, 96],
 ];
 
-// Experimental FP32 R4/G1 tile: keep the BM64 split rule and dispatch grid,
-// but compute seven rows per thread when BM56 needs exactly the same grid.
-function row56Source(code) {
-  const replacements = [
-    ["  let m0 = wg.y * 64u;", "  let m0 = wg.y * 56u;", 1],
-    ["lr < 64u", "lr < 56u", 2],
-    ["  var acc7 = vec2<f32>(0.0);\n", "", 1],
-    ["      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);\n      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));\n", "", 8],
-    ["      mm_store(acc7.x, row + 56u, col, bias, T, N, splits, wg.z);\n", "", 1],
-    ["      mm_store(acc7.y, row + 56u, col, bias, T, N, splits, wg.z);\n", "", 1],
-  ];
-  for (const [before, after, count] of replacements) {
-    if (code.split(before).length !== count + 1) throw new Error(`BM56 source no longer matches: ${before.trim()}`);
-    code = code.split(before).join(after);
-  }
-  return code;
-}
-
 async function sourceHash(code) {
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
@@ -369,8 +351,7 @@ async function main() {
     const shaderSource = variant.baseline ? baselineSource : source;
     const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const rendered = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
-      const code = variant.row56 ? row56Source(rendered) : rendered;
+      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, row56: variant.row56 });
       const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       shaderHashes[key] = { matmul: await sourceHash(code), reduce: await sourceHash(reduceCode) };
       pipelineCache.set(key, Promise.all([
@@ -521,7 +502,7 @@ async function main() {
     kernels: labels,
     baselineWasm,
     variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
-    sourceTransforms: { baseCommit: "dbc8f570d86646400c9754e3ce970d8eb0c3b800", row56: "physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic", shaderHashes },
+    sourceTransforms: { sourceCommit: query.get("sourceCommit"), row56: "WASM-rendered physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic", shaderHashes },
     cases,
     adapter: provenance,
     correctness,
