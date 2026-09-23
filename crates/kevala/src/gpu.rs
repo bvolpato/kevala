@@ -237,7 +237,6 @@ impl Spec {
             ("BN", bn.to_string()),
             ("BN_MINUS_1", (bn - 1).to_string()),
             ("SPLIT_TARGET", self.split_target.to_string()),
-            ("XS_LEN", if !self.f16 && self.groups == 1 && self.rows == 1 { "128" } else { "512" }.to_string()),
             ("WS_LEN", (8 * bn).to_string()),
             ("WIDE_WS_LEN", (16 * bn).to_string()),
             ("ACC_LEN", (self.rows * self.groups).to_string()),
