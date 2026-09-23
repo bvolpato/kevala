@@ -119,6 +119,10 @@ driver, not just the kernel execution time.
 For GPU timestamp measurements and prior matrix optimizations, see
 [GPU matrix tuning](docs/semif-matmul.md). Gemma's initial profiles and NVIDIA/AMD/native
 reference checks are in [Gemma 4 verification](docs/gemma4.md#verification).
+The latest shared FP32 results cover Laya, Kev, SemIf, and Gemma in
+[exact byte conversion](docs/fp32-byte-conversion-performance.md). Gemma's separate
+[normalization fusion](docs/gemma-rms-residual-performance.md) includes both sizes'
+correctness checks.
 
 ## Base weights, instruction tuning, and precision
 
