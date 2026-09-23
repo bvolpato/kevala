@@ -49,7 +49,9 @@ export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TAR
 /** Encodes a matmul with the kernel variant for T. `pipes` comes from `matmulPipelines`. */
 export function encodeMatmul(pass, pipes, op, T) {
   const R = rowsPerThread(T, pipes);
-  dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
+  // BM56 trims padding only when the R4 grid and K partition stay unchanged. Prefer R3 first.
+  const row56 = R === 4 && pipes.f16 === false && pipes.groups === 1 && Math.ceil(T / 56) === Math.ceil(T / 64);
+  dispatchMatmul(pass, (row56 && pipes.mm56) || pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
 }
 
 /** The matmul bind group layout, explicit so every kernel variant shares one bind group. */
@@ -69,7 +71,7 @@ export function reduceLayout(device) {
 
 /**
  * Builds the matmul variants (1 to 4 rows per thread) and their split-K reduces from the
- * binary's kernels; resolves to { layout, reduceLayout, mm: [, R1..R4], reduce: [, R1..R4] }.
+ * binary's kernels, plus an optional FP32 generic BM56 pipeline paired with the R4 reducer.
  * With `shader-f16` the tiles live in workgroup memory as f16, which halves the traffic that
  * limits this kernel (1.6-1.75x faster on Apple GPUs); products and sums stay f32, and the
  * rounding (about 3e-4 relative) is far below the int8 weight quantization.
@@ -82,13 +84,16 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
   const config = matmulConfig(device);
   const mm = [];
   const reduce = [];
-  await Promise.all(
-    [1, 2, 3, 4].flatMap((rows) => [
+  const [mm56] = await Promise.all([
+    kernel === "matmul" && !config.f16 && config.groups === 1
+      ? pipeline(device, wgsl(kernel, { ...config, rows: 4, row56: true }), "matmul_row56", pl)
+      : null,
+    ...[1, 2, 3, 4].flatMap((rows) => [
       pipeline(device, wgsl(kernel, { ...config, rows }), `${kernel}_r${rows}`, pl).then((p) => (mm[rows] = p)),
       pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
-  );
-  return { layout, reduceLayout: rlayout, mm, reduce, ...config };
+  ]);
+  return { layout, reduceLayout: rlayout, mm, mm56, reduce, ...config };
 }
 
 /** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */

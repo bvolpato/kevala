@@ -27,6 +27,11 @@ const DEFAULT_CASES = [
   [45, 132, 96],
 ];
 
+async function sourceHash(code) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 const numberParam = (query, name, fallback, min, max) => {
   if (!query.has(name)) return fallback;
   const value = Number(query.get(name));
@@ -58,19 +63,22 @@ function parseKernel(raw, T, config) {
   if (normalized === "runtime") {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T, config), groups: config.groups, baseline };
   }
-  const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
+  const match = normalized.match(/^([a-z_][a-z_0-9]*)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_row56"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
   const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups }) : match[3] ? Number(match[3]) : 4;
+  const row56 = match[1] === "matmul_row56";
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline };
+  if (row56 && (rows !== 4 || groups !== 1)) throw new Error(`${raw} requires FP32 rows=4/groups=1`);
+  if (row56 && Math.ceil(T / 56) !== Math.ceil(T / 64)) throw new Error(`${raw} requires ceil(T/56)==ceil(T/64), got T=${T}`);
+  return { label: raw, name: row56 ? "matmul" : f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline, row56 };
 }
 
 function makeRng(seed) {
@@ -178,6 +186,25 @@ function compareVariants(outputs, labels, tolerance) {
     }
   }
   return { ok: true, compared: labels, maxAbs, maxRelative };
+}
+
+function row56Pairs(variants) {
+  return variants.filter((v) => v.row56).map((candidate) => {
+    const control = variants.find((v) => !v.row56 && v.name === "matmul" && !v.f16 && v.rows === 4 && v.groups === 1 && v.target === candidate.target && v.wasmUrl === candidate.wasmUrl);
+    if (!control) throw new Error(`${candidate.label} requires a matching FP32 R4/G1 control with the same split target and WASM`);
+    return { control, candidate };
+  });
+}
+
+function compareRow56(outputs, pairs, mode, bias) {
+  return pairs.map(({ control, candidate }) => {
+    const a = outputs[control.label], b = outputs[candidate.label];
+    const aBits = new Uint32Array(a.buffer, a.byteOffset, a.length);
+    const bBits = new Uint32Array(b.buffer, b.byteOffset, b.length);
+    let bitMismatches = 0;
+    for (let i = 0; i < a.length; i++) if (aBits[i] !== bBits[i]) bitMismatches++;
+    return { compared: [control.label, candidate.label], mode, bias, samples: a.length, bitMismatches, ok: bitMismatches === 0 };
+  });
 }
 
 function adapterInfo(gpu) {
@@ -319,12 +346,14 @@ async function main() {
     reduce: device.createPipelineLayout({ bindGroupLayouts: [layouts.reduce] }),
   };
   const pipelineCache = new Map();
+  const shaderHashes = {};
   const getPipelines = async (variant, T) => {
     const shaderSource = variant.baseline ? baselineSource : source;
     const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, row56: variant.row56 });
       const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      shaderHashes[key] = { matmul: await sourceHash(code), reduce: await sourceHash(reduceCode) };
       pipelineCache.set(key, Promise.all([
         pipeline(device, code, `${variant.label}.matmul`, pipelineLayouts.matmul),
         pipeline(device, reduceCode, `${variant.label}.reduce`, pipelineLayouts.reduce),
@@ -342,7 +371,7 @@ async function main() {
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
   const cases = [];
-  const correctness = { ok: true, cpu: [], variants: [], errors: [] };
+  const correctness = { ok: true, cpu: [], variants: [], row56: [], errors: [] };
   const medians = [];
   const variantTolerance = { abs: device.features.has("shader-f16") ? 0.03 : 0.0005, relative: device.features.has("shader-f16") ? 0.002 : 0.0001 };
 
@@ -350,6 +379,8 @@ async function main() {
     const shape = shapes[shapeIndex];
     const [T, N, K] = shape;
     const variantObjects = variantsFor(T);
+    const pairs = row56Pairs(variantObjects);
+    const hasRow56 = pairs.length > 0;
     const partialFloats = Math.max(0, ...variantObjects.map((variant) => {
       const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
       return splits > 1 ? splits * T * N : 0;
@@ -377,6 +408,7 @@ async function main() {
     }, `${caseLabel(shape)} input upload`, uncaptured);
 
     const outputs = {};
+    const epilogueOutputs = {};
     const timings = [];
     const shouldCheckEpilogues = T * N <= 8192;
     const runs = [];
@@ -405,7 +437,7 @@ async function main() {
     for (const { variant, op, splits, reps, samples: samplesForKernel } of runs) {
       const sorted = [...samplesForKernel].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)];
-      timings.push({ kernel: variant.label, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, splits, reps, samples: samplesForKernel, medianMs: median });
+      timings.push({ kernel: variant.label, rows: variant.rows, groups: variant.groups, physicalBM: variant.row56 ? 56 : 16 * variant.rows, virtualBM: 16 * variant.rows, splitTarget: variant.target, splits, reps, samples: samplesForKernel, medianMs: median });
       await checked(device, async () => {
         device.queue.writeBuffer(params, 0, new Uint32Array([N, K, 0, 0]));
         device.queue.writeBuffer(Y, 0, zero);
@@ -419,15 +451,16 @@ async function main() {
       correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode: 0, bias: false, ...cpu });
       if (!cpu.ok) correctness.ok = false;
       if (shouldCheckEpilogues) {
-        for (const mode of [1, 2]) {
-          const withBias = true;
+        const epilogues = hasRow56 ? [[0, true], [1, false], [1, true], [2, false], [2, true]] : [[1, true], [2, true]];
+        for (const [mode, withBias] of epilogues) {
           await checked(device, async () => {
-            device.queue.writeBuffer(params, 0, new Uint32Array([N, K, mode, 1]));
+            device.queue.writeBuffer(params, 0, new Uint32Array([N, K, mode, Number(withBias)]));
             device.queue.writeBuffer(Y, 0, input.residual);
             await device.queue.onSubmittedWorkDone();
           }, `${caseLabel(shape)} mode ${mode} upload`, uncaptured);
           await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} mode ${mode}`);
           const epilogue = await readOutput(device, Y, bytes, uncaptured, `${caseLabel(shape)} mode ${mode}`);
+          if (hasRow56) (epilogueOutputs[`${mode}/${Number(withBias)}`] ||= {})[variant.label] = epilogue;
           const cpu = compareCpu(input, epilogue, variant, mode, withBias);
           correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode, bias: withBias, ...cpu });
           if (!cpu.ok) correctness.ok = false;
@@ -442,6 +475,13 @@ async function main() {
     const variantCheck = compareVariants(outputs, labels, variantTolerance);
     correctness.variants.push({ shape: caseLabel(shape), ...variantCheck });
     if (!variantCheck.ok) correctness.ok = false;
+    const exact = compareRow56(outputs, pairs, 0, false);
+    for (const [key, values] of Object.entries(epilogueOutputs)) {
+      const [mode, bias] = key.split("/").map(Number);
+      exact.push(...compareRow56(values, pairs, mode, Boolean(bias)));
+    }
+    correctness.row56.push(...exact.map((check) => ({ shape: caseLabel(shape), ...check })));
+    if (exact.some((check) => !check.ok)) correctness.ok = false;
     const shapeMedians = timings.map((item) => item.medianMs);
     const shapeMedian = shapeMedians[0];
     medians.push(shapeMedian);
@@ -462,6 +502,7 @@ async function main() {
     kernels: labels,
     baselineWasm,
     variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
+    sourceTransforms: { sourceCommit: query.get("sourceCommit"), row56: "WASM-rendered physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic", shaderHashes },
     cases,
     adapter: provenance,
     correctness,

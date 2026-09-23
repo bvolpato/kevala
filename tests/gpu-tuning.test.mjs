@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { mmSplits, rowsPerThread } from "../js/src/gpu.js";
+import { encodeMatmul, matmulPipelines, mmSplits, rowsPerThread } from "../js/src/gpu.js";
 import {
   calibrateMatmul,
   matmulShapes,
@@ -25,6 +25,63 @@ test("FP32 row tiles reduce padding while preserving the grid and split count", 
   }
   for (const [tokens, rows] of [[1, 1], [16, 1], [17, 2], [32, 2], [33, 3], [48, 3], [49, 4], [64, 4], [97, 4], [128, 4], [145, 4], [512, 4]]) {
     assert.equal(rowsPerThread(tokens, config), rows);
+  }
+});
+
+test("BM56 keeps the R3 preference and the virtual R4 dispatch and reducer", () => {
+  const pipes = { f16: false, groups: 1, splitTarget: 256, mm: [null, "r1", "r2", "r3", "r4"], mm56: "r56", reduce: [null, "reduce1", "reduce2", "reduce3", "reduce4"] };
+  const op = { N: 2048, K: 6144, group: {}, reduce: {} };
+  const run = (T, config = pipes) => {
+    const pipelines = [], grids = [], groups = [];
+    encodeMatmul({
+      setPipeline(p) { pipelines.push(p); },
+      setBindGroup(i, group) { groups.push([i, group]); },
+      dispatchWorkgroups(...grid) { grids.push(grid); },
+    }, config, op, T);
+    return { pipelines, grids, groups };
+  };
+  for (const T of [49, 53, 55, 56, 97, 99, 105, 111, 112, 145, 168, 193, 198, 224, 392]) {
+    const baseline = run(T, { ...pipes, mm56: null });
+    const candidate = run(T);
+    assert.equal(candidate.pipelines[0], "r56", `T=${T}`);
+    assert.deepEqual(candidate.pipelines.slice(1), baseline.pipelines.slice(1));
+    assert.deepEqual(candidate.grids, baseline.grids);
+    assert.deepEqual(candidate.groups, baseline.groups);
+  }
+  for (const T of [65, 80, 96, 129, 140, 144]) assert.equal(run(T).pipelines[0], "r3");
+  for (const T of [57, 64, 113, 128, 169, 192, 225, 393, 512, 601]) assert.equal(run(T).pipelines[0], "r4");
+  for (const [T, p] of [[16, "r1"], [31, "r2"], [47, "r3"]]) assert.equal(run(T).pipelines[0], p);
+  for (const config of [{ ...pipes, f16: true }, { ...pipes, groups: 2 }, { ...pipes, mm56: undefined }]) {
+    assert.equal(run(105, config).pipelines[0], "r4");
+  }
+  assert.deepEqual(run(105).grids[0], [32, 2, 4]);
+  assert.deepEqual(run(198).grids[0], [32, 4, 2]);
+  assert.deepEqual(run(198).pipelines, ["r56", "reduce4"]);
+});
+
+test("BM56 is built only for generic FP32 and shares its matrix layout", async (t) => {
+  const previous = globalThis.GPUShaderStage;
+  globalThis.GPUShaderStage = { COMPUTE: 4 };
+  t.after(() => {
+    if (previous === undefined) delete globalThis.GPUShaderStage;
+    else globalThis.GPUShaderStage = previous;
+  });
+  for (const [features, kernel, expected] of [[[], "matmul", true], [["shader-f16"], "matmul", false], [[], "matmul_gate_up", false], [["shader-f16"], "matmul_wide", false]]) {
+    const requests = [];
+    const device = {
+      features: new Set(features),
+      createBindGroupLayout: (layout) => layout,
+      createPipelineLayout: (layout) => layout,
+      createShaderModule: (module) => module,
+      createComputePipelineAsync: async (pipeline) => pipeline,
+    };
+    const pipes = await matmulPipelines(device, (name, spec) => { requests.push({ name, spec }); return ""; }, kernel);
+    assert.equal(Boolean(pipes.mm56), expected);
+    assert.equal(requests.length, expected ? 9 : 8);
+    assert.deepEqual(requests.filter(({ spec }) => spec.row56), expected ? [{ name: "matmul", spec: { f16: false, groups: 1, splitTarget: 256, rows: 4, row56: true } }] : []);
+    if (expected) assert.equal(pipes.mm56.layout, pipes.mm[4].layout);
+    assert.deepEqual(requests.filter(({ name }) => name === "reduce").map(({ spec }) => spec.rows), [1, 2, 3, 4]);
+    assert.ok(requests.filter(({ name }) => name === "reduce").every(({ spec }) => !spec.row56));
   }
 });
 
