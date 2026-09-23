@@ -36,6 +36,14 @@ test("Gemma GPU config rejects bidirectional direct scoring", () => {
   assert.throws(() => gemma4Config({ config: { ...base, use_bidirectional_attention: "all" } }), /does not support use_bidirectional_attention/);
 });
 
+test("Gemma GPU config rejects native-incompatible activation and attention variants", () => {
+  assert.throws(() => gemma4Config({ config: { ...base, hidden_activation: "silu" } }), /hidden_activation/);
+  assert.throws(() => gemma4Config({ config: { ...base, attention_bias: true } }), /attention_bias/);
+  assert.throws(() => gemma4Config({ config: { ...base, attention_k_eq_v: true } }), /attention_k_eq_v/);
+  assert.throws(() => gemma4Config({ config: { ...base, enable_moe_block: true } }), /enable_moe_block/);
+  assert.throws(() => gemma4Config({ config: { ...base, rope_parameters: { sliding_attention: { rope_type: "linear" }, full_attention: { rope_type: "proportional" } } } }), /rope_type/);
+});
+
 test("Gemma GPU config accepts a valid zero-sharing fallback", () => {
   const cfg = gemma4Config({ config: { ...base, num_kv_shared_layers: 0 } });
   assert.equal(cfg.sharedStart, cfg.layers);

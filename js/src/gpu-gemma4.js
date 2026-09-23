@@ -55,6 +55,18 @@ export function gemma4Config(header) {
   const globalRope = rope.full_attention || rope.full || {};
   const layersShared = Number(c.num_kv_shared_layers ?? c.kv_shared_layers ?? 0);
   const sharedStart = Math.max(0, layers - layersShared);
+  const boolField = (key) => {
+    if (!Object.hasOwn(c, key)) return false;
+    if (typeof c[key] !== "boolean") throw new Error(`Gemma 4 GPU config ${key} must be boolean`);
+    return c[key];
+  };
+  if (Object.hasOwn(c, "hidden_activation") && c.hidden_activation !== "gelu_pytorch_tanh") throw new Error("Gemma 4 GPU config supports only hidden_activation=gelu_pytorch_tanh");
+  const attentionBias = boolField("attention_bias");
+  const attentionKEqV = boolField("attention_k_eq_v");
+  const enableMoe = boolField("enable_moe_block");
+  if (attentionBias) throw new Error("Gemma 4 GPU config does not support attention_bias=true");
+  if (attentionKEqV) throw new Error("Gemma 4 GPU config does not support attention_k_eq_v=true");
+  if (enableMoe) throw new Error("Gemma 4 GPU config does not support enable_moe_block=true");
   if (!Number.isSafeInteger(layers) || layers <= 0 || !Number.isSafeInteger(hidden) || hidden <= 0 || !Number.isSafeInteger(Number(c.intermediate_size ?? c.intermediate)) || Number(c.intermediate_size ?? c.intermediate) <= 0) throw new Error("Gemma 4 GPU config has invalid model dimensions");
   if (!Number.isSafeInteger(Number(c.num_attention_heads ?? c.heads)) || Number(c.num_attention_heads ?? c.heads) <= 0 || !Number.isSafeInteger(kvHeads) || kvHeads <= 0 || !Number.isSafeInteger(globalKvHeads) || globalKvHeads <= 0) throw new Error("Gemma 4 GPU config has invalid attention head count");
   if (Number(c.num_attention_heads ?? c.heads) % kvHeads || Number(c.num_attention_heads ?? c.heads) % globalKvHeads) throw new Error("Gemma 4 GPU config requires attention heads divisible by KV heads");
@@ -77,6 +89,9 @@ export function gemma4Config(header) {
   }
   const window = Number(c.sliding_window ?? c.window ?? 512);
   if (!Number.isSafeInteger(window) || window <= 0) throw new Error("Gemma 4 GPU config has invalid sliding window");
+  const localRopeType = typeof localRope.rope_type === "string" ? localRope.rope_type : "default";
+  const globalRopeType = typeof globalRope.rope_type === "string" ? globalRope.rope_type : "proportional";
+  if (localRopeType !== "default" || globalRopeType !== "proportional") throw new Error(`Gemma 4 GPU config supports only sliding rope_type=default and full rope_type=proportional (got ${localRopeType}/${globalRopeType})`);
   const globalFraction = Number(c.global_partial_rotary ?? c.globalPartialRotary ?? globalRope.partial_rotary_factor ?? globalRope.partialRotaryFactor ?? 0.25);
   if (!Number.isFinite(globalFraction) || globalFraction < 0 || globalFraction > 1 || Math.floor((globalHeadDim * globalFraction) / 2) * 2 > 256) throw new Error("Gemma 4 GPU config has unsupported global proportional RoPE");
   return {

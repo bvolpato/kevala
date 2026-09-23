@@ -125,12 +125,12 @@ async function main() {
       const ids = Uint32Array.from({ length }, (_, i) => (3 + i * 7) % HEADER_CONFIG.vocab_size);
       const allRows = Uint32Array.from({ length }, (_, i) => i);
       const selected = Uint32Array.from(selectedRows(length));
-      const started = performance.now();
       const all = await model.forward(ids, allRows);
+      const selectedStarted = performance.now();
       const picked = await model.forward(ids, selected);
-      const elapsed = performance.now() - started;
+      const selectedElapsed = performance.now() - selectedStarted;
       const profileMs = model.lastProfile ? Object.values(model.lastProfile).reduce((sum, value) => sum + value, 0) : 0;
-      metricSamples.push(profileMs > 0 ? profileMs : Math.max(0.001, elapsed));
+      metricSamples.push(profileMs > 0 ? profileMs : Math.max(0.001, selectedElapsed));
       let caseMaxAbs = 0;
       for (let row = 0; row < selected.length; row++) for (let d = 0; d < cfg.hidden; d++) {
         caseMaxAbs = Math.max(caseMaxAbs, Math.abs(picked[row * cfg.hidden + d] - all[selected[row] * cfg.hidden + d]));
@@ -191,7 +191,7 @@ async function main() {
     done: true,
     backend: "webgpu",
     metricMs,
-    metric: "geometric mean of selected/all-row synthetic Gemma GPU forward milliseconds",
+    metric: "geometric mean of selected-tail forward milliseconds (GPU kernel timestamps when available)",
     method: model.profiler ? "timestamp-query" : "performance.now",
     adapter,
     correctness,
