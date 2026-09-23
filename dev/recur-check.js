@@ -10,6 +10,22 @@ const HEAD_DIM = 128;
 
 const plain = Object.freeze({ hidden: 256, heads: 2, kv_heads: 1, lin_key_heads: 2, lin_heads: 2, rotary: 64 });
 const grouped = Object.freeze({ hidden: 256, heads: 4, kv_heads: 2, lin_key_heads: 2, lin_heads: 4, rotary: 64 });
+const ACTUAL_CASES = [
+  ...[31, 124, 532].map((len) => ({
+    name: `actual-16h-${len}`,
+    cfg: Object.freeze({ ...plain, lin_key_heads: 16, lin_heads: 16 }),
+    stage: 1,
+    cpu: false,
+    segments: [{ len, parent: 1, dst: 2 }],
+  })),
+  ...[105, 198, 606].map((len) => ({
+    name: `actual-32h-${len}`,
+    cfg: Object.freeze({ ...plain, lin_key_heads: 16, lin_heads: 32 }),
+    stage: 1,
+    cpu: false,
+    segments: [{ len, parent: 1, dst: 2 }],
+  })),
+];
 
 const CASES = [
   {
@@ -333,9 +349,20 @@ async function main() {
         throw new Error(`${name} needs subgroups of at least ${widths[name]} lanes; use subgroups=0 for the shared path`);
       }
     }
+    const actualParam = query.get("actual");
+    if (actualParam !== null && actualParam !== "0" && actualParam !== "1") {
+      throw new Error(`actual must be 0 or 1, got ${actualParam}`);
+    }
+    const includeActual = actualParam === "1";
+    const reverseParam = query.get("reverse");
+    if (reverseParam !== null && reverseParam !== "0" && reverseParam !== "1") {
+      throw new Error(`reverse must be 0 or 1, got ${reverseParam}`);
+    }
+    const reverse = reverseParam === "1";
+    const baselineParam = query.get("baselineWasm");
     const timingHeadsParam = query.get("timingHeads");
     let timingHeads = null;
-    let cases = CASES;
+    let cases = includeActual ? [...CASES, ...ACTUAL_CASES] : CASES;
     if (timingHeadsParam !== null) {
       const parsed = Number(timingHeadsParam);
       if (!Number.isInteger(parsed) || ![16, 32, 48].includes(parsed)) {
@@ -343,28 +370,29 @@ async function main() {
       }
       timingHeads = parsed;
       const timingCfg = Object.freeze({ ...plain, lin_key_heads: Math.min(16, parsed), lin_heads: parsed });
-      cases = CASES.map((test) => test.name === "stage1-long-528" ? { ...test, cfg: timingCfg } : test);
+      cases = cases.map((test) => test.name === "stage1-long-528" ? { ...test, cfg: timingCfg } : test);
     }
     timer = makeTimer(device);
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
-    const baselineParam = query.get("baselineWasm");
     const baselineUrl = baselineParam ? new URL(baselineParam, document.baseURI).href : null;
     const baseline = baselineUrl ? await kernelSource(baselineUrl) : null;
+    const exactRequired = Boolean(baseline && widths[candidate] === widths[baselineCandidate]);
     const samples = numberParam("samples", 3, 1, 10);
     const warmups = numberParam("warmups", 1, 0, 5);
     const pipelineCache = new Map();
     const getPipeline = async (source, cfg) => {
       const sourceKey = source === current ? "current" : "baseline";
-      const lanes = widths[source === current ? candidate : baselineCandidate];
+      const selectedCandidate = sourceKey === "current" ? candidate : baselineCandidate;
+      const lanes = widths[selectedCandidate];
       const kernel = `kev_recur_lanes${lanes === 4 ? "" : lanes}`;
       const zTiles = lanes / 2;
-      const cfgKey = `${sourceKey}|${kernel}|${JSON.stringify(cfg)}`;
+      const cfgKey = `${sourceKey}|${selectedCandidate}|${kernel}|${JSON.stringify(cfg)}`;
       if (!pipelineCache.has(cfgKey)) {
         const code = source(kernel, { subgroups: useSubgroups, kev: cfg });
         pipelineCache.set(cfgKey, pipeline(device, code, `${kernel}.${sourceKey}.${cfg.lin_heads}`));
       }
-      return { pipeline: await pipelineCache.get(cfgKey), kernel, zTiles };
+      return { pipeline: await pipelineCache.get(cfgKey), kernel, candidate: selectedCandidate, zTiles };
     };
     const timing = [];
     const correctness = { ok: true, cpu: [], variants: [], errors: [] };
@@ -433,21 +461,26 @@ async function main() {
         correctness.variants.push({ case: test.name, exact, withinTolerance, core: coreDiff, state: stateDiff, coreGuard, stateGuard });
         oldNewExact &&= exact;
         oldNewWithinTolerance &&= withinTolerance;
-        if (!(exact || ((candidate !== "current" || baselineCandidate !== "current") && withinTolerance))) correctness.ok = false;
+        if (exactRequired ? !exact : !(exact || withinTolerance)) {
+          correctness.ok = false;
+        }
       }
       const reps = T <= 7 ? 16 : T <= 31 ? 8 : T <= 129 ? 2 : 1;
       const currentSamples = [];
       const baselineSamples = [];
+      const sampleOrder = reverse && baselineResult
+        ? [["baseline", baselineResult, baselineSamples], ["current", currentResult, currentSamples]]
+        : [["current", currentResult, currentSamples], ...(baselineResult ? [["baseline", baselineResult, baselineSamples]] : [])];
       for (let warmup = 0; warmup < warmups; warmup++) {
-        await upload();
-        await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, null, lost, uncaptured, `${test.name}.current.warmup`, { reps, zTiles: currentResult.zTiles });
+        for (const [label, variant] of sampleOrder) {
+          await upload();
+          await dispatch(device, variant.p, variant.bind, segCount, heads, null, lost, uncaptured, `${test.name}.${label}.warmup`, { reps, zTiles: variant.zTiles });
+        }
       }
       for (let sample = 0; sample < samples; sample++) {
-        await upload();
-        currentSamples.push(await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.current.sample`, { reps, zTiles: currentResult.zTiles }));
-        if (baselineResult) {
+        for (const [label, variant, values] of sampleOrder) {
           await upload();
-          baselineSamples.push(await dispatch(device, baselineResult.p, baselineResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.baseline.sample`, { reps, zTiles: baselineResult.zTiles }));
+          values.push(await dispatch(device, variant.p, variant.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.${label}.sample`, { reps, zTiles: variant.zTiles }));
         }
       }
       const currentMedian = median(currentSamples);
@@ -466,10 +499,13 @@ async function main() {
       baselineWasm: baselineUrl,
       candidate,
       baselineCandidate,
+      exactRequired,
       timingHeads,
+      actualCases: includeActual,
+      reverse,
       variantProvenance: {
-        current: { source: "current", wasmUrl: current.wasmUrl, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups },
-        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
+        current: { source: "current", wasmUrl: current.wasmUrl, candidate, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups },
+        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, candidate: baselineCandidate, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
       },
       cases: timing,
       cpuMaxAbs,
