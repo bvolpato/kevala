@@ -61,7 +61,7 @@ using its unchanged FP16 path. No Firefox speedup is attributed to this change.
   matrices, sampled large matrices, partial tiles, split reduction, bias,
   residual, and ReLU.
 - All nine supported weights retain **132/132 reference decisions** in Chrome.
-  The 255 recorded Kev, SemIf, and Gemma probabilities are unchanged with the same
+  The 225 recorded Kev, SemIf, and Gemma probabilities are unchanged with the same
   recurrence tuning choice. No probability tolerance was widened.
 - Chrome Laya retains its existing strict failure: maximum probability difference
   `0.024006444195624588` exceeds the `0.024` threshold. Main produces the same

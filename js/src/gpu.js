@@ -17,8 +17,11 @@ export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
   return Math.max(1, Math.min(8, Math.ceil(target / tiles), Math.floor(K / 128)));
 }
 
-/** Rows per thread for an input of T tokens: a short input gets a shorter tile (16 R rows). */
-export const rowsPerThread = (T) => (T >= 64 ? 4 : Math.max(1, Math.ceil(T / 16)));
+/** Select a 16 R row tile. FP32 can omit padded rows without changing the workgroup grid. */
+export function rowsPerThread(T, config = null) {
+  if (config?.f16 === false && config.groups === 1 && T >= 64 && Math.ceil(T / 48) === Math.ceil(T / 64)) return 3;
+  return T >= 64 ? 4 : Math.max(1, Math.ceil(T / 16));
+}
 
 export function matmulConfig(device) {
   return { f16: device.features.has("shader-f16"), groups: 1, splitTarget: 256 };
@@ -45,7 +48,7 @@ export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TAR
 
 /** Encodes a matmul with the kernel variant for T. `pipes` comes from `matmulPipelines`. */
 export function encodeMatmul(pass, pipes, op, T) {
-  const R = rowsPerThread(T);
+  const R = rowsPerThread(T, pipes);
   dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
 }
 
