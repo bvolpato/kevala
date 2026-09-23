@@ -224,7 +224,6 @@ impl Spec {
             ("F16", flag(self.f16)),
             ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
             ("GENERIC_UNROLL", flag(!self.f16 && self.groups == 1)),
-            ("GENERIC_32X4", flag(!self.f16 && self.groups == 1 && self.rows == 4)),
             ("ROWS_GE_2", flag(self.rows >= 2)),
             ("ROWS_GE_3", flag(self.rows >= 3)),
             ("ROWS_GE_4", flag(self.rows >= 4)),
