@@ -2,7 +2,7 @@
 // 64, query blocks of (segment start, segment length, first query), and CTX [T, W]. Each case is
 // checked against a CPU reference and timed with WebGPU timestamps, the variants taking turns.
 //
-//   attn-bench.html?cases=512:0,512:64,140:64,47:0,47/140/512:64&kernels=attention,attention_subgroup,attention_subgroup32
+//   attn-bench.html?cases=512:0,512:64,140:64,47:0,150/40:64&kernels=attention,attention_subgroup
 //
 // A case is T:window, one segment of T tokens (window 0 means global attention); T/T2:window
 // packs several segments, as a batched request does. The result has the same shape as
@@ -17,8 +17,6 @@ const DIM = 64;
 const KERNELS = {
   attention: { queries: 16 },
   attention_subgroup: { queries: 16, subgroup32: true },
-  // q32/k32 variant: 28,816 bytes of FP32 workgroup storage and 256 threads.
-  attention_subgroup32: { queries: 32, subgroup32: true, storage: 28816 },
   attention_tile: { queries: 64, capability: "attentionTile", spec: { subgroups: true } },
   // the tiled kernel without subgroups: row statistics through workgroup memory
   attention_tile_shared: { kernel: "attention_tile", spec: { subgroups: false }, queries: 64, f16: true, storage: 29968 },
@@ -35,7 +33,7 @@ function rng(seed) {
 }
 
 function parseCases() {
-  return (query.get("cases") || "512:0,512:64,140:64,47:0,47/140/512:64").split(",").map((item) => {
+  return (query.get("cases") || "512:0,512:64,140:64,47:0").split(",").map((item) => {
     const [lens, window] = item.split(":");
     return { label: item, lens: lens.split("/").map(Number), window: Number(window || 0) };
   });
@@ -65,7 +63,7 @@ async function main() {
   const d = gpu.device;
   const wgsl = await kernelSource();
   const timestamps = d.features.has("timestamp-query");
-  const names = (query.get("kernels") || "attention,attention_subgroup,attention_subgroup32").split(",");
+  const names = (query.get("kernels") || "attention,attention_subgroup").split(",");
   const samples = Number(query.get("samples") || 7);
   const warmups = Number(query.get("warmups") || 2);
   const repeats = Number(query.get("checks") || 1);
