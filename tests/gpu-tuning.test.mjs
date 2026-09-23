@@ -9,32 +9,15 @@ import {
   selectMatmulKernel,
 } from "../js/src/gpu-tuning.js";
 
-test("GPU tuning keeps generic without sufficient storage or timestamps", async () => {
+test("GPU tuning keeps generic when optional features are unavailable", async () => {
   const generic = {};
-  for (const [features, reason] of [[[], "insufficient-workgroup-storage"], [["timestamp-query"], "insufficient-workgroup-storage"], [["shader-f16"], "no-timestamp-query"]]) {
+  for (const [features, reason] of [[[], "no-shader-f16"], [["shader-f16"], "no-timestamp-query"]]) {
     const result = await calibrateMatmul({ features: new Set(features) }, null, null, { pipelines: { generic } });
     assert.equal(result.pipelines.generic, generic);
     assert.equal(result.pipelines.wide, null);
     assert.equal(result.diagnostics.reason, reason);
   }
-  await assert.rejects(calibrateMatmul({ features: new Set() }, null, null, { kernel: "wide" }), /requires 32768 bytes/);
-});
-
-test("FP32 wide selection works with 32 KiB of workgroup storage", async () => {
-  const generic = {};
-  const wide = {};
-  const device = {
-    features: new Set(["timestamp-query"]),
-    limits: { maxComputeWorkgroupStorageSize: 32768 },
-    pushErrorScope() {},
-    async popErrorScope() { return null; },
-  };
-  for (const kernel of ["auto", "wide"]) {
-    const result = await calibrateMatmul(device, null, null, { kernel, pipelines: { generic, wide } });
-    assert.equal(result.pipelines.wide, wide);
-    assert.equal(result.diagnostics.method, kernel === "auto" ? "timestamp-query" : "override");
-    assert.equal(result.diagnostics.reason, undefined);
-  }
+  await assert.rejects(calibrateMatmul({ features: new Set() }, null, null, { kernel: "wide" }), /requires.*shader-f16/);
 });
 
 test("a wide pipeline failure falls back only for automatic selection", async (t) => {
