@@ -180,6 +180,28 @@ function compareCpu(values, reference) {
   return { ok: true, samples: reference.checks.length, maxAbs, maxRelative, worst, tolerance };
 }
 
+function compareOutputs(shared, subgroup) {
+  if (shared.length !== subgroup.length) return { ok: false, samples: Math.max(shared.length, subgroup.length), message: "variant output lengths differ" };
+  const tolerance = { absolute: 1e-5, relative: 1e-5 };
+  let maxAbs = 0;
+  let maxRelative = 0;
+  let worst = null;
+  for (let index = 0; index < shared.length; index++) {
+    if (!Number.isFinite(shared[index]) || !Number.isFinite(subgroup[index])) return { ok: false, samples: shared.length, message: `non-finite variant output at index ${index}` };
+    const abs = Math.abs(shared[index] - subgroup[index]);
+    const relative = abs / Math.max(1, Math.abs(shared[index]), Math.abs(subgroup[index]));
+    if (abs > maxAbs) {
+      maxAbs = abs;
+      worst = { index, shared: shared[index], subgroup: subgroup[index] };
+    }
+    maxRelative = Math.max(maxRelative, relative);
+    if (abs > tolerance.absolute + tolerance.relative * Math.max(1, Math.abs(shared[index]), Math.abs(subgroup[index]))) {
+      return { ok: false, samples: shared.length, maxAbs, maxRelative, worst, tolerance, message: `variant mismatch at output index ${index}` };
+    }
+  }
+  return { ok: true, samples: shared.length, maxAbs, maxRelative, worst, tolerance };
+}
+
 function makeBuffer(device, size, usage, label) {
   return device.createBuffer({ label, size: Math.max(16, size), usage });
 }
@@ -225,11 +247,13 @@ async function checked(device, operation, phase, uncaptured) {
 
 function makeTimer(device) {
   if (!device.features.has("timestamp-query")) return { timestamp: false, method: "performance.now() wall clock" };
+  const slots = 2;
   return {
     timestamp: true,
     method: "WebGPU timestamp-query",
-    querySet: device.createQuerySet({ type: "timestamp", count: 2, label: "gemma-attn.timestamps" }),
-    resolved: makeBuffer(device, 16, U.QUERY_RESOLVE | U.COPY_SRC, "gemma-attn.timestamp-resolved"),
+    slots,
+    querySet: device.createQuerySet({ type: "timestamp", count: slots * 2, label: "gemma-attn.timestamps" }),
+    resolved: makeBuffer(device, slots * 16, U.QUERY_RESOLVE | U.COPY_SRC, "gemma-attn.timestamp-resolved"),
     read: makeBuffer(device, 256, U.MAP_READ | U.COPY_DST, "gemma-attn.timestamp-read"),
   };
 }
@@ -256,6 +280,35 @@ async function timedDispatch(device, timer, run, reps, uncaptured, phase) {
     const timestamps = new BigInt64Array(timer.read.getMappedRange(0, 16).slice(0));
     timer.read.unmap();
     return Number(timestamps[1] - timestamps[0]) / 1e6 / reps;
+  }, phase, uncaptured);
+}
+
+// Runs both variants in one command buffer, alternating their order across samples. Each
+// variant receives its own timestamp pair, so the comparison is interleaved on the same queue
+// submission instead of relying on separate runs with drifting GPU state.
+async function timedPair(device, timer, runs, reps, uncaptured, phase) {
+  if (!timer.timestamp) {
+    const timings = [];
+    for (let i = 0; i < runs.length; i++) timings.push(await timedDispatch(device, timer, runs[i], reps, uncaptured, `${phase}.${i}`));
+    return timings;
+  }
+  return checked(device, async () => {
+    const encoder = device.createCommandEncoder({ label: phase });
+    for (let i = 0; i < runs.length; i++) {
+      const pass = encoder.beginComputePass({ timestampWrites: { querySet: timer.querySet, beginningOfPassWriteIndex: 2 * i, endOfPassWriteIndex: 2 * i + 1 } });
+      pass.setPipeline(runs[i].pipeline);
+      pass.setBindGroup(0, runs[i].group);
+      for (let rep = 0; rep < reps; rep++) pass.dispatchWorkgroups(runs[i].T, runs[i].heads, 1);
+      pass.end();
+    }
+    encoder.resolveQuerySet(timer.querySet, 0, runs.length * 2, timer.resolved, 0);
+    encoder.copyBufferToBuffer(timer.resolved, 0, timer.read, 0, runs.length * 16);
+    device.queue.submit([encoder.finish()]);
+    await device.queue.onSubmittedWorkDone();
+    await timer.read.mapAsync(GPUMapMode.READ, 0, runs.length * 16);
+    const timestamps = new BigInt64Array(timer.read.getMappedRange(0, runs.length * 16).slice(0));
+    timer.read.unmap();
+    return runs.map((_, i) => Number(timestamps[2 * i + 1] - timestamps[2 * i]) / 1e6 / reps);
   }, phase, uncaptured);
 }
 
@@ -313,11 +366,31 @@ async function main() {
     ],
   });
   const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [layout] });
-  const attention = await pipeline(device, source("gemma4_attention"), "gemma4_attention", pipelineLayout);
-  const correctness = { ok: true, cases: [], tolerance: { absolute: 1e-5, relative: 1e-5 } };
+  const attentionShared = await pipeline(device, source("gemma4_attention", { subgroups: false }), "gemma4_attention_shared", pipelineLayout);
+  const adapterSubgroupMin = Number(gpu.adapter.info?.subgroupMinSize || 0);
+  const subgroupRequested = device.features.has("subgroups") && adapterSubgroupMin >= 8;
+  let attentionSubgroup = null;
+  let subgroupError = null;
+  if (subgroupRequested) {
+    try {
+      attentionSubgroup = await pipeline(device, source("gemma4_attention", { subgroups: true }), "gemma4_attention_subgroup", pipelineLayout);
+    } catch (error) {
+      subgroupError = String(error?.message || error);
+      log(`subgroup specialization unavailable: ${subgroupError}`);
+    }
+  }
+  const subgroupAvailable = !!attentionSubgroup;
+  const correctness = {
+    ok: true,
+    cases: [],
+    tolerance: { absolute: 1e-5, relative: 1e-5 },
+    fullOutputEquality: subgroupAvailable,
+    subgroupAvailable,
+  };
   const results = [];
-  const medians = [];
-  log(`device: ${gpu.name}; timer: ${timer.method}`);
+  const sharedMedians = [];
+  const subgroupMedians = [];
+  log(`device: ${gpu.name}; timer: ${timer.method}; subgroup=${subgroupAvailable ? `yes (min ${adapterSubgroupMin})` : "no"}`);
   for (let caseIndex = 0; caseIndex < cases.length; caseIndex++) {
     const c = cases[caseIndex];
     const input = makeInputs(c, (seed + Math.imul(caseIndex, 0x9e3779b9)) >>> 0, magnitude);
@@ -331,15 +404,17 @@ async function main() {
     const Q = makeBuffer(device, bytesQ, U.STORAGE | U.COPY_DST, `${c.label}.Q`);
     const K = makeBuffer(device, bytesK, U.STORAGE | U.COPY_DST, `${c.label}.K`);
     const V = makeBuffer(device, bytesV, U.STORAGE | U.COPY_DST, `${c.label}.V`);
-    const O = makeBuffer(device, bytesO, U.STORAGE | U.COPY_SRC, `${c.label}.O`);
+    const OShared = makeBuffer(device, bytesO, U.STORAGE | U.COPY_SRC, `${c.label}.O.shared`);
+    const OSubgroup = subgroupAvailable ? makeBuffer(device, bytesO, U.STORAGE | U.COPY_SRC, `${c.label}.O.subgroup`) : null;
     const POS = makeBuffer(device, c.T * 4, U.STORAGE | U.COPY_DST, `${c.label}.positions`);
-    const group = device.createBindGroup({
+    const group = (output) => device.createBindGroup({
       layout,
-      entries: [globals, params, Q, K, V, O, POS].map((buffer, binding) => ({ binding, resource: { buffer } })),
+      entries: [globals, params, Q, K, V, output, POS].map((buffer, binding) => ({ binding, resource: { buffer } })),
     });
     const work = estimateWork(c);
     const reps = Math.max(1, Math.min(64, Math.round(8e7 / Math.max(1, work))));
-    const run = { pipeline: attention, group, T: c.T, heads: c.heads };
+    const sharedRun = { pipeline: attentionShared, group: group(OShared), T: c.T, heads: c.heads };
+    const subgroupRun = attentionSubgroup ? { pipeline: attentionSubgroup, group: group(OSubgroup), T: c.T, heads: c.heads } : null;
     await checked(device, async () => {
       device.queue.writeBuffer(globals, 0, new Uint32Array([c.T, 0, c.T, 0]));
       device.queue.writeBuffer(params, 0, new Uint32Array([c.heads, c.kvHeads, c.dim, c.window, c.causal, 0, 0, 0]));
@@ -349,16 +424,46 @@ async function main() {
       device.queue.writeBuffer(POS, 0, Uint32Array.from({ length: c.T }, (_, i) => i));
       await device.queue.onSubmittedWorkDone();
     }, `${c.label} upload`, uncaptured);
-    for (let i = 0; i < warmups; i++) await timedDispatch(device, timer, run, reps, uncaptured, `${c.label} warmup ${i}`);
-    const timings = [];
-    for (let i = 0; i < samples; i++) timings.push(await timedDispatch(device, timer, run, reps, uncaptured, `${c.label} sample ${i}`));
-    const sorted = [...timings].sort((a, b) => a - b);
-    const medianMs = sorted[Math.floor(sorted.length / 2)];
-    const values = await readOutput(device, O, bytesO, uncaptured, c.label);
-    const cpu = compareCpu(values, reference);
-    if (!cpu.ok) correctness.ok = false;
-    correctness.cases.push({ case: c.label, ...cpu, fullCheck: reference.full, checkedQueryHeads: reference.tokens.length * reference.heads.length });
-    medians.push(medianMs);
+    for (let i = 0; i < warmups; i++) {
+      if (subgroupRun) {
+        const order = i % 2 ? [subgroupRun, sharedRun] : [sharedRun, subgroupRun];
+        await timedPair(device, timer, order, reps, uncaptured, `${c.label} warmup ${i}`);
+      } else await timedDispatch(device, timer, sharedRun, reps, uncaptured, `${c.label} warmup ${i}`);
+    }
+    const sharedTimings = [];
+    const subgroupTimings = [];
+    for (let i = 0; i < samples; i++) {
+      if (subgroupRun) {
+        const order = i % 2 ? [subgroupRun, sharedRun] : [sharedRun, subgroupRun];
+        const paired = await timedPair(device, timer, order, reps, uncaptured, `${c.label} sample ${i}`);
+        const sharedIndex = order[0] === sharedRun ? 0 : 1;
+        sharedTimings.push(paired[sharedIndex]);
+        subgroupTimings.push(paired[1 - sharedIndex]);
+      } else sharedTimings.push(await timedDispatch(device, timer, sharedRun, reps, uncaptured, `${c.label} sample ${i}`));
+    }
+    const median = (timings) => {
+      const sorted = [...timings].sort((a, b) => a - b);
+      return sorted[Math.floor(sorted.length / 2)];
+    };
+    const sharedMedianMs = median(sharedTimings);
+    const subgroupMedianMs = subgroupRun ? median(subgroupTimings) : null;
+    const sharedValues = await readOutput(device, OShared, bytesO, uncaptured, `${c.label}.shared`);
+    const subgroupValues = subgroupRun ? await readOutput(device, OSubgroup, bytesO, uncaptured, `${c.label}.subgroup`) : null;
+    const sharedCpu = compareCpu(sharedValues, reference);
+    const subgroupCpu = subgroupValues ? compareCpu(subgroupValues, reference) : null;
+    const equality = subgroupValues ? compareOutputs(sharedValues, subgroupValues) : null;
+    if (!sharedCpu.ok || subgroupCpu && !subgroupCpu.ok || equality && !equality.ok) correctness.ok = false;
+    correctness.cases.push({
+      case: c.label,
+      shared: sharedCpu,
+      subgroup: subgroupCpu,
+      equality,
+      fullCheck: reference.full,
+      fullOutputElements: bytesO / 4,
+      checkedQueryHeads: reference.tokens.length * reference.heads.length,
+    });
+    sharedMedians.push(sharedMedianMs);
+    if (subgroupMedianMs != null) subgroupMedians.push(subgroupMedianMs);
     results.push({
       case: c.label,
       T: c.T,
@@ -369,26 +474,34 @@ async function main() {
       causal: Boolean(c.causal),
       work,
       reps,
-      samples: timings,
-      medianMs,
-      correctness: cpu,
+      samples: sharedTimings,
+      medianMs: sharedMedianMs,
+      sharedSamples: sharedTimings,
+      sharedMedianMs,
+      subgroupSamples: subgroupRun ? subgroupTimings : null,
+      subgroupMedianMs,
+      interleaved: !!subgroupRun,
+      correctness: { shared: sharedCpu, subgroup: subgroupCpu, equality },
     });
-    log(`${c.label}: ${medianMs.toFixed(4)} ms (${timer.method}, ${reps} dispatches/sample), ${cpu.ok ? "correct" : "FAILED"} maxAbs=${cpu.maxAbs?.toExponential(2) || "n/a"}`);
-    for (const buffer of [globals, params, Q, K, V, O, POS]) buffer.destroy();
+    log(`${c.label}: shared=${sharedMedianMs.toFixed(4)} ms${subgroupMedianMs == null ? "" : ` subgroup=${subgroupMedianMs.toFixed(4)} ms`} (${timer.method}, ${reps} dispatches/sample), ${sharedCpu.ok && (!subgroupCpu || subgroupCpu.ok) && (!equality || equality.ok) ? "correct" : "FAILED"} maxAbs=${Math.max(sharedCpu.maxAbs || 0, subgroupCpu?.maxAbs || 0, equality?.maxAbs || 0).toExponential(2)}`);
+    for (const buffer of [globals, params, Q, K, V, OShared, OSubgroup, POS]) buffer?.destroy();
   }
-  const metricMs = Math.exp(medians.reduce((sum, value) => sum + Math.log(value), 0) / medians.length);
+  const metricMs = Math.exp(sharedMedians.reduce((sum, value) => sum + Math.log(value), 0) / sharedMedians.length);
+  const subgroupMetricMs = subgroupMedians.length ? Math.exp(subgroupMedians.reduce((sum, value) => sum + Math.log(value), 0) / subgroupMedians.length) : null;
   const result = {
     status: correctness.ok ? "done" : "error",
     done: true,
     backend: "webgpu",
     kernel: "gemma4_attention",
     metricMs,
-    metric: "geometric mean of per-case median Gemma 4 attention milliseconds",
-    method: timer.method,
+    subgroupMetricMs,
+    metric: "geometric mean of per-case median shared-kernel Gemma 4 attention milliseconds; subgroup timings are paired separately",
+    method: subgroupAvailable ? `${timer.method}, interleaved shared/subgroup` : timer.method,
     seed,
     magnitude,
     warmups,
     samples,
+    subgroup: { available: subgroupAvailable, requested: subgroupRequested, minSize: adapterSubgroupMin || null, error: subgroupError },
     cases: results,
     adapter: adapterInfo(gpu),
     correctness,
