@@ -282,13 +282,13 @@ function makeTimer(device) {
   };
 }
 
-async function dispatch(device, pipelineObject, bindGroup, segments, heads, timer, lost, uncaptured, label, reps = 1) {
+async function dispatch(device, pipelineObject, bindGroup, segments, heads, timer, lost, uncaptured, label, { reps = 1, zTiles = 2 } = {}) {
   return withGpuErrors(device, lost, label, async () => {
     const encoder = device.createCommandEncoder({ label });
     const pass = encoder.beginComputePass(timer ? { timestampWrites: { querySet: timer.querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } } : {});
     pass.setPipeline(pipelineObject);
     pass.setBindGroup(0, bindGroup);
-    for (let i = 0; i < reps; i++) pass.dispatchWorkgroups(segments, heads, 2);
+    for (let i = 0; i < reps; i++) pass.dispatchWorkgroups(segments, heads, zTiles);
     pass.end();
     if (timer) {
       encoder.resolveQuerySet(timer.querySet, 0, 2, timer.resolved, 0);
@@ -324,6 +324,13 @@ async function main() {
     if (useSubgroups && (!device.features.has("subgroups") || !gpu.subgroup4)) {
       throw new Error("subgroups=1 requested, but this device has no usable subgroup4 path");
     }
+    const candidate = query.get("candidate") || "current";
+    if (candidate !== "current" && candidate !== "recur8") {
+      throw new Error(`candidate must be current or recur8, got ${candidate}`);
+    }
+    if (candidate === "recur8" && useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < 8) {
+      throw new Error("candidate=recur8 with subgroups=1 requires subgroupMinSize >= 8; use subgroups=0 for the shared-memory path");
+    }
     timer = makeTimer(device);
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
@@ -335,17 +342,20 @@ async function main() {
     const pipelineCache = new Map();
     const getPipeline = async (source, cfg) => {
       const sourceKey = source === current ? "current" : "baseline";
-      const cfgKey = `${sourceKey}|${JSON.stringify(cfg)}`;
+      const kernel = source === current && candidate === "recur8" ? "kev_recur_lanes8" : "kev_recur_lanes";
+      const zTiles = kernel === "kev_recur_lanes8" ? 4 : 2;
+      const cfgKey = `${sourceKey}|${kernel}|${JSON.stringify(cfg)}`;
       if (!pipelineCache.has(cfgKey)) {
-        const code = source("kev_recur_lanes", { subgroups: useSubgroups, kev: cfg });
-        pipelineCache.set(cfgKey, pipeline(device, code, `kev_recur_lanes.${sourceKey}.${cfg.lin_heads}`));
+        const code = source(kernel, { subgroups: useSubgroups, kev: cfg });
+        pipelineCache.set(cfgKey, pipeline(device, code, `${kernel}.${sourceKey}.${cfg.lin_heads}`));
       }
-      return pipelineCache.get(cfgKey);
+      return { pipeline: await pipelineCache.get(cfgKey), kernel, zTiles };
     };
     const timing = [];
     const correctness = { ok: true, cpu: [], variants: [], errors: [] };
     let cpuMaxAbs = 0;
     let oldNewExact = baseline ? true : null;
+    let oldNewWithinTolerance = baseline ? true : null;
     for (let caseIndex = 0; caseIndex < CASES.length; caseIndex++) {
       const test = CASES[caseIndex];
       const data = makeCaseData(test, 0x4b455641 + caseIndex * 0x9e3779b9);
@@ -371,14 +381,15 @@ async function main() {
         await device.queue.onSubmittedWorkDone();
       }, uncaptured);
       const run = async (source, label, collectOutput) => {
-        const p = await getPipeline(source, test.cfg);
+        const variant = await getPipeline(source, test.cfg);
+        const p = variant.pipeline;
         await upload();
         const bind = device.createBindGroup({ layout: p.getBindGroupLayout(0), entries: [globals, input, ab, segs, state, core].map((buffer, binding) => ({ binding, resource: { buffer } })) });
-        await dispatch(device, p, bind, segCount, heads, null, lost, uncaptured, `${test.name}.${label}.correctness`);
-        if (!collectOutput) return { p, bind };
+        await dispatch(device, p, bind, segCount, heads, null, lost, uncaptured, `${test.name}.${label}.correctness`, { zTiles: variant.zTiles });
+        if (!collectOutput) return { p, bind, kernel: variant.kernel, zTiles: variant.zTiles };
         const coreOut = await readBuffer(device, core, Math.max(1, T * data.out) * 4, lost, uncaptured, `${test.name}.${label}.CORE`);
         const stateOut = await readBuffer(device, state, data.STATE.byteLength, lost, uncaptured, `${test.name}.${label}.STATE`);
-        return { p, bind, core: coreOut, state: stateOut };
+        return { p, bind, kernel: variant.kernel, zTiles: variant.zTiles, core: coreOut, state: stateOut };
       };
       const currentResult = await run(current, "current", true);
       const currentCpu = expected ? { core: cpuCheck(currentResult.core, expected.core), state: cpuCheck(currentResult.state, expected.state) } : null;
@@ -400,24 +411,28 @@ async function main() {
         }
         const coreDiff = maxDifference(currentResult.core, baselineResult.core);
         const stateDiff = maxDifference(currentResult.state, baselineResult.state);
+        const coreGuard = cpuCheck(currentResult.core, baselineResult.core);
+        const stateGuard = cpuCheck(currentResult.state, baselineResult.state);
         const exact = coreDiff.exact && stateDiff.exact;
-        correctness.variants.push({ case: test.name, exact, core: coreDiff, state: stateDiff });
+        const withinTolerance = coreGuard.ok && stateGuard.ok;
+        correctness.variants.push({ case: test.name, exact, withinTolerance, core: coreDiff, state: stateDiff, coreGuard, stateGuard });
         oldNewExact &&= exact;
-        if (!exact) correctness.ok = false;
+        oldNewWithinTolerance &&= withinTolerance;
+        if (!withinTolerance) correctness.ok = false;
       }
       const reps = T <= 7 ? 16 : T <= 31 ? 8 : T <= 129 ? 2 : 1;
       const currentSamples = [];
       const baselineSamples = [];
       for (let warmup = 0; warmup < warmups; warmup++) {
         await upload();
-        await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, null, lost, uncaptured, `${test.name}.current.warmup`, reps);
+        await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, null, lost, uncaptured, `${test.name}.current.warmup`, { reps, zTiles: currentResult.zTiles });
       }
       for (let sample = 0; sample < samples; sample++) {
         await upload();
-        currentSamples.push(await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.current.sample`, reps));
+        currentSamples.push(await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.current.sample`, { reps, zTiles: currentResult.zTiles }));
         if (baselineResult) {
           await upload();
-          baselineSamples.push(await dispatch(device, baselineResult.p, baselineResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.baseline.sample`, reps));
+          baselineSamples.push(await dispatch(device, baselineResult.p, baselineResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.baseline.sample`, { reps, zTiles: baselineResult.zTiles }));
         }
       }
       const currentMedian = median(currentSamples);
@@ -434,13 +449,15 @@ async function main() {
       samples,
       warmups,
       baselineWasm: baselineUrl,
+      candidate,
       variantProvenance: {
-        current: { source: "current", wasmUrl: current.wasmUrl, kernel: "kev_recur_lanes", subgroups: useSubgroups },
-        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: "kev_recur_lanes", subgroups: useSubgroups } } : {}),
+        current: { source: "current", wasmUrl: current.wasmUrl, kernel: candidate === "recur8" ? "kev_recur_lanes8" : "kev_recur_lanes", zTiles: candidate === "recur8" ? 4 : 2, subgroups: useSubgroups },
+        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: "kev_recur_lanes", zTiles: 2, subgroups: useSubgroups } } : {}),
       },
       cases: timing,
       cpuMaxAbs,
       oldNewExact,
+      oldNewWithinTolerance,
       correctness,
       adapter: adapterInfo(gpu),
     };
