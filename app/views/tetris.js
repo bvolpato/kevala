@@ -89,9 +89,10 @@ const HTML = `<div class="wrap">
         <p>The selected model on WebGPU or WebAssembly in the browser</p>
       </div>
       <div class="ai-metrics">
-        <div title="Full wall time for one model decision, from sending the scoring request until the scores return."><b data-m="ms">–</b><span data-m="where">median model wait</span></div>
-        <div title="Landing placements found by the auto controller's rotation, slide, and drop search."><b data-m="spots">–</b><span>landings found</span></div>
-        <div title="Distinct board states from the shortlist that were sent to the model."><b data-m="states">–</b><span>states scored</span></div>
+        <div title="Average batch time per board state scored by the model; the full last request is shown below."><span class="metric-kind" data-m="backend">Inference</span><b data-m="ms">–</b><span class="metric-label" data-m="unit">ms / decision</span></div>
+        <div title="Landing placements found by the auto controller's rotation, slide, and drop search."><span class="metric-kind">Search</span><b data-m="spots">–</b><span class="metric-label">landings found</span></div>
+        <div title="Distinct board states from the shortlist that were sent to the model."><span class="metric-kind">Shortlist</span><b data-m="states">–</b><span class="metric-label">states scored</span></div>
+        <p class="metric-detail" data-m="detail">Time is shown after the first model request.</p>
       </div>
       <div class="keys">${KEY_TILES}</div>
       <div class="plan" aria-label="Keys for this piece"></div>
@@ -191,6 +192,8 @@ export function mount(el, { session }) {
   let userTookOver = false;
   let wantAuto = false;
   const model = () => (session.ready ? session.kevala : null);
+  const recentDecisions = [];
+  let metricsModel = null;
 
   const ai = new AutoPlayer(game, {
     getModel: model,
@@ -669,9 +672,19 @@ export function mount(el, { session }) {
     ui.auto.setAttribute("aria-pressed", String(ai.enabled));
     ui.auto.classList.toggle("thinking", ai.busy);
     const backend = session.info?.backend;
-    const where = backend ? `median wait · ${backend === "webgpu" ? "WebGPU" : "CPU"}` : "median model wait";
-    el.querySelector('[data-m="where"]').textContent = where;
-    if (!ai.stats.ms.length) el.querySelector('[data-m="ms"]').textContent = ai.busy ? "…" : "–";
+    el.querySelector('[data-m="backend"]').textContent = backend === "webgpu" ? "WebGPU" : backend ? "CPU" : "Inference";
+    const activeModel = model();
+    if (metricsModel !== activeModel || !ai.stats.ms.length) {
+      metricsModel = activeModel;
+      recentDecisions.length = 0;
+      const msEl = el.querySelector('[data-m="ms"]');
+      msEl.textContent = ai.busy ? "…" : "–";
+      msEl.parentElement.title = "Average batch time per board state scored by the model; the full last request is shown below.";
+      el.querySelector('[data-m="unit"]').textContent = "ms / decision";
+      el.querySelector('[data-m="detail"]').textContent = "Time is shown after the first model request.";
+      el.querySelector('[data-m="spots"]').textContent = "–";
+      el.querySelector('[data-m="states"]').textContent = "–";
+    }
   }
 
   function spotHTML(spot, i) {
@@ -683,20 +696,19 @@ export function mount(el, { session }) {
     ].join("");
   }
 
-  const decisionWaits = [];
   function showDecision(decision) {
-    decisionWaits.push(decision.ms);
-    if (decisionWaits.length > 10) decisionWaits.shift();
-    const sortedWaits = [...decisionWaits].sort((a, b) => a - b);
-    const middle = sortedWaits.length >> 1;
-    const median = sortedWaits.length % 2
-      ? sortedWaits[middle]
-      : (sortedWaits[middle - 1] + sortedWaits[middle]) / 2;
+    recentDecisions.push({ ms: decision.ms, states: decision.states });
+    if (recentDecisions.length > 10) recentDecisions.shift();
+    const totalMs = recentDecisions.reduce((sum, item) => sum + item.ms, 0);
+    const totalStates = recentDecisions.reduce((sum, item) => sum + item.states, 0);
+    const [time, unit] = fmtMs(totalMs / totalStates).split(" ");
     const msEl = el.querySelector('[data-m="ms"]');
-    msEl.textContent = fmtMs(median);
+    msEl.textContent = time;
+    el.querySelector('[data-m="unit"]').textContent = `${unit} / decision`;
+    el.querySelector('[data-m="detail"]').textContent = `Last batch: ${fmtMs(decision.ms)} for ${decision.states} model ${decision.states === 1 ? "state" : "states"}.`;
     msEl.parentElement.title =
-      `Full wall wait for this piece's model decision: ${fmtMs(decision.ms)} to score ${decision.states} distinct states ` +
-      `(${decision.timing?.tokens ?? "?"} tokens). Displayed value is the median of the last ${decisionWaits.length} decisions.`;
+      `Average time per scored model state: ${fmtMs(totalMs)} across ${totalStates} states in the last ${recentDecisions.length} batches. ` +
+      `Full last batch: ${fmtMs(decision.ms)} for ${decision.states} states (${decision.timing?.tokens ?? "?"} tokens).`;
     el.querySelector('[data-m="spots"]').textContent = String(decision.spots);
     el.querySelector('[data-m="states"]').textContent = String(decision.states);
     const top = decision.scored.slice(0, 3);
