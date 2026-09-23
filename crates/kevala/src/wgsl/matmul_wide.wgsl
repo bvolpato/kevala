@@ -24,6 +24,12 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 var<workgroup> xs: array<vec4<{{TILE}}>, 1024>; // [m][k/4], two K blocks
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & 7)], two K blocks
 
+//#if F16
+const W_SWIZZLE: u32 = 15u;
+//#else
+const W_SWIZZLE: u32 = 7u;
+//#endif
+
 // Four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
 // xor makes each byte b + 128, and a byte in the low mantissa bits of 2^23 reads as 2^23 + b + 128
 fn sx(w: u32) -> vec4<f32> {
@@ -63,7 +69,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let lr = li / 4u;
   let lq = li % 4u;
   let xrow = m0 + lr;
-  let sw = lr & 7u;
+  let sw = lr & W_SWIZZLE;
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
   var wv0 = vec4<f32>(0.0);
@@ -95,12 +101,12 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
       }
       let r = lr;
-      ws[r * 16u + step * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
-      ws[r * 16u + step * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
+      ws[r * 16u + ((step * 8u + lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
+      ws[r * 16u + ((step * 8u + lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
     }
     workgroupBarrier();
 
-    let nx = lid.x & 7u;
+    let nx = lid.x & W_SWIZZLE;
     for (var kq = 0u; kq < 16u; kq++) {
       let c = lid.x;
       let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
