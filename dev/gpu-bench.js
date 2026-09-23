@@ -292,6 +292,7 @@ async function main() {
   const seed = numberParam(query, "seed", 0x4b455641, 1, 0xffffffff);
   const warmups = numberParam(query, "warmups", 2, 0, 10);
   const samples = numberParam(query, "samples", 7, 3, 20);
+  const specialize = query.get("specialize") === "1";
   const requestedKernels = (query.get("kernels") || "runtime").split(",").filter(Boolean);
   const baselineWasmParam = query.get("baselineWasm");
   const baselineWasm = baselineWasmParam ? new URL(baselineWasmParam, document.baseURI).href : null;
@@ -319,11 +320,12 @@ async function main() {
     reduce: device.createPipelineLayout({ bindGroupLayouts: [layouts.reduce] }),
   };
   const pipelineCache = new Map();
-  const getPipelines = async (variant, T) => {
+  const getPipelines = async (variant, T, N, K) => {
     const shaderSource = variant.baseline ? baselineSource : source;
-    const key = `${variant.label}|${variant.wasmUrl}|${T}`;
+    const key = `${variant.label}|${variant.wasmUrl}|${T}|${N}|${K}`;
     if (!pipelineCache.has(key)) {
-      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const shape = specialize && !variant.baseline ? { n: N, k: K } : {};
+      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, ...shape });
       const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       pipelineCache.set(key, Promise.all([
         pipeline(device, code, `${variant.label}.matmul`, pipelineLayouts.matmul),
@@ -381,7 +383,7 @@ async function main() {
     const shouldCheckEpilogues = T * N <= 8192;
     const runs = [];
     for (const variant of variantObjects) {
-      const pipes = await getPipelines(variant, T);
+      const pipes = await getPipelines(variant, T, N, K);
       const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, W, S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const reduce = device.createBindGroup({ layout: layouts.reduce, entries: [globals, params, part, B, Y].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const op = { N, K, group, reduce, pMatmul: pipes.pMatmul, pReduce: pipes.pReduce };
@@ -459,6 +461,7 @@ async function main() {
     seed,
     warmups,
     samples,
+    specialize,
     kernels: labels,
     baselineWasm,
     variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
