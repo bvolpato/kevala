@@ -82,8 +82,27 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let K = p.K;
 //#endif
   let nb = K / 32u;
+//#if GENERIC_UNROLL
+  // Grouped-M order follows Triton's matrix-multiplication tutorial, with groups of four.
+  // https://triton-lang.org/main/getting-started/tutorials/03-matrix-multiplication.html
+  let numM = (T + {{BM_MINUS_1}}u) / {{BM}}u;
+  var m0 = wg.y * {{BM}}u;
+  var n0 = wg.x * {{BN}}u;
+  if (numM > 1u) {
+    let numN = (N + {{BN_MINUS_1}}u) / {{BN}}u;
+    let tileIndex = wg.y * numN + wg.x;
+    let groupSpan = 4u * numN;
+    let group = tileIndex / groupSpan;
+    let firstM = group * 4u;
+    let groupM = min(4u, numM - firstM);
+    let inGroup = tileIndex - group * groupSpan;
+    m0 = (firstM + inGroup % groupM) * {{BM}}u;
+    n0 = (inGroup / groupM) * {{BN}}u;
+  }
+//#else
   let m0 = wg.y * {{BM}}u;
   let n0 = wg.x * {{BN}}u;
+//#endif
   // split-K: this workgroup covers blocks kb0..kb1 and, when split, writes a partial tile
   let splits = mm_splits(T, N, K);
   let per = (nb + splits - 1u) / splits;
