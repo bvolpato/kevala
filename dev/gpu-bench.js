@@ -57,7 +57,7 @@ function parseKernel(raw, T, config) {
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
-  if (match[1].startsWith("matmul_wide") && groups === 2 && !f16) throw new Error(`${raw} groups=2 requires shader-f16`);
+  if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
   return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups };
