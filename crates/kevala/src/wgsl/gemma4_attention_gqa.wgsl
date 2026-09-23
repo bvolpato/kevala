@@ -119,9 +119,8 @@ fn main(
     tile_range = vec2<u32>(first, min(last, g.S));
   }
   workgroupBarrier();
-  let span = workgroupUniformLoad(&tile_range);
-  let tile_start = span.x;
-  let tile_end = span.y;
+  let tile_start = tile_range.x;
+  let tile_end = tile_range.y;
 
   var m = NEG_INF;
   var l = 0.0;
