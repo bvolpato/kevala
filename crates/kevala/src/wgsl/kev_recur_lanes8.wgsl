@@ -1,11 +1,8 @@
-// The same recurrence with four lanes per value column, each holding a quarter of the key
-// dimension (32 of 128), so each token's serial chain is 32 multiply-adds instead of 128. The
-// private recurrence state uses 32 named scalar values, avoiding dynamic private-array indexing
-// while preserving the original scalar load, reduction, update, output, and store order. A
-// workgroup covers half of a head's 128 columns (z picks which). With subgroups (lanes numbered
-// consecutively within one) the four partial dot products combine with shuffles; without, through
-// workgroup memory: one more barrier per token for k.S, while a column's output sums after the
-// barrier that ends its token.
+// The same recurrence with eight lanes per value column, each holding 16 of 128 key values.
+// The private recurrence state uses 16 named scalar values, avoiding dynamic private-array
+// indexing. A workgroup covers one quarter of a head's 128 columns (z picks which). With
+// subgroups, the eight partial dot products combine with xor shuffles; without, through workgroup
+// memory. The state/cache layout is unchanged from kev_recur_lanes.
 //#if SUBGROUPS
 enable subgroups;
 //#endif
@@ -45,8 +42,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let kh = h;
 //#endif
   if (s >= g.S) { return; }
-  let column = wg.z * 64u + li / 4u;
-  let k0 = (li % 4u) * 32u;
+  let column = wg.z * 32u + li / 8u;
+  let k0 = (li % 8u) * 16u;
   if (li == 0u) {
     let sg = segs[s];
     info = vec4<u32>(sg.start, sg.len, sg.parent, sg.dst);
@@ -68,22 +65,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var c13 = 0.0;
   var c14 = 0.0;
   var c15 = 0.0;
-  var c16 = 0.0;
-  var c17 = 0.0;
-  var c18 = 0.0;
-  var c19 = 0.0;
-  var c20 = 0.0;
-  var c21 = 0.0;
-  var c22 = 0.0;
-  var c23 = 0.0;
-  var c24 = 0.0;
-  var c25 = 0.0;
-  var c26 = 0.0;
-  var c27 = 0.0;
-  var c28 = 0.0;
-  var c29 = 0.0;
-  var c30 = 0.0;
-  var c31 = 0.0;
   if (sp.z != 0xffffffffu) {
     let base = (sp.z * LIN_HEADS + h) * 16384u + column;
     c0 = STATE[base + (k0 + 0u) * 128u];
@@ -102,22 +83,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     c13 = STATE[base + (k0 + 13u) * 128u];
     c14 = STATE[base + (k0 + 14u) * 128u];
     c15 = STATE[base + (k0 + 15u) * 128u];
-    c16 = STATE[base + (k0 + 16u) * 128u];
-    c17 = STATE[base + (k0 + 17u) * 128u];
-    c18 = STATE[base + (k0 + 18u) * 128u];
-    c19 = STATE[base + (k0 + 19u) * 128u];
-    c20 = STATE[base + (k0 + 20u) * 128u];
-    c21 = STATE[base + (k0 + 21u) * 128u];
-    c22 = STATE[base + (k0 + 22u) * 128u];
-    c23 = STATE[base + (k0 + 23u) * 128u];
-    c24 = STATE[base + (k0 + 24u) * 128u];
-    c25 = STATE[base + (k0 + 25u) * 128u];
-    c26 = STATE[base + (k0 + 26u) * 128u];
-    c27 = STATE[base + (k0 + 27u) * 128u];
-    c28 = STATE[base + (k0 + 28u) * 128u];
-    c29 = STATE[base + (k0 + 29u) * 128u];
-    c30 = STATE[base + (k0 + 30u) * 128u];
-    c31 = STATE[base + (k0 + 31u) * 128u];
   } else {
     c0 = 0.0;
     c1 = 0.0;
@@ -135,22 +100,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     c13 = 0.0;
     c14 = 0.0;
     c15 = 0.0;
-    c16 = 0.0;
-    c17 = 0.0;
-    c18 = 0.0;
-    c19 = 0.0;
-    c20 = 0.0;
-    c21 = 0.0;
-    c22 = 0.0;
-    c23 = 0.0;
-    c24 = 0.0;
-    c25 = 0.0;
-    c26 = 0.0;
-    c27 = 0.0;
-    c28 = 0.0;
-    c29 = 0.0;
-    c30 = 0.0;
-    c31 = 0.0;
   }
   var v = 0.0;
   var decay = 0.0;
@@ -192,33 +141,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     kv += c13 * ks[cur][k0 + 13u];
     kv += c14 * ks[cur][k0 + 14u];
     kv += c15 * ks[cur][k0 + 15u];
-    kv += c16 * ks[cur][k0 + 16u];
-    kv += c17 * ks[cur][k0 + 17u];
-    kv += c18 * ks[cur][k0 + 18u];
-    kv += c19 * ks[cur][k0 + 19u];
-    kv += c20 * ks[cur][k0 + 20u];
-    kv += c21 * ks[cur][k0 + 21u];
-    kv += c22 * ks[cur][k0 + 22u];
-    kv += c23 * ks[cur][k0 + 23u];
-    kv += c24 * ks[cur][k0 + 24u];
-    kv += c25 * ks[cur][k0 + 25u];
-    kv += c26 * ks[cur][k0 + 26u];
-    kv += c27 * ks[cur][k0 + 27u];
-    kv += c28 * ks[cur][k0 + 28u];
-    kv += c29 * ks[cur][k0 + 29u];
-    kv += c30 * ks[cur][k0 + 30u];
-    kv += c31 * ks[cur][k0 + 31u];
 //#if SUBGROUPS
     kv += subgroupShuffleXor(kv, 1u);
     kv += subgroupShuffleXor(kv, 2u);
+    kv += subgroupShuffleXor(kv, 4u);
 //#else
     // the previous token's output, summed by its column's first lane before anyone overwrites it
-    if (r > 0u && k0 == 0u) { CORE[(t - 1u) * LIN_OUT + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
+    if (r > 0u && k0 == 0u) {
+      let q8 = li;
+      let left = (os[q8] + os[q8 + 1u]) + (os[q8 + 2u] + os[q8 + 3u]);
+      let right = (os[q8 + 4u] + os[q8 + 5u]) + (os[q8 + 6u] + os[q8 + 7u]);
+      CORE[(t - 1u) * LIN_OUT + h * 128u + column] = left + right;
+    }
     kvs[li] = kv;
     workgroupBarrier();
-    let q4 = li & ~3u;
-    // paired as the shuffles pair them, so both variants give the same bits
-    kv = (kvs[q4] + kvs[q4 + 1u]) + (kvs[q4 + 2u] + kvs[q4 + 3u]);
+    let q8 = li & ~7u;
+    let left = (kvs[q8] + kvs[q8 + 1u]) + (kvs[q8 + 2u] + kvs[q8 + 3u]);
+    let right = (kvs[q8 + 4u] + kvs[q8 + 5u]) + (kvs[q8 + 6u] + kvs[q8 + 7u]);
+    kv = left + right;
 //#endif
     let delta = (v - decay * kv) * beta;
     var o = 0.0;
@@ -270,57 +210,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     let x15 = decay * c15 + ks[cur][k0 + 15u] * delta;
     c15 = x15;
     o += x15 * qs[cur][k0 + 15u];
-    let x16 = decay * c16 + ks[cur][k0 + 16u] * delta;
-    c16 = x16;
-    o += x16 * qs[cur][k0 + 16u];
-    let x17 = decay * c17 + ks[cur][k0 + 17u] * delta;
-    c17 = x17;
-    o += x17 * qs[cur][k0 + 17u];
-    let x18 = decay * c18 + ks[cur][k0 + 18u] * delta;
-    c18 = x18;
-    o += x18 * qs[cur][k0 + 18u];
-    let x19 = decay * c19 + ks[cur][k0 + 19u] * delta;
-    c19 = x19;
-    o += x19 * qs[cur][k0 + 19u];
-    let x20 = decay * c20 + ks[cur][k0 + 20u] * delta;
-    c20 = x20;
-    o += x20 * qs[cur][k0 + 20u];
-    let x21 = decay * c21 + ks[cur][k0 + 21u] * delta;
-    c21 = x21;
-    o += x21 * qs[cur][k0 + 21u];
-    let x22 = decay * c22 + ks[cur][k0 + 22u] * delta;
-    c22 = x22;
-    o += x22 * qs[cur][k0 + 22u];
-    let x23 = decay * c23 + ks[cur][k0 + 23u] * delta;
-    c23 = x23;
-    o += x23 * qs[cur][k0 + 23u];
-    let x24 = decay * c24 + ks[cur][k0 + 24u] * delta;
-    c24 = x24;
-    o += x24 * qs[cur][k0 + 24u];
-    let x25 = decay * c25 + ks[cur][k0 + 25u] * delta;
-    c25 = x25;
-    o += x25 * qs[cur][k0 + 25u];
-    let x26 = decay * c26 + ks[cur][k0 + 26u] * delta;
-    c26 = x26;
-    o += x26 * qs[cur][k0 + 26u];
-    let x27 = decay * c27 + ks[cur][k0 + 27u] * delta;
-    c27 = x27;
-    o += x27 * qs[cur][k0 + 27u];
-    let x28 = decay * c28 + ks[cur][k0 + 28u] * delta;
-    c28 = x28;
-    o += x28 * qs[cur][k0 + 28u];
-    let x29 = decay * c29 + ks[cur][k0 + 29u] * delta;
-    c29 = x29;
-    o += x29 * qs[cur][k0 + 29u];
-    let x30 = decay * c30 + ks[cur][k0 + 30u] * delta;
-    c30 = x30;
-    o += x30 * qs[cur][k0 + 30u];
-    let x31 = decay * c31 + ks[cur][k0 + 31u] * delta;
-    c31 = x31;
-    o += x31 * qs[cur][k0 + 31u];
 //#if SUBGROUPS
     o += subgroupShuffleXor(o, 1u);
     o += subgroupShuffleXor(o, 2u);
+    o += subgroupShuffleXor(o, 4u);
     if (k0 == 0u) { CORE[t * LIN_OUT + h * 128u + column] = o; }
 //#else
     os[li] = o;
@@ -332,7 +225,12 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   }
 //#if SUBGROUPS
 //#else
-  if (sp.y > 0u && k0 == 0u) { CORE[(sp.x + sp.y - 1u) * LIN_OUT + h * 128u + column] = (os[li] + os[li + 1u]) + (os[li + 2u] + os[li + 3u]); }
+  if (sp.y > 0u && k0 == 0u) {
+    let q8 = li;
+    let left = (os[q8] + os[q8 + 1u]) + (os[q8 + 2u] + os[q8 + 3u]);
+    let right = (os[q8 + 4u] + os[q8 + 5u]) + (os[q8 + 6u] + os[q8 + 7u]);
+    CORE[(sp.x + sp.y - 1u) * LIN_OUT + h * 128u + column] = left + right;
+  }
 //#endif
   if (g.stage == 1u) {
     let base = (sp.w * LIN_HEADS + h) * 16384u + column;
@@ -352,21 +250,5 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     STATE[base + (k0 + 13u) * 128u] = c13;
     STATE[base + (k0 + 14u) * 128u] = c14;
     STATE[base + (k0 + 15u) * 128u] = c15;
-    STATE[base + (k0 + 16u) * 128u] = c16;
-    STATE[base + (k0 + 17u) * 128u] = c17;
-    STATE[base + (k0 + 18u) * 128u] = c18;
-    STATE[base + (k0 + 19u) * 128u] = c19;
-    STATE[base + (k0 + 20u) * 128u] = c20;
-    STATE[base + (k0 + 21u) * 128u] = c21;
-    STATE[base + (k0 + 22u) * 128u] = c22;
-    STATE[base + (k0 + 23u) * 128u] = c23;
-    STATE[base + (k0 + 24u) * 128u] = c24;
-    STATE[base + (k0 + 25u) * 128u] = c25;
-    STATE[base + (k0 + 26u) * 128u] = c26;
-    STATE[base + (k0 + 27u) * 128u] = c27;
-    STATE[base + (k0 + 28u) * 128u] = c28;
-    STATE[base + (k0 + 29u) * 128u] = c29;
-    STATE[base + (k0 + 30u) * 128u] = c30;
-    STATE[base + (k0 + 31u) * 128u] = c31;
   }
 }

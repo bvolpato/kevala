@@ -309,6 +309,7 @@ async function main() {
       { binding: 3, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
       { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
       { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: "storage" } },
+      { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: "read-only-storage" } },
     ],
   });
   const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [layout] });
@@ -331,19 +332,21 @@ async function main() {
     const K = makeBuffer(device, bytesK, U.STORAGE | U.COPY_DST, `${c.label}.K`);
     const V = makeBuffer(device, bytesV, U.STORAGE | U.COPY_DST, `${c.label}.V`);
     const O = makeBuffer(device, bytesO, U.STORAGE | U.COPY_SRC, `${c.label}.O`);
+    const POS = makeBuffer(device, c.T * 4, U.STORAGE | U.COPY_DST, `${c.label}.positions`);
     const group = device.createBindGroup({
       layout,
-      entries: [globals, params, Q, K, V, O].map((buffer, binding) => ({ binding, resource: { buffer } })),
+      entries: [globals, params, Q, K, V, O, POS].map((buffer, binding) => ({ binding, resource: { buffer } })),
     });
     const work = estimateWork(c);
     const reps = Math.max(1, Math.min(64, Math.round(8e7 / Math.max(1, work))));
     const run = { pipeline: attention, group, T: c.T, heads: c.heads };
     await checked(device, async () => {
-      device.queue.writeBuffer(globals, 0, new Uint32Array([c.T, 0, 0, 0]));
+      device.queue.writeBuffer(globals, 0, new Uint32Array([c.T, 0, c.T, 0]));
       device.queue.writeBuffer(params, 0, new Uint32Array([c.heads, c.kvHeads, c.dim, c.window, c.causal, 0, 0, 0]));
       device.queue.writeBuffer(Q, 0, input.q);
       device.queue.writeBuffer(K, 0, input.k);
       device.queue.writeBuffer(V, 0, input.v);
+      device.queue.writeBuffer(POS, 0, Uint32Array.from({ length: c.T }, (_, i) => i));
       await device.queue.onSubmittedWorkDone();
     }, `${c.label} upload`, uncaptured);
     for (let i = 0; i < warmups; i++) await timedDispatch(device, timer, run, reps, uncaptured, `${c.label} warmup ${i}`);
@@ -371,7 +374,7 @@ async function main() {
       correctness: cpu,
     });
     log(`${c.label}: ${medianMs.toFixed(4)} ms (${timer.method}, ${reps} dispatches/sample), ${cpu.ok ? "correct" : "FAILED"} maxAbs=${cpu.maxAbs?.toExponential(2) || "n/a"}`);
-    for (const buffer of [globals, params, Q, K, V, O]) buffer.destroy();
+    for (const buffer of [globals, params, Q, K, V, O, POS]) buffer.destroy();
   }
   const metricMs = Math.exp(medians.reduce((sum, value) => sum + Math.log(value), 0) / medians.length);
   const result = {

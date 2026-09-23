@@ -109,6 +109,408 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     workgroupBarrier();
 
     let nx = lid.x & W_SWIZZLE;
+//#if WIDE_UNROLL
+    {
+      let kq = 0u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 1u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 2u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 3u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 4u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 5u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 6u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 7u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 8u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 9u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 10u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 11u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 12u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 13u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 14u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+    {
+      let kq = 15u;
+      let c = lid.x;
+      let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 16u) * 16u + (kq ^ nx)]);
+      let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
+      let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
+
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
+      if ({{ROWS}}u > 1u) {
+        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+        }
+//#else
     for (var kq = 0u; kq < 16u; kq++) {
       let c = lid.x;
       let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
@@ -133,6 +535,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
       }
     }
+//#endif
     workgroupBarrier();
   }
 

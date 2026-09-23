@@ -1,0 +1,3411 @@
+{
+  "schemaVersion": 1,
+  "measuredUtc": "2026-09-23",
+  "status": "retained production changes; all model guards and runtime numerical gate verified",
+  "baseline": {
+    "commit": "8ee6ac6",
+    "label": "origin/main fresh build",
+    "chrome": "tmp/latency-goal/chrome-baseline/summary.json",
+    "firefox": "tmp/latency-goal/baseline/summary.json"
+  },
+  "candidate": {
+    "commit": "1b1ba64",
+    "chrome": "tmp/latency-goal/chrome-recur-guard/summary.json",
+    "firefox": "tmp/latency-goal/firefox-recur-guard/summary.json",
+    "previousMeasurement": "81edf97",
+    "laterValidationCommit": "d967bd8",
+    "laterDifference": "Removed two redundant queue-completion waits before mapAsync in calibration; inference kernels unchanged"
+  },
+  "environment": {
+    "os": "Ubuntu Linux",
+    "cpu": "AMD Ryzen 9 9950X3D",
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "vramGb": 16,
+    "driver": "595.71.05",
+    "chrome": "149.0.7827.200",
+    "firefox": "152.0.3",
+    "backend": "WebGPU over NVIDIA Vulkan ICD",
+    "softwareAdapter": false,
+    "chromeSession": "isolated headless Chrome with CDP; WebGPUDeveloperFeatures enables precise benchmark timestamps"
+  },
+  "browserFeatures": {
+    "chrome": {
+      "timestampQuery": true,
+      "shaderF16InFullModelTuning": false,
+      "fullModelReason": "no-shader-f16",
+      "matrixPath": "generic-f32"
+    },
+    "firefox": {
+      "timestampQuery": true,
+      "shaderF16InMatrixArtifacts": true,
+      "subgroupsUsedByMeasuredPath": false,
+      "matrixPath": "wide-f16-when-stable"
+    }
+  },
+  "method": {
+    "gpuMetric": "geometric mean of per-case median summed GPU kernel milliseconds",
+    "warmups": 2,
+    "runsPerCase": 5,
+    "uniqueInputs": true,
+    "serialSuites": true,
+    "gpuExcludes": [
+      "loading",
+      "CPU preparation",
+      "browser queue waits",
+      "readback",
+      "formatting"
+    ],
+    "roundTripMetric": "profiled complete awaited request p50; includes timestamp instrumentation, CPU work, browser scheduling, GPU completion, readback and formatting",
+    "source": "docs/gpu-latency-performance.md"
+  },
+  "models": {
+    "laya": [
+      47,
+      140,
+      512
+    ],
+    "kev-0.8b": [
+      31,
+      124,
+      532
+    ],
+    "semif-qwen3.5-2b": [
+      105,
+      198,
+      606
+    ],
+    "gemma-4-e2b": [
+      99,
+      193,
+      601
+    ]
+  },
+  "gpuMs": {
+    "chrome": {
+      "main": {
+        "laya": 13.458899,
+        "kev-0.8b": 20.169601,
+        "semif-qwen3.5-2b": 67.964585,
+        "gemma-4-e2b": 89.188128,
+        "geomean": 35.815757
+      },
+      "candidate": {
+        "laya": 12.946940174500034,
+        "kev-0.8b": 17.97863923939246,
+        "semif-qwen3.5-2b": 63.0864524498025,
+        "gemma-4-e2b": 40.45724158917814,
+        "geomean": 27.762852361400345
+      },
+      "deltaPct": {
+        "laya": -3.80386854452186,
+        "kev-0.8b": -10.862692626430936,
+        "semif-qwen3.5-2b": -7.177462424286851,
+        "gemma-4-e2b": -54.63831061777849,
+        "geomean": -22.48425082457326
+      },
+      "previousCandidate": {
+        "laya": 13.082195,
+        "kev-0.8b": 17.768877,
+        "semif-qwen3.5-2b": 63.029862,
+        "gemma-4-e2b": 40.481916,
+        "geomean": 27.751534
+      }
+    },
+    "firefox": {
+      "main": {
+        "laya": 15.076523,
+        "kev-0.8b": 24.367119,
+        "semif-qwen3.5-2b": 80.321711,
+        "gemma-4-e2b": 104.250473,
+        "geomean": 41.879751
+      },
+      "candidate": {
+        "laya": 14.487418155394922,
+        "kev-0.8b": 19.88450011042917,
+        "semif-qwen3.5-2b": 68.80585245880366,
+        "gemma-4-e2b": 48.20394478716966,
+        "geomean": 31.264638269620644
+      },
+      "deltaPct": {
+        "laya": -3.9074317374442225,
+        "kev-0.8b": -18.396179251108148,
+        "semif-qwen3.5-2b": -14.33716786884226,
+        "gemma-4-e2b": -53.76141383342245,
+        "geomean": -25.346647190856874
+      },
+      "previousCandidate": {
+        "laya": 14.36001,
+        "kev-0.8b": 20.147062,
+        "semif-qwen3.5-2b": 68.679921,
+        "gemma-4-e2b": 48.123974,
+        "geomean": 31.270832
+      }
+    }
+  },
+  "roundTripP50MsLongestCase": {
+    "chrome": {
+      "main": {
+        "laya": 38.4,
+        "kev-0.8b": 72.8,
+        "semif-qwen3.5-2b": 163.8,
+        "gemma-4-e2b": 224.4
+      },
+      "candidate": {
+        "laya": 38.30000019073486,
+        "kev-0.8b": 65.89999961853027,
+        "semif-qwen3.5-2b": 155.60000038146973,
+        "gemma-4-e2b": 87.60000038146973
+      }
+    },
+    "firefox": {
+      "main": {
+        "laya": 200,
+        "kev-0.8b": 200,
+        "semif-qwen3.5-2b": 300,
+        "gemma-4-e2b": 400
+      },
+      "candidate": {
+        "laya": 200,
+        "kev-0.8b": 200,
+        "semif-qwen3.5-2b": 300,
+        "gemma-4-e2b": 300
+      }
+    }
+  },
+  "commits": {
+    "wideF16Unroll": "b4685a2",
+    "genericF32Unroll": "62ec8e7",
+    "recurrenceAuto4_8_16": "81edf97",
+    "gemmaSelectedSharedKvRows": "34552a1"
+  },
+  "recurrenceAuto": {
+    "candidates": [
+      4,
+      8,
+      16
+    ],
+    "pointsTokens": [
+      128,
+      512
+    ],
+    "samplesPerPoint": 3,
+    "repetitionsPerPoint": 4,
+    "stableWinThreshold": 0.05,
+    "selected": {
+      "chrome": {
+        "kev-0.8b": 16,
+        "semif-qwen3.5-2b": 16
+      },
+      "firefox": {
+        "kev-0.8b": 16,
+        "semif-qwen3.5-2b": 16
+      }
+    },
+    "evidence": {
+      "chrome": [
+        "tmp/latency-goal/chrome-recur-auto/kev-0.8b.json",
+        "tmp/latency-goal/chrome-recur-auto/semif-qwen3.5-2b.json"
+      ],
+      "firefox": [
+        "tmp/latency-goal/firefox-recur-auto/kev-0.8b.json",
+        "tmp/latency-goal/firefox-recur-auto/semif-qwen3.5-2b.json"
+      ]
+    },
+    "runtimeNumericalGate": {
+      "absoluteTolerance": 0.00002,
+      "relativeTolerance": 0.00002,
+      "checks": "All CORE and STATE elements, finite values, exact unchanged parent slot, cached parent0/destination1 at128/512tokens",
+      "scratchCapBytes": 67108864,
+      "models": {
+        "chrome": {
+          "kev-0.8b": {
+            "benchmarkElapsedMs": 38.80000019073486,
+            "candidates": [
+              4,
+              8,
+              16
+            ],
+            "config": {
+              "linHeads": 16,
+              "linKeyHeads": 16
+            },
+            "elapsedMs": 262.6000003814697,
+            "lanes": 16,
+            "method": "runtime-numerical-readback+timestamp-query",
+            "reason": "stable-win-both-points",
+            "repetitions": 4,
+            "revision": 3,
+            "samples": 3,
+            "threshold": 0.05,
+            "tokens": [
+              128,
+              512
+            ],
+            "variants": [
+              {
+                "benefit": 0.35015983506048975,
+                "lanes": 8,
+                "normalizedRatio": 0.6498401649395102,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 262144,
+                        "length": 262144,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 1639
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 486643
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.3969838619232178e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 1393
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 285462
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.189328,
+                    "baselineMs": [
+                      0.189328,
+                      0.203536,
+                      0.189
+                    ],
+                    "benefit": 0.2979802247950646,
+                    "benefits": [
+                      0.29793797008366424,
+                      0.41824542095747186,
+                      0.2967619047619047
+                    ],
+                    "candidateMedianMs": 0.132912,
+                    "candidateMs": [
+                      0.13292,
+                      0.118408,
+                      0.132912
+                    ],
+                    "normalizedRatio": 0.7020197752049354,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 128,
+                    "wins": 3
+                  },
+                  {
+                    "baselineMedianMs": 0.777672,
+                    "baselineMs": [
+                      0.77912,
+                      0.777672,
+                      0.751152
+                    ],
+                    "benefit": 0.3984610478453642,
+                    "benefits": [
+                      0.34452202484854705,
+                      0.3984610478453641,
+                      0.37741495729226576
+                    ],
+                    "candidateMedianMs": 0.4678,
+                    "candidateMs": [
+                      0.510696,
+                      0.4678,
+                      0.467656
+                    ],
+                    "normalizedRatio": 0.6015389521546358,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "stable-win-both-points",
+                "stable": true,
+                "zTiles": 4
+              },
+              {
+                "benefit": 0.5314378515645182,
+                "lanes": 16,
+                "normalizedRatio": 0.4685621484354818,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 262144,
+                        "length": 262144,
+                        "lengthMismatch": false,
+                        "maxAbs": 2.3283064365386963e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 2511
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 511625
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 405
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 298247
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.203536,
+                    "baselineMs": [
+                      0.203536,
+                      0.189032,
+                      0.21908
+                    ],
+                    "benefit": 0.5465765270025942,
+                    "benefits": [
+                      0.5465765270025942,
+                      0.43480468915315923,
+                      0.5795508490049297
+                    ],
+                    "candidateMedianMs": 0.092288,
+                    "candidateMs": [
+                      0.092288,
+                      0.10684,
+                      0.092112
+                    ],
+                    "normalizedRatio": 0.4534234729974059,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 128,
+                    "wins": 3
+                  },
+                  {
+                    "baselineMedianMs": 0.751184,
+                    "baselineMs": [
+                      0.869752,
+                      0.751184,
+                      0.750936
+                    ],
+                    "benefit": 0.5157937336258493,
+                    "benefits": [
+                      0.5818026287953348,
+                      0.5158895823127223,
+                      0.5155379419817402
+                    ],
+                    "candidateMedianMs": 0.363728,
+                    "candidateMs": [
+                      0.363728,
+                      0.363656,
+                      0.3638
+                    ],
+                    "normalizedRatio": 0.4842062663741507,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "stable-win-both-points",
+                "stable": true,
+                "zTiles": 8
+              }
+            ]
+          },
+          "kev-4b": {
+            "benchmarkElapsedMs": 44.000000953674316,
+            "candidates": [
+              4,
+              8,
+              16
+            ],
+            "config": {
+              "linHeads": 32,
+              "linKeyHeads": 16
+            },
+            "elapsedMs": 310.5,
+            "lanes": 16,
+            "method": "runtime-numerical-readback+timestamp-query",
+            "reason": "stable-win-both-points",
+            "repetitions": 4,
+            "revision": 3,
+            "samples": 3,
+            "threshold": 0.05,
+            "tokens": [
+              128,
+              512
+            ],
+            "variants": [
+              {
+                "benefit": 0.08703793133552273,
+                "lanes": 8,
+                "normalizedRatio": 0.9129620686644773,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3662
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 687872
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 551349
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.189112,
+                    "baselineMs": [
+                      0.188888,
+                      0.189112,
+                      0.18916
+                    ],
+                    "benefit": 0.08524049240661613,
+                    "benefits": [
+                      0.08415569014442417,
+                      -0.06506197385676218,
+                      0.08720659758934227
+                    ],
+                    "candidateMedianMs": 0.172992,
+                    "candidateMs": [
+                      0.172992,
+                      0.201416,
+                      0.172664
+                    ],
+                    "normalizedRatio": 0.9147595075933839,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 128,
+                    "wins": 2
+                  },
+                  {
+                    "baselineMedianMs": 0.750992,
+                    "baselineMs": [
+                      0.750992,
+                      0.750464,
+                      0.779944
+                    ],
+                    "benefit": 0.08883183842171416,
+                    "benefits": [
+                      0.0888318384217142,
+                      0.08922479959065327,
+                      0.08672417506897921
+                    ],
+                    "candidateMedianMs": 0.68428,
+                    "candidateMs": [
+                      0.68428,
+                      0.683504,
+                      0.712304
+                    ],
+                    "normalizedRatio": 0.9111681615782858,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "point-regression",
+                "stable": false,
+                "zTiles": 4
+              },
+              {
+                "benefit": 0.22143843540776276,
+                "lanes": 16,
+                "normalizedRatio": 0.7785615645922372,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 2371
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 549923
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 574474
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.18916,
+                    "baselineMs": [
+                      0.189208,
+                      0.188856,
+                      0.18916
+                    ],
+                    "benefit": 0.23899344470289696,
+                    "benefits": [
+                      0.24079320113314442,
+                      0.10594315245478035,
+                      0.23899344470289702
+                    ],
+                    "candidateMedianMs": 0.143952,
+                    "candidateMs": [
+                      0.143648,
+                      0.168848,
+                      0.143952
+                    ],
+                    "normalizedRatio": 0.761006555297103,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 128,
+                    "wins": 3
+                  },
+                  {
+                    "baselineMedianMs": 0.751136,
+                    "baselineMs": [
+                      0.751136,
+                      0.750432,
+                      0.779864
+                    ],
+                    "benefit": 0.20347846461892383,
+                    "benefits": [
+                      0.20692923784773998,
+                      0.20273122681335543,
+                      0.2325328518818665
+                    ],
+                    "candidateMedianMs": 0.598296,
+                    "candidateMs": [
+                      0.595704,
+                      0.598296,
+                      0.59852
+                    ],
+                    "normalizedRatio": 0.7965215353810762,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "stable-win-both-points",
+                "stable": true,
+                "zTiles": 8
+              }
+            ]
+          },
+          "kev-9b": {
+            "benchmarkElapsedMs": 45.19999980926514,
+            "candidates": [
+              4,
+              8,
+              16
+            ],
+            "config": {
+              "linHeads": 32,
+              "linKeyHeads": 16
+            },
+            "elapsedMs": 316.5999994277954,
+            "lanes": 4,
+            "method": "runtime-numerical-readback+timestamp-query",
+            "reason": "no-stable-win-both-points",
+            "repetitions": 4,
+            "revision": 3,
+            "samples": 3,
+            "threshold": 0.05,
+            "tokens": [
+              128,
+              512
+            ],
+            "variants": [
+              {
+                "benefit": 0.06197954146989515,
+                "lanes": 8,
+                "normalizedRatio": 0.9380204585301049,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3662
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 687872
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 551349
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.189072,
+                    "baselineMs": [
+                      0.189072,
+                      0.216152,
+                      0.188952
+                    ],
+                    "benefit": 0.07214182956757209,
+                    "benefits": [
+                      0.07214182956757206,
+                      0.19897109441504135,
+                      -0.2525932511960709
+                    ],
+                    "candidateMedianMs": 0.175432,
+                    "candidateMs": [
+                      0.175432,
+                      0.173144,
+                      0.23668
+                    ],
+                    "normalizedRatio": 0.9278581704324279,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 128,
+                    "wins": 2
+                  },
+                  {
+                    "baselineMedianMs": 0.766024,
+                    "baselineMs": [
+                      0.750872,
+                      0.766024,
+                      0.779912
+                    ],
+                    "benefit": 0.051705951771746195,
+                    "benefits": [
+                      0.054731032719291736,
+                      0.014913370860443,
+                      0.0685923540091704
+                    ],
+                    "candidateMedianMs": 0.726416,
+                    "candidateMs": [
+                      0.709776,
+                      0.7546,
+                      0.726416
+                    ],
+                    "normalizedRatio": 0.9482940482282538,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 2
+                  }
+                ],
+                "reason": "point-regression",
+                "stable": false,
+                "zTiles": 4
+              },
+              {
+                "benefit": 0.23596737172088234,
+                "lanes": 16,
+                "normalizedRatio": 0.7640326282791177,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 2371
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 549923
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 574474
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.189136,
+                    "baselineMs": [
+                      0.189216,
+                      0.189088,
+                      0.189136
+                    ],
+                    "benefit": 0.24016580661534548,
+                    "benefits": [
+                      0.24048706240487058,
+                      -0.009519377221187997,
+                      0.24084256831063366
+                    ],
+                    "candidateMedianMs": 0.143712,
+                    "candidateMs": [
+                      0.143712,
+                      0.190888,
+                      0.143584
+                    ],
+                    "normalizedRatio": 0.7598341933846545,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 128,
+                    "wins": 2
+                  },
+                  {
+                    "baselineMedianMs": 0.779544,
+                    "baselineMs": [
+                      0.779544,
+                      0.794288,
+                      0.779384
+                    ],
+                    "benefit": 0.23174573853432268,
+                    "benefits": [
+                      0.27003478956928667,
+                      0.24600648631226962,
+                      0.23133141044722502
+                    ],
+                    "candidateMedianMs": 0.598888,
+                    "candidateMs": [
+                      0.56904,
+                      0.598888,
+                      0.599088
+                    ],
+                    "normalizedRatio": 0.7682542614656773,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "point-regression",
+                "stable": false,
+                "zTiles": 8
+              }
+            ]
+          }
+        },
+        "firefox": {
+          "kev-0.8b": {
+            "benchmarkElapsedMs": 200,
+            "candidates": [
+              4,
+              8,
+              16
+            ],
+            "config": {
+              "linHeads": 16,
+              "linKeyHeads": 16
+            },
+            "elapsedMs": 1001,
+            "lanes": 16,
+            "method": "runtime-numerical-readback+timestamp-query",
+            "reason": "stable-win-both-points",
+            "repetitions": 4,
+            "revision": 3,
+            "samples": 3,
+            "threshold": 0.05,
+            "tokens": [
+              128,
+              512
+            ],
+            "variants": [
+              {
+                "benefit": 0.3623104508974375,
+                "lanes": 8,
+                "normalizedRatio": 0.6376895491025625,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 262144,
+                        "length": 262144,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 1639
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 486643
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.3969838619232178e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 1393
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 285462
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.20184,
+                    "baselineMs": [
+                      0.20184,
+                      0.219984,
+                      0.194648
+                    ],
+                    "benefit": 0.3655568767340467,
+                    "benefits": [
+                      0.36555687673404674,
+                      0.4199578151138265,
+                      0.3405943035633554
+                    ],
+                    "candidateMedianMs": 0.128056,
+                    "candidateMs": [
+                      0.128056,
+                      0.1276,
+                      0.128352
+                    ],
+                    "normalizedRatio": 0.6344431232659533,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 128,
+                    "wins": 3
+                  },
+                  {
+                    "baselineMedianMs": 0.814288,
+                    "baselineMs": [
+                      0.90556,
+                      0.814288,
+                      0.801936
+                    ],
+                    "benefit": 0.3590474132002436,
+                    "benefits": [
+                      0.4337470736339945,
+                      0.27494940365079673,
+                      0.34917499650844946
+                    ],
+                    "candidateMedianMs": 0.52192,
+                    "candidateMs": [
+                      0.512776,
+                      0.5904,
+                      0.52192
+                    ],
+                    "normalizedRatio": 0.6409525867997564,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "stable-win-both-points",
+                "stable": true,
+                "zTiles": 4
+              },
+              {
+                "benefit": 0.4285580363298065,
+                "lanes": 16,
+                "normalizedRatio": 0.5714419636701935,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 262144,
+                        "length": 262144,
+                        "lengthMismatch": false,
+                        "maxAbs": 2.3283064365386963e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 2511
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 511625
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 405
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 298247
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.221528,
+                    "baselineMs": [
+                      0.221528,
+                      0.2604,
+                      0.19436
+                    ],
+                    "benefit": 0.4702972084792893,
+                    "benefits": [
+                      0.4702972084792893,
+                      0.5473118279569893,
+                      0.3964601769911504
+                    ],
+                    "candidateMedianMs": 0.117344,
+                    "candidateMs": [
+                      0.117344,
+                      0.11788,
+                      0.117304
+                    ],
+                    "normalizedRatio": 0.5297027915207108,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 128,
+                    "wins": 3
+                  },
+                  {
+                    "baselineMedianMs": 0.801648,
+                    "baselineMs": [
+                      0.772464,
+                      0.801648,
+                      0.801648
+                    ],
+                    "benefit": 0.3835299283476039,
+                    "benefits": [
+                      0.3980405559352928,
+                      0.3827415524020518,
+                      0.3835299283476039
+                    ],
+                    "candidateMedianMs": 0.494192,
+                    "candidateMs": [
+                      0.464992,
+                      0.494824,
+                      0.494192
+                    ],
+                    "normalizedRatio": 0.6164700716523961,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "stable-win-both-points",
+                "stable": true,
+                "zTiles": 8
+              }
+            ]
+          },
+          "kev-4b": {
+            "benchmarkElapsedMs": 200,
+            "candidates": [
+              4,
+              8,
+              16
+            ],
+            "config": {
+              "linHeads": 32,
+              "linKeyHeads": 16
+            },
+            "elapsedMs": 1012,
+            "lanes": 4,
+            "method": "runtime-numerical-readback+timestamp-query",
+            "reason": "no-stable-win-both-points",
+            "repetitions": 4,
+            "revision": 3,
+            "samples": 3,
+            "threshold": 0.05,
+            "tokens": [
+              128,
+              512
+            ],
+            "variants": [
+              {
+                "benefit": 0.11722191071348242,
+                "lanes": 8,
+                "normalizedRatio": 0.8827780892865176,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3662
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 687872
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 551349
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.202752,
+                    "baselineMs": [
+                      0.202752,
+                      0.245064,
+                      0.195912
+                    ],
+                    "benefit": -0.0017755681818181213,
+                    "benefits": [
+                      -0.001775568181818178,
+                      0.08565925635752297,
+                      0.10853852750214384
+                    ],
+                    "candidateMedianMs": 0.203112,
+                    "candidateMs": [
+                      0.203112,
+                      0.224072,
+                      0.174648
+                    ],
+                    "normalizedRatio": 1.001775568181818,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 128,
+                    "wins": 2
+                  },
+                  {
+                    "baselineMedianMs": 0.888024,
+                    "baselineMs": [
+                      0.890416,
+                      0.888024,
+                      0.810032
+                    ],
+                    "benefit": 0.22208408781744648,
+                    "benefits": [
+                      0.2241738692925554,
+                      0.22300298190139003,
+                      0.11222272700337764
+                    ],
+                    "candidateMedianMs": 0.690808,
+                    "candidateMs": [
+                      0.690808,
+                      0.689992,
+                      0.719128
+                    ],
+                    "normalizedRatio": 0.7779159121825535,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "point-regression",
+                "stable": false,
+                "zTiles": 4
+              },
+              {
+                "benefit": 0.017082729975784305,
+                "lanes": 16,
+                "normalizedRatio": 0.9829172700242156,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 2371
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 549923
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 574474
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.202744,
+                    "baselineMs": [
+                      0.202744,
+                      0.196136,
+                      0.223536
+                    ],
+                    "benefit": -0.0018940141261887256,
+                    "benefits": [
+                      -0.28903444738192013,
+                      -0.03564873353183504,
+                      0.09154677546346006
+                    ],
+                    "candidateMedianMs": 0.203128,
+                    "candidateMs": [
+                      0.261344,
+                      0.203128,
+                      0.203072
+                    ],
+                    "normalizedRatio": 1.0018940141261887,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 128,
+                    "wins": 1
+                  },
+                  {
+                    "baselineMedianMs": 0.862296,
+                    "baselineMs": [
+                      0.886696,
+                      0.862296,
+                      0.807704
+                    ],
+                    "benefit": 0.035700038037982273,
+                    "benefits": [
+                      0.06223553506500538,
+                      0.03574642582129566,
+                      -0.04993908659607981
+                    ],
+                    "candidateMedianMs": 0.831512,
+                    "candidateMs": [
+                      0.831512,
+                      0.831472,
+                      0.84804
+                    ],
+                    "normalizedRatio": 0.9642999619620176,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 512,
+                    "wins": 1
+                  }
+                ],
+                "reason": "point-regression",
+                "stable": false,
+                "zTiles": 8
+              }
+            ]
+          },
+          "kev-9b": {
+            "benchmarkElapsedMs": 200,
+            "candidates": [
+              4,
+              8,
+              16
+            ],
+            "config": {
+              "linHeads": 32,
+              "linKeyHeads": 16
+            },
+            "elapsedMs": 1002,
+            "lanes": 8,
+            "method": "runtime-numerical-readback+timestamp-query",
+            "reason": "stable-win-both-points",
+            "repetitions": 4,
+            "revision": 3,
+            "samples": 3,
+            "threshold": 0.05,
+            "tokens": [
+              128,
+              512
+            ],
+            "variants": [
+              {
+                "benefit": 0.13485822039393058,
+                "lanes": 8,
+                "normalizedRatio": 0.8651417796060694,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3662
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 687872
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 551349
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.202888,
+                    "baselineMs": [
+                      0.202888,
+                      0.196456,
+                      0.240968
+                    ],
+                    "benefit": 0.10015377942510152,
+                    "benefits": [
+                      0.13678482709672343,
+                      0.07069267418658623,
+                      0.06098735101756245
+                    ],
+                    "candidateMedianMs": 0.182568,
+                    "candidateMs": [
+                      0.175136,
+                      0.182568,
+                      0.226272
+                    ],
+                    "normalizedRatio": 0.8998462205748985,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 128,
+                    "wins": 3
+                  },
+                  {
+                    "baselineMedianMs": 0.862896,
+                    "baselineMs": [
+                      0.805408,
+                      0.868728,
+                      0.862896
+                    ],
+                    "benefit": 0.16822421241957308,
+                    "benefits": [
+                      0.14213913941753747,
+                      0.11942057813262603,
+                      0.1682242124195731
+                    ],
+                    "candidateMedianMs": 0.717736,
+                    "candidateMs": [
+                      0.690928,
+                      0.764984,
+                      0.717736
+                    ],
+                    "normalizedRatio": 0.8317757875804269,
+                    "reason": "stable-win",
+                    "stable": true,
+                    "tokens": 512,
+                    "wins": 3
+                  }
+                ],
+                "reason": "stable-win-both-points",
+                "stable": true,
+                "zTiles": 4
+              },
+              {
+                "benefit": -0.03326800078581815,
+                "lanes": 16,
+                "normalizedRatio": 1.0332680007858182,
+                "numericalCheck": {
+                  "ok": true,
+                  "points": [
+                    {
+                      "core": {
+                        "expectedLength": 524288,
+                        "length": 524288,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 2371
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 549923
+                      },
+                      "tokens": 128
+                    },
+                    {
+                      "core": {
+                        "expectedLength": 2097152,
+                        "length": 2097152,
+                        "lengthMismatch": false,
+                        "maxAbs": 1.862645149230957e-9,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 3316
+                      },
+                      "ok": true,
+                      "parentPreserved": true,
+                      "reason": "passed",
+                      "state": {
+                        "expectedLength": 1048576,
+                        "length": 1048576,
+                        "lengthMismatch": false,
+                        "maxAbs": 4.656612873077393e-10,
+                        "nonFinite": 0,
+                        "ok": true,
+                        "violations": 0,
+                        "worstIndex": 574474
+                      },
+                      "tokens": 512
+                    }
+                  ],
+                  "reason": "passed"
+                },
+                "points": [
+                  {
+                    "baselineMedianMs": 0.196696,
+                    "baselineMs": [
+                      0.19668,
+                      0.223024,
+                      0.196696
+                    ],
+                    "benefit": -0.030991987635742513,
+                    "benefits": [
+                      -0.030018303843807163,
+                      0.08981992969366523,
+                      -0.030991987635742416
+                    ],
+                    "candidateMedianMs": 0.202792,
+                    "candidateMs": [
+                      0.202584,
+                      0.202992,
+                      0.202792
+                    ],
+                    "normalizedRatio": 1.0309919876357423,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 128,
+                    "wins": 1
+                  },
+                  {
+                    "baselineMedianMs": 0.807448,
+                    "baselineMs": [
+                      0.863512,
+                      0.778784,
+                      0.807448
+                    ],
+                    "benefit": -0.03554903845201163,
+                    "benefits": [
+                      0.033778337764848634,
+                      -0.07366355754612315,
+                      -0.06652069235418254
+                    ],
+                    "candidateMedianMs": 0.836152,
+                    "candidateMs": [
+                      0.834344,
+                      0.836152,
+                      0.86116
+                    ],
+                    "normalizedRatio": 1.0355490384520116,
+                    "reason": "regression",
+                    "stable": false,
+                    "tokens": 512,
+                    "wins": 0
+                  }
+                ],
+                "reason": "point-regression",
+                "stable": false,
+                "zTiles": 8
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "gemmaSelectedRows": {
+    "chrome": "tmp/latency-goal/chrome-gemma-tail-check.json",
+    "firefox": "tmp/latency-goal/firefox-gemma-tail-check.json",
+    "lengths": [
+      1,
+      31,
+      65
+    ],
+    "maxAbs": 0,
+    "tolerance": 0.00002,
+    "duplicateOrder": true,
+    "emptyRows": true,
+    "noSharedFallback": true
+  },
+  "decisionGuards": {
+    "chrome": {
+      "totalSuites": 9,
+      "passedSuites": 8,
+      "knownBaselineFailure": {
+        "model": "laya",
+        "argmax": "41/41",
+        "maxDp": 0.024006444195624588,
+        "limit": 0.024,
+        "unchangedFromMain": true
+      },
+      "records": "tmp/latency-goal/chrome-final-parity-*.json",
+      "models": [
+        {
+          "model": "laya",
+          "argmax": 41,
+          "questions": 41,
+          "maxDp": 0.024006444195624588,
+          "limit": 0.024,
+          "strictPass": false
+        },
+        {
+          "model": "kev-0.8b",
+          "argmax": 13,
+          "questions": 13,
+          "maxDp": 0.009684860706329346,
+          "limit": 0.011,
+          "strictPass": true
+        },
+        {
+          "model": "kev-4b",
+          "argmax": 13,
+          "questions": 13,
+          "maxDp": 0.009962037205696106,
+          "limit": 0.011,
+          "strictPass": true
+        },
+        {
+          "model": "kev-9b",
+          "argmax": 5,
+          "questions": 5,
+          "maxDp": 0.004632741212844849,
+          "limit": 0.005,
+          "strictPass": true
+        },
+        {
+          "model": "semif-qwen3.5-0.8b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.0308188796043396,
+          "limit": 0.032,
+          "strictPass": true
+        },
+        {
+          "model": "semif-qwen3.5-2b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.02975749969482422,
+          "limit": 0.031,
+          "strictPass": true
+        },
+        {
+          "model": "semif-qwen3.5-4b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.020483791828155518,
+          "limit": 0.022,
+          "strictPass": true
+        },
+        {
+          "model": "gemma-4-e2b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.0191190242767334,
+          "limit": 0.03,
+          "strictPass": true
+        },
+        {
+          "model": "gemma-4-e4b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.009927734732627869,
+          "limit": 0.03,
+          "strictPass": true
+        }
+      ]
+    },
+    "firefox": {
+      "totalSuites": 9,
+      "passedSuites": 9,
+      "laya": {
+        "argmax": "41/41",
+        "maxDp": 0.023506444195624587,
+        "limit": 0.024
+      },
+      "records": "tmp/latency-goal/firefox-final-parity-*.json",
+      "models": [
+        {
+          "model": "laya",
+          "argmax": 41,
+          "questions": 41,
+          "maxDp": 0.023506444195624587,
+          "limit": 0.024,
+          "strictPass": true
+        },
+        {
+          "model": "kev-0.8b",
+          "argmax": 13,
+          "questions": 13,
+          "maxDp": 0.01007688045501709,
+          "limit": 0.011,
+          "strictPass": true
+        },
+        {
+          "model": "kev-4b",
+          "argmax": 13,
+          "questions": 13,
+          "maxDp": 0.009826898574829102,
+          "limit": 0.011,
+          "strictPass": true
+        },
+        {
+          "model": "kev-9b",
+          "argmax": 5,
+          "questions": 5,
+          "maxDp": 0.004656732082366943,
+          "limit": 0.005,
+          "strictPass": true
+        },
+        {
+          "model": "semif-qwen3.5-0.8b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.031084001064300537,
+          "limit": 0.032,
+          "strictPass": true
+        },
+        {
+          "model": "semif-qwen3.5-2b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.02859807014465332,
+          "limit": 0.031,
+          "strictPass": true
+        },
+        {
+          "model": "semif-qwen3.5-4b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.02038133144378662,
+          "limit": 0.022,
+          "strictPass": true
+        },
+        {
+          "model": "gemma-4-e2b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.019692420959472656,
+          "limit": 0.03,
+          "strictPass": true
+        },
+        {
+          "model": "gemma-4-e4b",
+          "argmax": 12,
+          "questions": 12,
+          "maxDp": 0.009426355361938477,
+          "limit": 0.03,
+          "strictPass": true
+        }
+      ]
+    },
+    "completion": "tmp/latency-goal/final-all-nine-guards.log"
+  },
+  "verification": {
+    "javascript": "102 passed",
+    "rustReleaseWorkspace": "64 passed, 0 failed",
+    "wgslRendering": "4 passed",
+    "cache": [
+      "chrome miss/hit/extension counters verified",
+      "firefox miss/hit/extension counters verified"
+    ],
+    "sources": [
+      "tmp/latency-goal/recur-auto-js-tests.log",
+      "tmp/latency-goal/shipping-rust-tests.log",
+      "tmp/latency-goal/recur-auto-rust-tests.log",
+      "tmp/latency-goal/chrome-recur-auto-cache.json",
+      "tmp/latency-goal/firefox-recur-auto-cache.json"
+    ],
+    "syntaxFiles": 75,
+    "wasm": "all three flavors rebuilt and ABI validated",
+    "site": "staging passed",
+    "runtimeCache": {
+      "chrome": {
+        "backend": "webgpu",
+        "cacheCountersVerified": true,
+        "crossOriginIsolated": false,
+        "done": true,
+        "extVsFresh": 0,
+        "flavor": "relaxed",
+        "hardwareConcurrency": 32,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 14,
+          "hit": 8,
+          "miss": 25
+        },
+        "requestedBackend": "webgpu",
+        "runner": {
+          "actualThreads": 1,
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "stats": {
+          "extensions": 1,
+          "hits": 1,
+          "misses": 1,
+          "tokensSaved": 80
+        },
+        "threads": 1
+      },
+      "firefox": {
+        "backend": "webgpu",
+        "cacheCountersVerified": true,
+        "crossOriginIsolated": false,
+        "done": true,
+        "extVsFresh": 0,
+        "flavor": "relaxed",
+        "hardwareConcurrency": 32,
+        "hitVsMiss": 0,
+        "ms": {
+          "extension": 103,
+          "hit": 100,
+          "miss": 100
+        },
+        "requestedBackend": "webgpu",
+        "runner": {
+          "actualThreads": 1,
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": true,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "stats": {
+          "extensions": 1,
+          "hits": 1,
+          "misses": 1,
+          "tokensSaved": 80
+        },
+        "threads": 1
+      }
+    }
+  },
+  "rejected": [
+    {
+      "name": "tall-128-row-matrix",
+      "reason": "47/short shapes regress45-66 percent; mixed larger shapes do not justify another kernel"
+    },
+    {
+      "name": "FP32-wide-selector",
+      "reason": "about1 percent aggregate gain with added selection complexity; set aside"
+    },
+    {
+      "name": "packed-half-staging",
+      "reason": "about0.17 percent paired aggregate gain; mostly slower on Chrome"
+    },
+    {
+      "name": "32-lane-recurrence",
+      "reason": "528token16/32/48head cases regress8/29/20 percent on Chrome and108/135/149 percent on Firefox"
+    },
+    {
+      "name": "32-query-Laya-attention",
+      "reason": "47/140token cases regress14-26 percent;512token cases improve10-13 percent"
+    },
+    {
+      "name": "Gemma-subgroup-attention",
+      "reason": "12 full paired arrays bit-exact, but601token512dim global case regresses6.6 percent"
+    },
+    {
+      "name": "two-plane-packed-int8-dot",
+      "speedup": 1.1853297115449268,
+      "reason": "Rejected at unchanged strictFP32guard: outlier/cancellation errors about0.0011;203 mismatches on198x2048x6144. Never integrated."
+    }
+  ],
+  "sources": [
+    "docs/gpu-latency-performance.md",
+    "tmp/latency-goal/chrome-baseline/summary.json",
+    "tmp/latency-goal/baseline/summary.json",
+    "tmp/latency-goal/chrome-recur-auto/summary.json",
+    "tmp/latency-goal/firefox-recur-auto/summary.json",
+    "docs/benchmarks/shared-matmul-linux-2026-09-23.json",
+    "docs/benchmarks/gemma-attention-linux-2026-09-23.json"
+  ],
+  "samples": {
+    "chrome": {
+      "main": {
+        "laya": [
+          {
+            "tokens": 47,
+            "gpuMs": [
+              5.398999999999999,
+              5.268999999999999,
+              5.595999999999999,
+              4.710999999999999,
+              5.1129999999999995
+            ],
+            "profiledWallMs": [
+              8.899999618530273,
+              8.899999618530273,
+              8.90000057220459,
+              7.399999618530273,
+              7.100000381469727
+            ]
+          },
+          {
+            "tokens": 140,
+            "gpuMs": [
+              13.327,
+              13.761000000000003,
+              13.552,
+              13.450999999999997,
+              13.284
+            ],
+            "profiledWallMs": [
+              16.200000762939453,
+              16.899999618530273,
+              16.100000381469727,
+              16.09999942779541,
+              16.199999809265137
+            ]
+          },
+          {
+            "tokens": 512,
+            "gpuMs": [
+              34.24100000000001,
+              34.20000000000001,
+              34.668,
+              34.660999999999994,
+              34.39900000000001
+            ],
+            "profiledWallMs": [
+              38.30000019073486,
+              38.39999961853027,
+              39.39999961853027,
+              39.40000057220459,
+              38.30000019073486
+            ]
+          }
+        ],
+        "kev-0.8b": [
+          {
+            "tokens": 31,
+            "gpuMs": [
+              5.985000000000001,
+              5.678999999999999,
+              5.829999999999999,
+              6.178,
+              6.091
+            ],
+            "profiledWallMs": [
+              9.199999809265137,
+              9.800000190734863,
+              9,
+              8.399999618530273,
+              8.699999809265137
+            ]
+          },
+          {
+            "tokens": 124,
+            "gpuMs": [
+              20.018000000000004,
+              20.436000000000007,
+              20.559,
+              20.112,
+              20.776999999999997
+            ],
+            "profiledWallMs": [
+              25.300000190734863,
+              24.5,
+              24.799999237060547,
+              25.399999618530273,
+              24.40000057220459
+            ]
+          },
+          {
+            "tokens": 532,
+            "gpuMs": [
+              67.447,
+              67.08600000000001,
+              66.657,
+              67.159,
+              66.573
+            ],
+            "profiledWallMs": [
+              75,
+              72.80000019073486,
+              75.89999961853027,
+              72.30000019073486,
+              72.39999961853027
+            ]
+          }
+        ],
+        "semif-qwen3.5-2b": [
+          {
+            "tokens": 105,
+            "gpuMs": [
+              33.268,
+              33.168,
+              33.828,
+              33.46100000000001,
+              33.720000000000006
+            ],
+            "profiledWallMs": [
+              38.59999942779541,
+              38,
+              38.60000038146973,
+              37.59999942779541,
+              38.5
+            ]
+          },
+          {
+            "tokens": 198,
+            "gpuMs": [
+              61.40499999999999,
+              61.431,
+              61.79,
+              61.464,
+              61.392
+            ],
+            "profiledWallMs": [
+              67.10000038146973,
+              67.19999980926514,
+              67.80000019073486,
+              68,
+              67.30000019073486
+            ]
+          },
+          {
+            "tokens": 606,
+            "gpuMs": [
+              153.38099999999997,
+              153.034,
+              152.703,
+              152.38099999999997,
+              152.72899999999993
+            ],
+            "profiledWallMs": [
+              163.69999980926514,
+              164.19999980926514,
+              164.89999961853027,
+              163.80000019073486,
+              163.5
+            ]
+          }
+        ],
+        "gemma-4-e2b": [
+          {
+            "tokens": 99,
+            "gpuMs": [
+              42.330999999999996,
+              42.169,
+              42.266,
+              42.35799999999999,
+              42.711999999999996
+            ],
+            "profiledWallMs": [
+              49.19999980926514,
+              48.5,
+              48.60000038146973,
+              48.69999980926514,
+              49.10000038146973
+            ]
+          },
+          {
+            "tokens": 193,
+            "gpuMs": [
+              78.211,
+              77.228,
+              77.69200000000002,
+              76.98800000000003,
+              77.47900000000001
+            ],
+            "profiledWallMs": [
+              85.10000038146973,
+              84.09999942779541,
+              83.60000038146973,
+              83.19999980926514,
+              83.69999980926514
+            ]
+          },
+          {
+            "tokens": 601,
+            "gpuMs": [
+              216.311,
+              216.17499999999995,
+              218.2079999999999,
+              218.253,
+              215.993
+            ],
+            "profiledWallMs": [
+              224.4000005722046,
+              222.79999923706055,
+              225,
+              224.5,
+              221.80000019073486
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "laya": [
+          {
+            "tokens": 47,
+            "gpuMs": [
+              5.011,
+              4.708,
+              5.089,
+              4.712999999999999,
+              5.047
+            ],
+            "profiledWallMs": [
+              7.5,
+              7.399999618530273,
+              8.300000190734863,
+              7.40000057220459,
+              7.299999237060547
+            ]
+          },
+          {
+            "tokens": 140,
+            "gpuMs": [
+              12.925,
+              13.010999999999997,
+              12.638,
+              12.898000000000001,
+              12.918000000000001
+            ],
+            "profiledWallMs": [
+              16.5,
+              16.100000381469727,
+              16.100000381469727,
+              15.899999618530273,
+              16.399999618530273
+            ]
+          },
+          {
+            "tokens": 512,
+            "gpuMs": [
+              32.987,
+              33.526,
+              34.051,
+              33.431999999999995,
+              33.837
+            ],
+            "profiledWallMs": [
+              38.09999942779541,
+              38.30000019073486,
+              38.60000038146973,
+              37.69999980926514,
+              39.39999961853027
+            ]
+          }
+        ],
+        "kev-0.8b": [
+          {
+            "tokens": 31,
+            "gpuMs": [
+              5.144,
+              5.585000000000001,
+              5.121,
+              5.698000000000001,
+              5.4079999999999995
+            ],
+            "profiledWallMs": [
+              9.5,
+              8.59999942779541,
+              7.300000190734863,
+              8.5,
+              8.5
+            ]
+          },
+          {
+            "tokens": 124,
+            "gpuMs": [
+              17.604000000000003,
+              18.534000000000002,
+              18.242000000000004,
+              17.953,
+              18.138
+            ],
+            "profiledWallMs": [
+              21.700000762939453,
+              22.699999809265137,
+              25.300000190734863,
+              23,
+              23
+            ]
+          },
+          {
+            "tokens": 532,
+            "gpuMs": [
+              59.834999999999994,
+              58.946,
+              59.057,
+              59.243999999999986,
+              59.836999999999996
+            ],
+            "profiledWallMs": [
+              65.89999961853027,
+              66.5,
+              65.69999980926514,
+              65.60000038146973,
+              69.19999980926514
+            ]
+          }
+        ],
+        "semif-qwen3.5-2b": [
+          {
+            "tokens": 105,
+            "gpuMs": [
+              30.625000000000004,
+              30.615,
+              31.15,
+              31.020000000000003,
+              30.320999999999998
+            ],
+            "profiledWallMs": [
+              37.10000038146973,
+              35.79999923706055,
+              37,
+              36.60000038146973,
+              36.69999980926514
+            ]
+          },
+          {
+            "tokens": 198,
+            "gpuMs": [
+              57.754,
+              57.568,
+              57.568999999999996,
+              57.43699999999999,
+              57.86600000000001
+            ],
+            "profiledWallMs": [
+              63.90000057220459,
+              62.5,
+              63.09999942779541,
+              62.60000038146973,
+              63.09999942779541
+            ]
+          },
+          {
+            "tokens": 606,
+            "gpuMs": [
+              144.33500000000004,
+              139.69199999999998,
+              142.411,
+              143.323,
+              142.265
+            ],
+            "profiledWallMs": [
+              156.39999961853027,
+              151.19999980926514,
+              157.60000038146973,
+              155.60000038146973,
+              154.39999961853027
+            ]
+          }
+        ],
+        "gemma-4-e2b": [
+          {
+            "tokens": 99,
+            "gpuMs": [
+              23.306000000000004,
+              23.515000000000004,
+              23.636,
+              23.043999999999997,
+              23.352
+            ],
+            "profiledWallMs": [
+              29.40000057220459,
+              30.600000381469727,
+              29.59999942779541,
+              29.5,
+              28.90000057220459
+            ]
+          },
+          {
+            "tokens": 193,
+            "gpuMs": [
+              35.403999999999996,
+              35.125,
+              34.973,
+              34.86200000000001,
+              35.00899999999999
+            ],
+            "profiledWallMs": [
+              41.39999961853027,
+              42.09999942779541,
+              43.80000019073486,
+              41.5,
+              41.5
+            ]
+          },
+          {
+            "tokens": 601,
+            "gpuMs": [
+              81,
+              80.35000000000001,
+              81.68899999999995,
+              81.18200000000002,
+              80.76199999999999
+            ],
+            "profiledWallMs": [
+              87.60000038146973,
+              87.5,
+              88.09999942779541,
+              88.30000019073486,
+              87.30000019073486
+            ]
+          }
+        ]
+      },
+      "previousCandidate": {
+        "laya": [
+          {
+            "tokens": 47,
+            "gpuMs": [
+              5.0969999999999995,
+              5.303999999999999,
+              5.093,
+              5.026999999999999,
+              5.090000000000001
+            ],
+            "profiledWallMs": [
+              7.59999942779541,
+              8.90000057220459,
+              8.09999942779541,
+              8.09999942779541,
+              8.5
+            ]
+          },
+          {
+            "tokens": 140,
+            "gpuMs": [
+              13.350000000000001,
+              12.645,
+              12.94,
+              12.491999999999999,
+              13.277
+            ],
+            "profiledWallMs": [
+              17.300000190734863,
+              17.399999618530273,
+              18.399999618530273,
+              16.5,
+              17.90000057220459
+            ]
+          },
+          {
+            "tokens": 512,
+            "gpuMs": [
+              34.071999999999996,
+              33.057,
+              34.117999999999995,
+              33.474999999999994,
+              33.973000000000006
+            ],
+            "profiledWallMs": [
+              40,
+              38.09999942779541,
+              39.60000038146973,
+              38.39999961853027,
+              40.19999980926514
+            ]
+          }
+        ],
+        "kev-0.8b": [
+          {
+            "tokens": 31,
+            "gpuMs": [
+              5.390000000000001,
+              5.256000000000001,
+              5.1419999999999995,
+              5.253000000000001,
+              5.377
+            ],
+            "profiledWallMs": [
+              8.899999618530273,
+              8.90000057220459,
+              7.699999809265137,
+              8.600000381469727,
+              8.399999618530273
+            ]
+          },
+          {
+            "tokens": 124,
+            "gpuMs": [
+              18.055,
+              17.589000000000002,
+              17.137999999999998,
+              18.079,
+              18.589999999999996
+            ],
+            "profiledWallMs": [
+              23.09999942779541,
+              22,
+              22.199999809265137,
+              22.700000762939453,
+              23
+            ]
+          },
+          {
+            "tokens": 532,
+            "gpuMs": [
+              59.207,
+              58.88100000000001,
+              59.11900000000001,
+              59.247,
+              58.95400000000001
+            ],
+            "profiledWallMs": [
+              65.89999961853027,
+              65.30000019073486,
+              65.69999980926514,
+              66.5,
+              65.80000019073486
+            ]
+          }
+        ],
+        "semif-qwen3.5-2b": [
+          {
+            "tokens": 105,
+            "gpuMs": [
+              30.817999999999998,
+              31.638000000000005,
+              30.391000000000005,
+              30.839,
+              30.636999999999997
+            ],
+            "profiledWallMs": [
+              36.09999942779541,
+              36.90000057220459,
+              34.89999961853027,
+              35.80000019073486,
+              35.69999980926514
+            ]
+          },
+          {
+            "tokens": 198,
+            "gpuMs": [
+              57.569999999999986,
+              57.67599999999999,
+              58.196000000000005,
+              57.65299999999999,
+              57.568999999999996
+            ],
+            "profiledWallMs": [
+              64,
+              63.40000057220459,
+              65.19999980926514,
+              64.09999942779541,
+              64.40000057220459
+            ]
+          },
+          {
+            "tokens": 606,
+            "gpuMs": [
+              139.269,
+              142.442,
+              140.933,
+              142.69600000000003,
+              139.359
+            ],
+            "profiledWallMs": [
+              152.69999980926514,
+              179.39999961853027,
+              168.4000005722046,
+              156.69999980926514,
+              154.69999980926514
+            ]
+          }
+        ],
+        "gemma-4-e2b": [
+          {
+            "tokens": 99,
+            "gpuMs": [
+              23.509000000000004,
+              23.176000000000002,
+              23.288000000000004,
+              23.418000000000006,
+              23.89500000000001
+            ],
+            "profiledWallMs": [
+              29.399999618530273,
+              30.100000381469727,
+              28.699999809265137,
+              29.300000190734863,
+              30.199999809265137
+            ]
+          },
+          {
+            "tokens": 193,
+            "gpuMs": [
+              35.14800000000001,
+              35.004999999999995,
+              35.029,
+              35.781,
+              35.040000000000006
+            ],
+            "profiledWallMs": [
+              40.69999980926514,
+              41.10000038146973,
+              41.5,
+              42.19999980926514,
+              40.89999961853027
+            ]
+          },
+          {
+            "tokens": 601,
+            "gpuMs": [
+              80.873,
+              81.106,
+              80.848,
+              80.62100000000001,
+              80.76799999999999
+            ],
+            "profiledWallMs": [
+              86.29999923706055,
+              87,
+              87.70000076293945,
+              87.29999923706055,
+              86.90000057220459
+            ]
+          }
+        ]
+      }
+    },
+    "firefox": {
+      "main": {
+        "laya": [
+          {
+            "tokens": 47,
+            "gpuMs": [
+              6.3,
+              5.574,
+              5.609999999999999,
+              5.563,
+              5.545
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              201
+            ]
+          },
+          {
+            "tokens": 140,
+            "gpuMs": [
+              16.587000000000003,
+              17.056,
+              16.665000000000003,
+              16.183,
+              16.605999999999998
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              201,
+              199
+            ]
+          },
+          {
+            "tokens": 512,
+            "gpuMs": [
+              36.983000000000004,
+              37.306,
+              37.022999999999996,
+              36.800000000000004,
+              37.869
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              199,
+              201,
+              199
+            ]
+          }
+        ],
+        "kev-0.8b": [
+          {
+            "tokens": 31,
+            "gpuMs": [
+              7.175000000000001,
+              6.975999999999999,
+              7.276000000000001,
+              7.34,
+              7.5409999999999995
+            ],
+            "profiledWallMs": [
+              200,
+              201,
+              199,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 124,
+            "gpuMs": [
+              24.113999999999994,
+              23.962999999999994,
+              23.908999999999992,
+              23.993,
+              23.953
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 532,
+            "gpuMs": [
+              82.981,
+              83.66500000000002,
+              82.721,
+              83.16900000000003,
+              82.928
+            ],
+            "profiledWallMs": [
+              200,
+              199,
+              200,
+              201,
+              200
+            ]
+          }
+        ],
+        "semif-qwen3.5-2b": [
+          {
+            "tokens": 105,
+            "gpuMs": [
+              39.267,
+              39.711000000000006,
+              39.675999999999995,
+              39.46600000000001,
+              39.541999999999994
+            ],
+            "profiledWallMs": [
+              200,
+              199,
+              201,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 198,
+            "gpuMs": [
+              73.366,
+              73.65600000000002,
+              73.505,
+              74.09299999999999,
+              73.84200000000003
+            ],
+            "profiledWallMs": [
+              199,
+              213,
+              200,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 606,
+            "gpuMs": [
+              178.73399999999998,
+              178.70100000000002,
+              177.90400000000002,
+              177.92299999999997,
+              177.26999999999998
+            ],
+            "profiledWallMs": [
+              300,
+              300,
+              300,
+              307,
+              300
+            ]
+          }
+        ],
+        "gemma-4-e2b": [
+          {
+            "tokens": 99,
+            "gpuMs": [
+              49.906,
+              50.112999999999985,
+              50.30799999999998,
+              49.89199999999999,
+              50.23599999999999
+            ],
+            "profiledWallMs": [
+              201,
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 193,
+            "gpuMs": [
+              90.58699999999999,
+              90.20200000000001,
+              91.16300000000001,
+              90.032,
+              90.42599999999999
+            ],
+            "profiledWallMs": [
+              301,
+              302,
+              300,
+              301,
+              300
+            ]
+          },
+          {
+            "tokens": 601,
+            "gpuMs": [
+              249.30399999999995,
+              250.02899999999997,
+              252.97400000000002,
+              249.379,
+              250.37600000000003
+            ],
+            "profiledWallMs": [
+              400,
+              400,
+              400,
+              401,
+              400
+            ]
+          }
+        ]
+      },
+      "candidate": {
+        "laya": [
+          {
+            "tokens": 47,
+            "gpuMs": [
+              5.856,
+              6.013,
+              6.104,
+              5.582,
+              5.571
+            ],
+            "profiledWallMs": [
+              199,
+              201,
+              200,
+              200,
+              201
+            ]
+          },
+          {
+            "tokens": 140,
+            "gpuMs": [
+              14.974,
+              14.439,
+              14.482999999999999,
+              14.655,
+              14.272999999999998
+            ],
+            "profiledWallMs": [
+              199,
+              203,
+              200,
+              210,
+              200
+            ]
+          },
+          {
+            "tokens": 512,
+            "gpuMs": [
+              35.903,
+              36.569,
+              35.852000000000004,
+              35.769000000000005,
+              35.768
+            ],
+            "profiledWallMs": [
+              211,
+              200,
+              200,
+              200,
+              200
+            ]
+          }
+        ],
+        "kev-0.8b": [
+          {
+            "tokens": 31,
+            "gpuMs": [
+              6.007000000000001,
+              6.005000000000001,
+              6.037000000000001,
+              6.001,
+              6
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              201,
+              201,
+              200
+            ]
+          },
+          {
+            "tokens": 124,
+            "gpuMs": [
+              19.796,
+              20.299,
+              20.384,
+              20.252999999999997,
+              19.871
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 532,
+            "gpuMs": [
+              64.552,
+              64.646,
+              64.659,
+              64.742,
+              64.625
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          }
+        ],
+        "semif-qwen3.5-2b": [
+          {
+            "tokens": 105,
+            "gpuMs": [
+              34.056,
+              33.919,
+              33.397,
+              34.09000000000001,
+              33.513999999999996
+            ],
+            "profiledWallMs": [
+              199,
+              201,
+              199,
+              201,
+              200
+            ]
+          },
+          {
+            "tokens": 198,
+            "gpuMs": [
+              62.671,
+              62.46200000000001,
+              62.61600000000001,
+              62.98400000000001,
+              62.737000000000016
+            ],
+            "profiledWallMs": [
+              200,
+              199,
+              200,
+              203,
+              200
+            ]
+          },
+          {
+            "tokens": 606,
+            "gpuMs": [
+              155.14499999999995,
+              150.88799999999998,
+              153.192,
+              153.56400000000002,
+              153.238
+            ],
+            "profiledWallMs": [
+              301,
+              300,
+              300,
+              300,
+              300
+            ]
+          }
+        ],
+        "gemma-4-e2b": [
+          {
+            "tokens": 99,
+            "gpuMs": [
+              27.942,
+              27.624000000000013,
+              27.453999999999997,
+              27.598999999999993,
+              27.802
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 193,
+            "gpuMs": [
+              42.015999999999984,
+              41.923999999999985,
+              42.02300000000001,
+              41.94699999999999,
+              41.584999999999994
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              210,
+              201,
+              199
+            ]
+          },
+          {
+            "tokens": 601,
+            "gpuMs": [
+              96.53500000000003,
+              96.20100000000002,
+              97.149,
+              97.39099999999999,
+              96.66299999999997
+            ],
+            "profiledWallMs": [
+              300,
+              300,
+              301,
+              300,
+              299
+            ]
+          }
+        ]
+      },
+      "previousCandidate": {
+        "laya": [
+          {
+            "tokens": 47,
+            "gpuMs": [
+              5.662999999999999,
+              5.6240000000000006,
+              5.686000000000001,
+              6.064,
+              6.084
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              201
+            ]
+          },
+          {
+            "tokens": 140,
+            "gpuMs": [
+              14.165,
+              14.515,
+              14.726000000000003,
+              14.368,
+              14.685
+            ],
+            "profiledWallMs": [
+              200,
+              203,
+              200,
+              201,
+              200
+            ]
+          },
+          {
+            "tokens": 512,
+            "gpuMs": [
+              35.879,
+              35.713,
+              35.54600000000001,
+              35.958,
+              36.864
+            ],
+            "profiledWallMs": [
+              200,
+              201,
+              200,
+              200,
+              200
+            ]
+          }
+        ],
+        "kev-0.8b": [
+          {
+            "tokens": 31,
+            "gpuMs": [
+              6.5139999999999985,
+              6.589,
+              6.299,
+              6.398,
+              6.221000000000001
+            ],
+            "profiledWallMs": [
+              200,
+              209,
+              200,
+              200,
+              200
+            ]
+          },
+          {
+            "tokens": 124,
+            "gpuMs": [
+              19.790000000000003,
+              19.742,
+              21.118000000000002,
+              19.435,
+              19.812999999999995
+            ],
+            "profiledWallMs": [
+              201,
+              200,
+              200,
+              200,
+              201
+            ]
+          },
+          {
+            "tokens": 532,
+            "gpuMs": [
+              64.62100000000001,
+              64.492,
+              64.48299999999999,
+              64.587,
+              64.639
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              201
+            ]
+          }
+        ],
+        "semif-qwen3.5-2b": [
+          {
+            "tokens": 105,
+            "gpuMs": [
+              33.88400000000001,
+              32.471999999999994,
+              33.874,
+              33.919000000000004,
+              32.599000000000004
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              201,
+              199,
+              201
+            ]
+          },
+          {
+            "tokens": 198,
+            "gpuMs": [
+              62.11899999999999,
+              62.471999999999994,
+              62.478,
+              63.149,
+              62.739
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              201
+            ]
+          },
+          {
+            "tokens": 606,
+            "gpuMs": [
+              153.239,
+              153.072,
+              152.57399999999998,
+              152.76500000000001,
+              153.254
+            ],
+            "profiledWallMs": [
+              301,
+              300,
+              306,
+              294,
+              301
+            ]
+          }
+        ],
+        "gemma-4-e2b": [
+          {
+            "tokens": 99,
+            "gpuMs": [
+              27.616999999999994,
+              27.619,
+              28.076999999999998,
+              27.724999999999994,
+              27.959999999999997
+            ],
+            "profiledWallMs": [
+              200,
+              201,
+              200,
+              201,
+              199
+            ]
+          },
+          {
+            "tokens": 193,
+            "gpuMs": [
+              41.648999999999994,
+              41.132999999999996,
+              41.471999999999994,
+              42.061,
+              43.256000000000014
+            ],
+            "profiledWallMs": [
+              200,
+              200,
+              200,
+              200,
+              203
+            ]
+          },
+          {
+            "tokens": 601,
+            "gpuMs": [
+              96.25200000000002,
+              96.76499999999999,
+              96.51799999999999,
+              96.222,
+              96.53300000000003
+            ],
+            "profiledWallMs": [
+              301,
+              300,
+              300,
+              301,
+              300
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

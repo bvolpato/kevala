@@ -42,8 +42,9 @@ function textConfig(header) {
 export function gemma4Config(header) {
   const c = textConfig(header);
   const layers = Number(c.num_hidden_layers ?? c.layers ?? c.num_layers);
-  const layerTypes = (c.layer_types || c.layerTypes || Array.from({ length: layers }, (_, i) => (i % 6 === 5 ? "full_attention" : "sliding_attention"))).map(String);
-  const full = layerTypes.map((t) => t === "full_attention" || t === "global_attention");
+  const rawLayerTypes = c.layer_types ?? c.layerTypes;
+  const layerTypes = Array.isArray(rawLayerTypes) ? rawLayerTypes.map((t) => String(t === "global_attention" ? "full_attention" : t)) : null;
+  const full = layerTypes?.map((t) => t === "full_attention");
   const hidden = Number(c.hidden_size ?? c.hidden);
   const localHeadDim = Number(c.head_dim ?? 256);
   const globalHeadDim = Number(c.global_head_dim ?? c.globalHeadDim ?? 512);
@@ -54,6 +55,18 @@ export function gemma4Config(header) {
   const globalRope = rope.full_attention || rope.full || {};
   const layersShared = Number(c.num_kv_shared_layers ?? c.kv_shared_layers ?? 0);
   const sharedStart = Math.max(0, layers - layersShared);
+  const boolField = (key) => {
+    if (!Object.hasOwn(c, key)) return false;
+    if (typeof c[key] !== "boolean") throw new Error(`Gemma 4 GPU config ${key} must be boolean`);
+    return c[key];
+  };
+  if (Object.hasOwn(c, "hidden_activation") && c.hidden_activation !== "gelu_pytorch_tanh") throw new Error("Gemma 4 GPU config supports only hidden_activation=gelu_pytorch_tanh");
+  const attentionBias = boolField("attention_bias");
+  const attentionKEqV = boolField("attention_k_eq_v");
+  const enableMoe = boolField("enable_moe_block");
+  if (attentionBias) throw new Error("Gemma 4 GPU config does not support attention_bias=true");
+  if (attentionKEqV) throw new Error("Gemma 4 GPU config does not support attention_k_eq_v=true");
+  if (enableMoe) throw new Error("Gemma 4 GPU config does not support enable_moe_block=true");
   if (!Number.isSafeInteger(layers) || layers <= 0 || !Number.isSafeInteger(hidden) || hidden <= 0 || !Number.isSafeInteger(Number(c.intermediate_size ?? c.intermediate)) || Number(c.intermediate_size ?? c.intermediate) <= 0) throw new Error("Gemma 4 GPU config has invalid model dimensions");
   if (!Number.isSafeInteger(Number(c.num_attention_heads ?? c.heads)) || Number(c.num_attention_heads ?? c.heads) <= 0 || !Number.isSafeInteger(kvHeads) || kvHeads <= 0 || !Number.isSafeInteger(globalKvHeads) || globalKvHeads <= 0) throw new Error("Gemma 4 GPU config has invalid attention head count");
   if (Number(c.num_attention_heads ?? c.heads) % kvHeads || Number(c.num_attention_heads ?? c.heads) % globalKvHeads) throw new Error("Gemma 4 GPU config requires attention heads divisible by KV heads");
@@ -66,9 +79,19 @@ export function gemma4Config(header) {
   if (!Number.isSafeInteger(pleDim) || pleDim <= 0 || !Number.isSafeInteger(vocab) || vocab <= 0 || !Number.isSafeInteger(pleVocab) || pleVocab <= 0) throw new Error("Gemma 4 GPU config has invalid PLE or vocabulary dimensions");
   const intermediate = Number(c.intermediate_size ?? c.intermediate);
   if (hidden % 4 || intermediate % 4 || pleDim % 4) throw new Error("Gemma 4 GPU config requires hidden, intermediate, and PLE dimensions divisible by four");
-  if (layerTypes.length !== layers || layerTypes.some((t) => t !== "sliding_attention" && t !== "full_attention" && t !== "global_attention")) throw new Error("Gemma 4 GPU config has invalid layer_types");
+  if (c.use_bidirectional_attention != null) throw new Error("Gemma 4 GPU config does not support use_bidirectional_attention for direct scoring");
+  if (!layerTypes || layerTypes.length !== layers) throw new Error("Gemma 4 GPU config requires layer_types for every decoder layer");
+  if (layerTypes.some((t) => t !== "sliding_attention" && t !== "full_attention")) throw new Error("Gemma 4 GPU config has invalid layer_types");
+  if (layerTypes.at(-1) !== "full_attention") throw new Error("Gemma 4 GPU config requires the final decoder layer to be full_attention");
+  const prefixTypes = new Set(layerTypes.slice(0, sharedStart));
+  for (const type of new Set(layerTypes.slice(sharedStart))) {
+    if (!prefixTypes.has(type)) throw new Error(`Gemma 4 GPU config has no non-shared KV source for ${type}`);
+  }
   const window = Number(c.sliding_window ?? c.window ?? 512);
   if (!Number.isSafeInteger(window) || window <= 0) throw new Error("Gemma 4 GPU config has invalid sliding window");
+  const localRopeType = typeof localRope.rope_type === "string" ? localRope.rope_type : "default";
+  const globalRopeType = typeof globalRope.rope_type === "string" ? globalRope.rope_type : "proportional";
+  if (localRopeType !== "default" || globalRopeType !== "proportional") throw new Error(`Gemma 4 GPU config supports only sliding rope_type=default and full rope_type=proportional (got ${localRopeType}/${globalRopeType})`);
   const globalFraction = Number(c.global_partial_rotary ?? c.globalPartialRotary ?? globalRope.partial_rotary_factor ?? globalRope.partialRotaryFactor ?? 0.25);
   if (!Number.isFinite(globalFraction) || globalFraction < 0 || globalFraction > 1 || Math.floor((globalHeadDim * globalFraction) / 2) * 2 > 256) throw new Error("Gemma 4 GPU config has unsupported global proportional RoPE");
   return {
@@ -101,7 +124,7 @@ export function gemma4Config(header) {
     ropeLocalTheta: Number(localRope.rope_theta ?? localRope.ropeTheta ?? c.rope_theta ?? 10000),
     ropeGlobalTheta: Number(globalRope.rope_theta ?? globalRope.ropeTheta ?? c.rope_theta ?? 1000000),
     ropeGlobalFraction: globalFraction,
-    causal: c.use_bidirectional_attention === "all" ? 0 : 1,
+    causal: 1,
   };
 }
 
@@ -127,6 +150,8 @@ export class GpuGemma4 {
     this.uniforms = [];
     this.ropeMax = 0;
     this.shared = new Map();
+    this.tailCapacity = 0;
+    this.tail = null;
   }
 
   write(dst, bytes) {
@@ -231,6 +256,12 @@ export class GpuGemma4 {
     this.dynamic = [];
     this.uniforms = [];
     this.shared = new Map();
+    this.tailBuffers = [];
+    this.tailCapacity = 0;
+    this.tail = null;
+    this.ops = null;
+    this.prefixOps = null;
+    this.tailOps = null;
   }
 
   ensure(tokens) {
@@ -287,6 +318,56 @@ export class GpuGemma4 {
     if (this.p) this.build();
   }
 
+  ensureTail(rows) {
+    if (!this.cfg.kvSharedLayers || this.cfg.sharedStart <= 0 || rows <= this.tailCapacity) return;
+    for (const b of this.tailBuffers || []) {
+      const i = this.dynamic.indexOf(b);
+      if (i >= 0) this.dynamic.splice(i, 1);
+      b.destroy();
+    }
+    const cap = Math.max(64, pow2(rows));
+    const d = this.device;
+    const D = this.cfg.hidden;
+    const Q = this.cfg.heads * this.cfg.globalHeadDim;
+    const maxI = this.cfg.intermediate * (this.cfg.useDoubleWideMlp ? 2 : 1);
+    const P = this.cfg.pleDim;
+    const buffers = [];
+    const make = (n, extra = 0, label = "Gemma 4 compact tail scratch") => {
+      const b = this.buffer(n, extra, label);
+      this.dynamic.push(b);
+      buffers.push(b);
+      return b;
+    };
+    const globals = d.createBuffer({ label: "Gemma 4 compact tail globals", size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.owned.push(globals);
+    this.dynamic.push(globals);
+    buffers.push(globals);
+    this.tailBuffers = buffers;
+    this.tailCapacity = cap;
+    this.tail = {
+      globals,
+      x: make(cap * D, U.COPY_DST | U.COPY_SRC, "Gemma 4 compact hidden states"),
+      input: make(cap * D, 0, "Gemma 4 compact input embedding"),
+      h: make(cap * D, U.COPY_SRC, "Gemma 4 compact normalized states"),
+      branch: make(cap * D, 0, "Gemma 4 compact residual branch"),
+      branchNorm: make(cap * D, 0, "Gemma 4 compact normalized branch"),
+      q: make(cap * Q, 0, "Gemma 4 compact queries"),
+      ctx: make(cap * Q, 0, "Gemma 4 compact attention context"),
+      gate: make(cap * maxI, 0, "Gemma 4 compact MLP gate"),
+      up: make(cap * maxI, 0, "Gemma 4 compact MLP up"),
+      act: make(cap * maxI, 0, "Gemma 4 compact MLP activation"),
+      pleToken: make(cap * P, 0, "Gemma 4 compact PLE token embedding"),
+      pleProj: make(cap * P, 0, "Gemma 4 compact PLE projection"),
+      ple: make(cap * P, 0, "Gemma 4 compact PLE input"),
+      pleGate: make(cap * P, 0, "Gemma 4 compact PLE gate"),
+      pleAct: make(cap * P, 0, "Gemma 4 compact PLE activation"),
+      ids: make(cap, U.COPY_DST, "Gemma 4 compact token ids"),
+      pos: make(cap, U.COPY_DST, "Gemma 4 compact token positions"),
+      part: make(SPLIT_SCRATCH, 0, "Gemma 4 compact matmul split scratch"),
+    };
+    if (this.p) this.build();
+  }
+
   weight(name) {
     const e = this.tensors.get(name);
     if (!e) throw new Error(`Gemma 4 GPU layout has no tensor ${name}`);
@@ -299,14 +380,14 @@ export class GpuGemma4 {
     const d = this.device;
     const cfg = this.cfg;
     const bg = (p, resources) => d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: resources.map((b, i) => ({ binding: i, resource: { buffer: b } })) });
-    const custom = (name, values, resources, label = name, dispatch) => ({
+    const custom = (target, name, values, resources, label = name, dispatch) => ({
       kind: name,
       label,
       pipeline: this.p[name],
-      group: bg(this.p[name], [this.globals, this.uniform(values), ...resources]),
+      group: bg(this.p[name], [target.globals, this.uniform(values), ...resources]),
       dispatch,
     });
-    const mm = (name, input, output, mode = 0, label = `mm.${name.split(".").at(-1)}`) => {
+    const mm = (target, name, input, output, mode = 0, label = `mm.${name.split(".").at(-1)}`) => {
       const e = this.weight(name);
       const [N, K] = e.info.shape.map(Number);
       const params = this.uniform([N, K, mode, 0]);
@@ -316,80 +397,143 @@ export class GpuGemma4 {
         label,
         N,
         K,
-        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.globals, params, input, e.buf, scales, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
-        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [this.globals, params, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        group: d.createBindGroup({ layout: this.mm.layout, entries: [target.globals, params, input, e.buf, scales, this.zeros, output, target.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [target.globals, params, target.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
-    const rms = (name, input, output, width = cfg.hidden, mode = 1, label = `rms.${name.split(".").at(-1)}`) => custom("RMS", [width, f32(cfg.eps), mode, 0], [input, this.weight(name).buf, output], label, (pass) => pass.dispatchWorkgroups(this.T));
-    const add = (label = "residual.add") => custom("RESIDUAL", [cfg.hidden, 0, 0, 0], [this.x, this.branchNorm, this.zeros], label, (pass) => pass.dispatchWorkgroups(this.T));
-    const scale = (name, label = "layer.scalar") => custom("RESIDUAL", [cfg.hidden, 1, 0, 0], [this.x, this.zeros, this.weight(name).buf], label, (pass) => pass.dispatchWorkgroups(this.T));
-    const ops = [];
-    const embed = this.weight("embed");
-    const embedWidth = Number(embed.info.shape[1]);
-    ops.push(custom("EMBED", [embedWidth, Math.ceil(embedWidth / 32), f32(cfg.embeddingScale), 0], [this.ids, embed.buf, embed.sbuf || this.zeros, this.x], "embed", (pass) => pass.dispatchWorkgroups(this.T)));
-    ops.push({ kind: "copy-input", label: "embed.copy", src: this.x, dst: this.input });
-    for (let i = 0; i < cfg.layers; i++) {
+    const rms = (target, name, input, output, width = cfg.hidden, mode = 1, label = `rms.${name.split(".").at(-1)}`) => custom(target, "RMS", [width, f32(cfg.eps), mode, 0], [input, this.weight(name).buf, output], label, (pass) => pass.dispatchWorkgroups(this.T));
+    const add = (target, label = "residual.add") => custom(target, "RESIDUAL", [cfg.hidden, 0, 0, 0], [target.x, target.branchNorm, this.zeros], label, (pass) => pass.dispatchWorkgroups(this.T));
+    const scale = (target, name, label = "layer.scalar") => custom(target, "RESIDUAL", [cfg.hidden, 1, 0, 0], [target.x, this.zeros, this.weight(name).buf], label, (pass) => pass.dispatchWorkgroups(this.T));
+    const appendLayer = (ops, target, i, compact) => {
       const type = cfg.full[i] ? "full_attention" : "sliding_attention";
       const headDim = cfg.full[i] ? cfg.globalHeadDim : cfg.localHeadDim;
       const kvHeads = cfg.full[i] ? cfg.globalKvHeads : cfg.kvHeads;
-      const qWidth = cfg.heads * headDim;
+      const shared = compact || i >= cfg.sharedStart;
       const kvWidth = kvHeads * headDim;
       const rotary = cfg.full[i] ? Math.floor((cfg.globalHeadDim * cfg.ropeGlobalFraction) / 2) * 2 : cfg.localHeadDim;
       const n = (s) => `l.${i}.${s}`;
-      const shared = i >= cfg.sharedStart;
-      const store = !shared && cfg.layerTypes.slice(0, cfg.sharedStart).findIndex((t) => t === cfg.layerTypes[i]) >= 0 && cfg.layerTypes.slice(0, cfg.sharedStart).map(String).lastIndexOf(cfg.layerTypes[i]) === i;
+      const store = cfg.kvSharedLayers > 0 && !compact && !shared && cfg.layerTypes.slice(0, cfg.sharedStart).findIndex((t) => t === cfg.layerTypes[i]) >= 0 && cfg.layerTypes.slice(0, cfg.sharedStart).map(String).lastIndexOf(cfg.layerTypes[i]) === i;
       // PLE projection is computed from the original scaled token embedding, then
       // combined immediately before this layer consumes it.
-      ops.push(mm(`ple.${i}.proj`, this.input, this.pleProj, 0, "mm.ple.proj"));
+      ops.push(mm(target, `ple.${i}.proj`, target.input, target.pleProj, 0, "mm.ple.proj"));
       const pleEmbed = this.weight(`ple.${i}.embed`);
-      ops.push(custom("EMBED", [cfg.pleDim, Math.ceil(cfg.pleDim / 32), f32(cfg.pleEmbeddingScale), 0], [this.ids, pleEmbed.buf, pleEmbed.sbuf || this.zeros, this.pleToken], "ple.embed", (pass) => pass.dispatchWorkgroups(this.T)));
-      ops.push(custom("PLE", [cfg.pleDim, cfg.hidden, f32(cfg.eps), f32(cfg.pleInputScale), f32(cfg.pleProjectionScale)], [this.pleToken, this.pleProj, this.weight("ple.norm").buf, this.ple], "ple.combine", (pass) => pass.dispatchWorkgroups(this.T)));
-      ops.push(rms(n("attn_norm"), this.x, this.h, cfg.hidden, 1, "rms.attn"));
-      ops.push(mm(n("q"), this.h, this.q, 0, "mm.q"));
+      ops.push(custom(target, "EMBED", [cfg.pleDim, Math.ceil(cfg.pleDim / 32), f32(cfg.pleEmbeddingScale), 0], [target.ids, pleEmbed.buf, pleEmbed.sbuf || this.zeros, target.pleToken], "ple.embed", (pass) => pass.dispatchWorkgroups(this.T)));
+      ops.push(custom(target, "PLE", [cfg.pleDim, cfg.hidden, f32(cfg.eps), f32(cfg.pleInputScale), f32(cfg.pleProjectionScale)], [target.pleToken, target.pleProj, this.weight("ple.norm").buf, target.ple], "ple.combine", (pass) => pass.dispatchWorkgroups(this.T)));
+      ops.push(rms(target, n("attn_norm"), target.x, target.h, cfg.hidden, 1, "rms.attn"));
+      ops.push(mm(target, n("q"), target.h, target.q, 0, "mm.q"));
       if (!shared) {
-        ops.push(mm(n("k"), this.h, this.k, 0, "mm.k"));
-        ops.push(mm(n("v"), this.h, this.v, 0, "mm.v"));
+        ops.push(mm(target, n("k"), target.h, target.k, 0, "mm.k"));
+        ops.push(mm(target, n("v"), target.h, target.v, 0, "mm.v"));
       }
       const qn = this.weight(n("qn")).buf;
       const kn = shared ? this.zeros : this.weight(n("kn")).buf;
-      ops.push(custom("QKV", [cfg.heads, kvHeads, headDim, rotary, cfg.full[i] ? 1 : 0, this.ropeMax * 128, shared ? 0 : 1, 0, f32(cfg.eps)], [this.q, this.k, this.v, qn, kn, this.rope, this.pos], "qkv", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads + (shared ? 0 : 2 * kvHeads))));
+      // A compact tail computes Q for selected rows only. K/V are already in the
+      // full-length shared pair, so the unused K/V groups must remain disabled.
+      ops.push(custom(target, "QKV", [cfg.heads, kvHeads, headDim, rotary, cfg.full[i] ? 1 : 0, this.ropeMax * 128, shared ? 0 : 1, 0, f32(cfg.eps)], [target.q, target.k || this.k, target.v || this.v, qn, kn, this.rope, target.pos], "qkv", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads + (shared ? 0 : 2 * kvHeads))));
       if (store) {
         const pair = this.shared.get(type);
-        ops.push({ kind: "copy-kv", label: `kv.share.${type}`, srcK: this.k, srcV: this.v, dstK: pair.k, dstV: pair.v, width: kvWidth });
+        ops.push({ kind: "copy-kv", label: `kv.share.${type}`, srcK: target.k, srcV: target.v, dstK: pair.k, dstV: pair.v, width: kvWidth });
       }
-      const pair = shared ? this.shared.get(type) : { k: this.k, v: this.v };
-      ops.push(custom("ATTN", [cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [this.q, pair.k, pair.v, this.ctx], "attn", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads)));
-      ops.push(mm(n("o"), this.ctx, this.branch, 0, "mm.o"));
-      ops.push(rms(n("attn_post_norm"), this.branch, this.branchNorm, cfg.hidden, 1, "rms.attn.post"));
-      ops.push(add("residual.attn"));
-      ops.push(rms(n("ffn_norm"), this.x, this.h, cfg.hidden, 1, "rms.ffn"));
-      ops.push(mm(n("gate"), this.h, this.gate, 0, "mm.gate"));
-      ops.push(mm(n("up"), this.h, this.up, 0, "mm.up"));
+      const pair = shared ? this.shared.get(type) : { k: target.k, v: target.v };
+      ops.push(custom(target, "ATTN", [cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [target.q, pair.k, pair.v, target.ctx, target.pos], "attn", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads)));
+      ops.push(mm(target, n("o"), target.ctx, target.branch, 0, "mm.o"));
+      ops.push(rms(target, n("attn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.attn.post"));
+      ops.push(add(target, "residual.attn"));
+      ops.push(rms(target, n("ffn_norm"), target.x, target.h, cfg.hidden, 1, "rms.ffn"));
+      ops.push(mm(target, n("gate"), target.h, target.gate, 0, "mm.gate"));
+      ops.push(mm(target, n("up"), target.h, target.up, 0, "mm.up"));
       const I = Number(this.weight(n("gate")).info.shape[0]);
-      ops.push(custom("GELU", [I, 0, 0, 0], [this.gate, this.up, this.act], "gelu", (pass) => {
+      ops.push(custom(target, "GELU", [I, 0, 0, 0], [target.gate, target.up, target.act], "gelu", (pass) => {
         const work = Math.ceil((this.T * I) / 256);
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
       }));
-      ops.push(mm(n("down"), this.act, this.branch, 0, "mm.down"));
-      ops.push(rms(n("ffn_post_norm"), this.branch, this.branchNorm, cfg.hidden, 1, "rms.ffn.post"));
-      ops.push(add("residual.ffn"));
-      ops.push(mm(n("ple_gate"), this.x, this.pleGate, 0, "mm.ple.gate"));
-      ops.push(custom("GELU", [cfg.pleDim, 1, 0, 0], [this.pleGate, this.ple, this.pleAct], "gelu.ple", (pass) => {
+      ops.push(mm(target, n("down"), target.act, target.branch, 0, "mm.down"));
+      ops.push(rms(target, n("ffn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ffn.post"));
+      ops.push(add(target, "residual.ffn"));
+      ops.push(mm(target, n("ple_gate"), target.x, target.pleGate, 0, "mm.ple.gate"));
+      ops.push(custom(target, "GELU", [cfg.pleDim, 1, 0, 0], [target.pleGate, target.ple, target.pleAct], "gelu.ple", (pass) => {
         const work = Math.ceil((this.T * cfg.pleDim) / 256);
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
       }));
-      ops.push(mm(n("ple_out"), this.pleAct, this.branch, 0, "mm.ple.out"));
-      ops.push(rms(n("ple_norm"), this.branch, this.branchNorm, cfg.hidden, 1, "rms.ple"));
-      ops.push(add("residual.ple"));
-      ops.push(scale(n("scalar"), "scale"));
+      ops.push(mm(target, n("ple_out"), target.pleAct, target.branch, 0, "mm.ple.out"));
+      ops.push(rms(target, n("ple_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ple"));
+      ops.push(add(target, "residual.ple"));
+      ops.push(scale(target, n("scalar"), "scale"));
+    };
+    const full = {
+      globals: this.globals,
+      part: this.part,
+      x: this.x,
+      input: this.input,
+      h: this.h,
+      branch: this.branch,
+      branchNorm: this.branchNorm,
+      q: this.q,
+      k: this.k,
+      v: this.v,
+      ctx: this.ctx,
+      gate: this.gate,
+      up: this.up,
+      act: this.act,
+      pleToken: this.pleToken,
+      pleProj: this.pleProj,
+      ple: this.ple,
+      pleGate: this.pleGate,
+      pleAct: this.pleAct,
+      ids: this.ids,
+      pos: this.pos,
+    };
+    const ops = [];
+    const embed = this.weight("embed");
+    const embedWidth = Number(embed.info.shape[1]);
+    ops.push(custom(full, "EMBED", [embedWidth, Math.ceil(embedWidth / 32), f32(cfg.embeddingScale), 0], [full.ids, embed.buf, embed.sbuf || this.zeros, full.x], "embed", (pass) => pass.dispatchWorkgroups(this.T)));
+    ops.push({ kind: "copy-input", label: "embed.copy", src: this.x, dst: this.input });
+    let prefixOps = null;
+    for (let i = 0; i < cfg.layers; i++) {
+      if (i === cfg.sharedStart) prefixOps = ops.slice();
+      appendLayer(ops, full, i, false);
     }
-    ops.push(rms("norm", this.x, this.h, cfg.hidden, 1, "rms.final"));
-    ops.push(custom("GATHER", [cfg.hidden, 0, 0, 0], [this.h, this.rows, this.gathered], "gather", (pass) => pass.dispatchWorkgroups(this.R)));
+    if (!prefixOps) prefixOps = ops.slice();
+    ops.push(rms(full, "norm", full.x, full.h, cfg.hidden, 1, "rms.final"));
+    ops.push(custom(full, "GATHER", [cfg.hidden, 0, 0, 0], [full.h, this.rows, this.gathered], "gather", (pass) => pass.dispatchWorkgroups(this.R)));
     this.ops = ops;
+    this.prefixOps = prefixOps;
+    this.tailOps = null;
+    if (this.tail && cfg.kvSharedLayers && cfg.sharedStart > 0) {
+      const tail = this.tail;
+      const compact = {
+        globals: tail.globals,
+        part: tail.part,
+        x: tail.x,
+        input: tail.input,
+        h: tail.h,
+        branch: tail.branch,
+        branchNorm: tail.branchNorm,
+        q: tail.q,
+        ctx: tail.ctx,
+        gate: tail.gate,
+        up: tail.up,
+        act: tail.act,
+        pleToken: tail.pleToken,
+        pleProj: tail.pleProj,
+        ple: tail.ple,
+        pleGate: tail.pleGate,
+        pleAct: tail.pleAct,
+        ids: tail.ids,
+        pos: tail.pos,
+      };
+      const tailOps = [];
+      // The selected rows are gathered in caller order. This keeps duplicates and
+      // arbitrary ordering exact while leaving the shared K/V pair full length.
+      tailOps.push(custom(compact, "GATHER", [cfg.hidden, 0, 0, 0], [this.x, this.rows, compact.x], "tail.gather.hidden", (pass) => pass.dispatchWorkgroups(this.T)));
+      tailOps.push(custom(compact, "GATHER", [cfg.hidden, 0, 0, 0], [this.input, this.rows, compact.input], "tail.gather.input", (pass) => pass.dispatchWorkgroups(this.T)));
+      for (let i = cfg.sharedStart; i < cfg.layers; i++) appendLayer(tailOps, compact, i, true);
+      tailOps.push(rms(compact, "norm", compact.x, compact.h, cfg.hidden, 1, "rms.final"));
+      this.tailOps = tailOps;
+    }
   }
 
-  encode(enc, ops, T) {
-    const prof = this.profiler;
+  encode(enc, ops, T, prof = this.profiler) {
     let pass = prof ? null : enc.beginComputePass();
     for (const op of ops) {
       if (op.kind === "copy-input" || op.kind === "copy-kv") {
@@ -424,30 +568,48 @@ export class GpuGemma4 {
     const T = ids.length;
     if (!T) throw new Error("Gemma 4 GPU forward needs at least one token");
     if (ids.some((id) => id >= this.cfg.vocab || id >= this.cfg.pleVocab)) throw new Error("Gemma 4 token id is outside an embedding vocabulary");
-    await this.ensureRope(T);
-    this.ensure(T);
     const selected = rows == null ? [T - 1] : Array.from(rows, Number);
+    const profiler = this.profiler;
     if (selected.some((r) => !Number.isSafeInteger(r) || r < 0 || r >= T)) throw new Error("Gemma 4 output row is outside the input sequence");
+    if (!selected.length) {
+      this.lastProfile = null;
+      return new Float32Array(0);
+    }
+    await this.ensureRope(T);
+    // A caller-provided identity selection can run the ordinary full-row graph. Any
+    // other selection uses the compact shared-KV tail when the model has one.
+    const allRows = selected.length === T && selected.every((row, i) => row === i);
+    this.ensure(Math.max(T, selected.length));
+    if (!allRows) this.ensureTail(selected.length);
     this.R = selected.length;
     const q = this.device.queue;
     const positions = new Uint32Array(T);
     for (let i = 0; i < T; i++) positions[i] = i;
-    q.writeBuffer(this.globals, 0, new Uint32Array([T, selected.length, 0, 0]));
+    q.writeBuffer(this.globals, 0, new Uint32Array([T, selected.length, T, 0]));
     q.writeBuffer(this.ids, 0, ids);
     q.writeBuffer(this.pos, 0, positions);
     q.writeBuffer(this.rows, 0, new Uint32Array(selected));
-    const groups = !this.profiler && T > YIELD_TOKENS ? chunks(this.ops, YIELD_CHUNKS) : [this.ops];
-    let enc = this.device.createCommandEncoder({ label: "Gemma 4 forward" });
-    for (let i = 0; i < groups.length; i++) {
-      if (i) enc = await endChunk(this.device, enc);
-      this.T = T;
-      this.encode(enc, groups[i], T);
+    const useTail = !allRows && !!this.tailOps && !!this.prefixOps;
+    if (useTail) {
+      q.writeBuffer(this.tail.globals, 0, new Uint32Array([selected.length, selected.length, T, 0]));
+      q.writeBuffer(this.tail.pos, 0, new Uint32Array(selected));
+      q.writeBuffer(this.tail.ids, 0, Uint32Array.from(selected, (row) => ids[row]));
     }
-    this.profiler?.finish(enc);
+    const longChunks = !profiler && T > YIELD_TOKENS;
+    const runOps = useTail ? this.prefixOps : this.ops;
+    const plans = (longChunks ? chunks(runOps, YIELD_CHUNKS) : [runOps]).map((ops, i) => ({ ops, rows: T, flushBefore: i > 0 }));
+    if (useTail) plans.push({ ops: this.tailOps, rows: selected.length, flushBefore: false });
+    let enc = this.device.createCommandEncoder({ label: "Gemma 4 forward" });
+    for (let i = 0; i < plans.length; i++) {
+      if (plans[i].flushBefore) enc = await endChunk(this.device, enc);
+      this.T = plans[i].rows;
+      this.encode(enc, plans[i].ops, plans[i].rows, profiler);
+    }
+    profiler?.finish(enc);
     const bytes = selected.length * this.cfg.hidden * 4;
-    enc.copyBufferToBuffer(this.gathered, 0, this.readback, 0, bytes);
+    enc.copyBufferToBuffer(useTail ? this.tail.h : this.gathered, 0, this.readback, 0, bytes);
     q.submit([enc.finish()]);
-    if (this.profiler) this.lastProfile = await this.profiler.collect();
+    if (profiler) this.lastProfile = await profiler.collect();
     await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
     const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
     this.readback.unmap();
