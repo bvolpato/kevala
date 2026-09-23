@@ -46,14 +46,14 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div class="card pad stack">
         <div class="policy"><label for="gr-allow">Ordinary request score ceiling <b class="mono" data-f="allow-v">0.35</b></label><input type="range" id="gr-allow" min="0.05" max="0.50" step="0.01" value="0.35"></div>
-        <div class="policy"><label for="gr-block">Override block score <b class="mono" data-f="block-v">0.80</b></label><input type="range" id="gr-block" min="0.55" max="0.99" step="0.01" value="0.80"></div>
+        <div class="policy"><label for="gr-block">Override block target <b class="mono" data-f="block-v">0.80</b></label><input type="range" id="gr-block" min="0.55" max="0.99" step="0.01" value="0.80"></div>
         <div class="session">
           <div><span>Checked</span><b data-f="n-all">0</b></div>
           <div><span>Allowed</span><b data-f="n-allow">0</b></div>
           <div><span>Blocked</span><b data-f="n-block">0</b></div>
           <div><span>Review</span><b data-f="n-review">0</b></div>
         </div>
-        <p class="tiny faint" style="margin:0">The two sliders change the score bands without rerunning the model. Message context also affects the result. Scores are estimates, not safety guarantees. Text stays in this browser.</p>
+        <p class="tiny faint" style="margin:0">The two sliders change the score bands without rerunning the model. An explicit override can block below the target score; an unclear or encoded message goes to Review. Scores are estimates, not safety guarantees. Text stays in this browser.</p>
       </div>
     </div>
 
@@ -74,7 +74,7 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div class="card pad">
         <h3>Read the scores</h3>
-        <p class="muted small">P(yes) and P(no) show the full binary distribution for each yes/no question. The score bands apply after checking whether the message is an ordinary task, an example being discussed, or an instruction aimed at the assistant. Uncertain cases go to Review.</p>
+        <p class="muted small">P(yes) and P(no) show the full binary distribution for each yes/no question. Clear instructions to bypass the assistant's rules can block with a score 0.15 below the target. Quoted examples being discussed and uncertain cases go to Review.</p>
         <p class="muted small" style="margin:0">Review is a recommendation, not an automated second pass. Test thresholds against your own labelled messages before using this pattern in a real application.</p>
       </div>
     </div>
