@@ -325,11 +325,13 @@ async function main() {
       throw new Error("subgroups=1 requested, but this device has no usable subgroup4 path");
     }
     const candidate = query.get("candidate") || "current";
-    if (candidate !== "current" && candidate !== "recur8") {
-      throw new Error(`candidate must be current or recur8, got ${candidate}`);
-    }
-    if (candidate === "recur8" && useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < 8) {
-      throw new Error("candidate=recur8 with subgroups=1 requires subgroupMinSize >= 8; use subgroups=0 for the shared-memory path");
+    const baselineCandidate = query.get("baselineCandidate") || "current";
+    const widths = { current: 4, recur8: 8, recur16: 16 };
+    for (const name of [candidate, baselineCandidate]) {
+      if (!Object.hasOwn(widths, name)) throw new Error(`unknown recurrence candidate ${name}`);
+      if (useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < widths[name]) {
+        throw new Error(`${name} needs subgroups of at least ${widths[name]} lanes; use subgroups=0 for the shared path`);
+      }
     }
     const timingHeadsParam = query.get("timingHeads");
     let timingHeads = null;
@@ -354,8 +356,9 @@ async function main() {
     const pipelineCache = new Map();
     const getPipeline = async (source, cfg) => {
       const sourceKey = source === current ? "current" : "baseline";
-      const kernel = source === current && candidate === "recur8" ? "kev_recur_lanes8" : "kev_recur_lanes";
-      const zTiles = kernel === "kev_recur_lanes8" ? 4 : 2;
+      const lanes = widths[source === current ? candidate : baselineCandidate];
+      const kernel = `kev_recur_lanes${lanes === 4 ? "" : lanes}`;
+      const zTiles = lanes / 2;
       const cfgKey = `${sourceKey}|${kernel}|${JSON.stringify(cfg)}`;
       if (!pipelineCache.has(cfgKey)) {
         const code = source(kernel, { subgroups: useSubgroups, kev: cfg });
@@ -430,7 +433,7 @@ async function main() {
         correctness.variants.push({ case: test.name, exact, withinTolerance, core: coreDiff, state: stateDiff, coreGuard, stateGuard });
         oldNewExact &&= exact;
         oldNewWithinTolerance &&= withinTolerance;
-        if (!(exact || (candidate === "recur8" && withinTolerance))) correctness.ok = false;
+        if (!(exact || ((candidate !== "current" || baselineCandidate !== "current") && withinTolerance))) correctness.ok = false;
       }
       const reps = T <= 7 ? 16 : T <= 31 ? 8 : T <= 129 ? 2 : 1;
       const currentSamples = [];
@@ -462,10 +465,11 @@ async function main() {
       warmups,
       baselineWasm: baselineUrl,
       candidate,
+      baselineCandidate,
       timingHeads,
       variantProvenance: {
-        current: { source: "current", wasmUrl: current.wasmUrl, kernel: candidate === "recur8" ? "kev_recur_lanes8" : "kev_recur_lanes", zTiles: candidate === "recur8" ? 4 : 2, subgroups: useSubgroups },
-        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: "kev_recur_lanes", zTiles: 2, subgroups: useSubgroups } } : {}),
+        current: { source: "current", wasmUrl: current.wasmUrl, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups },
+        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
       },
       cases: timing,
       cpuMaxAbs,
