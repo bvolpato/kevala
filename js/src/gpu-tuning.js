@@ -1,6 +1,6 @@
-// Load-time selector for generic, wide, and larger split-target matmul kernels. There is
-// intentionally no persistent cache: Firefox may expose an anonymous adapter, so a profile can
-// belong to another physical GPU on the next load.
+// Load-time selector for the generic and wide matmul kernels. There is intentionally no
+// persistent cache: Firefox may expose an anonymous adapter, so a profile can belong to another
+// physical GPU on the next load.
 
 import { dispatchMatmul, matmulPipelines, mmSplits, rowsPerThread } from "./gpu.js";
 
@@ -14,9 +14,6 @@ const REPETITIONS = 4;
 const THRESHOLD = 0.05;
 const DEADLINE_MS = 1500;
 const MAX_SCRATCH = 128 * 1024 * 1024;
-const SPLIT_TARGET = 512;
-// 128 and 200 sample different tile counts in the shared mid bucket; 512 represents long inputs.
-const SPLIT_TOKENS = [128, 200, 512];
 const RANK = new Map([
   ["gate_up", 0], ["qkvz", 1], ["down", 2], ["qkv", 3], ["out", 4], ["o", 5],
   ["gate", 0], ["up", 0], ["q", 1], ["k", 3], ["v", 3], ["ple_gate", 6], ["ple_out", 7], ["proj", 8],
@@ -113,10 +110,10 @@ function encodePass(encoder, op, tokens, querySet, queryIndex, repetitions = 1) 
   pass.end();
 }
 
-async function measureShape(device, shape, pipes, tokens = MATMUL_TOKENS) {
+async function measureShape(device, shape, pipes) {
   const U = usage();
-  const maxT = Math.max(...tokens);
-  const points = tokens.map((tokens) => ({ tokens, rows: rowsPerThread(tokens) }));
+  const maxT = Math.max(...MATMUL_TOKENS);
+  const points = MATMUL_TOKENS.map((tokens) => ({ tokens, rows: rowsPerThread(tokens) }));
   const xBytes = maxT * shape.K * 4;
   const yBytes = maxT * shape.N * 4;
   const partBytes = Math.max(...points.flatMap(({ tokens, rows }) => MATMUL_KERNELS.map((kind) => {
@@ -195,141 +192,6 @@ async function isolated(device, work) {
   return value;
 }
 
-function splitPointChecks(shape, generic) {
-  if (shape.K < 2 * shape.N) return SPLIT_TOKENS.map((tokens) => ({ tokens, eligible: false, reason: "k-below-2n" }));
-  const splitConfig = { f16: false, groups: 1, splitTarget: SPLIT_TARGET };
-  const genericTarget = generic.splitTarget ?? 256;
-  const genericGroups = generic.groups ?? 1;
-  return SPLIT_TOKENS.map((tokens) => {
-    const genericRows = rowsPerThread(tokens, generic);
-    const splitRows = rowsPerThread(tokens, splitConfig);
-    const genericSplits = mmSplits(tokens, shape.N, shape.K, genericTarget, 16 * genericRows, 64 * genericGroups);
-    const splitSplits = mmSplits(tokens, shape.N, shape.K, SPLIT_TARGET, 16 * splitRows, 64);
-    return {
-      tokens,
-      key: matmulTuningKey(shape.N, shape.K, tokens),
-      genericSplits,
-      splitSplits,
-      eligible: genericSplits !== splitSplits,
-      reason: genericSplits === splitSplits ? "same-split-count" : undefined,
-    };
-  });
-}
-
-async function calibrateSplit(device, wgsl, shapes, generic, selection, diagnostics, started) {
-  const plans = shapes.map((shape) => ({ shape, points: splitPointChecks(shape, generic) }));
-  const candidates = plans.filter((plan) => plan.points.some((point) => point.eligible));
-  const pipelines = (split) => ({ generic, wide: null, split });
-  diagnostics.method = "timestamp-query";
-  diagnostics.candidate = "split";
-  diagnostics.tokens = [...SPLIT_TOKENS];
-
-  const skipped = (plan) => ({
-    shape: `${plan.shape.N}x${plan.shape.K}`,
-    name: plan.shape.name,
-    points: plan.points.map((point) => ({
-      N: plan.shape.N,
-      K: plan.shape.K,
-      tokens: point.tokens,
-      key: matmulTuningKey(plan.shape.N, plan.shape.K, point.tokens),
-      kernel: "generic",
-      reason: point.reason,
-      genericSplits: point.genericSplits,
-      splitSplits: point.splitSplits,
-    })),
-  });
-
-  if (!candidates.length) {
-    diagnostics.reason = "no-differing-split-points";
-    diagnostics.points = plans.map(skipped);
-    diagnostics.elapsedMs = now() - started;
-    return { pipelines: pipelines(null), selection, diagnostics };
-  }
-
-  let split;
-  try {
-    split = await isolated(device, () => matmulPipelines(device, wgsl, "matmul", {
-      f16: false,
-      groups: 1,
-      splitTarget: SPLIT_TARGET,
-      rows: [3, 4],
-      layout: generic.layout,
-      reduceLayout: generic.reduceLayout,
-    }));
-  } catch (error) {
-    diagnostics.reason = "split-pipeline-failed";
-    diagnostics.error = String(error?.message || error);
-    diagnostics.elapsedMs = now() - started;
-    return { pipelines: pipelines(null), selection, diagnostics };
-  }
-
-  const candidatePipelines = { generic, wide: split };
-  const deadline = started + DEADLINE_MS;
-  for (const plan of plans) {
-    const active = plan.points.filter((point) => point.eligible);
-    if (!active.length) {
-      diagnostics.points.push(skipped(plan));
-      continue;
-    }
-    if (now() >= deadline) {
-      diagnostics.truncated = true;
-      break;
-    }
-    const record = { shape: `${plan.shape.N}x${plan.shape.K}`, name: plan.shape.name, points: [] };
-    let measured;
-    try {
-      measured = await isolated(device, () => measureShape(device, plan.shape, candidatePipelines, active.map((point) => point.tokens)));
-      const results = new Map(measured.points.map((point) => [point.tokens, point]));
-      record.points = plan.points.map((point) => {
-        if (!point.eligible) return {
-          N: plan.shape.N,
-          K: plan.shape.K,
-          tokens: point.tokens,
-          key: matmulTuningKey(plan.shape.N, plan.shape.K, point.tokens),
-          kernel: "generic",
-          reason: point.reason,
-          genericSplits: point.genericSplits,
-          splitSplits: point.splitSplits,
-        };
-        const result = results.get(point.tokens);
-        return { ...result, kernel: result.kernel === "wide" ? "split" : "generic", genericSplits: point.genericSplits, splitSplits: point.splitSplits };
-      });
-      const buckets = new Map();
-      for (const point of record.points.filter((item) => item.reason !== "same-split-count" && item.reason !== "k-below-2n")) {
-        if (!buckets.has(point.key)) buckets.set(point.key, []);
-        buckets.get(point.key).push(point);
-      }
-      for (const [key, points] of buckets) {
-        if (points.every((point) => point.kernel === "split")) {
-          selection.set(key, "split");
-        } else {
-          for (const point of points) if (point.kernel === "split") {
-            point.measuredKernel = "split";
-            point.kernel = "generic";
-            point.bucketReason = "mixed-split-results";
-          }
-        }
-      }
-    } catch (error) {
-      for (const key of selection.keys()) selection.set(key, "generic");
-      for (const prior of diagnostics.points) for (const point of prior.points || []) point.kernel = "generic";
-      diagnostics.reason = "calibration-failed";
-      diagnostics.error = String(error?.message || error);
-      record.reason = diagnostics.error;
-      diagnostics.points.push(record);
-      diagnostics.truncated = true;
-      break;
-    }
-    record.elapsedMs = measured.elapsedMs;
-    diagnostics.points.push(record);
-    if (now() >= deadline) diagnostics.truncated = true;
-    if (diagnostics.truncated) break;
-  }
-  diagnostics.elapsedMs = now() - started;
-  if (!diagnostics.reason) diagnostics.reason = [...selection.values()].includes("split") ? "stable-split-win" : "no-stable-split-win";
-  return { pipelines: pipelines(split), selection, diagnostics };
-}
-
 /** Build and, when possible, measure both candidates on up to six real loaded projection shapes. */
 export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const kernel = options.kernel || "auto";
@@ -343,14 +205,11 @@ export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const started = now();
   const generic = await pipelinesFor(device, wgsl, "generic", options.pipelines);
   if (kernel === "generic") return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
-  const hasF16 = device.features?.has?.("shader-f16") === true;
-  const hasTimestamps = device.features?.has?.("timestamp-query") === true;
-  if (kernel === "auto" && !hasTimestamps) {
-    diagnostics.reason = "no-timestamp-query";
+  if (kernel === "auto" && (!device.features?.has?.("shader-f16") || !device.features?.has?.("timestamp-query"))) {
+    diagnostics.reason = !device.features?.has?.("shader-f16") ? "no-shader-f16" : "no-timestamp-query";
     diagnostics.elapsedMs = now() - started;
     return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
   }
-  if (kernel === "auto" && !hasF16) return calibrateSplit(device, wgsl, shapes, generic, selection, diagnostics, started);
   let wide;
   try {
     wide = await isolated(device, () => pipelinesFor(device, wgsl, "wide", options.pipelines));
