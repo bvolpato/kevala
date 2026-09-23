@@ -113,17 +113,37 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let lq = li % 4u;
   let xrow = m0 + lr;
   let sw = lr & 7u;
+//#if GENERIC_UNROLL
+//#else
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
   var wv: array<vec4<f32>, {{WV_LEN}}>;
+//#endif
   for (var kb = kb0; kb < kb1; kb++) {
+//#if GENERIC_UNROLL
+    var xv0 = vec4<f32>(0.0);
+    var xv1 = vec4<f32>(0.0);
+//#else
     xv0 = vec4<f32>(0.0);
     xv1 = vec4<f32>(0.0);
+//#endif
     if (lr < {{BM}}u && xrow < T) {
       let base = (xrow * K + kb * 32u) / 4u + lq * 2u;
       xv0 = X[base];
       xv1 = X[base + 1u];
     }
+//#if GENERIC_UNROLL
+    var wv0 = vec4<f32>(0.0);
+    var wv1 = vec4<f32>(0.0);
+    let wrow = n0 + lr;
+    if (wrow < N) {
+      let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
+      let s = S[wrow * nb + kb];
+      let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
+      wv0 = sx(lo.x) * s;
+      wv1 = sx(lo.y) * s;
+    }
+//#else
     for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
       let wrow = n0 + lr + 64u * gg;
       wv[2u * gg] = vec4<f32>(0.0);
@@ -136,15 +156,21 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         wv[2u * gg + 1u] = sx(lo.y) * s;
       }
     }
+//#endif
     if (lr < {{BM}}u) {
       xs[lr * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
       xs[lr * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
     }
+//#if GENERIC_UNROLL
+    ws[lr * 8u + ((lq * 2u) ^ sw)] = vec4<f32>(wv0);
+    ws[lr * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<f32>(wv1);
+//#else
     for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
       let r = lr + 64u * gg;
       ws[r * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg]);
       ws[r * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg + 1u]);
     }
+//#endif
     workgroupBarrier();
     let nx = lid.x & 7u;
 //#if GENERIC_UNROLL
