@@ -2,7 +2,7 @@
 // 64, query blocks of (segment start, segment length, first query), and CTX [T, W]. Each case is
 // checked against a CPU reference and timed with WebGPU timestamps, the variants taking turns.
 //
-//   attn-bench.html?cases=512:0,512:64,140:64,47:0,150/40:64&kernels=attention,attention_subgroup
+//   attn-bench.html?cases=47:0,47:64,140:0,140:64,512:0,512:64,47/140/512:0,47/140/512:64&kernels=attention_subgroup,attention_tile_f32
 //
 // A case is T:window, one segment of T tokens (window 0 means global attention); T/T2:window
 // packs several segments, as a batched request does. The result has the same shape as
@@ -18,6 +18,10 @@ const KERNELS = {
   attention: { queries: 16 },
   attention_subgroup: { queries: 16, subgroup32: true },
   attention_tile: { queries: 64, capability: "attentionTile", spec: { subgroups: true } },
+  // FP32 counterpart for Chrome-class devices without shader-f16. The fast variant derives its
+  // logical lanes from subgroup IDs; `shared=1` renders the same source without subgroup builtins
+  // and exercises its 30,224-byte workgroup-memory fallback.
+  attention_tile_f32: { queries: 64, subgroup32: true, subgroupIds: true, shared: true, storage: 30224 },
   // the tiled kernel without subgroups: row statistics through workgroup memory
   attention_tile_shared: { kernel: "attention_tile", spec: { subgroups: false }, queries: 64, f16: true, storage: 29968 },
 };
@@ -33,7 +37,7 @@ function rng(seed) {
 }
 
 function parseCases() {
-  return (query.get("cases") || "512:0,512:64,140:64,47:0").split(",").map((item) => {
+  return (query.get("cases") || "47:0,47:64,140:0,140:64,512:0,512:64,47/140/512:0,47/140/512:64").split(",").map((item) => {
     const [lens, window] = item.split(":");
     return { label: item, lens: lens.split("/").map(Number), window: Number(window || 0) };
   });
@@ -63,7 +67,9 @@ async function main() {
   const d = gpu.device;
   const wgsl = await kernelSource();
   const timestamps = d.features.has("timestamp-query");
-  const names = (query.get("kernels") || "attention,attention_subgroup").split(",");
+  const names = (query.get("kernels") || "attention,attention_subgroup,attention_tile_f32").split(",");
+  const forceShared = query.get("shared") === "1";
+  const subgroupIds = !!globalThis.navigator?.gpu?.wgslLanguageFeatures?.has?.("subgroup_id");
   const samples = Number(query.get("samples") || 7);
   const warmups = Number(query.get("warmups") || 2);
   const repeats = Number(query.get("checks") || 1);
@@ -71,18 +77,21 @@ async function main() {
   const usable = names.filter((name) => {
     const k = KERNELS[name];
     if (!k) throw new Error(`unknown attention kernel: ${name}`);
-    return (!k.subgroup32 || gpu.subgroup32) && (!k.capability || gpu[k.capability]) &&
+    const sharedFallback = forceShared && k.shared;
+    return (!k.subgroup32 || sharedFallback || gpu.subgroup32) &&
+      (!k.subgroupIds || sharedFallback || subgroupIds) && (!k.capability || gpu[k.capability]) &&
       (!k.f16 || d.features.has("shader-f16")) && (!k.storage || d.limits.maxComputeWorkgroupStorageSize >= k.storage);
   });
   if (!usable.length) throw new Error("none of the requested attention kernels are supported");
-  log(`device: ${gpu.name}; kernels ${usable.join(", ")}${usable.length < names.length ? " (unsupported variants skipped)" : ""}`);
+  log(`device: ${gpu.name}; kernels ${usable.join(", ")}${usable.length < names.length ? " (unsupported variants skipped)" : ""}${forceShared ? "; shared fallback requested" : ""}`);
   const layout = d.createBindGroupLayout({
     entries: ["uniform", "uniform", "read-only-storage", "read-only-storage", "storage"].map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })),
   });
   const pipes = {};
   for (const name of usable) {
     const k = KERNELS[name];
-    const module = d.createShaderModule({ code: wgsl(k.kernel || name, k.spec || { subgroups: !!k.subgroup32 }) });
+    const spec = forceShared && k.shared ? { subgroups: false } : (k.spec || { subgroups: !!k.subgroup32 });
+    const module = d.createShaderModule({ code: wgsl(k.kernel || name, spec) });
     pipes[name] = await d.createComputePipelineAsync({ layout: d.createPipelineLayout({ bindGroupLayouts: [layout] }), compute: { module, entryPoint: "main" } });
   }
   const querySet = timestamps ? d.createQuerySet({ type: "timestamp", count: 2 }) : null;
@@ -175,10 +184,12 @@ async function main() {
 
     const timings = [];
     const errors = {};
+    const pairedErrors = {};
+    let firstOutput;
     for (const run of runs) {
       let err = 0;
       for (let repeat = 0; repeat < repeats; repeat++) {
-        d.queue.writeBuffer(CTX, 0, new Float32Array(T * W));
+        d.queue.writeBuffer(CTX, 0, new Float32Array(T * W).fill(NaN));
         const e = d.createCommandEncoder();
         const pass = e.beginComputePass();
         pass.setPipeline(pipes[run.name]);
@@ -192,6 +203,13 @@ async function main() {
         const got = new Float32Array(out.getMappedRange().slice(0));
         out.destroy();
         if (!got.every(Number.isFinite)) err = Infinity;
+        if (firstOutput) {
+          let delta = 0;
+          for (let i = 0; i < got.length; i++) delta = Math.max(delta, Math.abs(got[i] - firstOutput[i]));
+          pairedErrors[run.name] = Math.max(pairedErrors[run.name] || 0, delta);
+          const fp32 = usable.every((name) => !KERNELS[name].f16 && !KERNELS[name].capability);
+          if (!(delta < (fp32 ? 2e-5 : 2e-3))) ok = false;
+        } else firstOutput = got;
         checks.forEach(([i, h], k) => {
           for (let x = 0; x < DIM; x++) err = Math.max(err, Math.abs(got[i * W + h * DIM + x] - want[k][x]));
         });
@@ -201,7 +219,7 @@ async function main() {
       const sorted = [...run.samples].sort((a, b) => a - b);
       timings.push({ kernel: run.name, reps: run.reps, samples: run.samples, medianMs: sorted[sorted.length >> 1] });
     }
-    cases.push({ shape: c.label, T, window: c.window, checkedQueryHeads: checks.length, timings, errors, medianMs: timings[0].medianMs });
+    cases.push({ shape: c.label, T, window: c.window, checkedQueryHeads: checks.length, timings, errors, pairedErrors, medianMs: timings[0].medianMs });
     log(`${c.label}: ${timings.map((t) => `${t.kernel}=${t.medianMs.toFixed(3)}ms (err ${errors[t.kernel].toExponential(1)})`).join(", ")}`);
   }
   const metricMs = Math.exp(cases.reduce((s, c) => s + Math.log(c.medianMs), 0) / cases.length);
@@ -213,6 +231,8 @@ async function main() {
     method: timestamps ? "WebGPU timestamp-query" : "wall clock",
     kernels: usable,
     skippedKernels: names.filter((name) => !usable.includes(name)),
+    subgroupIds,
+    forceShared,
     verificationRepeats: repeats,
     features: [...d.features],
     cases,

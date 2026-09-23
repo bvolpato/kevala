@@ -125,6 +125,8 @@ The latest shared FP32 results cover Laya, Kev, SemIf, and Gemma in
 correctness checks.
 The Qwen-specific [FP32 attention tile report](docs/qwen-fp32-attention-performance.md)
 includes paired kernel measurements, full-model timings, and model-guard results.
+The [Laya FP32 attention report](docs/laya-fp32-attention-performance.md) includes paired
+kernel measurements, full-model repeats, and browser parity guards.
 
 ## Base weights, instruction tuning, and precision
 
