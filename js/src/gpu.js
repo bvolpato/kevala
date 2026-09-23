@@ -18,7 +18,7 @@ export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
 }
 
 /** Rows per thread for an input of T tokens: a short input gets a shorter tile (16 R rows). */
-export const rowsPerThread = (T) => (T >= 64 ? 2 : Math.max(1, Math.ceil(T / 16)));
+export const rowsPerThread = (T) => (T >= 64 ? 4 : Math.max(1, Math.ceil(T / 16)));
 
 export function matmulConfig(device) {
   return { f16: device.features.has("shader-f16"), groups: 1, splitTarget: 256 };
