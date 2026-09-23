@@ -20,19 +20,25 @@
 </head>
 <body>
 <h1>Comment form with a moderation gate</h1>
-<p class="muted">On submit, the comment is checked locally with three moderation questions (toxic, harassment, threat). Clearly toxic comments are blocked, borderline ones held for review, the rest posted. Nothing is sent to a server.</p>
+<p class="muted">On submit, the comment is checked locally with three moderation questions (toxic, harassment, threat) using the selected model. Clearly toxic comments are blocked, borderline ones held for review, the rest posted. Nothing is sent to a server.</p>
 
 <form id="form">
   <textarea id="comment" required placeholder="Write a comment…">Thanks for the write-up, the benchmark section was really useful.</textarea>
-  <p><button id="submit" type="submit" disabled>Post comment</button> <span id="status" class="muted">Loading the model…</span></p>
+  <p><button id="submit" type="submit" disabled>Post comment</button> <span id="status" class="muted">Loading the selected model…</span></p>
 </form>
 <div id="result"></div>
 <h3>Comments</h3>
 <div id="comments"></div>
 
 <script type="module">
-import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
+import { Kevala } from "https://bvolpato.github.io/kevala/js/src/index.js";
 
+const params = new URLSearchParams(location.search);
+const model = params.get("model") || "laya";
+const requestedBackend = params.get("backend");
+const backend = ["auto", "webgpu", "wasm"].includes(requestedBackend) ? requestedBackend : "auto";
+const status = document.getElementById("status");
+status.textContent = `Loading ${model}…`;
 
 // Thresholds on P(yes). Pick them on your own labelled comments: they trade missed abuse against
 // false blocks. Between REVIEW and BLOCK the comment waits for a human instead of guessing.
@@ -56,10 +62,10 @@ const questions = {
   },
 };
 
-const kevala = await Kevala.load({ model: "laya" });
+const kevala = await Kevala.load({ model, backend });
 const submit = document.getElementById("submit");
 submit.disabled = false;
-document.getElementById("status").textContent = `Moderation runs locally on ${kevala.info.backend}.`;
+status.textContent = `Moderation runs locally with ${model} on ${kevala.info.backend}.`;
 
 document.getElementById("form").addEventListener("submit", async (e) => {
   e.preventDefault(); // decide first, post later

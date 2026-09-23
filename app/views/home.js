@@ -2,8 +2,9 @@
 // prompt, the demo cards (with a small animated board on the Tetris card), the models and the
 // credits. How it works, the benchmarks, fidelity and limits live in the How view.
 
-import { esc, fmtMs, debounce, backendBadge, highlight, wireCopy, modelGate, css, REPO, CDN } from "../ui.js";
+import { esc, fmtMs, debounce, backendBadge, highlight, wireCopy, modelGate, css, REPO } from "../ui.js";
 import { renderAnswers } from "../answers.js";
+import { loadCode } from "../code.js";
 
 const DOCS = `${REPO}/blob/main/docs`;
 
@@ -174,13 +175,13 @@ const SETS = {
   },
 };
 
-const SNIPPET = `import { Kevala } from "${CDN}";
-
-const kevala = await Kevala.load({ model: "laya" });
+function snippet(session) {
+  return `${loadCode(session)}
 const { answers } = await kevala.decide("Can you refund the duplicate charge by Friday?", {
   urgent: { type: "noul", instructions: "Does the text mention a deadline?" },
 });
 console.log(answers.urgent.noul); // P(yes), for example 0.94`;
+}
 
 const INSTALL = `pnpm add kevala
 
@@ -265,8 +266,9 @@ const EMBED = `<section class="tight" id="embed">
     <div>
       <div class="eyebrow">Embed</div>
       <h2>Add it to a page</h2>
-      <p class="muted">Import it from a CDN, or install the <a href="https://www.npmjs.com/package/kevala">kevala</a> package with pnpm. It needs no build step and no special headers, so any static host works. The first call downloads the model's int8 pack from Hugging Face and keeps it in the browser.</p>
+      <p class="muted">The snippet uses this website’s runtime and your selected model, size and backend. It needs no build step. The first load downloads the model pack from Hugging Face and caches it in the browser.</p>
       <div class="code"><pre data-f="install"></pre></div>
+      <p class="muted small">The <code>kevala@latest</code> npm release currently supports Laya and Kev-0.8B. Use the website import for the other models.</p>
       <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words, and describe every option.</p>
     </div>
     <div class="code"><pre data-f="snippet"></pre></div>
@@ -483,10 +485,20 @@ export function mount(el, { session }) {
   const answersEl = $("answers");
   const emptyEl = $("empty");
   const presetsEl = el.querySelector(".presets");
+  const exampleLinks = el.querySelectorAll('a[href^="examples/"]');
+  const updateExampleLinks = (s) => {
+    const model = s.model === "custom" ? s.customUrl : s.model;
+    const query = new URLSearchParams({ model: model || "", backend: s.backend || "auto" });
+    for (const link of exampleLinks) {
+      const path = link.getAttribute("href").split("?", 1)[0];
+      link.setAttribute("href", `${path}?${query}`);
+    }
+  };
 
   modelGate($("gate"), "try it live");
-  $("snippet").innerHTML = highlight(SNIPPET);
+  $("snippet").innerHTML = highlight(snippet(session));
   $("install").innerHTML = highlight(INSTALL);
+  updateExampleLinks(session);
 
   // the agent prompt is the skill file (one source for both), without its front matter
   const promptEl = $("prompt");
@@ -607,6 +619,8 @@ export function mount(el, { session }) {
   }
 
   const sync = (s) => {
+    updateExampleLinks(s);
+    $("snippet").innerHTML = highlight(snippet(s));
     const model = s.ready ? s.kevala : null;
     if (model === kevala) return;
     kevala = model;

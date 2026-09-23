@@ -1,8 +1,15 @@
 # kevala examples
 
-Small, complete pages. Each one imports kevala from the jsDelivr CDN, loads a model once and calls
-`decide` or `decideMany`. Everything it needs is in the file: copy one into your site and it
-works. No build step and no dependencies.
+Small, complete pages. Each one imports the current website runtime from
+`https://bvolpato.github.io/kevala/js/src/index.js`, loads a model once and calls `decide` or
+`decideMany`. Everything it needs is in the file: copy one into your site and it works. No build
+step and no helper dependencies.
+
+Each page accepts `?model=<model-id-or-kevala-url>&backend=<auto|webgpu|wasm>`. The model defaults to
+`laya` and the backend defaults to `auto` (WebGPU when available, then WebAssembly). Known model
+IDs include the catalog entries below; a custom `.kevala` URL can be passed as the `model` value.
+The page status or log shows the selected model. The examples use the website runtime because the
+current `kevala@latest` jsDelivr package does not yet include the newer model families.
 
 ## Run them
 
@@ -14,10 +21,8 @@ pnpm serve
 open http://127.0.0.1:8080/examples/basic.html
 ```
 
-The basic example loads Laya by default. Its first visit downloads the pinned Hugging Face
-checkpoint (about 850 MB) and converts it in the browser to a 479 MB int8 pack, which is cached:
-later visits load in about a second. Kev-0.8B can use the same browser conversion path; Kev-4B,
-Kev-9B, and all SemIf sizes use their pre-converted `.kevala` packs.
+With no query parameters, the examples use `model=laya` and `backend=auto`. First visits download
+the selected model's pinned pack (or convert a supported checkpoint) and cache it in the browser.
 
 The model menu and the API also expose `kev-0.8b`, `kev-4b`, `kev-9b`,
 `semif-qwen3.5-0.8b`, `semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
@@ -29,7 +34,7 @@ SemIf uses frozen Qwen3.5 instruction weights and direct option scoring, with no
 | --- | --- |
 | [`basic.html`](basic.html) | The minimum: `Kevala.load()` with progress, then one `decide()` with a `noul`, a `choice` and a `score` question, and the raw response. |
 | [`moderation-form.html`](moderation-form.html) | A comment form that checks the text on submit with three moderation questions (toxic, harassment, threat), written out in the file. `P >= 0.75` blocks, `0.45 to 0.75` holds for review, lower posts. Thresholds are constants at the top. |
-| [`llm-cascade.html`](llm-cascade.html) | A support widget. kevala classifies the intent; if it is confident (`P >= 0.9` and Laya's `act_probability >= 0.5`) and a canned answer exists, it answers at once; otherwise it calls a slow fake `askLLM()` you would replace with your API. Counts how many calls were saved. |
+| [`llm-cascade.html`](llm-cascade.html) | A support widget. kevala classifies the intent; if it is confident (`P >= 0.9` and an optional `act_probability >= 0.5`) and a canned answer exists, it answers at once; otherwise it calls a slow fake `askLLM()` you would replace with your API. Counts how many calls were saved. |
 | [`game-loop.html`](game-loop.html) | A ship dodging rocks. Each tick the code describes every move in words ("A rock is close, two rows above the ship") and asks one `noul` question for all moves in one `decideMany`; the ship takes the highest P(safe). At most one request is in flight, so the game never waits. |
 
 Writing good questions, in short: ask what the text *says* (perception), not what to do. Compute
@@ -46,7 +51,7 @@ r.answers.team.action.act_probability; // Laya only: its estimate that acting on
 r.timing;                            // { forward, total, tokens, batched } in ms
 ```
 
-Kev and SemIf follow the decoder response format (answers rounded to 2 places and
+Kev, SemIf, and Gemma 4 follow the decoder response format (answers rounded to 2 places and
 `raw_probabilities` at full precision, with no Laya `action`). SemIf also reports that its scores
 are conditional on the listed options and are not calibrated decision confidence. Code that must
 work with all model families should treat `action` and `probability_status` as optional, as
