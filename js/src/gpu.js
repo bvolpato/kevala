@@ -77,6 +77,7 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
   const rpl = device.createPipelineLayout({ bindGroupLayouts: [rlayout] });
   const config = matmulConfig(device);
+  if (kernel === "matmul_wide") config.splitTarget = 512;
   const mm = [];
   const reduce = [];
   await Promise.all(
@@ -88,7 +89,7 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
   return { layout, reduceLayout: rlayout, mm, reduce, ...config };
 }
 
-/** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */
+/** Conservative scratch bound for split targets up to 512 and 64 x 64 tiles. */
 export const SPLIT_SCRATCH = 8 * 96 * 64 * 64;
 
 function parseSubpackHeader(prefix) {
