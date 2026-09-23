@@ -123,6 +123,8 @@ The latest shared FP32 results cover Laya, Kev, SemIf, and Gemma in
 [exact byte conversion](docs/fp32-byte-conversion-performance.md). Gemma's separate
 [normalization fusion](docs/gemma-rms-residual-performance.md) includes both sizes'
 correctness checks.
+The Qwen-specific [FP32 attention tile report](docs/qwen-fp32-attention-performance.md)
+includes paired kernel measurements, full-model timings, and model-guard results.
 
 ## Base weights, instruction tuning, and precision
 

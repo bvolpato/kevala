@@ -228,6 +228,8 @@ impl Spec {
             ("SUBGROUPS", flag(self.subgroups)),
             ("SHAPE", flag(self.shape.is_some())),
             ("TILE", if self.f16 { "f16" } else { "f32" }.to_string()),
+            ("KEY_BLOCK", if self.f16 { "16" } else { "8" }.to_string()),
+            ("KEY_BUFFER_LEN", if self.f16 { "1024" } else { "512" }.to_string()),
             ("ROWS", self.rows.to_string()),
             ("GROUPS", self.groups.to_string()),
             ("BM", bm.to_string()),
