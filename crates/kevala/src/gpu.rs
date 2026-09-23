@@ -21,6 +21,8 @@ const SOURCES: &[(&str, &str)] = &[
     ("common", include_str!("wgsl/common.wgsl")),
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
+    ("quantize_imatrix", include_str!("wgsl/quantize_imatrix.wgsl")),
+    ("matmul_imatrix", include_str!("wgsl/matmul_imatrix.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
@@ -60,6 +62,8 @@ const SOURCES: &[(&str, &str)] = &[
 /// The kernels a runtime can ask for (everything but the snippets).
 pub const KERNELS: &[&str] = &[
     "matmul",
+    "quantize_imatrix",
+    "matmul_imatrix",
     "matmul_wide",
     "reduce",
     "norm",
