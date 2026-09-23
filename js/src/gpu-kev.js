@@ -89,7 +89,7 @@ export class GpuKev {
     const d = this.device;
     this.recurTiles = 2;
     const kernels = {
-      RMS: ["kev_rms", { subgroups: this.subgroup32 && !!globalThis.navigator?.gpu?.wgslLanguageFeatures?.has("subgroup_id") }],
+      RMS: ["kev_rms"],
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],

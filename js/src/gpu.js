@@ -397,7 +397,7 @@ export class GpuTrunk {
       wiShape[1] === cfg.hidden && wiShape[1] % 32 === 0;
     const [genericMm, pNorm, pRope, pAttn, pGeglu, pGather, pGateUp] = await Promise.all([
       matmulPipelines(d, this.wgsl),
-      kernel("norm", { subgroups: this.subgroup32 && !!globalThis.navigator?.gpu?.wgslLanguageFeatures?.has("subgroup_id") }),
+      kernel("norm"),
       kernel("rope"),
       kernel(...this.attnKernel),
       kernel("geglu"),
