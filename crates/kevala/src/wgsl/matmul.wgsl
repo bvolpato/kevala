@@ -31,7 +31,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
-var<workgroup> xs: array<vec4<{{TILE}}>, 512>; // [m][k/4]
+var<workgroup> xs: array<vec4<{{TILE}}>, {{XS_LEN}}>; // [m][k/4]
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WS_LEN}}>; // [n][(k/4) ^ (n & 7)], swizzled
 
 // four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
