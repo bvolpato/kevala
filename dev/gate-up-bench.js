@@ -4,6 +4,47 @@ import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, pipeline, reduceL
 // Compare a fused paired projection against the complete unfused operation:
 // separate GEMMs for GELU-tanh, or one packed GEMM for GeGLU and SwiGLU.
 // Each baseline includes its activation dispatch. Fused split-K is unsupported.
+// variant=stores or variant=signed_bytes changes only the rendered fusion source,
+// retaining original fusion as a separately timed and bit-exact reference.
+
+function fusedVariantSource(code, variant) {
+  if (variant === "original") return code;
+  if (variant === "signed_bytes") {
+    const old = `fn sx(w: u32) -> vec4<f32> {
+  let u = w ^ 0x80808080u;
+  let bytes = vec4<u32>(u, u >> 8u, u >> 16u, u >> 24u) & vec4<u32>(0xFFu);
+  return bitcast<vec4<f32>>(bytes | vec4<u32>(0x4B000000u)) - vec4<f32>(8388736.0);
+}`;
+    const next = `fn sx(w: u32) -> vec4<f32> {
+  let bytes = vec4<i32>(bitcast<i32>(w << 24u), bitcast<i32>(w << 16u), bitcast<i32>(w << 8u), bitcast<i32>(w)) >> vec4<u32>(24u);
+  return vec4<f32>(bytes);
+}`;
+    if (code.split(old).length !== 2) throw new Error("fused signed-byte transform no longer matches the baseline");
+    return code.replace(old, next).replace("// Four signed int8 weights as exact f32 values without integer-to-float\n// conversion. This is the same unpacking used by matmul.wgsl.", "// Sign-extend packed int8 lanes before exact f32 conversion.");
+  }
+  if (variant !== "stores") throw new Error(`unknown fused variant ${variant}`);
+  const marker = "  for (var j = 0u; j < 2u; j++) {";
+  const start = code.indexOf(marker);
+  if (start < 0 || code.indexOf(marker, start + 1) !== -1 || !code.slice(start).includes("Y[row * N + col] = activate(gate) * up;")) {
+    throw new Error("fused store transform no longer matches the baseline");
+  }
+  const helper = `fn pair_store(gate: f32, up: f32, row: u32, col: u32) {
+  if (row >= g.T || col >= p.N) { return; }
+  Y[row * p.N + col] = activate(gate) * up;
+}
+
+`;
+  let stores = "";
+  for (const [component, offset] of [["x", 0], ["y", 32]]) {
+    for (let row = 0; row < 8; row++) stores += `  pair_store(gate${row}.${component}, up${row}.${component}, m0 + lid.y + ${row * 8}u, n0 + lid.x + ${offset}u);\n`;
+  }
+  return code.slice(0, start).replace("@compute @workgroup_size(32, 8)", `${helper}@compute @workgroup_size(32, 8)`) + stores + "}\n";
+}
+
+async function sourceHash(code) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code));
+  return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 const logNode = document.getElementById("log");
 const log = (line) => { logNode.textContent += `${line}\n`; };
@@ -340,6 +381,8 @@ async function main() {
   const warmups = numberParam(query, "warmups", 2, 0, 10);
   const samples = numberParam(query, "samples", 5, 3, 20);
   const activation = numberParam(query, "activation", 0, 0, 2);
+  const variantName = query.get("variant") || "original";
+  const reverse = query.get("reverse") === "1";
   const packed = activation !== 0;
   const shapes = parseCases(query);
   const patterns = parsePatterns(query, shapes.length);
@@ -364,8 +407,10 @@ async function main() {
   const pairPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [pairLayout] });
   const geluPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [geluLayout] });
   const pairCode = source("matmul_gate_up", { f16: false, rows: 4, groups: 1, splitTarget: target });
+  const candidateCode = fusedVariantSource(pairCode, variantName);
   const geluCode = source(["gemma4_gelu", "geglu", "kev_silumul"][activation]);
-  const pairPipeline = await pipeline(device, pairCode, "matmul_gate_up", pairPipelineLayout);
+  const pairPipeline = await pipeline(device, candidateCode, `matmul_gate_up.${variantName}`, pairPipelineLayout);
+  const originalPipeline = variantName === "original" ? pairPipeline : await pipeline(device, pairCode, "matmul_gate_up.original", pairPipelineLayout);
   const geluPipeline = await pipeline(device, geluCode, "gemma4_gelu", geluPipelineLayout);
   const genericPipelines = new Map();
   for (const rows of [1, 2, 3, 4]) {
@@ -381,6 +426,7 @@ async function main() {
   const correctness = { ok: true, cpuReference: "f64 dot reference over f32 inputs and dequantized Q8 weights, rounded to f32 before activation", activation: ["gelu-tanh", "gelu-erf", "silu"][activation], cpu: [], variants: [], errors: [] };
   const fusedMedians = [];
   const baselineMedians = [];
+  const originalMedians = [];
 
   for (let caseIndex = 0; caseIndex < shapes.length; caseIndex++) {
     const [T, N, K] = shapes[caseIndex];
@@ -403,7 +449,8 @@ async function main() {
     const upS = makeBuffer(device, scaleBytes, U.STORAGE | U.COPY_DST, `${label}.upS`);
     const gate = makeBuffer(device, bytes * (packed ? 2 : 1), U.STORAGE | U.COPY_SRC, `${label}.gate`);
     const up = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC, `${label}.up`);
-    const fused = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC, `${label}.fused`);
+    const fused = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC | U.COPY_DST, `${label}.fused`);
+    const unwritten = new Float32Array(bytes / 4).fill(NaN);
     const zeroBias = makeBuffer(device, baselineN * 4, U.STORAGE | U.COPY_DST, `${label}.bias`);
     const partialFloats = Math.max(1, mmSplits(T, baselineN, K, target, 16 * rowsPerThread(T), 64) * T * baselineN);
     const part = makeBuffer(device, partialFloats * 4, U.STORAGE, `${label}.partials`);
@@ -447,39 +494,58 @@ async function main() {
       dispatchGelu(pass, geluPipeline, geluGroup, T, N);
     };
     const fusedSequence = (pass) => dispatchFused(pass, pairPipeline, fusedGroup, T, N);
+    const originalSequence = (pass) => dispatchFused(pass, originalPipeline, fusedGroup, T, N);
+    const sequences = variantName === "original" ? [baselineSequence, fusedSequence] : [baselineSequence, originalSequence, fusedSequence];
     const reps = Math.max(1, Math.min(32, Math.round(2e9 / Math.max(1, 2 * T * N * K))));
     for (let i = 0; i < warmups; i++) {
-      await runSequence(device, null, i & 1 ? fusedSequence : baselineSequence, 1, uncaptured, `${label} warmup`);
+      for (const sequence of sequences) await runSequence(device, null, sequence, 1, uncaptured, `${label} warmup`);
     }
     const timer = makeTimer(device, reps);
     const baselineSamples = [];
     const fusedSamples = [];
+    const originalSamples = [];
     for (let i = 0; i < samples; i++) {
-      if (i & 1) {
-        fusedSamples.push(await runSequence(device, timer, fusedSequence, reps, uncaptured, `${label} fused sample`));
-        baselineSamples.push(await runSequence(device, timer, baselineSequence, reps, uncaptured, `${label} baseline sample`));
-      } else {
-        baselineSamples.push(await runSequence(device, timer, baselineSequence, reps, uncaptured, `${label} baseline sample`));
-        fusedSamples.push(await runSequence(device, timer, fusedSequence, reps, uncaptured, `${label} fused sample`));
+      const order = Array.from({ length: sequences.length }, (_, j) => (i + j) % sequences.length);
+      if ((Math.floor(i / sequences.length) + Number(reverse)) & 1) order.reverse();
+      for (const index of order) {
+        const ms = await runSequence(device, timer, sequences[index], reps, uncaptured, `${label} variant${index} sample`);
+        if (index === 0) baselineSamples.push(ms);
+        else if (index === sequences.length - 1) fusedSamples.push(ms);
+        else originalSamples.push(ms);
       }
     }
     const baselineMedian = median(baselineSamples);
     const fusedMedian = median(fusedSamples);
+    const originalMedian = variantName === "original" ? fusedMedian : median(originalSamples);
     baselineMedians.push(baselineMedian);
     fusedMedians.push(fusedMedian);
+    originalMedians.push(originalMedian);
 
+    device.queue.writeBuffer(fused, 0, unwritten);
     await runSequence(device, null, baselineSequence, 1, uncaptured, `${label} baseline correctness`);
     const baselineOutput = await readBuffer(device, fused, bytes, uncaptured, `${label} baseline output`);
+    device.queue.writeBuffer(fused, 0, unwritten);
     await runSequence(device, null, fusedSequence, 1, uncaptured, `${label} fused correctness`);
     const fusedOutput = await readBuffer(device, fused, bytes, uncaptured, `${label} fused output`);
+    let originalOutput = fusedOutput;
+    if (variantName !== "original") {
+      device.queue.writeBuffer(fused, 0, unwritten);
+      await runSequence(device, null, originalSequence, 1, uncaptured, `${label} original fusion correctness`);
+      originalOutput = await readBuffer(device, fused, bytes, uncaptured, `${label} original fusion output`);
+    }
     const finiteBaseline = finiteSummary(baselineOutput, `${label} baseline`);
     const finiteFused = finiteSummary(fusedOutput, `${label} fused`);
     const cpuBaseline = compareCpu(input, baselineOutput, `${label} baseline`);
     const cpuFused = compareCpu(input, fusedOutput, `${label} fused`);
+    const cpuOriginal = variantName === "original" ? cpuFused : compareCpu(input, originalOutput, `${label} original fusion`);
     const variant = compareArrays(baselineOutput, fusedOutput);
-    correctness.cpu.push({ shape: label, baseline: cpuBaseline, fused: cpuFused });
+    const fusionVariant = compareArrays(originalOutput, fusedOutput);
+    fusionVariant.ok &&= fusionVariant.bitMismatches === 0 && finiteSummary(originalOutput, `${label} original fusion`).ok;
+    correctness.cpu.push({ shape: label, baseline: cpuBaseline, original: cpuOriginal, fused: cpuFused });
     correctness.variants.push({ shape: label, ...variant });
-    if (!finiteBaseline.ok || !finiteFused.ok || !cpuBaseline.ok || !cpuFused.ok || !variant.ok) correctness.ok = false;
+    correctness.fusionVariants ||= [];
+    correctness.fusionVariants.push({ shape: label, ...fusionVariant });
+    if (!finiteBaseline.ok || !finiteFused.ok || !cpuBaseline.ok || !cpuFused.ok || !cpuOriginal.ok || !variant.ok || !fusionVariant.ok) correctness.ok = false;
     const entry = {
       shape: label,
       T,
@@ -495,15 +561,19 @@ async function main() {
       reps,
       baselineSamples,
       fusedSamples,
+      originalSamples: variantName === "original" ? fusedSamples : originalSamples,
       baselineMedianMs: baselineMedian,
       fusedMedianMs: fusedMedian,
+      originalMedianMs: originalMedian,
       speedup: baselineMedian / fusedMedian,
+      speedupVsOriginal: originalMedian / fusedMedian,
+      fusionVariantBitMismatches: fusionVariant.bitMismatches,
       cpuSamples: cpuFused.samples,
       variantMaxAbs: variant.maxAbs,
       variantMaxRelative: variant.maxRelative,
     };
     cases.push(entry);
-    log(`${label}: baseline=${baselineMedian.toFixed(3)}ms fused=${fusedMedian.toFixed(3)}ms speedup=${entry.speedup.toFixed(3)}x baselineSplits=${entry.baselineSplits}`);
+    log(`${label}: generic=${baselineMedian.toFixed(3)}ms original=${originalMedian.toFixed(3)}ms ${variantName}=${fusedMedian.toFixed(3)}ms vsGeneric=${entry.speedup.toFixed(3)}x vsOriginal=${entry.speedupVsOriginal.toFixed(3)}x bits=${fusionVariant.bitMismatches}`);
     timer.querySet?.destroy();
     timer.resolved?.destroy();
     timer.read?.destroy();
@@ -519,6 +589,10 @@ async function main() {
     metricMs,
     metric: "geometric mean of fused paired projection and activation GPU milliseconds",
     baselineMetricMs,
+    originalMetricMs: geometric(originalMedians),
+    speedupVsOriginal: geometric(originalMedians) / metricMs,
+    variant: variantName,
+    reverse,
     activation,
     packed,
     fusedDispatches: 1,
@@ -529,6 +603,15 @@ async function main() {
     target,
     cases,
     adapter: provenance,
+    provenance: {
+      sourceBaseCommit: "07e17a9afb2a065493ff4ef5de1c4664b394a474",
+      sourceTransform: variantName,
+      wasmUrl: source.wasmUrl,
+      page: location.href,
+      userAgent: navigator.userAgent,
+      shaderHashes: { original: await sourceHash(pairCode), candidate: await sourceHash(candidateCode), activation: await sourceHash(geluCode) },
+      scope: "Whole generic projection plus activation versus original fusion and one independently transformed fusion; no production shader changes",
+    },
     correctness,
   };
   if (!correctness.ok) result.error = "fused gate/up correctness checks failed";
