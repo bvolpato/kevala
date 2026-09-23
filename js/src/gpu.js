@@ -74,16 +74,17 @@ export function reduceLayout(device) {
  * limits this kernel (1.6-1.75x faster on Apple GPUs); products and sums stay f32, and the
  * rounding (about 3e-4 relative) is far below the int8 weight quantization.
  */
-export async function matmulPipelines(device, wgsl, kernel = "matmul") {
-  const layout = matmulLayout(device);
-  const rlayout = reduceLayout(device);
+export async function matmulPipelines(device, wgsl, kernel = "matmul", configOverrides = {}) {
+  const { rows: variants = [1, 2, 3, 4], layout: suppliedLayout, reduceLayout: suppliedReduceLayout, ...overrides } = configOverrides;
+  const layout = suppliedLayout || matmulLayout(device);
+  const rlayout = suppliedReduceLayout || reduceLayout(device);
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
   const rpl = device.createPipelineLayout({ bindGroupLayouts: [rlayout] });
-  const config = matmulConfig(device);
+  const config = { ...matmulConfig(device), ...overrides };
   const mm = [];
   const reduce = [];
   await Promise.all(
-    [1, 2, 3, 4].flatMap((rows) => [
+    variants.flatMap((rows) => [
       pipeline(device, wgsl(kernel, { ...config, rows }), `${kernel}_r${rows}`, pl).then((p) => (mm[rows] = p)),
       pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
