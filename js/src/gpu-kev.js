@@ -8,7 +8,7 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, encodeMatmul, mmSplits, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
 import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
