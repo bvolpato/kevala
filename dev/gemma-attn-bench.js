@@ -374,7 +374,7 @@ async function main() {
       correctness: cpu,
     });
     log(`${c.label}: ${medianMs.toFixed(4)} ms (${timer.method}, ${reps} dispatches/sample), ${cpu.ok ? "correct" : "FAILED"} maxAbs=${cpu.maxAbs?.toExponential(2) || "n/a"}`);
-    for (const buffer of [globals, params, Q, K, V, O]) buffer.destroy();
+    for (const buffer of [globals, params, Q, K, V, O, POS]) buffer.destroy();
   }
   const metricMs = Math.exp(medians.reduce((sum, value) => sum + Math.log(value), 0) / medians.length);
   const result = {
