@@ -29,17 +29,18 @@ export function matmulConfig(device) {
 
 /**
  * Encodes a matmul op (bind groups `group` and `reduce`), splitting K when it helps. The kernel
- * variant covers 16 R rows and 64 J columns per workgroup.
+ * variant covers 16 R rows and 64 J columns per workgroup. `activeT` can trim output
+ * dispatches while T retains the shader's split rule and partial-buffer stride.
  */
-export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1) {
+export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1, activeT = T) {
   const bm = 16 * R;
   const bn = 64 * J;
   const splits = mmSplits(T, op.N, op.K, target, bm, bn);
   pass.setPipeline(pMatmul);
   pass.setBindGroup(0, op.group);
-  pass.dispatchWorkgroups(Math.ceil(op.N / bn), Math.ceil(T / bm), splits);
+  pass.dispatchWorkgroups(Math.ceil(op.N / bn), Math.ceil(activeT / bm), splits);
   if (splits > 1) {
-    const n = Math.ceil((T * op.N) / 256);
+    const n = Math.ceil((activeT * op.N) / 256);
     pass.setPipeline(pReduce);
     pass.setBindGroup(0, op.reduce);
     pass.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
@@ -415,6 +416,7 @@ export class GpuTrunk {
     this.pGeglu = pGeglu;
     this.pGather = pGather;
     this.globals = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.compactGlobals = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
     const f32buf = (arr, usage = U.STORAGE) => {
       const b = d.createBuffer({ size: Math.max(16, arr.byteLength), usage: usage | U.COPY_DST });
       d.queue.writeBuffer(b, 0, arr);
@@ -490,7 +492,7 @@ export class GpuTrunk {
     const T = (n) => this.tensors.get(n);
     const bg = (pipeline, entries) =>
       d.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries.map((b, i) => ({ binding: i, resource: { buffer: b } })) });
-    const mm = (w, bias, input, output, mode) => {
+    const mm = (w, bias, input, output, mode, globals = this.globals) => {
       const e = T(w);
       const [N, K] = e.info.shape;
       const b = bias ? T(bias).buf : this.zeros;
@@ -500,13 +502,13 @@ export class GpuTrunk {
         label: "mm." + w.split(".").pop(),
         N,
         K,
-        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.globals, u, input, e.buf, e.sbuf, b, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
-        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [this.globals, u, this.part, b, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        group: d.createBindGroup({ layout: this.mm.layout, entries: [globals, u, input, e.buf, e.sbuf, b, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [globals, u, this.part, b, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
-    const norm = (w, b, input, output, typed = false) => ({
+    const norm = (w, b, input, output, typed = false, globals = this.globals) => ({
       kind: "norm",
-      group: bg(this.pNorm, [this.globals, this.uniform([D, b ? 1 : 0, typed ? 1 : 0, { f: typed ? cfg.norm_eps : b ? cfg.head_norm_eps : cfg.norm_eps }]), input, w, b || this.zeros, output, this.tok, this.typeEmb]),
+      group: bg(this.pNorm, [globals, this.uniform([D, b ? 1 : 0, typed ? 1 : 0, { f: typed ? cfg.norm_eps : b ? cfg.head_norm_eps : cfg.norm_eps }]), input, w, b || this.zeros, output, this.tok, this.typeEmb]),
     });
     const ops = [];
     for (let i = 0; i < cfg.layers; i++) {
@@ -527,12 +529,24 @@ export class GpuTrunk {
     // bridge: final encoder norm plus the question-type embedding, in place
     ops.push(norm(this.finalNorm, null, this.x, this.h, true));
     ops.push({ kind: "copy" });
+    this.compactHeadOps = null;
     for (let i = 0; i < cfg.head_layers; i++) {
       const n = (s) => `head.${i}.${s}`;
       ops.push(norm(T(n("norm1.w")).buf, T(n("norm1.b")).buf, this.x, this.h));
       ops.push(mm(n("in_proj"), n("in_proj.b"), this.h, this.qkv, 0));
       ops.push({ kind: "attn", group: bg(this.pAttn, [this.globals, this.uniform([D, 3 * D, 0, 0]), this.qkv, this.blocks, this.ctx]) });
       ops.push(mm(n("out_proj"), n("out_proj.b"), this.ctx, this.x, 1));
+      if (i === cfg.head_layers - 1) {
+        this.headTailAt = ops.length;
+        // Gather before the final row-local norm and FFN. The residual is already compact,
+        // so the final projection writes the scorer's rows without another gather.
+        this.compactHeadOps = [
+          { kind: "gather", label: "gather.head.compact", group: bg(this.pGather, [this.globals, this.x, this.rowsBuf, this.gathered]) },
+          { ...norm(T(n("norm2.w")).buf, T(n("norm2.b")).buf, this.gathered, this.h, false, this.compactGlobals), compact: true, label: "norm.head.compact" },
+          { ...mm(n("lin1"), n("lin1.b"), this.h, this.act, 2, this.compactGlobals), compact: true, label: "mm.head.compact.lin1" },
+          { ...mm(n("lin2"), n("lin2.b"), this.act, this.gathered, 1, this.compactGlobals), compact: true, label: "mm.head.compact.lin2" },
+        ];
+      }
       ops.push(norm(T(n("norm2.w")).buf, T(n("norm2.b")).buf, this.x, this.h));
       ops.push(mm(n("lin1"), n("lin1.b"), this.h, this.act, 2));
       ops.push(mm(n("lin2"), n("lin2.b"), this.act, this.x, 1));
@@ -571,13 +585,20 @@ export class GpuTrunk {
     for (const sg of segs) for (let q0 = 0; q0 < sg.len; q0 += this.attnQueries) blocks.push(sg.start, sg.len, q0, 0);
     const nblocks = blocks.length / 4;
     q.writeBuffer(this.globals, 0, new Uint32Array([tokens, rows.length, nblocks, 0]));
+    const compactHead = this.compactHeadOps && this.mm.f16 === false && this.mm.groups === 1 &&
+      (this.gpuKernel === "auto" || this.gpuKernel === "generic") && rows.length > 0 && rows.length <= 16 && rows.length < tokens;
+    // Preserve the original number of M tiles inside mm_splits, using existing R1 shaders.
+    // Both shaders use virtualT for PART strides; dispatch only the selected physical rows.
+    const virtualT = Math.min(tokens, Math.ceil(tokens / (16 * rowsPerThread(tokens, this.mm))) * 16);
+    if (compactHead) q.writeBuffer(this.compactGlobals, 0, new Uint32Array([virtualT, rows.length, 0, 0]));
     q.writeBuffer(this.blocks, 0, new Uint32Array(blocks));
     q.writeBuffer(this.x, 0, x);
     q.writeBuffer(this.tok, 0, tok);
     q.writeBuffer(this.rowsBuf, 0, new Uint32Array(rows));
     const prof = this.profiler;
     const heads = this.cfg.heads;
-    const groups = tokens > YIELD_TOKENS && !prof ? chunks(this.ops, YIELD_CHUNKS) : [this.ops];
+    const ops = compactHead ? [...this.ops.slice(0, this.headTailAt), ...this.compactHeadOps] : this.ops;
+    const groups = tokens > YIELD_TOKENS && !prof ? chunks(ops, YIELD_CHUNKS) : [ops];
     let enc = d.createCommandEncoder();
     for (let gi = 0; gi < groups.length; gi++) {
     // let the page render between chunks of a long pass
@@ -594,13 +615,17 @@ export class GpuTrunk {
       pass.setBindGroup(0, op.group);
       switch (op.kind) {
         case "mm": {
+          if (op.compact) {
+            dispatchMatmul(pass, this.mm.mm[1], this.mm.reduce[1], op, virtualT, this.mm.splitTarget, 1, 1, rows.length);
+            break;
+          }
           const kernel = this.gpuKernel === "auto" ? this.selectMatmulKernel(this.tuning.selection, op.N, op.K, tokens) : this.gpuKernel;
           encodeMatmul(pass, this.tuning.pipelines[kernel], op, tokens);
           break;
         }
         case "norm":
           pass.setPipeline(this.pNorm);
-          pass.dispatchWorkgroups(tokens);
+          pass.dispatchWorkgroups(op.compact ? rows.length : tokens);
           break;
         case "rope":
           pass.setPipeline(this.pRope);

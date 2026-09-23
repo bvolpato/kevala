@@ -131,6 +131,9 @@ The [FP32 BM56 row tile report](docs/fp32-row56-performance.md) includes final-W
 matmul timings, production-shaped model repeats, and model guards.
 The [subgroup direct-load recurrence report](docs/recurrence-direct-performance.md) includes
 production-rendered recurrence timings, repeated model suites, and parity guards.
+The [Laya compact final-head report](docs/laya-compact-head-performance.md) records
+a 2.63% reduction in summed GPU time across two paired production-build runs,
+with exact hidden-output comparisons and the unchanged Chrome probability-limit miss.
 
 ## Base weights, instruction tuning, and precision
 
