@@ -18,6 +18,8 @@ const publicHarnesses = [
   "dev/convert-test.html",
   "dev/decision-bench.html",
   "dev/decision-bench.js",
+  "dev/gemma-attn-bench.html",
+  "dev/gemma-attn-bench.js",
   "dev/gpu-bench.html",
   "dev/gpu-bench.js",
   "dev/kernels.html",

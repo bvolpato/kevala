@@ -62,6 +62,10 @@ of under 2 GiB; use WebGPU or the native 64-bit CLI with sufficient memory.
 
 ## Verification
 
+The [Gemma attention performance report](gemma-attention-performance.md) records the
+GPU kernel timings, numerical checks, and rejected optimization experiments for
+the tiled attention implementation.
+
 [`tools/golden_gemma.py`](../tools/golden_gemma.py) runs the upstream text model and records
 the exact chat prompt, token IDs, selected logits, probabilities, and source revision.
 Tokenization must match exactly. Native and browser comparisons must report probability
