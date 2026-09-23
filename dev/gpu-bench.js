@@ -56,10 +56,10 @@ function parseKernel(raw, T, config) {
   const normalized = `${name}${tail}`;
   const f16Available = config.f16;
   if (normalized === "runtime") {
-    return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups, baseline };
+    return { label: raw, name: "matmul", f16: config.f16, tileF16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups, baseline };
   }
   const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_packed"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
@@ -67,10 +67,11 @@ function parseKernel(raw, T, config) {
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
-  if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
+  if ((match[1].startsWith("matmul_wide") || match[1] === "matmul_packed") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline };
+  const tileF16 = f16 || match[1] === "matmul_packed";
+  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, tileF16, target, rows, groups, baseline };
 }
 
 function makeRng(seed) {
@@ -103,13 +104,15 @@ function signedByte(value) {
   return value < 128 ? value : value - 256;
 }
 
-function cpuValue(input, row, col, mode, withBias) {
+function cpuValue(input, row, col, mode, withBias, tileF16) {
   const { T, N, K, x, w, scales, bias, residual } = input;
   let sum = 0;
   const blocks = K / 32;
   for (let k = 0; k < K; k++) {
-    const weight = signedByte(w[col * K + k]) * scales[col * blocks + Math.floor(k / 32)];
-    sum = Math.fround(sum + Math.fround(x[row * K + k] * weight));
+    const weight = Math.fround(signedByte(w[col * K + k]) * scales[col * blocks + Math.floor(k / 32)]);
+    const xValue = tileF16 ? Math.f16round(x[row * K + k]) : x[row * K + k];
+    const weightValue = tileF16 ? Math.f16round(weight) : weight;
+    sum = Math.fround(sum + Math.fround(xValue * weightValue));
   }
   if (withBias) sum = Math.fround(sum + bias[col]);
   if (mode === 1) sum = Math.fround(sum + residual[row * N + col]);
@@ -142,7 +145,7 @@ function compareCpu(input, values, kernel, mode, withBias) {
   for (const index of indices) {
     const row = Math.floor(index / input.N);
     const col = index % input.N;
-    const expected = cpuValue(input, row, col, mode, withBias);
+    const expected = cpuValue(input, row, col, mode, withBias, kernel.tileF16);
     const actual = values[index];
     if (!Number.isFinite(actual) || !Number.isFinite(expected)) {
       return { ok: false, message: `non-finite result at row ${row}, col ${col}`, mode, withBias };
@@ -161,13 +164,18 @@ function compareCpu(input, values, kernel, mode, withBias) {
   return { ok: true, samples: indices.length, maxAbs, maxRelative, worst };
 }
 
-function compareVariants(outputs, labels, tolerance) {
+function compareVariants(outputs, variants) {
+  const labels = variants.map((variant) => variant.label);
   if (labels.length < 2) return { ok: true, samples: 0, maxAbs: 0, maxRelative: 0 };
   const baseline = outputs[labels[0]];
   let maxAbs = 0;
   let maxRelative = 0;
-  for (const label of labels.slice(1)) {
+  for (const variant of variants.slice(1)) {
+    const label = variant.label;
     const values = outputs[label];
+    const tolerance = variants[0].tileF16 || variant.tileF16
+      ? { abs: 0.03, relative: 0.002 }
+      : { abs: 0.0005, relative: 0.0001 };
     for (let i = 0; i < baseline.length; i++) {
       const abs = Math.abs(values[i] - baseline[i]);
       maxAbs = Math.max(maxAbs, abs);
@@ -341,11 +349,12 @@ async function main() {
   const allVariants = variantsFor(shapes[0][0]);
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
+  if (allVariants.some((variant) => variant.tileF16) && typeof Math.f16round !== "function") {
+    throw new Error("packed/native-f16 CPU checks require Math.f16round in this browser");
+  }
   const cases = [];
   const correctness = { ok: true, cpu: [], variants: [], errors: [] };
   const medians = [];
-  const variantTolerance = { abs: device.features.has("shader-f16") ? 0.03 : 0.0005, relative: device.features.has("shader-f16") ? 0.002 : 0.0001 };
-
   for (let shapeIndex = 0; shapeIndex < shapes.length; shapeIndex++) {
     const shape = shapes[shapeIndex];
     const [T, N, K] = shape;
@@ -439,7 +448,7 @@ async function main() {
         }, `${caseLabel(shape)} epilogue reset`, uncaptured);
       }
     }
-    const variantCheck = compareVariants(outputs, labels, variantTolerance);
+    const variantCheck = compareVariants(outputs, variantObjects);
     correctness.variants.push({ shape: caseLabel(shape), ...variantCheck });
     if (!variantCheck.ok) correctness.ok = false;
     const shapeMedians = timings.map((item) => item.medianMs);
@@ -461,7 +470,7 @@ async function main() {
     samples,
     kernels: labels,
     baselineWasm,
-    variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
+    variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name, shaderF16: variant.f16, tileF16: variant.tileF16 }])),
     cases,
     adapter: provenance,
     correctness,
