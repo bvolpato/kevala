@@ -1,4 +1,4 @@
-// Gemma attention: four lanes cooperate on each of 64 keys, then reduce a
+// Gemma attention: eight lanes cooperate on each of 32 keys, then reduce a
 // 128-key softmax tile. Output dimensions stay in registers across tiles.
 //#include common
 
@@ -28,30 +28,30 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var acc1 = 0.0;
   let start = select(0u, t + 1u - min(t + 1u, p.window), p.window > 0u);
   let end = select(g.T, t + 1u, p.causal != 0u);
-  let key_lane = lane % 4u;
+  let key_lane = lane % 8u;
   for (var j0 = start; j0 < end; j0 += 128u) {
-    for (var block = 0u; block < 2u; block++) {
-      let j = j0 + block * 64u + lane / 4u;
+    for (var block = 0u; block < 4u; block++) {
+      let j = j0 + block * 32u + lane / 8u;
       let kbase = j * p.kv_heads * H + kv_head * H;
       var sum = 0.0;
       if (j < end) {
         if (H % 4u == 0u) {
-          for (var d = key_lane * 4u; d < H; d += 16u) {
+          for (var d = key_lane * 4u; d < H; d += 32u) {
             let qv = vec4<f32>(qtile[d], qtile[d + 1u], qtile[d + 2u], qtile[d + 3u]);
             let kv = vec4<f32>(K[kbase + d], K[kbase + d + 1u], K[kbase + d + 2u], K[kbase + d + 3u]);
             sum += dot(qv, kv);
           }
         } else {
-          for (var d = key_lane; d < H; d += 4u) { sum += qtile[d] * K[kbase + d]; }
+          for (var d = key_lane; d < H; d += 8u) { sum += qtile[d] * K[kbase + d]; }
         }
       }
       partial[lane] = sum;
       workgroupBarrier();
-      for (var stride = 2u; stride > 0u; stride >>= 1u) {
+      for (var stride = 4u; stride > 0u; stride >>= 1u) {
         if (key_lane < stride) { partial[lane] += partial[lane + stride]; }
         workgroupBarrier();
       }
-      if (key_lane == 0u) { scores[block * 64u + lane / 4u] = select(-3.402823466e+38, partial[lane], j < end); }
+      if (key_lane == 0u) { scores[block * 32u + lane / 8u] = select(-3.402823466e+38, partial[lane], j < end); }
       workgroupBarrier();
     }
     partial[lane] = -3.402823466e+38;
