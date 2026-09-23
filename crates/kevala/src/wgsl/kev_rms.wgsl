@@ -14,7 +14,8 @@ var<workgroup> red: array<f32, 256>;
 @compute @workgroup_size(256)
 //#if SUBGROUPS
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32,
-        @builtin(subgroup_id) subgroup: u32, @builtin(subgroup_invocation_id) lane: u32) {
+        @builtin(subgroup_id) subgroup: u32, @builtin(subgroup_invocation_id) lane: u32,
+        @builtin(num_subgroups) subgroup_count: u32) {
 //#else
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32) {
 //#endif
@@ -29,14 +30,19 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
 //#if SUBGROUPS
   // Preserve the tree's 128, 64, 32, 16, 8, 4, 2, 1 addition order.
   for (var k = 128u; k > 32u; k >>= 1u) { if (l < k) { red[l] += red[l + k]; } workgroupBarrier(); }
-  var tail = 0.0;
-  if (subgroup == 0u) { tail = red[lane] + red[lane + 32u]; }
-  for (var k = 16u; k > 0u; k >>= 1u) {
-    let other = subgroupShuffleXor(tail, k);
-    if (lane < k) { tail += other; }
+  // Eight 32-lane subgroups account for every invocation, with no inactive lanes.
+  if (subgroup_count == 8u) {
+    var tail = 0.0;
+    if (subgroup == 0u) { tail = red[lane] + red[lane + 32u]; }
+    for (var k = 16u; k > 0u; k >>= 1u) {
+      let other = subgroupShuffleXor(tail, k);
+      if (lane < k) { tail += other; }
+    }
+    if (subgroup == 0u && lane == 0u) { red[0] = tail; }
+    workgroupBarrier();
+  } else {
+    for (var k = 32u; k > 0u; k >>= 1u) { if (l < k) { red[l] += red[l + k]; } workgroupBarrier(); }
   }
-  if (subgroup == 0u && lane == 0u) { red[0] = tail; }
-  workgroupBarrier();
 //#else
   for (var k = 128u; k > 0u; k >>= 1u) { if (l < k) { red[l] += red[l + k]; } workgroupBarrier(); }
 //#endif

@@ -133,6 +133,7 @@ export class GpuGemma4 {
   constructor(gpu, layout, cfg) {
     U = GPUBufferUsage;
     this.device = gpu.device;
+    this.subgroup32 = !!gpu.subgroup32;
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.gpuKernel = gpu.kernel || "auto";
@@ -203,7 +204,8 @@ export class GpuGemma4 {
     if (miss.length) throw new Error(`Gemma 4 GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
     const generic = await matmulPipelines(d, this.wgsl);
-    const built = await Promise.all(GEMMA4_KERNELS.map(async ([key, name]) => [key, await pipeline(d, this.wgsl(name), name)]));
+    const rmsSubgroups = this.subgroup32 && !!globalThis.navigator?.gpu?.wgslLanguageFeatures?.has("subgroup_id");
+    const built = await Promise.all(GEMMA4_KERNELS.map(async ([key, name]) => [key, await pipeline(d, this.wgsl(name, { subgroups: key === "RMS" && rmsSubgroups }), name)]));
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;

@@ -16,7 +16,7 @@ struct P { D: u32, bias: u32, typed: u32, eps: f32 }
 var<workgroup> red: array<f32, 256>;
 
 //#if SUBGROUPS
-fn reduce(v: f32, l: u32, subgroup: u32, lane: u32) -> f32 {
+fn reduce(v: f32, l: u32, subgroup: u32, lane: u32, subgroup_count: u32) -> f32 {
 //#else
 fn reduce(v: f32, l: u32) -> f32 {
 //#endif
@@ -28,14 +28,22 @@ fn reduce(v: f32, l: u32) -> f32 {
     if (l < s) { red[l] += red[l + s]; }
     workgroupBarrier();
   }
-  var tail = 0.0;
-  if (subgroup == 0u) { tail = red[lane] + red[lane + 32u]; }
-  for (var s = 16u; s > 0u; s >>= 1u) {
-    let other = subgroupShuffleXor(tail, s);
-    if (lane < s) { tail += other; }
+  // Eight 32-lane subgroups account for every invocation, with no inactive lanes.
+  if (subgroup_count == 8u) {
+    var tail = 0.0;
+    if (subgroup == 0u) { tail = red[lane] + red[lane + 32u]; }
+    for (var s = 16u; s > 0u; s >>= 1u) {
+      let other = subgroupShuffleXor(tail, s);
+      if (lane < s) { tail += other; }
+    }
+    if (subgroup == 0u && lane == 0u) { red[0] = tail; }
+    workgroupBarrier();
+  } else {
+    for (var s = 32u; s > 0u; s >>= 1u) {
+      if (l < s) { red[l] += red[l + s]; }
+      workgroupBarrier();
+    }
   }
-  if (subgroup == 0u && lane == 0u) { red[0] = tail; }
-  workgroupBarrier();
 //#else
   for (var s = 128u; s > 0u; s >>= 1u) {
     if (l < s) { red[l] += red[l + s]; }
@@ -50,7 +58,8 @@ fn reduce(v: f32, l: u32) -> f32 {
 @compute @workgroup_size(256)
 //#if SUBGROUPS
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32,
-        @builtin(subgroup_id) subgroup: u32, @builtin(subgroup_invocation_id) lane: u32) {
+        @builtin(subgroup_id) subgroup: u32, @builtin(subgroup_invocation_id) lane: u32,
+        @builtin(num_subgroups) subgroup_count: u32) {
 //#else
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32) {
 //#endif
@@ -62,14 +71,14 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var s = 0.0;
   for (var i = 0u; i < 4u; i++) { v[i] = X[base + l + i * 256u]; s += v[i]; }
 //#if SUBGROUPS
-  let mean = reduce(s, l, subgroup, lane) / f32(D);
+  let mean = reduce(s, l, subgroup, lane, subgroup_count) / f32(D);
 //#else
   let mean = reduce(s, l) / f32(D);
 //#endif
   var q = 0.0;
   for (var i = 0u; i < 4u; i++) { let d = v[i] - mean; q += d * d; }
 //#if SUBGROUPS
-  let inv = inverseSqrt(reduce(q, l, subgroup, lane) / f32(D) + p.eps);
+  let inv = inverseSqrt(reduce(q, l, subgroup, lane, subgroup_count) / f32(D) + p.eps);
 //#else
   let inv = inverseSqrt(reduce(q, l) / f32(D) + p.eps);
 //#endif
