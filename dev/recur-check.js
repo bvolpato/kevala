@@ -316,6 +316,14 @@ async function main() {
     gpu.device.lost.then((info) => (lost.value = info));
     gpu.device.addEventListener("uncapturederror", (event) => uncaptured.push(event.error?.message || String(event.error)));
     const device = gpu.device;
+    const subgroupParam = query.get("subgroups");
+    if (subgroupParam !== null && subgroupParam !== "0" && subgroupParam !== "1") {
+      throw new Error(`subgroups must be 0 or 1, got ${subgroupParam}`);
+    }
+    const useSubgroups = subgroupParam === "1";
+    if (useSubgroups && (!device.features.has("subgroups") || !gpu.subgroup4)) {
+      throw new Error("subgroups=1 requested, but this device has no usable subgroup4 path");
+    }
     timer = makeTimer(device);
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
@@ -329,7 +337,7 @@ async function main() {
       const sourceKey = source === current ? "current" : "baseline";
       const cfgKey = `${sourceKey}|${JSON.stringify(cfg)}`;
       if (!pipelineCache.has(cfgKey)) {
-        const code = source("kev_recur_lanes", { subgroups: false, kev: cfg });
+        const code = source("kev_recur_lanes", { subgroups: useSubgroups, kev: cfg });
         pipelineCache.set(cfgKey, pipeline(device, code, `kev_recur_lanes.${sourceKey}.${cfg.lin_heads}`));
       }
       return pipelineCache.get(cfgKey);
@@ -427,8 +435,8 @@ async function main() {
       warmups,
       baselineWasm: baselineUrl,
       variantProvenance: {
-        current: { source: "current", wasmUrl: current.wasmUrl, kernel: "kev_recur_lanes", subgroups: false },
-        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: "kev_recur_lanes", subgroups: false } } : {}),
+        current: { source: "current", wasmUrl: current.wasmUrl, kernel: "kev_recur_lanes", subgroups: useSubgroups },
+        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: "kev_recur_lanes", subgroups: useSubgroups } } : {}),
       },
       cases: timing,
       cpuMaxAbs,

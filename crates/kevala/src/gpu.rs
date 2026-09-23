@@ -216,6 +216,7 @@ impl Spec {
         let (n, k) = self.shape.unwrap_or((0, 0));
         vec![
             ("F16", flag(self.f16)),
+            ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
             ("SUBGROUPS", flag(self.subgroups)),
             ("SHAPE", flag(self.shape.is_some())),
             ("TILE", if self.f16 { "f16" } else { "f32" }.to_string()),
