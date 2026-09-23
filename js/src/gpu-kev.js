@@ -363,7 +363,11 @@ export class GpuKev {
     const rms = (w, input, output) => ({ k: "rms", group: bg(this.p.RMS, [this.g, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
     const one = [];
     const two = [];
-    const both = (op) => (one.push(op), two.push(op));
+    let stateComplete = false;
+    const both = (op) => {
+      if (!stateComplete) one.push(op);
+      two.push(op);
+    };
     for (let i = 0; i < cfg.layers; i++) {
       const n = (s) => `L.${i}.${s}`;
       both(rms(W(n("in_norm")).buf, this.x, this.h));
@@ -373,6 +377,8 @@ export class GpuKev {
         both({ k: "aprep", group: bg(this.p.APREP, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("q_norm")).buf, W(n("k_norm")).buf, this.tok, this.rope]) });
         if (!this.attnTile) both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
         one.push({ k: "savekv", group: bg(this.p.SAVE_KV, [this.g, this.proj, kv, this.tok, this.segs]) });
+        // Stage 1 only supplies carries. Its final hidden rows have no consumer.
+        if (i === cfg.layers - 1) stateComplete = true;
         const attn = this.attnTile ? [this.g, this.proj, kv, this.ablocks, this.segs, this.core] : [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv];
         both({ k: "attn", group: bg(this.p.ATTN, attn) });
         both(mm(n("o"), this.core, this.x, 1));
@@ -383,6 +389,7 @@ export class GpuKev {
         both({ k: "conv", group: bg(this.p.CONV, [this.g, this.proj, W(n("conv")).buf, this.tok, this.segs, tail, this.conv]) });
         one.push({ k: "savetail", group: bg(this.p.SAVE_TAIL, [this.g, this.proj, this.segs, tail]) });
         both({ k: "recur", group: bg(this.p.RECUR, [this.g, this.conv, this.gates, this.segs, state, this.core]) });
+        if (i === cfg.layers - 1) stateComplete = true;
         both({ k: "gnorm", group: bg(this.p.GNORM, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("gnorm")).buf, this.core]) });
         both(mm(n("out"), this.core, this.x, 1));
       }
