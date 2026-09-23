@@ -10,6 +10,7 @@
 
 import { GpuWeights, pipeline, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
+import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
 let U;
 
@@ -38,7 +39,7 @@ export class GpuKev {
     this.device = gpu.device;
     this.subgroup32 = !!gpu.subgroup32;
     this.subgroup4 = !!gpu.subgroup4;
-    this.subgroup8 = this.subgroup4 && (gpu.adapter.info?.subgroupMinSize || 0) >= 8;
+    this.subgroupMinSize = this.subgroup4 ? (gpu.adapter?.info?.subgroupMinSize || 4) : 0;
     // query-tiled attention where the GPU has the tiled Laya kernel: its rows are 8 tokens x the 4
     // query heads of one key/value head, which every Qwen3.5 size has
     this.attnTile = !!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads;
@@ -86,14 +87,13 @@ export class GpuKev {
     const miss = this.missing();
     if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
-    // Eight lanes share each value column; four workgroups cover a head.
-    this.recurTiles = 4;
+    this.recurTiles = 2;
     const kernels = {
       RMS: ["kev_rms"],
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],
-      RECUR: ["kev_recur_lanes8", { subgroups: this.subgroup8 }],
+      RECUR: ["kev_recur_lanes", { subgroups: this.subgroup4 }],
       GNORM: ["kev_gnorm"],
       APREP: ["kev_aprep"],
       SAVE_KV: ["kev_save_kv"],
@@ -106,6 +106,16 @@ export class GpuKev {
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
     this.mm = this.tuning.pipelines.generic;
+    const recurrence = await calibrateRecurrence(d, [
+      { lanes: 4, pipeline: this.p.RECUR },
+      ...[8, 16].map((lanes) => ({
+        lanes,
+        pipeline: () => pipeline(d, this.wgsl(`kev_recur_lanes${lanes}`, { subgroups: this.subgroupMinSize >= lanes, kev: this.cfg }), `kev_recur_lanes${lanes}`),
+      })),
+    ], this.cfg);
+    this.p.RECUR = recurrence.pipeline || this.p.RECUR;
+    this.recurTiles = recurrence.zTiles;
+    this.tuning.diagnostics.recurrence = { ...recurrence.diagnostics, lanes: recurrence.choice };
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const f32buf = (arr) => {
