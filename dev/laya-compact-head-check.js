@@ -6,7 +6,8 @@
 import { kernelSource } from "./wgsl.js";
 
 const large = new URLSearchParams(location.search).get("size") === "full";
-const D = large ? 1024 : 64;
+// Laya gather uses the supported 1024-wide hidden layout.
+const D = 1024;
 const F = large ? 4096 : 64;
 const HIDDEN_LIMIT = 2e-5;
 const logNode = document.getElementById("log");
