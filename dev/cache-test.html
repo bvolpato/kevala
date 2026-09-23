@@ -24,6 +24,7 @@ try {
   const longer = base + " I called support on Monday and nobody answered, so please refund the duplicate charge today.";
   const warm = await Kevala.load({ model, backend, threads, flavor });
   const info = { backend: warm.info.backend, threads: warm.info.threads, flavor: warm.info.flavor };
+  const warmGpuTuning = warm.info.gpuTuning;
   const t = [];
   const time = async (s) => { const t0 = performance.now(); const r = await warm.decide(s, Q); t.push(Math.round(performance.now() - t0)); return r; };
   const miss = await time(base);
@@ -32,9 +33,10 @@ try {
   const stats = ext.timing.cache;
   warm.dispose();
   const cold = await Kevala.load({ model, backend, threads, flavor });
+  const coldGpuTuning = cold.info.gpuTuning;
   const fresh = await cold.decide(longer, Q);
   cold.dispose();
-  window.ct = { ...info, model, repeat, requestedBackend: backend, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true, stats, ms: { miss: t[0], hit: t[1], extension: t[2] }, probabilities: { miss: flat(miss), hit: flat(hit), extension: flat(ext), fresh: flat(fresh) }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)), done: true };
+  window.ct = { ...info, model, repeat, requestedBackend: backend, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true, gpuTuning: { warm: warmGpuTuning, cold: coldGpuTuning }, stats, ms: { miss: t[0], hit: t[1], extension: t[2] }, probabilities: { miss: flat(miss), hit: flat(hit), extension: flat(ext), fresh: flat(fresh) }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)), done: true };
 } catch (e) { window.ct = { done: true, error: e.message }; }
 log(JSON.stringify(window.ct));
 </script>
