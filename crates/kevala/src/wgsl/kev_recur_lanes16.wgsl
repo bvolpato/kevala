@@ -14,8 +14,11 @@ enable subgroups;
 @group(0) @binding(3) var<storage, read> segs: array<Seg>;
 @group(0) @binding(4) var<storage, read_write> STATE: array<f32>;
 @group(0) @binding(5) var<storage, read_write> CORE: array<f32>;
+//#if SUBGROUPS
+//#else
 var<workgroup> qs: array<array<f32, 128>, 2>;
 var<workgroup> ks: array<array<f32, 128>, 2>;
+//#endif
 var<workgroup> info: vec4<u32>;
 //#if SUBGROUPS
 //#else
@@ -23,6 +26,8 @@ var<workgroup> kvs: array<f32, 256>; // partial k.S of each thread
 var<workgroup> os: array<f32, 256>;  // partial outputs of the token before
 //#endif
 
+//#if SUBGROUPS
+//#else
 // the token's q and k (key head kh) into buffer b: threads 0..127 copy q, 128..255 copy k
 fn stage(t: u32, kh: u32, b: u32, li: u32) {
   if (li < 128u) {
@@ -31,6 +36,7 @@ fn stage(t: u32, kh: u32, b: u32, li: u32) {
     ks[b][li - 128u] = C[t * LIN_DIM + LIN_QK + kh * 128u + li - 128u];
   }
 }
+//#endif
 
 @compute @workgroup_size(256)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) li: u32) {
@@ -77,6 +83,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     c6 = 0.0;
     c7 = 0.0;
   }
+//#if SUBGROUPS
+//#else
   var v = 0.0;
   var decay = 0.0;
   var beta = 0.0;
@@ -87,7 +95,31 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     beta = AB[sp.x * (2u * LIN_HEADS) + LIN_HEADS + h];
   }
   workgroupBarrier();
+//#endif
   for (var r = 0u; r < sp.y; r++) {
+//#if SUBGROUPS
+    let t = sp.x + r;
+    let v = C[t * LIN_DIM + 2u * LIN_QK + h * 128u + column];
+    let decay = AB[t * (2u * LIN_HEADS) + h];
+    let beta = AB[t * (2u * LIN_HEADS) + LIN_HEADS + h];
+    let qv0 = C[t * LIN_DIM + kh * 128u + k0 + 0u];
+    let qv1 = C[t * LIN_DIM + kh * 128u + k0 + 1u];
+    let qv2 = C[t * LIN_DIM + kh * 128u + k0 + 2u];
+    let qv3 = C[t * LIN_DIM + kh * 128u + k0 + 3u];
+    let qv4 = C[t * LIN_DIM + kh * 128u + k0 + 4u];
+    let qv5 = C[t * LIN_DIM + kh * 128u + k0 + 5u];
+    let qv6 = C[t * LIN_DIM + kh * 128u + k0 + 6u];
+    let qv7 = C[t * LIN_DIM + kh * 128u + k0 + 7u];
+    let key0 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 0u];
+    let key1 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 1u];
+    let key2 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 2u];
+    let key3 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 3u];
+    let key4 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 4u];
+    let key5 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 5u];
+    let key6 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 6u];
+    let key7 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 7u];
+    var kv = 0.0;
+//#else
     let t = sp.x + r;
     let cur = r & 1u;
     // stage the next token in the other buffer; nobody reads it until after the barrier
@@ -101,6 +133,17 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
       nb = AB[(t + 1u) * (2u * LIN_HEADS) + LIN_HEADS + h];
     }
     var kv = 0.0;
+//#endif
+//#if SUBGROUPS
+    kv += c0 * key0;
+    kv += c1 * key1;
+    kv += c2 * key2;
+    kv += c3 * key3;
+    kv += c4 * key4;
+    kv += c5 * key5;
+    kv += c6 * key6;
+    kv += c7 * key7;
+//#else
     kv += c0 * ks[cur][k0 + 0u];
     kv += c1 * ks[cur][k0 + 1u];
     kv += c2 * ks[cur][k0 + 2u];
@@ -109,6 +152,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     kv += c5 * ks[cur][k0 + 5u];
     kv += c6 * ks[cur][k0 + 6u];
     kv += c7 * ks[cur][k0 + 7u];
+//#endif
 //#if SUBGROUPS
     kv += subgroupShuffleXor(kv, 1u);
     kv += subgroupShuffleXor(kv, 2u);
@@ -139,6 +183,32 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
 //#endif
     let delta = (v - decay * kv) * beta;
     var o = 0.0;
+//#if SUBGROUPS
+    let x0 = decay * c0 + key0 * delta;
+    c0 = x0;
+    o += x0 * qv0;
+    let x1 = decay * c1 + key1 * delta;
+    c1 = x1;
+    o += x1 * qv1;
+    let x2 = decay * c2 + key2 * delta;
+    c2 = x2;
+    o += x2 * qv2;
+    let x3 = decay * c3 + key3 * delta;
+    c3 = x3;
+    o += x3 * qv3;
+    let x4 = decay * c4 + key4 * delta;
+    c4 = x4;
+    o += x4 * qv4;
+    let x5 = decay * c5 + key5 * delta;
+    c5 = x5;
+    o += x5 * qv5;
+    let x6 = decay * c6 + key6 * delta;
+    c6 = x6;
+    o += x6 * qv6;
+    let x7 = decay * c7 + key7 * delta;
+    c7 = x7;
+    o += x7 * qv7;
+//#else
     let x0 = decay * c0 + ks[cur][k0 + 0u] * delta;
     c0 = x0;
     o += x0 * qs[cur][k0 + 0u];
@@ -163,6 +233,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     let x7 = decay * c7 + ks[cur][k0 + 7u] * delta;
     c7 = x7;
     o += x7 * qs[cur][k0 + 7u];
+//#endif
 //#if SUBGROUPS
     o += subgroupShuffleXor(o, 1u);
     o += subgroupShuffleXor(o, 2u);
@@ -172,10 +243,13 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
 //#else
     os[li] = o;
 //#endif
+//#if SUBGROUPS
+//#else
     v = nv;
     decay = nd;
     beta = nb;
     workgroupBarrier();
+//#endif
   }
 //#if SUBGROUPS
 //#else

@@ -414,6 +414,11 @@ async function main() {
       throw new Error(`actual must be 0 or 1, got ${actualParam}`);
     }
     const includeActual = actualParam === "1";
+    const reverseParam = query.get("reverse");
+    if (reverseParam !== null && reverseParam !== "0" && reverseParam !== "1") {
+      throw new Error(`reverse must be 0 or 1, got ${reverseParam}`);
+    }
+    const reverse = reverseParam === "1";
     const baselineParam = query.get("baselineWasm");
     if (candidate === "recur16direct") {
       if (!useSubgroups) throw new Error("recur16direct requires subgroups=1");
@@ -436,6 +441,9 @@ async function main() {
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
     const baselineUrl = baselineParam ? new URL(baselineParam, document.baseURI).href : null;
+    if (candidate === "recur16direct" && baselineUrl !== current.wasmUrl) {
+      throw new Error("recur16direct requires baselineWasm to resolve to the same WASM as the current source");
+    }
     const baseline = baselineUrl ? await kernelSource(baselineUrl) : null;
     const samples = numberParam("samples", 3, 1, 10);
     const warmups = numberParam("warmups", 1, 0, 5);
@@ -528,16 +536,19 @@ async function main() {
       const reps = T <= 7 ? 16 : T <= 31 ? 8 : T <= 129 ? 2 : 1;
       const currentSamples = [];
       const baselineSamples = [];
+      const sampleOrder = reverse && baselineResult
+        ? [["baseline", baselineResult, baselineSamples], ["current", currentResult, currentSamples]]
+        : [["current", currentResult, currentSamples], ...(baselineResult ? [["baseline", baselineResult, baselineSamples]] : [])];
       for (let warmup = 0; warmup < warmups; warmup++) {
-        await upload();
-        await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, null, lost, uncaptured, `${test.name}.current.warmup`, { reps, zTiles: currentResult.zTiles });
+        for (const [label, variant] of sampleOrder) {
+          await upload();
+          await dispatch(device, variant.p, variant.bind, segCount, heads, null, lost, uncaptured, `${test.name}.${label}.warmup`, { reps, zTiles: variant.zTiles });
+        }
       }
       for (let sample = 0; sample < samples; sample++) {
-        await upload();
-        currentSamples.push(await dispatch(device, currentResult.p, currentResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.current.sample`, { reps, zTiles: currentResult.zTiles }));
-        if (baselineResult) {
+        for (const [label, variant, values] of sampleOrder) {
           await upload();
-          baselineSamples.push(await dispatch(device, baselineResult.p, baselineResult.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.baseline.sample`, { reps, zTiles: baselineResult.zTiles }));
+          values.push(await dispatch(device, variant.p, variant.bind, segCount, heads, timer, lost, uncaptured, `${test.name}.${label}.sample`, { reps, zTiles: variant.zTiles }));
         }
       }
       const currentMedian = median(currentSamples);
@@ -559,6 +570,7 @@ async function main() {
       exactRequired: candidate === "recur16direct",
       timingHeads,
       actualCases: includeActual,
+      reverse,
       variantProvenance: {
         current: { source: "current", wasmUrl: current.wasmUrl, candidate, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups, ...(candidate === "recur16direct" ? { transform: "recur16direct" } : {}) },
         ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, candidate: baselineCandidate, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
