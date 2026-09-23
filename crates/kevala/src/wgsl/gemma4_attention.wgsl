@@ -33,11 +33,19 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     for (var block = 0u; block < 4u; block++) {
       let j = j0 + block * 32u + lane / 8u;
       let kbase = j * p.kv_heads * H + kv_head * H;
-      var dot = 0.0;
+      var sum = 0.0;
       if (j < end) {
-        for (var d = key_lane; d < H; d += 8u) { dot += qtile[d] * K[kbase + d]; }
+        if (H % 4u == 0u) {
+          for (var d = key_lane * 4u; d < H; d += 32u) {
+            let qv = vec4<f32>(qtile[d], qtile[d + 1u], qtile[d + 2u], qtile[d + 3u]);
+            let kv = vec4<f32>(K[kbase + d], K[kbase + d + 1u], K[kbase + d + 2u], K[kbase + d + 3u]);
+            sum += dot(qv, kv);
+          }
+        } else {
+          for (var d = key_lane; d < H; d += 8u) { sum += qtile[d] * K[kbase + d]; }
+        }
       }
-      partial[lane] = dot;
+      partial[lane] = sum;
       workgroupBarrier();
       for (var stride = 4u; stride > 0u; stride >>= 1u) {
         if (key_lane < stride) { partial[lane] += partial[lane + stride]; }
