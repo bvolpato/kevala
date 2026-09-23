@@ -110,8 +110,6 @@ pub struct Spec {
     pub groups: u32,
     /// Matmul and reduce: how many workgroups split-K aims for on short inputs.
     pub split_target: u32,
-    /// Matmul and reduce: maximum split-K workgroups (8 normally, 16 for an opt-in experiment).
-    pub max_splits: u32,
     /// Matmul: N and K compiled in as constants instead of read from the uniform.
     pub shape: Option<(u32, u32)>,
     pub kev: KevSpec,
@@ -143,7 +141,6 @@ impl Default for Spec {
             rows: 4,
             groups: 1,
             split_target: 128,
-            max_splits: 8,
             shape: None,
             kev: KevSpec::default(),
         }
@@ -151,7 +148,7 @@ impl Default for Spec {
 }
 
 impl Spec {
-    /// Reads `{ f16, subgroups, rows, groups, splitTarget, maxSplits, n, k }`; missing fields keep their default.
+    /// Reads `{ f16, subgroups, rows, groups, splitTarget, n, k }`; missing fields keep their default.
     pub fn from_json(v: &Value) -> Result<Spec, String> {
         let mut s = Spec::default();
         let flag = |key: &str| v.get(key).map(|x| matches!(x, Value::Bool(true)));
@@ -170,13 +167,6 @@ impl Spec {
         }
         if let Some(t) = number("splitTarget") {
             s.split_target = t;
-        }
-        if let Some(value) = v.get("maxSplits") {
-            let n = value.as_usize().and_then(|n| u32::try_from(n).ok()).ok_or("invalid maxSplits")?;
-            if !(1..=16).contains(&n) {
-                return Err("maxSplits must be from 1 to 16".into());
-            }
-            s.max_splits = n;
         }
         if let (Some(n), Some(k)) = (number("n"), number("k")) {
             s.shape = Some((n, k));
@@ -247,7 +237,6 @@ impl Spec {
             ("BN", bn.to_string()),
             ("BN_MINUS_1", (bn - 1).to_string()),
             ("SPLIT_TARGET", self.split_target.to_string()),
-            ("SPLIT_CAP", self.max_splits.to_string()),
             ("WS_LEN", (8 * bn).to_string()),
             ("WIDE_WS_LEN", (16 * bn).to_string()),
             ("ACC_LEN", (self.rows * self.groups).to_string()),
