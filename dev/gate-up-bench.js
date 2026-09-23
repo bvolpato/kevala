@@ -117,12 +117,13 @@ function geluCpu(x) {
 function projectionCpu(input, row, col, weights, scales) {
   const { N, K, x } = input;
   const blocks = K / 32;
+  // An f64 sum avoids adding a separate sequential-f32 reduction error to the oracle.
   let sum = 0;
   for (let k = 0; k < K; k++) {
     const weight = Math.fround(signedByte(weights[col * K + k]) * scales[col * blocks + Math.floor(k / 32)]);
-    sum = Math.fround(sum + Math.fround(x[row * K + k] * weight));
+    sum += x[row * K + k] * weight;
   }
-  return sum;
+  return Math.fround(sum);
 }
 
 function cpuValue(input, row, col) {
@@ -377,7 +378,7 @@ async function main() {
   }
 
   const cases = [];
-  const correctness = { ok: true, cpuReference: "sequential f32 Q8 projections with an independent activation reference", activation: ["gelu-tanh", "gelu-erf", "silu"][activation], cpu: [], variants: [], errors: [] };
+  const correctness = { ok: true, cpuReference: "f64 dot reference over f32 inputs and dequantized Q8 weights, rounded to f32 before activation", activation: ["gelu-tanh", "gelu-erf", "silu"][activation], cpu: [], variants: [], errors: [] };
   const fusedMedians = [];
   const baselineMedians = [];
 
