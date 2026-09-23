@@ -21,7 +21,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
-var<workgroup> xs: array<vec4<{{TILE}}>, 1024>; // [m][k/4], two K blocks
+var<workgroup> xs: array<vec4<f32>, 1024>; // [m][k/4], two K blocks
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & 7)], two K blocks
 
 //#if F16
@@ -97,8 +97,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       }
 
       if (lr < {{BM}}u) {
-        xs[lr * 16u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
-        xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
+        xs[lr * 16u + step * 8u + lq * 2u] = xv0;
+        xs[lr * 16u + step * 8u + lq * 2u + 1u] = xv1;
       }
       let r = lr;
       ws[r * 16u + ((step * 8u + lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
