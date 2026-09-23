@@ -42,6 +42,21 @@ fn sx(w: u32) -> vec4<f32> {
   return bitcast<vec4<f32>>(bytes | vec4<u32>(0x4B000000u)) - vec4<f32>(8388736.0);
 }
 
+//#if GENERIC_UNROLL
+fn mm_store(value: f32, row: u32, col: u32, bias: f32, T: u32, N: u32, splits: u32, z: u32) {
+  if (row >= T) { return; }
+  let o = row * N + col;
+  if (splits > 1u) {
+    PART[z * T * N + o] = value;
+    return;
+  }
+  var v = value;
+  v += bias;
+  if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }
+  Y[o] = v;
+}
+
+//#endif
 //#include splits
 
 //#if GENERIC_UNROLL
@@ -362,54 +377,47 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   }
 
 //#if GENERIC_UNROLL
-  for (var j = 0u; j < 2u; j++) {
-    let col = n0 + lid.x + 32u * j;
-    if (col >= N) { break; }
-    var bias = 0.0;
-    if (p.bias == 1u) { bias = B[col]; }
-    let v0 = acc0[j];
-    let v1 = acc1[j];
+  let row = m0 + lid.y;
+  {
+    let col = n0 + lid.x + 0u;
+    if (col < N) {
+      var bias = 0.0;
+      if (p.bias == 1u) { bias = B[col]; }
+      mm_store(acc0.x, row + 0u, col, bias, T, N, splits, wg.z);
+      mm_store(acc1.x, row + 8u, col, bias, T, N, splits, wg.z);
 //#if ROWS_GE_2
-    let v2 = acc2[j];
-    let v3 = acc3[j];
+      mm_store(acc2.x, row + 16u, col, bias, T, N, splits, wg.z);
+      mm_store(acc3.x, row + 24u, col, bias, T, N, splits, wg.z);
 //#endif
 //#if ROWS_GE_3
-    let v4 = acc4[j];
-    let v5 = acc5[j];
+      mm_store(acc4.x, row + 32u, col, bias, T, N, splits, wg.z);
+      mm_store(acc5.x, row + 40u, col, bias, T, N, splits, wg.z);
 //#endif
 //#if ROWS_GE_4
-    let v6 = acc6[j];
-    let v7 = acc7[j];
+      mm_store(acc6.x, row + 48u, col, bias, T, N, splits, wg.z);
+      mm_store(acc7.x, row + 56u, col, bias, T, N, splits, wg.z);
 //#endif
-//#if ROWS_GE_4
-    for (var i = 0u; i < 8u; i++) {
-//#else
-    for (var i = 0u; i < 2u * {{ROWS}}u; i++) {
-//#endif
-      let row = m0 + lid.y + 8u * i;
-      if (row >= T) { break; }
-      let o = row * N + col;
-      var v = v0;
-      if (i == 1u) { v = v1; }
+    }
+  }
+  {
+    let col = n0 + lid.x + 32u;
+    if (col < N) {
+      var bias = 0.0;
+      if (p.bias == 1u) { bias = B[col]; }
+      mm_store(acc0.y, row + 0u, col, bias, T, N, splits, wg.z);
+      mm_store(acc1.y, row + 8u, col, bias, T, N, splits, wg.z);
 //#if ROWS_GE_2
-      else if (i == 2u) { v = v2; }
-      else if (i == 3u) { v = v3; }
+      mm_store(acc2.y, row + 16u, col, bias, T, N, splits, wg.z);
+      mm_store(acc3.y, row + 24u, col, bias, T, N, splits, wg.z);
 //#endif
 //#if ROWS_GE_3
-      else if (i == 4u) { v = v4; }
-      else if (i == 5u) { v = v5; }
+      mm_store(acc4.y, row + 32u, col, bias, T, N, splits, wg.z);
+      mm_store(acc5.y, row + 40u, col, bias, T, N, splits, wg.z);
 //#endif
 //#if ROWS_GE_4
-      else if (i == 6u) { v = v6; }
-      else if (i == 7u) { v = v7; }
+      mm_store(acc6.y, row + 48u, col, bias, T, N, splits, wg.z);
+      mm_store(acc7.y, row + 56u, col, bias, T, N, splits, wg.z);
 //#endif
-      if (splits > 1u) {
-        PART[wg.z * T * N + o] = v;
-        continue;
-      }
-      v += bias;
-      if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }
-      Y[o] = v;
     }
   }
 //#else
