@@ -10,17 +10,21 @@ const query = new URLSearchParams(location.search);
 const backend = query.get("backend") || "webgpu";
 const threads = Number(query.get("threads") || 1);
 const flavor = query.get("flavor") || undefined;
+const model = query.get("model") || "../tmp/kev-0.8b-q8.kevala";
+const repeat = Number(query.get("repeat") || 1);
 const Q = {
   a: { type: "noul", instructions: "Does the customer want money back?" },
   b: { type: "choice", instructions: "Which team?", criteria: { billing: "payments", shipping: "deliveries", other: null } },
 };
-const base = "Order #4411 arrived two weeks late and the box was crushed on one side. I was also charged twice for it on my credit card, and the second charge is still pending.";
-const longer = base + " I called support on Monday and nobody answered, so please refund the duplicate charge today.";
 const flat = (r) => [...r.raw_probabilities.a, ...r.raw_probabilities.b];
 const diff = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])));
 try {
-  const warm = await Kevala.load({ model: "../tmp/kev-0.8b-q8.kevala", backend, threads, flavor });
+  if (!Number.isInteger(repeat) || repeat < 1 || repeat > 32) throw new Error("repeat must be an integer from 1 to 32");
+  const base = Array(repeat).fill("Order #4411 arrived two weeks late and the box was crushed on one side. I was also charged twice for it on my credit card, and the second charge is still pending.").join(" ");
+  const longer = base + " I called support on Monday and nobody answered, so please refund the duplicate charge today.";
+  const warm = await Kevala.load({ model, backend, threads, flavor });
   const info = { backend: warm.info.backend, threads: warm.info.threads, flavor: warm.info.flavor };
+  const warmGpuTuning = warm.info.gpuTuning;
   const t = [];
   const time = async (s) => { const t0 = performance.now(); const r = await warm.decide(s, Q); t.push(Math.round(performance.now() - t0)); return r; };
   const miss = await time(base);
@@ -28,10 +32,11 @@ try {
   const ext = await time(longer);
   const stats = ext.timing.cache;
   warm.dispose();
-  const cold = await Kevala.load({ model: "../tmp/kev-0.8b-q8.kevala", backend, threads, flavor });
+  const cold = await Kevala.load({ model, backend, threads, flavor });
+  const coldGpuTuning = cold.info.gpuTuning;
   const fresh = await cold.decide(longer, Q);
   cold.dispose();
-  window.ct = { ...info, requestedBackend: backend, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true, stats, ms: { miss: t[0], hit: t[1], extension: t[2] }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)), done: true };
+  window.ct = { ...info, model, repeat, requestedBackend: backend, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true, gpuTuning: { warm: warmGpuTuning, cold: coldGpuTuning }, stats, ms: { miss: t[0], hit: t[1], extension: t[2] }, probabilities: { miss: flat(miss), hit: flat(hit), extension: flat(ext), fresh: flat(fresh) }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)), done: true };
 } catch (e) { window.ct = { done: true, error: e.message }; }
 log(JSON.stringify(window.ct));
 </script>
