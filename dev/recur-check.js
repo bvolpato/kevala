@@ -228,65 +228,6 @@ function median(values) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-function replaceChecked(source, needle, replacement, expectedCount = 1) {
-  const count = source.split(needle).length - 1;
-  if (count !== expectedCount) throw new Error(`direct recurrence transform expected ${expectedCount} occurrences of ${JSON.stringify(needle)}, found ${count}`);
-  return source.split(needle).join(replacement);
-}
-
-function directRecurrenceSource(source) {
-  if (!source.includes("enable subgroups;")) throw new Error("direct recurrence transform requires the rendered subgroup kernel");
-  if (source.includes("//#")) throw new Error("direct recurrence transform requires preprocessed WGSL");
-  let code = source;
-  code = replaceChecked(code, "var<workgroup> qs: array<array<f32, 128>, 2>;\n", "");
-  code = replaceChecked(code, "var<workgroup> ks: array<array<f32, 128>, 2>;\n", "");
-
-  const stageStart = code.indexOf("// the token's q and k (key head kh) into buffer b:");
-  const mainStart = code.indexOf("@compute @workgroup_size(256)", stageStart);
-  if (stageStart < 0 || mainStart < 0 || code.indexOf("fn stage(") < stageStart) {
-    throw new Error("direct recurrence transform could not locate the q/k staging helper");
-  }
-  code = code.slice(0, stageStart) + code.slice(mainStart);
-
-  const loopStart = "  for (var r = 0u; r < sp.y; r++) {\n";
-  const loopIndex = code.indexOf(loopStart);
-  const prologueIndex = code.indexOf("  var v = 0.0;\n  var decay = 0.0;\n  var beta = 0.0;\n", code.indexOf("fn main("));
-  if (prologueIndex < 0 || loopIndex < 0 || loopIndex <= prologueIndex) {
-    throw new Error("direct recurrence transform could not locate the staged recurrence prologue");
-  }
-  code = code.slice(0, prologueIndex) + loopStart + code.slice(loopIndex + loopStart.length);
-
-  const loadBlockEnd = "    var kv = 0.0;\n";
-  const loadBlockStart = "    let t = sp.x + r;\n    let cur = r & 1u;\n";
-  const loadStart = code.indexOf(loadBlockStart);
-  const loadEnd = code.indexOf(loadBlockEnd, loadStart);
-  if (loadStart < 0 || loadEnd < 0) throw new Error("direct recurrence transform could not locate the per-token staging block");
-  const scalarLoads = [
-    "    let t = sp.x + r;",
-    "    let v = C[t * LIN_DIM + 2u * LIN_QK + h * 128u + column];",
-    "    let decay = AB[t * (2u * LIN_HEADS) + h];",
-    "    let beta = AB[t * (2u * LIN_HEADS) + LIN_HEADS + h];",
-    ...Array.from({ length: 8 }, (_, i) => `    let qv${i} = C[t * LIN_DIM + kh * 128u + k0 + ${i}u];`),
-    ...Array.from({ length: 8 }, (_, i) => `    let key${i} = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + ${i}u];`),
-    "",
-  ].join("\n");
-  code = code.slice(0, loadStart) + scalarLoads + code.slice(loadEnd);
-
-  for (let i = 0; i < 8; i++) {
-    code = replaceChecked(code, `ks[cur][k0 + ${i}u]`, `key${i}`, 2);
-    code = replaceChecked(code, `qs[cur][k0 + ${i}u]`, `qv${i}`);
-  }
-  code = replaceChecked(code, "    v = nv;\n    decay = nd;\n    beta = nb;\n    workgroupBarrier();\n", "");
-  if (/\bstage\s*\(|\b(?:qs|ks|cur|nv|nd|nb)\b|workgroupBarrier\s*\(/.test(code)) {
-    throw new Error("direct recurrence transform left staged or barrier-based code behind");
-  }
-  if (!code.includes("let sp = workgroupUniformLoad(&info);")) throw new Error("direct recurrence transform lost the uniform segment load");
-  if (code.split("subgroupShuffleXor(kv,").length - 1 !== 4 || code.split("subgroupShuffleXor(o,").length - 1 !== 4) {
-    throw new Error("direct recurrence transform changed subgroup reduction structure");
-  }
-  return code;
-}
-
 function adapterInfo(gpu) {
   const info = gpu.adapter.info || {};
   return {
@@ -401,8 +342,7 @@ async function main() {
     }
     const candidate = query.get("candidate") || "current";
     const baselineCandidate = query.get("baselineCandidate") || "current";
-    const widths = { current: 4, recur8: 8, recur16: 16, recur16direct: 16 };
-    if (baselineCandidate === "recur16direct") throw new Error("recur16direct is supported only as the measured candidate");
+    const widths = { current: 4, recur8: 8, recur16: 16 };
     for (const name of [candidate, baselineCandidate]) {
       if (!Object.hasOwn(widths, name)) throw new Error(`unknown recurrence candidate ${name}`);
       if (useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < widths[name]) {
@@ -420,11 +360,6 @@ async function main() {
     }
     const reverse = reverseParam === "1";
     const baselineParam = query.get("baselineWasm");
-    if (candidate === "recur16direct") {
-      if (!useSubgroups) throw new Error("recur16direct requires subgroups=1");
-      if (baselineCandidate !== "recur16") throw new Error("recur16direct requires baselineCandidate=recur16");
-      if (!baselineParam) throw new Error("recur16direct requires baselineWasm=<url> for exact paired comparison");
-    }
     const timingHeadsParam = query.get("timingHeads");
     let timingHeads = null;
     let cases = includeActual ? [...CASES, ...ACTUAL_CASES] : CASES;
@@ -441,10 +376,8 @@ async function main() {
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
     const baselineUrl = baselineParam ? new URL(baselineParam, document.baseURI).href : null;
-    if (candidate === "recur16direct" && baselineUrl !== current.wasmUrl) {
-      throw new Error("recur16direct requires baselineWasm to resolve to the same WASM as the current source");
-    }
     const baseline = baselineUrl ? await kernelSource(baselineUrl) : null;
+    const exactRequired = Boolean(baseline && widths[candidate] === widths[baselineCandidate]);
     const samples = numberParam("samples", 3, 1, 10);
     const warmups = numberParam("warmups", 1, 0, 5);
     const pipelineCache = new Map();
@@ -456,8 +389,7 @@ async function main() {
       const zTiles = lanes / 2;
       const cfgKey = `${sourceKey}|${selectedCandidate}|${kernel}|${JSON.stringify(cfg)}`;
       if (!pipelineCache.has(cfgKey)) {
-        let code = source(kernel, { subgroups: useSubgroups, kev: cfg });
-        if (selectedCandidate === "recur16direct") code = directRecurrenceSource(code);
+        const code = source(kernel, { subgroups: useSubgroups, kev: cfg });
         pipelineCache.set(cfgKey, pipeline(device, code, `${kernel}.${sourceKey}.${cfg.lin_heads}`));
       }
       return { pipeline: await pipelineCache.get(cfgKey), kernel, candidate: selectedCandidate, zTiles };
@@ -529,7 +461,7 @@ async function main() {
         correctness.variants.push({ case: test.name, exact, withinTolerance, core: coreDiff, state: stateDiff, coreGuard, stateGuard });
         oldNewExact &&= exact;
         oldNewWithinTolerance &&= withinTolerance;
-        if (candidate === "recur16direct" ? !exact : !(exact || ((candidate !== "current" || baselineCandidate !== "current") && withinTolerance))) {
+        if (exactRequired ? !exact : !(exact || withinTolerance)) {
           correctness.ok = false;
         }
       }
@@ -567,12 +499,12 @@ async function main() {
       baselineWasm: baselineUrl,
       candidate,
       baselineCandidate,
-      exactRequired: candidate === "recur16direct",
+      exactRequired,
       timingHeads,
       actualCases: includeActual,
       reverse,
       variantProvenance: {
-        current: { source: "current", wasmUrl: current.wasmUrl, candidate, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups, ...(candidate === "recur16direct" ? { transform: "recur16direct" } : {}) },
+        current: { source: "current", wasmUrl: current.wasmUrl, candidate, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups },
         ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, candidate: baselineCandidate, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
       },
       cases: timing,
