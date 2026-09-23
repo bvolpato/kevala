@@ -42,7 +42,7 @@ export class GpuKev {
     this.subgroupMinSize = this.subgroup4 ? (gpu.adapter?.info?.subgroupMinSize || 4) : 0;
     // query-tiled attention where the GPU has the tiled Laya kernel: its rows are 8 tokens x the 4
     // query heads of one key/value head, which every Qwen3.5 size has
-    this.attnTileFp32 = !this.device.features.has("shader-f16") && this.subgroup32 && cfg.heads === 4 * cfg.kv_heads;
+    this.attnTileFp32 = this.subgroup32 && !this.device.features.has("shader-f16") && cfg.heads === 4 * cfg.kv_heads;
     this.attnTile = (!!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads) || this.attnTileFp32;
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
