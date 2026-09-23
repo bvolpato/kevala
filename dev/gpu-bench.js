@@ -58,16 +58,14 @@ function parseKernel(raw, T, config) {
   if (normalized === "runtime") {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T, config), groups: config.groups, baseline };
   }
-  const match = normalized.match(/^([a-z0-9_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_narrow32"].includes(match[1])) {
+  const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
-  const narrow32 = match[1] === "matmul_narrow32";
-  const target = match[2] ? Number(match[2]) : narrow32 ? 256 : 128;
+  const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
-  if (narrow32 && (rows !== 4 || groups !== 1 || target !== 256)) throw new Error(`${raw} requires rows=4, groups=1, split target=256`);
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
@@ -259,28 +257,13 @@ function makeTimer(device, useTimestamps) {
   };
 }
 
-// Experimental physical BN32 dispatch keeps the baseline BN64 split/reduce schedule.
-function dispatchNarrow32(pass, pMatmul, pReduce, op, T) {
-  const splits = mmSplits(T, op.N, op.K, 256, 64, 64);
-  pass.setPipeline(pMatmul);
-  pass.setBindGroup(0, op.group);
-  pass.dispatchWorkgroups(Math.ceil(op.N / 32), Math.ceil(T / 64), splits);
-  if (splits > 1) {
-    const n = Math.ceil((T * op.N) / 256);
-    pass.setPipeline(pReduce);
-    pass.setBindGroup(0, op.reduce);
-    pass.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
-  }
-}
-
 async function timedBatch(device, timer, op, T, reps, target, rows, groups, uncaptured, phase) {
   return checked(device, async () => {
     const encoder = device.createCommandEncoder({ label: phase });
     const pass = timer.timestamp
       ? encoder.beginComputePass({ timestampWrites: { querySet: timer.querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } })
       : encoder.beginComputePass();
-    const dispatch = op.narrow32 ? dispatchNarrow32 : dispatchMatmul;
-    for (let i = 0; i < reps; i++) dispatch(pass, op.pMatmul, op.pReduce, op, T, target, rows, groups);
+    for (let i = 0; i < reps; i++) dispatchMatmul(pass, op.pMatmul, op.pReduce, op, T, target, rows, groups);
     pass.end();
     const started = performance.now();
     if (timer.timestamp) {
@@ -356,14 +339,12 @@ async function main() {
     return { ...variant, provenance: variant.baseline ? "baseline" : "current", wasmUrl: shaderSource.wasmUrl };
   });
   const allVariants = variantsFor(shapes[0][0]);
-  const narrowTrial = allVariants.some((variant) => variant.name === "matmul_narrow32");
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
   const cases = [];
   const correctness = { ok: true, cpu: [], variants: [], errors: [] };
   const medians = [];
-  const useF16Tolerance = !narrowTrial && device.features.has("shader-f16");
-  const variantTolerance = { abs: useF16Tolerance ? 0.03 : 0.0005, relative: useF16Tolerance ? 0.002 : 0.0001 };
+  const variantTolerance = { abs: device.features.has("shader-f16") ? 0.03 : 0.0005, relative: device.features.has("shader-f16") ? 0.002 : 0.0001 };
 
   for (let shapeIndex = 0; shapeIndex < shapes.length; shapeIndex++) {
     const shape = shapes[shapeIndex];
@@ -396,7 +377,6 @@ async function main() {
     }, `${caseLabel(shape)} input upload`, uncaptured);
 
     const outputs = {};
-    const epilogueOutputs = {};
     const timings = [];
     const shouldCheckEpilogues = T * N <= 8192;
     const runs = [];
@@ -404,7 +384,7 @@ async function main() {
       const pipes = await getPipelines(variant, T);
       const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, W, S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const reduce = device.createBindGroup({ layout: layouts.reduce, entries: [globals, params, part, B, Y].map((buffer, binding) => ({ binding, resource: { buffer } })) });
-      const op = { N, K, group, reduce, pMatmul: pipes.pMatmul, pReduce: pipes.pReduce, narrow32: variant.name === "matmul_narrow32" };
+      const op = { N, K, group, reduce, pMatmul: pipes.pMatmul, pReduce: pipes.pReduce };
       const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
       // about 20 GFLOP per timed batch, so the timestamp resolution (tens of microseconds on some
       // browsers) stays small against it
@@ -439,7 +419,7 @@ async function main() {
       correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode: 0, bias: false, ...cpu });
       if (!cpu.ok) correctness.ok = false;
       if (shouldCheckEpilogues) {
-        for (const mode of narrowTrial ? [0, 1, 2] : [1, 2]) {
+        for (const mode of [1, 2]) {
           const withBias = true;
           await checked(device, async () => {
             device.queue.writeBuffer(params, 0, new Uint32Array([N, K, mode, 1]));
@@ -448,7 +428,6 @@ async function main() {
           }, `${caseLabel(shape)} mode ${mode} upload`, uncaptured);
           await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} mode ${mode}`);
           const epilogue = await readOutput(device, Y, bytes, uncaptured, `${caseLabel(shape)} mode ${mode}`);
-          if (narrowTrial) (epilogueOutputs[mode] ||= {})[variant.label] = epilogue;
           const cpu = compareCpu(input, epilogue, variant, mode, withBias);
           correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode, bias: withBias, ...cpu });
           if (!cpu.ok) correctness.ok = false;
@@ -463,11 +442,6 @@ async function main() {
     const variantCheck = compareVariants(outputs, labels, variantTolerance);
     correctness.variants.push({ shape: caseLabel(shape), ...variantCheck });
     if (!variantCheck.ok) correctness.ok = false;
-    for (const [mode, values] of Object.entries(epilogueOutputs)) {
-      const check = compareVariants(values, labels, variantTolerance);
-      correctness.variants.push({ shape: caseLabel(shape), mode: Number(mode), bias: true, ...check });
-      if (!check.ok) correctness.ok = false;
-    }
     const shapeMedians = timings.map((item) => item.medianMs);
     const shapeMedian = shapeMedians[0];
     medians.push(shapeMedian);
