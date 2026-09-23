@@ -1,24 +1,23 @@
 //! `kevala` command line: convert checkpoints to `.kevala` packs, answer questions, check parity
 //! against the PyTorch reference, and benchmark.
 
+mod conversion;
 mod parity_gemma;
 
 use kevala::engine::Engine;
 use kevala::json::Value;
 use kevala::model::{build_shard, AlignedBuf, Scratch, ShardPlan, Trunk};
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom, Write};
-use std::path::{Component, Path, PathBuf};
+use std::io::Read;
 use std::time::Instant;
 
-const USAGE: &str = "kevala: System 1 decision models (Laya, Kev, SemIf) without Python
+const USAGE: &str = "kevala: local decision models without Python
 
 usage:
-  kevala convert <checkpoint-dir> -o <out.kevala> [--block 32] [--keep-f32 head.,emb] [--revision <sha>]
+  kevala convert <checkpoint-dir> -o <out.kevala> [--adapter <dir>] [--base <dir>] [--readout direct-options|pointer|encoder-head] [--block 32]
+    [--tokenizer <tokenizer.json>] [--name <name>] [--source <url>] [--revision <sha>]
+    [--base-source <url>] [--base-revision <sha>] [--author <author>] [--license <license>] [--method-revision <sha>] [--keep-f32 <prefixes>]
   kevala decide <pack.kevala> --state <json|text> --questions <json>
-  kevala convert-kev --base <qwen-dir> --kev <kev-dir> -o <out.kevala> [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--kev-revision <sha>] [--base-revision <sha>]
-  kevala convert-semif --base <qwen-dir> --tokenizer <tokenizer.json> -o <out.kevala> [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--base-revision <sha>] [--method-revision <sha>]
-  kevala convert-gemma --base <gemma-dir> [-o <out.kevala>] [--tokenizer <tokenizer.json>] [--block 32] [--name <name>] [--source <url>] [--base-source <url>] [--base-revision <sha>] [--method-revision <sha>]
   kevala parity <pack.kevala> <golden.json> [--shards N]
   kevala parity-kev <pack.kevala> <golden-kev.json>
   kevala parity-semif <pack.kevala> <golden-semif.json> [--max-dp 0.05]
@@ -31,12 +30,9 @@ usage:
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let r = match args.first().map(String::as_str) {
-        Some("convert") => convert(&args[1..]),
+        Some("convert" | "convert-kev" | "convert-semif" | "convert-gemma") => conversion::run(&args[0], &args[1..]),
         Some("decide") => decide(&args[1..]),
         Some("parity") => parity(&args[1..]),
-        Some("convert-kev") => convert_kev(&args[1..]),
-        Some("convert-semif") => convert_semif(&args[1..]),
-        Some("convert-gemma") => convert_gemma(&args[1..]),
         Some("parity-kev") => parity_kev(&args[1..]),
         Some("parity-semif") => parity_semif(&args[1..]),
         Some("parity-gemma") => parity_gemma::run(&args[1..]),
@@ -96,41 +92,6 @@ fn load(path: &str) -> Result<Engine, String> {
     let e = Engine::load(bytes)?;
     eprintln!("loaded {path} ({:.0} MB) in {:.2}s", len as f64 / 1e6, t.elapsed().as_secs_f64());
     Ok(e)
-}
-
-fn convert(args: &[String]) -> Result<(), String> {
-    let dir = positional(args, 0)?;
-    let out = flag(args, "-o").ok_or("convert needs -o <out.kevala>")?;
-    let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
-    let revision = flag(args, "--revision").unwrap_or("1c5edc17a7acd8701df6fc341c0d179f1c62c982");
-    let t = Instant::now();
-    let st = read(&format!("{dir}/model.safetensors"))?;
-    let text = |p: &str| String::from_utf8(read(&format!("{dir}/{p}"))?).map_err(|_| format!("{p} is not UTF-8"));
-    let (enc, agent, tok) =
-        (text("encoder/config.json")?, text("rl_agent_config.json")?, text("tokenizer/tokenizer.json")?);
-    let model = Value::parse(&format!(
-        r#"{{"name":"laya","source":"https://huggingface.co/convaiinnovations/laya","revision":"{revision}",
-        "author":"Nandakishor M, Convai Innovations","license":"apache-2.0",
-        "converter":"kevala {}","quantization":"int8 symmetric absmax, one f32 scale per {block} weights; norms, biases, type embedding, scorer and act head in f32"}}"#,
-        env!("CARGO_PKG_VERSION")
-    ))
-    .map_err(|e| e.to_string())?;
-    let pack = kevala::convert::convert(
-        &kevala::convert::Checkpoint {
-            safetensors: &st,
-            encoder_config: &enc,
-            agent_config: &agent,
-            tokenizer_json: &tok,
-        },
-        &kevala::convert::Options {
-            block,
-            model,
-            keep_f32: flag(args, "--keep-f32").map(|s| s.split(',').map(String::from).collect()).unwrap_or_default(),
-        },
-    )?;
-    std::fs::write(out, &pack).map_err(|e| format!("{out}: {e}"))?;
-    eprintln!("wrote {out}: {:.1} MB in {:.1}s", pack.len() as f64 / 1e6, t.elapsed().as_secs_f64());
-    Ok(())
 }
 
 fn state_arg(s: &str) -> Value {
@@ -348,328 +309,6 @@ fn bench(args: &[String]) -> Result<(), String> {
         ms[0]
     );
     Ok(())
-}
-
-fn safetensors_header(path: &Path) -> Result<(Vec<u8>, usize), String> {
-    let mut file = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let mut prefix = [0u8; 8];
-    file.read_exact(&mut prefix).map_err(|e| format!("{}: {e}", path.display()))?;
-    let n = usize::try_from(u64::from_le_bytes(prefix))
-        .map_err(|_| format!("{}: header length does not fit usize", path.display()))?;
-    let total = 8usize.checked_add(n).ok_or_else(|| format!("{}: header length overflows usize", path.display()))?;
-    let mut head = Vec::with_capacity(total);
-    head.extend_from_slice(&prefix);
-    head.resize(total, 0);
-    file.read_exact(&mut head[8..]).map_err(|e| format!("{}: {e}", path.display()))?;
-    Ok((head, total))
-}
-
-fn indexed_shards(dir: &str) -> Result<Vec<PathBuf>, String> {
-    let root = Path::new(dir);
-    let index_path = root.join("model.safetensors.index.json");
-    if index_path.exists() {
-        let index_bytes = std::fs::read(&index_path).map_err(|e| format!("{}: {e}", index_path.display()))?;
-        let index_text =
-            String::from_utf8(index_bytes).map_err(|_| format!("{} is not UTF-8", index_path.display()))?;
-        let index = Value::parse(&index_text).map_err(|e| format!("{}: {e}", index_path.display()))?;
-        let mut names = Vec::new();
-        for (_, value) in index
-            .get("weight_map")
-            .and_then(Value::as_object)
-            .ok_or_else(|| format!("{}: missing weight_map", index_path.display()))?
-        {
-            let name = value
-                .as_str()
-                .ok_or_else(|| format!("{}: weight_map value is not a filename", index_path.display()))?;
-            if !names.iter().any(|seen| seen == name) {
-                names.push(name.to_string());
-            }
-        }
-        if names.is_empty() {
-            return Err(format!("{}: weight_map is empty", index_path.display()));
-        }
-        return names.into_iter().map(|name| safe_join(root, &name)).collect();
-    }
-    let single = root.join("model.safetensors");
-    if single.exists() {
-        return Ok(vec![single]);
-    }
-    let mut files: Vec<PathBuf> = std::fs::read_dir(root)
-        .map_err(|e| format!("{dir}: {e}"))?
-        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-        .filter(|path| path.extension().is_some_and(|ext| ext == "safetensors"))
-        .collect();
-    files.sort();
-    match files.len() {
-        0 => Err(format!("{dir}: no safetensors checkpoint or model.safetensors.index.json")),
-        1 => Ok(files),
-        _ => {
-            Err(format!("{dir}: {} safetensors shards found but model.safetensors.index.json is missing", files.len()))
-        }
-    }
-}
-
-fn safe_join(root: &Path, relative: &str) -> Result<PathBuf, String> {
-    let path = Path::new(relative);
-    if path.is_absolute()
-        || path
-            .components()
-            .any(|part| matches!(part, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
-    {
-        return Err(format!("checkpoint shard path is not relative: {relative}"));
-    }
-    Ok(root.join(path))
-}
-
-fn repo_url(value: &str) -> String {
-    if value.starts_with("http://") || value.starts_with("https://") {
-        value.to_string()
-    } else {
-        format!("https://huggingface.co/{value}")
-    }
-}
-
-fn config_repo(config: &Value, fallback_dir: &str) -> String {
-    let text_config = config.get("text_config").unwrap_or(config);
-    [config, text_config]
-        .into_iter()
-        .flat_map(|source| {
-            ["_name_or_path", "name_or_path", "base_model_name_or_path"]
-                .iter()
-                .filter_map(move |key| source.get(key).and_then(Value::as_str))
-        })
-        .find(|value| !value.is_empty() && *value != "Qwen/Qwen3.5")
-        .map(repo_url)
-        .unwrap_or_else(|| {
-            let fallback = Path::new(fallback_dir).file_name().and_then(|name| name.to_str()).unwrap_or("qwen3.5");
-            repo_url(fallback)
-        })
-}
-
-fn output_pack(path: &str, pack: &[u8], started: Instant) -> Result<(), String> {
-    let mut file = File::create(path).map_err(|e| format!("{path}: {e}"))?;
-    file.write_all(pack).map_err(|e| format!("{path}: {e}"))?;
-    file.flush().map_err(|e| format!("{path}: {e}"))?;
-    eprintln!("wrote {path}: {:.1} MB in {:.1}s", pack.len() as f64 / 1e6, started.elapsed().as_secs_f64());
-    Ok(())
-}
-
-enum StreamMode {
-    Kev { adapter: Vec<u8>, adapter_config: String, head: Vec<u8> },
-    Semif,
-}
-
-fn convert_sharded(
-    shards: &[PathBuf],
-    base_config: &str,
-    base_tokenizer: &str,
-    block: usize,
-    model: Value,
-    mode: StreamMode,
-) -> Result<Vec<u8>, String> {
-    let headers: Vec<Vec<u8>> =
-        shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
-    let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
-    let mut converter = match mode {
-        StreamMode::Kev { adapter, adapter_config, head } => kevala::convert_kev::KevConvert::new_sharded(
-            &refs,
-            base_config,
-            base_tokenizer,
-            &adapter,
-            &adapter_config,
-            &head,
-            block,
-            model,
-        )?,
-        StreamMode::Semif => {
-            kevala::convert_kev::KevConvert::new_semif_sharded(&refs, base_config, base_tokenizer, block, model)?
-        }
-    };
-    let mut out = vec![0u8; converter.total];
-    converter.begin(&mut out)?;
-    let mut files: Vec<File> = shards
-        .iter()
-        .map(|path| File::open(path).map_err(|e| format!("{}: {e}", path.display())))
-        .collect::<Result<_, _>>()?;
-    for (shard, name, offset, len) in converter.source_ranges()? {
-        let file = files.get_mut(shard).ok_or("converter returned an invalid shard index")?;
-        file.seek(SeekFrom::Start(offset as u64)).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
-        let mut bytes = vec![0u8; len];
-        file.read_exact(&mut bytes).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
-        converter.add_source(&name, bytes, &mut out)?;
-    }
-    if !converter.finished() {
-        return Err("conversion ended with tensors still missing".into());
-    }
-    Ok(out)
-}
-
-fn convert_gemma_sharded(
-    shards: &[PathBuf],
-    base_config: &str,
-    tokenizer: &str,
-    block: usize,
-    model: Value,
-) -> Result<Vec<u8>, String> {
-    let headers: Vec<Vec<u8>> =
-        shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
-    let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
-    let mut converter = kevala::convert_gemma::GemmaConvert::new_sharded(&refs, base_config, tokenizer, block, model)?;
-    let mut out = vec![0u8; converter.total];
-    converter.begin(&mut out)?;
-    let mut files: Vec<File> = shards
-        .iter()
-        .map(|path| File::open(path).map_err(|e| format!("{}: {e}", path.display())))
-        .collect::<Result<_, _>>()?;
-    for (shard, name, offset, len) in converter.source_ranges() {
-        let file = files.get_mut(shard).ok_or("Gemma converter returned an invalid shard index")?;
-        file.seek(SeekFrom::Start(offset as u64)).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
-        let mut bytes = vec![0u8; len];
-        file.read_exact(&mut bytes).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
-        converter.add_source(&name, bytes, &mut out)?;
-    }
-    if !converter.finished() {
-        return Err("Gemma conversion ended with tensors still missing".into());
-    }
-    Ok(out)
-}
-
-fn model_name(args: &[String], default: &str) -> String {
-    flag(args, "--name").unwrap_or(default).to_string()
-}
-
-fn convert_kev(args: &[String]) -> Result<(), String> {
-    let base = flag(args, "--base").ok_or("convert-kev needs --base <dir>")?;
-    let kev = flag(args, "--kev").ok_or("convert-kev needs --kev <dir>")?;
-    let out = flag(args, "-o").ok_or("convert-kev needs -o <out.kevala>")?;
-    let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
-    let started = Instant::now();
-    let text = |path: String| String::from_utf8(read(&path)?).map_err(|_| format!("{path} is not UTF-8"));
-    let base_config = text(format!("{base}/config.json"))?;
-    let base_value = Value::parse(&base_config).map_err(|e| format!("{base}/config.json: {e}"))?;
-    let adapter_config = text(format!("{kev}/adapter_config.json"))?;
-    let shards = indexed_shards(base)?;
-    let tokenizer = text(format!("{kev}/tokenizer.json")).or_else(|_| text(format!("{base}/tokenizer.json")))?;
-    let adapter = read(&format!("{kev}/adapter_model.safetensors"))?;
-    let head = read(&format!("{kev}/head.pt"))?;
-    let name = model_name(args, "kev-0.8b");
-    let source = flag(args, "--source")
-        .map(str::to_string)
-        .unwrap_or_else(|| format!("https://huggingface.co/jaredpalmer/{name}"));
-    let base_source = flag(args, "--base-source").map(str::to_string).unwrap_or_else(|| config_repo(&base_value, base));
-    let kev_revision = flag(args, "--kev-revision").unwrap_or("unknown");
-    let base_revision = flag(args, "--base-revision").unwrap_or("unknown");
-    let model = Value::Object(vec![
-        ("name".into(), Value::Str(name)),
-        ("source".into(), Value::Str(repo_url(&source))),
-        ("revision".into(), Value::Str(kev_revision.to_string())),
-        ("base".into(), Value::Str(repo_url(&base_source))),
-        ("base_revision".into(), Value::Str(base_revision.to_string())),
-        ("author".into(), Value::Str("Jared Palmer (Kev); Qwen team (base)".into())),
-        ("license".into(), Value::Str("apache-2.0".into())),
-        ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
-        ("quantization".into(), Value::Str(format!("LoRA merged in f32, then int8 symmetric absmax, one f32 scale per {block} weights; norms, gates, conv, pointer head in f32"))),
-    ]);
-    let pack = convert_sharded(
-        &shards,
-        &base_config,
-        &tokenizer,
-        block,
-        model,
-        StreamMode::Kev { adapter, adapter_config, head },
-    )?;
-    output_pack(out, &pack, started)
-}
-
-fn convert_semif(args: &[String]) -> Result<(), String> {
-    let base = flag(args, "--base").ok_or("convert-semif needs --base <dir>")?;
-    let tokenizer_path = flag(args, "--tokenizer").ok_or(
-        "convert-semif needs --tokenizer <tokenizer.json> saved by AutoTokenizer; use tools/convert_models.py",
-    )?;
-    let out = flag(args, "-o").ok_or("convert-semif needs -o <out.kevala>")?;
-    let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
-    let started = Instant::now();
-    let text = |path: String| String::from_utf8(read(&path)?).map_err(|_| format!("{path} is not UTF-8"));
-    let base_config = text(format!("{base}/config.json"))?;
-    let base_value = Value::parse(&base_config).map_err(|e| format!("{base}/config.json: {e}"))?;
-    let base_source = flag(args, "--base-source").map(str::to_string).unwrap_or_else(|| config_repo(&base_value, base));
-    let source = flag(args, "--source").map(str::to_string).unwrap_or_else(|| base_source.clone());
-    let default_name = Path::new(base)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .map(|name| format!("semif-{name}"))
-        .unwrap_or_else(|| "semif-qwen3.5".into());
-    let name = model_name(args, &default_name);
-    let base_revision = flag(args, "--base-revision").unwrap_or("unknown");
-    let method_revision = flag(args, "--method-revision").unwrap_or("1f2dea3e25379f9dfc98cb83c324f00ab5deda37");
-    let tokenizer = text(tokenizer_path.to_string())?;
-    let shards = indexed_shards(base)?;
-    let model = Value::Object(vec![
-        ("name".into(), Value::Str(name)),
-        ("source".into(), Value::Str(repo_url(&source))),
-        ("revision".into(), Value::Str(base_revision.to_string())),
-        ("base".into(), Value::Str(repo_url(&base_source))),
-        ("base_revision".into(), Value::Str(base_revision.to_string())),
-        ("author".into(), Value::Str("Qwen team (weights); SemIf (decision method)".into())),
-        ("license".into(), Value::Str("apache-2.0".into())),
-        ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
-        (
-            "quantization".into(),
-            Value::Str(format!(
-                "int8 symmetric absmax, one f32 scale per {block} weights; norms and SemIf label readout in f32"
-            )),
-        ),
-        ("inspiration".into(), Value::Str("SemIf direct-options-v1 readout".into())),
-        ("method_source".into(), Value::Str("https://github.com/TheoLeeCJ/SemIf".into())),
-        ("method_revision".into(), Value::Str(method_revision.to_string())),
-        ("method_license".into(), Value::Str("mit".into())),
-    ]);
-    let pack = convert_sharded(&shards, &base_config, &tokenizer, block, model, StreamMode::Semif)?;
-    output_pack(out, &pack, started)
-}
-
-fn convert_gemma(args: &[String]) -> Result<(), String> {
-    let base = flag(args, "--base").ok_or("convert-gemma needs --base <gemma-dir>")?;
-    let out = flag(args, "-o").ok_or("convert-gemma needs -o <out.kevala>")?;
-    let block: usize = flag(args, "--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
-    let started = Instant::now();
-    let text = |path: String| String::from_utf8(read(&path)?).map_err(|_| format!("{path} is not UTF-8"));
-    let base_config = text(format!("{base}/config.json"))?;
-    let base_value = Value::parse(&base_config).map_err(|e| format!("{base}/config.json: {e}"))?;
-    let tokenizer_path =
-        flag(args, "--tokenizer").map(str::to_string).unwrap_or_else(|| format!("{base}/tokenizer.json"));
-    let tokenizer = text(tokenizer_path)?;
-    let shards = indexed_shards(base)?;
-    let hidden =
-        base_value.get("text_config").and_then(|c| c.get("hidden_size")).and_then(Value::as_usize).unwrap_or(1536);
-    let default_name = if hidden <= 2048 { "gemma-4-e2b" } else { "gemma-4-e4b" };
-    let name = model_name(args, default_name);
-    let source = flag(args, "--source").map(str::to_string).unwrap_or_else(|| {
-        format!("https://huggingface.co/google/{}-it", if hidden <= 2048 { "gemma-4-E2B" } else { "gemma-4-E4B" })
-    });
-    let base_source = flag(args, "--base-source").map(str::to_string).unwrap_or_else(|| source.clone());
-    let revision = flag(args, "--base-revision").unwrap_or("unknown");
-    let method_revision = flag(args, "--method-revision").unwrap_or("1f2dea3e25379f9dfc98cb83c324f00ab5deda37");
-    let model = Value::Object(vec![
-        ("name".into(), Value::Str(name)),
-        ("source".into(), Value::Str(repo_url(&source))),
-        ("revision".into(), Value::Str(revision.to_string())),
-        ("base".into(), Value::Str(repo_url(&base_source))),
-        ("base_revision".into(), Value::Str(revision.to_string())),
-        ("author".into(), Value::Str("Google (Gemma team)".into())),
-        ("license".into(), Value::Str("apache-2.0".into())),
-        ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
-        (
-            "quantization".into(),
-            Value::Str(format!("BF16 source converted to symmetric int8 absmax, one f32 scale per {block} weights; norms and direct-option label readout in f32")),
-        ),
-        ("inspiration".into(), Value::Str("SemIf direct-options-v1 readout".into())),
-        ("method_source".into(), Value::Str("https://github.com/TheoLeeCJ/SemIf".into())),
-        ("method_revision".into(), Value::Str(method_revision.to_string())),
-        ("method_license".into(), Value::Str("mit".into())),
-    ]);
-    let pack = convert_gemma_sharded(&shards, &base_config, &tokenizer, block, model)?;
-    output_pack(out, &pack, started)
 }
 
 fn parity_kev(args: &[String]) -> Result<(), String> {

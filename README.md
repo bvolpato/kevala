@@ -236,7 +236,7 @@ page ─► index.js ─► engine worker ─► coordinator (Rust → WebAssemb
 ```
 
 - **One Rust core, zero crates.** JSON, Unicode tables, byte-level BPE tokenizers, the request
-  templates, the model architectures and readouts for all four product families, the `.kevala` pack format and the checkpoint converters (safetensors,
+  templates, the model architectures and readouts, the `.kevala` pack format and the checkpoint converters (safetensors,
   LoRA adapters, `torch.save` files) are all in `crates/kevala`, and the same code runs natively for the
   CLI and tests.
 - **GPU kernels in the crate too.** WebGPU only runs WGSL, so the kernels are `.wgsl` sources in
@@ -268,11 +268,12 @@ pnpm check:package dist/package/kevala-*.tgz
 pnpm stage:site                             # stage the allowlisted Pages tree in dist/site
 cargo build --release -p kevala-cli            # target/release/kevala
 
-kevala convert <laya-checkpoint-dir> -o laya-q8.kevala
-kevala convert-kev --base <qwen3.5-dir> --kev <kev-dir> -o kev-0.8b-q8.kevala   # see docs/packs.md
-kevala decide laya-q8.kevala --state "..." --questions '{"q": {"type": "noul", "instructions": "..."}}'
-kevala parity laya-q8.kevala tests/fixtures/golden.json
-kevala bench kev-0.8b-q8.kevala --tokens 128
+kevala convert <checkpoint-dir> -o model.kevala
+kevala convert <qwen3.5-dir> --adapter <adapter-dir> -o model.kevala
+# The config selects a supported architecture and validates its decision readout.
+kevala decide model.kevala --state "..." --questions '{"q": {"type": "noul", "instructions": "..."}}'
+kevala parity model.kevala reference.json    # use the reference for this checkpoint
+kevala bench model.kevala --tokens 128
 kevala wgsl matmul --f16 --rows 3                  # a GPU kernel, specialized
 
 pnpm serve                                 # static server at http://127.0.0.1:8080

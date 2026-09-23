@@ -36,10 +36,12 @@ downloads about half the bytes of the original checkpoints.
 | `gemma-4-e2b-q8.kevala` | Gemma 4 E2B | [google/gemma-4-E2B-it](https://huggingface.co/google/gemma-4-E2B-it) at `3e22461f65e89153144f8adb70e3b8c2cc9845a7` | 5.217 GB |
 | `gemma-4-e4b-q8.kevala` | Gemma 4 E4B | [google/gemma-4-E4B-it](https://huggingface.co/google/gemma-4-E4B-it) at `ee0ef6023621cff504d758262d4e04895a5af4a2` | 8.407 GB |
 
-The Laya, Kev, and SemIf packs were made with the kevala command line (`kevala convert`, `kevala convert-kev`): weights are
+The Laya, Kev, and SemIf packs were made with the kevala command line: weights are
 int8 with one f32 scale per 32 values (symmetric absmax); norms, biases, gates and decision heads stay
-f32; Kev's LoRA adapter is merged in f32 before quantization. The header of every pack records its
-source, revision, author, license and conversion. Against the upstream PyTorch code on the fixtures,
+f32; Kev's LoRA adapter is merged in f32 before quantization. The preferred command is
+`kevala convert <checkpoint-dir> -o out.kevala`; `convert-kev`, `convert-semif`, and `convert-gemma`
+remain compatibility aliases for the same validated path. The header of every pack records its source,
+revision, author, license and conversion. Against the upstream PyTorch code on the fixtures,
 Laya keeps 41/41 argmax agreement (largest probability difference 0.024) and Kev-0.8B 13/13 (0.010).
 
 Sizes above use decimal units. Each new pack has an adjacent JSON manifest with its exact byte
@@ -47,7 +49,8 @@ count, SHA-256, base checkpoint revision, and configuration. Kev-4B uses Qwen3.5
 `1001bb4d826a52d1f399e183466143f4da7b741b`; Kev-9B uses Qwen3.5-9B-Base at
 `68c46c4b3498877f3ef123c856ecfde50c39f404`. These are text-only packs.
 
-The Gemma 4 E2B and E4B packs are also text-only. They use `kevala convert-gemma` to
+The Gemma 4 E2B and E4B packs are also text-only. They use the common `kevala convert` path (with
+`convert-gemma` retained as a compatibility alias) to
 extract the dense language model from Google's multimodal checkpoints and do not include the
 vision or audio towers. The sizes above are the converted text pack sizes.
 
@@ -90,6 +93,9 @@ larger packs. WebGPU needs sufficient GPU memory and per-buffer limits. Large pa
 and are not downloaded by routine CI. Caching avoids later downloads, but loading still transfers
 weights to the GPU and needs working memory.
 
+Use a Kevala runtime that supports the pack's architecture. Older published packages can reject
+newer packs; the current source and hosted demo include the architectures listed here.
+
 The Gemma backend accepts at most 4096 input tokens per question. Overlong requests fail instead of silently
 dropping evidence. This runtime limit is smaller than the upstream model context limits.
 
@@ -99,9 +105,11 @@ const kevala = await Kevala.load({ model: "laya" }); // fetches laya-q8.kevala f
 ```
 
 For Laya and Kev-0.8B, `from: "checkpoint"` converts the original weights in the browser. Other
-models require these packs. The pinned native conversion helper is `tools/convert_models.py`;
-SemIf conversion materializes Transformers' tokenizer to preserve its token boundaries. The commands that made and
-checked these packs, and the steps to publish new ones, are in
+models require these packs. The native converter reads the checkpoint's Qwen2Tokenizer configuration
+and applies its normalization and added-token overlay, so ordinary conversion needs no Python or
+Transformers tokenizer materialization. Pass `--tokenizer` only for an explicit, verified override.
+The pinned conversion helper is `tools/convert_models.py`; it invokes the common native path. The
+commands that made and checked these packs, and the steps to publish new ones, are in
 [docs/packs.md](https://github.com/bvolpato/kevala/blob/main/docs/packs.md).
 
 ## Credits and licenses

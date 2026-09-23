@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.12"
-# dependencies = ["huggingface-hub", "transformers>=5.17"]
+# dependencies = ["huggingface-hub"]
 # ///
 """Convert pinned optional models serially; publishing is a separate explicit flag.
 
@@ -14,7 +14,6 @@ import hashlib
 import json
 import struct
 import subprocess
-import tempfile
 from pathlib import Path
 
 from huggingface_hub import CommitOperationAdd, HfApi, snapshot_download
@@ -26,6 +25,21 @@ PATTERNS = ["*.json", "*.safetensors", "*.pt", "*.jinja", "LICENSE*", "merges.tx
 
 def snapshot(spec):
     return snapshot_download(spec["repo"], revision=spec["revision"], allow_patterns=PATTERNS, max_workers=1)
+
+
+def conversion_command(cli, name, spec, source, base, output):
+    command = [str(cli), "convert", source, "--name", name,
+               "--source", spec["repo"], "--revision", spec["revision"],
+               "--base-source", spec.get("base", spec)["repo"],
+               "--base-revision", spec.get("base", spec)["revision"], "-o", str(output)]
+    if "base" in spec:
+        command += ["--base", base]
+    for field in ("author", "license"):
+        if field in spec:
+            command += [f"--{field}", spec[field]]
+    if "method" in spec:
+        command += ["--method-revision", spec["method"]["revision"]]
+    return command
 
 
 def inspect(path, source):
@@ -66,31 +80,8 @@ def main():
         path = args.output_dir / f"{name}-q8.kevala"
         if not args.upload_only:
             source = snapshot(spec)
-            base = snapshot(spec["base"]) if spec["kind"] == "kev" else source
-            command = [str(args.cli), f"convert-{spec['kind']}", "--base", base, "--name", name,
-                       "--source", spec["repo"], "--base-source", spec.get("base", spec)["repo"],
-                       "--base-revision", spec.get("base", spec)["revision"], "-o", str(path)]
-            if spec["kind"] == "kev":
-                command += ["--kev", source, "--kev-revision", spec["revision"]]
-                subprocess.run(command, check=True, cwd=ROOT)
-            elif spec["kind"] == "semif":
-                from transformers import AutoTokenizer
-
-                # Qwen2Tokenizer changes the raw checkpoint's pretokenizer on load.
-                with tempfile.TemporaryDirectory(prefix="kevala-tokenizer-") as tokenizer_dir:
-                    AutoTokenizer.from_pretrained(source, local_files_only=True).save_pretrained(tokenizer_dir)
-                    command += ["--tokenizer", str(Path(tokenizer_dir) / "tokenizer.json"),
-                                "--method-revision", spec["method"]["revision"]]
-                    subprocess.run(command, check=True, cwd=ROOT)
-            elif spec["kind"] == "gemma":
-                # Gemma's checkpoint already ships the tokenizer.json consumed by
-                # the native converter. Loading it through Transformers can rewrite
-                # the tokenizer and make token IDs drift from the reference.
-                command += ["--tokenizer", str(Path(source) / "tokenizer.json"),
-                            "--method-revision", spec["method"]["revision"]]
-                subprocess.run(command, check=True, cwd=ROOT)
-            else:
-                raise ValueError(f"{name}: unsupported converter kind {spec['kind']!r}")
+            base = snapshot(spec["base"]) if "base" in spec else source
+            subprocess.run(conversion_command(args.cli, name, spec, source, base, path), check=True, cwd=ROOT)
         record = inspect(path, spec)
         manifest = path.with_suffix(".json")
         manifest.write_text(json.dumps(record, indent=2) + "\n")
@@ -105,7 +96,7 @@ def main():
         api = HfApi()
         head = api.model_info(args.publish).sha
         result = api.create_commit(repo_id=args.publish, operations=operations, parent_commit=head,
-                                   commit_message="Add pinned Kev, SemIf, and Gemma 4 packs")
+                                   commit_message="Add pinned Kevala packs")
         print(f"Published {result.commit_url}", flush=True)
 
 

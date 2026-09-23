@@ -139,11 +139,11 @@ export default {
     const hlen = Number(new DataView(buf.buffer).getBigUint64(0, true));
     while (buf.byteLength < 8 + hlen) if (!(await more())) throw new Error("truncated safetensors header");
     const model = JSON.stringify({
-      name: "laya",
-      source: `https://huggingface.co/${up.repo}`,
+      name: up.name || up.repo?.split("/").pop() || "laya",
+      source: up.source || (up.repo ? `https://huggingface.co/${up.repo}` : undefined),
       revision: up.revision,
-      author: "Nandakishor M, Convai Innovations",
-      license: "apache-2.0",
+      author: up.author,
+      license: up.license,
       converter: "kevala (in-browser)",
       quantization: `int8 symmetric absmax, one f32 scale per ${up.block} weights; norms, biases, type embedding, scorer and act head in f32`,
     });

@@ -30,6 +30,53 @@ pub const SPECIAL: [&str; 5] = ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start
 /// SemIf's direct readout accepts up to sixteen options, represented by these answer slots.
 pub const SEMIF_LABELS: &str = "ABCDEFGHIJKLMNOP";
 
+fn pointer_dimension(root: &Py, hidden: usize) -> Result<usize, String> {
+    let Some(Py::Dict(tensors)) = root.get("head") else { return Err("head.pt has no head tensor dictionary".into()) };
+    let dimension = match root.get("head").and_then(|head| head.get("q.weight")) {
+        Some(Py::Tensor(tensor)) if tensor.shape.len() == 2 && tensor.shape[0] > 0 => tensor.shape[0],
+        _ => return Err("head.pt has no rank-2 head q.weight".into()),
+    };
+    for (key, value) in tensors {
+        let Py::Str(name) = key else { return Err("head.pt: head tensor names must be strings".into()) };
+        let expected = match name.as_str() {
+            "q.weight" | "k.weight" => vec![dimension, hidden],
+            "q.bias" | "k.bias" => vec![dimension],
+            _ => return Err(format!("head.pt: unsupported head tensor {name}")),
+        };
+        let Py::Tensor(tensor) = value else { return Err(format!("head.pt: {name} is not a tensor")) };
+        if tensor.shape != expected {
+            return Err(format!("head.pt: {name} must have shape {expected:?}, got {:?}", tensor.shape));
+        }
+    }
+    for name in ["q.weight", "k.weight", "q.bias", "k.bias"] {
+        if root.get("head").and_then(|head| head.get(name)).is_none() {
+            return Err(format!("head.pt: missing {name}"));
+        }
+    }
+    if let Py::Dict(entries) = root {
+        for (name, value) in entries {
+            if matches!(value, Py::Tensor(_)) && !matches!(name, Py::Str(name) if name == "temperature") {
+                return Err(format!("head.pt: unconsumed top-level tensor {name:?}"));
+            }
+        }
+    }
+    Ok(dimension)
+}
+
+fn pointer_temperature(head: &TorchFile<'_>) -> Result<f64, String> {
+    let temperature = match head.root.get("temperature") {
+        None => 1.0,
+        Some(Py::Tensor(tensor)) if tensor.shape.is_empty() || tensor.shape == [1] => {
+            *head.f32(tensor)?.first().ok_or("head.pt: empty temperature tensor")? as f64
+        }
+        Some(value) => value.as_f64().ok_or("head.pt: temperature must be a scalar")?,
+    };
+    if !temperature.is_finite() || temperature <= 0.0 {
+        return Err("head.pt: temperature must be finite and positive".into());
+    }
+    Ok(temperature)
+}
+
 /// A safetensors file whose tensors arrive one by one: the header up front, each tensor's bytes
 /// when the stream reaches it (or all at once for a file already in memory).
 struct St {
@@ -272,17 +319,17 @@ impl KevConvert {
         }
         let cfg_all = Value::parse(base_config).map_err(|e| format!("base config: {e}"))?;
         let cfg = cfg_all.get("text_config").unwrap_or(&cfg_all);
-        let (adapter, scaling) = if let Some((bytes, text)) = adapter_input {
+        let (adapter, scaling, adapter_rank) = if let Some((bytes, text)) = adapter_input {
             let adapter = St::whole(bytes)?;
             let acfg = Value::parse(text).map_err(|e| format!("adapter config: {e}"))?;
             let r = acfg.get("r").and_then(Value::as_f64).ok_or("adapter config: no r")?;
             let alpha = acfg.get("lora_alpha").and_then(Value::as_f64).ok_or("adapter config: no lora_alpha")?;
-            if r <= 0.0 || !r.is_finite() || !alpha.is_finite() {
-                return Err("adapter config: r and lora_alpha must be finite, and r positive".into());
+            if r <= 0.0 || !r.is_finite() || r.fract() != 0.0 || r > usize::MAX as f64 || !alpha.is_finite() {
+                return Err("adapter config: r must be a positive integer and lora_alpha must be finite".into());
             }
-            (adapter, (alpha / r) as f32)
+            (adapter, (alpha / r) as f32, Some(r as usize))
         } else {
-            (St::empty(), 0.0)
+            (St::empty(), 0.0, None)
         };
         let head = head_input.map(TorchFile::parse).transpose()?;
         if semif && head.is_some() {
@@ -323,12 +370,7 @@ impl KevConvert {
             return Err("base config: DeltaNet dimensions must be positive".into());
         }
         let (temperature, ptr_dim) = if let Some(head) = head.as_ref() {
-            let temperature = head.root.get("temperature").and_then(Py::as_f64).unwrap_or(1.0);
-            let ptr_dim = match head.root.get("head").and_then(|h| h.get("q.weight")) {
-                Some(Py::Tensor(t)) if t.shape.len() == 2 && t.shape[0] > 0 => t.shape[0],
-                _ => return Err("head.pt has no head q.weight".into()),
-            };
-            (temperature, ptr_dim)
+            (pointer_temperature(head)?, pointer_dimension(&head.root, hidden)?)
         } else {
             (1.0, 0)
         };
@@ -415,8 +457,16 @@ impl KevConvert {
             }
         }
         let mut w = Writer::new(model, config, tok.to_bytes());
-        let pre = "model.language_model.";
+        let pre = crate::convert::text_tensor_prefix(|name| base_index.contains_key(name))?;
         let src = Sources { base, base_index, adapter, head: head_tensors, scaling, pre: pre.to_string() };
+        let embedding = src.base_shape(&format!("{pre}embed_tokens.weight"))?;
+        if embedding != [u("vocab_size")?, hidden] {
+            return Err(format!("text embedding shape {embedding:?} does not match [vocab_size, hidden_size]"));
+        }
+        crate::convert::validate_tokenizer_vocab(tok.vocab_size(), u("vocab_size")?, embedding[0])?;
+        if semif {
+            crate::convert::require_prompt_tokens(&tok, &["<|im_start|>", "<|im_end|>", "<think>", "</think>"])?;
+        }
         // What each pack tensor is made of, in stream order.
         let mut plan: Vec<(String, Spec)> = vec![
             ("emb".into(), Spec::Embed(format!("{pre}embed_tokens.weight"))),
@@ -479,6 +529,9 @@ impl KevConvert {
             plan.push((format!("L.{i}.down"), fused(&["down_proj"], "mlp")));
         }
 
+        if let Some(rank) = adapter_rank {
+            src.validate_adapter(&plan, rank)?;
+        }
         for (name, spec) in &plan {
             match src.shape(spec)? {
                 (shape, true) if shape.len() == 2 && shape[1] % block == 0 => w.add_q8(name, shape[0], shape[1], block),
@@ -648,6 +701,43 @@ struct Sources {
 }
 
 impl Sources {
+    fn validate_adapter(&self, plan: &[(String, Spec)], rank: usize) -> Result<(), String> {
+        let modules: std::collections::HashSet<&str> = plan
+            .iter()
+            .flat_map(|(_, spec)| match spec {
+                Spec::Merged(module) => vec![module.as_str()],
+                Spec::Fused(modules) => modules.iter().map(String::as_str).collect(),
+                _ => Vec::new(),
+            })
+            .collect();
+        let entries = self.adapter.header.as_object().ok_or("adapter safetensors header must be an object")?;
+        let mut pairs = std::collections::HashSet::new();
+        for (name, _) in entries.iter().filter(|(name, _)| name != "__metadata__") {
+            let module = name
+                .strip_prefix("base_model.model.")
+                .and_then(|name| name.strip_suffix(".lora_A.weight").or_else(|| name.strip_suffix(".lora_B.weight")))
+                .ok_or_else(|| format!("unsupported pointer-adapter tensor {name}"))?;
+            if !modules.contains(module) {
+                return Err(format!("pointer-adapter tensor {name} targets a module this converter does not merge"));
+            }
+            pairs.insert(module);
+        }
+        if pairs.is_empty() {
+            return Err("pointer adapter has no LoRA tensor pairs".into());
+        }
+        for module in pairs {
+            let base = self.base_shape(&format!("{}{module}.weight", self.pre))?;
+            let a = self.adapter.shape(&format!("base_model.model.{module}.lora_A.weight"))?;
+            let b = self.adapter.shape(&format!("base_model.model.{module}.lora_B.weight"))?;
+            if base.len() != 2 || a != [rank, base[1]] || b != [base[0], rank] {
+                return Err(format!(
+                    "{module}: LoRA shapes A={a:?}, B={b:?} do not match rank {rank} and base {base:?}"
+                ));
+            }
+        }
+        Ok(())
+    }
+
     fn base_st(&self, name: &str) -> Result<&St, String> {
         let file = *self.base_index.get(name).ok_or_else(|| format!("checkpoint has no tensor {name}"))?;
         self.base.get(file).ok_or_else(|| format!("base shard {file} is missing"))
@@ -828,6 +918,45 @@ impl Sources {
 mod tests {
     use super::*;
 
+    #[test]
+    fn pointer_heads_require_all_four_exact_shapes_and_consume_every_tensor() {
+        let tensor = |shape: Vec<usize>| {
+            Py::Tensor(crate::torchpt::TensorRef {
+                key: "0".into(),
+                dtype: "FloatStorage".into(),
+                offset: 0,
+                stride: Vec::new(),
+                shape,
+            })
+        };
+        let head = vec![
+            (Py::Str("q.weight".into()), tensor(vec![16, 32])),
+            (Py::Str("k.weight".into()), tensor(vec![16, 32])),
+            (Py::Str("q.bias".into()), tensor(vec![16])),
+            (Py::Str("k.bias".into()), tensor(vec![16])),
+        ];
+        let root = |head: Vec<(Py, Py)>| {
+            Py::Dict(vec![(Py::Str("head".into()), Py::Dict(head)), (Py::Str("temperature".into()), tensor(vec![]))])
+        };
+        assert_eq!(pointer_dimension(&root(head.clone()), 32).unwrap(), 16);
+        assert!(pointer_dimension(&root(head.clone()), 64).unwrap_err().contains("q.weight"));
+        for (index, shape) in [(1, vec![15, 32]), (2, vec![17]), (3, vec![16, 1])] {
+            let mut invalid = head.clone();
+            invalid[index].1 = tensor(shape);
+            assert!(pointer_dimension(&root(invalid), 32).unwrap_err().contains("must have shape"));
+        }
+        let mut missing = head.clone();
+        missing.pop();
+        assert!(pointer_dimension(&root(missing), 32).unwrap_err().contains("missing k.bias"));
+        let mut extra = head.clone();
+        extra.push((Py::Str("unconsumed.weight".into()), tensor(vec![16, 32])));
+        assert!(pointer_dimension(&root(extra), 32).unwrap_err().contains("unsupported head tensor"));
+        let mut extra = root(head);
+        let Py::Dict(entries) = &mut extra else { unreachable!() };
+        entries.push((Py::Str("unconsumed".into()), tensor(vec![1])));
+        assert!(pointer_dimension(&extra, 32).unwrap_err().contains("unconsumed top-level tensor"));
+    }
+
     fn tiny_header(name: &str, start: usize, end: usize) -> Vec<u8> {
         let json = format!(r#"{{"{name}":{{"dtype":"F32","shape":[1],"data_offsets":[{start},{end}]}}}}"#);
         let mut bytes = (json.len() as u64).to_le_bytes().to_vec();
@@ -892,5 +1021,30 @@ mod tests {
             pre: String::new(),
         };
         assert!(sources.shape(&Spec::Conv("conv".into())).unwrap_err().contains("[channels, 1, kernel]"));
+    }
+
+    #[test]
+    fn pointer_adapters_reject_unconsumed_tensors_and_rank_mismatches() {
+        let header = |text: &str| {
+            let mut bytes = (text.len() as u64).to_le_bytes().to_vec();
+            bytes.extend_from_slice(text.as_bytes());
+            St::header_only(&bytes).unwrap()
+        };
+        let mut sources = Sources {
+            base: vec![header(r#"{"model.layers.0.mlp.down_proj.weight":{"shape":[32,64]}}"#)],
+            base_index: [("model.layers.0.mlp.down_proj.weight".into(), 0)].into_iter().collect(),
+            adapter: header(
+                r#"{"base_model.model.layers.0.mlp.down_proj.lora_A.weight":{"shape":[2,64]},"base_model.model.layers.0.mlp.down_proj.lora_B.weight":{"shape":[32,2]}}"#,
+            ),
+            head: Default::default(),
+            scaling: 1.0,
+            pre: "model.".into(),
+        };
+        let plan = vec![("down".into(), Spec::Merged("layers.0.mlp.down_proj".into()))];
+        assert!(sources.validate_adapter(&plan, 2).is_ok());
+        assert!(sources.validate_adapter(&plan, 4).unwrap_err().contains("do not match rank"));
+        assert!(sources.validate_adapter(&[], 2).unwrap_err().contains("does not merge"));
+        sources.adapter = header(r#"{"base_model.model.layers.0.mlp.down_proj.lora_A.weight":{"shape":[2,64]}}"#);
+        assert!(sources.validate_adapter(&plan, 2).unwrap_err().contains("lora_B"));
     }
 }

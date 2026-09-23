@@ -103,11 +103,12 @@ export default {
     const stHead = new Uint8Array(await (await fetch(url, { signal, headers: { range: `bytes=0-${8 + n - 1}` } })).arrayBuffer());
     const model = JSON.stringify({
       name: spec.name || spec.repo.split("/").pop(),
-      source: `https://huggingface.co/${spec.repo}`,
+      source: spec.source || (spec.repo ? `https://huggingface.co/${spec.repo}` : undefined),
       revision: spec.revision,
       base: `https://huggingface.co/${spec.base.repo}`,
       base_revision: spec.base.revision,
-      license: spec.license || "apache-2.0",
+      author: spec.author,
+      license: spec.license,
       converter: "kevala (in-browser)",
       quantization: `LoRA merged in f32, then int8 symmetric absmax, one f32 scale per ${spec.block} weights; norms, gates, conv, pointer head in f32`,
     });

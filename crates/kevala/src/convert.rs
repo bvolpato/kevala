@@ -9,6 +9,34 @@ use crate::json::Value;
 use crate::pack::Writer;
 use crate::tokenizer::Tokenizer;
 
+pub(crate) fn text_tensor_prefix(has: impl Fn(&str) -> bool) -> Result<&'static str, String> {
+    let mut prefixes = ["model.language_model.", "language_model.", "model."]
+        .into_iter()
+        .filter(|prefix| has(&format!("{prefix}embed_tokens.weight")));
+    let prefix = prefixes.next().ok_or("checkpoint has no supported text embedding tensor namespace")?;
+    if prefixes.next().is_some() {
+        return Err("checkpoint has ambiguous text embedding tensor namespaces".into());
+    }
+    Ok(prefix)
+}
+
+pub(crate) fn validate_tokenizer_vocab(tokens: usize, configured: usize, embedding_rows: usize) -> Result<(), String> {
+    if tokens > configured || tokens > embedding_rows {
+        return Err(format!("tokenizer ID range 0..{tokens} exceeds the configured vocabulary ({configured}) or embedding rows ({embedding_rows})"));
+    }
+    Ok(())
+}
+
+pub(crate) fn require_prompt_tokens(tokenizer: &Tokenizer, tokens: &[&str]) -> Result<(), String> {
+    for &token in tokens {
+        let id = tokenizer.token_id(token).ok_or_else(|| format!("tokenizer has no required prompt token {token}"))?;
+        if tokenizer.encode(token) != [id] {
+            return Err(format!("required prompt token {token} does not encode to its exact token ID"));
+        }
+    }
+    Ok(())
+}
+
 pub struct Checkpoint<'a> {
     pub safetensors: &'a [u8],
     pub encoder_config: &'a str,
@@ -165,6 +193,11 @@ pub fn plan(
 
     let u = |k: &str| enc.get(k).and_then(Value::as_usize).ok_or_else(|| format!("encoder config: no {k}"));
     let hidden = u("hidden_size")?;
+    let embedding = st.shape("encoder.embeddings.tok_embeddings.weight")?;
+    if embedding != [u("vocab_size")?, hidden] {
+        return Err(format!("encoder embedding shape {embedding:?} does not match [vocab_size, hidden_size]"));
+    }
+    validate_tokenizer_vocab(tok.vocab_size(), u("vocab_size")?, embedding[0])?;
     let layers = u("num_hidden_layers")?;
     let inter = u("intermediate_size")?;
     let head_layers = agent.get("head_layers").and_then(Value::as_usize).unwrap_or(2);
@@ -366,5 +399,27 @@ mod tests {
         let (q, s) = quantize(&w, 2, 4, 4);
         assert_eq!(s, vec![1.0 / 127.0, 2.0 / 127.0]);
         assert_eq!(q, vec![64, -127, 32, 0, 127, -127, 64, 0]);
+    }
+}
+
+#[cfg(test)]
+mod prefix_tests {
+    use super::text_tensor_prefix;
+
+    #[test]
+    fn text_namespace_is_selected_from_tensors_and_rejects_ambiguity() {
+        for prefix in ["model.", "model.language_model.", "language_model."] {
+            let tensor = format!("{prefix}embed_tokens.weight");
+            assert_eq!(text_tensor_prefix(|name| name == tensor).unwrap(), prefix);
+        }
+        assert!(text_tensor_prefix(|_| false).unwrap_err().contains("no supported"));
+        assert!(text_tensor_prefix(|_| true).unwrap_err().contains("ambiguous"));
+    }
+
+    #[test]
+    fn tokenizer_bounds_allow_padded_embeddings_and_reject_out_of_range_ids() {
+        assert!(super::validate_tokenizer_vocab(248077, 248320, 248320).is_ok());
+        assert!(super::validate_tokenizer_vocab(248321, 248320, 248320).is_err());
+        assert!(super::validate_tokenizer_vocab(248077, 248320, 248076).is_err());
     }
 }

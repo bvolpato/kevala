@@ -166,6 +166,26 @@ fn qwen_base_file_with_marks_regex() {
 }
 
 #[test]
+fn qwen_checkpoint_config_normalizes_to_autotokenizer_ids() {
+    let path =
+        std::env::var(QWEN_BASE.0).unwrap_or_else(|_| format!("{}/../../{}", env!("CARGO_MANIFEST_DIR"), QWEN_BASE.1));
+    let path = std::path::Path::new(&path);
+    let (Ok(raw), Ok(config)) =
+        (std::fs::read_to_string(path), std::fs::read_to_string(path.with_file_name("tokenizer_config.json")))
+    else {
+        eprintln!("skipping: raw Qwen tokenizer/config unavailable (set {})", QWEN_BASE.0);
+        return;
+    };
+    let normalized = Tokenizer::normalize_qwen2_json(&raw, &config).unwrap();
+    let tok = Tokenizer::from_hf_json(&normalized).unwrap();
+    assert_corpus(&tok, "tokenizer-qwen35.json");
+    assert_round_trip(&tok, "tokenizer-qwen35.json");
+    assert_eq!(tok.token_id("<|audio_start|>"), Some(248070));
+    assert_eq!(tok.token_id("<|audio_pad|>"), Some(248076));
+    assert_eq!(Tokenizer::normalize_qwen2_json(&normalized, &config).unwrap(), normalized);
+}
+
+#[test]
 fn gemma4_matches_hf_tokenizers_for_both_variants() {
     for tok in [gemma4_e2b(), gemma4_e4b()].into_iter().flatten() {
         assert_corpus(tok, "tokenizer-gemma4.json");
