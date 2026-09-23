@@ -166,8 +166,8 @@ generator; see the [Gemma 4 notes](docs/gemma4.md#verification). Open
   paths, shortlist promising outcomes, and describe them in words. The selected model scores that
   shortlist; the piece presses the keys toward the chosen landing. See the [seeded gameplay and
   latency measurements](docs/tetris-policy.md).
-- [Guardrail](https://bvolpato.github.io/kevala/#/guardrail): a prompt-injection and jailbreak gate in
-  front of an LLM that acts on confident answers and escalates the unsure ones.
+- [Prompt injection gate](https://bvolpato.github.io/kevala/#/guardrail): scores instruction overrides
+  and educational context, then recommends allow, block, or review with adjustable thresholds.
 - [Inbox](https://bvolpato.github.io/kevala/#/inbox): triage a mailbox, with rows filling in as each
   batch of answers returns.
 - [`examples/`](examples/): complete single-file pages you can copy into a site: a minimal page, a

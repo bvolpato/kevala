@@ -314,14 +314,13 @@ const DEMOS = `<section id="demos">
       </a>
       <a class="card demo-card" href="#/guardrail">
         <div class="art art-guard" aria-hidden="true">
-          <div class="g-line"><span>jailbreak</span><i style="--w:92%"></i></div>
-          <div class="g-line"><span>injection</span><i style="--w:71%"></i></div>
-          <div class="g-line"><span>sensitive data</span><i style="--w:8%"></i></div>
-          <div class="g-tag">escalate</div>
+          <div class="g-line"><span>override</span><i style="--w:92%"></i></div>
+          <div class="g-line"><span>analysis</span><i style="--w:71%"></i></div>
+          <div class="g-tag">review</div>
         </div>
         <div class="dc-body">
-          <h3>Prompt guardrail</h3>
-          <p>Checks a prompt before it reaches an LLM. Confident answers block or allow it, and unsure ones go to a slower check.</p>
+          <h3>Prompt injection gate</h3>
+          <p>Scores instruction overrides and educational context. Explore allow, block, and review thresholds in your browser.</p>
           <span class="go">Open →</span>
         </div>
       </a>
