@@ -285,7 +285,6 @@ export class GpuGemma4 {
     this.input = make(cap * D, U.COPY_DST, "Gemma 4 input embedding");
     this.h = make(cap * D, 0, "Gemma 4 normalized states");
     this.branch = make(cap * D, 0, "Gemma 4 residual branch");
-    this.branchNorm = make(cap * D, 0, "Gemma 4 normalized branch");
     this.q = make(cap * Q, 0, "Gemma 4 queries");
     this.k = make(cap * KV, U.COPY_SRC, "Gemma 4 keys");
     this.v = make(cap * KV, U.COPY_SRC, "Gemma 4 values");
@@ -350,7 +349,6 @@ export class GpuGemma4 {
       input: make(cap * D, 0, "Gemma 4 compact input embedding"),
       h: make(cap * D, U.COPY_SRC, "Gemma 4 compact normalized states"),
       branch: make(cap * D, 0, "Gemma 4 compact residual branch"),
-      branchNorm: make(cap * D, 0, "Gemma 4 compact normalized branch"),
       q: make(cap * Q, 0, "Gemma 4 compact queries"),
       ctx: make(cap * Q, 0, "Gemma 4 compact attention context"),
       gate: make(cap * maxI, 0, "Gemma 4 compact MLP gate"),
@@ -402,7 +400,6 @@ export class GpuGemma4 {
       };
     };
     const rms = (target, name, input, output, width = cfg.hidden, mode = 1, label = `rms.${name.split(".").at(-1)}`) => custom(target, "RMS", [width, f32(cfg.eps), mode, 0], [input, this.weight(name).buf, output], label, (pass) => pass.dispatchWorkgroups(this.T));
-    const add = (target, label = "residual.add") => custom(target, "RESIDUAL", [cfg.hidden, 0, 0, 0], [target.x, target.branchNorm, this.zeros], label, (pass) => pass.dispatchWorkgroups(this.T));
     const scale = (target, name, label = "layer.scalar") => custom(target, "RESIDUAL", [cfg.hidden, 1, 0, 0], [target.x, this.zeros, this.weight(name).buf], label, (pass) => pass.dispatchWorkgroups(this.T));
     const appendLayer = (ops, target, i, compact) => {
       const type = cfg.full[i] ? "full_attention" : "sliding_attention";
@@ -437,8 +434,7 @@ export class GpuGemma4 {
       const pair = shared ? this.shared.get(type) : { k: target.k, v: target.v };
       ops.push(custom(target, "ATTN", [cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [target.q, pair.k, pair.v, target.ctx, target.pos], "attn", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads)));
       ops.push(mm(target, n("o"), target.ctx, target.branch, 0, "mm.o"));
-      ops.push(rms(target, n("attn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.attn.post"));
-      ops.push(add(target, "residual.attn"));
+      ops.push(rms(target, n("attn_post_norm"), target.branch, target.x, cfg.hidden, 2, "rms.attn.post"));
       ops.push(rms(target, n("ffn_norm"), target.x, target.h, cfg.hidden, 1, "rms.ffn"));
       ops.push(mm(target, n("gate"), target.h, target.gate, 0, "mm.gate"));
       ops.push(mm(target, n("up"), target.h, target.up, 0, "mm.up"));
@@ -448,16 +444,14 @@ export class GpuGemma4 {
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
       }));
       ops.push(mm(target, n("down"), target.act, target.branch, 0, "mm.down"));
-      ops.push(rms(target, n("ffn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ffn.post"));
-      ops.push(add(target, "residual.ffn"));
+      ops.push(rms(target, n("ffn_post_norm"), target.branch, target.x, cfg.hidden, 2, "rms.ffn.post"));
       ops.push(mm(target, n("ple_gate"), target.x, target.pleGate, 0, "mm.ple.gate"));
       ops.push(custom(target, "GELU", [cfg.pleDim, 1, 0, 0], [target.pleGate, target.ple, target.pleAct], "gelu.ple", (pass) => {
         const work = Math.ceil((this.T * cfg.pleDim) / 256);
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
       }));
       ops.push(mm(target, n("ple_out"), target.pleAct, target.branch, 0, "mm.ple.out"));
-      ops.push(rms(target, n("ple_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ple"));
-      ops.push(add(target, "residual.ple"));
+      ops.push(rms(target, n("ple_norm"), target.branch, target.x, cfg.hidden, 2, "rms.ple"));
       ops.push(scale(target, n("scalar"), "scale"));
     };
     const full = {
@@ -467,7 +461,6 @@ export class GpuGemma4 {
       input: this.input,
       h: this.h,
       branch: this.branch,
-      branchNorm: this.branchNorm,
       q: this.q,
       k: this.k,
       v: this.v,
@@ -508,7 +501,6 @@ export class GpuGemma4 {
         input: tail.input,
         h: tail.h,
         branch: tail.branch,
-        branchNorm: tail.branchNorm,
         q: tail.q,
         ctx: tail.ctx,
         gate: tail.gate,

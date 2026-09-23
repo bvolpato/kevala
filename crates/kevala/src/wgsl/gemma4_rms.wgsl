@@ -1,5 +1,5 @@
-// Gemma RMSNorm uses the checkpoint weight as a direct multiplicative tensor;
-// mode 0 is the unscaled V normalization.
+// Gemma RMSNorm uses the checkpoint weight as a direct multiplicative tensor.
+// Mode 0 is unscaled, mode 1 is weighted, and mode 2 adds the weighted result to Y.
 //#include common
 
 struct P { D: u32, eps: f32, mode: u32, _a: u32 }
@@ -27,7 +27,13 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   }
   let inv = inverseSqrt(sums[0] / f32(p.D) + p.eps);
   for (var d = lane; d < p.D; d += 256u) {
-    let factor = select(1.0, W[d], p.mode == 1u);
-    Y[base + d] = X[base + d] * inv * factor;
+    let factor = select(1.0, W[d], p.mode == 1u || p.mode == 2u);
+    let normalized = X[base + d] * inv;
+    let weighted = normalized * factor;
+    if (p.mode == 2u) {
+      Y[base + d] = Y[base + d] + weighted;
+    } else {
+      Y[base + d] = weighted;
+    }
   }
 }
