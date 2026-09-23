@@ -129,6 +129,8 @@ The [Laya FP32 attention report](docs/laya-fp32-attention-performance.md) includ
 kernel measurements, full-model repeats, and browser parity guards.
 The [FP32 BM56 row tile report](docs/fp32-row56-performance.md) includes final-WASM
 matmul timings, production-shaped model repeats, and model guards.
+The [subgroup direct-load recurrence report](docs/recurrence-direct-performance.md) includes
+production-rendered recurrence timings, repeated model suites, and parity guards.
 
 ## Base weights, instruction tuning, and precision
 
