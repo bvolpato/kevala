@@ -102,6 +102,14 @@ export class GpuKev {
       SILUMUL: ["kev_silumul"],
       GATHER: ["kev_gather"],
     };
+    const gateUp = this.weights.tensors.get("L.0.gate_up")?.info;
+    const gateUpShape = gateUp?.shape;
+    if (
+      this.gpuKernel === "auto" && !d.features.has("shader-f16") &&
+      d.limits.maxComputeWorkgroupStorageSize >= 24576 && gateUp?.dtype === "q8" &&
+      Number(gateUp.block) === 32 && Array.isArray(gateUpShape) &&
+      gateUpShape[0] === 2 * this.cfg.intermediate && gateUpShape[1] === this.cfg.hidden && gateUpShape[1] % 32 === 0
+    ) kernels.GATE_UP = ["matmul_gate_up"];
     const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
@@ -394,8 +402,23 @@ export class GpuKev {
         both(mm(n("out"), this.core, this.x, 1));
       }
       both(rms(W(n("post_norm")).buf, this.x, this.h));
-      both(mm(n("gate_up"), this.h, this.up, 0));
-      both({ k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) });
+      const gateOp = mm(n("gate_up"), this.h, this.up, 0);
+      const siluOp = { k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) };
+      const gateWeight = W(n("gate_up"));
+      if (this.p.GATE_UP && gateOp.N === 2 * cfg.intermediate && gateWeight.info.dtype === "q8" && gateWeight.sbuf) {
+        both({
+          k: "gate_up",
+          label: "mm.gate_up.activation",
+          N: cfg.intermediate,
+          packedN: gateOp.N,
+          K: gateOp.K,
+          group: bg(this.p.GATE_UP, [this.g, this.uni([cfg.intermediate, gateOp.K, cfg.intermediate, 2]), this.h, gateWeight.buf, gateWeight.sbuf, gateWeight.buf, gateWeight.sbuf, this.act]),
+          fallback: [gateOp, siluOp],
+        });
+      } else {
+        both(gateOp);
+        both(siluOp);
+      }
       both(mm(n("down"), this.act, this.x, 1));
     }
     two.push({ k: "gather", group: bg(this.p.GATHER, [this.g, this.x, this.rows, this.gathered]) });
@@ -404,8 +427,13 @@ export class GpuKev {
 
   encode(enc, ops, T, S) {
     const prof = this.profiler;
+    const selected = ops.flatMap((op) => op.fallback && (
+      T < 64 ||
+      mmSplits(T, op.N, op.K, this.mm.splitTarget, 64, 64) !== 1 ||
+      mmSplits(T, op.packedN, op.K, this.mm.splitTarget, 64, 64) !== 1
+    ) ? op.fallback : [op]);
     let pass = prof ? null : enc.beginComputePass();
-    for (const op of ops) {
+    for (const op of selected) {
       if (prof) pass = prof.pass(enc, op.label || op.k);
       pass.setBindGroup(0, op.group);
       switch (op.k) {
@@ -414,6 +442,10 @@ export class GpuKev {
           encodeMatmul(pass, this.tuning.pipelines[kernel], op, T);
           break;
         }
+        case "gate_up":
+          pass.setPipeline(this.p.GATE_UP);
+          pass.dispatchWorkgroups(Math.ceil(op.N / 64), Math.ceil(T / 64));
+          break;
         case "rms":
           pass.setPipeline(this.p.RMS);
           pass.dispatchWorkgroups(T);
