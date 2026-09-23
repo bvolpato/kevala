@@ -21,6 +21,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("common", include_str!("wgsl/common.wgsl")),
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
+    ("matmul_narrow32", include_str!("wgsl/matmul_narrow32.wgsl")),
     ("matmul_gate_up", include_str!("wgsl/matmul_gate_up.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
@@ -61,6 +62,7 @@ const SOURCES: &[(&str, &str)] = &[
 /// The kernels a runtime can ask for (everything but the snippets).
 pub const KERNELS: &[&str] = &[
     "matmul",
+    "matmul_narrow32",
     "matmul_gate_up",
     "matmul_wide",
     "reduce",
