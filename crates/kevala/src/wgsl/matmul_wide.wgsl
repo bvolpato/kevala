@@ -66,8 +66,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let sw = lr & 7u;
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
-  var wv0 = vec4<f32>(0.0);
-  var wv1 = vec4<f32>(0.0);
   for (var block = kb0; block < kb1; block += 2u) {
     for (var step = 0u; step < 2u; step++) {
       let kb = block + step;
@@ -79,24 +77,31 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         xv1 = X[base + 1u];
       }
 
-      wv0 = vec4<f32>(0.0);
-      wv1 = vec4<f32>(0.0);
       let wrow = n0 + lr;
-      if (kb < kb1 && wrow < N) {
-        let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
-        let scale = S[wrow * nb + kb];
-        let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
-        wv0 = sx(lo.x) * scale;
-        wv1 = sx(lo.y) * scale;
-      }
 
       if (lr < {{BM}}u) {
         xs[lr * 16u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
         xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
       }
-      let r = lr;
-      ws[r * 16u + step * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
-      ws[r * 16u + step * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
+      // lq 0 and 2 own the packed words for q 0..3 and q 4..7.  The odd
+      // lanes used to reload those same words only to select the other pair.
+      // Have the even lane dequantize all four words and write every slot.
+      if ((lq & 1u) == 0u) {
+        let q = lq * 2u;
+        if (kb < kb1 && wrow < N) {
+          let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
+          let scale = S[wrow * nb + kb];
+          ws[lr * 16u + step * 8u + ((q + 0u) ^ sw)] = vec4<{{TILE}}>(sx(v.x) * scale);
+          ws[lr * 16u + step * 8u + ((q + 1u) ^ sw)] = vec4<{{TILE}}>(sx(v.y) * scale);
+          ws[lr * 16u + step * 8u + ((q + 2u) ^ sw)] = vec4<{{TILE}}>(sx(v.z) * scale);
+          ws[lr * 16u + step * 8u + ((q + 3u) ^ sw)] = vec4<{{TILE}}>(sx(v.w) * scale);
+        } else {
+          ws[lr * 16u + step * 8u + ((q + 0u) ^ sw)] = vec4<{{TILE}}>(0.0);
+          ws[lr * 16u + step * 8u + ((q + 1u) ^ sw)] = vec4<{{TILE}}>(0.0);
+          ws[lr * 16u + step * 8u + ((q + 2u) ^ sw)] = vec4<{{TILE}}>(0.0);
+          ws[lr * 16u + step * 8u + ((q + 3u) ^ sw)] = vec4<{{TILE}}>(0.0);
+        }
+      }
     }
     workgroupBarrier();
 
