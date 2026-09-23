@@ -1,6 +1,7 @@
-// Causal GQA attention, one workgroup per query token and head, 256 threads (one key each per
-// step). With 32-lane subgroups the per-step max and sum reduce inside each subgroup first, so a
-// reduction takes two barriers instead of eight.
+// Causal GQA attention, one workgroup per query token and head. Eight lanes cooperate on each
+// key score, producing four 32-key score blocks per 128-key online-softmax tile. With 32-lane
+// subgroups the tile max and sum reduce inside each subgroup first, so a reduction takes two
+// barriers instead of eight.
 //#if SUBGROUPS
 enable subgroups;
 //#endif
@@ -14,6 +15,7 @@ enable subgroups;
 @group(0) @binding(6) var<storage, read> KEYS: array<f32>;
 var<workgroup> q: array<vec4<f32>, 64>;
 var<workgroup> sc: array<f32, 256>;
+var<workgroup> dotp: array<f32, 256>;
 var<workgroup> red: array<f32, 256>;
 var<workgroup> info: vec4<u32>;
 var<workgroup> info2: vec4<u32>;
@@ -83,34 +85,56 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) d
   var m = -3.0e38;
   var lsum = 0.0;
   var o = 0.0;
-  for (var j0 = 0u; j0 < n; j0 += 256u) {
-    let j = j0 + d;
-    var s = -3.0e38;
-    if (j < n) {
-      var kb: u32;
-      if (j < plen) { kb = (pstart + j) * ATTN_KV + kvh * 256u; } else { kb = (start + j - plen) * ATTN_WIDTH + 2u * ATTN_Q + kvh * 256u; }
-      var acc = vec4<f32>(0.0);
-      if (j < plen) {
-        for (var c = 0u; c < 64u; c++) { acc += q[c] * vec4<f32>(KV[kb + c * 4u], KV[kb + c * 4u + 1u], KV[kb + c * 4u + 2u], KV[kb + c * 4u + 3u]); }
-      } else {
-        let kt = start + j - plen;
-        for (var c = 0u; c < 256u; c += 4u) {
-          let kb = (kvh * 256u + c) * g.T + kt;
-          acc += q[c >> 2u] * vec4<f32>(KEYS[kb], KEYS[kb + g.T], KEYS[kb + 2u * g.T], KEYS[kb + 3u * g.T]);
+  for (var j0 = 0u; j0 < n; j0 += 128u) {
+    // A workgroup has 256 lanes, so eight lanes can cover one 256-dimensional key while
+    // 32 keys are scored in parallel. Four such blocks form the softmax tile.
+    for (var block = 0u; block < 4u; block++) {
+      let lane = d % 8u;
+      let key_slot = d / 8u;
+      let j = j0 + block * 32u + key_slot;
+      var acc = 0.0;
+      if (j < n) {
+        if (j < plen) {
+          let key_base = (pstart + j) * ATTN_KV + kvh * 256u;
+          for (var c = lane * 4u; c < 256u; c += 32u) {
+            acc += dot(q[c >> 2u], vec4<f32>(
+              KV[key_base + c], KV[key_base + c + 1u],
+              KV[key_base + c + 2u], KV[key_base + c + 3u]));
+          }
+        } else {
+          let kt = start + j - plen;
+          for (var c = lane * 4u; c < 256u; c += 32u) {
+            let key_base = (kvh * 256u + c) * g.T + kt;
+            acc += dot(q[c >> 2u], vec4<f32>(
+              KEYS[key_base], KEYS[key_base + g.T],
+              KEYS[key_base + 2u * g.T], KEYS[key_base + 3u * g.T]));
+          }
         }
       }
-      s = (acc.x + acc.y + acc.z + acc.w) * 0.0625;
+      dotp[d] = acc;
+      workgroupBarrier();
+      for (var stride = 4u; stride > 0u; stride >>= 1u) {
+        if (lane < stride) { dotp[d] += dotp[d + stride]; }
+        workgroupBarrier();
+      }
+      if (lane == 0u) {
+        if (j < n) { sc[block * 32u + key_slot] = dotp[d] * 0.0625; }
+        else { sc[block * 32u + key_slot] = -3.0e38; }
+      }
+      workgroupBarrier();
     }
-    let tm = rmax(s, d);
+    var tile_score = -3.0e38;
+    if (d < 128u) { tile_score = sc[d]; }
+    let tm = rmax(tile_score, d);
     let mn = max(m, tm);
     let corr = exp(m - mn);
     var pj = 0.0;
-    if (j < n) { pj = exp(s - mn); }
-    sc[d] = pj;
+    if (d < 128u && j0 + d < n) { pj = exp(sc[d] - mn); }
+    if (d < 128u) { sc[d] = pj; }
     let ts = rsum(pj, d);
     lsum = lsum * corr + ts;
     o = o * corr;
-    let cnt = min(256u, n - j0);
+    let cnt = min(128u, n - j0);
     for (var jj = 0u; jj < cnt; jj++) {
       let key = j0 + jj;
       var vv: f32;
