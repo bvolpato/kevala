@@ -56,16 +56,16 @@ function parseKernel(raw, T, config) {
   const normalized = `${name}${tail}`;
   const f16Available = config.f16;
   if (normalized === "runtime") {
-    return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups, baseline };
+    return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T, config), groups: config.groups, baseline };
   }
   const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
   if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
-  const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
+  const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups }) : match[3] ? Number(match[3]) : 4;
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);

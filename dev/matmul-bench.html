@@ -26,8 +26,9 @@ async function main() {
   // "matmul_h:auto/2": f16 tiles, rows per thread picked from T, 2 groups of 64 columns
   const spec = (k, T) => {
     const m = k.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d))?$/);
-    const R = m[3] === "auto" ? rowsPerThread(T) : m[3] ? Number(m[3]) : 4;
-    return { name: m[1], target: m[2] ? Number(m[2]) : 128, R, J: m[4] ? Number(m[4]) : 1 };
+    const J = m[4] ? Number(m[4]) : 1;
+    const R = m[3] === "auto" ? rowsPerThread(T, { f16: m[1] !== "matmul", groups: J }) : m[3] ? Number(m[3]) : 4;
+    return { name: m[1], target: m[2] ? Number(m[2]) : 128, R, J };
   };
   const code = (k, T) => {
     const { name, target, R, J } = spec(k, T);
