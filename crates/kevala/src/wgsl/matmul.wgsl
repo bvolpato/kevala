@@ -25,11 +25,7 @@ enable f16;
 struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(1) var<uniform> p: P;
 @group(0) @binding(2) var<storage, read> X: array<vec4<f32>>;
-//#if GENERIC_UNROLL
-@group(0) @binding(3) var<storage, read> W: array<vec2<u32>>;
-//#else
 @group(0) @binding(3) var<storage, read> W: array<vec4<u32>>;
-//#endif
 @group(0) @binding(4) var<storage, read> S: array<f32>;
 @group(0) @binding(5) var<storage, read> B: array<f32>;
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
@@ -110,18 +106,11 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       wv[2u * gg] = vec4<f32>(0.0);
       wv[2u * gg + 1u] = vec4<f32>(0.0);
       if (wrow < N) {
-//#if GENERIC_UNROLL
-        let v = W[(wrow * K + kb * 32u) / 8u + lq];
-        let s = S[wrow * nb + kb];
-        wv[2u * gg] = sx(v.x) * s;
-        wv[2u * gg + 1u] = sx(v.y) * s;
-//#else
         let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
         let s = S[wrow * nb + kb];
         let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
         wv[2u * gg] = sx(lo.x) * s;
         wv[2u * gg + 1u] = sx(lo.y) * s;
-//#endif
       }
     }
     if (lr < {{BM}}u) {
