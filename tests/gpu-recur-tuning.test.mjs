@@ -65,8 +65,9 @@ test("recurrence tuning picks the best geometric mean among stable candidates", 
   assert.ok(result.winner.benefit > result.candidates[0].benefit);
 });
 
-function fakeDevice(log) {
+function fakeDevice(log, { corruptLanes = [] } = {}) {
   const buffers = [];
+  const broken = new Set(corruptLanes);
   const device = {
     features: new Set(["timestamp-query"]),
     limits: { maxStorageBufferBindingSize: 64 * 1024 * 1024, maxBufferSize: 64 * 1024 * 1024, maxUniformBufferBindingSize: 65536 },
@@ -77,21 +78,18 @@ function fakeDevice(log) {
     createBuffer(descriptor) {
       const buffer = {
         ...descriptor,
+        data: new ArrayBuffer(Math.max(16, descriptor.size)),
         destroyed: false,
         destroy() { this.destroyed = true; },
         async mapAsync() {},
-        getMappedRange(_offset, size) {
-          const out = new ArrayBuffer(size);
-          new BigInt64Array(out).set(this.stamps?.subarray(0, size / 8) || []);
-          return out;
-        },
+        getMappedRange(offset, size) { return this.data.slice(offset, offset + size); },
         unmap() {},
       };
       buffers.push(buffer);
       log.buffers.push(buffer);
       return buffer;
     },
-    createBindGroup() { return {}; },
+    createBindGroup(descriptor) { return { entries: descriptor.entries }; },
     createQuerySet(descriptor) {
       log.liveLabelsAtQuerySet.push(buffers.filter((buffer) => !buffer.destroyed).map((buffer) => buffer.label));
       const querySet = {
@@ -104,7 +102,7 @@ function fakeDevice(log) {
       return querySet;
     },
     createCommandEncoder() {
-      const command = { passes: [], resolves: [], copies: [] };
+      const command = { passes: [], resolves: [], copies: [], clears: [] };
       return {
         beginComputePass(options = {}) {
           const pass = { options, pipeline: null };
@@ -112,31 +110,53 @@ function fakeDevice(log) {
           log.passes.push(pass);
           return {
             setPipeline(pipeline) { pass.pipeline = pipeline; },
-            setBindGroup() {},
+            setBindGroup(_index, bindGroup) { pass.bindGroup = bindGroup; },
             dispatchWorkgroups() {},
             end() {},
           };
         },
         resolveQuerySet(...args) { command.resolves.push(args); log.resolves.push(args); },
         copyBufferToBuffer(...args) { command.copies.push(args); log.copies.push(args); },
+        clearBuffer(...args) { command.clears.push(args); },
         finish() { return command; },
       };
     },
     queue: {
-      writeBuffer() {},
+      writeBuffer(target, offset, source) {
+        const bytes = ArrayBuffer.isView(source)
+          ? new Uint8Array(source.buffer, source.byteOffset, source.byteLength)
+          : new Uint8Array(source);
+        new Uint8Array(target.data, offset, bytes.byteLength).set(bytes);
+      },
       submit(commands) {
         for (const command of commands) {
           let clock = 1000n;
+          for (const [target, offset = 0, size = target.size] of command.clears) new Uint8Array(target.data, offset, size).fill(0);
           for (const pass of command.passes) {
+            const resources = pass.bindGroup?.entries?.map((entry) => entry.resource.buffer) || [];
+            const globals = resources[0] && new Uint32Array(resources[0].data);
+            const state = resources[4] && new Float32Array(resources[4].data);
+            const core = resources[5] && new Float32Array(resources[5].data);
+            if (globals?.[3] === 1 && state && core) {
+              const slotFloats = state.length / 2;
+              core.fill(0.125);
+              state.fill(0.25, slotFloats);
+              if (broken.has(pass.pipeline.lanes)) {
+                core[0] += 0.1;
+                state[slotFloats] += 0.1;
+              }
+            }
             const writes = pass.options.timestampWrites;
             if (!writes) continue;
-            const duration = pass.pipeline.lanes === 4 ? 1_000_000n : 800_000n;
+            const duration = pass.pipeline.lanes === 4 ? 1_000_000n : pass.pipeline.lanes === 8 ? 800_000n : 600_000n;
             writes.querySet.stamps[writes.beginningOfPassWriteIndex] = clock;
             writes.querySet.stamps[writes.endOfPassWriteIndex] = clock + duration;
             clock += duration + 100n;
           }
-          for (const [querySet, first, count, resolved] of command.resolves) resolved.stamps = querySet.stamps.slice(first, first + count);
-          for (const [_source, _sourceOffset, destination] of command.copies) destination.stamps = _source.stamps;
+          for (const [querySet, first, count, resolved, offset] of command.resolves) new BigInt64Array(resolved.data, offset, count).set(querySet.stamps.subarray(first, first + count));
+          for (const [source, sourceOffset, destination, destinationOffset, size] of command.copies) {
+            new Uint8Array(destination.data, destinationOffset, size).set(new Uint8Array(source.data, sourceOffset, size));
+          }
         }
       },
       async onSubmittedWorkDone() {},
@@ -188,11 +208,13 @@ test("recurrence tuner measures both points with bounded query sets and sequenti
   assert.equal(result.choice, 8);
   assert.equal(result.zTiles, 4);
   assert.equal(result.pipeline, candidatePipeline);
+  assert.equal(result.diagnostics.variants[0].numericalCheck.ok, true);
+  assert.ok(result.diagnostics.variants[0].numericalCheck.points.every((point) => point.core.ok && point.state.ok && point.parentPreserved));
   assert.doesNotThrow(() => JSON.stringify(result.diagnostics));
   assert.equal(log.querySets.length, 2, "one timestamp set per token point");
   assert.deepEqual(log.querySets.map((querySet) => querySet.count), [12, 12], "3 samples x 2 passes x 2 timestamps");
   assert.deepEqual(log.resolves.map((resolve) => resolve[2]), [12, 12]);
-  assert.deepEqual(log.copies.map((copy) => copy[4]), [96, 96]);
+  assert.deepEqual(log.copies.filter((copy) => copy[0].label.endsWith(".resolved")).map((copy) => copy[4]), [96, 96]);
   const timed = log.passes.filter((pass) => pass.options.timestampWrites);
   assert.equal(timed.length, 12);
   for (let pointIndex = 0; pointIndex < 2; pointIndex++) {
@@ -203,4 +225,37 @@ test("recurrence tuner measures both points with bounded query sets and sequenti
   assert.ok(log.querySets.every((querySet) => querySet.destroyed));
   assert.ok(log.buffers.every((buffer) => buffer.destroyed));
   assert.equal(log.listeners.length, log.removed.length);
+});
+
+test("a faster candidate that fails CORE or STATE readback cannot win", async (t) => {
+  const previousUsage = globalThis.GPUBufferUsage;
+  const previousMapMode = globalThis.GPUMapMode;
+  globalThis.GPUBufferUsage = { STORAGE: 1, COPY_DST: 2, QUERY_RESOLVE: 4, COPY_SRC: 8, MAP_READ: 16, UNIFORM: 32 };
+  globalThis.GPUMapMode = { READ: 1 };
+  t.after(() => {
+    if (previousUsage === undefined) delete globalThis.GPUBufferUsage;
+    else globalThis.GPUBufferUsage = previousUsage;
+    if (previousMapMode === undefined) delete globalThis.GPUMapMode;
+    else globalThis.GPUMapMode = previousMapMode;
+  });
+
+  const log = { buffers: [], listeners: [], removed: [], passes: [], querySets: [], resolves: [], copies: [], liveLabelsAtQuerySet: [] };
+  const device = fakeDevice(log, { corruptLanes: [16] });
+  const pipeline = (lanes) => ({ lanes, getBindGroupLayout: () => ({}) });
+  const result = await calibrateRecurrence(device, [
+    { lanes: 4, pipeline: pipeline(4) },
+    { lanes: 8, pipeline: pipeline(8) },
+    { lanes: 16, pipeline: pipeline(16) },
+  ], { lin_key_heads: 16, lin_heads: 16 });
+
+  assert.equal(result.choice, 8);
+  assert.equal(result.pipeline.lanes, 8);
+  const failed = result.diagnostics.variants.find((candidate) => candidate.lanes === 16);
+  assert.equal(failed.reason, "numerical-guard-failed");
+  assert.equal(failed.numericalCheck.reason, "failed");
+  assert.deepEqual(failed.numericalCheck.points.map((point) => point.reason), ["numerical-mismatch", "numerical-mismatch"]);
+  assert.ok(failed.numericalCheck.points.every((point) => point.core.violations > 0));
+  assert.ok(failed.numericalCheck.points.every((point) => point.state.violations > 0));
+  assert.doesNotThrow(() => JSON.stringify(result.diagnostics));
+  assert.ok(log.buffers.every((buffer) => buffer.destroyed));
 });
