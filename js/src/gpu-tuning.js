@@ -4,7 +4,7 @@
 
 import { dispatchMatmul, matmulPipelines, mmSplits, rowsPerThread } from "./gpu.js";
 
-export const GPU_TUNING_REVISION = 1;
+export const GPU_TUNING_REVISION = 2;
 export const MATMUL_TOKENS = [16, 32, 48, 128, 512];
 export const MATMUL_KERNELS = ["generic", "wide"];
 
@@ -196,7 +196,9 @@ async function isolated(device, work) {
 export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const kernel = options.kernel || "auto";
   if (!["auto", ...MATMUL_KERNELS].includes(kernel)) throw new Error('kernel must be "auto", "generic", or "wide"');
-  if (kernel === "wide" && !device.features?.has?.("shader-f16")) throw new Error('wide matmul requires the "shader-f16" feature');
+  const wideBytes = device.features?.has?.("shader-f16") ? 16384 : 32768;
+  const wideFits = (device.limits?.maxComputeWorkgroupStorageSize ?? 16384) >= wideBytes;
+  if (kernel === "wide" && !wideFits) throw new Error(`wide matmul requires ${wideBytes} bytes of workgroup storage`);
   const shapes = matmulShapes(weights);
   const selection = new Map();
   const defaults = () => { for (const shape of shapes) for (const T of MATMUL_TOKENS) selection.set(matmulTuningKey(shape.N, shape.K, T), kernel === "wide" ? "wide" : "generic"); };
@@ -205,8 +207,8 @@ export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const started = now();
   const generic = await pipelinesFor(device, wgsl, "generic", options.pipelines);
   if (kernel === "generic") return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
-  if (kernel === "auto" && (!device.features?.has?.("shader-f16") || !device.features?.has?.("timestamp-query"))) {
-    diagnostics.reason = !device.features?.has?.("shader-f16") ? "no-shader-f16" : "no-timestamp-query";
+  if (kernel === "auto" && (!wideFits || !device.features?.has?.("timestamp-query"))) {
+    diagnostics.reason = !wideFits ? "insufficient-workgroup-storage" : "no-timestamp-query";
     diagnostics.elapsedMs = now() - started;
     return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
   }
