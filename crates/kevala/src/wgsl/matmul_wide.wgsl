@@ -21,7 +21,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
-var<workgroup> xs: array<vec4<{{TILE}}>, 1024>; // [m][k/4], two K blocks
+var<workgroup> xs: array<vec4<{{TILE}}>, {{WIDE_XS_LEN}}>; // [m][k/4], two K blocks
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & W_SWIZZLE)], two K blocks
 
 // FP16 vectors span two 32-bit banks. Spread full row tiles over all 16 slots;
