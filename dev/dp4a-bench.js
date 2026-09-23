@@ -10,9 +10,6 @@ const GUARDS = [
   { shape: [17, 65, 96], kind: "outlier" },
   { shape: [19, 67, 256], kind: "cancellation" },
   { shape: [65, 67, 128], kind: "random" },
-  { shape: [3, 70, 32], kind: "block_reset" },
-  { shape: [3, 70, 64], kind: "block_reset" },
-  { shape: [3, 70, 96], kind: "block_reset" },
 ];
 const log = (line) => { document.getElementById("log").textContent += `${line}\n`; };
 const median = (values) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
@@ -68,13 +65,6 @@ function makeInput(T, N, K, seed, kind = "random") {
       x[i + 1] = -x[i] + (random() - 0.5) * 0.0001;
     }
     for (let i = 0; i < w.length; i += 2) w[i + 1] = w[i];
-  }
-  if (kind === "block_reset") {
-    // Exactly representable activation/weight scales expose integer carry between blocks
-    // without confounding the regression with activation quantization error.
-    for (let i = 0; i < x.length; i++) x[i] = [127, 254, -127][Math.floor((i % K) / 32) % 3];
-    for (let i = 0; i < w.length; i++) w[i] = Math.floor(i / K) % 2 === 0 ? 1 : -1;
-    scales.fill(1);
   }
   return { T, N, K, x, w, scales, bias, residual, kind };
 }

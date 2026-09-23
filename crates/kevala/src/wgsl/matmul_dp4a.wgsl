@@ -36,8 +36,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let lq = li % 4u;
   let sw = lr & 7u;
   var acc: array<vec4<f32>, {{ACC_LEN}}>;
-  var d0: array<vec4<i32>, {{ACC_LEN}}>;
-  var d1: array<vec4<i32>, {{ACC_LEN}}>;
 
   for (var kb = kb0; kb < kb1; kb++) {
     if (lr < {{BM}}u) {
@@ -69,12 +67,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       if (lq == 0u) { wscale[r] = scale; }
     }
     workgroupBarrier();
-    // Clear explicitly: Chrome 149/NVIDIA retained implicit array initialization across
-    // loop iterations, carrying integer sums into the next block's different scales.
-    for (var ix = 0u; ix < {{ACC_LEN}}u; ix++) {
-      d0[ix] = vec4<i32>(0);
-      d1[ix] = vec4<i32>(0);
-    }
+    var d0: array<vec4<i32>, {{ACC_LEN}}>;
+    var d1: array<vec4<i32>, {{ACC_LEN}}>;
     let nx = lid.x & 7u;
     for (var kq = 0u; kq < 8u; kq++) {
       for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
