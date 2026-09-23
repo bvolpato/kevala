@@ -221,6 +221,7 @@ impl Spec {
             ("TILE", if self.f16 { "f16" } else { "f32" }.to_string()),
             ("ROWS", self.rows.to_string()),
             ("GROUPS", self.groups.to_string()),
+            ("GROUP2", flag(self.groups == 2)),
             ("BM", bm.to_string()),
             ("BM_MINUS_1", (bm - 1).to_string()),
             ("BN", bn.to_string()),
@@ -249,8 +250,8 @@ pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     if !KERNELS.contains(&kernel) {
         return Err(format!("no GPU kernel named {kernel:?}"));
     }
-    if kernel == "matmul_wide" && spec.groups != 1 {
-        return Err("matmul_wide requires groups=1".into());
+    if kernel == "matmul_wide" && spec.groups == 2 && !spec.f16 {
+        return Err("matmul_wide groups=2 requires f16".into());
     }
     let vars = spec.vars();
     let mut out = String::new();

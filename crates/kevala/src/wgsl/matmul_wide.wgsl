@@ -2,7 +2,7 @@
 //
 // Qwen projection kernel with 64-value staging and named accumulator vectors.
 // Keeping each row in a named vector avoids dynamic private-array indexing.
-// This variant supports one 64-column group per workgroup.
+// Group2 stages two 64-column groups and needs f16 workgroup storage to stay within 32 KiB.
 //
 // A workgroup covers {{BM}} rows and 64 columns. Each thread owns four columns
 // separated by 16, as in the generic kernel. X and W tiles use {{TILE}} while
@@ -57,6 +57,12 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   var acc1 = vec4<f32>(0.0);
   var acc2 = vec4<f32>(0.0);
   var acc3 = vec4<f32>(0.0);
+//#if GROUP2
+  var acc4 = vec4<f32>(0.0);
+  var acc5 = vec4<f32>(0.0);
+  var acc6 = vec4<f32>(0.0);
+  var acc7 = vec4<f32>(0.0);
+//#endif
 
   // Four threads per row load eight values. The wide variant stages two 32-value
   // quantization blocks before the barrier.
@@ -89,6 +95,18 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         wv0 = sx(lo.x) * scale;
         wv1 = sx(lo.y) * scale;
       }
+//#if GROUP2
+      var wv20 = vec4<f32>(0.0);
+      var wv21 = vec4<f32>(0.0);
+      let wrow2 = n0 + lr + 64u;
+      if (kb < kb1 && wrow2 < N) {
+        let v = W[(wrow2 * K + kb * 32u) / 16u + lq / 2u];
+        let scale = S[wrow2 * nb + kb];
+        let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
+        wv20 = sx(lo.x) * scale;
+        wv21 = sx(lo.y) * scale;
+      }
+//#endif
 
       if (lr < {{BM}}u) {
         xs[lr * 16u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
@@ -97,6 +115,11 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let r = lr;
       ws[r * 16u + step * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
       ws[r * 16u + step * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
+//#if GROUP2
+      let r2 = lr + 64u;
+      ws[r2 * 16u + step * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv20);
+      ws[r2 * 16u + step * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv21);
+//#endif
     }
     workgroupBarrier();
 
@@ -124,6 +147,27 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
         acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
       }
+//#if GROUP2
+      let c2 = c + 64u;
+      let b4 = vec4<f32>(ws[c2 * 16u + (kq ^ nx)]);
+      let b5 = vec4<f32>(ws[(c2 + 16u) * 16u + (kq ^ nx)]);
+      let b6 = vec4<f32>(ws[(c2 + 32u) * 16u + (kq ^ nx)]);
+      let b7 = vec4<f32>(ws[(c2 + 48u) * 16u + (kq ^ nx)]);
+      let a0g2 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
+      acc4 += vec4<f32>(dot(a0g2, b4), dot(a0g2, b5), dot(a0g2, b6), dot(a0g2, b7));
+      if ({{ROWS}}u > 1u) {
+        let a1g2 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+        acc5 += vec4<f32>(dot(a1g2, b4), dot(a1g2, b5), dot(a1g2, b6), dot(a1g2, b7));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a2g2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc6 += vec4<f32>(dot(a2g2, b4), dot(a2g2, b5), dot(a2g2, b6), dot(a2g2, b7));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a3g2 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc7 += vec4<f32>(dot(a3g2, b4), dot(a3g2, b5), dot(a3g2, b6), dot(a3g2, b7));
+      }
+//#endif
     }
     workgroupBarrier();
   }
@@ -156,4 +200,34 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       Y[o] = v;
     }
   }
+//#if GROUP2
+  for (var j = 0u; j < 4u; j++) {
+    let col = n0 + lid.x + 64u + 16u * j;
+    if (col >= N) { break; }
+    var bias = 0.0;
+    if (p.bias == 1u) { bias = B[col]; }
+    let values4 = acc4;
+    let v4 = values4[j];
+    let values5 = acc5;
+    let v5 = values5[j];
+    let values6 = acc6;
+    let v6 = values6[j];
+    let values7 = acc7;
+    let v7 = values7[j];
+    for (var i = 0u; i < {{ROWS}}u; i++) {
+      let row = m0 + lid.y + 16u * i;
+      if (row >= T) { break; }
+      let o = row * N + col;
+      var v = v4;
+      if (i == 1u) { v = v5; } else if (i == 2u) { v = v6; } else if (i == 3u) { v = v7; }
+      if (splits > 1u) {
+        PART[wg.z * T * N + o] = v;
+        continue;
+      }
+      v += bias;
+      if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }
+      Y[o] = v;
+    }
+  }
+//#endif
 }

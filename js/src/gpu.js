@@ -77,6 +77,7 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
   const rpl = device.createPipelineLayout({ bindGroupLayouts: [rlayout] });
   const config = matmulConfig(device);
+  if (kernel === "matmul_wide") config.groups = 2;
   const mm = [];
   const reduce = [];
   await Promise.all(
