@@ -1,8 +1,5 @@
 // Gemma attention: eight lanes cooperate on each of 32 keys, then reduce a
 // 128-key softmax tile. Output dimensions stay in registers across tiles.
-//#if SUBGROUPS
-enable subgroups;
-//#endif
 //#include common
 
 struct P { heads: u32, kv_heads: u32, head_dim: u32, window: u32, causal: u32, _a: u32, _b: u32, _c: u32 }
@@ -50,13 +47,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
           for (var d = key_lane; d < H; d += 8u) { sum += qtile[d] * K[kbase + d]; }
         }
       }
-      //#if SUBGROUPS
-      var reduced = sum;
-      reduced += subgroupShuffleXor(reduced, 4u);
-      reduced += subgroupShuffleXor(reduced, 2u);
-      reduced += subgroupShuffleXor(reduced, 1u);
-      if (key_lane == 0u) { scores[block * 32u + lane / 8u] = select(-3.402823466e+38, reduced, j < end); }
-      //#else
       partial[lane] = sum;
       workgroupBarrier();
       for (var stride = 4u; stride > 0u; stride >>= 1u) {
@@ -65,11 +55,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
       }
       if (key_lane == 0u) { scores[block * 32u + lane / 8u] = select(-3.402823466e+38, partial[lane], j < end); }
       workgroupBarrier();
-      //#endif
     }
-    //#if SUBGROUPS
-    workgroupBarrier();
-    //#endif
     partial[lane] = -3.402823466e+38;
     if (lane < 128u) { partial[lane] = scores[lane]; }
     workgroupBarrier();
