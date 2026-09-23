@@ -1,8 +1,13 @@
 // Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
 //
 //#if GENERIC_UNROLL
+//#if ROWS_GE_4
 // A workgroup of 32 x 8 threads covers 64 rows and 64 columns. Each thread owns
 // rows y + 8 i and columns x and x + 32, with eight named vec2 FP32 accumulators.
+//#else
+// A workgroup of 32 x 8 threads covers {{BM}} rows and 64 columns. Each thread owns
+// rows y + 8 i for i < 2 * {{ROWS}}, and columns x and x + 32, in named vec2 accumulators.
+//#endif
 // The K32 loaders and shared weight swizzle are identical to the 16 x 16 path.
 //#else
 // A workgroup of 16 x 16 threads covers {{BM}} rows ({{ROWS}} per thread) and {{BN}} columns
@@ -64,12 +69,18 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
 //#if GENERIC_UNROLL
   var acc0 = vec2<f32>(0.0);
   var acc1 = vec2<f32>(0.0);
+//#if ROWS_GE_2
   var acc2 = vec2<f32>(0.0);
   var acc3 = vec2<f32>(0.0);
+//#endif
+//#if ROWS_GE_3
   var acc4 = vec2<f32>(0.0);
   var acc5 = vec2<f32>(0.0);
+//#endif
+//#if ROWS_GE_4
   var acc6 = vec2<f32>(0.0);
   var acc7 = vec2<f32>(0.0);
+//#endif
 //#else
   var acc: array<vec4<f32>, {{ACC_LEN}}>; // [i][g]: row y + 16 i, columns x + 16 j + 64 g for j < 4
 //#endif
@@ -124,18 +135,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 1u;
@@ -145,18 +162,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 2u;
@@ -166,18 +189,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 3u;
@@ -187,18 +216,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 4u;
@@ -208,18 +243,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 5u;
@@ -229,18 +270,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 6u;
@@ -250,18 +297,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
     {
       let kq = 7u;
@@ -271,18 +324,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+//#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+//#endif
+//#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+//#endif
+//#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+//#endif
     }
 //#else
     // The f32 R4/G1 path keeps eight K/4 steps and four row accumulators visible to the compiler.
@@ -311,24 +370,40 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     if (p.bias == 1u) { bias = B[col]; }
     let v0 = acc0[j];
     let v1 = acc1[j];
+//#if ROWS_GE_2
     let v2 = acc2[j];
     let v3 = acc3[j];
+//#endif
+//#if ROWS_GE_3
     let v4 = acc4[j];
     let v5 = acc5[j];
+//#endif
+//#if ROWS_GE_4
     let v6 = acc6[j];
     let v7 = acc7[j];
+//#endif
+//#if ROWS_GE_4
     for (var i = 0u; i < 8u; i++) {
+//#else
+    for (var i = 0u; i < 2u * {{ROWS}}u; i++) {
+//#endif
       let row = m0 + lid.y + 8u * i;
       if (row >= T) { break; }
       let o = row * N + col;
       var v = v0;
       if (i == 1u) { v = v1; }
+//#if ROWS_GE_2
       else if (i == 2u) { v = v2; }
       else if (i == 3u) { v = v3; }
+//#endif
+//#if ROWS_GE_3
       else if (i == 4u) { v = v4; }
       else if (i == 5u) { v = v5; }
+//#endif
+//#if ROWS_GE_4
       else if (i == 6u) { v = v6; }
       else if (i == 7u) { v = v7; }
+//#endif
       if (splits > 1u) {
         PART[wg.z * T * N + o] = v;
         continue;
