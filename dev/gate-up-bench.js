@@ -128,7 +128,22 @@ function projectionCpu(input, row, col, weights, scales) {
 function cpuValue(input, row, col) {
   const gate = projectionCpu(input, row, col, input.gateW, input.gateS);
   const up = projectionCpu(input, row, col, input.upW, input.upS);
-  return Math.fround(geluCpu(gate) * up);
+  let activated = geluCpu(gate);
+  if (input.activation === 1) {
+    const x = gate * 0.70710678118;
+    const a = Math.abs(x);
+    let erf;
+    if (a < 0.5) {
+      const z = x * x;
+      erf = x * (1.1283791671 + z * (-0.3761263890 + z * (0.1128379167 + z * (-0.0268661706 + z * 0.0052239776))));
+    } else {
+      const t = 1 / (1 + 0.3275911 * a);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a);
+      erf = x >= 0 ? y : -y;
+    }
+    activated = Math.fround(0.5 * gate * (1 + erf));
+  } else if (input.activation === 2) activated = Math.fround(gate / (1 + Math.exp(-gate)));
+  return Math.fround(activated * up);
 }
 
 function sampleIndices(T, N) {
@@ -319,6 +334,8 @@ async function main() {
   const seed = numberParam(query, "seed", 0x4b455641, 1, 0xffffffff);
   const warmups = numberParam(query, "warmups", 2, 0, 10);
   const samples = numberParam(query, "samples", 5, 3, 20);
+  const activation = numberParam(query, "activation", 0, 0, 2);
+  const packed = activation !== 0;
   const shapes = parseCases(query);
   const patterns = parsePatterns(query, shapes.length);
   const gpu = await requestDevice({ features: ["timestamp-query"] });
@@ -336,13 +353,13 @@ async function main() {
   const mmLayout = matmulLayout(device);
   const reduceLayoutObject = reduceLayout(device);
   const pairLayout = makeLayout(device, ["uniform", "uniform", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "storage"]);
-  const geluLayout = makeLayout(device, ["uniform", "uniform", "read-only-storage", "read-only-storage", "storage"]);
+  const geluLayout = makeLayout(device, packed ? ["uniform", "uniform", "read-only-storage", "storage"] : ["uniform", "uniform", "read-only-storage", "read-only-storage", "storage"]);
   const mmPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [mmLayout] });
   const reducePipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [reduceLayoutObject] });
   const pairPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [pairLayout] });
   const geluPipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [geluLayout] });
   const pairCode = source("matmul_gate_up", { f16: false, rows: 4, groups: 1, splitTarget: target });
-  const geluCode = source("gemma4_gelu");
+  const geluCode = source(["gemma4_gelu", "geglu", "kev_silumul"][activation]);
   const pairPipeline = await pipeline(device, pairCode, "matmul_gate_up", pairPipelineLayout);
   const geluPipeline = await pipeline(device, geluCode, "gemma4_gelu", geluPipelineLayout);
   const genericPipelines = new Map();
@@ -367,24 +384,27 @@ async function main() {
     if (pairSplits !== 1) throw new Error(`matmul_gate_up does not support split-K: ${T}x${N}x${K} has ${pairSplits} splits at target ${target}`);
     const pattern = patterns[caseIndex];
     const input = makeInput(T, N, K, pattern, (seed + caseIndex * 0x9e3779b9) >>> 0);
+    input.activation = activation;
+    const baselineN = packed ? 2 * N : N;
     const label = `${T}x${N}x${K}:${pattern}`;
     const bytes = T * N * 4;
     const inputBytes = T * K * 4;
     const weightBytes = N * K;
     const scaleBytes = N * (K / 32) * 4;
     const X = makeBuffer(device, inputBytes, U.STORAGE | U.COPY_DST, `${label}.X`);
-    const gateW = makeBuffer(device, weightBytes, U.STORAGE | U.COPY_DST, `${label}.gateW`);
+    const gateW = makeBuffer(device, weightBytes * (packed ? 2 : 1), U.STORAGE | U.COPY_DST, `${label}.gateW`);
     const upW = makeBuffer(device, weightBytes, U.STORAGE | U.COPY_DST, `${label}.upW`);
-    const gateS = makeBuffer(device, scaleBytes, U.STORAGE | U.COPY_DST, `${label}.gateS`);
+    const gateS = makeBuffer(device, scaleBytes * (packed ? 2 : 1), U.STORAGE | U.COPY_DST, `${label}.gateS`);
     const upS = makeBuffer(device, scaleBytes, U.STORAGE | U.COPY_DST, `${label}.upS`);
-    const gate = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC, `${label}.gate`);
+    const gate = makeBuffer(device, bytes * (packed ? 2 : 1), U.STORAGE | U.COPY_SRC, `${label}.gate`);
     const up = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC, `${label}.up`);
     const fused = makeBuffer(device, bytes, U.STORAGE | U.COPY_SRC, `${label}.fused`);
-    const zeroBias = makeBuffer(device, N * 4, U.STORAGE | U.COPY_DST, `${label}.bias`);
-    const partialFloats = Math.max(1, mmSplits(T, N, K, target, 16 * rowsPerThread(T), 64) * T * N);
+    const zeroBias = makeBuffer(device, baselineN * 4, U.STORAGE | U.COPY_DST, `${label}.bias`);
+    const partialFloats = Math.max(1, mmSplits(T, baselineN, K, target, 16 * rowsPerThread(T), 64) * T * baselineN);
     const part = makeBuffer(device, partialFloats * 4, U.STORAGE, `${label}.partials`);
     const globals = makeBuffer(device, 16, U.UNIFORM | U.COPY_DST, `${label}.globals`);
     const params = makeBuffer(device, 16, U.UNIFORM | U.COPY_DST, `${label}.params`);
+    const pairParams = makeBuffer(device, 16, U.UNIFORM | U.COPY_DST, `${label}.pair-params`);
     const geluParams = makeBuffer(device, 16, U.UNIFORM | U.COPY_DST, `${label}.gelu-params`);
     const zeros = new Float32Array(N);
     await checked(device, async () => {
@@ -392,10 +412,15 @@ async function main() {
       device.queue.writeBuffer(gateW, 0, input.gateW);
       device.queue.writeBuffer(upW, 0, input.upW);
       device.queue.writeBuffer(gateS, 0, input.gateS);
+      if (packed) {
+        device.queue.writeBuffer(gateW, weightBytes, input.upW);
+        device.queue.writeBuffer(gateS, scaleBytes, input.upS);
+      }
       device.queue.writeBuffer(upS, 0, input.upS);
       device.queue.writeBuffer(zeroBias, 0, zeros);
       device.queue.writeBuffer(globals, 0, new Uint32Array([T, 0, 0, 0]));
-      device.queue.writeBuffer(params, 0, new Uint32Array([N, K, 0, 0]));
+      device.queue.writeBuffer(params, 0, new Uint32Array([baselineN, K, 0, 0]));
+      device.queue.writeBuffer(pairParams, 0, new Uint32Array([N, K, packed ? N : 0, activation]));
       device.queue.writeBuffer(geluParams, 0, new Uint32Array([N, 0, 0, 0]));
       await device.queue.onSubmittedWorkDone();
     }, `${label} input upload`, uncaptured);
@@ -406,13 +431,14 @@ async function main() {
     const upGroup = device.createBindGroup({ layout: mmLayout, entries: [globals, params, X, upW, upS, zeroBias, up, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
     const gateReduce = device.createBindGroup({ layout: reduceLayoutObject, entries: [globals, params, part, zeroBias, gate].map((buffer, binding) => ({ binding, resource: { buffer } })) });
     const upReduce = device.createBindGroup({ layout: reduceLayoutObject, entries: [globals, params, part, zeroBias, up].map((buffer, binding) => ({ binding, resource: { buffer } })) });
-    const geluGroup = device.createBindGroup({ layout: geluLayout, entries: [globals, geluParams, gate, up, fused].map((buffer, binding) => ({ binding, resource: { buffer } })) });
-    const fusedGroup = device.createBindGroup({ layout: pairLayout, entries: [globals, params, X, gateW, gateS, upW, upS, fused].map((buffer, binding) => ({ binding, resource: { buffer } })) });
-    const gateOp = { N, K, group: gateGroup, reduce: gateReduce, pMatmul: generic.mm, pReduce: generic.reduce };
+    const geluBuffers = packed ? [globals, geluParams, gate, fused] : [globals, geluParams, gate, up, fused];
+    const geluGroup = device.createBindGroup({ layout: geluLayout, entries: geluBuffers.map((buffer, binding) => ({ binding, resource: { buffer } })) });
+    const fusedGroup = device.createBindGroup({ layout: pairLayout, entries: [globals, pairParams, X, gateW, gateS, packed ? gateW : upW, packed ? gateS : upS, fused].map((buffer, binding) => ({ binding, resource: { buffer } })) });
+    const gateOp = { N: baselineN, K, group: gateGroup, reduce: gateReduce, pMatmul: generic.mm, pReduce: generic.reduce };
     const upOp = { N, K, group: upGroup, reduce: upReduce, pMatmul: generic.mm, pReduce: generic.reduce };
     const baselineSequence = (pass) => {
       dispatchMatmul(pass, generic.mm, generic.reduce, gateOp, T, target, rows, 1);
-      dispatchMatmul(pass, generic.mm, generic.reduce, upOp, T, target, rows, 1);
+      if (!packed) dispatchMatmul(pass, generic.mm, generic.reduce, upOp, T, target, rows, 1);
       dispatchGelu(pass, geluPipeline, geluGroup, T, N);
     };
     const fusedSequence = (pass) => dispatchFused(pass, pairPipeline, fusedGroup, T, N);
@@ -456,10 +482,10 @@ async function main() {
       K,
       pattern,
       pairSplits,
-      baselineSplits: mmSplits(T, N, K, target, 16 * rows, 64),
+      baselineSplits: mmSplits(T, baselineN, K, target, 16 * rows, 64),
       baselineRows: rows,
       fusedRows: 4,
-      baselineDispatches: 3,
+      baselineDispatches: (packed ? 1 : 2) * (mmSplits(T, baselineN, K, target, 16 * rows, 64) > 1 ? 2 : 1) + 1,
       fusedDispatches: 1,
       reps,
       baselineSamples,
@@ -476,7 +502,7 @@ async function main() {
     timer.querySet?.destroy();
     timer.resolved?.destroy();
     timer.read?.destroy();
-    for (const buffer of [X, gateW, upW, gateS, upS, gate, up, fused, zeroBias, part, globals, params, geluParams]) buffer.destroy();
+    for (const buffer of [X, gateW, upW, gateS, upS, gate, up, fused, zeroBias, part, globals, params, pairParams, geluParams]) buffer.destroy();
   }
 
   const geometric = (values) => Math.exp(values.reduce((sum, value) => sum + Math.log(value), 0) / values.length);
@@ -488,7 +514,8 @@ async function main() {
     metricMs,
     metric: "geometric mean of fused gate/up+GELU median GPU milliseconds",
     baselineMetricMs,
-    baselineDispatches: 3,
+    activation,
+    packed,
     fusedDispatches: 1,
     method: device.features.has("timestamp-query") ? "WebGPU timestamp-query" : "performance.now() wall clock",
     seed,

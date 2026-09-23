@@ -207,7 +207,7 @@ export class GpuGemma4 {
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;
-    if (!d.features.has("shader-f16") && d.limits.maxComputeWorkgroupStorageSize >= 24576) {
+    if (this.gpuKernel === "auto" && !d.features.has("shader-f16") && d.limits.maxComputeWorkgroupStorageSize >= 24576) {
       this.p.GATE_UP = await pipeline(d, this.wgsl("matmul_gate_up"), "matmul_gate_up");
     }
     this.globals = d.createBuffer({ label: "Gemma 4 globals", size: 16, usage: U.UNIFORM | U.COPY_DST });

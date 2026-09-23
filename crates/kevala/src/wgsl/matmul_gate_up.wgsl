@@ -1,4 +1,4 @@
-// Fused Q8 gate/up projections followed by Gemma's GELU-tanh gate.
+// Fused Q8 paired projections followed by a gated activation.
 //
 // A workgroup covers 64 rows and 64 columns with the same 16 x 16 mapping as
 // the generic R4/G1 matmul. X is staged once per K block. The two Q8 weight
@@ -8,7 +8,7 @@
 // rule would choose more than one split.
 //#include common
 
-struct P { N: u32, K: u32, _a: u32, _b: u32 }
+struct P { N: u32, K: u32, upRowOffset: u32, activation: u32 }
 @group(0) @binding(1) var<uniform> p: P;
 @group(0) @binding(2) var<storage, read> X: array<vec4<f32>>;
 @group(0) @binding(3) var<storage, read> WG: array<vec4<u32>>;
@@ -29,7 +29,20 @@ fn sx(w: u32) -> vec4<f32> {
   return bitcast<vec4<f32>>(bytes | vec4<u32>(0x4B000000u)) - vec4<f32>(8388736.0);
 }
 
-fn gelu(x: f32) -> f32 {
+fn erf(x: f32) -> f32 {
+  let a = abs(x);
+  if (a < 0.5) {
+    let z = x * x;
+    return x * (1.1283791671 + z * (-0.3761263890 + z * (0.1128379167 + z * (-0.0268661706 + z * 0.0052239776))));
+  }
+  let t = 1.0 / (1.0 + 0.3275911 * a);
+  let y = 1.0 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * exp(-a * a);
+  return select(-y, y, x >= 0.0);
+}
+
+fn activate(x: f32) -> f32 {
+  if (p.activation == 1u) { return 0.5 * x * (1.0 + erf(x * 0.70710678118)); }
+  if (p.activation == 2u) { return x / (1.0 + exp(-x)); }
   let c = 0.7978845608028654;
   return 0.5 * x * (1.0 + tanh(c * (x + 0.044715 * x * x * x)));
 }
@@ -78,11 +91,11 @@ fn main(
     if (wrow < N) {
       let gi = (wrow * K + kb * 32u) / 16u + lq / 2u;
       let gv = WG[gi];
-      let uv = WU[gi];
+      let uv = WU[gi + p.upRowOffset * K / 16u];
       let glo = select(gv.xy, gv.zw, (lq & 1u) == 1u);
       let ulo = select(uv.xy, uv.zw, (lq & 1u) == 1u);
       let gs = SG[wrow * nb + kb];
-      let us = SU[wrow * nb + kb];
+      let us = SU[(wrow + p.upRowOffset) * nb + kb];
       g0 = sx(glo.x) * gs;
       g1 = sx(glo.y) * gs;
       u0 = sx(ulo.x) * us;
@@ -308,7 +321,7 @@ fn main(
       if (i == 1u) { gate = g1; up = u1; }
       else if (i == 2u) { gate = g2; up = u2; }
       else if (i == 3u) { gate = g3; up = u3; }
-      Y[row * N + col] = gelu(gate) * up;
+      Y[row * N + col] = activate(gate) * up;
     }
   }
 }
