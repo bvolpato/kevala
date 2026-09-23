@@ -4,6 +4,9 @@ Measured on September 22, 2026, using Firefox 152.0.3 on Ubuntu, an NVIDIA RTX 5
 (595.71.05), and the Ryzen 9950X3D integrated AMD GPU (RADV, Mesa 25.2.8).
 Firefox uses Vulkan for WebGPU on this platform. These results do not use CUDA.
 
+The later [shared matrix layout measurements](shared-matmul-performance.md) cover
+Laya, Kev, SemIf, and Gemma 4 with interleaved comparisons against the prior build.
+
 [Recorded measurements and validation evidence](benchmarks/firefox-linux-2026-09-22.json)
 include the five GPU samples per case, per-kernel medians, all trial decisions, and numerical results.
 

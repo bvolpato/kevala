@@ -1,6 +1,6 @@
 // Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
 //
-// Qwen projection kernel with 64-value staging and named accumulator vectors.
+// Shared Q8 projection kernel with 64-value staging and named accumulator vectors.
 // Keeping each row in a named vector avoids dynamic private-array indexing.
 // This variant supports one 64-column group per workgroup.
 //
@@ -22,7 +22,15 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
 var<workgroup> xs: array<vec4<{{TILE}}>, 1024>; // [m][k/4], two K blocks
-var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & 7)], two K blocks
+var<workgroup> ws: array<vec4<{{TILE}}>, {{WIDE_WS_LEN}}>; // [n][(k/4) ^ (n & W_SWIZZLE)], two K blocks
+
+// FP16 vectors span two 32-bit banks. Spread full row tiles over all 16 slots;
+// shorter tiles keep the original layout, which wins on some adapters.
+//#if F16
+const W_SWIZZLE: u32 = select(7u, 15u, {{ROWS}}u == 4u);
+//#else
+const W_SWIZZLE: u32 = 7u;
+//#endif
 
 // Four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
 // xor makes each byte b + 128, and a byte in the low mantissa bits of 2^23 reads as 2^23 + b + 128
@@ -63,7 +71,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let lr = li / 4u;
   let lq = li % 4u;
   let xrow = m0 + lr;
-  let sw = lr & 7u;
+  let sw = lr & W_SWIZZLE;
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
   var wv0 = vec4<f32>(0.0);
@@ -95,12 +103,12 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
       }
       let r = lr;
-      ws[r * 16u + step * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
-      ws[r * 16u + step * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
+      ws[r * 16u + ((step * 8u + lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
+      ws[r * 16u + ((step * 8u + lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
     }
     workgroupBarrier();
 
-    let nx = lid.x & 7u;
+    let nx = lid.x & W_SWIZZLE;
     for (var kq = 0u; kq < 16u; kq++) {
       let c = lid.x;
       let b0 = vec4<f32>(ws[c * 16u + (kq ^ nx)]);
