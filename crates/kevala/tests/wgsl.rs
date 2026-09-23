@@ -15,6 +15,7 @@ fn specs() -> Vec<Spec> {
             }
         }
     }
+    out.push(Spec { row56: true, ..Default::default() });
     out.push(Spec { shape: Some((3072, 1024)), ..Default::default() });
     for hidden in [2048, 2560, 4096] {
         let kev = if hidden == 2048 {
@@ -73,6 +74,10 @@ fn bad_requests_are_errors() {
     assert!(wgsl("nope", &Spec::default()).is_err());
     let json = kevala::json::Value::parse(r#"{"kernel": "matmul", "rows": 5}"#).unwrap();
     assert!(kevala::gpu::wgsl_json(&json).is_err());
+    for fields in [r#""f16":true"#, r#""rows":3"#, r#""groups":2"#] {
+        let json = kevala::json::Value::parse(&format!(r#"{{"kernel":"matmul","row56":true,{fields}}}"#)).unwrap();
+        assert_eq!(kevala::gpu::wgsl_json(&json).unwrap_err(), "row56 requires f32 rows=4 groups=1");
+    }
 }
 
 #[test]

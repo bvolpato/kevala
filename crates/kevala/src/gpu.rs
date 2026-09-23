@@ -106,6 +106,8 @@ pub struct Spec {
     pub subgroups: bool,
     /// Matmul and reduce: rows per thread, 1 to 4 (a tile covers 16 * rows rows).
     pub rows: u32,
+    /// FP32 G1 R4 matmul: cover 56 rows, retaining the virtual 64-row split/grid rule.
+    pub row56: bool,
     /// Matmul and reduce: groups of 64 output columns per workgroup, 1 or 2.
     pub groups: u32,
     /// Matmul and reduce: how many workgroups split-K aims for on short inputs.
@@ -139,6 +141,7 @@ impl Default for Spec {
             f16: false,
             subgroups: false,
             rows: 4,
+            row56: false,
             groups: 1,
             split_target: 128,
             shape: None,
@@ -148,7 +151,7 @@ impl Default for Spec {
 }
 
 impl Spec {
-    /// Reads `{ f16, subgroups, rows, groups, splitTarget, n, k }`; missing fields keep their default.
+    /// Reads `{ f16, subgroups, rows, row56, groups, splitTarget, n, k }`; missing fields keep their default.
     pub fn from_json(v: &Value) -> Result<Spec, String> {
         let mut s = Spec::default();
         let flag = |key: &str| v.get(key).map(|x| matches!(x, Value::Bool(true)));
@@ -161,6 +164,9 @@ impl Spec {
         }
         if let Some(r) = number("rows") {
             s.rows = r;
+        }
+        if let Some(f) = flag("row56") {
+            s.row56 = f;
         }
         if let Some(g) = number("groups") {
             s.groups = g;
@@ -227,6 +233,8 @@ impl Spec {
             ("ROWS_GE_2", flag(self.rows >= 2)),
             ("ROWS_GE_3", flag(self.rows >= 3)),
             ("ROWS_GE_4", flag(self.rows >= 4)),
+            ("ROW56", flag(self.row56)),
+            ("ACC7", flag(self.rows >= 4 && !self.row56)),
             ("SUBGROUPS", flag(self.subgroups)),
             ("SHAPE", flag(self.shape.is_some())),
             ("TILE", if self.f16 { "f16" } else { "f32" }.to_string()),
@@ -235,6 +243,7 @@ impl Spec {
             ("ROWS", self.rows.to_string()),
             ("GROUPS", self.groups.to_string()),
             ("BM", bm.to_string()),
+            ("PHYSICAL_BM", if self.row56 { 56 } else { bm }.to_string()),
             ("BM_MINUS_1", (bm - 1).to_string()),
             ("BN", bn.to_string()),
             ("BN_MINUS_1", (bn - 1).to_string()),
@@ -264,6 +273,9 @@ pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     }
     if kernel == "matmul_wide" && spec.groups != 1 {
         return Err("matmul_wide requires groups=1".into());
+    }
+    if spec.row56 && (spec.f16 || spec.rows != 4 || spec.groups != 1) {
+        return Err("row56 requires f32 rows=4 groups=1".into());
     }
     let vars = spec.vars();
     let mut out = String::new();

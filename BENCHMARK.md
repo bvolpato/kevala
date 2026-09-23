@@ -127,6 +127,8 @@ The Qwen-specific [FP32 attention tile report](docs/qwen-fp32-attention-performa
 includes paired kernel measurements, full-model timings, and model-guard results.
 The [Laya FP32 attention report](docs/laya-fp32-attention-performance.md) includes paired
 kernel measurements, full-model repeats, and browser parity guards.
+The [FP32 BM56 row tile report](docs/fp32-row56-performance.md) includes final-WASM
+matmul timings, production-shaped model repeats, and model guards.
 
 ## Base weights, instruction tuning, and precision
 
