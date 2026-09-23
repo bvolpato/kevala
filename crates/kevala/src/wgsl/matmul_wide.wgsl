@@ -1,12 +1,10 @@
 // Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
 //
-// Qwen projection kernel with 64-value staging and named accumulator vectors.
-// Keeping each row in a named vector avoids dynamic private-array indexing.
-// This variant supports one 64-column group per workgroup.
-//
-// A workgroup covers {{BM}} rows and 64 columns. Each thread owns four columns
-// separated by 16, as in the generic kernel. X and W tiles use {{TILE}} while
-// every dot product and accumulator stays f32.
+// A workgroup of 16 x 8 threads covers {{BM}} rows and 64 columns. Each thread owns two
+// rows for every ROWS step, at y + 8*i, and four columns separated by 16. The 128-thread
+// shape keeps the same K=64 staging and output tile as the 256-thread wide kernel while
+// reducing the number of resident lanes. Loader rows use two 32-row strides, so every
+// X/W tile entry is written exactly once. Products and accumulators stay f32.
 //#if F16
 enable f16;
 //#endif
@@ -40,7 +38,7 @@ fn sx(w: u32) -> vec4<f32> {
 
 //#include splits
 
-@compute @workgroup_size(16, 16)
+@compute @workgroup_size(16, 8)
 fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid: vec3<u32>, @builtin(local_invocation_index) li: u32) {
   let T = g.T;
 //#if SHAPE
@@ -58,51 +56,55 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let kb0 = wg.z * per;
   let kb1 = min(nb, kb0 + per);
 
-  // Named vectors let the compiler remove unused rows without private-array indexing.
+  // Named vectors avoid private-array indexing in the hot loop. The constant guards let
+  // the compiler remove rows that are unused by ROWS=1, 2, or 3 specializations.
   var acc0 = vec4<f32>(0.0);
   var acc1 = vec4<f32>(0.0);
   var acc2 = vec4<f32>(0.0);
   var acc3 = vec4<f32>(0.0);
+  var acc4 = vec4<f32>(0.0);
+  var acc5 = vec4<f32>(0.0);
+  var acc6 = vec4<f32>(0.0);
+  var acc7 = vec4<f32>(0.0);
 
-  // Four threads per row load eight values. The wide variant stages two 32-value
-  // quantization blocks before the barrier.
-  let lr = li / 4u;
+  // Four lanes cooperate on each row, with two 32-row strides covering the 64-row
+  // maximum BM tile. This loads all 64 X rows and all 64 W rows with 128 threads.
+  let loaderRow = li / 4u;
   let lq = li % 4u;
-  let xrow = m0 + lr;
-  let sw = lr & W_SWIZZLE;
-  var xv0 = vec4<f32>(0.0);
-  var xv1 = vec4<f32>(0.0);
-  var wv0 = vec4<f32>(0.0);
-  var wv1 = vec4<f32>(0.0);
   for (var block = kb0; block < kb1; block += 2u) {
     for (var step = 0u; step < 2u; step++) {
       let kb = block + step;
-      xv0 = vec4<f32>(0.0);
-      xv1 = vec4<f32>(0.0);
-      if (kb < kb1 && lr < {{BM}}u && xrow < T) {
-        let base = (xrow * K + kb * 32u) / 4u + lq * 2u;
-        xv0 = X[base];
-        xv1 = X[base + 1u];
-      }
+      for (var rowStep = 0u; rowStep < 2u; rowStep++) {
+        let lr = loaderRow + rowStep * 32u;
+        let sw = lr & W_SWIZZLE;
+        var xv0 = vec4<f32>(0.0);
+        var xv1 = vec4<f32>(0.0);
+        let xrow = m0 + lr;
+        if (kb < kb1 && lr < {{BM}}u && xrow < T) {
+          let base = (xrow * K + kb * 32u) / 4u + lq * 2u;
+          xv0 = X[base];
+          xv1 = X[base + 1u];
+        }
+        if (lr < {{BM}}u) {
+          xs[lr * 16u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
+          xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
+        }
 
-      wv0 = vec4<f32>(0.0);
-      wv1 = vec4<f32>(0.0);
-      let wrow = n0 + lr;
-      if (kb < kb1 && wrow < N) {
-        let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
-        let scale = S[wrow * nb + kb];
-        let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
-        wv0 = sx(lo.x) * scale;
-        wv1 = sx(lo.y) * scale;
+        var wv0 = vec4<f32>(0.0);
+        var wv1 = vec4<f32>(0.0);
+        let wrow = n0 + lr;
+        if (kb < kb1 && wrow < N) {
+          let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
+          let scale = S[wrow * nb + kb];
+          let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
+          wv0 = sx(lo.x) * scale;
+          wv1 = sx(lo.y) * scale;
+        }
+        // W has one row for each of the 64 output columns, including rows not used by
+        // X when ROWS < 4. Those rows are still needed by the four output columns per lane.
+        ws[lr * 16u + ((step * 8u + lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
+        ws[lr * 16u + ((step * 8u + lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
       }
-
-      if (lr < {{BM}}u) {
-        xs[lr * 16u + step * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
-        xs[lr * 16u + step * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
-      }
-      let r = lr;
-      ws[r * 16u + ((step * 8u + lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv0);
-      ws[r * 16u + ((step * 8u + lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv1);
     }
     workgroupBarrier();
 
@@ -114,21 +116,35 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
       let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
 
-      // Keep the same row and dot-product order as matmul. Each row block
-      // is guarded by a compile-time constant so unused registers disappear.
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
       acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-      if ({{ROWS}}u > 1u) {
-        let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
+      if ({{ROWS}}u > 0u) {
+        let a1 = vec4<f32>(xs[(lid.y + 8u) * 16u + kq]);
         acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
       }
-      if ({{ROWS}}u > 2u) {
-        let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+      if ({{ROWS}}u > 1u) {
+        let a2 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
         acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
       }
-      if ({{ROWS}}u > 3u) {
-        let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+      if ({{ROWS}}u > 1u) {
+        let a3 = vec4<f32>(xs[(lid.y + 24u) * 16u + kq]);
         acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a4 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
+        acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
+      }
+      if ({{ROWS}}u > 2u) {
+        let a5 = vec4<f32>(xs[(lid.y + 40u) * 16u + kq]);
+        acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a6 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
+        acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
+      }
+      if ({{ROWS}}u > 3u) {
+        let a7 = vec4<f32>(xs[(lid.y + 56u) * 16u + kq]);
+        acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
       }
     }
     workgroupBarrier();
@@ -147,12 +163,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     let v2 = values2[j];
     let values3 = acc3;
     let v3 = values3[j];
-    for (var i = 0u; i < {{ROWS}}u; i++) {
-      let row = m0 + lid.y + 16u * i;
+    let values4 = acc4;
+    let v4 = values4[j];
+    let values5 = acc5;
+    let v5 = values5[j];
+    let values6 = acc6;
+    let v6 = values6[j];
+    let values7 = acc7;
+    let v7 = values7[j];
+    for (var i = 0u; i < 2u * {{ROWS}}u; i++) {
+      let row = m0 + lid.y + 8u * i;
       if (row >= T) { break; }
       let o = row * N + col;
       var v = v0;
-      if (i == 1u) { v = v1; } else if (i == 2u) { v = v2; } else if (i == 3u) { v = v3; }
+      if (i == 1u) { v = v1; }
+      else if (i == 2u) { v = v2; }
+      else if (i == 3u) { v = v3; }
+      else if (i == 4u) { v = v4; }
+      else if (i == 5u) { v = v5; }
+      else if (i == 6u) { v = v6; }
+      else if (i == 7u) { v = v7; }
       if (splits > 1u) {
         PART[wg.z * T * N + o] = v;
         continue;
