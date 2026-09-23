@@ -22,6 +22,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
+    ("matmul_tall", include_str!("wgsl/matmul_tall.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
     ("rope", include_str!("wgsl/rope.wgsl")),
@@ -59,6 +60,7 @@ const SOURCES: &[(&str, &str)] = &[
 pub const KERNELS: &[&str] = &[
     "matmul",
     "matmul_wide",
+    "matmul_tall",
     "reduce",
     "norm",
     "rope",
@@ -98,7 +100,8 @@ pub struct Spec {
     pub f16: bool,
     /// Kev attention: reduce inside 32-lane subgroups.
     pub subgroups: bool,
-    /// Matmul and reduce: rows per thread, 1 to 4 (a tile covers 16 * rows rows).
+    /// Matmul and reduce: rows per thread, 1 to 4 for the regular kernels and 8 for the tall
+    /// experimental kernel (a tile covers 16 * rows rows).
     pub rows: u32,
     /// Matmul and reduce: groups of 64 output columns per workgroup, 1 or 2.
     pub groups: u32,
@@ -199,8 +202,8 @@ impl Spec {
                 return Err("unsupported Qwen3.5 GPU dimensions".into());
             }
         }
-        if !(1..=4).contains(&s.rows) {
-            return Err(format!("rows must be 1 to 4, not {}", s.rows));
+        if !(1..=8).contains(&s.rows) {
+            return Err(format!("rows must be 1 to 8, not {}", s.rows));
         }
         if !(1..=2).contains(&s.groups) {
             return Err(format!("groups must be 1 or 2, not {}", s.groups));
@@ -252,6 +255,12 @@ pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     }
     if kernel == "matmul_wide" && spec.groups != 1 {
         return Err("matmul_wide requires groups=1".into());
+    }
+    if spec.rows > 4 && kernel != "matmul_tall" && kernel != "reduce" {
+        return Err(format!("rows={} is only supported by matmul_tall and reduce", spec.rows));
+    }
+    if kernel == "matmul_tall" && spec.rows > 4 && !spec.f16 {
+        return Err("matmul_tall rows=8 requires shader-f16: its full tile uses 48 KiB with f32 staging".into());
     }
     let vars = spec.vars();
     let mut out = String::new();
