@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kevala Gemma 4 attention benchmark</title>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<!--
+  Cases are T x query-heads x KV-heads x head-dim x window x causal, for example:
+  ?cases=7x8x2x256x4x1,11x8x4x512x0x0&samples=3
+  causal=1 uses keys through the current token; causal=0 is bidirectional.
+  A zero window is full attention. This page runs the production Gemma 4
+  attention WGSL and checks it against an independent deterministic CPU reference.
+-->
+<script type="module" src="./gemma-attn-bench.js"></script>
