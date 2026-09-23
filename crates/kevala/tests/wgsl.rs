@@ -31,7 +31,7 @@ fn specs() -> Vec<Spec> {
 fn every_kernel_renders_completely() {
     for kernel in KERNELS {
         for spec in specs() {
-            if kernel.starts_with("matmul_wide") && spec.groups != 1 {
+            if *kernel == "matmul_wide" && spec.groups != 1 {
                 assert!(wgsl(kernel, &spec).is_err());
                 continue;
             }

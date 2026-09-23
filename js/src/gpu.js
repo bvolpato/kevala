@@ -81,7 +81,7 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
   const reduce = [];
   await Promise.all(
     [1, 2, 3, 4].flatMap((rows) => [
-      pipeline(device, wgsl(kernel === "matmul_wide" ? "matmul_wide_mixed" : kernel, { ...config, rows }), `${kernel}_r${rows}`, pl).then((p) => (mm[rows] = p)),
+      pipeline(device, wgsl(kernel, { ...config, rows }), `${kernel}_r${rows}`, pl).then((p) => (mm[rows] = p)),
       pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
   );
