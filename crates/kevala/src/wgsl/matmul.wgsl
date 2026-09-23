@@ -1,17 +1,12 @@
 // Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
 //
 //#if GENERIC_UNROLL
-//#if GENERIC_GROUP2
-// A workgroup of 32 x 8 threads covers {{BM}} rows and 128 columns. Each thread owns
-// rows y + 8 i for i < 2 * {{ROWS}}, and columns x + 32 j for j < 4, in named vec4 accumulators.
-//#else
 //#if ROWS_GE_4
 // A workgroup of 32 x 8 threads covers 64 rows and 64 columns. Each thread owns
 // rows y + 8 i and columns x and x + 32, with eight named vec2 FP32 accumulators.
 //#else
 // A workgroup of 32 x 8 threads covers {{BM}} rows and 64 columns. Each thread owns
 // rows y + 8 i for i < 2 * {{ROWS}}, and columns x and x + 32, in named vec2 accumulators.
-//#endif
 //#endif
 // The K32 loaders and shared weight swizzle are identical to the 16 x 16 path.
 //#else
@@ -87,19 +82,19 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let kb0 = wg.z * per;
   let kb1 = min(nb, kb0 + per);
 //#if GENERIC_UNROLL
-  var acc0 = {{GENERIC_VEC}}<f32>(0.0);
-  var acc1 = {{GENERIC_VEC}}<f32>(0.0);
+  var acc0 = vec2<f32>(0.0);
+  var acc1 = vec2<f32>(0.0);
 //#if ROWS_GE_2
-  var acc2 = {{GENERIC_VEC}}<f32>(0.0);
-  var acc3 = {{GENERIC_VEC}}<f32>(0.0);
+  var acc2 = vec2<f32>(0.0);
+  var acc3 = vec2<f32>(0.0);
 //#endif
 //#if ROWS_GE_3
-  var acc4 = {{GENERIC_VEC}}<f32>(0.0);
-  var acc5 = {{GENERIC_VEC}}<f32>(0.0);
+  var acc4 = vec2<f32>(0.0);
+  var acc5 = vec2<f32>(0.0);
 //#endif
 //#if ROWS_GE_4
-  var acc6 = {{GENERIC_VEC}}<f32>(0.0);
-  var acc7 = {{GENERIC_VEC}}<f32>(0.0);
+  var acc6 = vec2<f32>(0.0);
+  var acc7 = vec2<f32>(0.0);
 //#endif
 //#else
   var acc: array<vec4<f32>, {{ACC_LEN}}>; // [i][g]: row y + 16 i, columns x + 16 j + 64 g for j < 4
@@ -145,514 +140,222 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
     workgroupBarrier();
     let nx = lid.x & 7u;
 //#if GENERIC_UNROLL
-//#if GENERIC_GROUP2
-    // Reuse four weight vectors and consume each input row before loading the next.
-//#else
     // Keep the eight K/4 steps explicit, reusing two weight vectors across eight rows.
-//#endif
     let c = lid.x;
     {
       let kq = 0u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 1u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 2u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 3u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 4u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 5u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 6u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
     {
       let kq = 7u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-//#if GENERIC_GROUP2
-      let b2 = vec4<f32>(ws[(c + 64u) * 8u + (kq ^ nx)]);
-      let b3 = vec4<f32>(ws[(c + 96u) * 8u + (kq ^ nx)]);
-//#endif
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
-//#else
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-//#endif
       let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
-//#else
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
-//#endif
 //#if ROWS_GE_2
       let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
-//#else
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-//#endif
       let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
-//#else
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
-//#endif
 //#endif
 //#if ROWS_GE_3
       let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc4 += vec4<f32>(dot(a4, b0), dot(a4, b1), dot(a4, b2), dot(a4, b3));
-//#else
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-//#endif
       let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc5 += vec4<f32>(dot(a5, b0), dot(a5, b1), dot(a5, b2), dot(a5, b3));
-//#else
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
-//#endif
 //#endif
 //#if ROWS_GE_4
       let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc6 += vec4<f32>(dot(a6, b0), dot(a6, b1), dot(a6, b2), dot(a6, b3));
-//#else
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-//#endif
       let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
-//#if GENERIC_GROUP2
-      acc7 += vec4<f32>(dot(a7, b0), dot(a7, b1), dot(a7, b2), dot(a7, b3));
-//#else
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
-//#endif
 //#endif
     }
 //#else
@@ -718,50 +421,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
 //#endif
     }
   }
-//#if GENERIC_GROUP2
-  {
-    let col = n0 + lid.x + 64u;
-    if (col < N) {
-      var bias = 0.0;
-      if (p.bias == 1u) { bias = B[col]; }
-      mm_store(acc0.z, row + 0u, col, bias, T, N, splits, wg.z);
-      mm_store(acc1.z, row + 8u, col, bias, T, N, splits, wg.z);
-//#if ROWS_GE_2
-      mm_store(acc2.z, row + 16u, col, bias, T, N, splits, wg.z);
-      mm_store(acc3.z, row + 24u, col, bias, T, N, splits, wg.z);
-//#endif
-//#if ROWS_GE_3
-      mm_store(acc4.z, row + 32u, col, bias, T, N, splits, wg.z);
-      mm_store(acc5.z, row + 40u, col, bias, T, N, splits, wg.z);
-//#endif
-//#if ROWS_GE_4
-      mm_store(acc6.z, row + 48u, col, bias, T, N, splits, wg.z);
-      mm_store(acc7.z, row + 56u, col, bias, T, N, splits, wg.z);
-//#endif
-    }
-  }
-  {
-    let col = n0 + lid.x + 96u;
-    if (col < N) {
-      var bias = 0.0;
-      if (p.bias == 1u) { bias = B[col]; }
-      mm_store(acc0.w, row + 0u, col, bias, T, N, splits, wg.z);
-      mm_store(acc1.w, row + 8u, col, bias, T, N, splits, wg.z);
-//#if ROWS_GE_2
-      mm_store(acc2.w, row + 16u, col, bias, T, N, splits, wg.z);
-      mm_store(acc3.w, row + 24u, col, bias, T, N, splits, wg.z);
-//#endif
-//#if ROWS_GE_3
-      mm_store(acc4.w, row + 32u, col, bias, T, N, splits, wg.z);
-      mm_store(acc5.w, row + 40u, col, bias, T, N, splits, wg.z);
-//#endif
-//#if ROWS_GE_4
-      mm_store(acc6.w, row + 48u, col, bias, T, N, splits, wg.z);
-      mm_store(acc7.w, row + 56u, col, bias, T, N, splits, wg.z);
-//#endif
-    }
-  }
-//#endif
 //#else
   for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
     for (var j = 0u; j < 4u; j++) {

@@ -223,9 +223,7 @@ impl Spec {
         vec![
             ("F16", flag(self.f16)),
             ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
-            ("GENERIC_UNROLL", flag(!self.f16)),
-            ("GENERIC_GROUP2", flag(!self.f16 && self.groups == 2)),
-            ("GENERIC_VEC", if self.groups == 2 { "vec4" } else { "vec2" }.to_string()),
+            ("GENERIC_UNROLL", flag(!self.f16 && self.groups == 1)),
             ("ROWS_GE_2", flag(self.rows >= 2)),
             ("ROWS_GE_3", flag(self.rows >= 3)),
             ("ROWS_GE_4", flag(self.rows >= 4)),
