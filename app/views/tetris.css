@@ -67,7 +67,7 @@
 .view-tetris .auto-btn[aria-pressed="true"] .led { background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); }
 .view-tetris .auto-btn.thinking .led { animation: t-blink 0.5s infinite alternate; }
 @keyframes t-blink { to { opacity: 0.25; } }
-.view-tetris .ai-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.view-tetris .ai-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
 .view-tetris .ai-metrics div { display: grid; gap: 3px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); min-width: 0; }
 .view-tetris .ai-metrics b { font: 700 1.55rem/1.1 var(--mono); letter-spacing: -0.02em; white-space: nowrap; }
 .view-tetris .ai-metrics span { font-size: 0.74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -126,6 +126,8 @@
 }
 @media (max-width: 640px) {
   .view-tetris .game { grid-template-columns: 1fr 1fr; grid-template-areas: "hold next" "stats stats" "board board" "ai ai"; gap: 10px; align-items: stretch; }
+  .view-tetris .ai-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .view-tetris .ai-metrics div:first-child { grid-column: 1 / -1; }
   .view-tetris .side.left { display: contents; }
   .view-tetris .hold-box { grid-area: hold; }
   .view-tetris .stats { grid-area: stats; grid-template-columns: repeat(4, 1fr); column-gap: 10px; }

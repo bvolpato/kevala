@@ -1,0 +1,889 @@
+{
+  "baselineRevision": "16b45947a3f3d48b75640ebd1e7045b6c5737e79",
+  "runs": {
+    "laya": {
+      "before": {
+        "games": [
+          {
+            "counts": {
+              "drop": 100,
+              "left": 113,
+              "right": 128,
+              "rotate": 70
+            },
+            "height": 6,
+            "holes": 2,
+            "keysPerPiece": 4.11,
+            "lines": 36,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 15376,
+            "seed": 1,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 113,
+              "right": 134,
+              "rotate": 90
+            },
+            "height": 9,
+            "holes": 8,
+            "keysPerPiece": 4.37,
+            "lines": 33,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 13160,
+            "seed": 2,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 121,
+              "right": 128,
+              "rotate": 101
+            },
+            "height": 11,
+            "holes": 7,
+            "keysPerPiece": 4.5,
+            "lines": 32,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 11256,
+            "seed": 3,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 110,
+              "right": 131,
+              "rotate": 93
+            },
+            "height": 6,
+            "holes": 2,
+            "keysPerPiece": 4.34,
+            "lines": 35,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 13202,
+            "seed": 4,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 113,
+              "right": 137,
+              "rotate": 85
+            },
+            "height": 4,
+            "holes": 1,
+            "keysPerPiece": 4.35,
+            "lines": 37,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 15482,
+            "seed": 5,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 109,
+              "right": 137,
+              "rotate": 97
+            },
+            "height": 8,
+            "holes": 7,
+            "keysPerPiece": 4.43,
+            "lines": 34,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 14580,
+            "seed": 6,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 102,
+              "right": 135,
+              "rotate": 62
+            },
+            "height": 8,
+            "holes": 2,
+            "keysPerPiece": 3.99,
+            "lines": 35,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 13808,
+            "seed": 7,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 111,
+              "right": 138,
+              "rotate": 94
+            },
+            "height": 5,
+            "holes": 2,
+            "keysPerPiece": 4.43,
+            "lines": 37,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 14308,
+            "seed": 8,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 115,
+              "right": 128,
+              "rotate": 83
+            },
+            "height": 3,
+            "holes": 0,
+            "keysPerPiece": 4.26,
+            "lines": 38,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 16354,
+            "seed": 9,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 116,
+              "right": 136,
+              "rotate": 88
+            },
+            "height": 9,
+            "holes": 4,
+            "keysPerPiece": 4.4,
+            "lines": 34,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 13930,
+            "seed": 10,
+            "stalls": 0
+          }
+        ],
+        "runner": {
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "summary": {
+          "backend": "webgpu",
+          "baseRevision": null,
+          "batchSize": 32,
+          "decisionBatches": 1000,
+          "decisionsPerSec": 14.991492323174134,
+          "elapsedMs": 66912.69999980927,
+          "games": 10,
+          "gpu": "nvidia blackwell",
+          "gpuPowerPreference": "high-performance",
+          "height": 69,
+          "holes": 35,
+          "lines": 351,
+          "meanHeight": 6.9,
+          "meanHoles": 3.5,
+          "model": "laya",
+          "modelRevision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+          "moves": 1000,
+          "p50TotalMs": 62.59999990463257,
+          "pieces": 100,
+          "policy": "placement",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms, biases, type embedding, scorer and act head in f32",
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "source": "../tmp/laya-q8.kevala",
+          "survived": 10,
+          "totalMs": 66704.50002193451
+        }
+      },
+      "after": {
+        "games": [
+          {
+            "counts": {
+              "drop": 100,
+              "left": 112,
+              "right": 125,
+              "rotate": 81
+            },
+            "height": 4,
+            "holes": 0,
+            "keysPerPiece": 4.18,
+            "lines": 38,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 18738,
+            "seed": 1,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 114,
+              "right": 137,
+              "rotate": 102
+            },
+            "height": 5,
+            "holes": 3,
+            "keysPerPiece": 4.53,
+            "lines": 36,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 14862,
+            "seed": 2,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 112,
+              "right": 134,
+              "rotate": 91
+            },
+            "height": 7,
+            "holes": 3,
+            "keysPerPiece": 4.37,
+            "lines": 35,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 13308,
+            "seed": 3,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 111,
+              "right": 129,
+              "rotate": 94
+            },
+            "height": 4,
+            "holes": 1,
+            "keysPerPiece": 4.34,
+            "lines": 38,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 15790,
+            "seed": 4,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 110,
+              "right": 129,
+              "rotate": 83
+            },
+            "height": 2,
+            "holes": 0,
+            "keysPerPiece": 4.22,
+            "lines": 39,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 15774,
+            "seed": 5,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 113,
+              "right": 134,
+              "rotate": 96
+            },
+            "height": 5,
+            "holes": 3,
+            "keysPerPiece": 4.43,
+            "lines": 36,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 14202,
+            "seed": 6,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 118,
+              "right": 130,
+              "rotate": 103
+            },
+            "height": 5,
+            "holes": 0,
+            "keysPerPiece": 4.51,
+            "lines": 38,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 14620,
+            "seed": 7,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 108,
+              "right": 138,
+              "rotate": 94
+            },
+            "height": 5,
+            "holes": 0,
+            "keysPerPiece": 4.4,
+            "lines": 38,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 17074,
+            "seed": 8,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 112,
+              "right": 133,
+              "rotate": 94
+            },
+            "height": 3,
+            "holes": 0,
+            "keysPerPiece": 4.39,
+            "lines": 39,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 16884,
+            "seed": 9,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 100,
+              "left": 110,
+              "right": 130,
+              "rotate": 79
+            },
+            "height": 3,
+            "holes": 0,
+            "keysPerPiece": 4.19,
+            "lines": 39,
+            "moves": 100,
+            "over": false,
+            "pieces": 100,
+            "score": 14672,
+            "seed": 10,
+            "stalls": 0
+          }
+        ],
+        "runner": {
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "summary": {
+          "backend": "webgpu",
+          "baseRevision": null,
+          "batchSize": 32,
+          "decisionBatches": 1000,
+          "decisionsPerSec": 116.14132072308068,
+          "elapsedMs": 8792.699999809265,
+          "games": 10,
+          "gpu": "nvidia blackwell",
+          "gpuPowerPreference": "high-performance",
+          "height": 43,
+          "holes": 10,
+          "lines": 376,
+          "meanHeight": 4.3,
+          "meanHoles": 1,
+          "model": "laya",
+          "modelRevision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+          "moves": 1000,
+          "p50TotalMs": 8.200000762939453,
+          "pieces": 100,
+          "policy": "placement",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms, biases, type embedding, scorer and act head in f32",
+          "seeds": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ],
+          "source": "../tmp/laya-q8.kevala",
+          "survived": 10,
+          "totalMs": 8610.200002670288
+        }
+      }
+    },
+    "kev08": {
+      "before": {
+        "games": [
+          {
+            "counts": {
+              "drop": 60,
+              "left": 72,
+              "right": 75,
+              "rotate": 46
+            },
+            "height": 12,
+            "holes": 4,
+            "keysPerPiece": 4.22,
+            "lines": 17,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 5050,
+            "seed": 1,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 69,
+              "right": 76,
+              "rotate": 61
+            },
+            "height": 4,
+            "holes": 1,
+            "keysPerPiece": 4.43,
+            "lines": 22,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 6966,
+            "seed": 2,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 66,
+              "right": 82,
+              "rotate": 55
+            },
+            "height": 5,
+            "holes": 3,
+            "keysPerPiece": 4.38,
+            "lines": 20,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 6114,
+            "seed": 3,
+            "stalls": 0
+          }
+        ],
+        "runner": {
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "summary": {
+          "backend": "webgpu",
+          "baseRevision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "batchSize": 32,
+          "decisionBatches": 180,
+          "decisionsPerSec": 10.972799648997995,
+          "elapsedMs": 16448.10000038147,
+          "games": 3,
+          "gpu": "nvidia blackwell",
+          "gpuPowerPreference": "high-performance",
+          "height": 21,
+          "holes": 8,
+          "lines": 59,
+          "meanHeight": 7,
+          "meanHoles": 2.6666666666666665,
+          "model": "kev-0.8b",
+          "modelRevision": "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+          "moves": 180,
+          "p50TotalMs": 88.55000019073486,
+          "pieces": 60,
+          "policy": "placement",
+          "quantization": "LoRA merged in f32, then int8 symmetric absmax, one f32 scale per 32 weights; norms, gates, conv, pointer head in f32",
+          "seeds": [
+            1,
+            2,
+            3
+          ],
+          "source": "../tmp/kev-0.8b-q8.kevala",
+          "survived": 3,
+          "totalMs": 16404.199999809265
+        }
+      },
+      "after": {
+        "games": [
+          {
+            "counts": {
+              "drop": 60,
+              "left": 64,
+              "right": 80,
+              "rotate": 45
+            },
+            "height": 3,
+            "holes": 0,
+            "keysPerPiece": 4.15,
+            "lines": 22,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 6830,
+            "seed": 1,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 66,
+              "right": 82,
+              "rotate": 53
+            },
+            "height": 7,
+            "holes": 3,
+            "keysPerPiece": 4.35,
+            "lines": 20,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 5514,
+            "seed": 2,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 63,
+              "right": 83,
+              "rotate": 60
+            },
+            "height": 7,
+            "holes": 3,
+            "keysPerPiece": 4.43,
+            "lines": 20,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 5918,
+            "seed": 3,
+            "stalls": 0
+          }
+        ],
+        "runner": {
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "summary": {
+          "backend": "webgpu",
+          "baseRevision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+          "batchSize": 32,
+          "decisionBatches": 180,
+          "decisionsPerSec": 100.0166690845104,
+          "elapsedMs": 1837.8000001907349,
+          "games": 3,
+          "gpu": "nvidia blackwell",
+          "gpuPowerPreference": "high-performance",
+          "height": 17,
+          "holes": 6,
+          "lines": 62,
+          "meanHeight": 5.666666666666667,
+          "meanHoles": 2,
+          "model": "kev-0.8b",
+          "modelRevision": "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+          "moves": 180,
+          "p50TotalMs": 10.5,
+          "pieces": 60,
+          "policy": "placement",
+          "quantization": "LoRA merged in f32, then int8 symmetric absmax, one f32 scale per 32 weights; norms, gates, conv, pointer head in f32",
+          "seeds": [
+            1,
+            2,
+            3
+          ],
+          "source": "../tmp/kev-0.8b-q8.kevala",
+          "survived": 3,
+          "totalMs": 1799.7000064849854
+        }
+      }
+    },
+    "semif2b": {
+      "before": {
+        "games": [
+          {
+            "counts": {
+              "drop": 60,
+              "left": 65,
+              "right": 80,
+              "rotate": 46
+            },
+            "height": 8,
+            "holes": 3,
+            "keysPerPiece": 4.18,
+            "lines": 18,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 5334,
+            "seed": 1,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 54,
+              "right": 89,
+              "rotate": 52
+            },
+            "height": 11,
+            "holes": 0,
+            "keysPerPiece": 4.25,
+            "lines": 18,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 5106,
+            "seed": 2,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 73,
+              "right": 77,
+              "rotate": 60
+            },
+            "height": 7,
+            "holes": 3,
+            "keysPerPiece": 4.5,
+            "lines": 19,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 5170,
+            "seed": 3,
+            "stalls": 0
+          }
+        ],
+        "runner": {
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "summary": {
+          "backend": "webgpu",
+          "baseRevision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "batchSize": 32,
+          "decisionBatches": 180,
+          "decisionsPerSec": 2.0575943521725004,
+          "elapsedMs": 87531.4000005722,
+          "games": 3,
+          "gpu": "nvidia blackwell",
+          "gpuPowerPreference": "high-performance",
+          "height": 26,
+          "holes": 6,
+          "lines": 55,
+          "meanHeight": 8.666666666666666,
+          "meanHoles": 2,
+          "model": "semif-qwen3.5-2b",
+          "modelRevision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "moves": 180,
+          "p50TotalMs": 433.44999980926514,
+          "pieces": 60,
+          "policy": "placement",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "seeds": [
+            1,
+            2,
+            3
+          ],
+          "source": "../tmp/semif-qwen3.5-2b-q8.kevala",
+          "survived": 3,
+          "totalMs": 87480.79999828339
+        }
+      },
+      "after": {
+        "games": [
+          {
+            "counts": {
+              "drop": 60,
+              "left": 64,
+              "right": 80,
+              "rotate": 45
+            },
+            "height": 3,
+            "holes": 0,
+            "keysPerPiece": 4.15,
+            "lines": 22,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 6830,
+            "seed": 1,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 65,
+              "right": 82,
+              "rotate": 63
+            },
+            "height": 3,
+            "holes": 1,
+            "keysPerPiece": 4.5,
+            "lines": 22,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 6990,
+            "seed": 2,
+            "stalls": 0
+          },
+          {
+            "counts": {
+              "drop": 60,
+              "left": 67,
+              "right": 82,
+              "rotate": 58
+            },
+            "height": 5,
+            "holes": 2,
+            "keysPerPiece": 4.45,
+            "lines": 21,
+            "moves": 60,
+            "over": false,
+            "pieces": 60,
+            "score": 6078,
+            "seed": 3,
+            "stalls": 0
+          }
+        ],
+        "runner": {
+          "browser": "chrome",
+          "browserRequested": "chrome (cdp)",
+          "browserVersion": "Chrome/149.0.7827.200",
+          "expectedBackend": "webgpu",
+          "headless": false,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": false,
+            "isolatedSeleniumProfile": false,
+            "note": "unchanged"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "summary": {
+          "backend": "webgpu",
+          "baseRevision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "batchSize": 32,
+          "decisionBatches": 180,
+          "decisionsPerSec": 30.984266844248506,
+          "elapsedMs": 5853.199999809265,
+          "games": 3,
+          "gpu": "nvidia blackwell",
+          "gpuPowerPreference": "high-performance",
+          "height": 11,
+          "holes": 3,
+          "lines": 65,
+          "meanHeight": 3.6666666666666665,
+          "meanHoles": 1,
+          "model": "semif-qwen3.5-2b",
+          "modelRevision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+          "moves": 180,
+          "p50TotalMs": 33.75000047683716,
+          "pieces": 60,
+          "policy": "placement",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+          "seeds": [
+            1,
+            2,
+            3
+          ],
+          "source": "../tmp/semif-qwen3.5-2b-q8.kevala",
+          "survived": 3,
+          "totalMs": 5809.4000062942505
+        }
+      }
+    }
+  }
+}

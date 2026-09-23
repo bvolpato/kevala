@@ -1,8 +1,9 @@
 # Optional model validation, September 22, 2026
 
-These measurements validate the converted packs and the current Tetris policy. They do not
+These measurements validate the converted packs and the September 22 Tetris policy. They do not
 establish state-of-the-art decision accuracy. Raw scores, source revisions, pack hashes, game
 outcomes, and every selected placement are in [the results JSON](benchmarks/models-linux-2026-09-22.json).
+The [current Tetris policy measurements](tetris-policy.md) use a safer shortlist and a later build.
 
 Hardware: RTX 5070 Ti, 16 GB, NVIDIA 595.71.05, Ryzen 9 9950X3D, Ubuntu, Firefox 152.0.3.
 Browser inference used hardware WebGPU through Vulkan. Runs were serialized.

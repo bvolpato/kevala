@@ -1,18 +1,14 @@
-// The auto player. When a piece appears, the code lists every spot it can land in (the game's
-// own collision and SRS kick code), puts each outcome into words, and asks the model one batched
-// yes/no question per spot: "Does the stack look clean after this move?". The piece then plays
-// the keys toward the spot with the highest P(yes), one press at a time, under normal gravity.
+// The auto player. When a piece appears, the code lists every spot its controller can reach
+// (the game's own collision and SRS kick code), measures each outcome, and rejects worse boards.
+// The model scores the remaining distinct outcomes with one batched yes/no question per outcome.
+// The piece then plays the keys toward the highest P(yes), one press at a time.
 //
 // Keys are how the choice shows up on screen: each key's value is the best P(yes) among the
-// spots that key leads toward from where the piece is now (turn first, then slide, then drop).
-// The code measures and describes; it never scores a spot. While a piece moves, the next piece's
-// spots are already being scored on the board it will land on, so answers are usually ready
-// the moment a piece appears; they are used only if that board and piece are exactly the ones
-// asked about. Asking the model for one key at a
-// time was tried and played far worse (no lines in 40 pieces): a decision model reads outcomes
-// well, but a single key press says little about where the piece ends up.
+// shortlisted representatives that key leads toward (turn first, then slide, then drop).
+// While a piece moves, the next piece's promising spots are scored on its expected board. The
+// answer is used only if that board and piece are exactly the ones asked about.
 
-import { enumeratePlacements, measure, rotated, shifted, place, spawnPiece, pieceFits } from "./engine.js";
+import { enumeratePlacements, measure, rotated, shifted, place, spawnPiece, pieceFits, dropDistance } from "./engine.js";
 
 export const KEYS = ["left", "right", "rotate", "drop"];
 export const GLYPH = { left: "←", right: "→", rotate: "↻", drop: "⤓" };
@@ -29,11 +25,18 @@ export const QUESTION = {
 const NUM = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
 const num = (n) => NUM[n] ?? String(n);
 const rows = (n) => `${num(n)} ${n === 1 ? "row" : "rows"}`;
+const SHORTLIST_MARGIN = 0.75;
+const SHORTLIST_SIZE = 4;
+
+function value(m) {
+  // Favor completed rows and avoid buried cells; height and roughness break safer-move ties.
+  return 8 * m.lines - 9 * m.newHoles - 2 * m.holesAfter - 0.5 * m.totalHeight - 0.5 * m.bumpiness - 0.3 * m.maxHeight;
+}
 
 /**
  * Where a value sits among the distinct values every option produces (lower is better for
  * bumpiness and height): "lo" in the better part, "hi" in the worse part, "mid" otherwise.
- * This is a comparison computed in code and stated in words, not a score.
+ * This is a comparison computed in code and stated in words.
  */
 function tier(v, values) {
   const u = [...new Set(values)].sort((a, b) => a - b);
@@ -45,11 +48,11 @@ function tier(v, values) {
 /** Plain-words description of one outcome, given the outcomes of all the options. */
 export function describe(m, all) {
   const s = [];
-  s.push(
-    m.newHoles
-      ? `This move buries ${num(m.newHoles)} empty ${m.newHoles > 1 ? "cells" : "cell"} under blocks, leaving ${m.newHoles > 1 ? "holes" : "a hole"} that cannot be filled.`
-      : "This move leaves no holes: every empty cell stays open to the sky.",
-  );
+  s.push(m.holesAfter
+    ? `The stack has ${num(m.holesAfter)} ${m.holesAfter === 1 ? "hole" : "holes"} after this move.`
+    : "The stack has no holes after this move.");
+  if (m.holesAfter > m.holesBefore) s.push(`That is ${num(m.holesAfter - m.holesBefore)} more than before.`);
+  if (m.holesAfter < m.holesBefore) s.push(`That is ${num(m.holesBefore - m.holesAfter)} fewer than before.`);
   if (m.lines) s.push(`It completes ${rows(m.lines)}.`);
   const b = tier(m.bumpiness, all.map((x) => x.bumpiness));
   s.push({ lo: "The surface ends up flatter than with most other moves.", mid: "The surface ends up about as flat as with most other moves.", hi: "The surface ends up bumpier than with most other moves." }[b]);
@@ -62,23 +65,41 @@ export function describe(m, all) {
 /** A few words for the panel. */
 export function summary(m, all) {
   const b = tier(m.bumpiness, all.map((x) => x.bumpiness));
-  return [m.lines ? `clears ${m.lines}` : null, m.newHoles ? `${m.newHoles} hole${m.newHoles > 1 ? "s" : ""}` : "no holes", { lo: "flatter", mid: "even", hi: "bumpier" }[b]].filter(Boolean).join(" · ");
+  return [m.lines ? `clears ${m.lines}` : null, m.holesAfter ? `${m.holesAfter} hole${m.holesAfter > 1 ? "s" : ""}` : "no holes", { lo: "flatter", mid: "even", hi: "bumpier" }[b]].filter(Boolean).join(" · ");
 }
 
-/** Every landing spot with its measured outcome, grouped by description (one model state each). */
+/** Measure all controller-reachable landings and ask the model about the safest distinct outcomes. */
 export function candidates(board, piece) {
-  const items = enumeratePlacements(board, piece).map((p) => ({ ...p, m: measure(board, p.final) }));
+  const items = enumeratePlacements(board, piece).map((p) => {
+    const m = measure(board, p.final);
+    return { ...p, m, value: value(m) };
+  });
   const all = items.map((i) => i.m);
-  const groups = new Map();
+  const grouped = new Map();
   for (const it of items) {
     it.text = describe(it.m, all);
     it.summary = summary(it.m, all);
-    if (!groups.has(it.text)) groups.set(it.text, []);
-    groups.get(it.text).push(it);
+    if (!grouped.has(it.text)) grouped.set(it.text, []);
+    grouped.get(it.text).push(it);
   }
-  // within a group every outcome reads the same to the model; take the one needing fewest inputs
-  for (const g of groups.values()) g.sort((a, b) => a.cost - b.cost);
+  for (const g of grouped.values()) g.sort((a, b) => b.value - a.value || a.cost - b.cost);
+  const ranked = [...grouped].sort((a, b) => b[1][0].value - a[1][0].value || a[1][0].cost - b[1][0].cost);
+  const best = ranked[0]?.[1][0].value;
+  const groups = new Map(ranked.filter(([, g]) => best - g[0].value <= SHORTLIST_MARGIN).slice(0, SHORTLIST_SIZE));
   return { items, groups, texts: [...groups.keys()] };
+}
+
+function reachable(board, pose, spot) {
+  let p = pose;
+  for (const dir of spot.rotations) {
+    p = rotated(board, p, dir);
+    if (!p) return false;
+  }
+  while (p.x !== spot.target.x) {
+    p = shifted(board, p, Math.sign(spot.target.x - p.x));
+    if (!p) return false;
+  }
+  return p.rot === spot.final.rot && p.y + dropDistance(board, p) === spot.final.y;
 }
 
 /** The next key toward a spot from pose `p`: turn first, then slide, then drop. */
@@ -110,14 +131,12 @@ export function keysTo(board, p, spot) {
   return keys;
 }
 
-/** Per key: the best P(yes) among the spots that key leads toward from pose `p`. */
+/** Per key: the best P(yes) among the shortlisted representatives from pose `p`. */
 export function keyValues(p, scored) {
   const v = Object.fromEntries(KEYS.map((k) => [k, null]));
   for (const s of scored) {
-    for (const spot of s.group) {
-      const k = nextKey(p, spot);
-      if (v[k] === null || s.p > v[k]) v[k] = s.p;
-    }
+    const k = nextKey(p, s.group[0]);
+    if (v[k] === null || s.p > v[k]) v[k] = s.p;
   }
   return v;
 }
@@ -144,9 +163,9 @@ function spawnPose(board, type) {
 const momentKey = (board, p) => `${board.join("")}|${p.type}${p.rot}:${p.x},${p.y}`;
 
 export const SPEEDS = {
-  chill: { label: "Chill", gap: 260 },
-  normal: { label: "Normal", gap: 110 },
-  turbo: { label: "Turbo", gap: 30 },
+  chill: { label: "Chill", gap: 260, dropGap: 30 },
+  normal: { label: "Normal", gap: 65, dropGap: 16 },
+  turbo: { label: "Turbo", gap: 25, dropGap: 8 },
 };
 
 /**
@@ -232,7 +251,7 @@ export class AutoPlayer {
     this.#settle(kevala, job, { epoch: this.epoch, pieceId: g.pieceId }, fits);
   }
 
-  /** Starts one batched question: every landing spot of `piece` on `board`. */
+  /** Starts one batched question for the promising distinct outcomes of `piece` on `board`. */
   #ask(kevala, board, piece) {
     const c = candidates(board, piece);
     const job = { key: momentKey(board, piece), epoch: this.epoch, c, t0: performance.now(), ms: 0 };
@@ -259,11 +278,17 @@ export class AutoPlayer {
           return;
         }
         const { c } = job;
-        const scored = c.texts.map((text, i) => ({ text, p: pTrue(res[i]), group: c.groups.get(text) }));
-        scored.sort((a, b) => b.p - a.p);
+        const scored = c.texts.map((text, i) => ({ text, p: pTrue(res[i]), group: c.groups.get(text).filter((spot) => reachable(g.board, g.piece, spot)) }))
+          .filter((s) => s.group.length);
+        if (!scored.length) {
+          this.stats.dropped++;
+          this.request();
+          return;
+        }
+        scored.sort((a, b) => b.p - a.p || b.group[0].value - a.group[0].value);
         const best = scored[0];
         const spot = best.group[0];
-        this.plan = { pieceId: tag.pieceId, best, spot, scored, keys: keysTo(g.board, g.piece, spot), pressed: 0, fails: 0 };
+        this.plan = { pieceId: tag.pieceId, best, spot, scored, keys: keysTo(g.board, g.piece, spot), pressed: 0 };
         this.timer = 0;
         const st = this.stats;
         st.decisions++;
@@ -306,7 +331,7 @@ export class AutoPlayer {
   next() {
     if (!this.plan || this.plan.pieceId !== this.game.pieceId || !this.game.piece) return null;
     if (this.plan.dropping) return "drop";
-    return this.plan.fails >= 4 ? "drop" : nextKey(this.game.piece, this.plan.spot);
+    return nextKey(this.game.piece, this.plan.spot);
   }
 
   /** Presses the next key of the plan when its time has come; called from the game loop. */
@@ -315,9 +340,11 @@ export class AutoPlayer {
     const plan = this.plan;
     if (!this.enabled || !plan || plan.pieceId !== g.pieceId || !g.active) return;
     if (plan.dropping) {
-      // "drop" is a fast fall, so the piece is seen falling; it locks as soon as it lands
-      g.softDrop = true;
-      if (g.onGround) g.hardDrop();
+      this.timer += dt;
+      if (this.timer >= SPEEDS[this.speed].dropGap) {
+        this.timer = 0;
+        if (!g.stepDown() || g.onGround) g.hardDrop();
+      }
       return;
     }
     this.timer += dt;
@@ -329,12 +356,17 @@ export class AutoPlayer {
     else if (key === "left") ok = g.move(-1);
     else if (key === "right") ok = g.move(1);
     if (!ok) {
-      // blocked (the stack rose into the path while it fell): try again, then give up and drop
-      plan.fails++;
+      // Gravity changed the path while the piece moved; score landings from its current pose.
+      this.plan = null;
+      this.ahead = null;
+      this.request();
       return;
     }
     plan.pressed++;
     this.onPress?.(key);
-    if (key === "drop") plan.dropping = true; // the landing spawns the next piece, which asks again
+    if (key === "drop") {
+      plan.dropping = true;
+      this.timer = 0;
+    }
   }
 }
