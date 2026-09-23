@@ -9,9 +9,9 @@ batch and avoids presenting many identical descriptions with different board qua
 
 The controller checks that a chosen landing is still reachable after inference and replans if
 gravity blocks a key on the way. It starts scoring the next piece while the current one moves,
-and advances an auto drop a row at a time. The panel
-reports the **full model wait for one piece**, rather than dividing that wait by the number of
-landings searched.
+and advances an auto drop a row at a time. The panel divides total elapsed time across the last
+ten model batches by the number of states actually scored in those batches. The full last batch
+wait appears below it. Searched landings are not counted as model decisions.
 
 ## Seeded WebGPU evaluation, September 23, 2026
 

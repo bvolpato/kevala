@@ -67,11 +67,14 @@
 .view-tetris .auto-btn[aria-pressed="true"] .led { background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2); }
 .view-tetris .auto-btn.thinking .led { animation: t-blink 0.5s infinite alternate; }
 @keyframes t-blink { to { opacity: 0.25; } }
-.view-tetris .ai-metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.view-tetris .ai-metrics div:first-child { grid-column: 1 / -1; }
-.view-tetris .ai-metrics div { display: grid; gap: 3px; padding: 12px 14px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); min-width: 0; }
-.view-tetris .ai-metrics b { font: 700 1.55rem/1.1 var(--mono); letter-spacing: -0.02em; white-space: nowrap; }
-.view-tetris .ai-metrics span { font-size: 0.74rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view-tetris .ai-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.view-tetris .ai-metrics div { display: grid; align-content: start; gap: 5px; padding: 12px 10px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); min-width: 0; }
+.view-tetris .ai-metrics div:first-child { background: rgba(69, 224, 192, 0.06); border-color: rgba(69, 224, 192, 0.3); }
+.view-tetris .ai-metrics .metric-kind { font: 700 0.62rem/1 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.view-tetris .ai-metrics b { font: 700 1.4rem/1.1 var(--mono); letter-spacing: -0.02em; white-space: nowrap; }
+.view-tetris .ai-metrics div:first-child b { color: var(--accent-2); }
+.view-tetris .ai-metrics .metric-label { font-size: 0.7rem; line-height: 1.25; color: var(--muted); }
+.view-tetris .ai-metrics .metric-detail { grid-column: 1 / -1; margin: 0 2px; font-size: 0.72rem; color: var(--faint); }
 .view-tetris .ai-sub { display: flex; justify-content: space-between; gap: 8px; margin-bottom: -6px; font: 600 0.7rem/1 var(--sans); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
 /* the key cluster: turn on top, then left, drop and right, like arrow keys */
