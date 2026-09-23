@@ -8,7 +8,7 @@
 // A workgroup of 32 x 8 threads covers {{BM}} rows and 64 columns. Each thread owns
 // rows y + 8 i for i < 2 * {{ROWS}}, and columns x and x + 32, in named vec2 accumulators.
 //#endif
-// Activations load directly from X; weights retain the K32 shared tile and XOR swizzle.
+// The K32 loaders and shared weight swizzle are identical to the 16 x 16 path.
 //#else
 // A workgroup of 16 x 16 threads covers {{BM}} rows ({{ROWS}} per thread) and {{BN}} columns
 // ({{GROUPS}} groups of 64); thread (x, y) owns rows y + 16 i and columns x + 16 j + 64 g, so
@@ -31,14 +31,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 @group(0) @binding(6) var<storage, read_write> Y: array<f32>;
 @group(0) @binding(7) var<storage, read_write> PART: array<f32>;
 
-//#if GENERIC_UNROLL
-fn mm_load_x(row: u32, K: u32, kb: u32, kq: u32, T: u32) -> vec4<f32> {
-  if (row >= T) { return vec4<f32>(0.0); }
-  return X[(row * K) / 4u + kb * 8u + kq];
-}
-//#else
 var<workgroup> xs: array<vec4<{{TILE}}>, 512>; // [m][k/4]
-//#endif
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WS_LEN}}>; // [n][(k/4) ^ (n & 7)], swizzled
 
 //#if GENERIC_UNROLL
@@ -115,27 +108,15 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   var acc: array<vec4<f32>, {{ACC_LEN}}>; // [i][g]: row y + 16 i, columns x + 16 j + 64 g for j < 4
 //#endif
 
-//#if GENERIC_UNROLL
-  // Weight loaders: 4 threads per row, 8 values each.
-//#else
   // loaders: 4 threads per row, 8 values each; X rows 0..{{BM}}, W rows lr + 64 g
-//#endif
   let lr = li / 4u;
   let lq = li % 4u;
-//#if GENERIC_UNROLL
-//#else
   let xrow = m0 + lr;
-//#endif
   let sw = lr & 7u;
-//#if GENERIC_UNROLL
-//#else
   var xv0 = vec4<f32>(0.0);
   var xv1 = vec4<f32>(0.0);
-//#endif
   var wv: array<vec4<f32>, {{WV_LEN}}>;
   for (var kb = kb0; kb < kb1; kb++) {
-//#if GENERIC_UNROLL
-//#else
     xv0 = vec4<f32>(0.0);
     xv1 = vec4<f32>(0.0);
     if (lr < {{BM}}u && xrow < T) {
@@ -143,7 +124,6 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       xv0 = X[base];
       xv1 = X[base + 1u];
     }
-//#endif
     for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
       let wrow = n0 + lr + 64u * gg;
       wv[2u * gg] = vec4<f32>(0.0);
@@ -156,13 +136,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
         wv[2u * gg + 1u] = sx(lo.y) * s;
       }
     }
-//#if GENERIC_UNROLL
-//#else
     if (lr < {{BM}}u) {
       xs[lr * 8u + lq * 2u] = vec4<{{TILE}}>(xv0);
       xs[lr * 8u + lq * 2u + 1u] = vec4<{{TILE}}>(xv1);
     }
-//#endif
     for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
       let r = lr + 64u * gg;
       ws[r * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg]);
@@ -177,26 +154,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 0u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -204,26 +181,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 1u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -231,26 +208,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 2u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -258,26 +235,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 3u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -285,26 +262,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 4u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -312,26 +289,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 5u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -339,26 +316,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 6u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
@@ -366,26 +343,26 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let kq = 7u;
       let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
       let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
-      let a0 = mm_load_x(m0 + lid.y + 0u, K, kb, kq, T);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
       acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
-      let a1 = mm_load_x(m0 + lid.y + 8u, K, kb, kq, T);
+      let a1 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
       acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
 //#if ROWS_GE_2
-      let a2 = mm_load_x(m0 + lid.y + 16u, K, kb, kq, T);
+      let a2 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
       acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
-      let a3 = mm_load_x(m0 + lid.y + 24u, K, kb, kq, T);
+      let a3 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
       acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
 //#endif
 //#if ROWS_GE_3
-      let a4 = mm_load_x(m0 + lid.y + 32u, K, kb, kq, T);
+      let a4 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
       acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
-      let a5 = mm_load_x(m0 + lid.y + 40u, K, kb, kq, T);
+      let a5 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
       acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
 //#endif
 //#if ROWS_GE_4
-      let a6 = mm_load_x(m0 + lid.y + 48u, K, kb, kq, T);
+      let a6 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
       acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
-      let a7 = mm_load_x(m0 + lid.y + 56u, K, kb, kq, T);
+      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
