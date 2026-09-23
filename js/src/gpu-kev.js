@@ -38,6 +38,7 @@ export class GpuKev {
     this.device = gpu.device;
     this.subgroup32 = !!gpu.subgroup32;
     this.subgroup4 = !!gpu.subgroup4;
+    this.subgroup8 = this.subgroup4 && (gpu.adapter.info?.subgroupMinSize || 0) >= 8;
     // query-tiled attention where the GPU has the tiled Laya kernel: its rows are 8 tokens x the 4
     // query heads of one key/value head, which every Qwen3.5 size has
     this.attnTile = !!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads;
@@ -85,15 +86,14 @@ export class GpuKev {
     const miss = this.missing();
     if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
-    // the lane-split recurrence: its four lanes per column combine with shuffles when the GPU has
-    // subgroups of 4 or more, through workgroup memory otherwise
-    this.lanes = true;
+    // Eight lanes share each value column; four workgroups cover a head.
+    this.recurTiles = 4;
     const kernels = {
       RMS: ["kev_rms"],
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],
-      RECUR: ["kev_recur_lanes", { subgroups: this.subgroup4 }],
+      RECUR: ["kev_recur_lanes8", { subgroups: this.subgroup8 }],
       GNORM: ["kev_gnorm"],
       APREP: ["kev_aprep"],
       SAVE_KV: ["kev_save_kv"],
@@ -415,7 +415,7 @@ export class GpuKev {
           break;
         case "recur":
           pass.setPipeline(this.p.RECUR);
-          pass.dispatchWorkgroups(S, this.cfg.lin_heads, this.lanes ? 2 : 1);
+          pass.dispatchWorkgroups(S, this.cfg.lin_heads, this.recurTiles);
           break;
         case "gnorm":
           pass.setPipeline(this.p.GNORM);

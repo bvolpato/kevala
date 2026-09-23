@@ -331,6 +331,18 @@ async function main() {
     if (candidate === "recur8" && useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < 8) {
       throw new Error("candidate=recur8 with subgroups=1 requires subgroupMinSize >= 8; use subgroups=0 for the shared-memory path");
     }
+    const timingHeadsParam = query.get("timingHeads");
+    let timingHeads = null;
+    let cases = CASES;
+    if (timingHeadsParam !== null) {
+      const parsed = Number(timingHeadsParam);
+      if (!Number.isInteger(parsed) || ![16, 32, 48].includes(parsed)) {
+        throw new Error(`timingHeads must be 16, 32, or 48, got ${timingHeadsParam}`);
+      }
+      timingHeads = parsed;
+      const timingCfg = Object.freeze({ ...plain, lin_key_heads: Math.min(16, parsed), lin_heads: parsed });
+      cases = CASES.map((test) => test.name === "stage1-long-528" ? { ...test, cfg: timingCfg } : test);
+    }
     timer = makeTimer(device);
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
@@ -356,8 +368,8 @@ async function main() {
     let cpuMaxAbs = 0;
     let oldNewExact = baseline ? true : null;
     let oldNewWithinTolerance = baseline ? true : null;
-    for (let caseIndex = 0; caseIndex < CASES.length; caseIndex++) {
-      const test = CASES[caseIndex];
+    for (let caseIndex = 0; caseIndex < cases.length; caseIndex++) {
+      const test = cases[caseIndex];
       const data = makeCaseData(test, 0x4b455641 + caseIndex * 0x9e3779b9);
       const expected = test.cpu ? cpuReference(test, data) : null;
       const T = data.T;
@@ -418,7 +430,7 @@ async function main() {
         correctness.variants.push({ case: test.name, exact, withinTolerance, core: coreDiff, state: stateDiff, coreGuard, stateGuard });
         oldNewExact &&= exact;
         oldNewWithinTolerance &&= withinTolerance;
-        if (!withinTolerance) correctness.ok = false;
+        if (!(exact || (candidate === "recur8" && withinTolerance))) correctness.ok = false;
       }
       const reps = T <= 7 ? 16 : T <= 31 ? 8 : T <= 129 ? 2 : 1;
       const currentSamples = [];
@@ -450,6 +462,7 @@ async function main() {
       warmups,
       baselineWasm: baselineUrl,
       candidate,
+      timingHeads,
       variantProvenance: {
         current: { source: "current", wasmUrl: current.wasmUrl, kernel: candidate === "recur8" ? "kev_recur_lanes8" : "kev_recur_lanes", zTiles: candidate === "recur8" ? 4 : 2, subgroups: useSubgroups },
         ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: "kev_recur_lanes", zTiles: 2, subgroups: useSubgroups } } : {}),
