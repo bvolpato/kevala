@@ -326,7 +326,7 @@ async function main() {
     }
     const candidate = query.get("candidate") || "current";
     const baselineCandidate = query.get("baselineCandidate") || "current";
-    const widths = { current: 4, recur8: 8, recur16: 16 };
+    const widths = { current: 4, recur8: 8, recur16: 16, recur32: 32 };
     for (const name of [candidate, baselineCandidate]) {
       if (!Object.hasOwn(widths, name)) throw new Error(`unknown recurrence candidate ${name}`);
       if (useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < widths[name]) {
