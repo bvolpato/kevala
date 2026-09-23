@@ -47,6 +47,11 @@ fn activate(x: f32) -> f32 {
   return 0.5 * x * (1.0 + tanh(c * (x + 0.044715 * x * x * x)));
 }
 
+fn pair_store(gate: f32, up: f32, row: u32, col: u32) {
+  if (row >= g.T || col >= p.N) { return; }
+  Y[row * p.N + col] = activate(gate) * up;
+}
+
 @compute @workgroup_size(32, 8)
 fn main(
   @builtin(workgroup_id) wid: vec3<u32>,
@@ -374,38 +379,20 @@ fn main(
     workgroupBarrier();
   }
 
-  for (var j = 0u; j < 2u; j++) {
-    let col = n0 + lid.x + 32u * j;
-    if (col >= N) { break; }
-    let g0 = gate0[j];
-    let g1 = gate1[j];
-    let g2 = gate2[j];
-    let g3 = gate3[j];
-    let g4 = gate4[j];
-    let g5 = gate5[j];
-    let g6 = gate6[j];
-    let g7 = gate7[j];
-    let u0 = up0[j];
-    let u1 = up1[j];
-    let u2 = up2[j];
-    let u3 = up3[j];
-    let u4 = up4[j];
-    let u5 = up5[j];
-    let u6 = up6[j];
-    let u7 = up7[j];
-    for (var i = 0u; i < 8u; i++) {
-      let row = m0 + lid.y + 8u * i;
-      if (row >= T) { break; }
-      var gate = g0;
-      var up = u0;
-      if (i == 1u) { gate = g1; up = u1; }
-      else if (i == 2u) { gate = g2; up = u2; }
-      else if (i == 3u) { gate = g3; up = u3; }
-      else if (i == 4u) { gate = g4; up = u4; }
-      else if (i == 5u) { gate = g5; up = u5; }
-      else if (i == 6u) { gate = g6; up = u6; }
-      else if (i == 7u) { gate = g7; up = u7; }
-      Y[row * N + col] = activate(gate) * up;
-    }
-  }
+  pair_store(gate0.x, up0.x, m0 + lid.y + 0u, n0 + lid.x + 0u);
+  pair_store(gate1.x, up1.x, m0 + lid.y + 8u, n0 + lid.x + 0u);
+  pair_store(gate2.x, up2.x, m0 + lid.y + 16u, n0 + lid.x + 0u);
+  pair_store(gate3.x, up3.x, m0 + lid.y + 24u, n0 + lid.x + 0u);
+  pair_store(gate4.x, up4.x, m0 + lid.y + 32u, n0 + lid.x + 0u);
+  pair_store(gate5.x, up5.x, m0 + lid.y + 40u, n0 + lid.x + 0u);
+  pair_store(gate6.x, up6.x, m0 + lid.y + 48u, n0 + lid.x + 0u);
+  pair_store(gate7.x, up7.x, m0 + lid.y + 56u, n0 + lid.x + 0u);
+  pair_store(gate0.y, up0.y, m0 + lid.y + 0u, n0 + lid.x + 32u);
+  pair_store(gate1.y, up1.y, m0 + lid.y + 8u, n0 + lid.x + 32u);
+  pair_store(gate2.y, up2.y, m0 + lid.y + 16u, n0 + lid.x + 32u);
+  pair_store(gate3.y, up3.y, m0 + lid.y + 24u, n0 + lid.x + 32u);
+  pair_store(gate4.y, up4.y, m0 + lid.y + 32u, n0 + lid.x + 32u);
+  pair_store(gate5.y, up5.y, m0 + lid.y + 40u, n0 + lid.x + 32u);
+  pair_store(gate6.y, up6.y, m0 + lid.y + 48u, n0 + lid.x + 32u);
+  pair_store(gate7.y, up7.y, m0 + lid.y + 56u, n0 + lid.x + 32u);
 }
