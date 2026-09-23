@@ -221,7 +221,10 @@ impl Spec {
         vec![
             ("F16", flag(self.f16)),
             ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
-            ("GENERIC_UNROLL", flag(!self.f16 && self.rows == 4 && self.groups == 1)),
+            ("GENERIC_UNROLL", flag(!self.f16 && self.groups == 1)),
+            ("ROWS_GE_2", flag(self.rows >= 2)),
+            ("ROWS_GE_3", flag(self.rows >= 3)),
+            ("ROWS_GE_4", flag(self.rows >= 4)),
             ("SUBGROUPS", flag(self.subgroups)),
             ("SHAPE", flag(self.shape.is_some())),
             ("TILE", if self.f16 { "f16" } else { "f32" }.to_string()),
