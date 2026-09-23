@@ -403,9 +403,9 @@ export class GpuKev {
         const tail = (op) => (op.tail = true, op);
         two.push(tail({ k: "gather", label: "tail.gather", group: bg(this.p.GATHER, [this.g, this.x, this.rows, this.gathered]) }));
         two.push(tail(rms(W(n("post_norm")).buf, this.gathered, this.tailH, this.gTail, "tail.rms")));
-        two.push(tail(mm(n("gate_up"), this.tailH, this.tailUp, 0, this.gTail, "mm.tail.gate_up")));
+        two.push(tail(mm(n("gate_up"), this.tailH, this.tailUp, 0, this.gTail, "tail.mm.gate_up")));
         two.push(tail({ k: "silumul", label: "tail.silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.gTail, this.uni([cfg.intermediate, 0, 0, 0]), this.tailUp, this.tailAct]) }));
-        two.push(tail(mm(n("down"), this.tailAct, this.gathered, 1, this.gTail, "mm.tail.down")));
+        two.push(tail(mm(n("down"), this.tailAct, this.gathered, 1, this.gTail, "tail.mm.down")));
       } else {
         both(rms(W(n("post_norm")).buf, this.x, this.h));
         both(mm(n("gate_up"), this.h, this.up, 0));
