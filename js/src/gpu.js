@@ -423,9 +423,6 @@ export class GpuTrunk {
     this.pGather = pGather;
     this.pGateUp = pGateUp;
     this.globals = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
-    // The final decision-head FFN may run on the selected rows only. It has its own token
-    // count in g.T while the original globals keep g.R for gather and the full-token passes.
-    this.compactGlobals = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
     const f32buf = (arr, usage = U.STORAGE) => {
       const b = d.createBuffer({ size: Math.max(16, arr.byteLength), usage: usage | U.COPY_DST });
       d.queue.writeBuffer(b, 0, arr);
@@ -501,31 +498,20 @@ export class GpuTrunk {
     const T = (n) => this.tensors.get(n);
     const bg = (pipeline, entries) =>
       d.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: entries.map((b, i) => ({ binding: i, resource: { buffer: b } })) });
-    const mm = (w, bias, input, output, mode, options = {}) => {
+    const mm = (w, bias, input, output, mode) => {
       const e = T(w);
       const [N, K] = e.info.shape;
       const b = bias ? T(bias).buf : this.zeros;
       const u = this.uniform([N, K, mode, bias ? 1 : 0]);
-      const globals = options.globals || this.globals;
       return {
         kind: "mm",
-        label: options.label || "mm." + w.split(".").pop(),
+        label: "mm." + w.split(".").pop(),
         N,
         K,
-        compact: !!options.compact,
-        compactOnly: !!options.compactOnly,
-        fullOnly: !!options.fullOnly,
-        group: d.createBindGroup({ layout: this.mm.layout, entries: [globals, u, input, e.buf, e.sbuf, b, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
-        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [globals, u, this.part, b, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.globals, u, input, e.buf, e.sbuf, b, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [this.globals, u, this.part, b, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
-    const gather = (input, output, options = {}) => ({
-      kind: "gather",
-      label: options.label || "gather",
-      compactOnly: !!options.compactOnly,
-      fullOnly: !!options.fullOnly,
-      group: bg(this.pGather, [options.globals || this.globals, input, this.rowsBuf, output]),
-    });
     const norm = (w, b, input, output, typed = false) => ({
       kind: "norm",
       group: bg(this.pNorm, [this.globals, this.uniform([D, b ? 1 : 0, typed ? 1 : 0, { f: typed ? cfg.norm_eps : b ? cfg.head_norm_eps : cfg.norm_eps }]), input, w, b || this.zeros, output, this.tok, this.typeEmb]),
@@ -568,36 +554,10 @@ export class GpuTrunk {
       ops.push({ kind: "attn", group: bg(this.pAttn, [this.globals, this.uniform([D, 3 * D, 0, 0]), this.qkv, this.blocks, this.ctx]) });
       ops.push(mm(n("out_proj"), n("out_proj.b"), this.ctx, this.x, 1));
       ops.push(norm(T(n("norm2.w")).buf, T(n("norm2.b")).buf, this.x, this.h));
-      const lin1 = mm(n("lin1"), n("lin1.b"), this.h, this.act, 2);
-      const lin2 = mm(n("lin2"), n("lin2.b"), this.act, this.x, 1);
-      if (i === cfg.head_layers - 1) {
-        // The final head FFN has no consumer for non-selected rows. Preserve the full residual
-        // and normalized hidden rows through the existing gather buffer, then run both linear
-        // projections with a separate g.T = rows.length uniform. Full-token execution remains
-        // available for the other head layers and for callers that select every token.
-        lin1.fullOnly = true;
-        lin2.fullOnly = true;
-        ops.push(lin1, lin2);
-        ops.push(gather(this.x, this.gathered, { compactOnly: true, label: "gather.head.compact.residual" }));
-        ops.push(gather(this.h, this.ctx, { compactOnly: true, label: "gather.head.compact.hidden" }));
-        const compactLin1 = mm(n("lin1"), n("lin1.b"), this.ctx, this.act, 2, {
-          globals: this.compactGlobals,
-          compact: true,
-          compactOnly: true,
-          label: "mm.head.compact.lin1",
-        });
-        const compactLin2 = mm(n("lin2"), n("lin2.b"), this.act, this.gathered, 1, {
-          globals: this.compactGlobals,
-          compact: true,
-          compactOnly: true,
-          label: "mm.head.compact.lin2",
-        });
-        ops.push(compactLin1, compactLin2);
-      } else {
-        ops.push(lin1, lin2);
-      }
+      ops.push(mm(n("lin1"), n("lin1.b"), this.h, this.act, 2));
+      ops.push(mm(n("lin2"), n("lin2.b"), this.act, this.x, 1));
     }
-    ops.push(gather(this.x, this.gathered, { fullOnly: true }));
+    ops.push({ kind: "gather", group: bg(this.pGather, [this.globals, this.x, this.rowsBuf, this.gathered]) });
     this.ops = ops;
   }
 
@@ -631,16 +591,13 @@ export class GpuTrunk {
     for (const sg of segs) for (let q0 = 0; q0 < sg.len; q0 += this.attnQueries) blocks.push(sg.start, sg.len, q0, 0);
     const nblocks = blocks.length / 4;
     q.writeBuffer(this.globals, 0, new Uint32Array([tokens, rows.length, nblocks, 0]));
-    const compactHead = this.cfg.head_layers > 0 && rows.length > 0 && rows.length < tokens;
-    if (compactHead) q.writeBuffer(this.compactGlobals, 0, new Uint32Array([rows.length, rows.length, 0, 0]));
     q.writeBuffer(this.blocks, 0, new Uint32Array(blocks));
     q.writeBuffer(this.x, 0, x);
     q.writeBuffer(this.tok, 0, tok);
     q.writeBuffer(this.rowsBuf, 0, new Uint32Array(rows));
     const prof = this.profiler;
     const heads = this.cfg.heads;
-    const selectedOps = this.ops.filter((op) => compactHead ? !op.fullOnly : !op.compactOnly);
-    const ops = selectedOps.flatMap((op) => op.fallback && (
+    const ops = this.ops.flatMap((op) => op.fallback && (
       tokens < 64 ||
       mmSplits(tokens, op.N, op.K, this.mm.splitTarget, 64, 64) !== 1 ||
       mmSplits(tokens, op.packedN, op.K, this.mm.splitTarget, 64, 64) !== 1
@@ -662,9 +619,8 @@ export class GpuTrunk {
       pass.setBindGroup(0, op.group);
       switch (op.kind) {
         case "mm": {
-          const matmulTokens = op.compact ? rows.length : tokens;
-          const kernel = this.gpuKernel === "auto" ? this.selectMatmulKernel(this.tuning.selection, op.N, op.K, matmulTokens) : this.gpuKernel;
-          encodeMatmul(pass, this.tuning.pipelines[kernel], op, matmulTokens);
+          const kernel = this.gpuKernel === "auto" ? this.selectMatmulKernel(this.tuning.selection, op.N, op.K, tokens) : this.gpuKernel;
+          encodeMatmul(pass, this.tuning.pipelines[kernel], op, tokens);
           break;
         }
         case "gate_up":
