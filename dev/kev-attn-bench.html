@@ -1,0 +1,12 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kevala FP32 Kev attention tile guard</title>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<!--
+  The guard pairs the subgroup fallback with the FP32 query-tiled kernel. It covers fresh
+  and cached tile boundaries, independent segments, GQA 8/2 and 16/4, empty dispatch,
+  and the real Kev/SemIf lengths used for timing. Both outputs are checked against an
+  independent CPU reference and compared element by element.
+-->
+<script type="module" src="./kev-attn-bench.js"></script>
