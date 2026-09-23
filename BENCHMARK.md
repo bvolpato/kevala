@@ -116,6 +116,28 @@ clock resolution is recorded. Firefox queue completion can produce roughly 100 m
 round-trip latency even with a fine clock. These values therefore describe this browser and
 driver, not just the kernel execution time.
 
+### Latest four-family GPU profile
+
+This Chrome profile compares merged main `eb67049` with that build plus packed loads in the
+subgroup recurrence kernel. Each family value is the geometric mean of median summed GPU kernel
+times across three input sizes; two complete runs per version are combined geometrically. The
+four-family value is the geometric mean of family metrics. It measures GPU profile time, not
+per-request or wall latency. Runs used an RTX 5070 Ti (16 GB), driver 595.71.05, Ryzen 9
+9950X3D, Ubuntu, Chrome 149.0.7827.200, and the NVIDIA Vulkan ICD.
+
+| Family | Baseline GPU ms | Packed GPU ms | Change |
+|---|---:|---:|---:|
+| Laya | 9.866 | 9.789 | 0.78% lower |
+| Kev 0.8B | 14.073 | 13.875 | 1.41% lower |
+| SemIf Qwen3.5 2B | 49.075 | 48.816 | 0.53% lower |
+| Gemma 4 E2B | 32.197 | 32.530 | 1.04% higher |
+| Four-family geometric mean | 21.642 | 21.550 | 0.42% lower |
+
+Kev and SemIf exercise the affected recurrence path. Laya and Gemma are controls, and the
+four-family change is descriptive rather than an attributed end-to-end gain. See the
+[packed recurrence report](docs/recurrence-packed-performance.md) for the actual recurrence
+profile component, rendered microbenchmarks, and correctness guards.
+
 For GPU timestamp measurements and prior matrix optimizations, see
 [GPU matrix tuning](docs/semif-matmul.md). Gemma's initial profiles and NVIDIA/AMD/native
 reference checks are in [Gemma 4 verification](docs/gemma4.md#verification).
@@ -131,6 +153,8 @@ The [FP32 BM56 row tile report](docs/fp32-row56-performance.md) includes final-W
 matmul timings, production-shaped model repeats, and model guards.
 The [subgroup direct-load recurrence report](docs/recurrence-direct-performance.md) includes
 production-rendered recurrence timings, repeated model suites, and parity guards.
+The [packed recurrence-load report](docs/recurrence-packed-performance.md) compares vector
+loads in the subgroup kernel with full-suite and model-guard results.
 The [Laya compact final-head report](docs/laya-compact-head-performance.md) records
 a 2.63% reduction in summed GPU time across two paired production-build runs,
 with exact hidden-output comparisons and the unchanged Chrome probability-limit miss.
