@@ -220,7 +220,6 @@ async function dispatchAndRead(device, candidate, bind, linHeads, stateBuffer, s
   encoder.copyBufferToBuffer(core, 0, read, 0, coreBytes);
   encoder.copyBufferToBuffer(stateBuffer, 0, read, coreBytes, stateBytes);
   device.queue.submit([encoder.finish()]);
-  await device.queue.onSubmittedWorkDone();
   await read.mapAsync(GPUMapMode.READ, 0, copyBytes);
   try {
     const bytes = read.getMappedRange(0, copyBytes).slice(0);
@@ -391,7 +390,6 @@ async function benchmark(device, candidates, config, tokens) {
     encoder.copyBufferToBuffer(resolved, 0, read, 0, queryBytes);
     const started = now();
     device.queue.submit([encoder.finish()]);
-    await device.queue.onSubmittedWorkDone();
     await read.mapAsync(GPUMapMode.READ, 0, queryBytes);
     const stamps = new BigInt64Array(read.getMappedRange(0, queryBytes).slice(0));
     read.unmap();
