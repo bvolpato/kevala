@@ -8,6 +8,7 @@ struct P { heads: u32, kv_heads: u32, head_dim: u32, window: u32, causal: u32, _
 @group(0) @binding(3) var<storage, read> K: array<f32>;
 @group(0) @binding(4) var<storage, read> V: array<f32>;
 @group(0) @binding(5) var<storage, read_write> O: array<f32>;
+@group(0) @binding(6) var<storage, read> POS: array<u32>;
 var<workgroup> qtile: array<f32, 512>;
 var<workgroup> partial: array<f32, 256>;
 var<workgroup> scores: array<f32, 128>;
@@ -21,13 +22,14 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let H = p.head_dim;
   let qbase = t * p.heads * H + head * H;
   let kv_head = head / (p.heads / p.kv_heads);
+  let position = POS[t];
   for (var d = lane; d < H; d += 256u) { qtile[d] = Q[qbase + d]; }
   if (lane == 0u) { state[0] = -3.402823466e+38; state[1] = 0.0; }
   workgroupBarrier();
   var acc0 = 0.0;
   var acc1 = 0.0;
-  let start = select(0u, t + 1u - min(t + 1u, p.window), p.window > 0u);
-  let end = select(g.T, t + 1u, p.causal != 0u);
+  let start = select(0u, position + 1u - min(position + 1u, p.window), p.window > 0u);
+  let end = select(g.S, position + 1u, p.causal != 0u);
   let key_lane = lane % 8u;
   for (var j0 = start; j0 < end; j0 += 128u) {
     for (var block = 0u; block < 4u; block++) {

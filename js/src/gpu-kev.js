@@ -10,6 +10,7 @@
 
 import { GpuWeights, pipeline, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
+import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
 let U;
 
@@ -38,6 +39,7 @@ export class GpuKev {
     this.device = gpu.device;
     this.subgroup32 = !!gpu.subgroup32;
     this.subgroup4 = !!gpu.subgroup4;
+    this.subgroupMinSize = this.subgroup4 ? (gpu.adapter?.info?.subgroupMinSize || 4) : 0;
     // query-tiled attention where the GPU has the tiled Laya kernel: its rows are 8 tokens x the 4
     // query heads of one key/value head, which every Qwen3.5 size has
     this.attnTile = !!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads;
@@ -85,9 +87,7 @@ export class GpuKev {
     const miss = this.missing();
     if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
-    // the lane-split recurrence: its four lanes per column combine with shuffles when the GPU has
-    // subgroups of 4 or more, through workgroup memory otherwise
-    this.lanes = true;
+    this.recurTiles = 2;
     const kernels = {
       RMS: ["kev_rms"],
       GATES: ["kev_gates"],
@@ -106,6 +106,16 @@ export class GpuKev {
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
     this.mm = this.tuning.pipelines.generic;
+    const recurrence = await calibrateRecurrence(d, [
+      { lanes: 4, pipeline: this.p.RECUR },
+      ...[8, 16].map((lanes) => ({
+        lanes,
+        pipeline: () => pipeline(d, this.wgsl(`kev_recur_lanes${lanes}`, { subgroups: this.subgroupMinSize >= lanes, kev: this.cfg }), `kev_recur_lanes${lanes}`),
+      })),
+    ], this.cfg);
+    this.p.RECUR = recurrence.pipeline || this.p.RECUR;
+    this.recurTiles = recurrence.zTiles;
+    this.tuning.diagnostics.recurrence = { ...recurrence.diagnostics, lanes: recurrence.choice };
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const f32buf = (arr) => {
@@ -415,7 +425,7 @@ export class GpuKev {
           break;
         case "recur":
           pass.setPipeline(this.p.RECUR);
-          pass.dispatchWorkgroups(S, this.cfg.lin_heads, this.lanes ? 2 : 1);
+          pass.dispatchWorkgroups(S, this.cfg.lin_heads, this.recurTiles);
           break;
         case "gnorm":
           pass.setPipeline(this.p.GNORM);

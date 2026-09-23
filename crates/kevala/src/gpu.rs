@@ -38,6 +38,8 @@ const SOURCES: &[(&str, &str)] = &[
     ("kev_save_tail", include_str!("wgsl/kev_save_tail.wgsl")),
     ("kev_qknorm", include_str!("wgsl/kev_qknorm.wgsl")),
     ("kev_recur_lanes", include_str!("wgsl/kev_recur_lanes.wgsl")),
+    ("kev_recur_lanes8", include_str!("wgsl/kev_recur_lanes8.wgsl")),
+    ("kev_recur_lanes16", include_str!("wgsl/kev_recur_lanes16.wgsl")),
     ("kev_gnorm", include_str!("wgsl/kev_gnorm.wgsl")),
     ("kev_aprep", include_str!("wgsl/kev_aprep.wgsl")),
     ("kev_save_kv", include_str!("wgsl/kev_save_kv.wgsl")),
@@ -74,6 +76,8 @@ pub const KERNELS: &[&str] = &[
     "kev_save_tail",
     "kev_qknorm",
     "kev_recur_lanes",
+    "kev_recur_lanes8",
+    "kev_recur_lanes16",
     "kev_gnorm",
     "kev_aprep",
     "kev_save_kv",
@@ -216,6 +220,8 @@ impl Spec {
         let (n, k) = self.shape.unwrap_or((0, 0));
         vec![
             ("F16", flag(self.f16)),
+            ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
+            ("GENERIC_UNROLL", flag(!self.f16 && self.rows == 4 && self.groups == 1)),
             ("SUBGROUPS", flag(self.subgroups)),
             ("SHAPE", flag(self.shape.is_some())),
             ("TILE", if self.f16 { "f16" } else { "f32" }.to_string()),
