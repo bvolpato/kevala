@@ -6,7 +6,7 @@
 // all large tensors and the embedding lookup on the device. The CPU receives only
 // the normalized rows requested by the scorer.
 
-import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, mmSplits, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
 
 let U;
@@ -207,9 +207,6 @@ export class GpuGemma4 {
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;
-    if (!d.features.has("shader-f16") && d.limits.maxComputeWorkgroupStorageSize >= 24576) {
-      this.p.GATE_UP = await pipeline(d, this.wgsl("matmul_gate_up"), "matmul_gate_up");
-    }
     this.globals = d.createBuffer({ label: "Gemma 4 globals", size: 16, usage: U.UNIFORM | U.COPY_DST });
     this.owned.push(this.globals);
     // A zero bias and fallback scale buffer. Normal Gemma projection tensors are Q8;
@@ -443,22 +440,13 @@ export class GpuGemma4 {
       ops.push(rms(target, n("attn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.attn.post"));
       ops.push(add(target, "residual.attn"));
       ops.push(rms(target, n("ffn_norm"), target.x, target.h, cfg.hidden, 1, "rms.ffn"));
-      const gateOp = mm(target, n("gate"), target.h, target.gate, 0, "mm.gate");
-      const upOp = mm(target, n("up"), target.h, target.up, 0, "mm.up");
+      ops.push(mm(target, n("gate"), target.h, target.gate, 0, "mm.gate"));
+      ops.push(mm(target, n("up"), target.h, target.up, 0, "mm.up"));
       const I = Number(this.weight(n("gate")).info.shape[0]);
-      const geluOp = custom(target, "GELU", [I, 0, 0, 0], [target.gate, target.up, target.act], "gelu", (pass) => {
+      ops.push(custom(target, "GELU", [I, 0, 0, 0], [target.gate, target.up, target.act], "gelu", (pass) => {
         const work = Math.ceil((this.T * I) / 256);
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
-      });
-      if (this.p.GATE_UP) {
-        const gate = this.weight(n("gate"));
-        const up = this.weight(n("up"));
-        const pair = custom(target, "GATE_UP", [I, gateOp.K, 0, 0], [target.h, gate.buf, gate.sbuf, up.buf, up.sbuf, target.act], "mm.gate_up", (pass) => pass.dispatchWorkgroups(Math.ceil(I / 64), Math.ceil(this.T / 64)));
-        pair.N = I;
-        pair.K = gateOp.K;
-        pair.fallback = [gateOp, upOp, geluOp];
-        ops.push(pair);
-      } else ops.push(gateOp, upOp, geluOp);
+      }));
       ops.push(mm(target, n("down"), target.act, target.branch, 0, "mm.down"));
       ops.push(rms(target, n("ffn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ffn.post"));
       ops.push(add(target, "residual.ffn"));
@@ -547,8 +535,7 @@ export class GpuGemma4 {
 
   encode(enc, ops, T, prof = this.profiler) {
     let pass = prof ? null : enc.beginComputePass();
-    const selected = ops.flatMap((op) => op.fallback && (T < 64 || mmSplits(T, op.N, op.K, this.mm.splitTarget, 64, 64) !== 1) ? op.fallback : [op]);
-    for (const op of selected) {
+    for (const op of ops) {
       if (op.kind === "copy-input" || op.kind === "copy-kv") {
         pass?.end();
         if (op.kind === "copy-input") enc.copyBufferToBuffer(op.src, 0, op.dst, 0, T * this.cfg.hidden * 4);
