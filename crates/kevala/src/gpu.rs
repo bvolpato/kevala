@@ -22,6 +22,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
+    ("matmul_wide_mixed", include_str!("wgsl/matmul_wide_mixed.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
     ("rope", include_str!("wgsl/rope.wgsl")),
@@ -59,6 +60,7 @@ const SOURCES: &[(&str, &str)] = &[
 pub const KERNELS: &[&str] = &[
     "matmul",
     "matmul_wide",
+    "matmul_wide_mixed",
     "reduce",
     "norm",
     "rope",
@@ -249,7 +251,7 @@ pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     if !KERNELS.contains(&kernel) {
         return Err(format!("no GPU kernel named {kernel:?}"));
     }
-    if kernel == "matmul_wide" && spec.groups != 1 {
+    if kernel.starts_with("matmul_wide") && spec.groups != 1 {
         return Err("matmul_wide requires groups=1".into());
     }
     let vars = spec.vars();
