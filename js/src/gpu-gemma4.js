@@ -16,6 +16,7 @@ const GEMMA4_KERNELS = [
   ["RMS", "gemma4_rms"],
   ["QKV", "gemma4_qkv"],
   ["ATTN", "gemma4_attention"],
+  ["ATTN_TILE", "gemma4_attention_tile"],
   ["GELU", "gemma4_gelu"],
   ["PLE", "gemma4_ple"],
   ["RESIDUAL", "gemma4_residual"],
@@ -24,6 +25,7 @@ const GEMMA4_KERNELS = [
 
 const f32 = (v) => ({ f: v });
 const pow2 = (n) => 2 ** Math.ceil(Math.log2(Math.max(1, n)));
+const GEMMA4_TILE_WORKGROUP_BYTES = 20608;
 
 function bf16Round(value) {
   const f = new Float32Array(1);
@@ -178,7 +180,8 @@ export class GpuGemma4 {
     if (miss.length) throw new Error(`Gemma 4 GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
     const generic = await matmulPipelines(d, this.wgsl);
-    const built = await Promise.all(GEMMA4_KERNELS.map(async ([key, name]) => [key, await pipeline(d, this.wgsl(name), name)]));
+    const kernels = GEMMA4_KERNELS.filter(([key]) => key !== "ATTN_TILE" || d.limits.maxComputeWorkgroupStorageSize >= GEMMA4_TILE_WORKGROUP_BYTES);
+    const built = await Promise.all(kernels.map(async ([key, name]) => [key, await pipeline(d, this.wgsl(name), name)]));
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;
@@ -306,6 +309,21 @@ export class GpuGemma4 {
       group: bg(this.p[name], [this.globals, this.uniform(values), ...resources]),
       dispatch,
     });
+    const attention = (values, resources, tile, dispatch) => {
+      const params = this.uniform(values);
+      const bindings = [this.globals, params, ...resources];
+      const useTile = tile && this.p.ATTN_TILE;
+      return {
+        kind: "ATTN",
+        label: "attn",
+        pipeline: this.p.ATTN,
+        group: bg(this.p.ATTN, bindings),
+        tilePipeline: useTile ? this.p.ATTN_TILE : null,
+        tileGroup: useTile ? bg(this.p.ATTN_TILE, bindings) : null,
+        tile: Boolean(useTile),
+        dispatch,
+      };
+    };
     const mm = (name, input, output, mode = 0, label = `mm.${name.split(".").at(-1)}`) => {
       const e = this.weight(name);
       const [N, K] = e.info.shape.map(Number);
@@ -358,7 +376,7 @@ export class GpuGemma4 {
         ops.push({ kind: "copy-kv", label: `kv.share.${type}`, srcK: this.k, srcV: this.v, dstK: pair.k, dstV: pair.v, width: kvWidth });
       }
       const pair = shared ? this.shared.get(type) : { k: this.k, v: this.v };
-      ops.push(custom("ATTN", [cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [this.q, pair.k, pair.v, this.ctx], "attn", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads)));
+      ops.push(attention([cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [this.q, pair.k, pair.v, this.ctx], headDim === 256 || headDim === 512, (pass, tiled) => pass.dispatchWorkgroups(tiled ? Math.ceil(this.T / 8) : this.T, cfg.heads)));
       ops.push(mm(n("o"), this.ctx, this.branch, 0, "mm.o"));
       ops.push(rms(n("attn_post_norm"), this.branch, this.branchNorm, cfg.hidden, 1, "rms.attn.post"));
       ops.push(add("residual.attn"));
@@ -404,12 +422,13 @@ export class GpuGemma4 {
         continue;
       }
       if (prof) pass = prof.pass(enc, op.label);
-      pass.setPipeline(op.pipeline || this.mm.mm[1]);
-      pass.setBindGroup(0, op.group);
+      const tiled = op.kind === "ATTN" && op.tile && T >= 8;
+      pass.setPipeline(tiled ? op.tilePipeline : (op.pipeline || this.mm.mm[1]));
+      pass.setBindGroup(0, tiled ? op.tileGroup : op.group);
       if (op.kind === "mm") {
         const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, T) : this.gpuKernel;
         encodeMatmul(pass, this.tuning.pipelines[kernel] || this.tuning.pipelines.generic, op, T);
-      } else op.dispatch(pass);
+      } else op.dispatch(pass, tiled);
       if (prof) {
         pass.end();
         pass = null;

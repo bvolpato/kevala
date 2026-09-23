@@ -13,7 +13,9 @@ const logNode = document.getElementById("log");
 const log = (line) => {
   logNode.textContent += `${line}\n`;
 };
-const state = { status: "running", backend: "webgpu", kernel: "gemma4_attention" };
+const kernel = query.get("kernel") || "gemma4_attention";
+const TILE_WORKGROUP_BYTES = 20608;
+const state = { status: "running", backend: "webgpu", kernel };
 window.gpuBench = state;
 
 let U;
@@ -288,6 +290,8 @@ function estimateWork(c) {
 
 async function main() {
   const cases = parseCases();
+  if (kernel !== "gemma4_attention" && kernel !== "gemma4_attention_tile") throw new Error(`unsupported attention kernel ${kernel}`);
+  if (kernel === "gemma4_attention_tile" && cases.some((c) => c.dim !== 256 && c.dim !== 512)) throw new Error("gemma4_attention_tile requires dim=256 or dim=512 cases");
   const seed = intParam("seed", 0x4b455641, 1, 0xffffffff);
   const warmups = intParam("warmups", 1, 0, 10);
   const samples = intParam("samples", 5, 1, 20);
@@ -296,6 +300,7 @@ async function main() {
   const device = gpu.device;
   U = GPUBufferUsage;
   activeDevice = gpu;
+  if (kernel === "gemma4_attention_tile" && device.limits.maxComputeWorkgroupStorageSize < TILE_WORKGROUP_BYTES) throw new Error(`gemma4_attention_tile needs ${TILE_WORKGROUP_BYTES} bytes of workgroup storage; device allows ${device.limits.maxComputeWorkgroupStorageSize}`);
   const uncaptured = [];
   device.addEventListener("uncapturederror", (event) => uncaptured.push({ message: event.error?.message || String(event.error) }));
   const source = await kernelSource();
@@ -312,7 +317,7 @@ async function main() {
     ],
   });
   const pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [layout] });
-  const attention = await pipeline(device, source("gemma4_attention"), "gemma4_attention", pipelineLayout);
+  const attention = await pipeline(device, source(kernel), kernel, pipelineLayout);
   const correctness = { ok: true, cases: [], tolerance: { absolute: 1e-5, relative: 1e-5 } };
   const results = [];
   const medians = [];
@@ -337,7 +342,7 @@ async function main() {
     });
     const work = estimateWork(c);
     const reps = Math.max(1, Math.min(64, Math.round(8e7 / Math.max(1, work))));
-    const run = { pipeline: attention, group, T: c.T, heads: c.heads };
+    const run = { pipeline: attention, group, T: kernel === "gemma4_attention_tile" ? Math.ceil(c.T / 8) : c.T, heads: c.heads };
     await checked(device, async () => {
       device.queue.writeBuffer(globals, 0, new Uint32Array([c.T, 0, 0, 0]));
       device.queue.writeBuffer(params, 0, new Uint32Array([c.heads, c.kvHeads, c.dim, c.window, c.causal, 0, 0, 0]));
@@ -378,7 +383,7 @@ async function main() {
     status: correctness.ok ? "done" : "error",
     done: true,
     backend: "webgpu",
-    kernel: "gemma4_attention",
+    kernel,
     metricMs,
     metric: "geometric mean of per-case median Gemma 4 attention milliseconds",
     method: timer.method,
