@@ -32,19 +32,6 @@ async function sourceHash(code) {
   return [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function pairedWeightLoads(code) {
-  const replacements = [
-    ["var<storage, read> W: array<vec4<u32>>;", "var<storage, read> W: array<vec2<u32>>;"],
-    ["let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];", "let lo = W[(wrow * K + kb * 32u) / 8u + lq];"],
-    ["        let lo = select(v.xy, v.zw, (lq & 1u) == 1u);\n", ""],
-  ];
-  for (const [from, to] of replacements) {
-    if (code.split(from).length !== 2) throw new Error("paired weight-load source no longer matches");
-    code = code.replace(from, to);
-  }
-  return code;
-}
-
 const numberParam = (query, name, fallback, min, max) => {
   if (!query.has(name)) return fallback;
   const value = Number(query.get(name));
@@ -77,23 +64,21 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T, config), groups: config.groups, baseline };
   }
   const match = normalized.match(/^([a-z_][a-z_0-9]*)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_row56", "matmul_x2"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_row56"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
+  const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
   const row56 = match[1] === "matmul_row56";
-  const x2 = match[1] === "matmul_x2";
-  const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups }) : match[3] ? Number(match[3]) : 4;
-  if (x2 && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
   if (row56 && (rows !== 4 || groups !== 1)) throw new Error(`${raw} requires FP32 rows=4/groups=1`);
   if (row56 && Math.ceil(T / 56) !== Math.ceil(T / 64)) throw new Error(`${raw} requires ceil(T/56)==ceil(T/64), got T=${T}`);
-  return { label: raw, name: row56 || x2 ? "matmul" : f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline, row56, x2 };
+  return { label: raw, name: row56 ? "matmul" : f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline, row56 };
 }
 
 function makeRng(seed) {
@@ -204,8 +189,8 @@ function compareVariants(outputs, labels, tolerance) {
 }
 
 function row56Pairs(variants) {
-  return variants.filter((v) => v.row56 || v.x2).map((candidate) => {
-    const control = variants.find((v) => !v.row56 && !v.x2 && v.name === "matmul" && !v.f16 && v.rows === candidate.rows && v.groups === 1 && v.target === candidate.target && v.wasmUrl === candidate.wasmUrl);
+  return variants.filter((v) => v.row56).map((candidate) => {
+    const control = variants.find((v) => !v.row56 && v.name === "matmul" && !v.f16 && v.rows === 4 && v.groups === 1 && v.target === candidate.target && v.wasmUrl === candidate.wasmUrl);
     if (!control) throw new Error(`${candidate.label} requires a matching FP32 R4/G1 control with the same split target and WASM`);
     return { control, candidate };
   });
@@ -366,8 +351,7 @@ async function main() {
     const shaderSource = variant.baseline ? baselineSource : source;
     const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const rendered = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, row56: variant.row56 });
-      const code = variant.x2 ? pairedWeightLoads(rendered) : rendered;
+      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, row56: variant.row56 });
       const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       shaderHashes[key] = { matmul: await sourceHash(code), reduce: await sourceHash(reduceCode) };
       pipelineCache.set(key, Promise.all([
@@ -518,7 +502,7 @@ async function main() {
     kernels: labels,
     baselineWasm,
     variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
-    sourceTransforms: { pairedWeightLoads: "vec2<u32> reads only the eight packed weights consumed by each loader", sourceCommit: query.get("sourceCommit"), row56: "WASM-rendered physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic", shaderHashes },
+    sourceTransforms: { sourceCommit: query.get("sourceCommit"), row56: "WASM-rendered physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic", shaderHashes },
     cases,
     adapter: provenance,
     correctness,
