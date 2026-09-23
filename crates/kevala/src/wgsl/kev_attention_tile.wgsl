@@ -1,13 +1,15 @@
-// Kev's causal GQA attention in query tiles, for GPUs with subgroups of 8 or more lanes and f16
+// Kev's causal GQA attention in query tiles, for GPUs with subgroups of 8 or more lanes
 // (FlashInfer's grouping of the query heads that share a key/value head). A workgroup takes up to
 // 8 consecutive tokens of one segment and one key/value head: 32 query rows (8 tokens x the 4
 // query heads of that key/value head), 8 lanes per row. A lane keeps 32 of its row's 256 query and
 // output dimensions in registers (vec4s lane, lane + 8, ...), so the keys and values the rows
-// share are staged once per 16 keys in workgroup memory, as f16, instead of once per row. A score
+// share are staged once per key block in workgroup memory, instead of once per row. A score
 // is finished across its row's 8 lanes with three shuffles, so every lane has the softmax state of
 // its row; the 32 lanes of a subgroup are one token, so the causal mask is uniform in a subgroup.
 // Keys come from the parent's cache rows first, then from this segment's own projections.
+//#if F16
 enable f16;
+//#endif
 enable subgroups;
 
 //#include kev_common
@@ -22,8 +24,8 @@ const PROW = ATTN_WIDTH / 4u; // vec4s per projection row
 const KROW = ATTN_KV / 4u;    // vec4s per cache row
 const KOFF = ATTN_Q / 2u;     // first key vec4 of a projection row (after the q and gate halves)
 const VOFF = KOFF + ATTN_K / 4u;
-var<workgroup> ks: array<vec4<f16>, 1024>; // [16 keys][64]
-var<workgroup> vs: array<vec4<f16>, 1024>; // [16 keys][64]
+var<workgroup> ks: array<vec4<{{TILE}}>, {{KEY_BUFFER_LEN}}>;
+var<workgroup> vs: array<vec4<{{TILE}}>, {{KEY_BUFFER_LEN}}>;
 var<workgroup> info: vec4<u32>;
 var<workgroup> info2: vec4<u32>;
 
@@ -71,9 +73,9 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var m = -3.0e38;
   var l = 0.0;
 
-  for (var j0 = 0u; j0 < kmax; j0 += 16u) {
+  for (var j0 = 0u; j0 < kmax; j0 += {{KEY_BLOCK}}u) {
     workgroupBarrier();
-    for (var e = li; e < 1024u; e += 256u) {
+    for (var e = li; e < {{KEY_BUFFER_LEN}}u; e += 256u) {
       let j = j0 + e / 64u;
       let dv = e % 64u;
       var kk = vec4<f32>(0.0);
@@ -87,14 +89,19 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
         kk = PROJ[row + KOFF];
         vv = PROJ[row + VOFF];
       }
+//#if F16
       ks[e] = vec4<f16>(kk);
       vs[e] = vec4<f16>(vv);
+//#else
+      ks[e] = kk;
+      vs[e] = vv;
+//#endif
     }
     workgroupBarrier();
 
-    var s: array<f32, 16>;
+    var s: array<f32, {{KEY_BLOCK}}>;
     var top = m;
-    for (var k = 0u; k < 16u; k++) {
+    for (var k = 0u; k < {{KEY_BLOCK}}u; k++) {
       var part = 0.0;
       for (var i = 0u; i < 8u; i++) { part += dot(q[i], vec4<f32>(ks[k * 64u + lane + 8u * i])); }
       let full = row_sum(part);
@@ -104,7 +111,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     let corr = exp(m - top);
     l *= corr;
     for (var i = 0u; i < 8u; i++) { o[i] *= corr; }
-    for (var k = 0u; k < 16u; k++) {
+    for (var k = 0u; k < {{KEY_BLOCK}}u; k++) {
       let pk = select(0.0, exp(s[k] - top), j0 + k < nk);
       l += pk;
       for (var i = 0u; i < 8u; i++) { o[i] += pk * vec4<f32>(vs[k * 64u + lane + 8u * i]); }

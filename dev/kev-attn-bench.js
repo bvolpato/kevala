@@ -8,7 +8,7 @@ import { pipeline, requestDevice } from "../js/src/gpu.js";
 const query = new URLSearchParams(location.search);
 const logNode = document.getElementById("log");
 const log = (line) => (logNode.textContent += `${line}\n`);
-const state = { status: "running", backend: "webgpu", kernel: "kev_attention_tile_f32", subgroups: true };
+const state = { status: "running", backend: "webgpu", kernel: "kev_attention_tile", subgroups: true };
 window.gpuBench = state;
 
 const DIM = 256;
@@ -494,7 +494,7 @@ async function main() {
       const kev = { ...KEV_SPEC, heads: c.heads, kv_heads: c.kvHeads };
       pipelines.set(key, Promise.all([
         pipeline(device, source("kev_attention", { subgroups: true, kev }), `kev_attention_${key}`, fallbackPipelineLayout),
-        pipeline(device, source("kev_attention_tile_f32", { subgroups: true, kev }), `kev_attention_tile_f32_${key}`, tilePipelineLayout),
+        pipeline(device, source("kev_attention_tile", { f16: false, subgroups: true, kev }), `kev_attention_tile_${key}`, tilePipelineLayout),
       ]));
     }
     return pipelines.get(key);
@@ -578,7 +578,7 @@ async function main() {
     status: correctness.ok ? "done" : "error",
     done: true,
     backend: "webgpu",
-    kernel: "kev_attention_tile_f32",
+    kernel: "kev_attention_tile",
     baselineKernel: "kev_attention",
     subgroups: true,
     metricMs,
