@@ -405,7 +405,6 @@ export class GpuGemma4 {
       };
     };
     const rms = (target, name, input, output, width = cfg.hidden, mode = 1, label = `rms.${name.split(".").at(-1)}`) => custom(target, "RMS", [width, f32(cfg.eps), mode, 0], [input, this.weight(name).buf, output], label, (pass) => pass.dispatchWorkgroups(this.T));
-    const add = (target, label = "residual.add") => custom(target, "RESIDUAL", [cfg.hidden, 0, 0, 0], [target.x, target.branchNorm, this.zeros], label, (pass) => pass.dispatchWorkgroups(this.T));
     const scale = (target, name, label = "layer.scalar") => custom(target, "RESIDUAL", [cfg.hidden, 1, 0, 0], [target.x, this.zeros, this.weight(name).buf], label, (pass) => pass.dispatchWorkgroups(this.T));
     const appendLayer = (ops, target, i, compact) => {
       const type = cfg.full[i] ? "full_attention" : "sliding_attention";
@@ -440,8 +439,7 @@ export class GpuGemma4 {
       const pair = shared ? this.shared.get(type) : { k: target.k, v: target.v };
       ops.push(custom(target, "ATTN", [cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [target.q, pair.k, pair.v, target.ctx, target.pos], "attn", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads)));
       ops.push(mm(target, n("o"), target.ctx, target.branch, 0, "mm.o"));
-      ops.push(rms(target, n("attn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.attn.post"));
-      ops.push(add(target, "residual.attn"));
+      ops.push(rms(target, n("attn_post_norm"), target.branch, target.x, cfg.hidden, 2, "rms.attn.post"));
       ops.push(rms(target, n("ffn_norm"), target.x, target.h, cfg.hidden, 1, "rms.ffn"));
       const gateOp = mm(target, n("gate"), target.h, target.gate, 0, "mm.gate");
       const upOp = mm(target, n("up"), target.h, target.up, 0, "mm.up");
@@ -460,16 +458,14 @@ export class GpuGemma4 {
         ops.push(pair);
       } else ops.push(gateOp, upOp, geluOp);
       ops.push(mm(target, n("down"), target.act, target.branch, 0, "mm.down"));
-      ops.push(rms(target, n("ffn_post_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ffn.post"));
-      ops.push(add(target, "residual.ffn"));
+      ops.push(rms(target, n("ffn_post_norm"), target.branch, target.x, cfg.hidden, 2, "rms.ffn.post"));
       ops.push(mm(target, n("ple_gate"), target.x, target.pleGate, 0, "mm.ple.gate"));
       ops.push(custom(target, "GELU", [cfg.pleDim, 1, 0, 0], [target.pleGate, target.ple, target.pleAct], "gelu.ple", (pass) => {
         const work = Math.ceil((this.T * cfg.pleDim) / 256);
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
       }));
       ops.push(mm(target, n("ple_out"), target.pleAct, target.branch, 0, "mm.ple.out"));
-      ops.push(rms(target, n("ple_norm"), target.branch, target.branchNorm, cfg.hidden, 1, "rms.ple"));
-      ops.push(add(target, "residual.ple"));
+      ops.push(rms(target, n("ple_norm"), target.branch, target.x, cfg.hidden, 2, "rms.ple"));
       ops.push(scale(target, n("scalar"), "scale"));
     };
     const full = {
