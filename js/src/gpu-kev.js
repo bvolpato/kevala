@@ -8,9 +8,8 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, encodeMatmul, mmSplits, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
-import { calibrateGateUp, canFuse, selectionKey } from "./gpu-gated.js";
 import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
 let U;
@@ -103,18 +102,18 @@ export class GpuKev {
       SILUMUL: ["kev_silumul"],
       GATHER: ["kev_gather"],
     };
+    const gateUp = this.weights.tensors.get("L.0.gate_up")?.info;
+    const gateUpShape = gateUp?.shape;
+    if (
+      this.gpuKernel === "auto" && !d.features.has("shader-f16") &&
+      d.limits.maxComputeWorkgroupStorageSize >= 24576 && gateUp?.dtype === "q8" &&
+      Number(gateUp.block) === 32 && Array.isArray(gateUpShape) &&
+      gateUpShape[0] === 2 * this.cfg.intermediate && gateUpShape[1] === this.cfg.hidden && gateUpShape[1] % 32 === 0
+    ) kernels.GATE_UP = ["matmul_gate_up"];
     const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
     this.mm = this.tuning.pipelines.generic;
-    const descriptors = Array.from({ length: this.cfg.layers }, (_, i) => {
-      const weight = this.weights.get(`L.${i}.gate_up`);
-      return { gate: weight, up: weight, activation: 2, packed: true };
-    });
-    const gated = await calibrateGateUp(d, this.wgsl, descriptors, { kernel: this.gpuKernel, pipelines: { generic: this.mm } });
-    this.p.GATE_UP = gated.pipeline;
-    this.gateUpSelection = gated.selection;
-    this.tuning.diagnostics.gated = gated.diagnostics;
     const recurrence = await calibrateRecurrence(d, [
       { lanes: 4, pipeline: this.p.RECUR },
       ...[8, 16].map((lanes) => ({
@@ -406,15 +405,13 @@ export class GpuKev {
       const gateOp = mm(n("gate_up"), this.h, this.up, 0);
       const siluOp = { k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) };
       const gateWeight = W(n("gate_up"));
-      const descriptor = { gate: gateWeight, up: gateWeight, activation: 2, packed: true };
-      if (this.p.GATE_UP && gateOp.N === 2 * cfg.intermediate && gateOp.K === cfg.hidden && canFuse(descriptor)) {
+      if (this.p.GATE_UP && gateOp.N === 2 * cfg.intermediate && gateWeight.info.dtype === "q8" && gateWeight.sbuf) {
         both({
           k: "gate_up",
           label: "mm.gate_up.activation",
           N: cfg.intermediate,
           packedN: gateOp.N,
           K: gateOp.K,
-          descriptor,
           group: bg(this.p.GATE_UP, [this.g, this.uni([cfg.intermediate, gateOp.K, cfg.intermediate, 2]), this.h, gateWeight.buf, gateWeight.sbuf, gateWeight.buf, gateWeight.sbuf, this.act]),
           fallback: [gateOp, siluOp],
         });
@@ -430,11 +427,11 @@ export class GpuKev {
 
   encode(enc, ops, T, S) {
     const prof = this.profiler;
-    const selected = this.p.GATE_UP ? ops.flatMap((op) => {
-      if (!op.descriptor) return [op];
-      const key = selectionKey(op.descriptor, T);
-      return this.gateUpSelection.get(key) === "fused" && canFuse(op.descriptor, { tokens: T, splitTarget: this.mm.splitTarget }) ? [op] : op.fallback;
-    }) : ops;
+    const selected = ops.flatMap((op) => op.fallback && (
+      T < 64 ||
+      mmSplits(T, op.N, op.K, this.mm.splitTarget, 64, 64) !== 1 ||
+      mmSplits(T, op.packedN, op.K, this.mm.splitTarget, 64, 64) !== 1
+    ) ? op.fallback : [op]);
     let pass = prof ? null : enc.beginComputePass();
     for (const op of selected) {
       if (prof) pass = prof.pass(enc, op.label || op.k);

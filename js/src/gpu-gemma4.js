@@ -8,7 +8,6 @@
 
 import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, mmSplits, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
-import { calibrateGateUp, canFuse, selectionKey } from "./gpu-gated.js";
 
 let U;
 
@@ -208,16 +207,9 @@ export class GpuGemma4 {
     this.p = Object.fromEntries(built);
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;
-    const descriptors = Array.from({ length: this.cfg.layers }, (_, i) => ({
-      gate: this.weight(`l.${i}.gate`),
-      up: this.weight(`l.${i}.up`),
-      activation: 0,
-      packed: false,
-    }));
-    const gated = await calibrateGateUp(d, this.wgsl, descriptors, { kernel: this.gpuKernel, pipelines: { generic: this.mm } });
-    this.p.GATE_UP = gated.pipeline;
-    this.gateUpSelection = gated.selection;
-    this.tuning.diagnostics.gated = gated.diagnostics;
+    if (this.gpuKernel === "auto" && !d.features.has("shader-f16") && d.limits.maxComputeWorkgroupStorageSize >= 24576) {
+      this.p.GATE_UP = await pipeline(d, this.wgsl("matmul_gate_up"), "matmul_gate_up");
+    }
     this.globals = d.createBuffer({ label: "Gemma 4 globals", size: 16, usage: U.UNIFORM | U.COPY_DST });
     this.owned.push(this.globals);
     // A zero bias and fallback scale buffer. Normal Gemma projection tensors are Q8;
@@ -458,14 +450,12 @@ export class GpuGemma4 {
         const work = Math.ceil((this.T * I) / 256);
         pass.dispatchWorkgroups(Math.min(work, 65535), Math.ceil(work / 65535));
       });
-      const gate = this.weight(n("gate"));
-      const up = this.weight(n("up"));
-      const descriptor = { gate, up, activation: 0, packed: false };
-      if (this.p.GATE_UP && gateOp.N === I && gateOp.K === cfg.hidden && canFuse(descriptor)) {
-        const pair = custom(target, "GATE_UP", [I, gateOp.K, 0, 0], [target.h, gate.buf, gate.sbuf, up.buf, up.sbuf, target.act], "mm.gate_up.activation", (pass) => pass.dispatchWorkgroups(Math.ceil(I / 64), Math.ceil(this.T / 64)));
+      if (this.p.GATE_UP) {
+        const gate = this.weight(n("gate"));
+        const up = this.weight(n("up"));
+        const pair = custom(target, "GATE_UP", [I, gateOp.K, 0, 0], [target.h, gate.buf, gate.sbuf, up.buf, up.sbuf, target.act], "mm.gate_up", (pass) => pass.dispatchWorkgroups(Math.ceil(I / 64), Math.ceil(this.T / 64)));
         pair.N = I;
         pair.K = gateOp.K;
-        pair.descriptor = descriptor;
         pair.fallback = [gateOp, upOp, geluOp];
         ops.push(pair);
       } else ops.push(gateOp, upOp, geluOp);
@@ -557,11 +547,7 @@ export class GpuGemma4 {
 
   encode(enc, ops, T, prof = this.profiler) {
     let pass = prof ? null : enc.beginComputePass();
-    const selected = this.p.GATE_UP ? ops.flatMap((op) => {
-      if (!op.descriptor) return [op];
-      const key = selectionKey(op.descriptor, T);
-      return this.gateUpSelection.get(key) === "fused" && canFuse(op.descriptor, { tokens: T, splitTarget: this.mm.splitTarget }) ? [op] : op.fallback;
-    }) : ops;
+    const selected = ops.flatMap((op) => op.fallback && (T < 64 || mmSplits(T, op.N, op.K, this.mm.splitTarget, 64, 64) !== 1) ? op.fallback : [op]);
     for (const op of selected) {
       if (op.kind === "copy-input" || op.kind === "copy-kv") {
         pass?.end();
