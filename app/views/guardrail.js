@@ -1,6 +1,6 @@
 import { debounce, fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, js } from "../ui.js";
 import { loadCode } from "../code.js";
-import { QUESTIONS, DEFAULT_THRESHOLDS, assess } from "./guardrail-policy.js";
+import { QUESTIONS, DEFAULT_THRESHOLDS, policySignals, assess } from "./guardrail-policy.js";
 
 const SAMPLES = [
   ["Everyday request", "Can you help me write a polite email asking my landlord to fix the heating before the weekend?"],
@@ -16,20 +16,13 @@ function code(session, thresholds) {
 
 // These scores screen for instruction overrides, not every kind of unsafe content.
 const questions = ${js(QUESTIONS)};
+const DEFAULT_THRESHOLDS = ${js(DEFAULT_THRESHOLDS)};
+const policySignals = ${policySignals.toString()};
+const assess = ${assess.toString()};
 
-async function gate(prompt, allowBelow = ${thresholds.allow.toFixed(2)}, blockAbove = ${thresholds.block.toFixed(2)}, contextAbove = ${thresholds.context.toFixed(2)}, directAbove = ${thresholds.direct.toFixed(2)}) {
+async function gate(prompt, allowBelow = ${thresholds.allow.toFixed(2)}, blockAbove = ${thresholds.block.toFixed(2)}) {
   const { answers } = await kevala.decide({ prompt }, questions);
-  const override = answers.instruction_override.noul;
-  const educational = answers.educational_context.noul;
-  const direct = answers.request_intent.probabilities.direct;
-  const overrideAct = answers.instruction_override.action?.act_probability ?? 1;
-  const contextAct = answers.educational_context.action?.act_probability ?? 1;
-  const intentAct = answers.request_intent.action?.act_probability ?? 1;
-  if (override <= allowBelow && overrideAct >= 0.5) return "allow";
-  if (override >= blockAbove && overrideAct >= 0.5 &&
-      ((educational < contextAbove && contextAct >= 0.5) ||
-       (direct >= directAbove && intentAct >= 0.5))) return "block";
-  return "review";
+  return assess(answers, prompt, { allow: allowBelow, block: blockAbove }).verdict;
 }
 
 console.log(await gate("Can you help me write a polite email?"));`;
@@ -39,7 +32,7 @@ const TEMPLATE = `<div class="wrap">
   <div class="page-head">
     <div class="eyebrow">Demo · instruction overrides</div>
     <h1>Prompt injection gate</h1>
-    <p>Check whether a message contains an instruction to ignore the assistant's rules or reveal hidden context. The selected model scores the text, whether the user is discussing an attack, and whether the request is directed at the assistant. This demo does not screen for every kind of unsafe content.</p>
+    <p>Check whether a message contains an instruction to ignore the assistant's rules or reveal hidden context. The selected model scores the text and a small context check distinguishes ordinary editing from instructions aimed at the assistant. This demo does not screen for every kind of unsafe content.</p>
   </div>
 
   <div data-f="gate"></div>
@@ -52,17 +45,15 @@ const TEMPLATE = `<div class="wrap">
         <div class="samples" role="group" aria-label="Sample messages" data-f="samples"></div>
       </div>
       <div class="card pad stack">
-        <div class="policy"><label for="gr-allow">Allow when override P ≤ <b class="mono" data-f="allow-v">0.25</b></label><input type="range" id="gr-allow" min="0.05" max="0.45" step="0.01" value="0.25"></div>
-        <div class="policy"><label for="gr-block">Block when override P ≥ <b class="mono" data-f="block-v">0.80</b></label><input type="range" id="gr-block" min="0.55" max="0.99" step="0.01" value="0.80"></div>
-        <div class="policy"><label for="gr-context">Analysis-context threshold <b class="mono" data-f="context-v">0.50</b></label><input type="range" id="gr-context" min="0.10" max="0.90" step="0.01" value="0.50"></div>
-        <div class="policy"><label for="gr-direct">Block high overrides if direct-request P ≥ <b class="mono" data-f="direct-v">0.65</b></label><input type="range" id="gr-direct" min="0.50" max="0.90" step="0.01" value="0.65"></div>
+        <div class="policy"><label for="gr-allow">Ordinary request score ceiling <b class="mono" data-f="allow-v">0.35</b></label><input type="range" id="gr-allow" min="0.05" max="0.50" step="0.01" value="0.35"></div>
+        <div class="policy"><label for="gr-block">Override block score <b class="mono" data-f="block-v">0.80</b></label><input type="range" id="gr-block" min="0.55" max="0.99" step="0.01" value="0.80"></div>
         <div class="session">
           <div><span>Checked</span><b data-f="n-all">0</b></div>
           <div><span>Allowed</span><b data-f="n-allow">0</b></div>
           <div><span>Blocked</span><b data-f="n-block">0</b></div>
           <div><span>Review</span><b data-f="n-review">0</b></div>
         </div>
-        <p class="tiny faint" style="margin:0">The sliders change the decision without rerunning the model. Scores are model estimates, not calibrated safety guarantees. Message text stays in this browser.</p>
+        <p class="tiny faint" style="margin:0">The two sliders change the score bands without rerunning the model. Message context also affects the result. Scores are estimates, not safety guarantees. Text stays in this browser.</p>
       </div>
     </div>
 
@@ -83,7 +74,7 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div class="card pad">
         <h3>Read the scores</h3>
-        <p class="muted small">P(yes) and P(no) show the full binary distribution for each yes/no question. The instruction-override score controls the allow and block bands. A strong analysis score sends a possible quoted example to Review unless the direct-request score also supports a block.</p>
+        <p class="muted small">P(yes) and P(no) show the full binary distribution for each yes/no question. The score bands apply after checking whether the message is an ordinary task, an example being discussed, or an instruction aimed at the assistant. Uncertain cases go to Review.</p>
         <p class="muted small" style="margin:0">Review is a recommendation, not an automated second pass. Test thresholds against your own labelled messages before using this pattern in a real application.</p>
       </div>
     </div>
@@ -151,7 +142,7 @@ export function mount(el, { session }) {
     request(true);
   });
 
-  for (const [id, key] of [["gr-allow", "allow"], ["gr-block", "block"], ["gr-context", "context"], ["gr-direct", "direct"]]) {
+  for (const [id, key] of [["gr-allow", "allow"], ["gr-block", "block"]]) {
     el.querySelector(`#${id}`).addEventListener("input", (e) => {
       thresholds[key] = Number(e.target.value);
       $(`${key}-v`).textContent = thresholds[key].toFixed(2);
@@ -167,12 +158,12 @@ export function mount(el, { session }) {
     const verdict = $("verdict");
     verdict.className = "verdict";
     verdict.innerHTML = verdictHTML("?", "Waiting", kevala ? "Checking…" : "Load the model to start");
-    $("why").textContent = "Low override scores allow; high scores block when analysis context is low or direct-request intent is high. Other messages need review.";
+    $("why").textContent = "Ordinary requests can continue; instructions aimed at the assistant can stop. Uncertain cases need review.";
     $("checks").innerHTML = "";
   }
 
-  function paint({ r: response, ms, info }) {
-    const result = assess(response.answers, thresholds);
+  function paint({ r: response, ms, info, prompt }) {
+    const result = assess(response.answers, prompt, thresholds);
     const verdict = $("verdict");
     verdict.className = `verdict v-${result.verdict}`;
     const detail = `${fmtMs(ms)} round trip · ${response.usage?.input_tokens ?? "?"} tokens · ${esc(backendLabel(info))}`;
@@ -191,7 +182,7 @@ export function mount(el, { session }) {
   const history = [];
   function updateCounts() {
     Object.assign(counts, { all: history.length, allow: 0, block: 0, review: 0 });
-    for (const answers of history) counts[assess(answers, thresholds).verdict]++;
+    for (const { answers, prompt } of history) counts[assess(answers, prompt, thresholds).verdict]++;
     for (const [key, n] of Object.entries(counts)) $(`n-${key}`).textContent = n;
   }
   let kevala = null;
@@ -218,10 +209,10 @@ export function mount(el, { session }) {
       const response = await model.decide({ prompt }, QUESTIONS);
       const ms = performance.now() - t0;
       if (model !== kevala || prompt !== promptInput.value) return;
-      last = { r: response, ms, info: model.info };
+      last = { r: response, ms, info: model.info, prompt };
       paint(last);
       if (settled) {
-        history.push(response.answers);
+        history.push({ answers: response.answers, prompt });
         updateCounts();
       }
     } catch (e) {
@@ -268,7 +259,7 @@ export function mount(el, { session }) {
       if (unsettled) owed = 2;
     },
     // read-only handles for tests
-    gate: (answers) => assess(answers, thresholds),
+    gate: (answers, prompt) => assess(answers, prompt, thresholds),
     counts,
     get last() {
       return last;
