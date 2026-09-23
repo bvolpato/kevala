@@ -17,14 +17,18 @@ function code(session, thresholds) {
 // These scores screen for instruction overrides, not every kind of unsafe content.
 const questions = ${js(QUESTIONS)};
 
-async function gate(prompt, allowBelow = ${thresholds.allow.toFixed(2)}, blockAbove = ${thresholds.block.toFixed(2)}, contextAbove = ${thresholds.context.toFixed(2)}) {
+async function gate(prompt, allowBelow = ${thresholds.allow.toFixed(2)}, blockAbove = ${thresholds.block.toFixed(2)}, contextAbove = ${thresholds.context.toFixed(2)}, directAbove = ${thresholds.direct.toFixed(2)}) {
   const { answers } = await kevala.decide({ prompt }, questions);
   const override = answers.instruction_override.noul;
   const educational = answers.educational_context.noul;
+  const direct = answers.request_intent.probabilities.direct;
   const overrideAct = answers.instruction_override.action?.act_probability ?? 1;
   const contextAct = answers.educational_context.action?.act_probability ?? 1;
+  const intentAct = answers.request_intent.action?.act_probability ?? 1;
   if (override <= allowBelow && overrideAct >= 0.5) return "allow";
-  if (override >= blockAbove && educational < contextAbove && overrideAct >= 0.5 && contextAct >= 0.5) return "block";
+  if (override >= blockAbove && overrideAct >= 0.5 &&
+      ((educational < contextAbove && contextAct >= 0.5) ||
+       (direct >= directAbove && intentAct >= 0.5))) return "block";
   return "review";
 }
 
@@ -35,7 +39,7 @@ const TEMPLATE = `<div class="wrap">
   <div class="page-head">
     <div class="eyebrow">Demo · instruction overrides</div>
     <h1>Prompt injection gate</h1>
-    <p>Check whether a message contains an instruction to ignore the assistant's rules or reveal hidden context. The selected model scores the text and whether the user is discussing an attack as an example. This demo does not screen for every kind of unsafe content.</p>
+    <p>Check whether a message contains an instruction to ignore the assistant's rules or reveal hidden context. The selected model scores the text, whether the user is discussing an attack, and whether the request is directed at the assistant. This demo does not screen for every kind of unsafe content.</p>
   </div>
 
   <div data-f="gate"></div>
@@ -50,7 +54,8 @@ const TEMPLATE = `<div class="wrap">
       <div class="card pad stack">
         <div class="policy"><label for="gr-allow">Allow when override P ≤ <b class="mono" data-f="allow-v">0.25</b></label><input type="range" id="gr-allow" min="0.05" max="0.45" step="0.01" value="0.25"></div>
         <div class="policy"><label for="gr-block">Block when override P ≥ <b class="mono" data-f="block-v">0.80</b></label><input type="range" id="gr-block" min="0.55" max="0.99" step="0.01" value="0.80"></div>
-        <div class="policy"><label for="gr-context">Review high overrides if analysis P ≥ <b class="mono" data-f="context-v">0.50</b></label><input type="range" id="gr-context" min="0.10" max="0.90" step="0.01" value="0.50"></div>
+        <div class="policy"><label for="gr-context">Analysis-context threshold <b class="mono" data-f="context-v">0.50</b></label><input type="range" id="gr-context" min="0.10" max="0.90" step="0.01" value="0.50"></div>
+        <div class="policy"><label for="gr-direct">Block high overrides if direct-request P ≥ <b class="mono" data-f="direct-v">0.65</b></label><input type="range" id="gr-direct" min="0.50" max="0.90" step="0.01" value="0.65"></div>
         <div class="session">
           <div><span>Checked</span><b data-f="n-all">0</b></div>
           <div><span>Allowed</span><b data-f="n-allow">0</b></div>
@@ -78,7 +83,7 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div class="card pad">
         <h3>Read the scores</h3>
-        <p class="muted small">P(yes) and P(no) show the full binary distribution for each question. The instruction-override score controls the allow and block bands. A strong educational-analysis score prevents an automatic block when an apparent attack may be a quoted example.</p>
+        <p class="muted small">P(yes) and P(no) show the full binary distribution for each yes/no question. The instruction-override score controls the allow and block bands. A strong analysis score sends a possible quoted example to Review unless the direct-request score also supports a block.</p>
         <p class="muted small" style="margin:0">Review is a recommendation, not an automated second pass. Test thresholds against your own labelled messages before using this pattern in a real application.</p>
       </div>
     </div>
@@ -87,13 +92,21 @@ const TEMPLATE = `<div class="wrap">
 
 const ICON = { allow: "✓", block: "✕", review: "?" };
 const WORD = { allow: "Allow", block: "Block", review: "Review" };
-const LABEL = { instruction_override: "Instruction override", educational_context: "Educational analysis" };
+const LABEL = { instruction_override: "Instruction override", educational_context: "Educational analysis", request_intent: "Request intent" };
 
 function verdictHTML(icon, word, detail) {
   return `<div class="v-icon">${icon}</div><div><div class="v-big">${word}</div><div class="tiny faint">${detail}</div></div>`;
 }
 
 function checkHTML(id, answer) {
+  if (answer.type === "choice") {
+    return `<div class="check">
+      <span class="name">${LABEL[id]}</span>
+      <span class="instr">${esc(QUESTIONS[id].instructions)}</span>
+      ${Object.entries(answer.probabilities).map(([choice, p]) => `<span class="num">${esc(choice)} ${p.toFixed(3)}</span>`).join("")}
+      ${answer.action?.act_probability === undefined ? "" : `<span class="num">Act ${answer.action.act_probability.toFixed(2)}</span>`}
+    </div>`;
+  }
   const p = answer.noul;
   const act = answer.action?.act_probability;
   const fill = `<span class="fill" data-w="${(p * 100).toFixed(1)}" style="width:0"></span>`;
@@ -138,7 +151,7 @@ export function mount(el, { session }) {
     request(true);
   });
 
-  for (const [id, key] of [["gr-allow", "allow"], ["gr-block", "block"], ["gr-context", "context"]]) {
+  for (const [id, key] of [["gr-allow", "allow"], ["gr-block", "block"], ["gr-context", "context"], ["gr-direct", "direct"]]) {
     el.querySelector(`#${id}`).addEventListener("input", (e) => {
       thresholds[key] = Number(e.target.value);
       $(`${key}-v`).textContent = thresholds[key].toFixed(2);
@@ -154,7 +167,7 @@ export function mount(el, { session }) {
     const verdict = $("verdict");
     verdict.className = "verdict";
     verdict.innerHTML = verdictHTML("?", "Waiting", kevala ? "Checking…" : "Load the model to start");
-    $("why").textContent = "Low override scores allow; high scores block only when analysis context is low. Other messages need review.";
+    $("why").textContent = "Low override scores allow; high scores block when analysis context is low or direct-request intent is high. Other messages need review.";
     $("checks").innerHTML = "";
   }
 
