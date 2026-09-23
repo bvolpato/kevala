@@ -9,7 +9,11 @@ enable subgroups;
 
 //#include kev_common
 
+//#if SUBGROUPS
+@group(0) @binding(1) var<storage, read> C: array<vec4<f32>>;
+//#else
 @group(0) @binding(1) var<storage, read> C: array<f32>;
+//#endif
 @group(0) @binding(2) var<storage, read> AB: array<f32>;
 @group(0) @binding(3) var<storage, read> segs: array<Seg>;
 @group(0) @binding(4) var<storage, read_write> STATE: array<f32>;
@@ -99,25 +103,32 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   for (var r = 0u; r < sp.y; r++) {
 //#if SUBGROUPS
     let t = sp.x + r;
-    let v = C[t * LIN_DIM + 2u * LIN_QK + h * 128u + column];
+    let row4 = t * (LIN_DIM / 4u);
+    let v = C[row4 + 2u * (LIN_QK / 4u) + h * 32u + column / 4u][column & 3u];
     let decay = AB[t * (2u * LIN_HEADS) + h];
     let beta = AB[t * (2u * LIN_HEADS) + LIN_HEADS + h];
-    let qv0 = C[t * LIN_DIM + kh * 128u + k0 + 0u];
-    let qv1 = C[t * LIN_DIM + kh * 128u + k0 + 1u];
-    let qv2 = C[t * LIN_DIM + kh * 128u + k0 + 2u];
-    let qv3 = C[t * LIN_DIM + kh * 128u + k0 + 3u];
-    let qv4 = C[t * LIN_DIM + kh * 128u + k0 + 4u];
-    let qv5 = C[t * LIN_DIM + kh * 128u + k0 + 5u];
-    let qv6 = C[t * LIN_DIM + kh * 128u + k0 + 6u];
-    let qv7 = C[t * LIN_DIM + kh * 128u + k0 + 7u];
-    let key0 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 0u];
-    let key1 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 1u];
-    let key2 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 2u];
-    let key3 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 3u];
-    let key4 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 4u];
-    let key5 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 5u];
-    let key6 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 6u];
-    let key7 = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + 7u];
+    let qBase = row4 + kh * 32u + k0 / 4u;
+    let kBase = row4 + LIN_QK / 4u + kh * 32u + k0 / 4u;
+    let qpacked0 = C[qBase];
+    let qpacked1 = C[qBase + 1u];
+    let kpacked0 = C[kBase];
+    let kpacked1 = C[kBase + 1u];
+    let qv0 = qpacked0.x;
+    let qv1 = qpacked0.y;
+    let qv2 = qpacked0.z;
+    let qv3 = qpacked0.w;
+    let qv4 = qpacked1.x;
+    let qv5 = qpacked1.y;
+    let qv6 = qpacked1.z;
+    let qv7 = qpacked1.w;
+    let key0 = kpacked0.x;
+    let key1 = kpacked0.y;
+    let key2 = kpacked0.z;
+    let key3 = kpacked0.w;
+    let key4 = kpacked1.x;
+    let key5 = kpacked1.y;
+    let key6 = kpacked1.z;
+    let key7 = kpacked1.w;
     var kv = 0.0;
 //#else
     let t = sp.x + r;
