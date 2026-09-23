@@ -114,41 +114,21 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       let b2 = vec4<f32>(ws[(c + 32u) * 16u + (kq ^ nx)]);
       let b3 = vec4<f32>(ws[(c + 48u) * 16u + (kq ^ nx)]);
 
-      // Accumulate across the four input components with vector FMAs. The named
-      // vectors keep the existing four-column mapping while avoiding a separate
-      // vector add after each dot product.
-      let bx = vec4<f32>(b0.x, b1.x, b2.x, b3.x);
-      let by = vec4<f32>(b0.y, b1.y, b2.y, b3.y);
-      let bz = vec4<f32>(b0.z, b1.z, b2.z, b3.z);
-      let bw = vec4<f32>(b0.w, b1.w, b2.w, b3.w);
-
-      // Each row block is guarded by a compile-time constant so unused
-      // registers disappear.
+      // Keep the same row and dot-product order as matmul. Each row block
+      // is guarded by a compile-time constant so unused registers disappear.
       let a0 = vec4<f32>(xs[(lid.y + 0u) * 16u + kq]);
-      acc0 = fma(vec4<f32>(a0.x), bx, acc0);
-      acc0 = fma(vec4<f32>(a0.y), by, acc0);
-      acc0 = fma(vec4<f32>(a0.z), bz, acc0);
-      acc0 = fma(vec4<f32>(a0.w), bw, acc0);
+      acc0 += vec4<f32>(dot(a0, b0), dot(a0, b1), dot(a0, b2), dot(a0, b3));
       if ({{ROWS}}u > 1u) {
         let a1 = vec4<f32>(xs[(lid.y + 16u) * 16u + kq]);
-        acc1 = fma(vec4<f32>(a1.x), bx, acc1);
-        acc1 = fma(vec4<f32>(a1.y), by, acc1);
-        acc1 = fma(vec4<f32>(a1.z), bz, acc1);
-        acc1 = fma(vec4<f32>(a1.w), bw, acc1);
+        acc1 += vec4<f32>(dot(a1, b0), dot(a1, b1), dot(a1, b2), dot(a1, b3));
       }
       if ({{ROWS}}u > 2u) {
         let a2 = vec4<f32>(xs[(lid.y + 32u) * 16u + kq]);
-        acc2 = fma(vec4<f32>(a2.x), bx, acc2);
-        acc2 = fma(vec4<f32>(a2.y), by, acc2);
-        acc2 = fma(vec4<f32>(a2.z), bz, acc2);
-        acc2 = fma(vec4<f32>(a2.w), bw, acc2);
+        acc2 += vec4<f32>(dot(a2, b0), dot(a2, b1), dot(a2, b2), dot(a2, b3));
       }
       if ({{ROWS}}u > 3u) {
         let a3 = vec4<f32>(xs[(lid.y + 48u) * 16u + kq]);
-        acc3 = fma(vec4<f32>(a3.x), bx, acc3);
-        acc3 = fma(vec4<f32>(a3.y), by, acc3);
-        acc3 = fma(vec4<f32>(a3.z), bz, acc3);
-        acc3 = fma(vec4<f32>(a3.w), bw, acc3);
+        acc3 += vec4<f32>(dot(a3, b0), dot(a3, b1), dot(a3, b2), dot(a3, b3));
       }
     }
     workgroupBarrier();
