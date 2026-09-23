@@ -30,10 +30,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let end = select(g.T, t + 1u, p.causal != 0u);
   let key_lane = lane % 8u;
   for (var j0 = start; j0 < end; j0 += 128u) {
-    if (lane < 128u) { scores[lane] = -3.402823466e+38; }
-    workgroupBarrier();
-    let blocks = (min(128u, end - j0) + 31u) / 32u;
-    for (var block = 0u; block < blocks; block++) {
+    for (var block = 0u; block < 4u; block++) {
       let j = j0 + block * 32u + lane / 8u;
       let kbase = j * p.kv_heads * H + kv_head * H;
       var sum = 0.0;
