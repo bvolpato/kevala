@@ -62,15 +62,24 @@ function parseKernel(raw, T, config) {
   if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
-  const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
+  const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups }) : match[3] ? Number(match[3]) : 4;
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
   return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline };
+}
+
+function parseSplitCaps(query) {
+  if (!query.has("splitCaps")) return [8];
+  const caps = query.get("splitCaps").split(",").map(Number);
+  if (!caps.length || caps.some((cap) => ![8, 16].includes(cap)) || new Set(caps).size !== caps.length) {
+    throw new Error("splitCaps must be a comma-separated list of 8 and/or 16");
+  }
+  return caps;
 }
 
 function makeRng(seed) {
@@ -257,13 +266,13 @@ function makeTimer(device, useTimestamps) {
   };
 }
 
-async function timedBatch(device, timer, op, T, reps, target, rows, groups, uncaptured, phase) {
+async function timedBatch(device, timer, op, T, reps, target, rows, groups, maxSplits, uncaptured, phase) {
   return checked(device, async () => {
     const encoder = device.createCommandEncoder({ label: phase });
     const pass = timer.timestamp
       ? encoder.beginComputePass({ timestampWrites: { querySet: timer.querySet, beginningOfPassWriteIndex: 0, endOfPassWriteIndex: 1 } })
       : encoder.beginComputePass();
-    for (let i = 0; i < reps; i++) dispatchMatmul(pass, op.pMatmul, op.pReduce, op, T, target, rows, groups);
+    for (let i = 0; i < reps; i++) dispatchMatmul(pass, op.pMatmul, op.pReduce, op, T, target, rows, groups, maxSplits);
     pass.end();
     const started = performance.now();
     if (timer.timestamp) {
@@ -293,6 +302,7 @@ async function main() {
   const warmups = numberParam(query, "warmups", 2, 0, 10);
   const samples = numberParam(query, "samples", 7, 3, 20);
   const requestedKernels = (query.get("kernels") || "runtime").split(",").filter(Boolean);
+  const splitCaps = parseSplitCaps(query);
   const baselineWasmParam = query.get("baselineWasm");
   const baselineWasm = baselineWasmParam ? new URL(baselineWasmParam, document.baseURI).href : null;
   const baselineRequested = requestedKernels.some((raw) => kernelName(raw).endsWith("_baseline"));
@@ -323,8 +333,8 @@ async function main() {
     const shaderSource = variant.baseline ? baselineSource : source;
     const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
-      const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, maxSplits: variant.maxSplits });
+      const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target, maxSplits: variant.maxSplits });
       pipelineCache.set(key, Promise.all([
         pipeline(device, code, `${variant.label}.matmul`, pipelineLayouts.matmul),
         pipeline(device, reduceCode, `${variant.label}.reduce`, pipelineLayouts.reduce),
@@ -333,11 +343,22 @@ async function main() {
     const [pMatmul, pReduce] = await pipelineCache.get(key);
     return { pMatmul, pReduce };
   };
-  const variantsFor = (T) => requestedKernels.map((name) => {
-    const variant = parseKernel(name, T, matmulConfig(device));
-    const shaderSource = variant.baseline ? baselineSource : source;
-    return { ...variant, provenance: variant.baseline ? "baseline" : "current", wasmUrl: shaderSource.wasmUrl };
-  });
+  const variantsFor = (T) => {
+    const kernels = requestedKernels.map((name) => parseKernel(name, T, matmulConfig(device)));
+    if (splitCaps.includes(16) && kernels.some((variant) => variant.f16 || variant.name !== "matmul" || variant.baseline)) {
+      throw new Error("splitCaps=16 requires the current-source FP32 matmul kernel; select matmul instead of F16 or baseline variants");
+    }
+    return kernels.flatMap((variant) => splitCaps.map((maxSplits) => {
+      const shaderSource = variant.baseline ? baselineSource : source;
+      return {
+        ...variant,
+        label: query.has("splitCaps") ? `${variant.label}/cap${maxSplits}` : variant.label,
+        maxSplits,
+        provenance: variant.baseline ? "baseline" : "current",
+        wasmUrl: shaderSource.wasmUrl,
+      };
+    }));
+  };
   const allVariants = variantsFor(shapes[0][0]);
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
@@ -351,7 +372,7 @@ async function main() {
     const [T, N, K] = shape;
     const variantObjects = variantsFor(T);
     const partialFloats = Math.max(0, ...variantObjects.map((variant) => {
-      const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
+      const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups, variant.maxSplits);
       return splits > 1 ? splits * T * N : 0;
     }));
     const input = makeInput(T, N, K, (seed + shapeIndex * 0x9e3779b9) >>> 0);
@@ -385,7 +406,7 @@ async function main() {
       const group = device.createBindGroup({ layout: layouts.matmul, entries: [globals, params, X, W, S, B, Y, part].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const reduce = device.createBindGroup({ layout: layouts.reduce, entries: [globals, params, part, B, Y].map((buffer, binding) => ({ binding, resource: { buffer } })) });
       const op = { N, K, group, reduce, pMatmul: pipes.pMatmul, pReduce: pipes.pReduce };
-      const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
+      const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups, variant.maxSplits);
       // about 20 GFLOP per timed batch, so the timestamp resolution (tens of microseconds on some
       // browsers) stays small against it
       const reps = Math.max(1, Math.min(512, Math.round(2e10 / Math.max(1, 2 * T * N * K))));
@@ -395,23 +416,23 @@ async function main() {
     // ramps and thermal drift fall on all of them alike
     const turn = (round) => runs.map((_, i) => runs[(i + round) % runs.length]);
     for (let i = 0; i < warmups; i++) {
-      for (const run of turn(i)) await timedBatch(device, timer, run.op, T, run.reps, run.variant.target, run.variant.rows, run.variant.groups, uncaptured, `${caseLabel(shape)} ${run.variant.label} warmup`);
+      for (const run of turn(i)) await timedBatch(device, timer, run.op, T, run.reps, run.variant.target, run.variant.rows, run.variant.groups, run.variant.maxSplits, uncaptured, `${caseLabel(shape)} ${run.variant.label} warmup`);
     }
     for (let i = 0; i < samples; i++) {
       for (const run of turn(i)) {
-        run.samples.push(await timedBatch(device, timer, run.op, T, run.reps, run.variant.target, run.variant.rows, run.variant.groups, uncaptured, `${caseLabel(shape)} ${run.variant.label} sample`));
+        run.samples.push(await timedBatch(device, timer, run.op, T, run.reps, run.variant.target, run.variant.rows, run.variant.groups, run.variant.maxSplits, uncaptured, `${caseLabel(shape)} ${run.variant.label} sample`));
       }
     }
     for (const { variant, op, splits, reps, samples: samplesForKernel } of runs) {
       const sorted = [...samplesForKernel].sort((a, b) => a - b);
       const median = sorted[Math.floor(sorted.length / 2)];
-      timings.push({ kernel: variant.label, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, splits, reps, samples: samplesForKernel, medianMs: median });
+      timings.push({ kernel: variant.label, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, maxSplits: variant.maxSplits, splits, reps, samples: samplesForKernel, medianMs: median });
       await checked(device, async () => {
         device.queue.writeBuffer(params, 0, new Uint32Array([N, K, 0, 0]));
         device.queue.writeBuffer(Y, 0, zero);
         await device.queue.onSubmittedWorkDone();
       }, `${caseLabel(shape)} ${variant.label} reset`, uncaptured);
-      await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} ${variant.label} correctness`);
+      await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, variant.maxSplits, uncaptured, `${caseLabel(shape)} ${variant.label} correctness`);
       outputs[variant.label] = await readOutput(device, Y, bytes, uncaptured, `${caseLabel(shape)} ${variant.label}`);
       const finite = finiteSummary(outputs[variant.label]);
       if (!finite.ok) throw new Error(`${caseLabel(shape)} ${variant.label}: ${finite.message}`);
@@ -426,7 +447,7 @@ async function main() {
             device.queue.writeBuffer(Y, 0, input.residual);
             await device.queue.onSubmittedWorkDone();
           }, `${caseLabel(shape)} mode ${mode} upload`, uncaptured);
-          await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} mode ${mode}`);
+          await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, variant.maxSplits, uncaptured, `${caseLabel(shape)} mode ${mode}`);
           const epilogue = await readOutput(device, Y, bytes, uncaptured, `${caseLabel(shape)} mode ${mode}`);
           const cpu = compareCpu(input, epilogue, variant, mode, withBias);
           correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode, bias: withBias, ...cpu });
@@ -446,7 +467,7 @@ async function main() {
     const shapeMedian = shapeMedians[0];
     medians.push(shapeMedian);
     cases.push({ shape: caseLabel(shape), T, N, K, timings, medianMs: shapeMedian });
-    log(`${caseLabel(shape)}: ${timings.map((item) => `${item.kernel}=${item.medianMs.toFixed(3)}ms`).join(", ")} splits=${timings[0].splits}`);
+    log(`${caseLabel(shape)}: ${timings.map((item) => `${item.kernel}=${item.medianMs.toFixed(3)}ms (${item.splits} splits, cap ${item.maxSplits})`).join(", ")}`);
     for (const buffer of [X, W, S, B, Y, part, globals, params]) buffer.destroy();
   }
   const metricMs = Math.exp(medians.reduce((sum, value) => sum + Math.log(value), 0) / medians.length);

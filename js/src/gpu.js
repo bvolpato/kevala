@@ -10,11 +10,13 @@
 // tokens is 16 workgroups), so K is split across up to 8 workgroups whose partial tiles a second
 // pass sums. The kernel (wgsl/splits.wgsl) and the host compute the same split count.
 const SPLIT_TARGET = 128;
+const SPLIT_CAP = 8;
 /** Host side of `mm_splits`. */
-export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
+export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64, maxSplits = SPLIT_CAP) {
+  if (!Number.isInteger(maxSplits) || maxSplits < 1 || maxSplits > 16) throw new RangeError("maxSplits must be from 1 to 16");
   const tiles = Math.ceil(N / bn) * Math.ceil(T / bm);
   if (tiles >= Math.ceil((target * 3) / 4)) return 1;
-  return Math.max(1, Math.min(8, Math.ceil(target / tiles), Math.floor(K / 128)));
+  return Math.max(1, Math.min(maxSplits, Math.ceil(target / tiles), Math.floor(K / 128)));
 }
 
 /** Select a 16 R row tile. FP32 can omit padded rows without changing the workgroup grid. */
@@ -24,17 +26,17 @@ export function rowsPerThread(T, config = null) {
 }
 
 export function matmulConfig(device) {
-  return { f16: device.features.has("shader-f16"), groups: 1, splitTarget: 256 };
+  return { f16: device.features.has("shader-f16"), groups: 1, splitTarget: 256, maxSplits: SPLIT_CAP };
 }
 
 /**
  * Encodes a matmul op (bind groups `group` and `reduce`), splitting K when it helps. The kernel
  * variant covers 16 R rows and 64 J columns per workgroup.
  */
-export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1) {
+export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1, maxSplits = SPLIT_CAP) {
   const bm = 16 * R;
   const bn = 64 * J;
-  const splits = mmSplits(T, op.N, op.K, target, bm, bn);
+  const splits = mmSplits(T, op.N, op.K, target, bm, bn, maxSplits);
   pass.setPipeline(pMatmul);
   pass.setBindGroup(0, op.group);
   pass.dispatchWorkgroups(Math.ceil(op.N / bn), Math.ceil(T / bm), splits);
@@ -49,7 +51,7 @@ export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TAR
 /** Encodes a matmul with the kernel variant for T. `pipes` comes from `matmulPipelines`. */
 export function encodeMatmul(pass, pipes, op, T) {
   const R = rowsPerThread(T, pipes);
-  dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
+  dispatchMatmul(pass, pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups, pipes.maxSplits);
 }
 
 /** The matmul bind group layout, explicit so every kernel variant shares one bind group. */
