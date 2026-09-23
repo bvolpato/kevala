@@ -1,9 +1,9 @@
 import { kernelSource } from "./wgsl.js";
 import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, pipeline, reduceLayout, requestDevice, rowsPerThread } from "../js/src/gpu.js";
 
-// This page is an isolated experiment. It compares one fused gate/up+GELU
-// dispatch with the generic gate matmul, generic up matmul, and gemma4_gelu
-// sequence used by the runtime. The fused kernel intentionally rejects split-K.
+// Compare a fused paired projection against the complete unfused operation:
+// separate GEMMs for GELU-tanh, or one packed GEMM for GeGLU and SwiGLU.
+// Each baseline includes its activation dispatch. Fused split-K is unsupported.
 
 const logNode = document.getElementById("log");
 const log = (line) => { logNode.textContent += `${line}\n`; };
@@ -191,9 +191,13 @@ function finiteSummary(values, label) {
 function compareArrays(a, b) {
   let maxAbs = 0;
   let maxRelative = 0;
+  let bitMismatches = 0;
+  const aBits = new Uint32Array(a.buffer, a.byteOffset, a.length);
+  const bBits = new Uint32Array(b.buffer, b.byteOffset, b.length);
   let worst = null;
   let ok = true;
   for (let i = 0; i < a.length; i++) {
+    if (aBits[i] !== bBits[i]) bitMismatches++;
     const abs = Math.abs(a[i] - b[i]);
     const relative = abs / Math.max(1, Math.abs(a[i]));
     if (abs > maxAbs) {
@@ -203,7 +207,7 @@ function compareArrays(a, b) {
     maxRelative = Math.max(maxRelative, relative);
     if (abs > 0.0005 + 0.0001 * Math.max(1, Math.abs(a[i]))) ok = false;
   }
-  return { ok, samples: a.length, maxAbs, maxRelative, worst, message: ok ? undefined : "fused output differs from generic baseline" };
+  return { ok, samples: a.length, bitMismatches, maxAbs, maxRelative, worst, message: ok ? undefined : "fused output differs from generic baseline" };
 }
 
 function makeBuffer(device, bytes, usage, label) {
@@ -373,7 +377,7 @@ async function main() {
   }
 
   const cases = [];
-  const correctness = { ok: true, cpuReference: "f32 signed-int8 projections with the gemma4_gelu tanh expression", cpu: [], variants: [], errors: [] };
+  const correctness = { ok: true, cpuReference: "sequential f32 Q8 projections with an independent activation reference", activation: ["gelu-tanh", "gelu-erf", "silu"][activation], cpu: [], variants: [], errors: [] };
   const fusedMedians = [];
   const baselineMedians = [];
 
@@ -512,7 +516,7 @@ async function main() {
     status: correctness.ok ? "done" : "error",
     backend: "webgpu",
     metricMs,
-    metric: "geometric mean of fused gate/up+GELU median GPU milliseconds",
+    metric: "geometric mean of fused paired projection and activation GPU milliseconds",
     baselineMetricMs,
     activation,
     packed,
