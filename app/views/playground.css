@@ -33,6 +33,9 @@
 .view-playground .pg-st-h { font: 600 0.78rem var(--sans); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .view-playground .pg-st-h:empty { display: none; }
 .view-playground .code pre { font-size: 0.8rem; }
+.view-playground .pg-tested { display: grid; gap: 10px; border-top: 1px solid var(--border); padding-top: 16px; }
+.view-playground .pg-tested h3, .view-playground .pg-tested p { margin: 0; }
+.view-playground .pg-tested pre { max-height: 320px; overflow: auto; padding-top: 44px; }
 
 @media (max-width: 900px) {
   .view-playground .pg { grid-template-columns: 1fr; }

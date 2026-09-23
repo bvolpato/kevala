@@ -151,6 +151,7 @@ class Session extends EventTarget {
     /** { frac, indet, label } while loading */
     this.progress = null;
     this.kevala = null;
+    this.loadedOptions = null;
     this.error = null;
     this.cached = {};
   }
@@ -161,6 +162,10 @@ class Session extends EventTarget {
 
   get info() {
     return this.kevala?.info || null;
+  }
+
+  get from() {
+    return FROM;
   }
 
   nameOf(model = this.model) {
@@ -299,6 +304,7 @@ class Session extends EventTarget {
         return this.load();
       }
       this.kevala = kevala;
+      this.loadedOptions = { model: src, from: FROM, backend };
       this.status = "ready";
       this.progress = null;
       this.#persist();
@@ -335,6 +341,7 @@ class Session extends EventTarget {
     if (!this.kevala) return;
     this.kevala.dispose();
     this.kevala = null;
+    this.loadedOptions = null;
     this.status = "idle";
     this.#persist();
     this.#emit();

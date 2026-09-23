@@ -271,28 +271,6 @@ export function logo(id) {
   ].join("");
 }
 
-/** Where pages import the library from: the npm package on jsDelivr. */
-export const CDN = "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
-
-/**
- * Formats a value as JavaScript source for the code snippets on the site: unquoted keys where
- * they are identifiers, short arrays and objects on one line, 2-space indentation.
- */
-export function js(value, indent = "") {
-  const inner = indent + "  ";
-  const fitsOneLine = (s) => s.length < 80 && !s.includes("\n");
-  if (Array.isArray(value)) {
-    const items = value.map((x) => js(x, inner));
-    const oneLine = `[${items.join(", ")}]`;
-    return fitsOneLine(oneLine) ? oneLine : `[\n${items.map((x) => inner + x).join(",\n")},\n${indent}]`;
-  }
-  if (value && typeof value === "object") {
-    const key = (k) => (/^[A-Za-z_$][\w$]*$/.test(k) ? k : JSON.stringify(k));
-    const entries = Object.entries(value).map(([k, x]) => `${key(k)}: ${js(x, inner)}`);
-    const oneLine = `{ ${entries.join(", ")} }`;
-    return fitsOneLine(oneLine) ? oneLine : `{\n${entries.map((x) => inner + x).join(",\n")},\n${indent}}`;
-  }
-  return JSON.stringify(value);
-}
+export { js } from "./code.js";
 
 export { session, MODELS };

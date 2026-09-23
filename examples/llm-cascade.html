@@ -17,13 +17,20 @@
 </head>
 <body>
 <h1>Cascade: kevala first, LLM only when unsure</h1>
-<p class="muted">A support widget. kevala reads the intent in tens of milliseconds. When it is confident and a canned answer exists, the user gets it at once; otherwise the message goes to a (fake, slow) LLM. <span id="stats"></span></p>
+<p class="muted">A support widget. The selected kevala model reads the intent locally. When it is confident and a canned answer exists, the user gets it at once; otherwise the message goes to a (fake, slow) LLM. <span id="stats"></span></p>
 <form id="form"><input id="q" autocomplete="off" placeholder="Ask support something…" value="How do I reset my password?"></form>
 <div id="samples"></div>
 <div id="log"></div>
 
 <script type="module">
-import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
+import { Kevala } from "https://bvolpato.github.io/kevala/js/src/index.js";
+
+const params = new URLSearchParams(location.search);
+const model = params.get("model") || "laya";
+const requestedBackend = params.get("backend");
+const backend = ["auto", "webgpu", "wasm"].includes(requestedBackend) ? requestedBackend : "auto";
+const stats = document.getElementById("stats");
+stats.textContent = `Loading ${model}…`;
 
 
 // Stand-in for your real LLM call: slow, and it costs money. Replace with fetch() to your API.
@@ -52,15 +59,19 @@ const questions = {
 };
 const CONFIDENT = 0.9; // act locally only above this probability
 
-const kevala = await Kevala.load({ model: "laya" });
+const kevala = await Kevala.load({ model, backend });
 let local = 0, escalated = 0;
+const renderStats = () => {
+  stats.textContent = `Model ${model} on ${kevala.info.backend}. So far: ${local} answered locally, ${escalated} escalated.`;
+};
+renderStats();
 
 async function handle(message) {
   const t0 = performance.now();
   const { answers } = await kevala.decide({ message }, questions);
   const a = answers.intent;
   const p = a.probabilities[a.choice];
-  const act = a.action?.act_probability ?? 1; // Laya's own "safe to act" estimate
+  const act = a.action?.act_probability ?? 1; // Models without an action score use the intent probability alone.
   const ms = performance.now() - t0;
   let reply, path;
   if (CANNED[a.choice] && p >= CONFIDENT && act >= 0.5) {
@@ -77,7 +88,7 @@ async function handle(message) {
   div.className = "turn";
   div.innerHTML = `<div><b>You:</b> ${escapeHtml(message)}</div><div><b>Support:</b> ${escapeHtml(reply)}</div><div class="path">${path}</div>`;
   document.getElementById("log").prepend(div);
-  document.getElementById("stats").textContent = `So far: ${local} answered locally, ${escalated} escalated.`;
+  renderStats();
 }
 
 const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);

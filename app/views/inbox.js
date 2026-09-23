@@ -1,8 +1,9 @@
 // Inbox triage: twelve emails and the laya SDK's email questions, sent in growing batches so
 // rows fill in as answers arrive. Sort, filter, open one to see every probability.
 
-import { fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, decideStream, CDN, js } from "../ui.js";
+import { fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, decideStream, js } from "../ui.js";
 import { renderAnswers } from "../answers.js";
+import { loadCode } from "../code.js";
 
 // the laya SDK's email questions, written out
 const QUESTIONS = {
@@ -200,9 +201,8 @@ function rowHTML({ email, index, result }, isOpen) {
   ].join("");
 }
 
-const CODE = `import { Kevala } from "${CDN}";
-
-const kevala = await Kevala.load({ model: "laya" });
+function code(session) {
+  return `${loadCode(session)}
 
 const questions = ${js(QUESTIONS)};
 
@@ -217,6 +217,7 @@ results.forEach((r, i) => {
   const a = r.answers;
   console.log(emails[i].subject, a.category.choice, "urgency", a.urgency.score, "P(phishing)", a.is_phishing.noul);
 });`;
+}
 
 const TEAM_OPTIONS = Object.keys(QUESTIONS.category.criteria)
   .map((team) => `<option value="${esc(team)}">${esc(team)}</option>`)
@@ -273,7 +274,7 @@ export function mount(el, { session }) {
   const runBtn = $("run");
 
   modelGate($("gate"), "triage the inbox");
-  $("code").innerHTML = highlight(CODE);
+  $("code").innerHTML = highlight(code(session));
   wireCopy(el);
 
   let emails = SAMPLE.slice();
@@ -423,6 +424,7 @@ export function mount(el, { session }) {
     render();
   };
   const sync = (s) => {
+    $("code").innerHTML = highlight(code(s));
     const model = s.ready ? s.kevala : null;
     if (model === kevala) return;
     kevala = model;

@@ -3,7 +3,8 @@
 // answers stream in batch by batch.
 
 import { Editor } from "../editor.js";
-import { css, esc, fmtMs, debounce, highlightJSON, highlight, wireCopy, modelGate, decideStream, backendLabel, CDN, js } from "../ui.js";
+import { css, esc, fmtMs, debounce, highlightJSON, highlight, wireCopy, modelGate, decideStream, backendLabel } from "../ui.js";
+import { requestCode } from "../code.js";
 import { renderAnswers } from "../answers.js";
 
 // sample requests; the question sets are the laya SDK's, written out
@@ -278,7 +279,7 @@ const HTML = `<div class="wrap">
       <div class="pg-tabs seg" role="tablist" aria-label="View">
         <button type="button" data-pane-tab="answers" aria-pressed="true">Answers</button>
         <button type="button" data-pane-tab="json" aria-pressed="false">JSON</button>
-        <button type="button" data-pane-tab="code" aria-pressed="false">Code</button>
+        <button type="button" data-pane-tab="code" aria-pressed="false">Request code</button>
         <button type="button" data-pane-tab="profile" aria-pressed="false" title="Time every GPU kernel of this request">Profile</button>
       </div>
       <div data-pane="answers">${EMPTY_ANSWERS}</div>
@@ -287,6 +288,11 @@ const HTML = `<div class="wrap">
       <div data-pane="profile" class="hidden">
         <p class="muted small" data-f="profile">Open this tab with a model loaded on WebGPU to time every kernel of the request.</p>
       </div>
+      <section class="pg-tested" aria-labelledby="pg-tested-heading">
+        <h3 id="pg-tested-heading">Copy tested request</h3>
+        <p class="muted small" data-f="tested-status">Run a request to get the code for its result, including the selected model and your inputs.</p>
+        <div class="code hidden" data-f="tested-block"><pre data-f="tested-code"></pre></div>
+      </section>
     </div>
   </div>
 </div>`;
@@ -389,6 +395,7 @@ export function mount(el, { session }) {
   let active = 0;
   let visible = false;
   let dirty = false;
+  let testedCode = "";
   const stateEditor = new Editor($(".st-ed"), {
     label: "State",
     minRows: 4,
@@ -443,32 +450,13 @@ export function mount(el, { session }) {
   }
 
   function renderCode(request) {
-    if (request.error) return;
-    const model = session.model === "custom" ? "https://example.com/model.kevala" : session.model;
-    const setup = [
-      `import { Kevala } from "${CDN}";`,
-      "",
-      `const kevala = await Kevala.load({ model: "${model}" });`,
-      "",
-      `const questions = ${js(request.questions)};`,
-      "",
-    ];
-    const call =
-      request.items.length === 1
-        ? [
-            `const state = ${js(request.items[0].state)};`,
-            "",
-            "const r = await kevala.decide(state, questions);",
-            "console.log(r.answers);",
-          ]
-        : [
-            `const states = ${js(request.items.map((item) => item.state))};`,
-            "",
-            "// every state in one call, batched into shared forward passes",
-            "const rs = await kevala.decideMany(states.map((state) => ({ state, questions })));",
-            "rs.forEach((r) => console.log(r.answers));",
-          ];
-    $('[data-f="code"]').innerHTML = highlight([...setup, ...call].join("\n"));
+    $('[data-f="code"]').innerHTML = request.error ? esc(request.error) : highlight(requestCode(request, session));
+    if (testedCode) {
+      const matches = !request.error && requestCode(request, session) === testedCode;
+      $('[data-f="tested-status"]').textContent = matches
+        ? "The model and inputs from the last successful run. Copy this into a JavaScript module."
+        : "The last successful run is saved below. Run again to include your edits.";
+    }
   }
 
   // the Profile tab times every kernel; profiling slows requests down, so it is on only there
@@ -544,8 +532,9 @@ export function mount(el, { session }) {
     again = false;
     dirty = false;
     const ticket = ++runCount;
-    const isStale = () => ticket !== runCount;
     const kevala = session.kevala;
+    const isStale = () => ticket !== runCount || kevala !== session.kevala;
+    const code = requestCode(request, session.loadedOptions || session);
     const out = new Array(request.items.length);
     const pane = $('[data-pane="answers"]');
     pane.classList.add("busy");
@@ -567,9 +556,13 @@ export function mount(el, { session }) {
       showTimings(kevala, out, wall, first);
       $('[data-f="json"]').innerHTML = highlightJSON(fmtJSON(out.length === 1 ? out[0] : out));
       if (profiling) $('[data-pane="profile"]').innerHTML = profileHTML(out, wall);
+      testedCode = code;
+      $('[data-f="tested-code"]').innerHTML = highlight(code);
+      $('[data-f="tested-block"]').classList.remove("hidden");
+      renderCode(parseRequest(states, questionEditor.value));
       window.playground = { last: { wall, first, out } };
     } catch (e) {
-      pane.innerHTML = `<div class="error">${esc(e.message)}</div>`;
+      if (!isStale()) pane.innerHTML = `<div class="error">${esc(e.message)}</div>`;
     } finally {
       pane.classList.remove("busy");
       running = false;
@@ -610,6 +603,7 @@ export function mount(el, { session }) {
     if (action === "add") {
       states.push("");
       select(states.length - 1);
+      changed();
       stateEditor.focus();
     }
     if (action === "remove" && states.length > 1) {
@@ -630,6 +624,10 @@ export function mount(el, { session }) {
     validate();
     if (s.ready && visible && dirty) run();
     if (!s.ready) {
+      testedCode = "";
+      $('[data-f="tested-code"]').textContent = "";
+      $('[data-f="tested-block"]').classList.add("hidden");
+      $('[data-f="tested-status"]').textContent = "Run a request to get the code for its result, including the selected model and your inputs.";
       $('[data-pane="answers"]').innerHTML = EMPTY_ANSWERS;
       dirty = true;
     }

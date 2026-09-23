@@ -22,9 +22,15 @@
 </div>
 
 <script type="module">
-import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
+import { Kevala } from "https://bvolpato.github.io/kevala/js/src/index.js";
 
-const kevala = await Kevala.load({ model: "laya" });
+const params = new URLSearchParams(location.search);
+const model = params.get("model") || "laya";
+const requestedBackend = params.get("backend");
+const backend = ["auto", "webgpu", "wasm"].includes(requestedBackend) ? requestedBackend : "auto";
+const log = document.getElementById("log");
+log.textContent = `Loading ${model}…`;
+const kevala = await Kevala.load({ model, backend });
 
 const LANES = 3, ROWS = 8, TICK = 700;
 let ship = 1, rocks = [], dodged = 0, crashes = 0, thinking = false;
@@ -62,7 +68,7 @@ async function decide() {
   opts.forEach((o, i) => (o.p = res[i].answers.safe.noul));
   const best = opts.reduce((a, b) => (b.p > a.p ? b : a));
   ship = best.lane;
-  document.getElementById("log").textContent = opts.map((o) => `${o === best ? "→" : " "} ${o.name.padEnd(5)} P(safe)=${o.p.toFixed(3)}  ${o.state}`).join("\n") + `\n\n${ms.toFixed(0)} ms for ${opts.length} states in one pass (${kevala.info.backend})`;
+  log.textContent = opts.map((o) => `${o === best ? "→" : " "} ${o.name.padEnd(5)} P(safe)=${o.p.toFixed(3)}  ${o.state}`).join("\n") + `\n\n${ms.toFixed(0)} ms for ${opts.length} states in one pass (${model}, ${kevala.info.backend})`;
   thinking = false;
 }
 
