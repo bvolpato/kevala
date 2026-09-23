@@ -10,6 +10,22 @@ const HEAD_DIM = 128;
 
 const plain = Object.freeze({ hidden: 256, heads: 2, kv_heads: 1, lin_key_heads: 2, lin_heads: 2, rotary: 64 });
 const grouped = Object.freeze({ hidden: 256, heads: 4, kv_heads: 2, lin_key_heads: 2, lin_heads: 4, rotary: 64 });
+const ACTUAL_CASES = [
+  ...[31, 124, 532].map((len) => ({
+    name: `actual-16h-${len}`,
+    cfg: Object.freeze({ ...plain, lin_key_heads: 16, lin_heads: 16 }),
+    stage: 1,
+    cpu: false,
+    segments: [{ len, parent: 1, dst: 2 }],
+  })),
+  ...[105, 198, 606].map((len) => ({
+    name: `actual-32h-${len}`,
+    cfg: Object.freeze({ ...plain, lin_key_heads: 16, lin_heads: 32 }),
+    stage: 1,
+    cpu: false,
+    segments: [{ len, parent: 1, dst: 2 }],
+  })),
+];
 
 const CASES = [
   {
@@ -212,6 +228,65 @@ function median(values) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
+function replaceChecked(source, needle, replacement, expectedCount = 1) {
+  const count = source.split(needle).length - 1;
+  if (count !== expectedCount) throw new Error(`direct recurrence transform expected ${expectedCount} occurrences of ${JSON.stringify(needle)}, found ${count}`);
+  return source.split(needle).join(replacement);
+}
+
+function directRecurrenceSource(source) {
+  if (!source.includes("enable subgroups;")) throw new Error("direct recurrence transform requires the rendered subgroup kernel");
+  if (source.includes("//#")) throw new Error("direct recurrence transform requires preprocessed WGSL");
+  let code = source;
+  code = replaceChecked(code, "var<workgroup> qs: array<array<f32, 128>, 2>;\n", "");
+  code = replaceChecked(code, "var<workgroup> ks: array<array<f32, 128>, 2>;\n", "");
+
+  const stageStart = code.indexOf("// the token's q and k (key head kh) into buffer b:");
+  const mainStart = code.indexOf("@compute @workgroup_size(256)", stageStart);
+  if (stageStart < 0 || mainStart < 0 || code.indexOf("fn stage(") < stageStart) {
+    throw new Error("direct recurrence transform could not locate the q/k staging helper");
+  }
+  code = code.slice(0, stageStart) + code.slice(mainStart);
+
+  const loopStart = "  for (var r = 0u; r < sp.y; r++) {\n";
+  const loopIndex = code.indexOf(loopStart);
+  const prologueIndex = code.indexOf("  var v = 0.0;\n  var decay = 0.0;\n  var beta = 0.0;\n", code.indexOf("fn main("));
+  if (prologueIndex < 0 || loopIndex < 0 || loopIndex <= prologueIndex) {
+    throw new Error("direct recurrence transform could not locate the staged recurrence prologue");
+  }
+  code = code.slice(0, prologueIndex) + loopStart + code.slice(loopIndex + loopStart.length);
+
+  const loadBlockEnd = "    var kv = 0.0;\n";
+  const loadBlockStart = "    let t = sp.x + r;\n    let cur = r & 1u;\n";
+  const loadStart = code.indexOf(loadBlockStart);
+  const loadEnd = code.indexOf(loadBlockEnd, loadStart);
+  if (loadStart < 0 || loadEnd < 0) throw new Error("direct recurrence transform could not locate the per-token staging block");
+  const scalarLoads = [
+    "    let t = sp.x + r;",
+    "    let v = C[t * LIN_DIM + 2u * LIN_QK + h * 128u + column];",
+    "    let decay = AB[t * (2u * LIN_HEADS) + h];",
+    "    let beta = AB[t * (2u * LIN_HEADS) + LIN_HEADS + h];",
+    ...Array.from({ length: 8 }, (_, i) => `    let qv${i} = C[t * LIN_DIM + kh * 128u + k0 + ${i}u];`),
+    ...Array.from({ length: 8 }, (_, i) => `    let key${i} = C[t * LIN_DIM + LIN_QK + kh * 128u + k0 + ${i}u];`),
+    "",
+  ].join("\n");
+  code = code.slice(0, loadStart) + scalarLoads + code.slice(loadEnd);
+
+  for (let i = 0; i < 8; i++) {
+    code = replaceChecked(code, `ks[cur][k0 + ${i}u]`, `key${i}`, 2);
+    code = replaceChecked(code, `qs[cur][k0 + ${i}u]`, `qv${i}`);
+  }
+  code = replaceChecked(code, "    v = nv;\n    decay = nd;\n    beta = nb;\n    workgroupBarrier();\n", "");
+  if (/\bstage\s*\(|\b(?:qs|ks|cur|nv|nd|nb)\b|workgroupBarrier\s*\(/.test(code)) {
+    throw new Error("direct recurrence transform left staged or barrier-based code behind");
+  }
+  if (!code.includes("let sp = workgroupUniformLoad(&info);")) throw new Error("direct recurrence transform lost the uniform segment load");
+  if (code.split("subgroupShuffleXor(kv,").length - 1 !== 4 || code.split("subgroupShuffleXor(o,").length - 1 !== 4) {
+    throw new Error("direct recurrence transform changed subgroup reduction structure");
+  }
+  return code;
+}
+
 function adapterInfo(gpu) {
   const info = gpu.adapter.info || {};
   return {
@@ -326,16 +401,28 @@ async function main() {
     }
     const candidate = query.get("candidate") || "current";
     const baselineCandidate = query.get("baselineCandidate") || "current";
-    const widths = { current: 4, recur8: 8, recur16: 16 };
+    const widths = { current: 4, recur8: 8, recur16: 16, recur16direct: 16 };
+    if (baselineCandidate === "recur16direct") throw new Error("recur16direct is supported only as the measured candidate");
     for (const name of [candidate, baselineCandidate]) {
       if (!Object.hasOwn(widths, name)) throw new Error(`unknown recurrence candidate ${name}`);
       if (useSubgroups && (gpu.adapter.info?.subgroupMinSize || 0) < widths[name]) {
         throw new Error(`${name} needs subgroups of at least ${widths[name]} lanes; use subgroups=0 for the shared path`);
       }
     }
+    const actualParam = query.get("actual");
+    if (actualParam !== null && actualParam !== "0" && actualParam !== "1") {
+      throw new Error(`actual must be 0 or 1, got ${actualParam}`);
+    }
+    const includeActual = actualParam === "1";
+    const baselineParam = query.get("baselineWasm");
+    if (candidate === "recur16direct") {
+      if (!useSubgroups) throw new Error("recur16direct requires subgroups=1");
+      if (baselineCandidate !== "recur16") throw new Error("recur16direct requires baselineCandidate=recur16");
+      if (!baselineParam) throw new Error("recur16direct requires baselineWasm=<url> for exact paired comparison");
+    }
     const timingHeadsParam = query.get("timingHeads");
     let timingHeads = null;
-    let cases = CASES;
+    let cases = includeActual ? [...CASES, ...ACTUAL_CASES] : CASES;
     if (timingHeadsParam !== null) {
       const parsed = Number(timingHeadsParam);
       if (!Number.isInteger(parsed) || ![16, 32, 48].includes(parsed)) {
@@ -343,12 +430,11 @@ async function main() {
       }
       timingHeads = parsed;
       const timingCfg = Object.freeze({ ...plain, lin_key_heads: Math.min(16, parsed), lin_heads: parsed });
-      cases = CASES.map((test) => test.name === "stage1-long-528" ? { ...test, cfg: timingCfg } : test);
+      cases = cases.map((test) => test.name === "stage1-long-528" ? { ...test, cfg: timingCfg } : test);
     }
     timer = makeTimer(device);
     owned.push(timer.resolved, timer.read);
     const current = await kernelSource();
-    const baselineParam = query.get("baselineWasm");
     const baselineUrl = baselineParam ? new URL(baselineParam, document.baseURI).href : null;
     const baseline = baselineUrl ? await kernelSource(baselineUrl) : null;
     const samples = numberParam("samples", 3, 1, 10);
@@ -356,15 +442,17 @@ async function main() {
     const pipelineCache = new Map();
     const getPipeline = async (source, cfg) => {
       const sourceKey = source === current ? "current" : "baseline";
-      const lanes = widths[source === current ? candidate : baselineCandidate];
+      const selectedCandidate = sourceKey === "current" ? candidate : baselineCandidate;
+      const lanes = widths[selectedCandidate];
       const kernel = `kev_recur_lanes${lanes === 4 ? "" : lanes}`;
       const zTiles = lanes / 2;
-      const cfgKey = `${sourceKey}|${kernel}|${JSON.stringify(cfg)}`;
+      const cfgKey = `${sourceKey}|${selectedCandidate}|${kernel}|${JSON.stringify(cfg)}`;
       if (!pipelineCache.has(cfgKey)) {
-        const code = source(kernel, { subgroups: useSubgroups, kev: cfg });
+        let code = source(kernel, { subgroups: useSubgroups, kev: cfg });
+        if (selectedCandidate === "recur16direct") code = directRecurrenceSource(code);
         pipelineCache.set(cfgKey, pipeline(device, code, `${kernel}.${sourceKey}.${cfg.lin_heads}`));
       }
-      return { pipeline: await pipelineCache.get(cfgKey), kernel, zTiles };
+      return { pipeline: await pipelineCache.get(cfgKey), kernel, candidate: selectedCandidate, zTiles };
     };
     const timing = [];
     const correctness = { ok: true, cpu: [], variants: [], errors: [] };
@@ -433,7 +521,9 @@ async function main() {
         correctness.variants.push({ case: test.name, exact, withinTolerance, core: coreDiff, state: stateDiff, coreGuard, stateGuard });
         oldNewExact &&= exact;
         oldNewWithinTolerance &&= withinTolerance;
-        if (!(exact || ((candidate !== "current" || baselineCandidate !== "current") && withinTolerance))) correctness.ok = false;
+        if (candidate === "recur16direct" ? !exact : !(exact || ((candidate !== "current" || baselineCandidate !== "current") && withinTolerance))) {
+          correctness.ok = false;
+        }
       }
       const reps = T <= 7 ? 16 : T <= 31 ? 8 : T <= 129 ? 2 : 1;
       const currentSamples = [];
@@ -466,10 +556,12 @@ async function main() {
       baselineWasm: baselineUrl,
       candidate,
       baselineCandidate,
+      exactRequired: candidate === "recur16direct",
       timingHeads,
+      actualCases: includeActual,
       variantProvenance: {
-        current: { source: "current", wasmUrl: current.wasmUrl, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups },
-        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
+        current: { source: "current", wasmUrl: current.wasmUrl, candidate, kernel: `kev_recur_lanes${widths[candidate] === 4 ? "" : widths[candidate]}`, zTiles: widths[candidate] / 2, subgroups: useSubgroups, ...(candidate === "recur16direct" ? { transform: "recur16direct" } : {}) },
+        ...(baseline ? { baseline: { source: "baseline", wasmUrl: baseline.wasmUrl, candidate: baselineCandidate, kernel: `kev_recur_lanes${widths[baselineCandidate] === 4 ? "" : widths[baselineCandidate]}`, zTiles: widths[baselineCandidate] / 2, subgroups: useSubgroups } } : {}),
       },
       cases: timing,
       cpuMaxAbs,
