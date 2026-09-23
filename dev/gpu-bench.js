@@ -59,18 +59,19 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T, config), groups: config.groups, baseline };
   }
   const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_packed", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
-  const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
+  const packed16 = match[1] === "matmul_packed";
+  const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups }) : match[3] ? Number(match[3]) : 4;
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline };
+  return { label: raw, name: packed16 ? "matmul" : f16 ? match[1].slice(0, -2) : match[1], f16, packed16, target, rows, groups, baseline };
 }
 
 function makeRng(seed) {
@@ -134,8 +135,9 @@ function finiteSummary(values) {
 function compareCpu(input, values, kernel, mode, withBias) {
   const all = input.T * input.N <= 8192;
   const indices = sampleIndices(input.T, input.N, all);
-  const absTolerance = kernel.f16 ? 0.03 : 0.0005;
-  const relativeTolerance = kernel.f16 ? 0.002 : 0.0001;
+  const halfTiles = kernel.f16 || kernel.packed16;
+  const absTolerance = halfTiles ? 0.03 : 0.0005;
+  const relativeTolerance = halfTiles ? 0.002 : 0.0001;
   let maxAbs = 0;
   let maxRelative = 0;
   let worst = null;
@@ -161,18 +163,19 @@ function compareCpu(input, values, kernel, mode, withBias) {
   return { ok: true, samples: indices.length, maxAbs, maxRelative, worst };
 }
 
-function compareVariants(outputs, labels, tolerance) {
+function compareVariants(outputs, labels, tolerance, packedLabels = []) {
   if (labels.length < 2) return { ok: true, samples: 0, maxAbs: 0, maxRelative: 0 };
   const baseline = outputs[labels[0]];
   let maxAbs = 0;
   let maxRelative = 0;
   for (const label of labels.slice(1)) {
     const values = outputs[label];
+    const pairTolerance = packedLabels.includes(labels[0]) || packedLabels.includes(label) ? { abs: 0.03, relative: 0.002 } : tolerance;
     for (let i = 0; i < baseline.length; i++) {
       const abs = Math.abs(values[i] - baseline[i]);
       maxAbs = Math.max(maxAbs, abs);
       maxRelative = Math.max(maxRelative, abs / Math.max(1, Math.abs(baseline[i])));
-      if (abs > tolerance.abs + tolerance.relative * Math.max(1, Math.abs(baseline[i]))) {
+      if (abs > pairTolerance.abs + pairTolerance.relative * Math.max(1, Math.abs(baseline[i]))) {
         return { ok: false, compared: [labels[0], label], maxAbs, maxRelative, message: `kernel mismatch at output ${i}: ${labels[0]} vs ${label}` };
       }
     }
@@ -323,7 +326,8 @@ async function main() {
     const shaderSource = variant.baseline ? baselineSource : source;
     const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      const code = shaderSource(variant.name, { f16: variant.f16, packed16: variant.packed16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
+      if (variant.packed16 && !code.includes("pack2x16float")) throw new Error(`${variant.label}: WASM does not support packed16`);
       const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       pipelineCache.set(key, Promise.all([
         pipeline(device, code, `${variant.label}.matmul`, pipelineLayouts.matmul),
@@ -345,6 +349,7 @@ async function main() {
   const correctness = { ok: true, cpu: [], variants: [], errors: [] };
   const medians = [];
   const variantTolerance = { abs: device.features.has("shader-f16") ? 0.03 : 0.0005, relative: device.features.has("shader-f16") ? 0.002 : 0.0001 };
+  const packedLabels = allVariants.filter((variant) => variant.packed16).map((variant) => variant.label);
 
   for (let shapeIndex = 0; shapeIndex < shapes.length; shapeIndex++) {
     const shape = shapes[shapeIndex];
@@ -439,7 +444,7 @@ async function main() {
         }, `${caseLabel(shape)} epilogue reset`, uncaptured);
       }
     }
-    const variantCheck = compareVariants(outputs, labels, variantTolerance);
+    const variantCheck = compareVariants(outputs, labels, variantTolerance, packedLabels);
     correctness.variants.push({ shape: caseLabel(shape), ...variantCheck });
     if (!variantCheck.ok) correctness.ok = false;
     const shapeMedians = timings.map((item) => item.medianMs);

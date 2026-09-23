@@ -102,6 +102,8 @@ pub const KERNELS: &[&str] = &[
 pub struct Spec {
     /// Matmul: keep the workgroup tiles in f16 (half the workgroup-memory traffic).
     pub f16: bool,
+    /// Matmul: pack pairs of f16 values into u32 workgroup tiles without shader-f16.
+    pub packed16: bool,
     /// Kev attention: reduce inside 32-lane subgroups.
     pub subgroups: bool,
     /// Matmul and reduce: rows per thread, 1 to 4 (a tile covers 16 * rows rows).
@@ -137,6 +139,7 @@ impl Default for Spec {
     fn default() -> Spec {
         Spec {
             f16: false,
+            packed16: false,
             subgroups: false,
             rows: 4,
             groups: 1,
@@ -148,13 +151,19 @@ impl Default for Spec {
 }
 
 impl Spec {
-    /// Reads `{ f16, subgroups, rows, groups, splitTarget, n, k }`; missing fields keep their default.
+    /// Reads `{ f16, packed16, subgroups, rows, groups, splitTarget, n, k }`; missing fields keep their default.
     pub fn from_json(v: &Value) -> Result<Spec, String> {
         let mut s = Spec::default();
         let flag = |key: &str| v.get(key).map(|x| matches!(x, Value::Bool(true)));
         let number = |key: &str| v.get(key).and_then(Value::as_usize).map(|n| n as u32);
         if let Some(f) = flag("f16") {
             s.f16 = f;
+        }
+        if let Some(f) = flag("packed16") {
+            s.packed16 = f;
+        }
+        if s.f16 && s.packed16 {
+            return Err("f16 and packed16 are mutually exclusive".into());
         }
         if let Some(f) = flag("subgroups") {
             s.subgroups = f;
@@ -220,8 +229,13 @@ impl Spec {
         let bn = 64 * self.groups;
         let flag = |on: bool| if on { "1".to_string() } else { String::new() };
         let (n, k) = self.shape.unwrap_or((0, 0));
+        let tile = if self.f16 { "vec4<f16>" } else { "vec4<f32>" };
         vec![
             ("F16", flag(self.f16)),
+            ("PACKED16", flag(self.packed16)),
+            ("MM_TILE", if self.packed16 { "vec2<u32>" } else { tile }.to_string()),
+            ("MM_PACK", if self.packed16 { "pack_tile" } else { tile }.to_string()),
+            ("MM_UNPACK", if self.packed16 { "unpack_tile" } else { "vec4<f32>" }.to_string()),
             ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
             ("GENERIC_UNROLL", flag(!self.f16 && self.groups == 1)),
             ("ROWS_GE_2", flag(self.rows >= 2)),
