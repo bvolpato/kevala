@@ -386,27 +386,23 @@ export class GpuTrunk {
     const cfg = this.cfg;
     const pipe = (code, label) => pipeline(d, code, label);
     const kernel = (name, spec) => pipe(this.wgsl(name, spec), name);
-    const [genericMm, pNorm, pRope, pAttn, pGeglu, pGather] = await Promise.all([
+    const wi = this.weights.tensors.get("enc.0.wi")?.info;
+    const wiShape = wi?.shape;
+    const gateUpCapable = this.gpuKernel === "auto" && !d.features.has("shader-f16") &&
+      d.limits.maxComputeWorkgroupStorageSize >= 24576 && wi?.dtype === "q8" &&
+      Number(wi.block) === 32 && Array.isArray(wiShape) && wiShape[0] === 2 * cfg.intermediate &&
+      wiShape[1] === cfg.hidden && wiShape[1] % 32 === 0;
+    const [genericMm, pNorm, pRope, pAttn, pGeglu, pGather, pGateUp] = await Promise.all([
       matmulPipelines(d, this.wgsl),
       kernel("norm"),
       kernel("rope"),
       kernel(...this.attnKernel),
       kernel("geglu"),
       kernel("gather"),
+      gateUpCapable ? kernel("matmul_gate_up") : null,
     ]);
     const { calibrateMatmul, selectedMatmulKernel } = await import("./gpu-tuning.js");
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic: genericMm } });
-    const { calibrateGateUp, canFuse, selectionKey } = await import("./gpu-gated.js");
-    const descriptors = Array.from({ length: cfg.layers }, (_, i) => {
-      const weight = this.weights.get(`enc.${i}.wi`);
-      return { gate: weight, up: weight, activation: 1, packed: true };
-    });
-    const gated = await calibrateGateUp(d, this.wgsl, descriptors, { kernel: this.gpuKernel, pipelines: { generic: this.tuning.pipelines.generic } });
-    this.pGateUp = gated.pipeline;
-    this.gateUpSelection = gated.selection;
-    this.canFuseGateUp = canFuse;
-    this.gateUpSelectionKey = selectionKey;
-    this.tuning.diagnostics.gated = gated.diagnostics;
     this.selectMatmulKernel = selectedMatmulKernel;
     this.mm = this.tuning.pipelines.generic;
     this.pNorm = pNorm;
@@ -414,6 +410,7 @@ export class GpuTrunk {
     this.pAttn = pAttn;
     this.pGeglu = pGeglu;
     this.pGather = pGather;
+    this.pGateUp = pGateUp;
     this.globals = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
     const f32buf = (arr, usage = U.STORAGE) => {
       const b = d.createBuffer({ size: Math.max(16, arr.byteLength), usage: usage | U.COPY_DST });
@@ -523,15 +520,13 @@ export class GpuTrunk {
       const wiOp = mm(n("wi"), null, this.h, this.up, 0);
       const gegluOp = { kind: "geglu", I: cfg.intermediate, group: bg(this.pGeglu, [this.globals, this.uniform([cfg.intermediate, 0, 0, 0]), this.up, this.act]) };
       const wiWeight = T(n("wi"));
-      const descriptor = { gate: wiWeight, up: wiWeight, activation: 1, packed: true };
-      if (this.pGateUp && wiOp.N === 2 * cfg.intermediate && wiOp.K === cfg.hidden && this.canFuseGateUp(descriptor)) {
+      if (this.pGateUp && wiOp.N === 2 * cfg.intermediate && wiWeight.info.dtype === "q8" && wiWeight.sbuf) {
         ops.push({
           kind: "gate_up",
           label: "mm.wi.activation",
           N: cfg.intermediate,
           packedN: wiOp.N,
           K: wiOp.K,
-          descriptor,
           group: bg(this.pGateUp, [this.globals, this.uniform([cfg.intermediate, wiOp.K, cfg.intermediate, 1]), this.h, wiWeight.buf, wiWeight.sbuf, wiWeight.buf, wiWeight.sbuf, this.act]),
           fallback: [wiOp, gegluOp],
         });
@@ -591,11 +586,11 @@ export class GpuTrunk {
     q.writeBuffer(this.rowsBuf, 0, new Uint32Array(rows));
     const prof = this.profiler;
     const heads = this.cfg.heads;
-    const ops = this.pGateUp ? this.ops.flatMap((op) => {
-      if (!op.descriptor) return [op];
-      const key = this.gateUpSelectionKey(op.descriptor, tokens);
-      return this.gateUpSelection.get(key) === "fused" && this.canFuseGateUp(op.descriptor, { tokens, splitTarget: this.mm.splitTarget }) ? [op] : op.fallback;
-    }) : this.ops;
+    const ops = this.ops.flatMap((op) => op.fallback && (
+      tokens < 64 ||
+      mmSplits(tokens, op.N, op.K, this.mm.splitTarget, 64, 64) !== 1 ||
+      mmSplits(tokens, op.packedN, op.K, this.mm.splitTarget, 64, 64) !== 1
+    ) ? op.fallback : [op]);
     const groups = tokens > YIELD_TOKENS && !prof ? chunks(ops, YIELD_CHUNKS) : [ops];
     let enc = d.createCommandEncoder();
     for (let gi = 0; gi < groups.length; gi++) {
