@@ -1,6 +1,11 @@
 // Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
 //
 //#if GENERIC_UNROLL
+//#if GENERIC_32X4
+// A workgroup of 32 x 4 threads covers 64 rows and 64 columns. Each thread owns
+// rows y + 4 i for i < 16, and columns x and x + 32, in sixteen named vec2 accumulators.
+// Each thread stages two logical loader chunks into the unchanged K32 shared tile.
+//#else
 //#if ROWS_GE_4
 // A workgroup of 32 x 8 threads covers 64 rows and 64 columns. Each thread owns
 // rows y + 8 i and columns x and x + 32, with eight named vec2 FP32 accumulators.
@@ -9,6 +14,7 @@
 // rows y + 8 i for i < 2 * {{ROWS}}, and columns x and x + 32, in named vec2 accumulators.
 //#endif
 // The K32 loaders and shared weight swizzle are identical to the 16 x 16 path.
+//#endif
 //#else
 // A workgroup of 16 x 16 threads covers {{BM}} rows ({{ROWS}} per thread) and {{BN}} columns
 // ({{GROUPS}} groups of 64); thread (x, y) owns rows y + 16 i and columns x + 16 j + 64 g, so
@@ -57,10 +63,42 @@ fn mm_store(value: f32, row: u32, col: u32, bias: f32, T: u32, N: u32, splits: u
 }
 
 //#endif
+//#if GENERIC_32X4
+fn stage_chunk(logical: u32, m0: u32, n0: u32, K: u32, N: u32, T: u32, nb: u32, kb: u32) {
+  let lr = logical / 4u;
+  let lq = logical % 4u;
+  let xrow = m0 + lr;
+  if (xrow < T) {
+    let base = (xrow * K + kb * 32u) / 4u + lq * 2u;
+    xs[lr * 8u + lq * 2u] = X[base];
+    xs[lr * 8u + lq * 2u + 1u] = X[base + 1u];
+  } else {
+    xs[lr * 8u + lq * 2u] = vec4<f32>(0.0);
+    xs[lr * 8u + lq * 2u + 1u] = vec4<f32>(0.0);
+  }
+  let wrow = n0 + lr;
+  let sw = lr & 7u;
+  if (wrow < N) {
+    let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
+    let s = S[wrow * nb + kb];
+    let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
+    ws[lr * 8u + ((lq * 2u) ^ sw)] = sx(lo.x) * s;
+    ws[lr * 8u + ((lq * 2u + 1u) ^ sw)] = sx(lo.y) * s;
+  } else {
+    ws[lr * 8u + ((lq * 2u) ^ sw)] = vec4<f32>(0.0);
+    ws[lr * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<f32>(0.0);
+  }
+}
+
+//#endif
 //#include splits
 
 //#if GENERIC_UNROLL
+//#if GENERIC_32X4
+@compute @workgroup_size(32, 4)
+//#else
 @compute @workgroup_size(32, 8)
+//#endif
 //#else
 @compute @workgroup_size(16, 16)
 //#endif
@@ -82,6 +120,24 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   let kb0 = wg.z * per;
   let kb1 = min(nb, kb0 + per);
 //#if GENERIC_UNROLL
+//#if GENERIC_32X4
+  var acc0 = vec2<f32>(0.0);
+  var acc1 = vec2<f32>(0.0);
+  var acc2 = vec2<f32>(0.0);
+  var acc3 = vec2<f32>(0.0);
+  var acc4 = vec2<f32>(0.0);
+  var acc5 = vec2<f32>(0.0);
+  var acc6 = vec2<f32>(0.0);
+  var acc7 = vec2<f32>(0.0);
+  var acc8 = vec2<f32>(0.0);
+  var acc9 = vec2<f32>(0.0);
+  var acc10 = vec2<f32>(0.0);
+  var acc11 = vec2<f32>(0.0);
+  var acc12 = vec2<f32>(0.0);
+  var acc13 = vec2<f32>(0.0);
+  var acc14 = vec2<f32>(0.0);
+  var acc15 = vec2<f32>(0.0);
+//#else
   var acc0 = vec2<f32>(0.0);
   var acc1 = vec2<f32>(0.0);
 //#if ROWS_GE_2
@@ -96,10 +152,16 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   var acc6 = vec2<f32>(0.0);
   var acc7 = vec2<f32>(0.0);
 //#endif
+//#endif
 //#else
   var acc: array<vec4<f32>, {{ACC_LEN}}>; // [i][g]: row y + 16 i, columns x + 16 j + 64 g for j < 4
 //#endif
 
+//#if GENERIC_32X4
+  for (var kb = kb0; kb < kb1; kb++) {
+    stage_chunk(li, m0, n0, K, N, T, nb, kb);
+    stage_chunk(li + 128u, m0, n0, K, N, T, nb, kb);
+//#else
   // loaders: 4 threads per row, 8 values each; X rows 0..{{BM}}, W rows lr + 64 g
   let lr = li / 4u;
   let lq = li % 4u;
@@ -137,9 +199,310 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       ws[r * 8u + ((lq * 2u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg]);
       ws[r * 8u + ((lq * 2u + 1u) ^ sw)] = vec4<{{TILE}}>(wv[2u * gg + 1u]);
     }
+//#endif
     workgroupBarrier();
     let nx = lid.x & 7u;
 //#if GENERIC_UNROLL
+//#if GENERIC_32X4
+    // Reuse two weight vectors and consume each input row before loading the next.
+    let c = lid.x;
+    {
+      let kq = 0u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 1u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 2u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 3u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 4u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 5u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 6u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+    {
+      let kq = 7u;
+      let b0 = vec4<f32>(ws[c * 8u + (kq ^ nx)]);
+      let b1 = vec4<f32>(ws[(c + 32u) * 8u + (kq ^ nx)]);
+      let a0 = vec4<f32>(xs[(lid.y + 0u) * 8u + kq]);
+      acc0 += vec2<f32>(dot(a0, b0), dot(a0, b1));
+      let a1 = vec4<f32>(xs[(lid.y + 4u) * 8u + kq]);
+      acc1 += vec2<f32>(dot(a1, b0), dot(a1, b1));
+      let a2 = vec4<f32>(xs[(lid.y + 8u) * 8u + kq]);
+      acc2 += vec2<f32>(dot(a2, b0), dot(a2, b1));
+      let a3 = vec4<f32>(xs[(lid.y + 12u) * 8u + kq]);
+      acc3 += vec2<f32>(dot(a3, b0), dot(a3, b1));
+      let a4 = vec4<f32>(xs[(lid.y + 16u) * 8u + kq]);
+      acc4 += vec2<f32>(dot(a4, b0), dot(a4, b1));
+      let a5 = vec4<f32>(xs[(lid.y + 20u) * 8u + kq]);
+      acc5 += vec2<f32>(dot(a5, b0), dot(a5, b1));
+      let a6 = vec4<f32>(xs[(lid.y + 24u) * 8u + kq]);
+      acc6 += vec2<f32>(dot(a6, b0), dot(a6, b1));
+      let a7 = vec4<f32>(xs[(lid.y + 28u) * 8u + kq]);
+      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
+      let a8 = vec4<f32>(xs[(lid.y + 32u) * 8u + kq]);
+      acc8 += vec2<f32>(dot(a8, b0), dot(a8, b1));
+      let a9 = vec4<f32>(xs[(lid.y + 36u) * 8u + kq]);
+      acc9 += vec2<f32>(dot(a9, b0), dot(a9, b1));
+      let a10 = vec4<f32>(xs[(lid.y + 40u) * 8u + kq]);
+      acc10 += vec2<f32>(dot(a10, b0), dot(a10, b1));
+      let a11 = vec4<f32>(xs[(lid.y + 44u) * 8u + kq]);
+      acc11 += vec2<f32>(dot(a11, b0), dot(a11, b1));
+      let a12 = vec4<f32>(xs[(lid.y + 48u) * 8u + kq]);
+      acc12 += vec2<f32>(dot(a12, b0), dot(a12, b1));
+      let a13 = vec4<f32>(xs[(lid.y + 52u) * 8u + kq]);
+      acc13 += vec2<f32>(dot(a13, b0), dot(a13, b1));
+      let a14 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);
+      acc14 += vec2<f32>(dot(a14, b0), dot(a14, b1));
+      let a15 = vec4<f32>(xs[(lid.y + 60u) * 8u + kq]);
+      acc15 += vec2<f32>(dot(a15, b0), dot(a15, b1));
+    }
+//#else
     // Keep the eight K/4 steps explicit, reusing two weight vectors across eight rows.
     let c = lid.x;
     {
@@ -358,6 +721,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));
 //#endif
     }
+//#endif
 //#else
     // The f32 R4/G1 path keeps eight K/4 steps and four row accumulators visible to the compiler.
     for (var kq = 0u; kq < 8u; kq++) {
@@ -378,6 +742,55 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
   }
 
 //#if GENERIC_UNROLL
+//#if GENERIC_32X4
+  let row = m0 + lid.y;
+  {
+    let col = n0 + lid.x + 0u;
+    if (col < N) {
+      var bias = 0.0;
+      if (p.bias == 1u) { bias = B[col]; }
+      mm_store(acc0.x, row + 0u, col, bias, T, N, splits, wg.z);
+      mm_store(acc1.x, row + 4u, col, bias, T, N, splits, wg.z);
+      mm_store(acc2.x, row + 8u, col, bias, T, N, splits, wg.z);
+      mm_store(acc3.x, row + 12u, col, bias, T, N, splits, wg.z);
+      mm_store(acc4.x, row + 16u, col, bias, T, N, splits, wg.z);
+      mm_store(acc5.x, row + 20u, col, bias, T, N, splits, wg.z);
+      mm_store(acc6.x, row + 24u, col, bias, T, N, splits, wg.z);
+      mm_store(acc7.x, row + 28u, col, bias, T, N, splits, wg.z);
+      mm_store(acc8.x, row + 32u, col, bias, T, N, splits, wg.z);
+      mm_store(acc9.x, row + 36u, col, bias, T, N, splits, wg.z);
+      mm_store(acc10.x, row + 40u, col, bias, T, N, splits, wg.z);
+      mm_store(acc11.x, row + 44u, col, bias, T, N, splits, wg.z);
+      mm_store(acc12.x, row + 48u, col, bias, T, N, splits, wg.z);
+      mm_store(acc13.x, row + 52u, col, bias, T, N, splits, wg.z);
+      mm_store(acc14.x, row + 56u, col, bias, T, N, splits, wg.z);
+      mm_store(acc15.x, row + 60u, col, bias, T, N, splits, wg.z);
+    }
+  }
+  {
+    let col = n0 + lid.x + 32u;
+    if (col < N) {
+      var bias = 0.0;
+      if (p.bias == 1u) { bias = B[col]; }
+      mm_store(acc0.y, row + 0u, col, bias, T, N, splits, wg.z);
+      mm_store(acc1.y, row + 4u, col, bias, T, N, splits, wg.z);
+      mm_store(acc2.y, row + 8u, col, bias, T, N, splits, wg.z);
+      mm_store(acc3.y, row + 12u, col, bias, T, N, splits, wg.z);
+      mm_store(acc4.y, row + 16u, col, bias, T, N, splits, wg.z);
+      mm_store(acc5.y, row + 20u, col, bias, T, N, splits, wg.z);
+      mm_store(acc6.y, row + 24u, col, bias, T, N, splits, wg.z);
+      mm_store(acc7.y, row + 28u, col, bias, T, N, splits, wg.z);
+      mm_store(acc8.y, row + 32u, col, bias, T, N, splits, wg.z);
+      mm_store(acc9.y, row + 36u, col, bias, T, N, splits, wg.z);
+      mm_store(acc10.y, row + 40u, col, bias, T, N, splits, wg.z);
+      mm_store(acc11.y, row + 44u, col, bias, T, N, splits, wg.z);
+      mm_store(acc12.y, row + 48u, col, bias, T, N, splits, wg.z);
+      mm_store(acc13.y, row + 52u, col, bias, T, N, splits, wg.z);
+      mm_store(acc14.y, row + 56u, col, bias, T, N, splits, wg.z);
+      mm_store(acc15.y, row + 60u, col, bias, T, N, splits, wg.z);
+    }
+  }
+//#else
   let row = m0 + lid.y;
   {
     let col = n0 + lid.x + 0u;
@@ -421,6 +834,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
 //#endif
     }
   }
+//#endif
 //#else
   for (var gg = 0u; gg < {{GROUPS}}u; gg++) {
     for (var j = 0u; j < 4u; j++) {
