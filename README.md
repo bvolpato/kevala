@@ -3,7 +3,7 @@
 <p align="center"><b>Ask questions about text with Laya, Kev, SemIf, and Gemma 4 running on the user's own hardware.</b></p>
 
 <p align="center">
-  <a href="https://bvolpato.github.io/kevala/#/tetris"><img src="docs/tetris.gif" alt="Tetris played live by the Laya decision model on WebGPU: the model scores every landing spot and presses the keys to get there" width="760"></a>
+  <a href="https://bvolpato.github.io/kevala/#/tetris"><img src="docs/tetris.gif" alt="Model-guided Tetris running in the browser: game rules shortlist promising landings, a decision model scores them, and the piece follows the chosen path" width="760"></a>
 </p>
 
 <p align="center">
@@ -162,9 +162,10 @@ generator; see the [Gemma 4 notes](docs/gemma4.md#verification). Open
 
 - [Playground](https://bvolpato.github.io/kevala/#/playground): any state, any questions, any model
   and backend, with the response as highlighted JSON and the code to reproduce it.
-- [Tetris](https://bvolpato.github.io/kevala/#/tetris): the model plays. When a piece appears, code
-  lists every spot it can land in and describes each outcome in words; the model scores the candidates
-  in batches, and the piece presses the keys (turn, left, right, drop) toward the best one.
+- [Tetris](https://bvolpato.github.io/kevala/#/tetris): game rules search turn, slide, and drop
+  paths, shortlist promising outcomes, and describe them in words. The selected model scores that
+  shortlist; the piece presses the keys toward the chosen landing. See the [seeded gameplay and
+  latency measurements](docs/tetris-policy.md).
 - [Guardrail](https://bvolpato.github.io/kevala/#/guardrail): a prompt-injection and jailbreak gate in
   front of an LLM that acts on confident answers and escalates the unsure ones.
 - [Inbox](https://bvolpato.github.io/kevala/#/inbox): triage a mailbox, with rows filling in as each

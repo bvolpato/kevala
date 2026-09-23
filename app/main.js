@@ -11,7 +11,7 @@ const defineRoute = (id, label, title) => ({ id, label, title, load: () => impor
 const ROUTES = [
   defineRoute("home", "Home", "kevala · decision models that run in the page"),
   defineRoute("playground", "Playground", "Playground · kevala"),
-  defineRoute("tetris", "Tetris", "Tetris played by a decision model · kevala"),
+  defineRoute("tetris", "Tetris", "Model-guided Tetris · kevala"),
   defineRoute("guardrail", "Guardrail", "Prompt guardrail · kevala"),
   defineRoute("inbox", "Inbox", "Inbox triage · kevala"),
   defineRoute("how", "How it works", "How kevala works"),

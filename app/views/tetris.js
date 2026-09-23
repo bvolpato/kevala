@@ -1,7 +1,7 @@
 // Tetris: rendering, input (keyboard with DAS/ARR, touch), the simulation loop and the model
 // panel. Game rules live in ../tetris/engine.js, the auto player in ../tetris/ai.js.
 
-import { Game, W, H, HIDDEN, VISIBLE, SHAPES, pieceCells } from "../tetris/engine.js";
+import { Game, W, H, HIDDEN, VISIBLE, SOFT_DROP_MS, SHAPES, pieceCells } from "../tetris/engine.js";
 import { AutoPlayer, QUESTION, SPEEDS, KEYS, GLYPH, KEY_NAME } from "../tetris/ai.js";
 import { css, esc, fmtMs, highlightJSON, logo, modelGate } from "../ui.js";
 import { params } from "../session.js";
@@ -38,8 +38,8 @@ const KEY_TILES = ["rotate", "left", "drop", "right"]
 const HTML = `<div class="wrap">
   <div class="t-head">
     <div>
-      <h1>Tetris, played by a decision model</h1>
-      <p>The model scores every place the piece can land on this device, then presses the keys.</p>
+      <h1>Model-guided Tetris</h1>
+      <p>Game rules shortlist promising landings the auto controller can reach; the selected model scores their board states.</p>
     </div>
     <div class="t-tools">
       <button type="button" class="btn auto-btn" aria-pressed="false"><span class="led"></span>Auto <kbd>A</kbd></button>
@@ -66,9 +66,9 @@ const HTML = `<div class="wrap">
       <div class="overlay">
         <div class="ov-card">
           <h2 class="ov-title">Tetris</h2>
-          <p class="ov-text muted">Play yourself, or let the model play.</p>
+          <p class="ov-text muted">Play yourself, or watch model-guided play.</p>
           <div class="row">
-            <button class="btn primary ov-auto" type="button">Watch the model play</button>
+            <button class="btn primary ov-auto" type="button">Watch Auto play</button>
             <button class="btn ov-play" type="button">Play <kbd>Enter</kbd></button>
           </div>
           <p class="tiny faint">Arrows move · Up/X turn · Z turn back · Space drop · C hold · P pause</p>
@@ -85,17 +85,18 @@ const HTML = `<div class="wrap">
     <section class="ai" aria-label="What the model decides">
       <div class="clip-brand">
         <div class="clip-mark">${logo("tg")}<span>kevala</span></div>
-        <h2>A decision model plays Tetris</h2>
-        <p>The selected Laya, Kev, or SemIf model on WebGPU or WebAssembly in the browser</p>
+        <h2>Watch model-guided Tetris</h2>
+        <p>The selected model on WebGPU or WebAssembly in the browser</p>
       </div>
       <div class="ai-metrics">
-        <div><b data-m="ms">–</b><span data-m="where">per move</span></div>
-        <div title="The places this piece can land, scored together"><b data-m="spots">–</b><span>placements scored</span></div>
+        <div title="Full wall time for one model decision, from sending the scoring request until the scores return."><b data-m="ms">–</b><span data-m="where">median model wait</span></div>
+        <div title="Landing placements found by the auto controller's rotation, slide, and drop search."><b data-m="spots">–</b><span>landings found</span></div>
+        <div title="Distinct board states from the shortlist that were sent to the model."><b data-m="states">–</b><span>states scored</span></div>
       </div>
       <div class="keys">${KEY_TILES}</div>
       <div class="plan" aria-label="Keys for this piece"></div>
       <div class="ai-sub"><span>Best spots</span><span>P(clean stack)</span></div>
-      <ol class="spots"><li class="empty">Turn on Auto to watch the model score every spot.</li></ol>
+      <ol class="spots"><li class="empty">Turn on Auto to watch the model score shortlisted states.</li></ol>
       <details class="seen">
         <summary>What the model read</summary>
         <div class="code"><pre class="json" data-seen></pre></div>
@@ -114,9 +115,9 @@ const HTML = `<div class="wrap">
     <button type="button" data-t="hard" aria-label="Hard drop">⤓</button>
   </div>
   <section class="explain grid-3">
-    <div><h3>1 · List</h3><p>Every turn and column the piece can reach, found with the game's own collision code.</p></div>
-    <div><h3>2 · Describe</h3><p>Each outcome in plain words: holes left, rows cleared, a flatter or bumpier surface.</p></div>
-    <div><h3>3 · Score</h3><p>One pass asks <em>“Does the stack look clean?”</em> about every spot. The piece heads for the likeliest yes. The decision models were not trained to play Tetris.</p></div>
+    <div><h3>1 · List</h3><p>The auto controller searches reachable turn, slide, and drop paths using the game's collision rules.</p></div>
+    <div><h3>2 · Shortlist</h3><p>Simple game rules choose promising landings and describe the resulting stacks: holes, cleared rows, height and roughness.</p></div>
+    <div><h3>3 · Score</h3><p>The selected model scores the shortlist. With multiple states, the piece follows the highest score. These decision models were not trained to play Tetris.</p></div>
   </section>
 </div>`;
 
@@ -566,9 +567,16 @@ export function mount(el, { session }) {
     if (game.piece && !game.over) {
       // no landing shadow and no target outline: where the piece lands stays a surprise
       const piece = game.piece;
+      // Render the fall accumulator between rows. This changes only the picture; collision,
+      // gravity, lock timing, and input continue to use the game's fixed-step integer state.
+      const autoDrop = ai.enabled && ai.plan?.pieceId === game.pieceId && ai.plan.dropping;
+      const rowMs = game.softDrop ? Math.min(game.gravityMs, SOFT_DROP_MS) : game.gravityMs;
+      const fall = game.active && !game.onGround
+        ? Math.min(1, autoDrop ? ai.timer / SPEEDS[ai.speed].dropGap : game.fall / rowMs)
+        : 0;
       ctx.globalAlpha = game.onGround ? 1 - 0.35 * Math.min(1, game.lockTimer / 500) : 1;
       for (const [x, y] of pieceCells(piece)) {
-        if (y >= HIDDEN) ctx.drawImage(sprite(COLORS[piece.type], cell), x * px, (y - HIDDEN) * px);
+        if (y >= HIDDEN) ctx.drawImage(sprite(COLORS[piece.type], cell), x * px, (y - HIDDEN + fall) * px);
       }
       ctx.globalAlpha = 1;
     }
@@ -661,7 +669,7 @@ export function mount(el, { session }) {
     ui.auto.setAttribute("aria-pressed", String(ai.enabled));
     ui.auto.classList.toggle("thinking", ai.busy);
     const backend = session.info?.backend;
-    const where = backend ? (backend === "webgpu" ? "per move, WebGPU" : "per move, CPU") : "per move";
+    const where = backend ? `median wait · ${backend === "webgpu" ? "WebGPU" : "CPU"}` : "median model wait";
     el.querySelector('[data-m="where"]').textContent = where;
     if (!ai.stats.ms.length) el.querySelector('[data-m="ms"]').textContent = ai.busy ? "…" : "–";
   }
@@ -675,18 +683,22 @@ export function mount(el, { session }) {
     ].join("");
   }
 
-  // a piece's moves are scored together, so a move costs the pass time over the moves it scored
-  const msPerMove = [];
+  const decisionWaits = [];
   function showDecision(decision) {
-    msPerMove.push(decision.ms / decision.spots);
-    if (msPerMove.length > 10) msPerMove.shift();
-    const median = [...msPerMove].sort((a, b) => a - b)[msPerMove.length >> 1];
+    decisionWaits.push(decision.ms);
+    if (decisionWaits.length > 10) decisionWaits.shift();
+    const sortedWaits = [...decisionWaits].sort((a, b) => a - b);
+    const middle = sortedWaits.length >> 1;
+    const median = sortedWaits.length % 2
+      ? sortedWaits[middle]
+      : (sortedWaits[middle - 1] + sortedWaits[middle]) / 2;
     const msEl = el.querySelector('[data-m="ms"]');
     msEl.textContent = fmtMs(median);
     msEl.parentElement.title =
-      `${fmtMs(decision.ms)} to score the ${decision.spots} moves of this piece ` +
-      `(${decision.states} distinct outcomes, ${decision.timing?.tokens ?? "?"} tokens); median of the last ${msPerMove.length} pieces`;
+      `Full wall wait for this piece's model decision: ${fmtMs(decision.ms)} to score ${decision.states} distinct states ` +
+      `(${decision.timing?.tokens ?? "?"} tokens). Displayed value is the median of the last ${decisionWaits.length} decisions.`;
     el.querySelector('[data-m="spots"]').textContent = String(decision.spots);
+    el.querySelector('[data-m="states"]').textContent = String(decision.states);
     const top = decision.scored.slice(0, 3);
     ui.spots.innerHTML = top.map(spotHTML).join("");
     requestAnimationFrame(() => {
