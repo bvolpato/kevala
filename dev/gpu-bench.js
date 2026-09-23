@@ -59,29 +59,18 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T), groups: config.groups, baseline };
   }
   const match = normalized.match(/^([a-z_]+)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  const aliases = {
-    wide: "matmul_wide",
-    wide_h: "matmul_wide_h",
-    tall: "matmul_tall",
-    tall_h: "matmul_tall_h",
-  };
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_tall", "matmul_tall_h", "wide", "wide_h", "tall", "tall_h"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
-  const canonical = aliases[match[1]] || match[1];
   const rows = match[3] === "auto" ? rowsPerThread(T) : match[3] ? Number(match[3]) : 4;
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
-  const f16 = canonical.endsWith("_h");
-  if (![1, 2, 3, 4, 8].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
-  if (canonical.startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
-  if (canonical.startsWith("matmul_tall") && (groups !== 1 || rows !== 8 || !f16)) {
-    throw new Error(`${raw} requires shader-f16, rows=8, and groups=1`);
-  }
-  if (rows === 8 && !canonical.startsWith("matmul_tall")) throw new Error(`${raw} only supports rows=8 for the tall kernel`);
+  const f16 = match[1].endsWith("_h");
+  if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
+  if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
-  return { label: raw, name: f16 ? canonical.slice(0, -2) : canonical, f16, target, rows, groups, baseline };
+  return { label: raw, name: f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline };
 }
 
 function makeRng(seed) {
@@ -316,13 +305,6 @@ async function main() {
   lostDevices.set(device, null);
   device.lost.then((info) => lostDevices.set(device, info));
   if (gpu.adapter.info?.isFallbackAdapter || gpu.adapter.isFallbackAdapter) throw new Error("software WebGPU adapter is not allowed");
-  const tallRequested = requestedKernels.some((raw) => {
-    const name = kernelName(raw).replace(/_baseline$/, "");
-    return ["tall", "tall_h", "matmul_tall", "matmul_tall_h"].includes(name);
-  });
-  if (tallRequested && device.limits.maxComputeWorkgroupStorageSize < 24 * 1024) {
-    throw new Error(`tall matmul requires at least 24576 bytes of workgroup storage, adapter provides ${device.limits.maxComputeWorkgroupStorageSize}`);
-  }
   const uncaptured = [];
   const onError = (event) => uncaptured.push({ name: event.error?.name || "GPUError", message: event.error?.message || String(event.error) });
   device.addEventListener("uncapturederror", onError);
