@@ -54,6 +54,7 @@ export const MODELS = {
     author: "Bruno Volpato",
     base: { repo: "Qwen/Qwen3.5-4B", revision: "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a" },
     license: "apache-2.0",
+    hosted: "https://huggingface.co/bvolpato/bruv1-4b/resolve/4358588de0bec4cb9662dc8ef004d9a85065941a/bruv1-4b-q8.kevala",
     browserConvert: false,
     pack: 4751303168,
     packSha256: "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",

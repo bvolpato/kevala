@@ -68,6 +68,13 @@ The Bruv 4B Q8 pack also matched all 12 scoreable cases in its
 choices, with maximum absolute option-score difference 0.019503. One one-option question is
 outside the direct-options contract and was skipped by the reference generator.
 
+The [published-pack smoke result](benchmarks/results/decisions-linux-2026-09-22/hosted-bruv1-4b-smoke.json)
+loaded Bruv 4B from its pinned Hugging Face URL in a fresh Firefox WebGPU profile. It returned
+36/36 valid decisions and 34/36 correct on the Kevala authored cases in their original order.
+All 36 option distributions matched the corresponding local-pack run exactly. Loading, including
+the network transfer and GPU setup, took 136.4 seconds on this connection; measured decision
+p50 was 200.08 ms. The public file's SHA-256 and byte-range behavior were checked separately.
+
 ## Tasks and scoring
 
 The frozen [dataset manifest](benchmarks/decisions/manifest.json) records the source revisions,
