@@ -70,7 +70,7 @@ const MODEL_FAMILIES = {
   bruv: {
     name: "Bruv",
     short: "Locally fine-tuned Qwen3.5 decision model; experimental",
-    models: [["bruv1-0.8b", "0.8B"]],
+    models: [["bruv1-0.8b", "0.8B"], ["bruv1-4b", "4B"]],
   },
   kev: {
     name: "Kev",

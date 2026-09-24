@@ -1,12 +1,14 @@
 # Choosing and running models
 
-Laya is the demo default. Experimental Bruv 0.8B appears second in the model menu.
-Select Kev to reveal its 0.8B, 4B, and 9B size slider. SemIf has 0.8B, 2B, and 4B sizes. Gemma 4 has
+Laya is the demo default. Experimental Bruv appears second in the model menu, with 0.8B selected
+by default and 4B available through its size slider. Kev has 0.8B, 4B, and 9B sizes.
+SemIf has 0.8B, 2B, and 4B sizes. Gemma 4 has
 E2B and E4B dense text models. Switching families starts
 at the smallest size; saved choices and explicit model URLs retain their selected size. Changing
 the slider updates the download size and waits for **Load** before fetching weights. Their weights are
 distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs),
-with Bruv in its own [0.8B model repository](https://huggingface.co/bvolpato/bruv1-0.8b).
+with Bruv in separate [0.8B](https://huggingface.co/bvolpato/bruv1-0.8b) and
+[4B](https://huggingface.co/bvolpato/bruv1-4b) model repositories.
 
 The catalog pins the [verified pack revision](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).
 Load any model below by name. With the development server, `?pack=local#/tetris` loads local files
@@ -16,6 +18,7 @@ from `tmp/` instead.
 |---|---|---|---:|
 | `laya` | ModernBERT-large with Laya's trained decision layers | Marker scorer and act head | 479 MB |
 | `bruv1-0.8b` | Qwen3.5-0.8B with Bruv's local LoRA fine-tune merged in | Native option-label logits | 855 MB |
+| `bruv1-4b` | Qwen3.5-4B with Bruv's local LoRA fine-tune merged in | Native option-label logits | 4.75 GB |
 | `kev-0.8b` | Qwen3.5-0.8B-Base with Kev's merged LoRA adapter | Trained pointer head | 857 MB |
 | `kev-4b` | Qwen3.5-4B-Base with Kev's merged LoRA adapter | Trained pointer head | 4.76 GB |
 | `kev-9b` | Qwen3.5-9B-Base with Kev's merged LoRA adapter | Trained pointer head | 8.96 GB |
@@ -65,7 +68,7 @@ adapter or additional training step. SemIf's upstream Qwen3.5 reference uses the
 Kev uses a different checkpoint: its LoRA adapter and pointer head are trained for decisions.
 
 [Bruv](https://github.com/bvolpato/bruv) uses the same direct option readout with a
-fine-tuned Qwen3.5-0.8B checkpoint. Its initial supervised data follows Together's
+fine-tuned Qwen3.5-0.8B or 4B checkpoint. Its initial supervised data follows Together's
 [Tev1 recipe](https://github.com/togethercomputer/tev1), rerendered to Kevala's prompt and
 16-option limit. It is experimental; its training and held-out evaluation are documented with the
 weights. This is a different checkpoint from the frozen SemIf choice.

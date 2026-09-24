@@ -7,16 +7,17 @@ calibrated confidence, or a ranking against other inference engines.
 
 ## Results: September 22–24, 2026
 
-All ten packs completed all 864 requested decisions with valid probabilities and no runtime
-failures: **8,640 WebGPU decisions in total**. Each cell below gives accuracy and the number
+All eleven packs completed all 864 requested decisions with valid probabilities and no runtime
+failures: **9,504 WebGPU decisions in total**. Each cell below gives accuracy and the number
 of correct option orders. Pack sizes are binary GiB, not VRAM requirements.
-The first nine runs were recorded September 22; Bruv 0.8B was recorded September 24 UTC
+The first nine runs were recorded September 22; both Bruv runs were recorded September 24 UTC
 on the same GPU and driver after its training job had exited.
 
 | Pack | Download GiB | Kevala authored | SemIf authored | SemIf perturbations |
 |---|---:|---:|---:|---:|
 | Laya | 0.45 | 75.0% (81/108) | 62.3% (269/432) | 69.4% (225/324) |
 | Bruv 0.8B | 0.80 | 90.7% (98/108) | 79.6% (344/432) | 64.8% (210/324) |
+| Bruv 4B | 4.42 | 92.6% (100/108) | 93.3% (403/432) | 91.4% (296/324) |
 | Kev 0.8B | 0.80 | 89.8% (97/108) | 71.1% (307/432) | 70.7% (229/324) |
 | Kev 4B | 4.43 | 91.7% (99/108) | 89.4% (386/432) | 90.1% (292/324) |
 | Kev 9B | 8.35 | 96.3% (104/108) | 91.9% (397/432) | 96.3% (312/324) |
@@ -36,6 +37,7 @@ They are descriptive counts; related SemIf cases are not independent observation
 |---|---:|---:|---:|---:|---:|
 | Laya | 10/36 | 22/144 | 17/108 | 99.9 | 100.3 |
 | Bruv 0.8B | 2/36 | 16/144 | 14/108 | 99.9 | 100.2 |
+| Bruv 4B | 1/36 | 12/144 | 5/108 | 200.0 | 202.7 |
 | Kev 0.8B | 2/36 | 19/144 | 11/108 | 99.9 | 100.3 |
 | Kev 4B | 2/36 | 6/144 | 7/108 | 100.0 | 199.9 |
 | Kev 9B | 1/36 | 3/144 | 0/108 | 200.0 | 299.7 |
@@ -45,20 +47,21 @@ They are descriptive counts; related SemIf cases are not independent observation
 | Gemma 4 E2B IT | 5/36 | 38/144 | 45/108 | 100.0 | 200.0 |
 | Gemma 4 E4B IT | 0/36 | 17/144 | 14/108 | 200.0 | 202.9 |
 
-Bruv 0.8B answered 652/864 decisions correctly across the three suites. Kev 9B had the
-highest accuracy on the two SemIf suites in this comparison. SemIf 4B and Gemma
+Bruv 0.8B answered 652/864 decisions correctly across the three suites; Bruv 4B answered
+799/864. Bruv 4B had the highest score on the SemIf authored suite, while Kev 9B had the
+highest score on the SemIf perturbation suite. SemIf 4B and Gemma
 E4B answered all new Kevala cases correctly, but their lower scores on the SemIf suites show
 why one small suite is insufficient. Several direct-option models were sensitive to option
 order. Use these measurements to select candidates for your own evaluation, not as a universal
 model ranking.
 
-The [ten-pack summary JSON](benchmarks/results/decisions-linux-2026-09-22/summary-bruv.json) includes per-family
+The [eleven-pack summary JSON](benchmarks/results/decisions-linux-2026-09-22/summary-bruv.json) includes per-family
 scores, grouped 95% bootstrap intervals, position bias, and validation results. The
 [original nine-pack summary](benchmarks/results/decisions-linux-2026-09-22/summary.json) remains
 available. The [raw outputs](benchmarks/results/decisions-linux-2026-09-22/)
 include every answer, probability, and timing. The six Kev/SemIf runs predate runtime fixture
 hash capture; their artifacts explicitly record post-run verification of the unchanged fixture
-files. Laya, Bruv, and both Gemma runs captured and checked those hashes in the running page. All ten
+files. Laya, both Bruv runs, and both Gemma runs captured and checked those hashes in the running page. All eleven
 local pack files were independently hashed in full and matched the pinned catalog digests.
 
 ## Tasks and scoring
@@ -109,9 +112,12 @@ The recorded browser runs use Ubuntu, Firefox 152.0.3, an NVIDIA RTX 5070 Ti wit
 and driver 595.71.05, and an AMD Ryzen 9 9950X3D host. GPU jobs run sequentially. The NVIDIA
 Vulkan ICD is selected explicitly, and the runner rejects a software adapter or CPU fallback.
 These are WebGPU runs. CUDA is used separately for the original-weight reference comparison.
+The Bruv 4B run used a 250 W device power limit and stopped if measured GPU draw exceeded
+220 W or CPU package draw exceeded 170 W. Its latency is therefore measured under a different
+power limit from the earlier runs; compare its accuracy and coverage independently of latency.
 
 Every browser run uses a fresh isolated headless Firefox profile, batch size one, automatic
-GPU matrix selection, and the same local copies of the published Q8 packs. Downloading,
+GPU matrix selection, and local copies of the Q8 packs. Downloading,
 initialization, tuning, and warmup are excluded from decision latency and recorded separately.
 Pack caching and cross-request inference caching are disabled. Duplicate sharing within one
 batch remains available, although these runs have only one request per batch.

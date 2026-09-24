@@ -28,6 +28,7 @@ const BASE_MODEL_FILES = Object.freeze({
 });
 const OPTIONAL_MODEL_FILES = Object.freeze({
   "bruv1-0.8b": "decision-bruv1-0.8b.json",
+  "bruv1-4b": "decision-bruv1-4b.json",
 });
 const MODEL_FILES = Object.freeze({ ...BASE_MODEL_FILES, ...OPTIONAL_MODEL_FILES });
 const MODEL_ALIASES = Object.freeze({

@@ -1,6 +1,6 @@
 {
   "schema": "kevala-decision-report-v1",
-  "generatedUtc": "2026-09-24T04:02:35.087Z",
+  "generatedUtc": "2026-09-24T06:48:46.437Z",
   "probabilitySumTolerance": 0.001,
   "canonical": {
     "permutations": [
@@ -5950,6 +5950,601 @@
               "confidence95": [
                 0.5061728395061729,
                 0.7870370370370371
+              ]
+            }
+          }
+        }
+      }
+    },
+    "bruv1-4b": {
+      "status": "ok",
+      "file": {
+        "path": "benchmarks/results/decisions-linux-2026-09-22/decision-bruv1-4b.json",
+        "sha256": "b3a085e841df607a499220ee3efb6ecf06a8b6cf00e9ff8ebfdb36bfce837c2d"
+      },
+      "validation": {
+        "ok": true,
+        "issues": [],
+        "expectedRows": 864,
+        "timingRows": 864,
+        "probabilityRows": 864,
+        "probabilityTolerance": 0.001
+      },
+      "runtime": {
+        "backend": "webgpu",
+        "threads": 1,
+        "gpu": {
+          "architecture": null,
+          "available": true,
+          "description": null,
+          "device": null,
+          "features": [
+            "bgra8unorm-storage",
+            "core-features-and-limits",
+            "depth-clip-control",
+            "depth32float-stencil8",
+            "float32-filterable",
+            "indirect-first-instance",
+            "rg11b10ufloat-renderable",
+            "shader-f16",
+            "texture-compression-bc",
+            "texture-compression-bc-sliced-3d",
+            "timestamp-query"
+          ],
+          "isFallbackAdapter": false,
+          "limits": {
+            "maxBufferSize": 1073741824,
+            "maxStorageBufferBindingSize": 1073741824
+          },
+          "name": "WebGPU",
+          "vendor": null
+        },
+        "runner": {
+          "browser": "firefox",
+          "browserRequested": "firefox",
+          "browserVersion": "152.0.3",
+          "expectedBackend": "webgpu",
+          "headless": true,
+          "timerPrivacy": {
+            "firefoxPrecisionDisabled": true,
+            "isolatedSeleniumProfile": true,
+            "note": "Firefox timer privacy settings are changed only in the temporary Selenium profile"
+          },
+          "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+        },
+        "cachePolicy": {
+          "backend": "webgpu",
+          "enabled": false,
+          "requested": false,
+          "supported": true
+        },
+        "environment": null,
+        "validation": {
+          "backend": "webgpu",
+          "hardwareAdapter": {
+            "architecture": null,
+            "available": true,
+            "description": null,
+            "device": null,
+            "features": [
+              "bgra8unorm-storage",
+              "core-features-and-limits",
+              "depth-clip-control",
+              "depth32float-stencil8",
+              "float32-filterable",
+              "indirect-first-instance",
+              "rg11b10ufloat-renderable",
+              "shader-f16",
+              "texture-compression-bc",
+              "texture-compression-bc-sliced-3d",
+              "timestamp-query"
+            ],
+            "isFallbackAdapter": false,
+            "limits": {
+              "maxBufferSize": 1073741824,
+              "maxStorageBufferBindingSize": 1073741824
+            },
+            "name": "WebGPU",
+            "vendor": null
+          },
+          "clock": {
+            "crossOriginIsolated": false,
+            "fine": true,
+            "minDeltaMs": 0.01999999999999602,
+            "quantized": false,
+            "source": "performance.now"
+          },
+          "cachePolicy": {
+            "backend": "webgpu",
+            "enabled": false,
+            "requested": false,
+            "supported": true
+          },
+          "modelInfo": {
+            "author": "Bruno Volpato",
+            "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+            "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+            "converter": "kevala 0.1.3",
+            "inspiration": "SemIf direct-options-v1 readout",
+            "license": "apache-2.0",
+            "method_license": "mit",
+            "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+            "method_source": "https://github.com/TheoLeeCJ/SemIf",
+            "name": "bruv1-4b",
+            "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+            "revision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52",
+            "source": "https://huggingface.co/bvolpato/bruv1-4b"
+          },
+          "modelArch": "kev",
+          "expectedArch": "kev",
+          "expectedSource": "https://huggingface.co/bvolpato/bruv1-4b",
+          "expectedRevision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52"
+        }
+      },
+      "pack": {
+        "model": "bruv1-4b",
+        "modelRevision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52",
+        "catalogHash": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+        "catalogHashScope": "expected-catalog-pack-sha256",
+        "verification": {
+          "status": "verified",
+          "source": "postRunVerification.pack",
+          "expectedCatalogHash": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+          "expectedCatalogBytes": 4751303168,
+          "recordedFullPackSha256": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+          "recordedFullPackBytes": 4751303168,
+          "verifiedUtc": "2026-09-24T06:48:38.975Z",
+          "method": "sha256 over the complete local pack after the Firefox WebGPU sweep; matched the catalog digest",
+          "originalOutputSha256": "40d7a3a4b486ab6ab3f3c86b684fa09b9c1cbc265c773957c6f30f05b140cd39"
+        },
+        "modelInfo": {
+          "author": "Bruno Volpato",
+          "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+          "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+          "converter": "kevala 0.1.3",
+          "inspiration": "SemIf direct-options-v1 readout",
+          "license": "apache-2.0",
+          "method_license": "mit",
+          "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+          "method_source": "https://github.com/TheoLeeCJ/SemIf",
+          "name": "bruv1-4b",
+          "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+          "revision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52",
+          "source": "https://huggingface.co/bvolpato/bruv1-4b"
+        },
+        "datasetModule": "kevala-decision-v1",
+        "datasetFiles": [
+          "kevala-authored36.jsonl",
+          "semif-authored144.jsonl",
+          "semif-perturbations108.jsonl"
+        ]
+      },
+      "runtimeErrors": [],
+      "datasetProvenance": {
+        "status": "verified",
+        "hashesPresent": true,
+        "capturedAtRuntime": true,
+        "verificationScope": "canonical fixture SHA-256",
+        "hashes": [
+          {
+            "path": "benchmarks/decisions/kevala-authored36.jsonl",
+            "dataset": "kevala-authored36",
+            "sha256": "2b1c67080104f910412457ef77a6d37575be0b07d4e9d47c15a3da24346233c2",
+            "matchesCanonical": true
+          },
+          {
+            "path": "benchmarks/decisions/semif-authored144.jsonl",
+            "dataset": "semif-authored144",
+            "sha256": "8162d1c73f925af64453f1ec05ef36d583b3815bf698e60f0d454bd11537e079",
+            "matchesCanonical": true
+          },
+          {
+            "path": "benchmarks/decisions/semif-perturbations108.jsonl",
+            "dataset": "semif-perturbations108",
+            "sha256": "1dd7ccf80518d0e34886478ca23982aa726e9daccd343b9e95cedaf6b569bec4",
+            "matchesCanonical": true
+          }
+        ],
+        "unverifiedPaths": [],
+        "verification": null,
+        "postRunVerification": {
+          "originalOutputSha256": "40d7a3a4b486ab6ab3f3c86b684fa09b9c1cbc265c773957c6f30f05b140cd39",
+          "verifiedUtc": "2026-09-24T06:48:38.975Z",
+          "pack": {
+            "sha256": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+            "bytes": 4751303168,
+            "method": "sha256 over the complete local pack after the Firefox WebGPU sweep; matched the catalog digest"
+          },
+          "note": "Measurements and answers are unchanged. Verification metadata was appended after the run."
+        },
+        "note": "Fixture hashes and the dataset manifest were emitted by the benchmark harness."
+      },
+      "latency": {
+        "count": 864,
+        "p50Ms": 200.0399999999936,
+        "p95Ms": 202.72000000000116,
+        "minMs": 195.45999999999185,
+        "maxMs": 213.84000000000017
+      },
+      "reportedLatency": {
+        "count": 864,
+        "maxMs": 213.84000000000017,
+        "minMs": 195.45999999999185,
+        "p50Ms": 200.0399999999936,
+        "p95Ms": 202.72000000000116
+      },
+      "cachePolicy": {
+        "backend": "webgpu",
+        "enabled": false,
+        "requested": false,
+        "supported": true
+      },
+      "model": "bruv1-4b",
+      "metrics": {
+        "total": 864,
+        "correct": 799,
+        "valid": 864,
+        "accuracy": 0.9247685185185185,
+        "coverage": 1,
+        "invalid": 0,
+        "missing": 0,
+        "perFamily": {
+          "candidate_selection": {
+            "total": 288,
+            "correct": 275,
+            "valid": 288,
+            "accuracy": 0.9548611111111112,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0
+          },
+          "evidence_interpretation": {
+            "total": 288,
+            "correct": 270,
+            "valid": 288,
+            "accuracy": 0.9375,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0
+          },
+          "rule_application": {
+            "total": 288,
+            "correct": 254,
+            "valid": 288,
+            "accuracy": 0.8819444444444444,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0
+          }
+        },
+        "semanticPermutationFlip": {
+          "groups": 288,
+          "groupsWithPredictions": 288,
+          "groupsWithFlip": 18,
+          "rate": 0.0625
+        },
+        "selectedPositionBias": {
+          "selectedPositionCounts": [
+            289,
+            282,
+            293
+          ],
+          "goldPositionCounts": [
+            288,
+            288,
+            288
+          ],
+          "expectedPositionCounts": [
+            288.0000000000011,
+            288.0000000000011,
+            288.0000000000011
+          ],
+          "selectedPositionRate": [
+            0.33449074074074076,
+            0.3263888888888889,
+            0.33912037037037035
+          ],
+          "goldPositionRate": [
+            0.3333333333333333,
+            0.3333333333333333,
+            0.3333333333333333
+          ],
+          "expectedPositionRate": [
+            0.3333333333333346,
+            0.3333333333333346,
+            0.3333333333333346
+          ],
+          "bias": [
+            0.0011574074074061635,
+            -0.0069444444444456965,
+            0.005787037037035758
+          ],
+          "maxAbsoluteBias": 0.0069444444444456965
+        },
+        "groupBootstrap": {
+          "groups": 72,
+          "samples": 1000,
+          "seed": 217,
+          "estimate": 0.9247685185185185,
+          "confidence95": [
+            0.8867521367521367,
+            0.9588888888888889
+          ]
+        },
+        "perDataset": {
+          "kevala-authored36": {
+            "total": 108,
+            "correct": 100,
+            "valid": 108,
+            "accuracy": 0.9259259259259259,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0,
+            "perFamily": {
+              "candidate_selection": {
+                "total": 36,
+                "correct": 36,
+                "valid": 36,
+                "accuracy": 1,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              },
+              "evidence_interpretation": {
+                "total": 36,
+                "correct": 30,
+                "valid": 36,
+                "accuracy": 0.8333333333333334,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              },
+              "rule_application": {
+                "total": 36,
+                "correct": 34,
+                "valid": 36,
+                "accuracy": 0.9444444444444444,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              }
+            },
+            "semanticPermutationFlip": {
+              "groups": 36,
+              "groupsWithPredictions": 36,
+              "groupsWithFlip": 1,
+              "rate": 0.027777777777777776
+            },
+            "selectedPositionBias": {
+              "selectedPositionCounts": [
+                36,
+                35,
+                37
+              ],
+              "goldPositionCounts": [
+                36,
+                36,
+                36
+              ],
+              "expectedPositionCounts": [
+                35.99999999999998,
+                35.99999999999998,
+                35.99999999999998
+              ],
+              "selectedPositionRate": [
+                0.3333333333333333,
+                0.32407407407407407,
+                0.3425925925925926
+              ],
+              "goldPositionRate": [
+                0.3333333333333333,
+                0.3333333333333333,
+                0.3333333333333333
+              ],
+              "expectedPositionRate": [
+                0.33333333333333315,
+                0.33333333333333315,
+                0.33333333333333315
+              ],
+              "bias": [
+                1.6653345369377348e-16,
+                -0.009259259259259078,
+                0.009259259259259467
+              ],
+              "maxAbsoluteBias": 0.009259259259259467
+            },
+            "groupBootstrap": {
+              "groups": 36,
+              "samples": 1000,
+              "seed": 217,
+              "estimate": 0.9259259259259259,
+              "confidence95": [
+                0.8333333333333334,
+                1
+              ]
+            }
+          },
+          "semif-authored144": {
+            "total": 432,
+            "correct": 403,
+            "valid": 432,
+            "accuracy": 0.9328703703703703,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0,
+            "perFamily": {
+              "candidate_selection": {
+                "total": 144,
+                "correct": 134,
+                "valid": 144,
+                "accuracy": 0.9305555555555556,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              },
+              "evidence_interpretation": {
+                "total": 144,
+                "correct": 132,
+                "valid": 144,
+                "accuracy": 0.9166666666666666,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              },
+              "rule_application": {
+                "total": 144,
+                "correct": 137,
+                "valid": 144,
+                "accuracy": 0.9513888888888888,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              }
+            },
+            "semanticPermutationFlip": {
+              "groups": 144,
+              "groupsWithPredictions": 144,
+              "groupsWithFlip": 12,
+              "rate": 0.08333333333333333
+            },
+            "selectedPositionBias": {
+              "selectedPositionCounts": [
+                144,
+                141,
+                147
+              ],
+              "goldPositionCounts": [
+                144,
+                144,
+                144
+              ],
+              "expectedPositionCounts": [
+                143.99999999999972,
+                143.99999999999972,
+                143.99999999999972
+              ],
+              "selectedPositionRate": [
+                0.3333333333333333,
+                0.3263888888888889,
+                0.3402777777777778
+              ],
+              "goldPositionRate": [
+                0.3333333333333333,
+                0.3333333333333333,
+                0.3333333333333333
+              ],
+              "expectedPositionRate": [
+                0.33333333333333265,
+                0.33333333333333265,
+                0.33333333333333265
+              ],
+              "bias": [
+                6.661338147750939e-16,
+                -0.006944444444443754,
+                0.006944444444445141
+              ],
+              "maxAbsoluteBias": 0.006944444444445141
+            },
+            "groupBootstrap": {
+              "groups": 36,
+              "samples": 1000,
+              "seed": 217,
+              "estimate": 0.9328703703703703,
+              "confidence95": [
+                0.9004629629629629,
+                0.9652777777777778
+              ]
+            }
+          },
+          "semif-perturbations108": {
+            "total": 324,
+            "correct": 296,
+            "valid": 324,
+            "accuracy": 0.9135802469135802,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0,
+            "perFamily": {
+              "candidate_selection": {
+                "total": 108,
+                "correct": 105,
+                "valid": 108,
+                "accuracy": 0.9722222222222222,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              },
+              "evidence_interpretation": {
+                "total": 108,
+                "correct": 108,
+                "valid": 108,
+                "accuracy": 1,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              },
+              "rule_application": {
+                "total": 108,
+                "correct": 83,
+                "valid": 108,
+                "accuracy": 0.7685185185185185,
+                "coverage": 1,
+                "invalid": 0,
+                "missing": 0
+              }
+            },
+            "semanticPermutationFlip": {
+              "groups": 108,
+              "groupsWithPredictions": 108,
+              "groupsWithFlip": 5,
+              "rate": 0.046296296296296294
+            },
+            "selectedPositionBias": {
+              "selectedPositionCounts": [
+                109,
+                106,
+                109
+              ],
+              "goldPositionCounts": [
+                108,
+                108,
+                108
+              ],
+              "expectedPositionCounts": [
+                107.99999999999955,
+                107.99999999999955,
+                107.99999999999955
+              ],
+              "selectedPositionRate": [
+                0.33641975308641975,
+                0.3271604938271605,
+                0.33641975308641975
+              ],
+              "goldPositionRate": [
+                0.3333333333333333,
+                0.3333333333333333,
+                0.3333333333333333
+              ],
+              "expectedPositionRate": [
+                0.3333333333333319,
+                0.3333333333333319,
+                0.3333333333333319
+              ],
+              "bias": [
+                0.0030864197530878212,
+                -0.006172839506171424,
+                0.0030864197530878212
+              ],
+              "maxAbsoluteBias": 0.006172839506171424
+            },
+            "groupBootstrap": {
+              "groups": 36,
+              "samples": 1000,
+              "seed": 217,
+              "estimate": 0.9135802469135802,
+              "confidence95": [
+                0.8364197530864198,
+                0.9783950617283951
               ]
             }
           }
