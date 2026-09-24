@@ -22,8 +22,10 @@
 .view-playground .pg-res { display: grid; gap: 12px; position: sticky; top: 76px; }
 .view-playground .timing { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .view-playground .timing div { background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; display: grid; min-width: 0; }
+.view-playground .timing div:first-child { border-color: var(--accent); }
 .view-playground .timing span { font-size: 0.64rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
 .view-playground .timing b { font: 700 1rem var(--mono); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view-playground .timing div:first-child b { font-size: 1.15rem; }
 .view-playground .pg-tabs { justify-self: start; }
 .view-playground [data-pane] { max-height: calc(100vh - 290px); overflow: auto; }
 .view-playground [data-pane="answers"] { display: grid; gap: 14px; }
