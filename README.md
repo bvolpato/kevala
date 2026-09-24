@@ -113,6 +113,42 @@ native 64-bit CPU CLI; its maximum input is 4096 tokens.
 
 Families are pluggable: see [Adding a model family](docs/adding-a-model.md).
 
+## Decision accuracy and latency
+
+<!-- decision-benchmark:start -->
+
+Snapshot: **2026-09-23**, Apple M4 Max (40 GPU cores), 64 GiB unified memory, macOS 26.4.1, Chrome 151.0.7922.34 (hidden).
+Text-only choice requests; Q8 packs; batch size one; inference caching and GPU profiling disabled. Downloads, loading, tuning, and warmup are excluded.
+
+| Model | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean decide ms | p95 ms | Pass mean range ms |
+|---|---:|---:|---:|---:|---:|---:|
+| `laya` | 75.0% (243/324) | 62.3% (807/1296) | 69.4% (675/972) | 23.8 | 48.8 | 19.2-30.3 |
+| `kev-0.8b` | 89.8% (291/324) | 71.1% (921/1296) | 70.7% (687/972) | 30.4 | 62.2 | 25.8-32.7 |
+| `kev-4b` | 91.7% (297/324) | 89.4% (1158/1296) | 90.1% (876/972) | 183.7 | 324.1 | 144.6-258.9 |
+| `kev-9b` | 96.3% (312/324) | 91.9% (1191/1296) | 96.3% (936/972) | 360.9 | 669.9 | 344.1-372.6 |
+| `semif-qwen3.5-0.8b` | 60.2% (195/324) | 50.9% (660/1296) | 41.7% (405/972) | 56.1 | 83.2 | 53.6-58.3 |
+| `semif-qwen3.5-2b` | 85.2% (276/324) | 63.4% (822/1296) | 55.2% (537/972) | 106.6 | 148.0 | 104.1-109.9 |
+| `semif-qwen3.5-4b` | 100.0% (324/324) | 84.0% (1089/1296) | 74.7% (726/972) | 363.0 | 575.0 | 353.4-381.5 |
+| `gemma-4-e2b` | 94.4% (306/324) | 78.2% (1014/1296) | 71.3% (693/972) | 61.0 | 88.6 | 60.2-62.5 |
+| `gemma-4-e4b` | 100.0% (324/324) | 89.1% (1155/1296) | 90.1% (876/972) | 251.0 | 524.2 | 237.0-258.3 |
+
+Mean latency is the arithmetic mean of all 2592 awaited `decide()` calls per model across 3 full passes, including tokenization and GPU readback, not summed kernel time. Failures count against accuracy; coverage and source-group confidence intervals are in [the full report](benchmarks/results/decisions-m4-max-2026-09-23/report.md).
+Pass mean ranges show repeat variability, not confidence intervals. An interactive workstation can have substantial timing noise; this is not a dedicated-GPU performance limit.
+
+[Datasets and hashes](benchmarks/decisions/manifest.json): 36 Kevala cases, 144 SemIf authored variants, and 108 related perturbations, each in three option orders. There are only 72 independent source groups; rotations and perturbations are not independent examples. The suites stay separate instead of inflating one headline score. Labels have not been independently human adjudicated, and training overlap has not been audited; this is a synthetic regression benchmark, not general model accuracy.
+
+**Build caveat:** this build contains uncommitted changes; the served JS/WASM fingerprint is recorded with every result.
+
+Runtime build revision: c71b14a7a4a5455edf33fee289c2cfd339c6fe55. [Raw decisions and timings](benchmarks/results/decisions-m4-max-2026-09-23/).
+
+<!-- decision-benchmark:end -->
+
+The table is generated from validated raw outputs, not edited by hand. See
+[the benchmark protocol and reproduction commands](BENCHMARK.md).
+
+The table includes the local Gemma GELU repair. It predates Bruv and the additional
+[Qwen kernel safety fixes](docs/kernel-safety.md). Those changes are not measured here.
+
 ## Speed
 
 For GPU measurements across the seven Laya, Kev, and SemIf models on Firefox/Linux, see

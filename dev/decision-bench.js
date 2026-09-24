@@ -2,7 +2,7 @@
 // and latency have independent accounting. The canonical cases live in benchmarks/decisions;
 // this adapter accepts the stable dataset exports used by the offline metrics harness.
 import { Kevala, MODELS } from "../js/src/index.js";
-import { DEFAULT_PERMUTATIONS, evaluateDecisions, expandPermutations } from "../benchmarks/decisions/metrics.js";
+import { DEFAULT_PERMUTATIONS, evaluateDecisions, expandPermutations, summarizeLatencies } from "../benchmarks/decisions/metrics.js";
 
 const logNode = document.getElementById("log");
 const summaryNode = document.getElementById("summary");
@@ -195,11 +195,6 @@ function probabilitiesFor(response, options) {
   return probs;
 }
 
-function percentile(values, fraction) {
-  const sorted = values.slice().sort((a, b) => a - b);
-  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * fraction) - 1))];
-}
-
 async function clockInfo() {
   const samples = [];
   let previous = performance.now();
@@ -268,6 +263,7 @@ async function run() {
   const pack = query.get("pack") || "hosted";
   const datasetName = query.get("dataset") || "all";
   const permutations = integerParam(query, "permutations", 3, 1, 3);
+  const warmups = integerParam(query, "warmups", 5, 1, 32);
   const batch = integerParam(query, "batch", 1, 1, 1);
   const profile = query.get("profile") === "1";
   if (!["webgpu", "wasm"].includes(backend)) fail(`backend must be webgpu or wasm, got ${backend}`);
@@ -296,7 +292,9 @@ async function run() {
     const info = model.info || {};
     validateModelInfo(info, modelName, spec);
     const warmupStart = performance.now();
-    await model.decide("kevala decision benchmark warmup", { warmup: { type: "choice", instructions: "Choose the warmup option.", criteria: { ready: "ready", idle: "idle" } } });
+    for (let index = 0; index < warmups; index++) {
+      await model.decide("kevala decision benchmark warmup", { warmup: { type: "choice", instructions: "Choose the warmup option.", criteria: { ready: "ready", idle: "idle" } } });
+    }
     const warmupDecisionMs = performance.now() - warmupStart;
     if (profile) {
       const supported = await model.profile(true);
@@ -346,7 +344,7 @@ async function run() {
     const expectedRows = cases.length;
     const invalidCount = metricQuality.invalid + metricQuality.missing;
     const correctCount = metricQuality.correct;
-    const wall = rows.map((row) => row.wallMs).filter((value) => Number.isFinite(value) && value > 0);
+    const wall = rows.map((row) => row.wallMs);
     const revision = info.model?.revision || spec.revision || null;
     // The catalog value identifies the expected published pack. This page does not read the
     // complete pack bytes, so it must not describe the value as a verified download hash.
@@ -372,7 +370,7 @@ async function run() {
       warmupDecisionMs,
       timingAllRows: rows,
       rawProbs: rows.map(({ caseId, permutation, rawProbabilities }) => ({ caseId, permutation, probabilities: rawProbabilities })),
-      latency: { count: wall.length, p50Ms: percentile(wall, 0.5), p95Ms: percentile(wall, 0.95), minMs: Math.min(...wall), maxMs: Math.max(...wall) },
+      latency: summarizeLatencies(wall),
       quality,
       errors,
       profile: profileRow,
@@ -387,6 +385,8 @@ async function run() {
         metricsApi: "benchmarks/decisions/metrics.js:evaluateDecisions",
         permutations: permutationNames,
         batch,
+        warmups,
+        profileDuringMeasurements: false,
         stateCache: info.stateCache ?? null,
         clock,
         modelInfo: info.model || null,

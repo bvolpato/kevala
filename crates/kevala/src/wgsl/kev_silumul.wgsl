@@ -13,5 +13,5 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let t = idx / I;
   let i = idx % I;
   let u = Uu[t * 2u * I + i];
-  A[idx] = u / (1.0 + exp(-u)) * Uu[t * 2u * I + I + i];
+  A[idx] = silu(u) * Uu[t * 2u * I + I + i];
 }

@@ -3,6 +3,24 @@
 
 export const DEFAULT_PERMUTATIONS = Object.freeze(["identity", "rotate1", "rotate2"]);
 
+export function summarizeLatencies(values) {
+  if (!Array.isArray(values)) throw new Error("latency samples must be finite positive numbers");
+  const sorted = [...values];
+  if (sorted.some((value) => typeof value !== "number" || !Number.isFinite(value) || value <= 0)) {
+    throw new Error("latency samples must be finite positive numbers");
+  }
+  sorted.sort((left, right) => left - right);
+  const quantile = (fraction) => sorted.length ? sorted[Math.ceil(sorted.length * fraction) - 1] : null;
+  return {
+    count: values.length,
+    p50Ms: quantile(0.5),
+    p95Ms: quantile(0.95),
+    minMs: sorted[0] ?? null,
+    maxMs: sorted.at(-1) ?? null,
+    meanMs: values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null,
+  };
+}
+
 const DATASET_ALIASES = Object.freeze({
   kevala: "kevala-authored36",
   "kevala-authored36": "kevala-authored36",

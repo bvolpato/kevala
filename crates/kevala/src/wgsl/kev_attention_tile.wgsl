@@ -122,7 +122,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   if (live) {
     for (var i = 0u; i < 8u; i++) {
       let gate = PROJ[t * PROW + h * 128u + 64u + lane + 8u * i];
-      OUT[t * (ATTN_Q / 4u) + h * 64u + lane + 8u * i] = o[i] / l / (vec4<f32>(1.0) + exp(-gate));
+      OUT[t * (ATTN_Q / 4u) + h * 64u + lane + 8u * i] = o[i] / l * sigmoid4(gate);
     }
   }
 }
