@@ -270,8 +270,8 @@ const HTML = `<div class="wrap">
     </div>
     <div class="card pad pg-res">
       <div class="timing">
+        <div data-t="compute-card" title="Time spent in model forward calls"><span data-t="compute-label">Model time</span><b data-t="compute">–</b></div>
         <div><span>Round trip</span><b data-t="wall">–</b></div>
-        <div><span>First answer</span><b data-t="first">–</b></div>
         <div><span>Tokens</span><b data-t="tok">–</b></div>
         <div><span>Backend</span><b data-t="be">–</b></div>
       </div>
@@ -499,10 +499,21 @@ export function mount(el, { session }) {
     });
   }
 
-  function showTimings(kevala, out, wall, first) {
+  function showTimings(kevala, out, wall) {
     const tokens = out.reduce((sum, response) => sum + (response?.usage?.input_tokens || 0), 0);
+    const timings = [...new Set(out.map((response) => response?.timing).filter(Boolean))];
+    const gpuTimings = timings.filter((timing) => timing.gpu && Object.keys(timing.gpu).length);
+    const gpuMs = gpuTimings.reduce((sum, timing) =>
+      sum + Object.values(timing.gpu).reduce((total, ms) => total + ms, 0), 0);
+    const modelMs = timings.reduce((sum, timing) => sum + (timing.forward || 0), 0);
+    const hasModelTime = timings.some((timing) => timing.forward != null);
+    const computeMs = gpuTimings.length ? gpuMs : hasModelTime ? modelMs : null;
+    $('[data-t="compute-label"]').textContent = gpuTimings.length ? "GPU time" : "Model time";
+    $('[data-t="compute"]').textContent = fmtMs(computeMs);
+    $('[data-t="compute-card"]').title = gpuTimings.length
+      ? "Sum of measured GPU kernel times; profiling adds overhead"
+      : "Time spent in model forward calls, including transfers when applicable";
     $('[data-t="wall"]').textContent = fmtMs(wall);
-    $('[data-t="first"]').textContent = fmtMs(first);
     $('[data-t="tok"]').textContent = String(tokens || out[0]?.timing?.tokens || "–");
     $('[data-t="be"]').textContent = backendLabel(kevala.info);
     const cache = out.at(-1)?.timing?.cache;
@@ -540,11 +551,9 @@ export function mount(el, { session }) {
     pane.classList.add("busy");
     stateBlocks(pane, request.items);
     const t0 = performance.now();
-    let first = 0;
     try {
       const onAnswer = (response, i) => {
         if (isStale()) return;
-        if (!first) first = performance.now() - t0;
         out[i] = response;
         const block = pane.children[i];
         block.classList.remove("pending");
@@ -553,14 +562,14 @@ export function mount(el, { session }) {
       await decideStream(kevala, request.items, onAnswer, { isStale });
       if (isStale()) return;
       const wall = performance.now() - t0;
-      showTimings(kevala, out, wall, first);
+      showTimings(kevala, out, wall);
       $('[data-f="json"]').innerHTML = highlightJSON(fmtJSON(out.length === 1 ? out[0] : out));
       if (profiling) $('[data-pane="profile"]').innerHTML = profileHTML(out, wall);
       testedCode = code;
       $('[data-f="tested-code"]').innerHTML = highlight(code);
       $('[data-f="tested-block"]').classList.remove("hidden");
       renderCode(parseRequest(states, questionEditor.value));
-      window.playground = { last: { wall, first, out } };
+      window.playground = { last: { wall, out } };
     } catch (e) {
       if (!isStale()) pane.innerHTML = `<div class="error">${esc(e.message)}</div>`;
     } finally {
