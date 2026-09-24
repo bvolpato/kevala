@@ -1,6 +1,6 @@
 <h1 align="center">kevala</h1>
 
-<p align="center"><b>Ask questions about text with Laya, Kev, SemIf, and Gemma 4 running on the user's own hardware.</b></p>
+<p align="center"><b>Ask questions about text with Laya, Bruv, Kev, SemIf, and Gemma 4 running on the user's own hardware.</b></p>
 
 <p align="center">
   <a href="https://bvolpato.github.io/kevala/#/tetris"><img src="docs/tetris.gif" alt="Model-guided Tetris running in the browser: game rules shortlist promising landings, a decision model scores them, and the piece follows the chosen path" width="760"></a>
@@ -16,7 +16,7 @@
 </p>
 
 kevala runs [Laya](https://huggingface.co/convaiinnovations/laya),
-[Kev](https://github.com/jaredpalmer/kev), frozen Qwen3.5 models, and
+[Bruv](https://github.com/bvolpato/bruv), [Kev](https://github.com/jaredpalmer/kev), frozen Qwen3.5 models, and
 [Gemma 4](docs/gemma4.md) with [SemIf option scoring](docs/models.md#how-semif-scoring-works)
 inside the browser.
 You give it text or JSON and typed questions (`noul` for yes/no, `choice`, `score`), and it scores
@@ -25,7 +25,8 @@ and no data leaving the tab.
 
 The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU kernels written for
 these models. The browser runtime is a few plain ES modules. The first load downloads a pinned int8
-pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) and keeps it in
+pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) (or Bruv's
+[0.8B repository](https://huggingface.co/bvolpato/bruv1-0.8b)) and keeps it in
 the browser, so there is nothing to host. Laya and Kev-0.8B also support conversion from the
 original checkpoint in the browser. Larger Kev models, SemIf models, and Gemma 4 require a converted
 pack.
@@ -73,6 +74,7 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 | Family | Model name | Decision readout | Pack download |
 |---|---|---|---:|
 | Laya | `laya` | Marker scorer and act head | 479 MB |
+| Bruv | `bruv1-0.8b` | Locally fine-tuned option-label scorer | 855 MB |
 | Kev | `kev-0.8b` | Trained pointer head | 857 MB |
 | Kev | `kev-4b` | Trained pointer head | 4.76 GB |
 | Kev | `kev-9b` | Trained pointer head | 8.96 GB |
@@ -82,7 +84,8 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 | Gemma 4 | `gemma-4-e2b` | Native option-label logits | 5.22 GB |
 | Gemma 4 | `gemma-4-e4b` | Native option-label logits | 8.41 GB |
 
-Laya uses a ModernBERT-large encoder. Kev uses Qwen3.5 base models with its merged LoRA adapter
+Laya uses a ModernBERT-large encoder. Bruv is a local Qwen3.5 fine-tune for choosing among
+listed options. Kev uses Qwen3.5 base models with its merged LoRA adapter
 and trained pointer head. SemIf applies direct option scoring to frozen Qwen3.5 instruction
 models. Gemma 4 uses Google's frozen E2B and E4B instruction weights with the same direct option
 readout; these are dense text-only packs with Gemma's per-layer embeddings, not MoE models. See
@@ -93,8 +96,9 @@ Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
 `Kevala.load({ model: "kev-4b" })` or `Kevala.load({ model: "semif-qwen3.5-2b" })`,
 or pass a `.kevala` URL you host.
 
-Laya remains the demo default. Select **Kev** to choose 0.8B, 4B, or 9B with the size slider.
-**SemIf** appears alongside Laya and Kev, with 0.8B, 2B, or 4B sizes. Selecting either family starts
+Laya remains the demo default, with experimental **Bruv 0.8B** second in the picker.
+Select **Kev** to choose 0.8B, 4B, or 9B with its size slider.
+**SemIf** appears alongside them, with 0.8B, 2B, or 4B sizes. Selecting a family starts
 at its smallest size; changing sizes waits for **Load** before downloading. **Gemma 4** starts with
 E2B and can be changed to E4B before loading.
 
@@ -130,7 +134,7 @@ cache is impossible; it packs every question of a request into one pass instead.
 
 ## Fidelity
 
-Decision accuracy, option-order stability, and browser latency for all nine supported packs:
+Decision accuracy, option-order stability, and browser latency for the supported packs:
 [BENCHMARK.md](BENCHMARK.md). The report includes Gemma base versus IT and Q8 versus BF16
 comparisons, with raw outputs and reproducible scoring.
 

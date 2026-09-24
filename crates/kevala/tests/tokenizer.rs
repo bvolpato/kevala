@@ -183,6 +183,12 @@ fn qwen_checkpoint_config_normalizes_to_autotokenizer_ids() {
     assert_eq!(tok.token_id("<|audio_start|>"), Some(248070));
     assert_eq!(tok.token_id("<|audio_pad|>"), Some(248076));
     assert_eq!(Tokenizer::normalize_qwen2_json(&normalized, &config).unwrap(), normalized);
+    let mut config_without_overlay = kevala::json::Value::parse(&config).unwrap();
+    if let kevala::json::Value::Object(fields) = &mut config_without_overlay {
+        fields.retain(|(key, _)| key != "added_tokens_decoder");
+    }
+    let materialized = Tokenizer::normalize_qwen2_json(&normalized, &config_without_overlay.to_json()).unwrap();
+    assert_eq!(materialized, normalized);
 }
 
 #[test]

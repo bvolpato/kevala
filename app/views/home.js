@@ -358,7 +358,7 @@ const DEMOS = `<section id="demos">
 const MODEL_CARDS = `<section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Laya, Kev, SemIf, and Gemma 4</h2>
+    <h2>Laya, Bruv, Kev, SemIf, and Gemma 4</h2>
     <div class="grid-3">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
@@ -369,6 +369,17 @@ const MODEL_CARDS = `<section class="tight" id="models">
           <div><dt>Stored pack</dt><dd>479 MB int8</dd></div>
           <div><dt>Context</dt><dd>512 tokens per state</dd></div>
           <div><dt>By</dt><dd>Nandakishor M, Convai Innovations · Apache-2.0</dd></div>
+        </dl>
+      </div>
+      <div class="card pad model-card">
+        <div class="row"><h3>Bruv 0.8B</h3><span class="badge gpu"><span class="dot"></span>WebGPU</span></div>
+        <p class="muted small">A local Qwen3.5 fine-tune for choosing among labeled options. It follows the public Tev1 data recipe with Kevala's direct option scoring objective. Experimental, with the source checkpoint and evaluations published openly.</p>
+        <dl class="specs">
+          <div><dt>Parameters</dt><dd>0.8B</dd></div>
+          <div><dt>Pack download</dt><dd>855 MB int8. Runtime memory is higher.</dd></div>
+          <div><dt>Scores</dt><dd>Relative scores for up to 16 options per question, not calibrated decision confidence.</dd></div>
+          <div><dt>Evaluation</dt><dd>652/864 correct on the separate browser decision suite; <a href="${REPO}/blob/main/BENCHMARK.md">see all suites</a>.</dd></div>
+          <div><dt>Source</dt><dd><a href="https://github.com/bvolpato/bruv">Bruv training code</a> · <a href="https://huggingface.co/bvolpato/bruv1-0.8b">checkpoint and pack</a>.</dd></div>
         </dl>
       </div>
       <div class="card pad model-card">
@@ -422,7 +433,7 @@ const HOOD = `<section class="tight" id="under-the-hood">
       </a>
       <a class="card pad mini-card" href="${REPO}/blob/main/BENCHMARK.md">
         <h3>Benchmarks</h3>
-        <p class="muted small">Decision accuracy, option-order stability, and WebGPU latency across all nine model packs, with the raw results.</p>
+        <p class="muted small">Decision accuracy, option-order stability, and WebGPU latency across the supported model packs, with the raw results.</p>
         <span class="go">See the numbers →</span>
       </a>
       <a class="card pad mini-card" href="#/how/fidelity">

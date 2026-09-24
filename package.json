@@ -1,13 +1,14 @@
 {
   "name": "kevala",
   "version": "0.1.3",
-  "description": "Run Laya, Kev, SemIf, and Gemma 4 decisions on your own hardware: typed questions in, option probabilities out, using WebGPU or supported WebAssembly/native CPU backends with no server.",
+  "description": "Run Laya, Bruv, Kev, SemIf, and Gemma 4 decisions on your own hardware: typed questions in, option probabilities out, using WebGPU or supported WebAssembly/native CPU backends with no server.",
   "keywords": [
     "webassembly",
     "webgpu",
     "decision-model",
     "classification",
     "laya",
+    "bruv",
     "kev",
     "semif",
     "gemma",

@@ -5,15 +5,18 @@ Accuracy, option-order stability, conversion fidelity, and latency are separate 
 The fixtures are small synthetic tasks. They do not establish general reasoning ability,
 calibrated confidence, or a ranking against other inference engines.
 
-## Results: September 22, 2026
+## Results: September 22–24, 2026
 
-All nine packs completed all 864 requested decisions with valid probabilities and no runtime
-failures: **7,776 WebGPU decisions in total**. Each cell below gives accuracy and the number
+All ten packs completed all 864 requested decisions with valid probabilities and no runtime
+failures: **8,640 WebGPU decisions in total**. Each cell below gives accuracy and the number
 of correct option orders. Pack sizes are binary GiB, not VRAM requirements.
+The first nine runs were recorded September 22; Bruv 0.8B was recorded September 24 UTC
+on the same GPU and driver after its training job had exited.
 
 | Pack | Download GiB | Kevala authored | SemIf authored | SemIf perturbations |
 |---|---:|---:|---:|---:|
 | Laya | 0.45 | 75.0% (81/108) | 62.3% (269/432) | 69.4% (225/324) |
+| Bruv 0.8B | 0.80 | 90.7% (98/108) | 79.6% (344/432) | 64.8% (210/324) |
 | Kev 0.8B | 0.80 | 89.8% (97/108) | 71.1% (307/432) | 70.7% (229/324) |
 | Kev 4B | 4.43 | 91.7% (99/108) | 89.4% (386/432) | 90.1% (292/324) |
 | Kev 9B | 8.35 | 96.3% (104/108) | 91.9% (397/432) | 96.3% (312/324) |
@@ -32,6 +35,7 @@ They are descriptive counts; related SemIf cases are not independent observation
 | Pack | Kevala flips | SemIf authored flips | SemIf perturbation flips | Wall p50 ms | Wall p95 ms |
 |---|---:|---:|---:|---:|---:|
 | Laya | 10/36 | 22/144 | 17/108 | 99.9 | 100.3 |
+| Bruv 0.8B | 2/36 | 16/144 | 14/108 | 99.9 | 100.2 |
 | Kev 0.8B | 2/36 | 19/144 | 11/108 | 99.9 | 100.3 |
 | Kev 4B | 2/36 | 6/144 | 7/108 | 100.0 | 199.9 |
 | Kev 9B | 1/36 | 3/144 | 0/108 | 200.0 | 299.7 |
@@ -41,17 +45,20 @@ They are descriptive counts; related SemIf cases are not independent observation
 | Gemma 4 E2B IT | 5/36 | 38/144 | 45/108 | 100.0 | 200.0 |
 | Gemma 4 E4B IT | 0/36 | 17/144 | 14/108 | 200.0 | 202.9 |
 
-Kev 9B had the highest accuracy on the two SemIf suites in this run. SemIf 4B and Gemma
+Bruv 0.8B answered 652/864 decisions correctly across the three suites. Kev 9B had the
+highest accuracy on the two SemIf suites in this comparison. SemIf 4B and Gemma
 E4B answered all new Kevala cases correctly, but their lower scores on the SemIf suites show
 why one small suite is insufficient. Several direct-option models were sensitive to option
 order. Use these measurements to select candidates for your own evaluation, not as a universal
 model ranking.
 
-The [summary JSON](benchmarks/results/decisions-linux-2026-09-22/summary.json) includes per-family
-scores, grouped 95% bootstrap intervals, position bias, and validation results. The [raw outputs](benchmarks/results/decisions-linux-2026-09-22/)
+The [ten-pack summary JSON](benchmarks/results/decisions-linux-2026-09-22/summary-bruv.json) includes per-family
+scores, grouped 95% bootstrap intervals, position bias, and validation results. The
+[original nine-pack summary](benchmarks/results/decisions-linux-2026-09-22/summary.json) remains
+available. The [raw outputs](benchmarks/results/decisions-linux-2026-09-22/)
 include every answer, probability, and timing. The six Kev/SemIf runs predate runtime fixture
 hash capture; their artifacts explicitly record post-run verification of the unchanged fixture
-files. Laya and both Gemma runs captured and checked those hashes in the running page. All nine
+files. Laya, Bruv, and both Gemma runs captured and checked those hashes in the running page. All ten
 local pack files were independently hashed in full and matched the pinned catalog digests.
 
 ## Tasks and scoring

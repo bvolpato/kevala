@@ -1,4 +1,4 @@
-// kevala: System 1 decision models (Laya, Kev, SemIf, Gemma 4) in the browser, no server, no dependencies.
+// kevala: System 1 decision models (Laya, Bruv, Kev, SemIf, Gemma 4) in the browser, no server, no dependencies.
 //
 //   import { Kevala } from "kevala";
 //   const kevala = await Kevala.load({ onProgress: (p) => console.log(p) });

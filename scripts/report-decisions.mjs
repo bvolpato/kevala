@@ -15,7 +15,7 @@ import {
 import { MODELS } from "../js/src/source.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const MODEL_FILES = Object.freeze({
+const BASE_MODEL_FILES = Object.freeze({
   laya: "decision-laya.json",
   "kev-0.8b": "decision-kev-0.8b.json",
   "kev-4b": "decision-kev-4b.json",
@@ -26,6 +26,10 @@ const MODEL_FILES = Object.freeze({
   "gemma-4-e2b": "decision-gemma-4-e2b.json",
   "gemma-4-e4b": "decision-gemma-4-e4b.json",
 });
+const OPTIONAL_MODEL_FILES = Object.freeze({
+  "bruv1-0.8b": "decision-bruv1-0.8b.json",
+});
+const MODEL_FILES = Object.freeze({ ...BASE_MODEL_FILES, ...OPTIONAL_MODEL_FILES });
 const MODEL_ALIASES = Object.freeze({
   "gemma-4-e2b-it": "gemma-4-e2b",
   "gemma-4-e4b-it": "gemma-4-e4b",
@@ -48,7 +52,7 @@ const DATASET_FILES = [
 ];
 
 function parseArgs(argv) {
-  const args = { results: resolve(ROOT, "tmp"), fixtures: resolve(ROOT, "benchmarks/decisions"), references: [], output: null, markdown: null, checkSummary: null, probabilityTolerance: DEFAULT_PROBABILITY_TOLERANCE };
+  const args = { results: resolve(ROOT, "tmp"), fixtures: resolve(ROOT, "benchmarks/decisions"), references: [], optionalModels: [], output: null, markdown: null, checkSummary: null, probabilityTolerance: DEFAULT_PROBABILITY_TOLERANCE };
   for (let index = 0; index < argv.length; index++) {
     const value = argv[index];
     const next = () => {
@@ -58,12 +62,17 @@ function parseArgs(argv) {
     if (value === "--results") args.results = resolvePath(next());
     else if (value === "--fixtures") args.fixtures = resolvePath(next());
     else if (value === "--reference") args.references.push(resolvePath(next()));
+    else if (value === "--include-model") {
+      const model = next();
+      if (!Object.hasOwn(OPTIONAL_MODEL_FILES, model)) throw new Error(`unknown optional model ${model}`);
+      if (!args.optionalModels.includes(model)) args.optionalModels.push(model);
+    }
     else if (value === "--output") args.output = resolvePath(next());
     else if (value === "--markdown") args.markdown = resolvePath(next());
     else if (value === "--check-summary") args.checkSummary = resolvePath(next());
     else if (value === "--probability-tolerance") args.probabilityTolerance = Number(next());
     else if (value === "--help" || value === "-h") {
-      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--reference FILE ...] [--output FILE] [--markdown FILE] [--check-summary FILE]");
+      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--include-model NAME ...] [--reference FILE ...] [--output FILE] [--markdown FILE] [--check-summary FILE]");
       process.exit(0);
     } else throw new Error(`unknown argument ${value}`);
   }
@@ -938,7 +947,7 @@ async function main() {
     missing: [],
   };
   const modelData = new Map();
-  for (const model of Object.keys(MODEL_FILES)) {
+  for (const model of [...Object.keys(BASE_MODEL_FILES), ...args.optionalModels]) {
     const path = await findResult(args.results, model);
     if (!path) report.missing.push(`model result: ${MODEL_FILES[model]}`);
     const checked = await processModel(model, path, canonical, args.probabilityTolerance);
