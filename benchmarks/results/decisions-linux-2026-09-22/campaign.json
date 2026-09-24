@@ -1,0 +1,23 @@
+{
+  "schema": "kevala-decision-campaign-v1",
+  "date": "2026-09-22",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "vramGiB": 16,
+    "cpu": "AMD Ryzen 9 9950X3D",
+    "os": "Ubuntu",
+    "driver": "595.71.05"
+  },
+  "browser": {
+    "name": "firefox",
+    "version": "152.0.3",
+    "visibility": "headless"
+  },
+  "engineRevision": null,
+  "passes": 1,
+  "resultsPath": "benchmarks/results/decisions-linux-2026-09-22",
+  "notes": [
+    "**Timing caveat:** this Firefox run has roughly 100 ms WebGPU queue-completion steps despite a fine clock. These are browser-specific end-to-end measurements, not GPU kernel latency or a current-main speed ranking. Only one full pass per model was recorded.",
+    "**Provenance caveat:** this campaign description is reconstructed from the existing report and host metadata, not newly measured. Six Kev/SemIf fixture hashes were verified after the run; Laya and Gemma captured hashes at runtime. The host is documented in `docs/benchmarks/models-linux-2026-09-22.json`; the browser reports an anonymous hardware adapter."
+  ]
+}

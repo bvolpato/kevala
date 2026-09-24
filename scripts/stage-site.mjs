@@ -12,6 +12,8 @@ const destination = join(dist, "site");
 const publicFiles = [".nojekyll", "LICENSE", "THIRD_PARTY_NOTICES", "README.md", "BENCHMARK.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html", "site/index.html"];
 const publicDirectories = ["app", "assets", "benchmarks/decisions", "benchmarks/results", "docs", "examples", "js/src", "skills", "tests/fixtures"];
 const publicHarnesses = [
+  "dev/activation-check.html",
+  "dev/activation-check.js",
   "dev/attn-bench.html",
   "dev/attn-bench.js",
   "dev/cache-test.html",
@@ -20,11 +22,23 @@ const publicHarnesses = [
   "dev/decision-bench.js",
   "dev/gemma-attn-bench.html",
   "dev/gemma-attn-bench.js",
+  "dev/gemma-gelu-check.html",
+  "dev/gemma-gelu-check.js",
+  "dev/gemma-rms-check.html",
+  "dev/gemma-rms-check.js",
+  "dev/gemma-tail-check.html",
+  "dev/gemma-tail-check.js",
   "dev/gpu-bench.html",
   "dev/gpu-bench.js",
   "dev/kernels.html",
+  "dev/kernel-compile-check.html",
+  "dev/kernel-compile-check.js",
+  "dev/kev-attn-bench.html",
+  "dev/kev-attn-bench.js",
   "dev/matmul-bench.html",
   "dev/recur-bench.html",
+  "dev/recur-check.html",
+  "dev/recur-check.js",
   "dev/tetris-eval.html",
   "dev/wgsl.js",
 ];

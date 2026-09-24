@@ -1,0 +1,27 @@
+{
+  "schema": "kevala-decision-campaign-v1",
+  "date": "2026-09-23",
+  "hardware": {
+    "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Max, Version 26.4.1 (Build 25E253))",
+    "cpu": "Apple M4 Max",
+    "os": "macOS 26.4.1",
+    "vramGiB": null,
+    "driver": "26.4.1",
+    "cpuCores": 16,
+    "memoryGiB": 64,
+    "gpuCores": 40,
+    "unifiedMemoryGiB": 64
+  },
+  "browser": {
+    "name": "chrome",
+    "version": "Chrome/151.0.7922.34",
+    "visibility": "hidden"
+  },
+  "engineRevision": "c71b14a7a4a5455edf33fee289c2cfd339c6fe55",
+  "passes": 1,
+  "resultsPath": "benchmarks/results/decisions-m4-max-2026-09-23",
+  "reportPath": "benchmarks/results/decisions-m4-max-2026-09-23/report.md",
+  "notes": [
+    "**Build caveat:** this build contains uncommitted changes; the served JS/WASM fingerprint is recorded with every result."
+  ]
+}

@@ -29,7 +29,7 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     }
     s += w[i] * x;
   }
-  var v = s / (1.0 + exp(-s));
+  var v = silu(s);
   if (wg.y < LIN_KEY_HEADS) {
     // Each workgroup contains two 128-wide q/k heads.
     let j = l % 128u;

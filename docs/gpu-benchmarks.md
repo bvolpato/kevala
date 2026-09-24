@@ -1,5 +1,9 @@
 # Firefox Linux GPU kernel sweep
 
+For the September 24 M4 Max numerical audit and fixes, see
+[kernel safety](kernel-safety.md). That audit includes actual compilation of every
+registered kernel and CPU-reference checks; it is not a new latency comparison.
+
 Measured on September 22, 2026, using Firefox 152.0.3 on Ubuntu, an NVIDIA RTX 5070 Ti
 (595.71.05), and the Ryzen 9950X3D integrated AMD GPU (RADV, Mesa 25.2.8).
 Firefox uses Vulkan for WebGPU on this platform. These results do not use CUDA.
@@ -239,8 +243,12 @@ behind a flag.
 
 ## Reproduce
 
-Serve the checkout and use a Chrome that listens for DevTools; the runner opens its own context
-there, raises and sizes its window (Chrome slows covered windows), and closes it.
+Serve the checkout and use a Chrome that listens for DevTools. The runner opens a hidden target
+in its own context, without a window or tab-strip entry, and closes it when finished. Pass
+`--headed` to `scripts/bench-gpu.py` only when you need a visible window. Hidden targets are not
+a headless browser process; the shared Chrome stays running. Results record `targetVisibility`
+so timing comparisons can keep the same visibility mode. CPU latency in hidden targets can be
+affected by browser background scheduling; do not compare it directly with foreground timings.
 
 ```sh
 export KEVALA_BENCH_CDP=http://127.0.0.1:9333

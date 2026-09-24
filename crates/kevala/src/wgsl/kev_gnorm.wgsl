@@ -18,5 +18,5 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) j
   for (var k = 64u; k > 0u; k >>= 1u) { if (j < k) { red[j] += red[j + k]; } workgroupBarrier(); }
   let inv = inverseSqrt(red[0] / 128.0 + p.eps);
   let z = PROJ[t * LIN_WIDTH + LIN_DIM + wg.y * 128u + j];
-  CORE[idx] = o * inv * GW[j] * (z / (1.0 + exp(-z)));
+  CORE[idx] = o * inv * GW[j] * silu(z);
 }

@@ -1,6 +1,6 @@
 {
-  "schema": "kevala-decision-report-v1",
-  "generatedUtc": "2026-09-22T23:20:38.490Z",
+  "schema": "kevala-decision-report-v2",
+  "generatedUtc": "2026-09-24T20:24:01.056Z",
   "probabilitySumTolerance": 0.001,
   "canonical": {
     "permutations": [
@@ -9,6 +9,7 @@
       "rotate2"
     ],
     "expandedRows": 864,
+    "passes": 1,
     "files": [
       {
         "path": "benchmarks/decisions/kevala-authored36.jsonl",
@@ -37,6 +38,55 @@
       "sha256": "14d04ccb0bde798f55276d4be28857e2070a1cf93b87ea281c1eb8312bfcbd5a"
     }
   },
+  "campaign": {
+    "schema": "kevala-decision-campaign-v1",
+    "date": "2026-09-22",
+    "hardware": {
+      "gpu": "NVIDIA GeForce RTX 5070 Ti",
+      "vramGiB": 16,
+      "cpu": "AMD Ryzen 9 9950X3D",
+      "os": "Ubuntu",
+      "driver": "595.71.05"
+    },
+    "browser": {
+      "name": "firefox",
+      "version": "152.0.3",
+      "visibility": "headless"
+    },
+    "engineRevision": null,
+    "passes": 1,
+    "resultsPath": "benchmarks/results/decisions-linux-2026-09-22",
+    "notes": [
+      "**Timing caveat:** this Firefox run has roughly 100 ms WebGPU queue-completion steps despite a fine clock. These are browser-specific end-to-end measurements, not GPU kernel latency or a current-main speed ranking. Only one full pass per model was recorded.",
+      "**Provenance caveat:** this campaign description is reconstructed from the existing report and host metadata, not newly measured. Six Kev/SemIf fixture hashes were verified after the run; Laya and Gemma captured hashes at runtime. The host is documented in `docs/benchmarks/models-linux-2026-09-22.json`; the browser reports an anonymous hardware adapter."
+    ],
+    "dateEnd": "2026-09-22"
+  },
+  "campaigns": [
+    {
+      "schema": "kevala-decision-campaign-v1",
+      "date": "2026-09-22",
+      "hardware": {
+        "gpu": "NVIDIA GeForce RTX 5070 Ti",
+        "vramGiB": 16,
+        "cpu": "AMD Ryzen 9 9950X3D",
+        "os": "Ubuntu",
+        "driver": "595.71.05"
+      },
+      "browser": {
+        "name": "firefox",
+        "version": "152.0.3",
+        "visibility": "headless"
+      },
+      "engineRevision": null,
+      "passes": 1,
+      "resultsPath": "benchmarks/results/decisions-linux-2026-09-22",
+      "notes": [
+        "**Timing caveat:** this Firefox run has roughly 100 ms WebGPU queue-completion steps despite a fine clock. These are browser-specific end-to-end measurements, not GPU kernel latency or a current-main speed ranking. Only one full pass per model was recorded.",
+        "**Provenance caveat:** this campaign description is reconstructed from the existing report and host metadata, not newly measured. Six Kev/SemIf fixture hashes were verified after the run; Laya and Gemma captured hashes at runtime. The host is documented in `docs/benchmarks/models-linux-2026-09-22.json`; the browser reports an anonymous hardware adapter."
+      ]
+    }
+  ],
   "models": {
     "laya": {
       "status": "ok",
@@ -102,6 +152,9 @@
           "supported": false
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -235,7 +288,8 @@
         "p50Ms": 99.94000000000052,
         "p95Ms": 100.26000000000204,
         "minMs": 97.32000000000698,
-        "maxMs": 112.42000000000009
+        "maxMs": 112.42000000000009,
+        "meanMs": 100.02942129629636
       },
       "reportedLatency": {
         "count": 864,
@@ -686,6 +740,9 @@
           "supported": true
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -822,7 +879,8 @@
         "p50Ms": 99.94000000000231,
         "p95Ms": 100.30000000000018,
         "minMs": 97.37999999999738,
-        "maxMs": 111.44000000000231
+        "maxMs": 111.44000000000231,
+        "meanMs": 100.07502314814816
       },
       "reportedLatency": {
         "count": 864,
@@ -1273,6 +1331,9 @@
           "supported": true
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -1409,7 +1470,8 @@
         "p50Ms": 99.95999999999913,
         "p95Ms": 199.86000000000055,
         "minMs": 96.16000000000348,
-        "maxMs": 205.2399999999907
+        "maxMs": 205.2399999999907,
+        "meanMs": 106.42120370370355
       },
       "reportedLatency": {
         "count": 864,
@@ -1860,6 +1922,9 @@
           "supported": true
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -1996,7 +2061,8 @@
         "p50Ms": 199.98000000001048,
         "p95Ms": 299.72000000000116,
         "minMs": 96.41999999999824,
-        "maxMs": 309.1000000000058
+        "maxMs": 309.1000000000058,
+        "meanMs": 186.8327083333328
       },
       "reportedLatency": {
         "count": 864,
@@ -2447,6 +2513,9 @@
           "supported": true
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -2591,7 +2660,8 @@
         "p50Ms": 99.94000000000231,
         "p95Ms": 100.15999999999984,
         "minMs": 97.73999999999069,
-        "maxMs": 112.21999999999936
+        "maxMs": 112.21999999999936,
+        "meanMs": 100.00150462962966
       },
       "reportedLatency": {
         "count": 864,
@@ -3042,6 +3112,9 @@
           "supported": true
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -3186,7 +3259,8 @@
         "p50Ms": 99.94000000000231,
         "p95Ms": 100.22000000000116,
         "minMs": 92.47999999999593,
-        "maxMs": 112.07999999999991
+        "maxMs": 112.07999999999991,
+        "meanMs": 100.05006944444452
       },
       "reportedLatency": {
         "count": 864,
@@ -3637,6 +3711,9 @@
           "supported": true
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -3781,7 +3858,8 @@
         "p50Ms": 200.0399999999936,
         "p95Ms": 202.31999999999243,
         "minMs": 192.9200000000128,
-        "maxMs": 212.01999999999865
+        "maxMs": 212.01999999999865,
+        "meanMs": 200.29435185185193
       },
       "reportedLatency": {
         "count": 864,
@@ -4232,6 +4310,9 @@
           "supported": false
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -4377,7 +4458,8 @@
         "p50Ms": 100,
         "p95Ms": 200.04000000000087,
         "minMs": 97.2599999999984,
-        "maxMs": 204.3399999999965
+        "maxMs": 204.3399999999965,
+        "meanMs": 117.1238657407408
       },
       "reportedLatency": {
         "count": 864,
@@ -4828,6 +4910,9 @@
           "supported": false
         },
         "environment": null,
+        "batch": 1,
+        "warmups": null,
+        "engine": null,
         "validation": {
           "backend": "webgpu",
           "hardwareAdapter": {
@@ -4973,7 +5058,8 @@
         "p50Ms": 200.04000000000087,
         "p95Ms": 202.9199999999837,
         "minMs": 198.57999999999993,
-        "maxMs": 303.679999999993
+        "maxMs": 303.679999999993,
+        "meanMs": 204.42631944444426
       },
       "reportedLatency": {
         "count": 864,
@@ -8286,7 +8372,8 @@
             "p50Ms": 15.553530305624008,
             "p95Ms": 17.638598568737507,
             "minMs": 14.286233112215996,
-            "maxMs": 18.496510572731495
+            "maxMs": 18.496510572731495,
+            "meanMs": 15.727756682921338
           },
           "sourceSummary": {
             "rows": 108,
@@ -8671,7 +8758,8 @@
             "p50Ms": 18.25520768761635,
             "p95Ms": 19.96842958033085,
             "minMs": 17.10883155465126,
-            "maxMs": 22.454372607171535
+            "maxMs": 22.454372607171535,
+            "meanMs": 18.353318519614362
           },
           "sourceSummary": {
             "rows": 108,
@@ -8936,7 +9024,8 @@
             "p50Ms": 22.693287581205368,
             "p95Ms": 23.71050976216793,
             "minMs": 21.848774515092373,
-            "maxMs": 24.223048239946365
+            "maxMs": 24.223048239946365,
+            "meanMs": 22.748843620151835
           },
           "sourceSummary": {
             "rows": 108,
@@ -9261,7 +9350,8 @@
             "p50Ms": 28.991992585361004,
             "p95Ms": 30.381150543689728,
             "minMs": 27.9568275436759,
-            "maxMs": 32.087174244225025
+            "maxMs": 32.087174244225025,
+            "meanMs": 29.113758139795177
           },
           "sourceSummary": {
             "rows": 108,

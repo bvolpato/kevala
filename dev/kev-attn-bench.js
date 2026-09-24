@@ -148,6 +148,10 @@ function makeCase(plan, seed) {
 
   const q = makeArray(random, T * attnQ, VALUE_SCALE);
   const gate = makeArray(random, T * attnQ, GATE_SCALE);
+  if (query.get("gateTails") === "1") {
+    const tails = [-3.4028234663852886e38, -1000, -100, -20, -10, -1, 0, 1, 10, 20, 100, 1000, 3.4028234663852886e38];
+    for (let index = 0; index < gate.length; index++) gate[index] = tails[index % tails.length];
+  }
   const currentK = makeArray(random, T * attnK, VALUE_SCALE);
   const currentV = makeArray(random, T * attnK, VALUE_SCALE);
   const proj = new Float32Array(T * attnWidth);
@@ -586,6 +590,7 @@ async function main() {
     metric: "geometric mean of per-plan median FP32 tiled Kev attention milliseconds",
     method: timer.method,
     seed,
+    gateTails: query.get("gateTails") === "1",
     warmups,
     samples,
     cases,

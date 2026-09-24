@@ -121,5 +121,5 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) d
     workgroupBarrier();
   }
   let gate = PROJ[t * ATTN_WIDTH + h * 512u + 256u + d];
-  OUT[t * ATTN_Q + h * 256u + d] = o / lsum / (1.0 + exp(-gate));
+  OUT[t * ATTN_Q + h * 256u + d] = o / lsum * sigmoid(gate);
 }

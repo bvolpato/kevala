@@ -10,11 +10,24 @@ import {
   evaluateDecisions,
   expandPermutations,
   goldOptionId,
+  summarizeLatencies,
   validateDecisionRow,
 } from "../benchmarks/decisions/metrics.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const decisionDir = resolve(root, "benchmarks/decisions");
+
+test("latency summary uses an arithmetic mean and nearest-rank percentiles", () => {
+  assert.deepEqual(summarizeLatencies([100, 1, 2]), {
+    count: 3, p50Ms: 2, p95Ms: 100, minMs: 1, maxMs: 100, meanMs: 103 / 3,
+  });
+  assert.deepEqual(summarizeLatencies([]), {
+    count: 0, p50Ms: null, p95Ms: null, minMs: null, maxMs: null, meanMs: null,
+  });
+  for (const value of [null, undefined, "100", 0, -1, NaN, Infinity]) {
+    assert.throws(() => summarizeLatencies([1, value]), /finite positive numbers/);
+  }
+});
 
 async function readJsonl(name) {
   const text = await readFile(resolve(decisionDir, name), "utf8");

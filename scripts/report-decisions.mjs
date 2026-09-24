@@ -11,6 +11,7 @@ import {
   evaluateDecisions,
   expandPermutations,
   goldOptionId,
+  summarizeLatencies,
 } from "../benchmarks/decisions/metrics.js";
 import { MODELS } from "../js/src/source.js";
 
@@ -51,9 +52,11 @@ const DATASET_FILES = [
   "semif-authored144.jsonl",
   "semif-perturbations108.jsonl",
 ];
+const README_START = "<!-- decision-benchmark:start -->";
+const README_END = "<!-- decision-benchmark:end -->";
 
 function parseArgs(argv) {
-  const args = { results: resolve(ROOT, "tmp"), fixtures: resolve(ROOT, "benchmarks/decisions"), references: [], optionalModels: [], output: null, markdown: null, checkSummary: null, probabilityTolerance: DEFAULT_PROBABILITY_TOLERANCE };
+  const args = { results: resolve(ROOT, "tmp"), repeatResults: [], fixtures: resolve(ROOT, "benchmarks/decisions"), references: [], optionalModels: [], output: null, markdown: null, readme: null, checkReadme: null, noReferences: false, checkSummary: null, probabilityTolerance: DEFAULT_PROBABILITY_TOLERANCE };
   for (let index = 0; index < argv.length; index++) {
     const value = argv[index];
     const next = () => {
@@ -61,6 +64,7 @@ function parseArgs(argv) {
       return argv[++index];
     };
     if (value === "--results") args.results = resolvePath(next());
+    else if (value === "--repeat-results") args.repeatResults.push(resolvePath(next()));
     else if (value === "--fixtures") args.fixtures = resolvePath(next());
     else if (value === "--reference") args.references.push(resolvePath(next()));
     else if (value === "--include-model") {
@@ -70,15 +74,21 @@ function parseArgs(argv) {
     }
     else if (value === "--output") args.output = resolvePath(next());
     else if (value === "--markdown") args.markdown = resolvePath(next());
+    else if (value === "--readme") args.readme = resolvePath(next());
+    else if (value === "--check-readme") args.checkReadme = resolvePath(next());
+    else if (value === "--no-references") args.noReferences = true;
     else if (value === "--check-summary") args.checkSummary = resolvePath(next());
     else if (value === "--probability-tolerance") args.probabilityTolerance = Number(next());
     else if (value === "--help" || value === "-h") {
-      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--include-model NAME ...] [--reference FILE ...] [--output FILE] [--markdown FILE] [--check-summary FILE]");
+      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--repeat-results DIR ...] [--include-model NAME ...] [--reference FILE ... | --no-references] [--output FILE] [--markdown FILE] [--check-summary FILE] [--readme FILE | --check-readme FILE]");
       process.exit(0);
     } else throw new Error(`unknown argument ${value}`);
   }
   if (!Number.isFinite(args.probabilityTolerance) || args.probabilityTolerance <= 0) throw new Error("--probability-tolerance must be positive");
-  if (!args.references.length) args.references = DEFAULT_REFERENCES.map((name) => resolve(args.results, name));
+  if (args.readme && args.checkReadme) throw new Error("--readme and --check-readme are mutually exclusive");
+  if (args.noReferences && args.references.length) throw new Error("--no-references cannot be combined with --reference");
+  if (new Set([args.results, ...args.repeatResults]).size !== args.repeatResults.length + 1) throw new Error("repeated runs must use distinct result directories");
+  if (!args.noReferences && !args.references.length) args.references = DEFAULT_REFERENCES.map((name) => resolve(args.results, name));
   return args;
 }
 
@@ -103,6 +113,37 @@ async function sha256(path) {
 
 async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
+}
+
+function validDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toJSON()?.slice(0, 10) === value;
+}
+
+function validCampaign(campaign) {
+  const text = (value) => typeof value === "string" && value.length > 0;
+  return campaign?.schema === "kevala-decision-campaign-v1" && validDate(campaign.date)
+    && (campaign.dateEnd === undefined || validDate(campaign.dateEnd) && campaign.dateEnd >= campaign.date)
+    && [campaign.hardware?.gpu, campaign.hardware?.cpu, campaign.hardware?.os, campaign.browser?.name, campaign.browser?.version, campaign.browser?.visibility, campaign.resultsPath].every(text)
+    && campaign.passes === 1 && Array.isArray(campaign.notes) && campaign.notes.every(text);
+}
+
+async function loadCampaigns(directories) {
+  const campaigns = [];
+  for (const [index, directory] of directories.entries()) {
+    const path = resolve(directory, "campaign.json");
+    const campaign = await exists(path) ? await readJson(path) : null;
+    if ((!campaign && directories.length > 1) || (campaign && !validCampaign(campaign))) throw new Error(`run ${index + 1}: missing or invalid campaign.json`);
+    campaigns.push(campaign);
+  }
+  const primary = campaigns[0];
+  if (!primary) return { campaign: null, campaigns };
+  for (const [index, campaign] of campaigns.entries()) {
+    for (const field of ["schema", "hardware", "browser", "engineRevision", "resultsPath", "reportPath"]) {
+      if (firstDifference(campaign[field], primary[field])) throw new Error(`run ${index + 1}: campaign ${field} does not match run 1`);
+    }
+  }
+  const dates = campaigns.flatMap((campaign) => [campaign.date, campaign.dateEnd ?? campaign.date]).sort();
+  return { campaigns, campaign: { ...primary, date: dates[0], dateEnd: dates.at(-1), passes: campaigns.length, notes: [...new Set(campaigns.flatMap((campaign) => campaign.notes))] } };
 }
 
 async function readJsonl(path) {
@@ -331,21 +372,13 @@ function validateDatasetProvenance(data, expected, issues) {
   };
 }
 
-function quantile(values, fraction) {
-  if (!values.length) return null;
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * fraction) - 1))];
+function latency(rows, field) {
+  const values = rows.map((row) => row?.[field]);
+  return values.every(validLatency) ? summarizeLatencies(values) : null;
 }
 
-function latency(rows, field) {
-  const values = rows.map((row) => Number(row?.[field])).filter((value) => Number.isFinite(value) && value >= 0);
-  return {
-    count: values.length,
-    p50Ms: quantile(values, 0.5),
-    p95Ms: quantile(values, 0.95),
-    minMs: values.length ? Math.min(...values) : null,
-    maxMs: values.length ? Math.max(...values) : null,
-  };
+function validLatency(value) {
+  return typeof value === "number" && Number.isFinite(value) && value > 0;
 }
 
 function modelKey(value) {
@@ -376,12 +409,18 @@ async function findResult(resultsDir, model) {
 }
 
 async function loadCanonical(fixturesDir) {
+  const manifestPath = resolve(fixturesDir, "manifest.json");
+  const manifestData = await readJson(manifestPath);
+  if (!sameArray(manifestData.permutations, DEFAULT_PERMUTATIONS)) throw new Error("manifest permutations do not match the scoring protocol");
   const all = [];
   const files = [];
   const byDataset = new Map();
   for (const name of DATASET_FILES) {
     const path = resolve(fixturesDir, name);
     const rows = await readJsonl(path);
+    const digest = await sha256(path);
+    const entry = manifestFileEntry(manifestData, { path });
+    if (!entry || entry.sha256 !== digest || entry.rows !== rows.length) throw new Error(`${name}: fixture bytes or row count do not match manifest.json`);
     const expanded = expandPermutations(rows);
     const dataset = decisionDataset(rows[0]);
     for (const row of expanded) {
@@ -389,12 +428,10 @@ async function loadCanonical(fixturesDir) {
       if (!byDataset.has(dataset)) byDataset.set(dataset, []);
       byDataset.get(dataset).push(row);
     }
-    files.push({ path: relative(ROOT, path), sha256: await sha256(path), rows: rows.length, expandedRows: expanded.length, dataset });
+    files.push({ path: relative(ROOT, path), sha256: digest, rows: rows.length, expandedRows: expanded.length, dataset });
   }
-  const manifestPath = resolve(fixturesDir, "manifest.json");
-  const manifest = await exists(manifestPath)
-    ? { path: relative(ROOT, manifestPath), sha256: await sha256(manifestPath) }
-    : null;
+  if (manifestData.expanded_counts?.total !== all.length) throw new Error("manifest expanded row count does not match the scoring protocol");
+  const manifest = { path: relative(ROOT, manifestPath), sha256: await sha256(manifestPath) };
   return { all, byId: new Map(all.map((row) => [row.id, row])), byDataset, files, manifest };
 }
 
@@ -503,6 +540,7 @@ function validateRawResult(data, expected, tolerance, model) {
 
   const timingById = new Map();
   for (const raw of timingRows) {
+    if (!validLatency(raw.wallMs)) addIssue(issues, `timing ${idOf(raw) ?? "<missing>"}: wallMs must be a finite positive number`);
     const id = idOf(raw);
     if (!id) addIssue(issues, "timing row has no case ID");
     else if (timingById.has(id)) addIssue(issues, `duplicate timing case ID ${id}`);
@@ -554,6 +592,9 @@ function runtimeReport(data) {
     runner: data.runner ?? null,
     cachePolicy: data.metadata?.stateCache ?? data.cachePolicy ?? data.stateCache ?? null,
     environment: data.environment ?? null,
+    batch: data.metadata?.batch ?? null,
+    warmups: data.metadata?.warmups ?? null,
+    engine: data.metadata?.engine ?? null,
   };
 }
 
@@ -571,6 +612,8 @@ function packReport(data, verification) {
 }
 
 function validateModelMetadata(data, model, issues) {
+  if (data.metadata?.batch !== 1) addIssue(issues, "benchmark must explicitly report batch:1");
+  if (data.metadata?.profileDuringMeasurements === true || (Array.isArray(data.timingAllRows) && data.timingAllRows.some((row) => row.timing?.gpu != null))) addIssue(issues, "decision latency must be measured with GPU profiling disabled");
   const cachePolicy = data.cachePolicy ?? data.metadata?.stateCache ?? data.stateCache ?? null;
   if (!cachePolicy || cachePolicy.enabled !== false) addIssue(issues, "state cache policy must explicitly report enabled:false");
 
@@ -644,6 +687,42 @@ async function processModel(model, path, expected, tolerance) {
   return {
     report,
     internal: validation.ok ? { probabilitiesById: checked.probabilitiesById, predictions: checked.predictions, timingById: checked.timingById } : null,
+  };
+}
+
+function runtimeSignature(item) {
+  return JSON.stringify({ gpu: item.runtime.gpu, engine: item.runtime.engine, environment: item.runtime.environment, runner: item.runtime.runner, warmups: item.runtime.warmups });
+}
+
+function combineRuns(model, runs, expected) {
+  if (runs.length === 1) return runs[0];
+  const primary = runs[0];
+  const issues = runs.flatMap((run, index) => run.report.status === "ok" ? [] : [`run ${index + 1} is missing or invalid`]);
+  const valid = runs.filter((run) => run.report.status === "ok");
+  if (valid.length === runs.length) {
+    if (new Set(valid.map((run) => runtimeSignature(run.report))).size !== 1) issues.push("repeated runs have mixed runtime settings");
+    if (new Set(valid.map((run) => run.report.file.sha256)).size !== runs.length) issues.push("repeated runs contain duplicate artifact bytes");
+  }
+  const rows = [];
+  const predictions = [];
+  const timings = [];
+  for (const [index, run] of runs.entries()) {
+    if (!run.internal) continue;
+    rows.push(...expected.all.map((row) => ({ ...row, id: `${row.id}::run:${index + 1}`, base_id: `${row.base_id}::run:${index + 1}` })));
+    predictions.push(...run.internal.predictions.map((prediction) => ({ ...prediction, id: `${prediction.id}::run:${index + 1}` })));
+    timings.push(...run.internal.timingById.values());
+  }
+  return {
+    internal: issues.length ? null : primary.internal,
+    report: {
+      ...primary.report,
+      model,
+      status: issues.length ? "invalid" : "ok",
+      validation: { ...primary.report.validation, ok: issues.length === 0, issues, expectedRows: expected.all.length * runs.length, timingRows: timings.length, probabilityRows: runs.reduce((sum, run) => sum + (run.report.validation?.probabilityRows ?? 0), 0) },
+      metrics: issues.length ? null : evaluateDecisions(rows, predictions),
+      latency: issues.length ? null : latency(timings, "wallMs"),
+      runs: runs.map((run) => run.report),
+    },
   };
 }
 
@@ -755,6 +834,7 @@ function validateReferenceVariant(name, variant, expectedRows, tolerance, refere
   }
   for (const id of byId.keys()) if (!expectedRows.some((row) => row.id === id)) addIssue(issues, `${name}: unexpected case ID ${id}`);
   const forwardRows = rows.map((row) => ({ value: row.timing_ms?.forward_median }));
+  if (forwardRows.some((row) => !validLatency(row.value))) addIssue(issues, `${name}: forward timing must be a finite positive number`);
   const report = {
     status: issues.length ? "invalid" : "ok",
     variant: name,
@@ -915,10 +995,17 @@ function compareQ8WithReference(modelData, referenceData, expectedRows, model, r
 }
 
 function markdown(report) {
-  const out = ["# Decision benchmark report", "", `Generated: ${report.generatedUtc}`, "", "## Model results", "", "| Model | Status | Rows | Accuracy | Coverage | Invalid | p50 ms | p95 ms |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |"];
+  const out = ["# Decision benchmark report", "", `Generated: ${report.generatedUtc}`, "", `Full passes: ${report.canonical.passes}; requested decisions per model: ${report.canonical.expandedRows * report.canonical.passes}.`, "", "These are synthetic fixture scores, not general model accuracy. Rotations, perturbations, and repeated passes are correlated; confidence intervals resample the same 72 source groups. The combined accuracy below weights suites by their row counts; use the separate suite scores for model comparison. Mean latency pools individual awaited calls, not kernel timings.", "", "## Model results", "", "| Model | Status | Rows | Accuracy | Coverage | Invalid | Mean ms | p50 ms | p95 ms |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"];
   for (const [model, item] of Object.entries(report.models)) {
     const metrics = item.metrics;
-    out.push(`| ${model} | ${item.status} | ${metrics?.total ?? "—"} | ${metrics?.accuracy?.toFixed?.(4) ?? "—"} | ${metrics?.coverage?.toFixed?.(4) ?? "—"} | ${metrics ? metrics.invalid + metrics.missing : "—"} | ${item.latency?.p50Ms?.toFixed?.(2) ?? "—"} | ${item.latency?.p95Ms?.toFixed?.(2) ?? "—"} |`);
+    out.push(`| ${model} | ${item.status} | ${metrics?.total ?? "—"} | ${metrics?.accuracy?.toFixed?.(4) ?? "—"} | ${metrics?.coverage?.toFixed?.(4) ?? "—"} | ${metrics ? metrics.invalid + metrics.missing : "—"} | ${item.latency?.meanMs?.toFixed?.(2) ?? "—"} | ${item.latency?.p50Ms?.toFixed?.(2) ?? "—"} | ${item.latency?.p95Ms?.toFixed?.(2) ?? "—"} |`);
+  }
+  if (report.canonical.passes > 1) {
+    out.push("", "## Per-pass results", "", "Repeated passes measure execution variability, not additional independent tasks. Option-order flips are computed within each pass. Dates are UTC.", "", "| Model | Pass | Date | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean ms | p95 ms |", "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |");
+    for (const [model, item] of Object.entries(report.models)) for (const [index, run] of (item.runs ?? []).entries()) {
+      const scores = ["kevala-authored36", "semif-authored144", "semif-perturbations108"].map((dataset) => run.metrics?.perDataset?.[dataset]?.accuracy == null ? "—" : `${(100 * run.metrics.perDataset[dataset].accuracy).toFixed(1)}%`);
+      out.push(`| ${model} | ${index + 1} | ${campaignDates(report.campaigns[index])} | ${scores.join(" | ")} | ${run.latency?.meanMs?.toFixed?.(2) ?? "—"} | ${run.latency?.p95Ms?.toFixed?.(2) ?? "—"} |`);
+    }
   }
   out.push("", "## Per-dataset results", "", "| Model | Dataset | Rows | Accuracy | Coverage | Invalid | CI 95% | Flips |", "| --- | --- | ---: | ---: | ---: | ---: | --- | ---: |");
   for (const [model, item] of Object.entries(report.models)) for (const [dataset, metrics] of Object.entries(item.metrics?.perDataset ?? {})) {
@@ -934,14 +1021,90 @@ function markdown(report) {
   return `${out.join("\n")}\n`;
 }
 
+function campaignDates(campaign) {
+  if (!campaign) return "not captured";
+  return campaign.dateEnd && campaign.dateEnd !== campaign.date ? `${campaign.date} to ${campaign.dateEnd}` : campaign.date;
+}
+
+function validateCampaignRuntime(campaign, item, model) {
+  const runner = item.runtime.runner;
+  const visibility = runner?.targetVisibility ?? (runner?.headless === true ? "headless" : "headed");
+  if (runner?.browser !== campaign.browser.name || runner?.browserVersion !== campaign.browser.version || visibility !== campaign.browser.visibility) {
+    throw new Error(`${model}: browser does not match campaign.json`);
+  }
+  if (campaign.engineRevision && item.runtime.engine?.revision !== campaign.engineRevision) throw new Error(`${model}: engine revision does not match campaign.json`);
+  if (item.runtime.environment?.hardware && firstDifference(campaign.hardware, item.runtime.environment.hardware)) throw new Error(`${model}: hardware does not match campaign.json`);
+}
+
+function comparisonTable(report) {
+  const campaign = report.campaign;
+  if (!campaign) throw new Error("README publication requires campaign.json with the measurement date and hardware");
+  let signature = null;
+  const gpuLabel = campaign.hardware.gpu.match(/ANGLE Metal Renderer: ([^,]+)/)?.[1] ?? campaign.hardware.gpu;
+  const cpuLabel = campaign.hardware.cpu === gpuLabel ? "" : `, ${campaign.hardware.cpu}`;
+  const gpuCores = campaign.hardware.gpuCores ? ` (${campaign.hardware.gpuCores} GPU cores)` : "";
+  const memoryLabel = campaign.hardware.unifiedMemoryGiB ? `, ${campaign.hardware.unifiedMemoryGiB} GiB unified memory` : "";
+  const browserLabel = { chrome: "Chrome", firefox: "Firefox" }[campaign.browser.name] ?? campaign.browser.name;
+  const browserVersion = campaign.browser.version.replace(/^(?:Chrome|Firefox)\//, "");
+  const lines = [
+    `Snapshot (UTC): **${campaignDates(campaign)}**, ${gpuLabel}${gpuCores}${campaign.hardware.vramGiB ? ` (${campaign.hardware.vramGiB} GiB)` : ""}${cpuLabel}${memoryLabel}, ${campaign.hardware.os}, ${browserLabel} ${browserVersion} (${campaign.browser.visibility}).`,
+    "Text-only choice requests; Q8 packs; batch size one; inference caching and GPU profiling disabled. Downloads, loading, tuning, and warmup are excluded.",
+    "",
+    "| Model | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean decide ms | p95 ms | Pass mean range ms |",
+    "|---|---:|---:|---:|---:|---:|---:|",
+  ];
+  for (const [model, item] of Object.entries(report.models)) {
+    if (item.status !== "ok" || item.latency?.count !== report.canonical.expandedRows * report.canonical.passes || !validLatency(item.latency.meanMs) || !["verified", "post-run"].includes(item.datasetProvenance?.status) || item.runs?.some((run) => !["verified", "post-run"].includes(run.datasetProvenance?.status))) {
+      throw new Error(`${model}: README publication requires complete validated decisions, timings, and fixture provenance`);
+    }
+    validateCampaignRuntime(campaign, item, model);
+    const current = runtimeSignature(item);
+    if (signature !== null && signature !== current) throw new Error(`${model}: mixed GPU, engine, environment, or warmup settings cannot share a README table`);
+    signature = current;
+    const scores = ["kevala-authored36", "semif-authored144", "semif-perturbations108"].map((dataset) => {
+      const metric = item.metrics.perDataset[dataset];
+      return `${(100 * metric.accuracy).toFixed(1)}% (${metric.correct}/${metric.total})`;
+    });
+    const means = (item.runs ?? [item]).map((run) => run.latency.meanMs);
+    const meanRange = `${Math.min(...means).toFixed(1)}-${Math.max(...means).toFixed(1)}`;
+    lines.push(`| \`${model}\` | ${scores.join(" | ")} | ${item.latency.meanMs.toFixed(1)} | ${item.latency.p95Ms.toFixed(1)} | ${meanRange} |`);
+  }
+  lines.push(
+    "",
+    `Mean latency is the arithmetic mean of all ${report.canonical.expandedRows * report.canonical.passes} awaited \`decide()\` calls per model across ${report.canonical.passes} full pass${report.canonical.passes === 1 ? "" : "es"}, including tokenization and GPU readback, not summed kernel time. Failures count against accuracy; coverage and source-group confidence intervals are in [the full report](${campaign.reportPath ?? "BENCHMARK.md"}).`,
+    "Pass mean ranges show repeat variability, not confidence intervals. An interactive workstation can have substantial timing noise; this is not a dedicated-GPU performance limit.",
+    "",
+    "[Datasets and hashes](benchmarks/decisions/manifest.json): 36 Kevala cases, 144 SemIf authored variants, and 108 related perturbations, each in three option orders. There are only 72 independent source groups; rotations and perturbations are not independent examples. The suites stay separate instead of inflating one headline score. Labels have not been independently human adjudicated, and training overlap has not been audited; this is a synthetic regression benchmark, not general model accuracy.",
+    "",
+    ...campaign.notes.map((note) => `${note}\n`),
+    `Runtime build revision: ${campaign.engineRevision ?? "not captured in this older run"}. [Raw decisions and timings](${campaign.resultsPath}/).`,
+  );
+  return lines.join("\n").trim();
+}
+
+async function updateReadme(path, report, check) {
+  const source = await readFile(path, "utf8");
+  if (source.split(README_START).length !== 2 || source.split(README_END).length !== 2) throw new Error("README must have exactly one decision-benchmark marker pair");
+  const start = source.indexOf(README_START) + README_START.length;
+  const end = source.indexOf(README_END);
+  if (end < start) throw new Error("README decision-benchmark markers are out of order");
+  const updated = `${source.slice(0, start)}\n\n${comparisonTable(report)}\n\n${source.slice(end)}`;
+  if (check && source !== updated) throw new Error("README decision table is stale; regenerate with --readme README.md");
+  if (!check) await writeFile(path, updated);
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const canonical = await loadCanonical(args.fixtures);
+  const directories = [args.results, ...args.repeatResults];
+  const { campaign, campaigns } = await loadCampaigns(directories);
   const report = {
-    schema: "kevala-decision-report-v1",
+    schema: "kevala-decision-report-v2",
     generatedUtc: new Date().toISOString(),
     probabilitySumTolerance: args.probabilityTolerance,
-    canonical: { permutations: [...DEFAULT_PERMUTATIONS], expandedRows: canonical.all.length, files: canonical.files, manifest: canonical.manifest },
+    canonical: { permutations: [...DEFAULT_PERMUTATIONS], expandedRows: canonical.all.length, passes: args.repeatResults.length + 1, files: canonical.files, manifest: canonical.manifest },
+    campaign,
+    campaigns,
     models: {},
     references: {},
     comparisons: [],
@@ -949,9 +1112,15 @@ async function main() {
   };
   const modelData = new Map();
   for (const model of [...Object.keys(BASE_MODEL_FILES), ...args.optionalModels]) {
-    const path = await findResult(args.results, model);
-    if (!path) report.missing.push(`model result: ${MODEL_FILES[model]}`);
-    const checked = await processModel(model, path, canonical, args.probabilityTolerance);
+    const runs = [];
+    for (const [index, directory] of directories.entries()) {
+      const path = await findResult(directory, model);
+      if (!path) report.missing.push(`model result: ${relative(ROOT, directory)}/${MODEL_FILES[model]}`);
+      const run = await processModel(model, path, canonical, args.probabilityTolerance);
+      if (campaigns[index] && run.report.status === "ok") validateCampaignRuntime(campaigns[index], run.report, model);
+      runs.push(run);
+    }
+    const checked = combineRuns(model, runs, canonical);
     report.models[model] = checked.report;
     modelData.set(model, checked);
   }
@@ -965,12 +1134,14 @@ async function main() {
     report.references[relative(ROOT, path)] = checked.report;
     for (const [name, variant] of checked.variants) referenceData.set(name, variant);
   }
-  for (const variant of ["e2b-base", "e2b-it", "e4b-base", "e4b-it"]) {
-    if (!referenceData.has(variant)) report.missing.push(`reference variant: ${variant}`);
+  if (!args.noReferences) {
+    for (const variant of ["e2b-base", "e2b-it", "e4b-base", "e4b-it"]) {
+      if (!referenceData.has(variant)) report.missing.push(`reference variant: ${variant}`);
+    }
+    const kevalaRows = canonical.byDataset.get("kevala-authored36") ?? [];
+    report.comparisons.push(compareQ8WithReference(modelData.get("gemma-4-e2b"), referenceData, kevalaRows, "gemma-4-e2b", "e2b-it"));
+    report.comparisons.push(compareQ8WithReference(modelData.get("gemma-4-e4b"), referenceData, kevalaRows, "gemma-4-e4b", "e4b-it"));
   }
-  const kevalaRows = canonical.byDataset.get("kevala-authored36") ?? [];
-  report.comparisons.push(compareQ8WithReference(modelData.get("gemma-4-e2b"), referenceData, kevalaRows, "gemma-4-e2b", "e2b-it"));
-  report.comparisons.push(compareQ8WithReference(modelData.get("gemma-4-e4b"), referenceData, kevalaRows, "gemma-4-e4b", "e4b-it"));
   const text = JSON.stringify(report, null, 2) + "\n";
   if (args.output) {
     await mkdir(dirname(args.output), { recursive: true });
@@ -990,7 +1161,9 @@ async function main() {
       || report.comparisons.some((item) => item.status !== "ok")) {
     console.error("Decision report contains missing or invalid inputs; inspect the saved validation results.");
     process.exitCode = 1;
+    return;
   }
+  if (args.readme || args.checkReadme) await updateReadme(args.readme ?? args.checkReadme, report, Boolean(args.checkReadme));
 }
 
 main().catch((error) => {

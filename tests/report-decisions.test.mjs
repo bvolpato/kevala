@@ -18,9 +18,9 @@ async function runReporter(results, output, checkSummary = null, extraArgs = [])
   const args = [
     reporter,
     "--results", results,
-    "--reference", resolve(results, referenceName),
     "--output", output,
   ];
+  if (!extraArgs.includes("--no-references")) args.push("--reference", resolve(results, referenceName));
   if (checkSummary) args.push("--check-summary", checkSummary);
   args.push(...extraArgs);
   try {
@@ -42,7 +42,8 @@ test("selected additional models require a measured result", async (t) => {
   const result = await runReporter(results, output, null, ["--include-model", "bruv1-0.8b"]);
   assert.notEqual(result.code, 0);
   const report = JSON.parse(await readFile(output, "utf8"));
-  assert.deepEqual(report.missing, ["model result: decision-bruv1-0.8b.json"]);
+  assert.equal(report.missing.length, 1);
+  assert.match(report.missing[0], /decision-bruv1-0\.8b\.json$/);
   assert.equal(report.models["bruv1-0.8b"].status, "missing");
 });
 
@@ -62,6 +63,77 @@ async function readResult(directory, model) {
   return { path, value: JSON.parse(await readFile(path, "utf8")) };
 }
 
+async function repeatedResults() {
+  const directory = await copiedResults();
+  const summary = JSON.parse(await readFile(committedSummary, "utf8"));
+  for (const model of Object.keys(summary.models)) {
+    const result = await readResult(directory, model);
+    result.value.timingAllRows.forEach((row) => { row.wallMs *= 2; });
+    await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
+  }
+  return directory;
+}
+
+test("repeated campaign dates and notes are retained in the published table", async (context) => {
+  const repeated = await repeatedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(repeated, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const campaignPath = resolve(repeated, "campaign.json");
+  const campaign = JSON.parse(await readFile(campaignPath, "utf8"));
+  campaign.date = "2026-09-24";
+  campaign.dateEnd = "2026-09-25";
+  campaign.notes.push("Repeat-specific timing caveat.");
+  await writeFile(campaignPath, JSON.stringify(campaign));
+  await writeFile(readme, "<!-- decision-benchmark:start -->\noriginal\n<!-- decision-benchmark:end -->\n");
+  const result = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated, "--readme", readme]);
+  assert.equal(result.code, 0, result.stderr);
+  const report = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(report.campaign.dateEnd, "2026-09-25");
+  assert.deepEqual(report.campaigns.map((item) => item.date), ["2026-09-22", "2026-09-24"]);
+  const table = await readFile(readme, "utf8");
+  assert.match(table, /2026-09-22 to 2026-09-25/);
+  assert.match(table, /Repeat-specific timing caveat/);
+});
+
+test("publication rejects inconsistent or missing repeated campaign metadata", async (context) => {
+  const repeated = await repeatedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(repeated, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const source = "<!-- decision-benchmark:start -->\noriginal\n<!-- decision-benchmark:end -->\n";
+  await writeFile(readme, source);
+  const campaignPath = resolve(repeated, "campaign.json");
+  const original = JSON.parse(await readFile(campaignPath, "utf8"));
+  const changes = [
+    (campaign) => { campaign.hardware.gpu = "Different GPU"; },
+    (campaign) => { campaign.browser.version = "Different browser"; },
+    (campaign) => { campaign.engineRevision = "different-revision"; },
+    (campaign) => { campaign.date = "2026-02-30"; },
+    (campaign) => { campaign.dateEnd = "2026-09-21"; },
+    (campaign) => { delete campaign.notes; },
+  ];
+  for (const change of [...changes, null]) {
+    const campaign = structuredClone(original);
+    if (change) {
+      change(campaign);
+      await writeFile(campaignPath, JSON.stringify(campaign));
+    } else {
+      await rm(campaignPath);
+    }
+    const result = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated, "--readme", readme]);
+    assert.notEqual(result.code, 0, "repeat campaign metadata must be checked before publication");
+    assert.match(result.stderr, /run 2:.*campaign/);
+    assert.equal(await readFile(readme, "utf8"), source);
+  }
+});
+
 test("reporter accepts matching full-pack evidence and committed summary", async (t) => {
   const output = await temporaryOutput();
   t.after(async () => rm(dirname(output), { recursive: true, force: true }));
@@ -79,6 +151,119 @@ test("reporter accepts matching full-pack evidence and committed summary", async
   assert.equal(verification.expectedCatalogHash, "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2");
   assert.equal(verification.recordedFullPackSha256, verification.expectedCatalogHash);
   assert.equal(verification.recordedFullPackBytes, 857259584);
+  const raw = await readResult(archivedResults, "kev-0.8b");
+  assert.equal(report.models["kev-0.8b"].latency.meanMs, raw.value.timingAllRows.reduce((sum, row) => sum + row.wallMs, 0) / raw.value.timingAllRows.length);
+});
+
+test("README generation checks computed scores and preserves unrelated text", async (context) => {
+  const results = await copiedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(results, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const campaignFile = resolve(results, "campaign.json");
+  const campaign = JSON.parse(await readFile(campaignFile, "utf8"));
+  campaign.reportPath = "benchmarks/results/new-campaign/report.md";
+  await writeFile(campaignFile, `${JSON.stringify(campaign)}\n`);
+  const source = "Keep this introduction.\n<!-- decision-benchmark:start -->\nstale\n<!-- decision-benchmark:end -->\nKeep this ending.\n";
+  await writeFile(readme, source);
+  const before = await runReporter(results, output, null, ["--check-readme", readme]);
+  assert.notEqual(before.code, 0);
+  assert.match(before.stderr, /README decision table is stale/);
+  const regenerated = await runReporter(results, output, null, ["--readme", readme]);
+  assert.equal(regenerated.code, 0, regenerated.stderr);
+  const actual = await readFile(readme, "utf8");
+  assert.ok(actual.startsWith("Keep this introduction.\n"));
+  assert.ok(actual.endsWith("\nKeep this ending.\n"));
+  assert.match(actual, /89\.8% \(97\/108\)/);
+  assert.match(actual, /\| `kev-0\.8b` .* \| 100\.1 \| 100\.3 \|/);
+  assert.ok(actual.includes(`[the full report](${campaign.reportPath})`));
+  const checked = await runReporter(results, output, null, ["--check-readme", readme]);
+  assert.equal(checked.code, 0, checked.stderr);
+});
+
+test("README publication rejects mixed browser campaigns and leaves the file unchanged", async (context) => {
+  const results = await copiedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(results, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const source = "<!-- decision-benchmark:start -->\noriginal\n<!-- decision-benchmark:end -->\n";
+  await writeFile(readme, source);
+  const result = await readResult(results, "kev-0.8b");
+  result.value.runner.browserVersion = "different-version";
+  await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
+  const reported = await runReporter(results, output, null, ["--readme", readme]);
+  assert.notEqual(reported.code, 0);
+  assert.match(reported.stderr, /browser does not match campaign.json/);
+  assert.equal(await readFile(readme, "utf8"), source);
+});
+
+test("repeated runs pool actual wall samples and retain independent source groups", async (context) => {
+  const repeated = await repeatedResults();
+  const output = await temporaryOutput();
+  context.after(async () => {
+    await rm(repeated, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const original = JSON.parse(await readFile(committedSummary, "utf8"));
+  const reported = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated]);
+  assert.equal(reported.code, 0, reported.stderr);
+  const report = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(report.canonical.passes, 2);
+  for (const [model, result] of Object.entries(report.models)) {
+    assert.equal(result.metrics.total, 1728);
+    assert.equal(result.metrics.correct, original.models[model].metrics.correct * 2);
+    assert.equal(result.metrics.groupBootstrap.groups, 72);
+    assert.equal(result.metrics.semanticPermutationFlip.groups, original.models[model].metrics.semanticPermutationFlip.groups * 2);
+    assert.equal(result.metrics.semanticPermutationFlip.rate, original.models[model].metrics.semanticPermutationFlip.rate);
+    assert.equal(result.metrics.perDataset["kevala-authored36"].groupBootstrap.groups, 36);
+    assert.equal(result.latency.count, 1728);
+    assert.ok(Math.abs(result.latency.meanMs - original.models[model].latency.meanMs * 1.5) < 1e-8);
+    assert.equal(result.runs.length, 2);
+  }
+  assert.deepEqual(report.references, {});
+  assert.deepEqual(report.comparisons, []);
+});
+
+test("README publication rejects a hardware caption that contradicts the raw environment", async (context) => {
+  const results = await copiedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(results, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const source = "<!-- decision-benchmark:start -->\noriginal\n<!-- decision-benchmark:end -->\n";
+  await writeFile(readme, source);
+  const campaign = JSON.parse(await readFile(resolve(results, "campaign.json"), "utf8"));
+  for (const model of Object.keys(JSON.parse(await readFile(committedSummary, "utf8")).models)) {
+    const result = await readResult(results, model);
+    result.value.environment = { hardware: { ...campaign.hardware, gpu: "A different GPU" } };
+    await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
+  }
+  const reported = await runReporter(results, output, null, ["--readme", readme]);
+  assert.notEqual(reported.code, 0);
+  assert.match(reported.stderr, /hardware does not match campaign.json/);
+  assert.equal(await readFile(readme, "utf8"), source);
+});
+
+test("copied artifacts cannot masquerade as independent repeated measurements", async (context) => {
+  const repeated = await copiedResults();
+  const output = await temporaryOutput();
+  context.after(async () => {
+    await rm(repeated, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const reported = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated]);
+  assert.notEqual(reported.code, 0);
+  const report = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(report.models.laya.status, "invalid");
+  assert.match(report.models.laya.validation.issues.join("\n"), /duplicate artifact bytes/);
 });
 
 test("reporter rejects a wrong full-pack digest", async (t) => {
@@ -132,6 +317,25 @@ test("reporter rejects a corrupted full-pack byte size", async (t) => {
   const report = JSON.parse(await readFile(output, "utf8"));
   assert.equal(report.models["kev-0.8b"].pack.verification.status, "invalid");
   assert.match(report.models["kev-0.8b"].validation.issues.join("\n"), /full-pack byte size mismatch/);
+});
+
+test("reporter rejects missing, coerced, and nonpositive wall timings", async (context) => {
+  const results = await copiedResults();
+  const output = await temporaryOutput();
+  context.after(async () => {
+    await rm(results, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const result = await readResult(results, "kev-0.8b");
+  for (const value of [null, undefined, "100", 0, -1]) {
+    result.value.timingAllRows[0].wallMs = value;
+    await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
+    const reported = await runReporter(results, output);
+    assert.notEqual(reported.code, 0, `wallMs=${JSON.stringify(value)} must fail validation`);
+    const report = JSON.parse(await readFile(output, "utf8"));
+    assert.equal(report.models["kev-0.8b"].latency, null);
+    assert.match(report.models["kev-0.8b"].validation.issues.join("\n"), /wallMs must be a finite positive number/);
+  }
 });
 
 test("summary check rejects altered metrics", async (t) => {

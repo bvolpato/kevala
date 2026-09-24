@@ -9,6 +9,8 @@ struct P { I: u32, mode: u32, _a: u32, _b: u32 }
 @group(0) @binding(4) var<storage, read_write> A: array<f32>;
 
 fn gelu(x: f32) -> f32 {
+  if (x >= 10.0) { return x; }
+  if (x <= -10.0) { return 0.0; }
   let c = 0.7978845608028654;
   return 0.5 * x * (1.0 + tanh(c * (x + 0.044715 * x * x * x)));
 }

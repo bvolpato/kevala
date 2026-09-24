@@ -1,0 +1,74 @@
+{
+  "schema": "kevala-gemma-gelu-regression-v1",
+  "date": "2026-09-23",
+  "kernel": "gemma4_gelu",
+  "before": {
+    "backend": "webgpu",
+    "done": true,
+    "error": "GELU(20) * 1: NaN, expected 20",
+    "runner": {
+      "browser": "chrome",
+      "browserRequested": "chrome (cdp)",
+      "browserVersion": "Chrome/151.0.7922.34",
+      "expectedBackend": "webgpu",
+      "headless": false,
+      "targetVisibility": "hidden",
+      "timerPrivacy": {
+        "firefoxPrecisionDisabled": false,
+        "isolatedSeleniumProfile": false,
+        "note": "unchanged"
+      },
+      "vkDriverFiles": null
+    },
+    "status": "error"
+  },
+  "after": {
+    "adapter": {
+      "isFallbackAdapter": false,
+      "name": "apple metal-3",
+      "vendor": "apple"
+    },
+    "backend": "webgpu",
+    "correctness": {
+      "absoluteTolerance": 0.00001,
+      "cases": [
+        {
+          "finite": true,
+          "scale": 1,
+          "values": 116
+        },
+        {
+          "finite": true,
+          "scale": -1,
+          "values": 116
+        },
+        {
+          "finite": true,
+          "scale": 0,
+          "values": 116
+        }
+      ],
+      "maxAbs": 4.76837158203125e-7,
+      "ok": true,
+      "relativeTolerance": 0.00002
+    },
+    "done": true,
+    "method": "performance.now wall-clock numerical guard",
+    "metricMs": 0.7333333293596903,
+    "runner": {
+      "browser": "chrome",
+      "browserRequested": "chrome (cdp)",
+      "browserVersion": "Chrome/151.0.7922.34",
+      "expectedBackend": "webgpu",
+      "headless": false,
+      "targetVisibility": "hidden",
+      "timerPrivacy": {
+        "firefoxPrecisionDisabled": false,
+        "isolatedSeleniumProfile": false,
+        "note": "unchanged"
+      },
+      "vkDriverFiles": null
+    },
+    "status": "done"
+  }
+}

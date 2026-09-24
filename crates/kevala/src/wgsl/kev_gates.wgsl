@@ -33,10 +33,10 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   var o: f32;
   if (j < LIN_HEADS) {
     let x = v + DT[j];
-    let sp = select(log(1.0 + exp(x)), x, x > 20.0);
+    let sp = softplus(x);
     o = exp(NA[j] * sp);
   } else {
-    o = 1.0 / (1.0 + exp(-v));
+    o = sigmoid(v);
   }
   AB[t * OUTS + j] = o;
 }

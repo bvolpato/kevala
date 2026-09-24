@@ -72,11 +72,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--timeout", type=float, default=240.0, help="maximum browser wait in seconds")
     parser.add_argument("--output", type=Path, help="write the structured page result to this JSON file")
     parser.add_argument("--max-dp", type=float, default=0.024, help="maximum parity probability difference")
-    parser.add_argument("--headed", action="store_true", help="show the selected browser instead of using headless mode")
+    parser.add_argument("--headed", action="store_true", help="show a benchmark window instead of a headless browser or hidden CDP target")
     parser.add_argument(
         "--cdp",
         default=os.environ.get("KEVALA_BENCH_CDP"),
-        help="run in the Chrome listening at this DevTools URL (a fresh context of it) instead of launching a browser",
+        help="run in a hidden target of the Chrome listening at this DevTools URL instead of launching a browser",
     )
     return parser.parse_args()
 
@@ -519,7 +519,7 @@ def create_browser(args: argparse.Namespace):
     return webdriver.Firefox(options=options, service=Service(log_output=os.devnull))
 
 
-def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float) -> tuple[object, dict]:
+def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float, headed: bool = False) -> tuple[object, dict]:
     """Loads `url` in a fresh context of a running Chrome and polls `expression` until it is done.
 
     This speaks the DevTools protocol directly: Playwright's attach step asserts on target types
@@ -550,12 +550,17 @@ def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float) 
         context = send("Target.createBrowserContext", {"disposeOnDetach": True})["browserContextId"]
         result: object = None
         try:
-            target = send("Target.createTarget", {"url": "about:blank", "browserContextId": context, "newWindow": True})["targetId"]
+            target_params = {"url": "about:blank", "browserContextId": context}
+            if headed:
+                target_params["newWindow"] = True
+            else:
+                target_params.update({"hidden": True, "background": True})
+            target = send("Target.createTarget", target_params)["targetId"]
             session = send("Target.attachToTarget", {"targetId": target, "flatten": True})["sessionId"]
-            # Chrome slows covered windows: size this one and bring it to the front
-            window = send("Browser.getWindowForTarget", {"targetId": target})["windowId"]
-            send("Browser.setWindowBounds", {"windowId": window, "bounds": {"width": 1280, "height": 900, "windowState": "normal"}})
-            send("Page.bringToFront", session=session)
+            if headed:
+                window = send("Browser.getWindowForTarget", {"targetId": target})["windowId"]
+                send("Browser.setWindowBounds", {"windowId": window, "bounds": {"width": 1280, "height": 900, "windowState": "normal"}})
+                send("Page.bringToFront", session=session)
             send("Page.navigate", {"url": url}, session=session)
             deadline = time.monotonic() + timeout
             while time.monotonic() < deadline:
@@ -591,7 +596,7 @@ def main() -> int:
     result_global = RESULT_GLOBALS[args.result]
     result_expression = f"return window.{result_global} || null;"
     if args.cdp:
-        result, capabilities = poll_chrome(args.cdp, url, result_expression, args.result, args.timeout)
+        result, capabilities = poll_chrome(args.cdp, url, result_expression, args.result, args.timeout, headed=args.headed)
     else:
         try:
             browser = create_browser(args)
@@ -618,6 +623,7 @@ def main() -> int:
         "browserRequested": "chrome (cdp)" if args.cdp else args.browser,
         "browserVersion": capabilities.get("browserVersion"),
         "headless": not args.headed and not args.cdp,
+        "targetVisibility": "hidden" if args.cdp and not args.headed else "headed" if args.headed else "headless",
         "expectedBackend": args.backend,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
         "timerPrivacy": {
