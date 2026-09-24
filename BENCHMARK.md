@@ -63,6 +63,10 @@ include every answer, probability, and timing. The six Kev/SemIf runs predate ru
 hash capture; their artifacts explicitly record post-run verification of the unchanged fixture
 files. Laya, both Bruv runs, and both Gemma runs captured and checked those hashes in the running page. All eleven
 local pack files were independently hashed in full and matched the pinned catalog digests.
+The Bruv 4B Q8 pack also matched all 12 scoreable cases in its
+[BF16 reference fixture](tests/fixtures/golden-bruv1-4b.json): exact prompt tokens and answer
+choices, with maximum absolute option-score difference 0.019503. One one-option question is
+outside the direct-options contract and was skipped by the reference generator.
 
 ## Tasks and scoring
 
