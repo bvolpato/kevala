@@ -1,0 +1,1929 @@
+{
+  "backend": "webgpu",
+  "catalogHash": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
+  "catalogHashScope": "expected-catalog-pack-sha256",
+  "done": true,
+  "errors": [],
+  "gpuInfo": {
+    "architecture": null,
+    "available": true,
+    "description": null,
+    "device": null,
+    "features": [
+      "bgra8unorm-storage",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "float32-filterable",
+      "indirect-first-instance",
+      "rg11b10ufloat-renderable",
+      "shader-f16",
+      "texture-compression-bc",
+      "texture-compression-bc-sliced-3d",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxBufferSize": 1073741824,
+      "maxStorageBufferBindingSize": 1073741824
+    },
+    "name": "WebGPU",
+    "vendor": null
+  },
+  "hash": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
+  "hashScope": "expected-catalog-pack-sha256",
+  "latency": {
+    "count": 36,
+    "maxMs": 201.22000000000116,
+    "minMs": 199.70000000001164,
+    "p50Ms": 200.0799999999872,
+    "p95Ms": 201.22000000000116
+  },
+  "loadMs": 136444.8,
+  "metadata": {
+    "batch": 1,
+    "clock": {
+      "crossOriginIsolated": false,
+      "fine": true,
+      "minDeltaMs": 0.01999999999999602,
+      "quantized": false,
+      "source": "performance.now"
+    },
+    "dataset": "kevala",
+    "datasetFileHashes": {
+      "kevala-authored36.jsonl": {
+        "rows": 36,
+        "sha256": "2b1c67080104f910412457ef77a6d37575be0b07d4e9d47c15a3da24346233c2"
+      }
+    },
+    "datasetFiles": [
+      "kevala-authored36.jsonl"
+    ],
+    "datasetManifest": {
+      "counts": {
+        "kevala_authored": 36,
+        "semif_authored": 144,
+        "semif_perturbations": 108
+      },
+      "expanded_counts": {
+        "kevala_authored": 108,
+        "semif_authored": 432,
+        "semif_perturbations": 324,
+        "total": 864
+      },
+      "kevala": {
+        "families": {
+          "candidate_selection": 12,
+          "evidence_interpretation": 12,
+          "rule_application": 12
+        },
+        "groups": 36,
+        "options": {
+          "3": 36
+        },
+        "path": "kevala-authored36.jsonl",
+        "rows": 36,
+        "sha256": "2b1c67080104f910412457ef77a6d37575be0b07d4e9d47c15a3da24346233c2"
+      },
+      "permutations": [
+        "identity",
+        "rotate1",
+        "rotate2"
+      ],
+      "semif": {
+        "fixtures": [
+          {
+            "families": {
+              "candidate_selection": 48,
+              "evidence_interpretation": 48,
+              "rule_application": 48
+            },
+            "groups": 36,
+            "options": {
+              "3": 144
+            },
+            "path": "semif-authored144.jsonl",
+            "rows": 144,
+            "sha256": "8162d1c73f925af64453f1ec05ef36d583b3815bf698e60f0d454bd11537e079"
+          },
+          {
+            "families": {
+              "candidate_selection": 36,
+              "evidence_interpretation": 36,
+              "rule_application": 36
+            },
+            "groups": 36,
+            "options": {
+              "3": 108
+            },
+            "path": "semif-perturbations108.jsonl",
+            "rows": 108,
+            "sha256": "1dd7ccf80518d0e34886478ca23982aa726e9daccd343b9e95cedaf6b569bec4"
+          }
+        ],
+        "license": "MIT",
+        "license_sha256": "f765f2140f8507a8f0d81ec0fd2c4bd72fe6a066841ef27883ff876a76bf61be",
+        "perturbation_manifest_sha256": "f81f93b57e0b46b0164b6eb6d65a419604c6af37a5aaba55c413f76581f2fef8",
+        "repository": "https://github.com/TheoLeeCJ/SemIf",
+        "revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37"
+      },
+      "source_policy": "SemIf fixture bytes are copied unchanged after revision, license, and SHA-256 checks.",
+      "version": "kevala-decision-v1"
+    },
+    "datasetManifestSha256": "14d04ccb0bde798f55276d4be28857e2070a1cf93b87ea281c1eb8312bfcbd5a",
+    "datasetModule": "kevala-decision-v1",
+    "elapsedMs": 143822.2,
+    "measuredDecisionMs": 7216.179999999993,
+    "metricsApi": "benchmarks/decisions/metrics.js:evaluateDecisions",
+    "modelArch": "kev",
+    "modelInfo": {
+      "author": "Bruno Volpato",
+      "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+      "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "converter": "kevala 0.1.3",
+      "inspiration": "SemIf direct-options-v1 readout",
+      "license": "apache-2.0",
+      "method_license": "mit",
+      "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "method_source": "https://github.com/TheoLeeCJ/SemIf",
+      "name": "bruv1-4b",
+      "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+      "revision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
+      "source": "https://huggingface.co/bvolpato/bruv1-4b"
+    },
+    "permutations": [
+      "identity"
+    ],
+    "stateCache": {
+      "backend": "webgpu",
+      "enabled": false,
+      "requested": false,
+      "supported": true
+    }
+  },
+  "metric": "per-decision wall-clock p50 milliseconds; quality validated independently",
+  "metricMs": 200.0799999999872,
+  "model": "bruv1-4b",
+  "modelArch": "kev",
+  "modelInfo": {
+    "author": "Bruno Volpato",
+    "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+    "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "converter": "kevala 0.1.3",
+    "inspiration": "SemIf direct-options-v1 readout",
+    "license": "apache-2.0",
+    "method_license": "mit",
+    "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+    "method_source": "https://github.com/TheoLeeCJ/SemIf",
+    "name": "bruv1-4b",
+    "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+    "revision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
+    "source": "https://huggingface.co/bvolpato/bruv1-4b"
+  },
+  "modelRevision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
+  "profile": null,
+  "quality": {
+    "accuracy": 0.9444444444444444,
+    "correct": 34,
+    "coverage": 1,
+    "groupBootstrap": {
+      "confidence95": [
+        0.8611111111111112,
+        1
+      ],
+      "estimate": 0.9444444444444444,
+      "groups": 36,
+      "samples": 1000,
+      "seed": 217
+    },
+    "invalid": 0,
+    "invalidCount": 0,
+    "missing": 0,
+    "perDataset": {
+      "kevala-authored36": {
+        "accuracy": 0.9444444444444444,
+        "correct": 34,
+        "coverage": 1,
+        "groupBootstrap": {
+          "confidence95": [
+            0.8611111111111112,
+            1
+          ],
+          "estimate": 0.9444444444444444,
+          "groups": 36,
+          "samples": 1000,
+          "seed": 217
+        },
+        "invalid": 0,
+        "missing": 0,
+        "perFamily": {
+          "candidate_selection": {
+            "accuracy": 1,
+            "correct": 12,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0,
+            "total": 12,
+            "valid": 12
+          },
+          "evidence_interpretation": {
+            "accuracy": 0.8333333333333334,
+            "correct": 10,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0,
+            "total": 12,
+            "valid": 12
+          },
+          "rule_application": {
+            "accuracy": 1,
+            "correct": 12,
+            "coverage": 1,
+            "invalid": 0,
+            "missing": 0,
+            "total": 12,
+            "valid": 12
+          }
+        },
+        "selectedPositionBias": {
+          "bias": [
+            -1.1102230246251563E-16,
+            -1.1102230246251563E-16,
+            -1.1102230246251563E-16
+          ],
+          "expectedPositionCounts": [
+            12.000000000000004,
+            12.000000000000004,
+            12.000000000000004
+          ],
+          "expectedPositionRate": [
+            0.3333333333333334,
+            0.3333333333333334,
+            0.3333333333333334
+          ],
+          "goldPositionCounts": [
+            12,
+            12,
+            12
+          ],
+          "goldPositionRate": [
+            0.3333333333333333,
+            0.3333333333333333,
+            0.3333333333333333
+          ],
+          "maxAbsoluteBias": 1.1102230246251563E-16,
+          "selectedPositionCounts": [
+            12,
+            12,
+            12
+          ],
+          "selectedPositionRate": [
+            0.3333333333333333,
+            0.3333333333333333,
+            0.3333333333333333
+          ]
+        },
+        "semanticPermutationFlip": {
+          "groups": 36,
+          "groupsWithFlip": 0,
+          "groupsWithPredictions": 36,
+          "rate": 0
+        },
+        "total": 36,
+        "valid": 36
+      }
+    },
+    "perFamily": {
+      "candidate_selection": {
+        "accuracy": 1,
+        "correct": 12,
+        "coverage": 1,
+        "invalid": 0,
+        "missing": 0,
+        "total": 12,
+        "valid": 12
+      },
+      "evidence_interpretation": {
+        "accuracy": 0.8333333333333334,
+        "correct": 10,
+        "coverage": 1,
+        "invalid": 0,
+        "missing": 0,
+        "total": 12,
+        "valid": 12
+      },
+      "rule_application": {
+        "accuracy": 1,
+        "correct": 12,
+        "coverage": 1,
+        "invalid": 0,
+        "missing": 0,
+        "total": 12,
+        "valid": 12
+      }
+    },
+    "selectedPositionBias": {
+      "bias": [
+        -1.1102230246251563E-16,
+        -1.1102230246251563E-16,
+        -1.1102230246251563E-16
+      ],
+      "expectedPositionCounts": [
+        12.000000000000004,
+        12.000000000000004,
+        12.000000000000004
+      ],
+      "expectedPositionRate": [
+        0.3333333333333334,
+        0.3333333333333334,
+        0.3333333333333334
+      ],
+      "goldPositionCounts": [
+        12,
+        12,
+        12
+      ],
+      "goldPositionRate": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ],
+      "maxAbsoluteBias": 1.1102230246251563E-16,
+      "selectedPositionCounts": [
+        12,
+        12,
+        12
+      ],
+      "selectedPositionRate": [
+        0.3333333333333333,
+        0.3333333333333333,
+        0.3333333333333333
+      ]
+    },
+    "semanticPermutationFlip": {
+      "groups": 36,
+      "groupsWithFlip": 0,
+      "groupsWithPredictions": 36,
+      "rate": 0
+    },
+    "total": 36,
+    "valid": 36
+  },
+  "rawProbs": [
+    {
+      "caseId": "kev-evidence-01::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.0004635828663595021,
+        "insufficient": 0.004147526808083057,
+        "supported": 0.9953888654708862
+      }
+    },
+    {
+      "caseId": "kev-evidence-02::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.9976759552955629,
+        "insufficient": 0.0011542231077328324,
+        "supported": 0.0011697906302288177
+      }
+    },
+    {
+      "caseId": "kev-evidence-03::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.002428195439279079,
+        "insufficient": 0.9957005381584167,
+        "supported": 0.001871260115876794
+      }
+    },
+    {
+      "caseId": "kev-evidence-04::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.0023017250932753086,
+        "insufficient": 0.008863762021064758,
+        "supported": 0.98883455991745
+      }
+    },
+    {
+      "caseId": "kev-evidence-05::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.9969227910041808,
+        "insufficient": 0.002447604900225997,
+        "supported": 0.0006296180072240531
+      }
+    },
+    {
+      "caseId": "kev-evidence-06::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.9239744544029236,
+        "insufficient": 0.06276509910821915,
+        "supported": 0.0132603757083416
+      }
+    },
+    {
+      "caseId": "kev-evidence-07::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.9977583885192872,
+        "insufficient": 0.0018725721165537832,
+        "supported": 0.00036898741382174194
+      }
+    },
+    {
+      "caseId": "kev-evidence-08::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.2641005516052246,
+        "insufficient": 0.6259579062461853,
+        "supported": 0.10994156450033188
+      }
+    },
+    {
+      "caseId": "kev-evidence-09::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.0008609563228674233,
+        "insufficient": 0.004888696130365133,
+        "supported": 0.9942504167556764
+      }
+    },
+    {
+      "caseId": "kev-evidence-10::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.9722861647605896,
+        "insufficient": 0.024443993344902992,
+        "supported": 0.003269805805757642
+      }
+    },
+    {
+      "caseId": "kev-evidence-11::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.0011733422288671136,
+        "insufficient": 0.005075443536043167,
+        "supported": 0.9937511086463928
+      }
+    },
+    {
+      "caseId": "kev-evidence-12::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "contradicted": 0.9946790933609008,
+        "insufficient": 0.004719309974461794,
+        "supported": 0.0006016293191350996
+      }
+    },
+    {
+      "caseId": "kev-rule-01::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.004332660231739283,
+        "permitted": 0.9954333901405334,
+        "prohibited": 0.00023387253168039024
+      }
+    },
+    {
+      "caseId": "kev-rule-02::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.0016020202310755849,
+        "permitted": 0.0014762049540877342,
+        "prohibited": 0.996921718120575
+      }
+    },
+    {
+      "caseId": "kev-rule-03::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.9931833148002625,
+        "permitted": 0.0022571829613298178,
+        "prohibited": 0.004559460561722517
+      }
+    },
+    {
+      "caseId": "kev-rule-04::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.0033539196010679007,
+        "permitted": 0.003111349418759346,
+        "prohibited": 0.9935346841812134
+      }
+    },
+    {
+      "caseId": "kev-rule-05::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.013618024066090584,
+        "permitted": 0.985848307609558,
+        "prohibited": 0.0005337033653631806
+      }
+    },
+    {
+      "caseId": "kev-rule-06::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.7774106860160828,
+        "permitted": 0.003671678015962243,
+        "prohibited": 0.21891768276691437
+      }
+    },
+    {
+      "caseId": "kev-rule-07::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.006236915942281485,
+        "permitted": 0.993410050868988,
+        "prohibited": 0.0003530532994773239
+      }
+    },
+    {
+      "caseId": "kev-rule-08::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.0035063158720731735,
+        "permitted": 0.9961025714874268,
+        "prohibited": 0.0003911397070623934
+      }
+    },
+    {
+      "caseId": "kev-rule-09::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.002228153171017766,
+        "permitted": 0.001415492850355804,
+        "prohibited": 0.99635648727417
+      }
+    },
+    {
+      "caseId": "kev-rule-10::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.0008294934523291886,
+        "permitted": 0.0006717083742842078,
+        "prohibited": 0.998498797416687
+      }
+    },
+    {
+      "caseId": "kev-rule-11::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.01164835412055254,
+        "permitted": 0.9872480034828186,
+        "prohibited": 0.0011035525240004065
+      }
+    },
+    {
+      "caseId": "kev-rule-12::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "insufficient": 0.9981170892715454,
+        "permitted": 0.001739906263537705,
+        "prohibited": 0.00014307050150819123
+      }
+    },
+    {
+      "caseId": "kev-candidate-01::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.002587628783658147,
+        "north": 0.9970239996910096,
+        "south": 0.000388417043723166
+      }
+    },
+    {
+      "caseId": "kev-candidate-02::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.0037001187447458506,
+        "north": 0.0003527647058945149,
+        "south": 0.9959471821784972
+      }
+    },
+    {
+      "caseId": "kev-candidate-03::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.997087061405182,
+        "north": 0.0024761699605733156,
+        "south": 0.00043677163193933666
+      }
+    },
+    {
+      "caseId": "kev-candidate-04::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.0025241326075047255,
+        "north": 0.9973917007446288,
+        "south": 0.00008419938967563212
+      }
+    },
+    {
+      "caseId": "kev-candidate-05::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.0018772851908579469,
+        "north": 0.0005643118638545275,
+        "south": 0.9975584745407104
+      }
+    },
+    {
+      "caseId": "kev-candidate-06::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.9958230257034302,
+        "north": 0.0034368245396763086,
+        "south": 0.0007401771144941449
+      }
+    },
+    {
+      "caseId": "kev-candidate-07::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.007954034954309464,
+        "north": 0.990761697292328,
+        "south": 0.0012842707801610231
+      }
+    },
+    {
+      "caseId": "kev-candidate-08::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.004315515048801899,
+        "north": 0.0005639870651066303,
+        "south": 0.9951204657554626
+      }
+    },
+    {
+      "caseId": "kev-candidate-09::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.0005704279174096882,
+        "north": 0.9979346990585328,
+        "south": 0.0014949296601116655
+      }
+    },
+    {
+      "caseId": "kev-candidate-10::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.006293009500950575,
+        "north": 0.00034746722667478025,
+        "south": 0.9933595061302184
+      }
+    },
+    {
+      "caseId": "kev-candidate-11::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.9925832748413086,
+        "north": 0.006262131966650486,
+        "south": 0.001154608209617436
+      }
+    },
+    {
+      "caseId": "kev-candidate-12::perm:identity",
+      "permutation": "identity",
+      "probabilities": {
+        "no_match": 0.0019126025727018712,
+        "north": 0.9972803592681884,
+        "south": 0.0008070235489867628
+      }
+    }
+  ],
+  "runner": {
+    "actualThreads": 1,
+    "browser": "firefox",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": true,
+      "isolatedSeleniumProfile": true,
+      "note": "Firefox timer privacy settings are changed only in the temporary Selenium profile"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "stateCache": {
+    "backend": "webgpu",
+    "enabled": false,
+    "requested": false,
+    "supported": true
+  },
+  "status": "done",
+  "threads": 1,
+  "timingAllRows": [
+    {
+      "baseId": "kev-evidence-01",
+      "caseId": "kev-evidence-01::perm:identity",
+      "correct": true,
+      "expected": "supported",
+      "invalid": false,
+      "options": [
+        "supported",
+        "insufficient",
+        "contradicted"
+      ],
+      "permutation": "identity",
+      "prediction": "supported",
+      "rawProbabilities": {
+        "contradicted": 0.0004635828663595021,
+        "insufficient": 0.004147526808083057,
+        "supported": 0.9953888654708862
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 3,
+          "tokensSaved": 0
+        },
+        "forward": 198.61999999999537,
+        "prepare": 1.179999999993015,
+        "tokens": 147,
+        "total": 199.95999999999185
+      },
+      "wallMs": 200.19999999998257
+    },
+    {
+      "baseId": "kev-evidence-02",
+      "caseId": "kev-evidence-02::perm:identity",
+      "correct": true,
+      "expected": "contradicted",
+      "invalid": false,
+      "options": [
+        "supported",
+        "insufficient",
+        "contradicted"
+      ],
+      "permutation": "identity",
+      "prediction": "contradicted",
+      "rawProbabilities": {
+        "contradicted": 0.9976759552955629,
+        "insufficient": 0.0011542231077328324,
+        "supported": 0.0011697906302288177
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 4,
+          "tokensSaved": 0
+        },
+        "forward": 198.5799999999872,
+        "prepare": 0.9800000000104774,
+        "tokens": 142,
+        "total": 199.72000000000116
+      },
+      "wallMs": 199.94000000000233
+    },
+    {
+      "baseId": "kev-evidence-03",
+      "caseId": "kev-evidence-03::perm:identity",
+      "correct": true,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "supported",
+        "insufficient",
+        "contradicted"
+      ],
+      "permutation": "identity",
+      "prediction": "insufficient",
+      "rawProbabilities": {
+        "contradicted": 0.002428195439279079,
+        "insufficient": 0.9957005381584167,
+        "supported": 0.001871260115876794
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 5,
+          "tokensSaved": 0
+        },
+        "forward": 198.7399999999907,
+        "prepare": 1.040000000008149,
+        "tokens": 145,
+        "total": 199.94000000000233
+      },
+      "wallMs": 200.18000000002212
+    },
+    {
+      "baseId": "kev-evidence-04",
+      "caseId": "kev-evidence-04::perm:identity",
+      "correct": true,
+      "expected": "supported",
+      "invalid": false,
+      "options": [
+        "contradicted",
+        "supported",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "supported",
+      "rawProbabilities": {
+        "contradicted": 0.0023017250932753086,
+        "insufficient": 0.008863762021064758,
+        "supported": 0.98883455991745
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 6,
+          "tokensSaved": 0
+        },
+        "forward": 198.38000000000463,
+        "prepare": 1.1600000000034925,
+        "tokens": 145,
+        "total": 199.6600000000035
+      },
+      "wallMs": 199.89999999999415
+    },
+    {
+      "baseId": "kev-evidence-05",
+      "caseId": "kev-evidence-05::perm:identity",
+      "correct": true,
+      "expected": "contradicted",
+      "invalid": false,
+      "options": [
+        "contradicted",
+        "supported",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "contradicted",
+      "rawProbabilities": {
+        "contradicted": 0.9969227910041808,
+        "insufficient": 0.002447604900225997,
+        "supported": 0.0006296180072240531
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 7,
+          "tokensSaved": 0
+        },
+        "forward": 198.69999999998257,
+        "prepare": 1.0200000000186265,
+        "tokens": 143,
+        "total": 199.86000000001513
+      },
+      "wallMs": 200.0799999999872
+    },
+    {
+      "baseId": "kev-evidence-06",
+      "caseId": "kev-evidence-06::perm:identity",
+      "correct": false,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "supported",
+        "contradicted",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "contradicted",
+      "rawProbabilities": {
+        "contradicted": 0.9239744544029236,
+        "insufficient": 0.06276509910821915,
+        "supported": 0.0132603757083416
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 8,
+          "tokensSaved": 0
+        },
+        "forward": 199.87999999997555,
+        "prepare": 1,
+        "tokens": 142,
+        "total": 201
+      },
+      "wallMs": 201.22000000000116
+    },
+    {
+      "baseId": "kev-evidence-07",
+      "caseId": "kev-evidence-07::perm:identity",
+      "correct": true,
+      "expected": "contradicted",
+      "invalid": false,
+      "options": [
+        "supported",
+        "contradicted",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "contradicted",
+      "rawProbabilities": {
+        "contradicted": 0.9977583885192872,
+        "insufficient": 0.0018725721165537832,
+        "supported": 0.00036898741382174194
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 9,
+          "tokensSaved": 0
+        },
+        "forward": 198.35999999998603,
+        "prepare": 1.1400000000139698,
+        "tokens": 144,
+        "total": 199.6600000000035
+      },
+      "wallMs": 199.85999999998603
+    },
+    {
+      "baseId": "kev-evidence-08",
+      "caseId": "kev-evidence-08::perm:identity",
+      "correct": true,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "insufficient",
+        "supported",
+        "contradicted"
+      ],
+      "permutation": "identity",
+      "prediction": "insufficient",
+      "rawProbabilities": {
+        "contradicted": 0.2641005516052246,
+        "insufficient": 0.6259579062461853,
+        "supported": 0.10994156450033188
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 10,
+          "tokensSaved": 0
+        },
+        "forward": 198.51999999998952,
+        "prepare": 1.0199999999895226,
+        "tokens": 144,
+        "total": 199.6600000000035
+      },
+      "wallMs": 199.96000000002095
+    },
+    {
+      "baseId": "kev-evidence-09",
+      "caseId": "kev-evidence-09::perm:identity",
+      "correct": true,
+      "expected": "supported",
+      "invalid": false,
+      "options": [
+        "contradicted",
+        "insufficient",
+        "supported"
+      ],
+      "permutation": "identity",
+      "prediction": "supported",
+      "rawProbabilities": {
+        "contradicted": 0.0008609563228674233,
+        "insufficient": 0.004888696130365133,
+        "supported": 0.9942504167556764
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 11,
+          "tokensSaved": 0
+        },
+        "forward": 198.67999999999304,
+        "prepare": 0.9600000000209548,
+        "tokens": 140,
+        "total": 199.77999999999884
+      },
+      "wallMs": 200.01999999998952
+    },
+    {
+      "baseId": "kev-evidence-10",
+      "caseId": "kev-evidence-10::perm:identity",
+      "correct": false,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "supported",
+        "insufficient",
+        "contradicted"
+      ],
+      "permutation": "identity",
+      "prediction": "contradicted",
+      "rawProbabilities": {
+        "contradicted": 0.9722861647605896,
+        "insufficient": 0.024443993344902992,
+        "supported": 0.003269805805757642
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 12,
+          "tokensSaved": 0
+        },
+        "forward": 198.77999999999884,
+        "prepare": 0.8800000000046566,
+        "tokens": 146,
+        "total": 199.7600000000093
+      },
+      "wallMs": 199.97999999998137
+    },
+    {
+      "baseId": "kev-evidence-11",
+      "caseId": "kev-evidence-11::perm:identity",
+      "correct": true,
+      "expected": "supported",
+      "invalid": false,
+      "options": [
+        "supported",
+        "contradicted",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "supported",
+      "rawProbabilities": {
+        "contradicted": 0.0011733422288671136,
+        "insufficient": 0.005075443536043167,
+        "supported": 0.9937511086463928
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 13,
+          "tokensSaved": 0
+        },
+        "forward": 198.88000000000463,
+        "prepare": 0.8599999999860302,
+        "tokens": 143,
+        "total": 199.85999999998603
+      },
+      "wallMs": 199.97999999998137
+    },
+    {
+      "baseId": "kev-evidence-12",
+      "caseId": "kev-evidence-12::perm:identity",
+      "correct": true,
+      "expected": "contradicted",
+      "invalid": false,
+      "options": [
+        "supported",
+        "insufficient",
+        "contradicted"
+      ],
+      "permutation": "identity",
+      "prediction": "contradicted",
+      "rawProbabilities": {
+        "contradicted": 0.9946790933609008,
+        "insufficient": 0.004719309974461794,
+        "supported": 0.0006016293191350996
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 14,
+          "tokensSaved": 0
+        },
+        "forward": 198.72000000000116,
+        "prepare": 1.2200000000011642,
+        "tokens": 149,
+        "total": 200.05999999999767
+      },
+      "wallMs": 200.2600000000093
+    },
+    {
+      "baseId": "kev-rule-01",
+      "caseId": "kev-rule-01::perm:identity",
+      "correct": true,
+      "expected": "permitted",
+      "invalid": false,
+      "options": [
+        "permitted",
+        "insufficient",
+        "prohibited"
+      ],
+      "permutation": "identity",
+      "prediction": "permitted",
+      "rawProbabilities": {
+        "insufficient": 0.004332660231739283,
+        "permitted": 0.9954333901405334,
+        "prohibited": 0.00023387253168039024
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 15,
+          "tokensSaved": 0
+        },
+        "forward": 198.5800000000163,
+        "prepare": 1.1199999999953434,
+        "tokens": 156,
+        "total": 199.82000000000696
+      },
+      "wallMs": 200
+    },
+    {
+      "baseId": "kev-rule-02",
+      "caseId": "kev-rule-02::perm:identity",
+      "correct": true,
+      "expected": "prohibited",
+      "invalid": false,
+      "options": [
+        "permitted",
+        "insufficient",
+        "prohibited"
+      ],
+      "permutation": "identity",
+      "prediction": "prohibited",
+      "rawProbabilities": {
+        "insufficient": 0.0016020202310755849,
+        "permitted": 0.0014762049540877342,
+        "prohibited": 0.996921718120575
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 16,
+          "tokensSaved": 0
+        },
+        "forward": 198.67999999999304,
+        "prepare": 1.1000000000058208,
+        "tokens": 160,
+        "total": 199.89999999999415
+      },
+      "wallMs": 200.13999999998487
+    },
+    {
+      "baseId": "kev-rule-03",
+      "caseId": "kev-rule-03::perm:identity",
+      "correct": true,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "permitted",
+        "insufficient",
+        "prohibited"
+      ],
+      "permutation": "identity",
+      "prediction": "insufficient",
+      "rawProbabilities": {
+        "insufficient": 0.9931833148002625,
+        "permitted": 0.0022571829613298178,
+        "prohibited": 0.004559460561722517
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 17,
+          "tokensSaved": 0
+        },
+        "forward": 188.36000000001513,
+        "prepare": 11.35999999998603,
+        "tokens": 153,
+        "total": 199.89999999999415
+      },
+      "wallMs": 200.3399999999965
+    },
+    {
+      "baseId": "kev-rule-04",
+      "caseId": "kev-rule-04::perm:identity",
+      "correct": true,
+      "expected": "prohibited",
+      "invalid": false,
+      "options": [
+        "prohibited",
+        "permitted",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "prohibited",
+      "rawProbabilities": {
+        "insufficient": 0.0033539196010679007,
+        "permitted": 0.003111349418759346,
+        "prohibited": 0.9935346841812134
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 18,
+          "tokensSaved": 0
+        },
+        "forward": 198.45999999999185,
+        "prepare": 0.9400000000023284,
+        "tokens": 152,
+        "total": 199.54000000000815
+      },
+      "wallMs": 199.85999999998603
+    },
+    {
+      "baseId": "kev-rule-05",
+      "caseId": "kev-rule-05::perm:identity",
+      "correct": true,
+      "expected": "permitted",
+      "invalid": false,
+      "options": [
+        "insufficient",
+        "permitted",
+        "prohibited"
+      ],
+      "permutation": "identity",
+      "prediction": "permitted",
+      "rawProbabilities": {
+        "insufficient": 0.013618024066090584,
+        "permitted": 0.985848307609558,
+        "prohibited": 0.0005337033653631806
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 19,
+          "tokensSaved": 0
+        },
+        "forward": 198.22000000000116,
+        "prepare": 1.3800000000046566,
+        "tokens": 157,
+        "total": 199.72000000000116
+      },
+      "wallMs": 199.94000000000233
+    },
+    {
+      "baseId": "kev-rule-06",
+      "caseId": "kev-rule-06::perm:identity",
+      "correct": true,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "permitted",
+        "prohibited",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "insufficient",
+      "rawProbabilities": {
+        "insufficient": 0.7774106860160828,
+        "permitted": 0.003671678015962243,
+        "prohibited": 0.21891768276691437
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 20,
+          "tokensSaved": 0
+        },
+        "forward": 199.7399999999907,
+        "prepare": 1.1400000000139698,
+        "tokens": 157,
+        "total": 201.02000000001863
+      },
+      "wallMs": 201.22000000000116
+    },
+    {
+      "baseId": "kev-rule-07",
+      "caseId": "kev-rule-07::perm:identity",
+      "correct": true,
+      "expected": "permitted",
+      "invalid": false,
+      "options": [
+        "prohibited",
+        "insufficient",
+        "permitted"
+      ],
+      "permutation": "identity",
+      "prediction": "permitted",
+      "rawProbabilities": {
+        "insufficient": 0.006236915942281485,
+        "permitted": 0.993410050868988,
+        "prohibited": 0.0003530532994773239
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 21,
+          "tokensSaved": 0
+        },
+        "forward": 198.5,
+        "prepare": 1.080000000016298,
+        "tokens": 154,
+        "total": 199.70000000001164
+      },
+      "wallMs": 199.87999999997555
+    },
+    {
+      "baseId": "kev-rule-08",
+      "caseId": "kev-rule-08::perm:identity",
+      "correct": true,
+      "expected": "permitted",
+      "invalid": false,
+      "options": [
+        "permitted",
+        "prohibited",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "permitted",
+      "rawProbabilities": {
+        "insufficient": 0.0035063158720731735,
+        "permitted": 0.9961025714874268,
+        "prohibited": 0.0003911397070623934
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 22,
+          "tokensSaved": 0
+        },
+        "forward": 198.85999999998603,
+        "prepare": 1,
+        "tokens": 152,
+        "total": 200.01999999998952
+      },
+      "wallMs": 200.22000000000116
+    },
+    {
+      "baseId": "kev-rule-09",
+      "caseId": "kev-rule-09::perm:identity",
+      "correct": true,
+      "expected": "prohibited",
+      "invalid": false,
+      "options": [
+        "permitted",
+        "prohibited",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "prohibited",
+      "rawProbabilities": {
+        "insufficient": 0.002228153171017766,
+        "permitted": 0.001415492850355804,
+        "prohibited": 0.99635648727417
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 23,
+          "tokensSaved": 0
+        },
+        "forward": 198.72000000000116,
+        "prepare": 1.0200000000186265,
+        "tokens": 155,
+        "total": 199.88000000000463
+      },
+      "wallMs": 200.0800000000163
+    },
+    {
+      "baseId": "kev-rule-10",
+      "caseId": "kev-rule-10::perm:identity",
+      "correct": true,
+      "expected": "prohibited",
+      "invalid": false,
+      "options": [
+        "insufficient",
+        "permitted",
+        "prohibited"
+      ],
+      "permutation": "identity",
+      "prediction": "prohibited",
+      "rawProbabilities": {
+        "insufficient": 0.0008294934523291886,
+        "permitted": 0.0006717083742842078,
+        "prohibited": 0.998498797416687
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 24,
+          "tokensSaved": 0
+        },
+        "forward": 198.72000000000116,
+        "prepare": 1.1000000000058208,
+        "tokens": 162,
+        "total": 200
+      },
+      "wallMs": 200.22000000000116
+    },
+    {
+      "baseId": "kev-rule-11",
+      "caseId": "kev-rule-11::perm:identity",
+      "correct": true,
+      "expected": "permitted",
+      "invalid": false,
+      "options": [
+        "prohibited",
+        "permitted",
+        "insufficient"
+      ],
+      "permutation": "identity",
+      "prediction": "permitted",
+      "rawProbabilities": {
+        "insufficient": 0.01164835412055254,
+        "permitted": 0.9872480034828186,
+        "prohibited": 0.0011035525240004065
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 25,
+          "tokensSaved": 0
+        },
+        "forward": 198.47999999998137,
+        "prepare": 1.0599999999976717,
+        "tokens": 150,
+        "total": 199.6600000000035
+      },
+      "wallMs": 199.86000000001513
+    },
+    {
+      "baseId": "kev-rule-12",
+      "caseId": "kev-rule-12::perm:identity",
+      "correct": true,
+      "expected": "insufficient",
+      "invalid": false,
+      "options": [
+        "insufficient",
+        "permitted",
+        "prohibited"
+      ],
+      "permutation": "identity",
+      "prediction": "insufficient",
+      "rawProbabilities": {
+        "insufficient": 0.9981170892715454,
+        "permitted": 0.001739906263537705,
+        "prohibited": 0.00014307050150819123
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 26,
+          "tokensSaved": 0
+        },
+        "forward": 198.67999999999304,
+        "prepare": 1.1600000000034925,
+        "tokens": 179,
+        "total": 199.94000000000233
+      },
+      "wallMs": 200.0800000000163
+    },
+    {
+      "baseId": "kev-candidate-01",
+      "caseId": "kev-candidate-01::perm:identity",
+      "correct": true,
+      "expected": "north",
+      "invalid": false,
+      "options": [
+        "north",
+        "south",
+        "no_match"
+      ],
+      "permutation": "identity",
+      "prediction": "north",
+      "rawProbabilities": {
+        "no_match": 0.002587628783658147,
+        "north": 0.9970239996910096,
+        "south": 0.000388417043723166
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 27,
+          "tokensSaved": 0
+        },
+        "forward": 198.8399999999965,
+        "prepare": 0.9200000000128056,
+        "tokens": 139,
+        "total": 199.89999999999415
+      },
+      "wallMs": 200.11999999999537
+    },
+    {
+      "baseId": "kev-candidate-02",
+      "caseId": "kev-candidate-02::perm:identity",
+      "correct": true,
+      "expected": "south",
+      "invalid": false,
+      "options": [
+        "no_match",
+        "north",
+        "south"
+      ],
+      "permutation": "identity",
+      "prediction": "south",
+      "rawProbabilities": {
+        "no_match": 0.0037001187447458506,
+        "north": 0.0003527647058945149,
+        "south": 0.9959471821784972
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 28,
+          "tokensSaved": 0
+        },
+        "forward": 198.7399999999907,
+        "prepare": 0.9400000000023284,
+        "tokens": 142,
+        "total": 199.80000000001743
+      },
+      "wallMs": 200.0799999999872
+    },
+    {
+      "baseId": "kev-candidate-03",
+      "caseId": "kev-candidate-03::perm:identity",
+      "correct": true,
+      "expected": "no_match",
+      "invalid": false,
+      "options": [
+        "north",
+        "no_match",
+        "south"
+      ],
+      "permutation": "identity",
+      "prediction": "no_match",
+      "rawProbabilities": {
+        "no_match": 0.997087061405182,
+        "north": 0.0024761699605733156,
+        "south": 0.00043677163193933666
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 29,
+          "tokensSaved": 0
+        },
+        "forward": 198.60000000000585,
+        "prepare": 1.0199999999895226,
+        "tokens": 146,
+        "total": 199.7399999999907
+      },
+      "wallMs": 199.94000000000233
+    },
+    {
+      "baseId": "kev-candidate-04",
+      "caseId": "kev-candidate-04::perm:identity",
+      "correct": true,
+      "expected": "north",
+      "invalid": false,
+      "options": [
+        "no_match",
+        "north",
+        "south"
+      ],
+      "permutation": "identity",
+      "prediction": "north",
+      "rawProbabilities": {
+        "no_match": 0.0025241326075047255,
+        "north": 0.9973917007446288,
+        "south": 0.00008419938967563212
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 30,
+          "tokensSaved": 0
+        },
+        "forward": 198.8399999999965,
+        "prepare": 1,
+        "tokens": 148,
+        "total": 199.94000000000233
+      },
+      "wallMs": 200.11999999999537
+    },
+    {
+      "baseId": "kev-candidate-05",
+      "caseId": "kev-candidate-05::perm:identity",
+      "correct": true,
+      "expected": "south",
+      "invalid": false,
+      "options": [
+        "south",
+        "north",
+        "no_match"
+      ],
+      "permutation": "identity",
+      "prediction": "south",
+      "rawProbabilities": {
+        "no_match": 0.0018772851908579469,
+        "north": 0.0005643118638545275,
+        "south": 0.9975584745407104
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 31,
+          "tokensSaved": 0
+        },
+        "forward": 198.82000000000696,
+        "prepare": 0.9799999999813735,
+        "tokens": 144,
+        "total": 199.89999999999415
+      },
+      "wallMs": 200.04000000000815
+    },
+    {
+      "baseId": "kev-candidate-06",
+      "caseId": "kev-candidate-06::perm:identity",
+      "correct": true,
+      "expected": "no_match",
+      "invalid": false,
+      "options": [
+        "north",
+        "south",
+        "no_match"
+      ],
+      "permutation": "identity",
+      "prediction": "no_match",
+      "rawProbabilities": {
+        "no_match": 0.9958230257034302,
+        "north": 0.0034368245396763086,
+        "south": 0.0007401771144941449
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 32,
+          "tokensSaved": 0
+        },
+        "forward": 198.8399999999965,
+        "prepare": 0.9800000000104774,
+        "tokens": 140,
+        "total": 199.94000000000233
+      },
+      "wallMs": 200.10000000000585
+    },
+    {
+      "baseId": "kev-candidate-07",
+      "caseId": "kev-candidate-07::perm:identity",
+      "correct": true,
+      "expected": "north",
+      "invalid": false,
+      "options": [
+        "south",
+        "no_match",
+        "north"
+      ],
+      "permutation": "identity",
+      "prediction": "north",
+      "rawProbabilities": {
+        "no_match": 0.007954034954309464,
+        "north": 0.990761697292328,
+        "south": 0.0012842707801610231
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 33,
+          "tokensSaved": 0
+        },
+        "forward": 199.87999999997555,
+        "prepare": 0.9800000000104774,
+        "tokens": 150,
+        "total": 201
+      },
+      "wallMs": 201.1600000000035
+    },
+    {
+      "baseId": "kev-candidate-08",
+      "caseId": "kev-candidate-08::perm:identity",
+      "correct": true,
+      "expected": "south",
+      "invalid": false,
+      "options": [
+        "north",
+        "south",
+        "no_match"
+      ],
+      "permutation": "identity",
+      "prediction": "south",
+      "rawProbabilities": {
+        "no_match": 0.004315515048801899,
+        "north": 0.0005639870651066303,
+        "south": 0.9951204657554626
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 34,
+          "tokensSaved": 0
+        },
+        "forward": 198.51999999998952,
+        "prepare": 1.1400000000139698,
+        "tokens": 153,
+        "total": 199.77999999999884
+      },
+      "wallMs": 199.89999999999415
+    },
+    {
+      "baseId": "kev-candidate-09",
+      "caseId": "kev-candidate-09::perm:identity",
+      "correct": true,
+      "expected": "north",
+      "invalid": false,
+      "options": [
+        "north",
+        "south",
+        "no_match"
+      ],
+      "permutation": "identity",
+      "prediction": "north",
+      "rawProbabilities": {
+        "no_match": 0.0005704279174096882,
+        "north": 0.9979346990585328,
+        "south": 0.0014949296601116655
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 35,
+          "tokensSaved": 0
+        },
+        "forward": 198.8399999999965,
+        "prepare": 0.9600000000209548,
+        "tokens": 149,
+        "total": 199.90000000002328
+      },
+      "wallMs": 200.04000000000815
+    },
+    {
+      "baseId": "kev-candidate-10",
+      "caseId": "kev-candidate-10::perm:identity",
+      "correct": true,
+      "expected": "south",
+      "invalid": false,
+      "options": [
+        "no_match",
+        "north",
+        "south"
+      ],
+      "permutation": "identity",
+      "prediction": "south",
+      "rawProbabilities": {
+        "no_match": 0.006293009500950575,
+        "north": 0.00034746722667478025,
+        "south": 0.9933595061302184
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 36,
+          "tokensSaved": 0
+        },
+        "forward": 199.10000000000585,
+        "prepare": 0.8999999999941792,
+        "tokens": 144,
+        "total": 200.11999999999537
+      },
+      "wallMs": 200.2600000000093
+    },
+    {
+      "baseId": "kev-candidate-11",
+      "caseId": "kev-candidate-11::perm:identity",
+      "correct": true,
+      "expected": "no_match",
+      "invalid": false,
+      "options": [
+        "north",
+        "no_match",
+        "south"
+      ],
+      "permutation": "identity",
+      "prediction": "no_match",
+      "rawProbabilities": {
+        "no_match": 0.9925832748413086,
+        "north": 0.006262131966650486,
+        "south": 0.001154608209617436
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 37,
+          "tokensSaved": 0
+        },
+        "forward": 198.67999999999304,
+        "prepare": 1.040000000008149,
+        "tokens": 142,
+        "total": 199.86000000001513
+      },
+      "wallMs": 200.36000000001513
+    },
+    {
+      "baseId": "kev-candidate-12",
+      "caseId": "kev-candidate-12::perm:identity",
+      "correct": true,
+      "expected": "north",
+      "invalid": false,
+      "options": [
+        "north",
+        "south",
+        "no_match"
+      ],
+      "permutation": "identity",
+      "prediction": "north",
+      "rawProbabilities": {
+        "no_match": 0.0019126025727018712,
+        "north": 0.9972803592681884,
+        "south": 0.0008070235489867628
+      },
+      "timing": {
+        "batched": 1,
+        "cache": {
+          "extensions": 0,
+          "hits": 0,
+          "misses": 38,
+          "tokensSaved": 0
+        },
+        "forward": 198.32000000000696,
+        "prepare": 1.0399999999790452,
+        "tokens": 150,
+        "total": 199.5
+      },
+      "wallMs": 199.70000000001164
+    }
+  ],
+  "warmupDecisionMs": 99.54000000000816,
+  "warmupMs": 174.63999999998487,
+  "postRunVerification": {
+    "originalOutputSha256": "ed4bbdc0c7ae2226a96baeab1bbaf9518b051ec348c0e8ad697a4a36b819359c",
+    "verifiedUtc": "2026-09-24T13:27:22Z",
+    "packMode": "hosted",
+    "hosted": {
+      "url": "https://huggingface.co/bvolpato/bruv1-4b/resolve/4358588de0bec4cb9662dc8ef004d9a85065941a/bruv1-4b-q8.kevala",
+      "bytes": 4751303168,
+      "sha256": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
+      "method": "public Hub file metadata and byte-range checks, including bytes beyond 4 GiB"
+    },
+    "comparison": {
+      "localFullSweepCaseCount": 36,
+      "semanticChoiceChanges": 0,
+      "maxProbabilityDifference": 0
+    },
+    "note": "The page ran with pack=hosted. Publication and comparison metadata were appended after the run."
+  }
+}

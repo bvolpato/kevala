@@ -26,7 +26,8 @@ and no data leaving the tab.
 The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU kernels written for
 these models. The browser runtime is a few plain ES modules. The first load downloads a pinned int8
 pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-packs) (or Bruv's
-[0.8B repository](https://huggingface.co/bvolpato/bruv1-0.8b)) and keeps it in
+[0.8B](https://huggingface.co/bvolpato/bruv1-0.8b) and
+[4B](https://huggingface.co/bvolpato/bruv1-4b) repositories) and keeps it in
 the browser, so there is nothing to host. Laya and Kev-0.8B also support conversion from the
 original checkpoint in the browser. Larger Kev models, SemIf models, and Gemma 4 require a converted
 pack.
@@ -75,6 +76,7 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 |---|---|---|---:|
 | Laya | `laya` | Marker scorer and act head | 479 MB |
 | Bruv | `bruv1-0.8b` | Locally fine-tuned option-label scorer | 855 MB |
+| Bruv | `bruv1-4b` | Locally fine-tuned option-label scorer | 4.75 GB |
 | Kev | `kev-0.8b` | Trained pointer head | 857 MB |
 | Kev | `kev-4b` | Trained pointer head | 4.76 GB |
 | Kev | `kev-9b` | Trained pointer head | 8.96 GB |
@@ -96,7 +98,8 @@ Normal loading downloads the stored pack, not the upstream checkpoint. Pick with
 `Kevala.load({ model: "kev-4b" })` or `Kevala.load({ model: "semif-qwen3.5-2b" })`,
 or pass a `.kevala` URL you host.
 
-Laya remains the demo default, with experimental **Bruv 0.8B** second in the picker.
+Laya remains the demo default, with experimental **Bruv** second in the picker. Bruv defaults
+to 0.8B and offers 4B through the size slider.
 Select **Kev** to choose 0.8B, 4B, or 9B with its size slider.
 **SemIf** appears alongside them, with 0.8B, 2B, or 4B sizes. Selecting a family starts
 at its smallest size; changing sizes waits for **Load** before downloading. **Gemma 4** starts with

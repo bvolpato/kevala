@@ -225,7 +225,7 @@ const HERO = `<section class="hero">
     <div class="hero-copy">
       <div class="eyebrow">Open source · Apache-2.0</div>
       <h1>Ask questions about text, <span class="grad-text">answered on the user's own GPU</span></h1>
-      <p class="lede">kevala runs <b>Laya</b>, <b>Kev</b>, <b>SemIf</b>, and <b>Gemma 4</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option without generating an answer token by token. There is no server to run, and the text stays on the device.</p>
+      <p class="lede">kevala runs <b>Laya</b>, <b>Bruv</b>, <b>Kev</b>, <b>SemIf</b>, and <b>Gemma 4</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option without generating an answer token by token. There is no server to run, and the text stays on the device.</p>
       <div class="row cta">
         <a class="btn primary" href="#/playground">Open the playground</a>
         <a class="btn" href="#/tetris">Watch it play Tetris</a>
@@ -372,14 +372,14 @@ const MODEL_CARDS = `<section class="tight" id="models">
         </dl>
       </div>
       <div class="card pad model-card">
-        <div class="row"><h3>Bruv 0.8B</h3><span class="badge gpu"><span class="dot"></span>WebGPU</span></div>
+        <div class="row"><h3>Bruv</h3><span class="badge gpu"><span class="dot"></span>WebGPU</span></div>
         <p class="muted small">A local Qwen3.5 fine-tune for choosing among labeled options. It follows the public Tev1 data recipe with Kevala's direct option scoring objective. Experimental, with the source checkpoint and evaluations published openly.</p>
         <dl class="specs">
-          <div><dt>Parameters</dt><dd>0.8B</dd></div>
-          <div><dt>Pack download</dt><dd>855 MB int8. Runtime memory is higher.</dd></div>
+          <div><dt>Parameters</dt><dd>0.8B (default) or 4B</dd></div>
+          <div><dt>Pack download</dt><dd>855 MB or 4.75 GB int8. Runtime memory is higher.</dd></div>
           <div><dt>Scores</dt><dd>Relative scores for up to 16 options per question, not calibrated decision confidence.</dd></div>
-          <div><dt>Evaluation</dt><dd>652/864 correct on the separate browser decision suite; <a href="${REPO}/blob/main/BENCHMARK.md">see all suites</a>.</dd></div>
-          <div><dt>Source</dt><dd><a href="https://github.com/bvolpato/bruv">Bruv training code</a> · <a href="https://huggingface.co/bvolpato/bruv1-0.8b">checkpoint and pack</a>.</dd></div>
+          <div><dt>Evaluation</dt><dd>0.8B: 652/864 correct; 4B: 799/864 on the separate browser decision suite. <a href="${REPO}/blob/main/BENCHMARK.md">See all suites</a>.</dd></div>
+          <div><dt>Source</dt><dd><a href="https://github.com/bvolpato/bruv">Bruv training code</a> · <a href="https://huggingface.co/bvolpato/bruv1-0.8b">0.8B checkpoint and pack</a> · <a href="https://huggingface.co/bvolpato/bruv1-4b">4B checkpoint and pack</a>.</dd></div>
         </dl>
       </div>
       <div class="card pad model-card">

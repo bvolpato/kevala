@@ -14,6 +14,7 @@ export const LOCAL = params.get("pack") === "local";
 const LOCAL_PACKS = {
   laya: new URL("../tmp/laya-q8.kevala", import.meta.url).href,
   "bruv1-0.8b": new URL("../tmp/bruv1-0.8b-q8.kevala", import.meta.url).href,
+  "bruv1-4b": new URL("../tmp/bruv1-4b-q8.kevala", import.meta.url).href,
   "kev-0.8b": new URL("../tmp/kev-0.8b-q8.kevala", import.meta.url).href,
   "kev-4b": new URL("../tmp/kev-4b-q8.kevala", import.meta.url).href,
   "kev-9b": new URL("../tmp/kev-9b-q8.kevala", import.meta.url).href,
@@ -36,6 +37,11 @@ export const MODEL_NOTES = {
   },
   "bruv1-0.8b": {
     name: "Bruv1-0.8B",
+    short: "Locally fine-tuned Qwen3.5 decision model; experimental",
+    large: true,
+  },
+  "bruv1-4b": {
+    name: "Bruv1-4B",
     short: "Locally fine-tuned Qwen3.5 decision model; experimental",
     large: true,
   },

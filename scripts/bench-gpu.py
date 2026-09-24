@@ -382,7 +382,9 @@ def decision_metric(result: dict, expected_backend: str = "webgpu") -> float:
         raise ValueError(f"decision quality counts are invalid: {quality!r}")
     if valid != total or invalid != 0 or correct < 0 or correct > total:
         raise ValueError(f"decision quality has invalid rows: {quality!r}")
-    if not finite_number(quality.get("accuracy")) or float(quality["accuracy"]) != correct / total:
+    if not finite_number(quality.get("accuracy")) or not math.isclose(
+        float(quality["accuracy"]), correct / total, rel_tol=1e-12, abs_tol=1e-12
+    ):
         raise ValueError(f"decision quality accuracy is inconsistent: {quality!r}")
     rows = result["timingAllRows"]
     if not isinstance(rows, list) or len(rows) != total:

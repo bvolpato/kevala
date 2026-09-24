@@ -1,6 +1,6 @@
 ---
 name: kevala
-description: Add fast, private, typed decisions to a web page with kevala, which runs Laya, Kev, SemIf, and Gemma 4 in the browser on WebGPU, with WebAssembly support for smaller packs, no server, and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Kev, SemIf, Gemma 4, typed decisions, or a System One API in the browser.
+description: Add fast, private, typed decisions to a web page with kevala, which runs Laya, Bruv, Kev, SemIf, and Gemma 4 in the browser on WebGPU, with WebAssembly support for smaller packs, no server, and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Bruv, Kev, SemIf, Gemma 4, typed decisions, or a System One API in the browser.
 ---
 
 # Integrating kevala
@@ -23,15 +23,16 @@ with a bundler.
 import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
 const kevala = await Kevala.load({
-  model: "laya",               // or a Kev, SemIf, or Gemma 4 model name, or a hosted .kevala URL
+  model: "laya",               // or a Bruv, Kev, SemIf, or Gemma 4 model name, or a hosted .kevala URL
   onProgress: (p) => show(p),  // {phase, file, loaded, total}: download, convert, cache, init, warmup
 });
 ```
 
-Known names include `kev-0.8b`, `kev-4b`, `kev-9b`, `semif-qwen3.5-0.8b`,
+Known names include `bruv1-0.8b`, `bruv1-4b`, `kev-0.8b`, `kev-4b`, `kev-9b`, `semif-qwen3.5-0.8b`,
 `semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
 
-- First visit: Laya downloads a 479 MB int8 pack; Kev packs range from 857 MB to 8.96 GB;
+- First visit: Laya downloads a 479 MB int8 pack; Bruv packs are 855 MB or 4.75 GB;
+  Kev packs range from 857 MB to 8.96 GB;
   SemIf Qwen3.5 packs range from 855 MB to 4.75 GB; and Gemma 4 packs are 5.22 GB or 8.41 GB.
   `from: "checkpoint"` downloads and converts
   original weights in the browser for Laya and Kev-0.8B only. The larger Kev, SemIf, and Gemma choices
