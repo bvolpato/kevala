@@ -1,6 +1,6 @@
 {
   "schema": "kevala-decision-report-v1",
-  "generatedUtc": "2026-09-24T06:48:46.437Z",
+  "generatedUtc": "2026-09-24T13:06:54.178Z",
   "probabilitySumTolerance": 0.001,
   "canonical": {
     "permutations": [
@@ -5960,7 +5960,7 @@
       "status": "ok",
       "file": {
         "path": "benchmarks/results/decisions-linux-2026-09-22/decision-bruv1-4b.json",
-        "sha256": "b3a085e841df607a499220ee3efb6ecf06a8b6cf00e9ff8ebfdb36bfce837c2d"
+        "sha256": "ada54038574f8d32855d9791e0066b2fe2efea5f5a752942d303e23af8235f01"
       },
       "validation": {
         "ok": true,
@@ -6000,6 +6000,7 @@
           "vendor": null
         },
         "runner": {
+          "actualThreads": 1,
           "browser": "firefox",
           "browserRequested": "firefox",
           "browserVersion": "152.0.3",
@@ -6072,30 +6073,30 @@
             "method_source": "https://github.com/TheoLeeCJ/SemIf",
             "name": "bruv1-4b",
             "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
-            "revision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52",
+            "revision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
             "source": "https://huggingface.co/bvolpato/bruv1-4b"
           },
           "modelArch": "kev",
           "expectedArch": "kev",
           "expectedSource": "https://huggingface.co/bvolpato/bruv1-4b",
-          "expectedRevision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52"
+          "expectedRevision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867"
         }
       },
       "pack": {
         "model": "bruv1-4b",
-        "modelRevision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52",
-        "catalogHash": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+        "modelRevision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
+        "catalogHash": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
         "catalogHashScope": "expected-catalog-pack-sha256",
         "verification": {
           "status": "verified",
           "source": "postRunVerification.pack",
-          "expectedCatalogHash": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+          "expectedCatalogHash": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
           "expectedCatalogBytes": 4751303168,
-          "recordedFullPackSha256": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+          "recordedFullPackSha256": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
           "recordedFullPackBytes": 4751303168,
-          "verifiedUtc": "2026-09-24T06:48:38.975Z",
+          "verifiedUtc": "2026-09-24T13:06:33Z",
           "method": "sha256 over the complete local pack after the Firefox WebGPU sweep; matched the catalog digest",
-          "originalOutputSha256": "40d7a3a4b486ab6ab3f3c86b684fa09b9c1cbc265c773957c6f30f05b140cd39"
+          "originalOutputSha256": "86a1088419c13aebf631e6ca867c1386b9d65401e895216b35133fd97b4ce9a9"
         },
         "modelInfo": {
           "author": "Bruno Volpato",
@@ -6109,7 +6110,7 @@
           "method_source": "https://github.com/TheoLeeCJ/SemIf",
           "name": "bruv1-4b",
           "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
-          "revision": "5b44d14703c8ee81b419bdd78f309eb61888a3cdd176d3421216ac08a4e8ff52",
+          "revision": "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
           "source": "https://huggingface.co/bvolpato/bruv1-4b"
         },
         "datasetModule": "kevala-decision-v1",
@@ -6148,10 +6149,10 @@
         "unverifiedPaths": [],
         "verification": null,
         "postRunVerification": {
-          "originalOutputSha256": "40d7a3a4b486ab6ab3f3c86b684fa09b9c1cbc265c773957c6f30f05b140cd39",
-          "verifiedUtc": "2026-09-24T06:48:38.975Z",
+          "originalOutputSha256": "86a1088419c13aebf631e6ca867c1386b9d65401e895216b35133fd97b4ce9a9",
+          "verifiedUtc": "2026-09-24T13:06:33Z",
           "pack": {
-            "sha256": "fa50a0998428bb3cf575f12e4965a38c8b52ea98caf80204850146c231fd2edb",
+            "sha256": "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
             "bytes": 4751303168,
             "method": "sha256 over the complete local pack after the Firefox WebGPU sweep; matched the catalog digest"
           },
@@ -6162,16 +6163,16 @@
       "latency": {
         "count": 864,
         "p50Ms": 200.0399999999936,
-        "p95Ms": 202.72000000000116,
-        "minMs": 195.45999999999185,
-        "maxMs": 213.84000000000017
+        "p95Ms": 202.36000000000055,
+        "minMs": 188.5,
+        "maxMs": 211.6600000000035
       },
       "reportedLatency": {
         "count": 864,
-        "maxMs": 213.84000000000017,
-        "minMs": 195.45999999999185,
+        "maxMs": 211.6600000000035,
+        "minMs": 188.5,
         "p50Ms": 200.0399999999936,
-        "p95Ms": 202.72000000000116
+        "p95Ms": 202.36000000000055
       },
       "cachePolicy": {
         "backend": "webgpu",
