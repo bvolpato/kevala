@@ -1,6 +1,6 @@
 # How kevala works
 
-kevala runs System 1 decision models (Laya, Kev, SemIf, and Gemma 4) inside a web page.
+kevala runs System 1 decision models (Laya, Bruv, Kev, SemIf, and Gemma 4) inside a web page.
 A request is a state plus typed questions (`noul`, `choice`, `score`), and the answer is a probability
 for every option without autoregressive text generation. Nothing leaves the tab.
 

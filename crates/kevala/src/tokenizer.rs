@@ -693,10 +693,13 @@ impl Tokenizer {
         if !matches!(pre, PreTokenizer::Qwen2 | PreTokenizer::Qwen2Marks) {
             return Err("Qwen2Tokenizer has an unsupported pre-tokenizer contract".into());
         }
-        let mut overlay: Vec<(usize, Value)> = config
-            .get("added_tokens_decoder")
-            .and_then(Value::as_object)
-            .ok_or("Qwen2Tokenizer config has no added_tokens_decoder")?
+        // Recent Transformers saves materialize added tokens in tokenizer.json and omit
+        // added_tokens_decoder from tokenizer_config.json. Older upstream files supply both.
+        let overlay_tokens = match config.get("added_tokens_decoder") {
+            Some(value) => value.as_object().ok_or("Qwen2Tokenizer added_tokens_decoder must be an object")?,
+            None => &[],
+        };
+        let mut overlay: Vec<(usize, Value)> = overlay_tokens
             .iter()
             .map(|(id, value)| {
                 Ok((id.parse().map_err(|_| "added_tokens_decoder contains an invalid ID")?, value.clone()))

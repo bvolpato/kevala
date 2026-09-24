@@ -7,14 +7,14 @@ const DOCS = `${REPO}/blob/main/docs`;
 
 const ARCH_ALT =
   "Diagram: pinned Hugging Face checkpoints stream into an in-browser int8 converter and a cached .kevala pack; " +
-  "the Rust core compiled to WebAssembly runs Laya, Kev, SemIf, or Gemma 4 on WebGPU; Laya can also use tensor-parallel WebAssembly workers; " +
+  "the Rust core compiled to WebAssembly runs Laya, Bruv, Kev, SemIf, or Gemma 4 on WebGPU; Laya can also use tensor-parallel WebAssembly workers; " +
   "your page gets typed answers.";
 
 const TEMPLATE = `<div class="wrap">
   <div class="page-head">
     <div class="eyebrow">How it works</div>
     <h1>From a Hugging Face checkpoint to an answer, in the browser</h1>
-    <p>kevala streams the authors' weights at a pinned revision, converts supported checkpoints to int8 in the tab and runs Laya, Kev, SemIf, or Gemma 4 with a dependency-free Rust core. WebGPU runs the browser path; native 64-bit CPU support covers larger packs, while the large Gemma packs require WebGPU in the browser or native CPU. Laya can split its CPU layers across workers; Kev and SemIf use one CPU instance when that path is available. This page covers each step, the latency, and how close the results stay to the PyTorch reference.</p>
+    <p>kevala streams pinned int8 packs, converts supported checkpoints in the tab, and runs Laya, Bruv, Kev, SemIf, or Gemma 4 with a dependency-free Rust core. WebGPU runs the browser path; native 64-bit CPU support covers larger packs, while Gemma 4 requires WebGPU in the browser or native CPU. Laya can split its CPU layers across workers; Bruv, Kev, and SemIf use one CPU instance when that path is available. This page covers each step, the latency, and how close the results stay to the PyTorch reference.</p>
     <nav class="how-toc" aria-label="On this page">
       <a href="#/how/architecture">Architecture</a>
       <a href="#/how/bench">Speed</a>
@@ -35,11 +35,11 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div>
         <span class="n">2</span><h3>Streamed packs</h3>
-        <p class="muted small">The int8 pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in the browser (Origin Private File System, with the Cache API as a fallback). Laya and Kev-0.8B can also quantize their original checkpoints in the browser when the pack is unreachable; larger Kev, all SemIf choices, and Gemma 4 use converted packs.</p>
+        <p class="muted small">The int8 pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in the browser (Origin Private File System, with the Cache API as a fallback). Laya and Kev-0.8B can also quantize their original checkpoints in the browser when the pack is unreachable; Bruv, larger Kev, all SemIf choices, and Gemma 4 use converted packs.</p>
       </div>
       <div>
         <span class="n">3</span><h3>WebGPU or workers</h3>
-        <p class="muted small">On WebGPU, WGSL kernels run every transformer layer of Laya, Kev, SemIf, and Gemma 4. Without it, Laya's layers split across tensor-parallel WebAssembly workers, with two exchanges per layer; Kev and SemIf run in one CPU instance. Gemma 4 needs WebGPU in the browser or the native 64-bit CPU CLI.</p>
+        <p class="muted small">On WebGPU, WGSL kernels run every transformer layer of Laya, Bruv, Kev, SemIf, and Gemma 4. Without it, Laya's layers split across tensor-parallel WebAssembly workers, with two exchanges per layer; Bruv, Kev, and SemIf run in one CPU instance. Gemma 4 needs WebGPU in the browser or the native 64-bit CPU CLI.</p>
       </div>
       <div>
         <span class="n">4</span><h3>Batching</h3>
@@ -52,7 +52,7 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="bench">
     <div class="eyebrow">Speed</div>
     <h2>Latency</h2>
-    <p class="muted">For decision quality and current NVIDIA WebGPU measurements across all nine packs, read the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a>.</p>
+    <p class="muted">For decision quality and current NVIDIA WebGPU measurements across the supported packs, read the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a>.</p>
     <p class="muted">Apple M4 Max, WebGPU in Chrome, cold requests unless noted.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Laya, short request</span><b>11 ms</b><span class="ts">one question, about 45 tokens</span></div>

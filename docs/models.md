@@ -1,11 +1,12 @@
 # Choosing and running models
 
-Laya is the demo default. Select Kev in the model menu to reveal its 0.8B, 4B, and 9B size slider.
-SemIf appears alongside Laya and Kev, with 0.8B, 2B, and 4B sizes. Gemma 4 appears as a fourth
-family with E2B and E4B dense text models. Switching families starts
+Laya is the demo default. Experimental Bruv 0.8B appears second in the model menu.
+Select Kev to reveal its 0.8B, 4B, and 9B size slider. SemIf has 0.8B, 2B, and 4B sizes. Gemma 4 has
+E2B and E4B dense text models. Switching families starts
 at the smallest size; saved choices and explicit model URLs retain their selected size. Changing
 the slider updates the download size and waits for **Load** before fetching weights. Their weights are
-distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs).
+distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato/kevala-packs),
+with Bruv in its own [0.8B model repository](https://huggingface.co/bvolpato/bruv1-0.8b).
 
 The catalog pins the [verified pack revision](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).
 Load any model below by name. With the development server, `?pack=local#/tetris` loads local files
@@ -14,6 +15,7 @@ from `tmp/` instead.
 | Model name | Weights | Decision readout | Pack download |
 |---|---|---|---:|
 | `laya` | ModernBERT-large with Laya's trained decision layers | Marker scorer and act head | 479 MB |
+| `bruv1-0.8b` | Qwen3.5-0.8B with Bruv's local LoRA fine-tune merged in | Native option-label logits | 855 MB |
 | `kev-0.8b` | Qwen3.5-0.8B-Base with Kev's merged LoRA adapter | Trained pointer head | 857 MB |
 | `kev-4b` | Qwen3.5-4B-Base with Kev's merged LoRA adapter | Trained pointer head | 4.76 GB |
 | `kev-9b` | Qwen3.5-9B-Base with Kev's merged LoRA adapter | Trained pointer head | 8.96 GB |
@@ -62,6 +64,12 @@ adapter or additional training step. SemIf's upstream Qwen3.5 reference uses the
 0.8B and 2B choices extend the method to smaller models in Kevala. They need their own evaluation.
 Kev uses a different checkpoint: its LoRA adapter and pointer head are trained for decisions.
 
+[Bruv](https://github.com/bvolpato/bruv) uses the same direct option readout with a
+fine-tuned Qwen3.5-0.8B checkpoint. Its initial supervised data follows Together's
+[Tev1 recipe](https://github.com/togethercomputer/tev1), rerendered to Kevala's prompt and
+16-option limit. It is experimental; its training and held-out evaluation are documented with the
+weights. This is a different checkpoint from the frozen SemIf choice.
+
 Gemma 4 uses Google's frozen E2B or E4B instruction weights with the same direct option readout,
 but renders Gemma's own instruction chat template with thinking disabled. E2B and E4B are dense
 text models with per-layer embeddings, not MoE models. Their packs omit the source checkpoint's
@@ -76,7 +84,7 @@ pack files.
 
 ### Interpreting the scores
 
-SemIf packs support `noul`, `choice`, and `score`, with **at most 16 options per question**.
+SemIf and Bruv packs support `noul`, `choice`, and `score`, with **at most 16 options per question**.
 They return the Kev response shape, including full precision `raw_probabilities`, plus:
 
 ```json
@@ -104,7 +112,7 @@ and pinned provenance.
 | Backend | What must fit |
 |---|---|
 | Browser WebGPU | Transformer weights and working buffers on the GPU; tokenizer, embeddings, and readout in a WASM coordinator |
-| Browser WASM / `kevala/node` | The whole Kev or SemIf pack in one WASM allocation, plus working memory; Gemma 4 packs exceed this limit |
+| Browser WASM / `kevala/node` | The whole pack in one WASM allocation, plus working memory; Gemma 4 packs exceed this limit |
 | Native 64-bit CLI | Pack weights and working memory in system RAM; the loader reads directly into aligned storage |
 
 Rust's aligned allocations in wasm32 must be under 2 GiB. Browser CPU and Node loading reject

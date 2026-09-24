@@ -67,6 +67,11 @@ function renderChip(s) {
 }
 
 const MODEL_FAMILIES = {
+  bruv: {
+    name: "Bruv",
+    short: "Locally fine-tuned Qwen3.5 decision model; experimental",
+    models: [["bruv1-0.8b", "0.8B"]],
+  },
   kev: {
     name: "Kev",
     short: "Qwen3.5 hybrid decoder + trained pointer head",
@@ -154,8 +159,8 @@ function familyOption(s, family) {
     `</button>`,
     `<div class="mf-control">`,
     `<div class="mf-size-line"><span class="tiny muted">Model size</span><b data-family-size>${esc(MODEL_NOTES[selected]?.name || selected)}</b></div>`,
-    `<input type="range" class="mf-slider" data-family-slider="${family}" min="0" max="${models.length - 1}" step="1" value="${selectedIndex}" aria-label="${esc(spec.name)} model size" aria-valuetext="${esc(familyValueText(s, selected))}" aria-describedby="${infoId}">`,
-    `<div class="mf-ticks" aria-hidden="true">${ticks}</div>`,
+    models.length > 1 ? `<input type="range" class="mf-slider" data-family-slider="${family}" min="0" max="${models.length - 1}" step="1" value="${selectedIndex}" aria-label="${esc(spec.name)} model size" aria-valuetext="${esc(familyValueText(s, selected))}" aria-describedby="${infoId}">` : "",
+    models.length > 1 ? `<div class="mf-ticks" aria-hidden="true">${ticks}</div>` : "",
     `<span class="tiny mf-pack" data-family-pack>${esc(modelSizeLabel(selected))}</span>`,
     `<p class="tiny mf-info" id="${infoId}" data-family-info>${esc(modelStateLine(s, selected))}</p>`,
     `</div>`,

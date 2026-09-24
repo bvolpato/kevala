@@ -14,7 +14,7 @@ const archivedResults = resolve(root, "benchmarks/results/decisions-linux-2026-0
 const committedSummary = resolve(archivedResults, "summary.json");
 const referenceName = "gemma-base-vs-it.json";
 
-async function runReporter(results, output, checkSummary = null) {
+async function runReporter(results, output, checkSummary = null, extraArgs = []) {
   const args = [
     reporter,
     "--results", results,
@@ -22,6 +22,7 @@ async function runReporter(results, output, checkSummary = null) {
     "--output", output,
   ];
   if (checkSummary) args.push("--check-summary", checkSummary);
+  args.push(...extraArgs);
   try {
     const result = await execFile(process.execPath, args, { cwd: root, maxBuffer: 32 * 1024 * 1024 });
     return { code: 0, stdout: result.stdout, stderr: result.stderr };
@@ -29,6 +30,21 @@ async function runReporter(results, output, checkSummary = null) {
     return { code: error.code ?? 1, stdout: error.stdout ?? "", stderr: error.stderr ?? "" };
   }
 }
+
+test("selected additional models require a measured result", async (t) => {
+  const results = await copiedResults();
+  const output = await temporaryOutput();
+  t.after(async () => {
+    await rm(results, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  await rm(resolve(results, "decision-bruv1-0.8b.json"));
+  const result = await runReporter(results, output, null, ["--include-model", "bruv1-0.8b"]);
+  assert.notEqual(result.code, 0);
+  const report = JSON.parse(await readFile(output, "utf8"));
+  assert.deepEqual(report.missing, ["model result: decision-bruv1-0.8b.json"]);
+  assert.equal(report.models["bruv1-0.8b"].status, "missing");
+});
 
 async function copiedResults() {
   const directory = await mkdtemp(resolve(tmpdir(), "kevala-report-decisions-"));
