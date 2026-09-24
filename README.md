@@ -117,7 +117,7 @@ Families are pluggable: see [Adding a model family](docs/adding-a-model.md).
 
 <!-- decision-benchmark:start -->
 
-Snapshot: **2026-09-23**, Apple M4 Max (40 GPU cores), 64 GiB unified memory, macOS 26.4.1, Chrome 151.0.7922.34 (hidden).
+Snapshot (UTC): **2026-09-23 to 2026-09-24**, Apple M4 Max (40 GPU cores), 64 GiB unified memory, macOS 26.4.1, Chrome 151.0.7922.34 (hidden).
 Text-only choice requests; Q8 packs; batch size one; inference caching and GPU profiling disabled. Downloads, loading, tuning, and warmup are excluded.
 
 | Model | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean decide ms | p95 ms | Pass mean range ms |

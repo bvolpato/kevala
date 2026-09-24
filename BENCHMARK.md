@@ -11,7 +11,7 @@ and a [generated full report](benchmarks/results/decisions-m4-max-2026-09-23/rep
 The NVIDIA snapshot below is retained as historical evidence, not the README's current
 latency source.
 
-The M4 Max campaign completed 23,328 scored decisions: nine models, three full passes,
+The M4 Max campaign ran September 23-24 (UTC) and completed 23,328 scored decisions: nine models, three full passes,
 and 864 decisions per pass. Every call returned valid probabilities, and each model's
 predictions and probabilities were identical across all three passes. Latency was noisier:
 Kev 4B's full-pass means ranged from 144.6 to 258.9 ms. The table reports the pooled mean
@@ -144,6 +144,10 @@ means so workstation timing noise is visible rather than hidden by pooling. Miss
 invalidate a run rather than disappearing from the latency denominator. README publication
 also rejects mixed browser, GPU, build, environment, or warmup metadata. CI checks both the
 committed summary and the generated README block.
+
+Every repeated directory must supply valid campaign metadata that matches the other passes
+and its own raw runtime evidence. The report retains each pass's UTC dates and notes; the
+README displays the full measurement date range rather than only the first pass's date.
 
 The initial M4 Max run exposed a Metal GELU failure: a valid input of 20 produced NaN,
 preventing Gemma from finishing load-time warmup. The production shader now returns the

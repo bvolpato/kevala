@@ -141,6 +141,8 @@ for (let pass = 1; pass <= passes; pass++) {
     const scores = Object.entries(result.quality.perDataset).map(([dataset, metric]) => `${dataset}: ${(100 * metric.accuracy).toFixed(1)}%`).join(", ");
     console.error(`${model}, pass ${pass}: ${scores}; mean ${result.latency.meanMs.toFixed(1)} ms`);
   }
+  campaign.dateEnd = new Date().toISOString().slice(0, 10);
+  await writeFile(resolve(directory, "campaign.json"), JSON.stringify(campaign, null, 2) + "\n");
   directories.push(directory);
 }
 if (models.length === Object.keys(MODELS).length) {

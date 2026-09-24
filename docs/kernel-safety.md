@@ -90,7 +90,7 @@ The guards cover deterministic synthetic cases, not every model activation or GP
 driver. Firefox/Linux was not rerun in this audit. No speedup is claimed from these
 safety fixes; numerical/compilation guard wall times are not inference latency.
 
-The README remains the separately pinned September 23 three-pass evaluation,
+The README remains the separately pinned September 23-24 (UTC) three-pass evaluation,
 not a new performance claim for this changed build. Its dataset and reliability
 limitations remain documented in [the protocol](../BENCHMARK.md).
 

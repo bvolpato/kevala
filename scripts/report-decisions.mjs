@@ -115,6 +115,37 @@ async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
 
+function validDate(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(value).toJSON()?.slice(0, 10) === value;
+}
+
+function validCampaign(campaign) {
+  const text = (value) => typeof value === "string" && value.length > 0;
+  return campaign?.schema === "kevala-decision-campaign-v1" && validDate(campaign.date)
+    && (campaign.dateEnd === undefined || validDate(campaign.dateEnd) && campaign.dateEnd >= campaign.date)
+    && [campaign.hardware?.gpu, campaign.hardware?.cpu, campaign.hardware?.os, campaign.browser?.name, campaign.browser?.version, campaign.browser?.visibility, campaign.resultsPath].every(text)
+    && campaign.passes === 1 && Array.isArray(campaign.notes) && campaign.notes.every(text);
+}
+
+async function loadCampaigns(directories) {
+  const campaigns = [];
+  for (const [index, directory] of directories.entries()) {
+    const path = resolve(directory, "campaign.json");
+    const campaign = await exists(path) ? await readJson(path) : null;
+    if ((!campaign && directories.length > 1) || (campaign && !validCampaign(campaign))) throw new Error(`run ${index + 1}: missing or invalid campaign.json`);
+    campaigns.push(campaign);
+  }
+  const primary = campaigns[0];
+  if (!primary) return { campaign: null, campaigns };
+  for (const [index, campaign] of campaigns.entries()) {
+    for (const field of ["schema", "hardware", "browser", "engineRevision", "resultsPath", "reportPath"]) {
+      if (firstDifference(campaign[field], primary[field])) throw new Error(`run ${index + 1}: campaign ${field} does not match run 1`);
+    }
+  }
+  const dates = campaigns.flatMap((campaign) => [campaign.date, campaign.dateEnd ?? campaign.date]).sort();
+  return { campaigns, campaign: { ...primary, date: dates[0], dateEnd: dates.at(-1), passes: campaigns.length, notes: [...new Set(campaigns.flatMap((campaign) => campaign.notes))] } };
+}
+
 async function readJsonl(path) {
   return (await readFile(path, "utf8")).split(/\r?\n/).filter(Boolean).map((line, index) => {
     try {
@@ -970,10 +1001,10 @@ function markdown(report) {
     out.push(`| ${model} | ${item.status} | ${metrics?.total ?? "—"} | ${metrics?.accuracy?.toFixed?.(4) ?? "—"} | ${metrics?.coverage?.toFixed?.(4) ?? "—"} | ${metrics ? metrics.invalid + metrics.missing : "—"} | ${item.latency?.meanMs?.toFixed?.(2) ?? "—"} | ${item.latency?.p50Ms?.toFixed?.(2) ?? "—"} | ${item.latency?.p95Ms?.toFixed?.(2) ?? "—"} |`);
   }
   if (report.canonical.passes > 1) {
-    out.push("", "## Per-pass results", "", "Repeated passes measure execution variability, not additional independent tasks. Option-order flips are computed within each pass.", "", "| Model | Pass | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean ms | p95 ms |", "| --- | ---: | ---: | ---: | ---: | ---: | ---: |");
+    out.push("", "## Per-pass results", "", "Repeated passes measure execution variability, not additional independent tasks. Option-order flips are computed within each pass. Dates are UTC.", "", "| Model | Pass | Date | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean ms | p95 ms |", "| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: |");
     for (const [model, item] of Object.entries(report.models)) for (const [index, run] of (item.runs ?? []).entries()) {
       const scores = ["kevala-authored36", "semif-authored144", "semif-perturbations108"].map((dataset) => run.metrics?.perDataset?.[dataset]?.accuracy == null ? "—" : `${(100 * run.metrics.perDataset[dataset].accuracy).toFixed(1)}%`);
-      out.push(`| ${model} | ${index + 1} | ${scores.join(" | ")} | ${run.latency?.meanMs?.toFixed?.(2) ?? "—"} | ${run.latency?.p95Ms?.toFixed?.(2) ?? "—"} |`);
+      out.push(`| ${model} | ${index + 1} | ${campaignDates(report.campaigns[index])} | ${scores.join(" | ")} | ${run.latency?.meanMs?.toFixed?.(2) ?? "—"} | ${run.latency?.p95Ms?.toFixed?.(2) ?? "—"} |`);
     }
   }
   out.push("", "## Per-dataset results", "", "| Model | Dataset | Rows | Accuracy | Coverage | Invalid | CI 95% | Flips |", "| --- | --- | ---: | ---: | ---: | ---: | --- | ---: |");
@@ -990,11 +1021,24 @@ function markdown(report) {
   return `${out.join("\n")}\n`;
 }
 
+function campaignDates(campaign) {
+  if (!campaign) return "not captured";
+  return campaign.dateEnd && campaign.dateEnd !== campaign.date ? `${campaign.date} to ${campaign.dateEnd}` : campaign.date;
+}
+
+function validateCampaignRuntime(campaign, item, model) {
+  const runner = item.runtime.runner;
+  const visibility = runner?.targetVisibility ?? (runner?.headless === true ? "headless" : "headed");
+  if (runner?.browser !== campaign.browser.name || runner?.browserVersion !== campaign.browser.version || visibility !== campaign.browser.visibility) {
+    throw new Error(`${model}: browser does not match campaign.json`);
+  }
+  if (campaign.engineRevision && item.runtime.engine?.revision !== campaign.engineRevision) throw new Error(`${model}: engine revision does not match campaign.json`);
+  if (item.runtime.environment?.hardware && firstDifference(campaign.hardware, item.runtime.environment.hardware)) throw new Error(`${model}: hardware does not match campaign.json`);
+}
+
 function comparisonTable(report) {
   const campaign = report.campaign;
-  if (campaign?.schema !== "kevala-decision-campaign-v1" || !/^\d{4}-\d{2}-\d{2}$/.test(campaign.date) || !campaign.hardware?.gpu || !campaign.hardware?.cpu || !campaign.hardware?.os || !campaign.browser || !Array.isArray(campaign.notes) || !campaign.resultsPath) {
-    throw new Error("README publication requires campaign.json with the measurement date and hardware");
-  }
+  if (!campaign) throw new Error("README publication requires campaign.json with the measurement date and hardware");
   let signature = null;
   const gpuLabel = campaign.hardware.gpu.match(/ANGLE Metal Renderer: ([^,]+)/)?.[1] ?? campaign.hardware.gpu;
   const cpuLabel = campaign.hardware.cpu === gpuLabel ? "" : `, ${campaign.hardware.cpu}`;
@@ -1003,7 +1047,7 @@ function comparisonTable(report) {
   const browserLabel = { chrome: "Chrome", firefox: "Firefox" }[campaign.browser.name] ?? campaign.browser.name;
   const browserVersion = campaign.browser.version.replace(/^(?:Chrome|Firefox)\//, "");
   const lines = [
-    `Snapshot: **${campaign.date}**, ${gpuLabel}${gpuCores}${campaign.hardware.vramGiB ? ` (${campaign.hardware.vramGiB} GiB)` : ""}${cpuLabel}${memoryLabel}, ${campaign.hardware.os}, ${browserLabel} ${browserVersion} (${campaign.browser.visibility}).`,
+    `Snapshot (UTC): **${campaignDates(campaign)}**, ${gpuLabel}${gpuCores}${campaign.hardware.vramGiB ? ` (${campaign.hardware.vramGiB} GiB)` : ""}${cpuLabel}${memoryLabel}, ${campaign.hardware.os}, ${browserLabel} ${browserVersion} (${campaign.browser.visibility}).`,
     "Text-only choice requests; Q8 packs; batch size one; inference caching and GPU profiling disabled. Downloads, loading, tuning, and warmup are excluded.",
     "",
     "| Model | Kevala accuracy | SemIf authored accuracy | SemIf perturbation accuracy | Mean decide ms | p95 ms | Pass mean range ms |",
@@ -1013,13 +1057,7 @@ function comparisonTable(report) {
     if (item.status !== "ok" || item.latency?.count !== report.canonical.expandedRows * report.canonical.passes || !validLatency(item.latency.meanMs) || !["verified", "post-run"].includes(item.datasetProvenance?.status) || item.runs?.some((run) => !["verified", "post-run"].includes(run.datasetProvenance?.status))) {
       throw new Error(`${model}: README publication requires complete validated decisions, timings, and fixture provenance`);
     }
-    const runner = item.runtime.runner;
-    const visibility = runner?.targetVisibility ?? (runner?.headless === true ? "headless" : "headed");
-    if (runner?.browser !== campaign.browser.name || runner?.browserVersion !== campaign.browser.version || visibility !== campaign.browser.visibility) {
-      throw new Error(`${model}: browser does not match campaign.json`);
-    }
-    if (campaign.engineRevision && item.runtime.engine?.revision !== campaign.engineRevision) throw new Error(`${model}: engine revision does not match campaign.json`);
-    if (item.runtime.environment?.hardware && firstDifference(campaign.hardware, item.runtime.environment.hardware)) throw new Error(`${model}: hardware does not match campaign.json`);
+    validateCampaignRuntime(campaign, item, model);
     const current = runtimeSignature(item);
     if (signature !== null && signature !== current) throw new Error(`${model}: mixed GPU, engine, environment, or warmup settings cannot share a README table`);
     signature = current;
@@ -1058,12 +1096,15 @@ async function updateReadme(path, report, check) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const canonical = await loadCanonical(args.fixtures);
+  const directories = [args.results, ...args.repeatResults];
+  const { campaign, campaigns } = await loadCampaigns(directories);
   const report = {
     schema: "kevala-decision-report-v2",
     generatedUtc: new Date().toISOString(),
     probabilitySumTolerance: args.probabilityTolerance,
     canonical: { permutations: [...DEFAULT_PERMUTATIONS], expandedRows: canonical.all.length, passes: args.repeatResults.length + 1, files: canonical.files, manifest: canonical.manifest },
-    campaign: await exists(resolve(args.results, "campaign.json")) ? await readJson(resolve(args.results, "campaign.json")) : null,
+    campaign,
+    campaigns,
     models: {},
     references: {},
     comparisons: [],
@@ -1072,10 +1113,12 @@ async function main() {
   const modelData = new Map();
   for (const model of [...Object.keys(BASE_MODEL_FILES), ...args.optionalModels]) {
     const runs = [];
-    for (const directory of [args.results, ...args.repeatResults]) {
+    for (const [index, directory] of directories.entries()) {
       const path = await findResult(directory, model);
       if (!path) report.missing.push(`model result: ${relative(ROOT, directory)}/${MODEL_FILES[model]}`);
-      runs.push(await processModel(model, path, canonical, args.probabilityTolerance));
+      const run = await processModel(model, path, canonical, args.probabilityTolerance);
+      if (campaigns[index] && run.report.status === "ok") validateCampaignRuntime(campaigns[index], run.report, model);
+      runs.push(run);
     }
     const checked = combineRuns(model, runs, canonical);
     report.models[model] = checked.report;

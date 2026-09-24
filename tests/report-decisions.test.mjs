@@ -63,6 +63,77 @@ async function readResult(directory, model) {
   return { path, value: JSON.parse(await readFile(path, "utf8")) };
 }
 
+async function repeatedResults() {
+  const directory = await copiedResults();
+  const summary = JSON.parse(await readFile(committedSummary, "utf8"));
+  for (const model of Object.keys(summary.models)) {
+    const result = await readResult(directory, model);
+    result.value.timingAllRows.forEach((row) => { row.wallMs *= 2; });
+    await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
+  }
+  return directory;
+}
+
+test("repeated campaign dates and notes are retained in the published table", async (context) => {
+  const repeated = await repeatedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(repeated, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const campaignPath = resolve(repeated, "campaign.json");
+  const campaign = JSON.parse(await readFile(campaignPath, "utf8"));
+  campaign.date = "2026-09-24";
+  campaign.dateEnd = "2026-09-25";
+  campaign.notes.push("Repeat-specific timing caveat.");
+  await writeFile(campaignPath, JSON.stringify(campaign));
+  await writeFile(readme, "<!-- decision-benchmark:start -->\noriginal\n<!-- decision-benchmark:end -->\n");
+  const result = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated, "--readme", readme]);
+  assert.equal(result.code, 0, result.stderr);
+  const report = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(report.campaign.dateEnd, "2026-09-25");
+  assert.deepEqual(report.campaigns.map((item) => item.date), ["2026-09-22", "2026-09-24"]);
+  const table = await readFile(readme, "utf8");
+  assert.match(table, /2026-09-22 to 2026-09-25/);
+  assert.match(table, /Repeat-specific timing caveat/);
+});
+
+test("publication rejects inconsistent or missing repeated campaign metadata", async (context) => {
+  const repeated = await repeatedResults();
+  const output = await temporaryOutput();
+  const readme = resolve(dirname(output), "README.md");
+  context.after(async () => {
+    await rm(repeated, { recursive: true, force: true });
+    await rm(dirname(output), { recursive: true, force: true });
+  });
+  const source = "<!-- decision-benchmark:start -->\noriginal\n<!-- decision-benchmark:end -->\n";
+  await writeFile(readme, source);
+  const campaignPath = resolve(repeated, "campaign.json");
+  const original = JSON.parse(await readFile(campaignPath, "utf8"));
+  const changes = [
+    (campaign) => { campaign.hardware.gpu = "Different GPU"; },
+    (campaign) => { campaign.browser.version = "Different browser"; },
+    (campaign) => { campaign.engineRevision = "different-revision"; },
+    (campaign) => { campaign.date = "2026-02-30"; },
+    (campaign) => { campaign.dateEnd = "2026-09-21"; },
+    (campaign) => { delete campaign.notes; },
+  ];
+  for (const change of [...changes, null]) {
+    const campaign = structuredClone(original);
+    if (change) {
+      change(campaign);
+      await writeFile(campaignPath, JSON.stringify(campaign));
+    } else {
+      await rm(campaignPath);
+    }
+    const result = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated, "--readme", readme]);
+    assert.notEqual(result.code, 0, "repeat campaign metadata must be checked before publication");
+    assert.match(result.stderr, /run 2:.*campaign/);
+    assert.equal(await readFile(readme, "utf8"), source);
+  }
+});
+
 test("reporter accepts matching full-pack evidence and committed summary", async (t) => {
   const output = await temporaryOutput();
   t.after(async () => rm(dirname(output), { recursive: true, force: true }));
@@ -133,18 +204,13 @@ test("README publication rejects mixed browser campaigns and leaves the file unc
 });
 
 test("repeated runs pool actual wall samples and retain independent source groups", async (context) => {
-  const repeated = await copiedResults();
+  const repeated = await repeatedResults();
   const output = await temporaryOutput();
   context.after(async () => {
     await rm(repeated, { recursive: true, force: true });
     await rm(dirname(output), { recursive: true, force: true });
   });
   const original = JSON.parse(await readFile(committedSummary, "utf8"));
-  for (const model of Object.keys(original.models)) {
-    const result = await readResult(repeated, model);
-    result.value.timingAllRows.forEach((row) => { row.wallMs *= 2; });
-    await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
-  }
   const reported = await runReporter(archivedResults, output, null, ["--no-references", "--repeat-results", repeated]);
   assert.equal(reported.code, 0, reported.stderr);
   const report = JSON.parse(await readFile(output, "utf8"));
