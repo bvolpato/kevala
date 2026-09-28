@@ -1,4 +1,7 @@
 // RMS norm over the hidden dimension (zero-centred weights stored as 1 + w).
+//#if SUBGROUPS
+//#include ordered_sum
+//#endif
 //#include kev_common
 
 struct P { D: u32, _a: u32, _b: u32, eps: f32 }
@@ -8,7 +11,11 @@ struct P { D: u32, _a: u32, _b: u32, eps: f32 }
 @group(0) @binding(4) var<storage, read_write> Y: array<f32>;
 var<workgroup> red: array<f32, 256>;
 @compute @workgroup_size(256)
-fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32) {
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l: u32
+//#if SUBGROUPS
+  , @builtin(subgroup_invocation_id) subgroupLane: u32
+//#endif
+) {
   let t = wg.x;
   if (t >= g.T) { return; }
   let base = t * p.D;
@@ -17,7 +24,13 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   for (var i = 0u; i < HIDDEN / 256u; i++) { v[i] = X[base + l + i * 256u]; s += v[i] * v[i]; }
   red[l] = s;
   workgroupBarrier();
+//#if SUBGROUPS
+  for (var k = 128u; k >= 32u; k >>= 1u) { if (l < k) { red[l] += red[l + k]; } workgroupBarrier(); }
+  let sum = ordered_sum32(red[subgroupLane], subgroupLane);
+//#else
   for (var k = 128u; k > 0u; k >>= 1u) { if (l < k) { red[l] += red[l + k]; } workgroupBarrier(); }
-  let inv = inverseSqrt(red[0] / f32(p.D) + p.eps);
+  let sum = red[0];
+//#endif
+  let inv = inverseSqrt(sum / f32(p.D) + p.eps);
   for (var i = 0u; i < HIDDEN / 256u; i++) { let c = l + i * 256u; Y[base + c] = v[i] * inv * Wt[c]; }
 }

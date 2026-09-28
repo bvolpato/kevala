@@ -1,5 +1,8 @@
 // Gemma RMSNorm uses the checkpoint weight as a direct multiplicative tensor.
 // Mode 0 is unscaled, mode 1 is weighted, and mode 2 adds the weighted result to Y.
+//#if SUBGROUPS
+//#include ordered_sum
+//#endif
 //#include common
 
 struct P { D: u32, eps: f32, mode: u32, _a: u32 }
@@ -10,7 +13,11 @@ struct P { D: u32, eps: f32, mode: u32, _a: u32 }
 var<workgroup> sums: array<f32, 256>;
 
 @compute @workgroup_size(256)
-fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) lane: u32
+//#if SUBGROUPS
+  , @builtin(subgroup_invocation_id) subgroupLane: u32
+//#endif
+) {
   let t = wg.x;
   if (t >= g.T) { return; }
   let base = t * p.D;
@@ -21,11 +28,20 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   }
   sums[lane] = sum;
   workgroupBarrier();
+//#if SUBGROUPS
+  for (var stride = 128u; stride >= 32u; stride >>= 1u) {
+//#else
   for (var stride = 128u; stride > 0u; stride >>= 1u) {
+//#endif
     if (lane < stride) { sums[lane] += sums[lane + stride]; }
     workgroupBarrier();
   }
-  let inv = inverseSqrt(sums[0] / f32(p.D) + p.eps);
+//#if SUBGROUPS
+  let total = ordered_sum32(sums[subgroupLane], subgroupLane);
+//#else
+  let total = sums[0];
+//#endif
+  let inv = inverseSqrt(total / f32(p.D) + p.eps);
   for (var d = lane; d < p.D; d += 256u) {
     let factor = select(1.0, W[d], p.mode == 1u || p.mode == 2u);
     let normalized = X[base + d] * inv;

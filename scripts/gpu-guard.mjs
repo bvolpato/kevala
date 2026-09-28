@@ -14,10 +14,14 @@ const checks = [
   ["compile-baseline", "gpu", `${compilePath}&baseline=1`],
   ["activations", "gpu", "/dev/activation-check.html"],
   ["tiles", "gpu", "/dev/gpu-bench.html?cases=7x132x96,17x132x96,45x132x96,45x132x1024&samples=3&warmups=1"],
+  ["row-tiles", "gpu", "/dev/gpu-bench.html?cases=65x68x96,80x132x96,96x70x160,129x68x96,140x132x96,144x70x160&kernels=matmul_h@256:4,matmul_h@256:3&samples=3&warmups=1", undefined, ["shaderF16", "timestampQuery"]],
+  ["ordered-sums", "gpu", "/dev/kernel-bench.html?kernels=norm,kev_rms,kev_aprep,gemma4_rms,gemma4_ple&tokens=1,47,128&seed=42&samples=3&warmups=1", undefined, ["subgroup32", "timestampQuery"]],
+  ...[2048, 2560, 4096].map((hidden) => [`ordered-rms-${hidden}`, "gpu", `/dev/kernel-bench.html?kernels=kev_rms&kevHidden=${hidden}&tokens=1,47,128&seed=42&samples=3&warmups=1`, undefined, ["subgroup32", "timestampQuery"]]),
   ["kernels", "kernels", "/dev/kernels.html"],
   ["gemma-gelu", "gpu", "/dev/gemma-gelu-check.html"],
   ["gemma-attention", "gpu", "/dev/gemma-attn-bench.html?samples=1&warmups=1"],
   ["gemma-rms", "gpu", "/dev/gemma-rms-check.html?samples=1&warmups=1"],
+  ["gemma-rms-subgroups", "gpu", "/dev/gemma-rms-check.html?subgroups=1&samples=1&warmups=1", undefined, ["subgroup32", "timestampQuery"]],
   ["gemma-tail", "gpu", "/dev/gemma-tail-check.html"],
   ["recur4-shared", "gpu", "/dev/recur-check.html?candidate=current&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],
   ["recur8-shared", "gpu", "/dev/recur-check.html?candidate=recur8&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],
@@ -40,6 +44,7 @@ for (const [name, kind, path, tolerance, required = []] of checks) {
     continue;
   }
   const args = ["run", "scripts/bench-gpu.py", "--result", kind, "--timeout", "600", "--url", base + path, "--output", resolve(out, `${name}.json`)];
+  if (process.env.KEVALA_BENCH_CDP) args.push("--cdp-default-context");
   if (tolerance) args.push("--max-dp", tolerance);
   const run = spawnSync("uv", args, { stdio: "inherit", timeout: 650000 });
   if (run.error || run.status !== 0) {
@@ -48,7 +53,7 @@ for (const [name, kind, path, tolerance, required = []] of checks) {
   }
   if (name === "compile") {
     capabilities = JSON.parse(readFileSync(resolve(out, "compile.json"), "utf8")).capabilities;
-    if (!["timestampQuery", "subgroup4", "subgroup8", "subgroup16", "subgroup32"].every((capability) => typeof capabilities?.[capability] === "boolean")) throw new Error("compile guard did not report device capabilities");
+    if (!["timestampQuery", "shaderF16", "subgroup4", "subgroup8", "subgroup16", "subgroup32"].every((capability) => typeof capabilities?.[capability] === "boolean")) throw new Error("compile guard did not report device capabilities");
   }
 }
 console.log("All supported GPU numerical guards passed");

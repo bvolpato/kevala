@@ -1,7 +1,7 @@
 // End-to-end decision benchmark. The page runs one typed choice request at a time so quality
 // and latency have independent accounting. The canonical cases live in benchmarks/decisions;
 // this adapter accepts the stable dataset exports used by the offline metrics harness.
-import { Kevala, MODELS } from "../js/src/index.js";
+import { MODELS } from "../js/src/index.js";
 import { DEFAULT_PERMUTATIONS, evaluateDecisions, expandPermutations, summarizeLatencies } from "../benchmarks/decisions/metrics.js";
 
 const logNode = document.getElementById("log");
@@ -270,7 +270,9 @@ async function run() {
   if (!["local", "hosted"].includes(pack)) fail(`pack must be local or hosted, got ${pack}`);
   if (!["all", "kevala", "semif"].includes(datasetName)) fail(`dataset must be all, kevala, or semif, got ${datasetName}`);
   if (!modelName || !MODELS[modelName]) fail(`unknown model ${modelName}`);
-  const source = pack === "local" ? `../tmp/${modelName}-q8.kevala` : modelName;
+  const packUrl = query.get("packUrl") ? new URL(query.get("packUrl"), location.href) : null;
+  if (packUrl && packUrl.origin !== location.origin) fail("packUrl must be same-origin");
+  const source = packUrl?.href || (pack === "local" ? `../tmp/${modelName}-q8.kevala` : modelName);
   const dataset = await loadDataset(datasetName);
   const baseCases = dataset.cases.map(normalizeCase);
   if (!baseCases.length) fail(`dataset ${datasetName} selected no canonical cases`);
@@ -287,7 +289,10 @@ async function run() {
   summaryNode.textContent = `loading ${modelName} (${backend})`;
   try {
     const beforeLoad = performance.now();
-    model = await Kevala.load({ model: source, backend, cache: false, profile: false, stateCache: false });
+    const runtime = new URL(query.get("runtime") || "../js/src/index.js", document.baseURI);
+    if (runtime.origin !== location.origin) throw new Error("runtime must be same-origin");
+    const { Kevala } = await import(runtime.href);
+    model = await Kevala.load({ model: source, backend, cache: query.get("cache") === "1", profile: false, stateCache: false });
     const loadWallMs = performance.now() - beforeLoad;
     const info = model.info || {};
     validateModelInfo(info, modelName, spec);

@@ -133,7 +133,7 @@ Text-only choice requests; Q8 packs; batch size one; inference caching and GPU p
 | `gemma-4-e4b` | 100.0% (324/324) | 89.1% (1155/1296) | 90.1% (876/972) | 251.0 | 524.2 | 237.0-258.3 |
 
 Mean latency is the arithmetic mean of all 2592 awaited `decide()` calls per model across 3 full passes, including tokenization and GPU readback, not summed kernel time. Failures count against accuracy; coverage and source-group confidence intervals are in [the full report](benchmarks/results/decisions-m4-max-2026-09-23/report.md).
-Pass mean ranges show repeat variability, not confidence intervals. An interactive workstation can have substantial timing noise; this is not a dedicated-GPU performance limit.
+Pass mean ranges show repeat variability, not confidence intervals.
 
 [Datasets and hashes](benchmarks/decisions/manifest.json): 36 Kevala cases, 144 SemIf authored variants, and 108 related perturbations, each in three option orders. There are only 72 independent source groups; rotations and perturbations are not independent examples. The suites stay separate instead of inflating one headline score. Labels have not been independently human adjudicated, and training overlap has not been audited; this is a synthetic regression benchmark, not general model accuracy.
 
@@ -154,6 +154,11 @@ The table includes the local Gemma GELU repair. It predates Bruv and the additio
 For GPU measurements across the seven Laya, Kev, and SemIf models on Firefox/Linux, see
 [GPU matrix tuning](docs/semif-matmul.md). Gemma 4's E2B and E4B checks are in the
 [Gemma 4 notes](docs/gemma4.md). Performance depends on the model, request, and hardware.
+
+The [September 25 M4 Max kernel sweep](docs/m4-max-kernel-performance.md) compares
+all registered kernels, records rejected experiments, and validates the retained optimizations.
+The repeated 140-token Laya comparison reduces mean awaited latency from 24.78 to
+20.74 ms (16.3%). The report includes measured latencies for all 11 models.
 
 On an Apple M4 Max, with WebGPU in Chrome:
 

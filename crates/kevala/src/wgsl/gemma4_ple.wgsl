@@ -1,5 +1,8 @@
 // Combines the token identity and context projection parts of PLE. The context
 // projection has already been computed by a Q8 matmul from the original embedding.
+//#if SUBGROUPS
+//#include ordered_sum
+//#endif
 //#include common
 
 struct P { width: u32, input_dim: u32, eps: f32, input_scale: f32, projection_scale: f32, _a: u32, _b: u32, _c: u32 }
@@ -11,7 +14,11 @@ struct P { width: u32, input_dim: u32, eps: f32, input_scale: f32, projection_sc
 var<workgroup> sums: array<f32, 256>;
 
 @compute @workgroup_size(256)
-fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) lane: u32) {
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) lane: u32
+//#if SUBGROUPS
+  , @builtin(subgroup_invocation_id) subgroupLane: u32
+//#endif
+) {
   let t = wg.x;
   if (t >= g.T) { return; }
   let base = t * p.width;
@@ -22,11 +29,20 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   }
   sums[lane] = sum;
   workgroupBarrier();
+//#if SUBGROUPS
+  for (var stride = 128u; stride >= 32u; stride >>= 1u) {
+//#else
   for (var stride = 128u; stride > 0u; stride >>= 1u) {
+//#endif
     if (lane < stride) { sums[lane] += sums[lane + stride]; }
     workgroupBarrier();
   }
-  let inv = inverseSqrt(sums[0] / f32(p.width) + p.eps);
+//#if SUBGROUPS
+  let total = ordered_sum32(sums[subgroupLane], subgroupLane);
+//#else
+  let total = sums[0];
+//#endif
+  let inv = inverseSqrt(total / f32(p.width) + p.eps);
   for (var i = lane; i < p.width; i += 256u) {
     let context = projected[base + i] * p.projection_scale * inv * W[i];
     Y[base + i] = (token[base + i] + context) * p.input_scale;

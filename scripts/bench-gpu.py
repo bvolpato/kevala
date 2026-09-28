@@ -78,6 +78,11 @@ def parse_args() -> argparse.Namespace:
         default=os.environ.get("KEVALA_BENCH_CDP"),
         help="run in a hidden target of the Chrome listening at this DevTools URL instead of launching a browser",
     )
+    parser.add_argument(
+        "--cdp-default-context",
+        action="store_true",
+        help="use an owned target in Chrome's default context to avoid hidden-target context teardown crashes",
+    )
     return parser.parse_args()
 
 
@@ -519,8 +524,8 @@ def create_browser(args: argparse.Namespace):
     return webdriver.Firefox(options=options, service=Service(log_output=os.devnull))
 
 
-def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float, headed: bool = False) -> tuple[object, dict]:
-    """Loads `url` in a fresh context of a running Chrome and polls `expression` until it is done.
+def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float, headed: bool = False, default_context: bool = False) -> tuple[object, dict]:
+    """Loads `url` in an owned target of a running Chrome and polls `expression` until it is done.
 
     This speaks the DevTools protocol directly: Playwright's attach step asserts on target types
     it does not know, which some Chrome builds add for their own UI.
@@ -547,10 +552,13 @@ def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float, 
                         raise RuntimeError(f"{method}: {reply['error'].get('message')}")
                     return reply.get("result", {})
 
-        context = send("Target.createBrowserContext", {"disposeOnDetach": True})["browserContextId"]
+        context = None if default_context else send("Target.createBrowserContext", {"disposeOnDetach": True})["browserContextId"]
+        target = None
         result: object = None
         try:
-            target_params = {"url": "about:blank", "browserContextId": context}
+            target_params = {"url": "about:blank"}
+            if context:
+                target_params["browserContextId"] = context
             if headed:
                 target_params["newWindow"] = True
             else:
@@ -576,12 +584,24 @@ def poll_chrome(cdp: str, url: str, expression: str, kind: str, timeout: float, 
         except Exception as error:
             result = {"error": f"browser runner: {error}"}
         finally:
-            send("Target.disposeBrowserContext", {"browserContextId": context})
-    return result, {"browserName": "chrome", "browserVersion": endpoint.get("Browser")}
+            cleanup = []
+            if target:
+                cleanup.append(("Target.closeTarget", {"targetId": target}))
+            if context:
+                cleanup.append(("Target.disposeBrowserContext", {"browserContextId": context}))
+            for method, params in cleanup:
+                try:
+                    send(method, params)
+                except Exception as error:
+                    print(f"browser cleanup: {error}", file=sys.stderr)
+    return result, {"browserName": "chrome", "browserVersion": endpoint.get("Browser"), "browserContext": "default" if default_context else "isolated"}
 
 
 def main() -> int:
     args = parse_args()
+    if args.cdp_default_context and not args.cdp:
+        print("--cdp-default-context requires --cdp", file=sys.stderr)
+        return 2
     if args.result in {"gpu", "kernels"} and args.backend != "webgpu":
         print(f"--backend {args.backend} is not valid for --result {args.result}", file=sys.stderr)
         return 2
@@ -596,7 +616,7 @@ def main() -> int:
     result_global = RESULT_GLOBALS[args.result]
     result_expression = f"return window.{result_global} || null;"
     if args.cdp:
-        result, capabilities = poll_chrome(args.cdp, url, result_expression, args.result, args.timeout, headed=args.headed)
+        result, capabilities = poll_chrome(args.cdp, url, result_expression, args.result, args.timeout, headed=args.headed, default_context=args.cdp_default_context)
     else:
         try:
             browser = create_browser(args)
@@ -624,6 +644,7 @@ def main() -> int:
         "browserVersion": capabilities.get("browserVersion"),
         "headless": not args.headed and not args.cdp,
         "targetVisibility": "hidden" if args.cdp and not args.headed else "headed" if args.headed else "headless",
+        "browserContext": capabilities.get("browserContext", "isolated"),
         "expectedBackend": args.backend,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
         "timerPrivacy": {

@@ -89,13 +89,13 @@ export class GpuKev {
     const d = this.device;
     this.recurTiles = 2;
     const kernels = {
-      RMS: ["kev_rms"],
+      RMS: ["kev_rms", { subgroups: this.subgroup32 }],
       GATES: ["kev_gates"],
       CONV: ["kev_conv"],
       SAVE_TAIL: ["kev_save_tail"],
       RECUR: ["kev_recur_lanes", { subgroups: this.subgroup4 }],
       GNORM: ["kev_gnorm"],
-      APREP: ["kev_aprep"],
+      APREP: ["kev_aprep", { subgroups: this.subgroup32 }],
       SAVE_KV: ["kev_save_kv"],
       KEYS: ["kev_attention_keys"],
       ATTN: this.attnTile ? ["kev_attention_tile", { f16: !this.attnTileFp32 }] : ["kev_attention", { subgroups: this.subgroup32 }],

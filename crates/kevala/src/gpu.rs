@@ -19,6 +19,7 @@ use crate::json::Value;
 /// ever included by kernels.
 const SOURCES: &[(&str, &str)] = &[
     ("common", include_str!("wgsl/common.wgsl")),
+    ("ordered_sum", include_str!("wgsl/ordered_sum.wgsl")),
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),

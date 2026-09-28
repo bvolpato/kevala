@@ -55,7 +55,7 @@ async function run() {
       method: "GPU pipeline compilation wall clock", metricMs: (performance.now() - started) / Math.max(1, compiled.length),
       adapter: { name: runtime.name, vendor: runtime.adapter.info?.vendor ?? null, isFallbackAdapter: false },
       deviceFeatures: [...device.features], languageFeatures: [...(languageFeatures || [])],
-      capabilities: { timestampQuery: device.features.has("timestamp-query"), subgroup4: runtime.subgroup4, subgroup8: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 8, subgroup16: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 16, subgroup32: runtime.subgroup32 },
+      capabilities: { timestampQuery: device.features.has("timestamp-query"), shaderF16: device.features.has("shader-f16"), subgroup4: runtime.subgroup4, subgroup8: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 8, subgroup16: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 16, subgroup32: runtime.subgroup32 },
       limits: { maxComputeWorkgroupStorageSize: device.limits.maxComputeWorkgroupStorageSize },
       correctness: { ok: !failures.length, registeredKernels: kernels.length, compiled, skipped, failures },
       ...(failures.length ? { error: failures.map((failure) => `${failure.kernel}: ${failure.error}`).join("; ") } : {}),

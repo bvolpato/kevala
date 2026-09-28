@@ -349,12 +349,14 @@ async function main() {
   const seed = numberParam("seed", 0x4b455641, 1, 0xffffffff);
   const warmups = numberParam("warmups", 2, 0, 10);
   const samples = numberParam("samples", 5, 1, 20);
-  const gpu = await requestDevice({ features: ["timestamp-query"] });
+  const subgroups = new URLSearchParams(location.search).get("subgroups") === "1";
+  const gpu = await requestDevice({ features: subgroups ? ["timestamp-query", "subgroups"] : ["timestamp-query"] });
+  if (subgroups && !gpu.subgroup32) throw new Error("RMS subgroup path requires exactly 32-lane subgroups");
   if (gpu.adapter.info?.isFallbackAdapter || gpu.adapter.isFallbackAdapter) throw new Error("software WebGPU adapter is not accepted");
   const uncaptured = [];
   gpu.device.addEventListener("uncapturederror", (event) => uncaptured.push({ message: event.error?.message || String(event.error) }));
   const source = await kernelSource();
-  const rms = await pipeline(gpu.device, source("gemma4_rms"), "gemma4_rms");
+  const rms = await pipeline(gpu.device, source("gemma4_rms", { subgroups }), "gemma4_rms");
   const residualKernel = await pipeline(gpu.device, source("gemma4_residual"), "gemma4_residual");
   const correctness = { ok: true, cases: [], maxAbs: 0, cpuMaxAbs: 0, bitDifferences: 0, tolerance: { absolute: ABS_TOLERANCE } };
   log(`device: ${gpu.name}; adapter=${adapterInfo(gpu).vendor || "unknown"}; timestamp=${gpu.device.features.has("timestamp-query")}`);

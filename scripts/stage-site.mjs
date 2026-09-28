@@ -31,6 +31,8 @@ const publicHarnesses = [
   "dev/gpu-bench.html",
   "dev/gpu-bench.js",
   "dev/kernels.html",
+  "dev/kernel-bench.html",
+  "dev/kernel-bench.js",
   "dev/kernel-compile-check.html",
   "dev/kernel-compile-check.js",
   "dev/kev-attn-bench.html",

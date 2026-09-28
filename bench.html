@@ -18,7 +18,6 @@
 </p>
 <pre id="log"></pre>
 <script type="module">
-import { Kevala, MODELS } from "./js/src/index.js";
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.bench = { status: "idle" };
@@ -40,12 +39,17 @@ async function run() {
   let kevala = null;
   try {
     const backend = q.get("backend") || $("backend").value;
+    const runtime = new URL(q.get("runtime") || "./js/src/index.js", document.baseURI);
+    if (runtime.origin !== location.origin) throw new Error("runtime must be same-origin");
+    const { Kevala, MODELS } = await import(runtime.href);
     const threadOption = q.get("threads") || $("threads").value;
     const threads = threadOption === "auto" ? "auto" : Number(threadOption);
     const name = q.get("model") || "laya";
     const local = q.get("pack") === "local";
     if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
-    const model = local ? `./tmp/${name}-q8.kevala` : name;
+    const packUrl = q.get("packUrl") ? new URL(q.get("packUrl"), document.baseURI) : null;
+    if (packUrl && packUrl.origin !== location.origin) throw new Error("packUrl must be same-origin");
+    const model = packUrl?.href || (local ? `./tmp/${name}-q8.kevala` : name);
     const runs = integerParam(q, "runs", 10, 1);
     const warmups = integerParam(q, "warmups", 2, 0);
     const requestedFlavor = q.get("flavor") || undefined;
@@ -54,10 +58,12 @@ async function run() {
     // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
     // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
     const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
-    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", stateCache: q.get("stateCache") === "0" ? false : undefined, profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const results = {
       model: name,
+      modelInfo: kevala.info.model,
+      runtime: runtime.href,
       arch: kevala.info.arch,
       backend: kevala.info.backend,
       gpu: kevala.info.gpu,

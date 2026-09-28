@@ -17,9 +17,9 @@ export function mmSplits(T, N, K, target = SPLIT_TARGET, bm = 64, bn = 64) {
   return Math.max(1, Math.min(8, Math.ceil(target / tiles), Math.floor(K / 128)));
 }
 
-/** Select a 16 R row tile. FP32 can omit padded rows without changing the workgroup grid. */
+/** Select a 16 R row tile without changing the workgroup grid or split-K partition. */
 export function rowsPerThread(T, config = null) {
-  if (config?.f16 === false && config.groups === 1 && T >= 64 && Math.ceil(T / 48) === Math.ceil(T / 64)) return 3;
+  if (config?.groups === 1 && (config.f16 === false || config.kernel !== "matmul_wide") && T >= 64 && Math.ceil(T / 48) === Math.ceil(T / 64)) return 3;
   return T >= 64 ? 4 : Math.max(1, Math.ceil(T / 16));
 }
 
@@ -94,7 +94,7 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul") {
       pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
   ]);
-  return { layout, reduceLayout: rlayout, mm, mm56, reduce, ...config };
+  return { layout, reduceLayout: rlayout, mm, mm56, reduce, kernel, ...config };
 }
 
 /** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */
@@ -400,7 +400,7 @@ export class GpuTrunk {
     const kernel = (name, spec) => pipe(this.wgsl(name, spec), name);
     const [genericMm, pNorm, pRope, pAttn, pGeglu, pGather] = await Promise.all([
       matmulPipelines(d, this.wgsl),
-      kernel("norm"),
+      kernel("norm", { subgroups: this.subgroup32 }),
       kernel("rope"),
       kernel(...this.attnKernel),
       kernel("geglu"),

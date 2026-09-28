@@ -70,7 +70,7 @@ function parseKernel(raw, T, config) {
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
-  const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups }) : match[3] ? Number(match[3]) : 4;
+  const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups, kernel: match[1].startsWith("matmul_wide") ? "matmul_wide" : "matmul" }) : match[3] ? Number(match[3]) : 4;
   const row56 = match[1] === "matmul_row56";
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
   if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
@@ -188,22 +188,27 @@ function compareVariants(outputs, labels, tolerance) {
   return { ok: true, compared: labels, maxAbs, maxRelative };
 }
 
-function row56Pairs(variants) {
-  return variants.filter((v) => v.row56).map((candidate) => {
+function exactPairs(variants, T, N, K) {
+  const pairs = variants.filter((v) => v.row56).map((candidate) => {
     const control = variants.find((v) => !v.row56 && v.name === "matmul" && !v.f16 && v.rows === 4 && v.groups === 1 && v.target === candidate.target && v.wasmUrl === candidate.wasmUrl);
     if (!control) throw new Error(`${candidate.label} requires a matching FP32 R4/G1 control with the same split target and WASM`);
     return { control, candidate };
   });
+  for (const candidate of variants.filter((v) => v.rows === 3 && v.groups === 1 && !v.row56)) {
+    const control = variants.find((v) => v.name === candidate.name && v.f16 === candidate.f16 && v.rows === 4 && v.groups === 1 && v.target === candidate.target && v.wasmUrl === candidate.wasmUrl && !v.row56);
+    if (control && Math.ceil(T / 48) === Math.ceil(T / 64) && mmSplits(T, N, K, candidate.target, 48, 64) === mmSplits(T, N, K, control.target, 64, 64)) pairs.push({ control, candidate });
+  }
+  return pairs;
 }
 
-function compareRow56(outputs, pairs, mode, bias) {
+function compareExact(outputs, pairs, mode, bias) {
   return pairs.map(({ control, candidate }) => {
     const a = outputs[control.label], b = outputs[candidate.label];
     const aBits = new Uint32Array(a.buffer, a.byteOffset, a.length);
     const bBits = new Uint32Array(b.buffer, b.byteOffset, b.length);
     let bitMismatches = 0;
     for (let i = 0; i < a.length; i++) if (aBits[i] !== bBits[i]) bitMismatches++;
-    return { compared: [control.label, candidate.label], mode, bias, samples: a.length, bitMismatches, ok: bitMismatches === 0 };
+    return { compared: [control.label, candidate.label], row56: !!candidate.row56, mode, bias, samples: a.length, bitMismatches, ok: bitMismatches === 0 };
   });
 }
 
@@ -371,7 +376,7 @@ async function main() {
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
   const cases = [];
-  const correctness = { ok: true, cpu: [], variants: [], row56: [], errors: [] };
+  const correctness = { ok: true, cpu: [], variants: [], row56: [], rowTiles: [], errors: [] };
   const medians = [];
   const variantTolerance = { abs: device.features.has("shader-f16") ? 0.03 : 0.0005, relative: device.features.has("shader-f16") ? 0.002 : 0.0001 };
 
@@ -379,8 +384,8 @@ async function main() {
     const shape = shapes[shapeIndex];
     const [T, N, K] = shape;
     const variantObjects = variantsFor(T);
-    const pairs = row56Pairs(variantObjects);
-    const hasRow56 = pairs.length > 0;
+    const pairs = exactPairs(variantObjects, T, N, K);
+    const hasExactPairs = pairs.length > 0;
     const partialFloats = Math.max(0, ...variantObjects.map((variant) => {
       const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
       return splits > 1 ? splits * T * N : 0;
@@ -451,7 +456,7 @@ async function main() {
       correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode: 0, bias: false, ...cpu });
       if (!cpu.ok) correctness.ok = false;
       if (shouldCheckEpilogues) {
-        const epilogues = hasRow56 ? [[0, true], [1, false], [1, true], [2, false], [2, true]] : [[1, true], [2, true]];
+        const epilogues = hasExactPairs ? [[0, true], [1, false], [1, true], [2, false], [2, true]] : [[1, true], [2, true]];
         for (const [mode, withBias] of epilogues) {
           await checked(device, async () => {
             device.queue.writeBuffer(params, 0, new Uint32Array([N, K, mode, Number(withBias)]));
@@ -460,7 +465,7 @@ async function main() {
           }, `${caseLabel(shape)} mode ${mode} upload`, uncaptured);
           await timedBatch(device, timer, op, T, 1, variant.target, variant.rows, variant.groups, uncaptured, `${caseLabel(shape)} mode ${mode}`);
           const epilogue = await readOutput(device, Y, bytes, uncaptured, `${caseLabel(shape)} mode ${mode}`);
-          if (hasRow56) (epilogueOutputs[`${mode}/${Number(withBias)}`] ||= {})[variant.label] = epilogue;
+          if (hasExactPairs) (epilogueOutputs[`${mode}/${Number(withBias)}`] ||= {})[variant.label] = epilogue;
           const cpu = compareCpu(input, epilogue, variant, mode, withBias);
           correctness.cpu.push({ shape: caseLabel(shape), kernel: variant.label, mode, bias: withBias, ...cpu });
           if (!cpu.ok) correctness.ok = false;
@@ -475,12 +480,13 @@ async function main() {
     const variantCheck = compareVariants(outputs, labels, variantTolerance);
     correctness.variants.push({ shape: caseLabel(shape), ...variantCheck });
     if (!variantCheck.ok) correctness.ok = false;
-    const exact = compareRow56(outputs, pairs, 0, false);
+    const exact = compareExact(outputs, pairs, 0, false);
     for (const [key, values] of Object.entries(epilogueOutputs)) {
       const [mode, bias] = key.split("/").map(Number);
-      exact.push(...compareRow56(values, pairs, mode, Boolean(bias)));
+      exact.push(...compareExact(values, pairs, mode, Boolean(bias)));
     }
-    correctness.row56.push(...exact.map((check) => ({ shape: caseLabel(shape), ...check })));
+    correctness.row56.push(...exact.filter((check) => check.row56).map((check) => ({ shape: caseLabel(shape), ...check })));
+    correctness.rowTiles.push(...exact.filter((check) => !check.row56).map((check) => ({ shape: caseLabel(shape), ...check })));
     if (exact.some((check) => !check.ok)) correctness.ok = false;
     const shapeMedians = timings.map((item) => item.medianMs);
     const shapeMedian = shapeMedians[0];

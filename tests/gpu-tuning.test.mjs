@@ -10,21 +10,24 @@ import {
   selectMatmulKernel,
 } from "../js/src/gpu-tuning.js";
 
-test("FP32 row tiles reduce padding while preserving the grid and split count", () => {
-  const config = { f16: false, groups: 1 };
-  for (const tokens of [65, 80, 96, 129, 140, 144]) {
-    const rows = rowsPerThread(tokens, config);
-    assert.equal(rows, 3);
-    assert.equal(Math.ceil(tokens / (16 * rows)), Math.ceil(tokens / 64));
-    for (const [N, K] of [[70, 160], [1024, 2624], [12288, 2048]]) {
-      assert.equal(mmSplits(tokens, N, K, 256, 16 * rows, 64), mmSplits(tokens, N, K, 256, 64, 64));
+test("row tiles reduce padding while preserving the grid and split count", () => {
+  for (const f16 of [false, true]) {
+    const config = { f16, groups: 1 };
+    for (const tokens of [65, 80, 96, 129, 140, 144]) {
+      const rows = rowsPerThread(tokens, config);
+      assert.equal(rows, 3);
+      assert.equal(Math.ceil(tokens / (16 * rows)), Math.ceil(tokens / 64));
+      for (const [N, K] of [[70, 160], [1024, 2624], [12288, 2048]]) {
+        assert.equal(mmSplits(tokens, N, K, 256, 16 * rows, 64), mmSplits(tokens, N, K, 256, 64, 64));
+      }
+      assert.equal(rowsPerThread(tokens, { f16: false, groups: 2 }), 4);
+      assert.equal(rowsPerThread(tokens, { f16: true, groups: 1, kernel: "matmul_wide" }), 4);
+      assert.equal(rowsPerThread(tokens, { f16: false, groups: 1, kernel: "matmul_wide" }), 3);
+      assert.equal(rowsPerThread(tokens), 4);
     }
-    assert.equal(rowsPerThread(tokens, { f16: true, groups: 1 }), 4);
-    assert.equal(rowsPerThread(tokens, { f16: false, groups: 2 }), 4);
-    assert.equal(rowsPerThread(tokens), 4);
-  }
-  for (const [tokens, rows] of [[1, 1], [16, 1], [17, 2], [32, 2], [33, 3], [48, 3], [49, 4], [64, 4], [97, 4], [128, 4], [145, 4], [512, 4]]) {
-    assert.equal(rowsPerThread(tokens, config), rows);
+    for (const [tokens, rows] of [[1, 1], [16, 1], [17, 2], [32, 2], [33, 3], [48, 3], [49, 4], [64, 4], [97, 4], [128, 4], [145, 4], [512, 4]]) {
+      assert.equal(rowsPerThread(tokens, config), rows);
+    }
   }
 });
 

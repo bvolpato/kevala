@@ -4,6 +4,9 @@ For the September 24 M4 Max numerical audit and fixes, see
 [kernel safety](kernel-safety.md). That audit includes actual compilation of every
 registered kernel and CPU-reference checks; it is not a new latency comparison.
 
+The [September 25 M4 Max performance sweep](m4-max-kernel-performance.md) follows
+that audit with paired kernel timings, all-model profiles and optimization experiments.
+
 Measured on September 22, 2026, using Firefox 152.0.3 on Ubuntu, an NVIDIA RTX 5070 Ti
 (595.71.05), and the Ryzen 9950X3D integrated AMD GPU (RADV, Mesa 25.2.8).
 Firefox uses Vulkan for WebGPU on this platform. These results do not use CUDA.
