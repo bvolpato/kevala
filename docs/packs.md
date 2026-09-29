@@ -90,6 +90,8 @@ architecture and readout, rather than guessing from a repository name or paramet
 files the converter reads are needed: the Laya repo also holds multilingual and typed-decision
 variants that would triple the download.
 
+For Qwen3.5 packs, the native CLI writes converted tensors directly to disk. It does not hold the whole output pack in RAM. Embedding conversion widens at most 16 MiB of values at a time, and direct readout conversion selects only the required LM-head rows. The converter still holds source tensors while their dependent outputs are processed.
+
 ```sh
 cargo build --release -p kevala-cli
 kevala=target/release/kevala
@@ -149,7 +151,7 @@ cargo build --release -p kevala-cli
 uv run tools/convert_models.py --models kev-4b semif-qwen3.5-0.8b
 
 # Optional larger conversions. Each selected model is converted serially.
-uv run tools/convert_models.py --models kev-9b semif-qwen3.5-2b semif-qwen3.5-4b
+uv run tools/convert_models.py --models kev-9b semif-qwen3.5-2b semif-qwen3.5-4b semif-qwen3.5-9b
 
 # Gemma 4 E2B and E4B, converted as text-only dense packs
 uv run tools/convert_models.py --models gemma-4-e2b gemma-4-e4b

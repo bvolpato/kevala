@@ -142,6 +142,15 @@ impl St {
         Ok((start, end))
     }
     fn f32(&self, name: &str) -> Result<Vec<f32>, String> {
+        let count = self
+            .shape(name)?
+            .iter()
+            .try_fold(1usize, |n, &d| n.checked_mul(d))
+            .ok_or_else(|| format!("{name}: shape overflows usize"))?;
+        self.f32_range(name, 0, count)
+    }
+
+    fn f32_range(&self, name: &str, start: usize, count: usize) -> Result<Vec<f32>, String> {
         let t = self.header.get(name).ok_or_else(|| format!("checkpoint has no tensor {name}"))?;
         let raw: &[u8] = match self.parts.get(name) {
             Some(b) => b,
@@ -155,20 +164,29 @@ impl St {
             .iter()
             .try_fold(1usize, |n, &d| n.checked_mul(d))
             .ok_or_else(|| format!("{name}: shape overflows usize"))?;
-        let (elem, out) = match t.get("dtype").and_then(Value::as_str) {
-            Some("F32") => (4, raw.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect()),
-            Some("BF16") => (
-                2,
-                raw.chunks_exact(2).map(|c| f32::from_bits((u16::from_le_bytes([c[0], c[1]]) as u32) << 16)).collect(),
-            ),
-            Some("F16") => (2, raw.chunks_exact(2).map(|c| f16_to_f32(u16::from_le_bytes([c[0], c[1]]))).collect()),
+        let dtype = t.get("dtype").and_then(Value::as_str);
+        let elem = match dtype {
+            Some("F32") => 4,
+            Some("BF16" | "F16") => 2,
             other => return Err(format!("{name}: unsupported dtype {other:?}")),
         };
         let expected = numel.checked_mul(elem).ok_or_else(|| format!("{name}: byte size overflows usize"))?;
         if raw.len() != expected {
             return Err(format!("{name}: expected {expected} bytes, got {}", raw.len()));
         }
-        Ok(out)
+        let end = start
+            .checked_add(count)
+            .filter(|&end| end <= numel)
+            .ok_or_else(|| format!("{name}: selected values exceed tensor shape"))?;
+        let raw = &raw[start * elem..end * elem];
+        Ok(match dtype {
+            Some("F32") => raw.chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect(),
+            Some("BF16") => {
+                raw.chunks_exact(2).map(|c| f32::from_bits((u16::from_le_bytes([c[0], c[1]]) as u32) << 16)).collect()
+            }
+            Some("F16") => raw.chunks_exact(2).map(|c| f16_to_f32(u16::from_le_bytes([c[0], c[1]]))).collect(),
+            _ => unreachable!(),
+        })
     }
 }
 
@@ -594,24 +612,35 @@ impl KevConvert {
     }
 
     /// Writes pack tensor `i` and frees the source tensors nothing else still needs.
-    fn run_job(&mut self, i: usize, out: &mut [u8]) -> Result<(), String> {
-        let v = self.src.data(&self.plan[i].1)?;
+    fn run_job(&mut self, i: usize, write: &mut impl FnMut(usize, &[u8]) -> Result<(), String>) -> Result<(), String> {
         let info = &self.infos[i];
-        if v.len() != info.numel() {
-            return Err(format!("{}: converted {} values, expected {}", info.name, v.len(), info.numel()));
-        }
-        if info.dtype == crate::pack::DType::Q8 {
-            let (q, s) = quantize(&v, info.rows(), info.cols(), self.block);
-            for (j, x) in q.into_iter().enumerate() {
-                out[info.offset + j] = x as u8;
+        let mut emit = |first: usize, values: &[f32]| -> Result<(), String> {
+            if info.dtype == crate::pack::DType::Q8 {
+                let (q, scales) = quantize(values, values.len() / info.cols(), info.cols(), self.block);
+                let bytes: Vec<u8> = q.into_iter().map(|x| x as u8).collect();
+                write(info.offset + first, &bytes)?;
+                let bytes: Vec<u8> = scales.iter().flat_map(|x| x.to_le_bytes()).collect();
+                write(info.scales_offset + first / self.block * 4, &bytes)
+            } else {
+                let bytes: Vec<u8> = values.iter().flat_map(|x| x.to_le_bytes()).collect();
+                write(info.offset + first * 4, &bytes)
             }
-            for (j, x) in s.iter().enumerate() {
-                out[info.scales_offset + j * 4..info.scales_offset + j * 4 + 4].copy_from_slice(&x.to_le_bytes());
+        };
+        if let Spec::Embed(name) = &self.plan[i].1 {
+            // Bound widening scratch to 16 MiB and preserve quantization block boundaries.
+            let rows_per_chunk = (4 * 1024 * 1024 / info.cols()).max(1);
+            for first_row in (0..info.rows()).step_by(rows_per_chunk) {
+                let rows = rows_per_chunk.min(info.rows() - first_row);
+                let first = first_row * info.cols();
+                let values = self.src.base_st(name)?.f32_range(name, first, rows * info.cols())?;
+                emit(first, &values)?;
             }
         } else {
-            for (j, x) in v.iter().enumerate() {
-                out[info.offset + j * 4..info.offset + j * 4 + 4].copy_from_slice(&x.to_le_bytes());
+            let values = self.src.data(&self.plan[i].1)?;
+            if values.len() != info.numel() {
+                return Err(format!("{}: converted {} values, expected {}", info.name, values.len(), info.numel()));
             }
+            emit(0, &values)?;
         }
         self.done[i] = true;
         for n in std::mem::take(&mut self.needs[i]) {
@@ -626,21 +655,42 @@ impl KevConvert {
 
     /// Starts writing `out` (the whole pack): the prefix and every tensor that needs no base weights.
     pub fn begin(&mut self, out: &mut [u8]) -> Result<(), String> {
-        out[..self.prefix.len()].copy_from_slice(&self.prefix);
+        self.begin_writer(&mut |offset, bytes| {
+            out[offset..offset + bytes.len()].copy_from_slice(bytes);
+            Ok(())
+        })
+    }
+
+    /// Writes the pack prefix and ready tensors without retaining the whole output pack.
+    pub fn begin_writer(&mut self, write: &mut impl FnMut(usize, &[u8]) -> Result<(), String>) -> Result<(), String> {
+        write(0, &self.prefix)?;
         for i in 0..self.plan.len() {
             if self.missing[i] == 0 && !self.done[i] {
-                self.run_job(i, out)?;
+                self.run_job(i, write)?;
             }
         }
         Ok(())
     }
 
     pub fn add_source(&mut self, name: &str, bytes: Vec<u8>, out: &mut [u8]) -> Result<(), String> {
+        self.add_source_writer(name, bytes, &mut |offset, bytes| {
+            out[offset..offset + bytes.len()].copy_from_slice(bytes);
+            Ok(())
+        })
+    }
+
+    /// Converts ready tensors into a caller-owned file or buffer.
+    pub fn add_source_writer(
+        &mut self,
+        name: &str,
+        bytes: Vec<u8>,
+        write: &mut impl FnMut(usize, &[u8]) -> Result<(), String>,
+    ) -> Result<(), String> {
         self.src.put(name, bytes)?;
         for i in self.readers.get(name).cloned().unwrap_or_default() {
             self.missing[i] -= 1;
             if self.missing[i] == 0 {
-                self.run_job(i, out)?;
+                self.run_job(i, write)?;
             }
         }
         Ok(())
@@ -892,10 +942,9 @@ impl Sources {
             Spec::Rows(n, rows) => {
                 let shape = self.base_shape(n)?;
                 let width = shape[1];
-                let values = self.base_st(n)?.f32(n)?;
                 let mut selected = Vec::with_capacity(rows.len() * width);
                 for &row in rows {
-                    selected.extend_from_slice(&values[row * width..(row + 1) * width]);
+                    selected.extend(self.base_st(n)?.f32_range(n, row * width, width)?);
                 }
                 selected
             }
@@ -962,6 +1011,88 @@ mod tests {
         let mut bytes = (json.len() as u64).to_le_bytes().to_vec();
         bytes.extend_from_slice(json.as_bytes());
         bytes
+    }
+
+    #[test]
+    fn chunked_embedding_writer_matches_whole_matrix_quantization() {
+        let (rows, cols, block) = (4097, 1024, 32);
+        let count = rows * cols;
+        let values: Vec<f32> = (0..count).map(|i| ((i % 509) as f32 - 254.0) / 256.0).collect();
+        let raw: Vec<u8> = values.iter().flat_map(|x| ((x.to_bits() >> 16) as u16).to_le_bytes()).collect();
+        let header = Value::parse(&format!(
+            r#"{{"embedding":{{"dtype":"BF16","shape":[{rows},{cols}],"data_offsets":[0,{}]}}}}"#,
+            raw.len()
+        ))
+        .unwrap();
+        let scale_bytes = count / block * 4;
+        let info = crate::pack::TensorInfo {
+            name: "embedding".into(),
+            dtype: crate::pack::DType::Q8,
+            shape: vec![rows, cols],
+            offset: 64,
+            size: count,
+            block,
+            scales_offset: 64 + count,
+            scales_size: scale_bytes,
+        };
+        let mut converter = KevConvert {
+            src: Sources {
+                base: vec![St { header, data_start: 0, whole: Vec::new(), parts: Default::default() }],
+                base_index: [("embedding".into(), 0)].into_iter().collect(),
+                adapter: St::empty(),
+                head: Default::default(),
+                scaling: 0.0,
+                pre: String::new(),
+            },
+            plan: vec![("embedding".into(), Spec::Embed("embedding".into()))],
+            infos: vec![info],
+            done: vec![false],
+            uses: [("embedding".into(), 1)].into_iter().collect(),
+            needs: vec![vec!["embedding".into()]],
+            missing: vec![1],
+            readers: [("embedding".into(), vec![0])].into_iter().collect(),
+            block,
+            prefix: vec![7; 64],
+            total: 64 + count + scale_bytes,
+        };
+        let mut output = vec![0; converter.total];
+        let mut writes = Vec::new();
+        let mut writer = |at: usize, bytes: &[u8]| {
+            writes.push((at, bytes.len()));
+            output[at..at + bytes.len()].copy_from_slice(bytes);
+            Ok(())
+        };
+        converter.begin_writer(&mut writer).unwrap();
+        converter.add_source_writer("embedding", raw, &mut writer).unwrap();
+        assert!(converter.finished());
+        assert_eq!(writes.len(), 5);
+        assert!(converter.src.base[0].parts.is_empty());
+        let (q, scales) = quantize(&values, rows, cols, block);
+        let q: Vec<u8> = q.into_iter().map(|x| x as u8).collect();
+        let scales: Vec<u8> = scales.iter().flat_map(|x| x.to_le_bytes()).collect();
+        assert_eq!(&output[..64], &[7; 64]);
+        assert_eq!(&output[64..64 + count], q);
+        assert_eq!(&output[64 + count..], scales);
+    }
+
+    #[test]
+    fn selected_readout_rows_preserve_order_and_reject_out_of_bounds() {
+        let source = St {
+            header: Value::parse(r#"{"head":{"dtype":"F32","shape":[3,2],"data_offsets":[0,24]}}"#).unwrap(),
+            data_start: 0,
+            whole: (0..6).flat_map(|x| (x as f32).to_le_bytes()).collect(),
+            parts: Default::default(),
+        };
+        let sources = Sources {
+            base: vec![source],
+            base_index: [("head".into(), 0)].into_iter().collect(),
+            adapter: St::empty(),
+            head: Default::default(),
+            scaling: 0.0,
+            pre: String::new(),
+        };
+        assert_eq!(sources.data(&Spec::Rows("head".into(), vec![2, 0])).unwrap(), vec![4.0, 5.0, 0.0, 1.0]);
+        assert!(sources.data(&Spec::Rows("head".into(), vec![3])).is_err());
     }
 
     #[test]

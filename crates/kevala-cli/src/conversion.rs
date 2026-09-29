@@ -98,7 +98,8 @@ fn convert_sharded(
     block: usize,
     model: Value,
     mode: StreamMode,
-) -> Result<Vec<u8>, String> {
+    output: &str,
+) -> Result<usize, String> {
     let headers: Vec<Vec<u8>> =
         shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
     let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
@@ -117,8 +118,13 @@ fn convert_sharded(
             kevala::convert_kev::KevConvert::new_semif_sharded(&refs, base_config, base_tokenizer, block, model)?
         }
     };
-    let mut out = vec![0u8; converter.total];
-    converter.begin(&mut out)?;
+    let mut output_file = File::create(output).map_err(|e| format!("{output}: {e}"))?;
+    output_file.set_len(converter.total as u64).map_err(|e| format!("{output}: {e}"))?;
+    let mut write = |offset: usize, bytes: &[u8]| -> Result<(), String> {
+        output_file.seek(SeekFrom::Start(offset as u64)).map_err(|e| format!("{output}: {e}"))?;
+        output_file.write_all(bytes).map_err(|e| format!("{output}: {e}"))
+    };
+    converter.begin_writer(&mut write)?;
     let mut files: Vec<File> = shards
         .iter()
         .map(|path| File::open(path).map_err(|e| format!("{}: {e}", path.display())))
@@ -128,12 +134,13 @@ fn convert_sharded(
         file.seek(SeekFrom::Start(offset as u64)).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
         let mut bytes = vec![0u8; len];
         file.read_exact(&mut bytes).map_err(|e| format!("{}: {e}", shards[shard].display()))?;
-        converter.add_source(&name, bytes, &mut out)?;
+        converter.add_source_writer(&name, bytes, &mut write)?;
     }
     if !converter.finished() {
         return Err("conversion ended with tensors still missing".into());
     }
-    Ok(out)
+    output_file.sync_all().map_err(|e| format!("{output}: {e}"))?;
+    Ok(converter.total)
 }
 
 fn convert_gemma_sharded(
@@ -644,7 +651,10 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
                 } else {
                     StreamMode::Semif
                 };
-                convert_sharded(&shards, &config_text, &tokenizer, block, model, mode)?
+                let output = options.get("-o").unwrap();
+                let len = convert_sharded(&shards, &config_text, &tokenizer, block, model, mode, output)?;
+                eprintln!("wrote {output}: {:.1} MB in {:.1}s", len as f64 / 1e6, started.elapsed().as_secs_f64());
+                return Ok(());
             }
             Architecture::Encoder => unreachable!(),
         }

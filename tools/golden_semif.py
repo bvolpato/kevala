@@ -28,6 +28,11 @@ Examples:
       --output tmp/golden-semif-qwen35-4b.json
   HF_HOME=tmp/hf uv run tools/golden_semif.py --local /models/qwen35-4b \
       --revision local-qwen35-4b --cases injection email_object_state
+
+For a bounded CPU reference load, use ``--offload-dir /path/to/offload``.
+The decoder layers load from disk during each forward pass. The tokenizer,
+embedding, final norm, and LM head remain on CPU. Use ``--dtype bfloat16``
+to reduce their memory use. The reference records this execution mode.
 """
 
 from __future__ import annotations
@@ -207,7 +212,7 @@ def _state_prefix(tokenizer, state) -> list[int]:
     return prefix[:-1]
 
 
-def _load_model(source: str, revision: str | None, device_name: str, dtype_name: str, local: bool):
+def _load_model(source: str, revision: str | None, device_name: str, dtype_name: str, local: bool, offload_dir: str | None = None):
     import torch
     import transformers
 
@@ -228,6 +233,17 @@ def _load_model(source: str, revision: str | None, device_name: str, dtype_name:
         "device_map": {"": device},
         "low_cpu_mem_usage": True,
     }
+    if offload_dir:
+        if device_name != "cpu":
+            raise ValueError("Layer offload requires --device cpu")
+        prefix = "model.language_model" if config.model_type == "qwen3_5" else "model"
+        kwargs["device_map"] = {
+            f"{prefix}.embed_tokens": "cpu", f"{prefix}.norm": "cpu", f"{prefix}.rotary_emb": "cpu", "lm_head": "cpu",
+            **{f"{prefix}.layers.{i}": "disk" for i in range(config.get_text_config().num_hidden_layers)},
+        }
+        if config.model_type == "qwen3_5":
+            kwargs["device_map"]["model.visual"] = "disk"
+        kwargs["offload_folder"] = offload_dir
 
     # Qwen3.5 may be published as a text-only checkpoint or as the
     # conditional-generation wrapper.  In both cases run only its text model
@@ -325,6 +341,7 @@ def main():
     ap.add_argument("--cases", nargs="+", help="case IDs, as separate values or comma-separated values")
     ap.add_argument("--max-tokens", type=int, default=4096)
     ap.add_argument("--no-activations", action="store_true", help="skip the first-row final hidden activation dump")
+    ap.add_argument("--offload-dir", help="stream decoder weights from disk for a bounded CPU reference load")
     a = ap.parse_args()
     if a.max_tokens < 1:
         ap.error("--max-tokens must be positive")
@@ -342,7 +359,7 @@ def main():
     revision = a.revision if a.revision else ("local" if local else DEFAULT_REVISION)
     try:
         language_model, label_weights, label_bias, tokenizer, device, dtype, hidden_size, torch, transformers = _load_model(
-            source, revision, a.device, a.dtype, local
+            source, revision, a.device, a.dtype, local, a.offload_dir
         )
     except (OSError, RuntimeError, ValueError) as error:
         ap.error(str(error))
@@ -374,6 +391,7 @@ def main():
             "vocab_size": int(label_weights.shape[0]),
             "transformers_version": transformers.__version__,
             "torch_version": torch.__version__,
+            "decoder_layer_offload": bool(a.offload_dir),
         },
         "prompt_version": PROMPT_VERSION,
         "label_contract": {"letters": list(LETTERS), "token_ids": labels, "max_options": len(LETTERS)},
