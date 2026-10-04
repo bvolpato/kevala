@@ -1,7 +1,10 @@
 //! SemIf prompt and branch layout parity against the pinned native reference.
 //!
 //! These checks only load the materialized Qwen tokenizer and the JSON golden cases. They do
-//! not load model weights or exercise the numerical readout.
+//! not load model weights or exercise the numerical readout. Without the tokenizer the tests
+//! print a notice and pass, unless `KEVALA_REQUIRE_FIXTURES` is set (see `support::fixture_text`).
+
+mod support;
 
 use std::sync::OnceLock;
 
@@ -11,18 +14,7 @@ use kevala::tokenizer::Tokenizer;
 
 fn tokenizer() -> Option<&'static Tokenizer> {
     static TOK: OnceLock<Option<Tokenizer>> = OnceLock::new();
-    TOK.get_or_init(|| {
-        let path = std::env::var("KEVALA_QWEN_TOKENIZER_JSON")
-            .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR"), "/../../tmp/kev/tokenizer.json").into());
-        match std::fs::read_to_string(&path) {
-            Ok(s) => Some(Tokenizer::from_hf_json(&s).unwrap_or_else(|e| panic!("{path}: {e}"))),
-            Err(_) => {
-                eprintln!("skipping: no materialized Qwen tokenizer at {path}");
-                None
-            }
-        }
-    })
-    .as_ref()
+    support::fixture_tokenizer(&TOK, "KEVALA_QWEN_TOKENIZER_JSON", "tmp/kev/tokenizer.json")
 }
 
 fn golden() -> Value {

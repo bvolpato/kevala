@@ -5,17 +5,20 @@
 //! hidden states become answer distributions); plus the modalities it reads. Every family answers
 //! the same request shape (`state`, optional typed `parts`, typed `questions`) and returns its own
 //! reference response format. Adding a family is one `Model` implementation and one `FAMILIES`
-//! entry; nothing else in the engine, the WebAssembly ABI or the pack format changes.
+//! entry; the pack format and `kevala_decide` do not change. A family whose layers also run
+//! outside this crate (on WebGPU or in shard workers) adds its own prepare and finish entry
+//! points to the WebAssembly ABI.
 //!
 //! | arch | template | backbone | head |
 //! |---|---|---|---|
 //! | `laya` | one bidirectional sequence per question, a `[MASK]` per option | ModernBERT encoder | 2-layer transformer, marker scorer, act head |
-//! | `kev` | one causal row per question sharing the state | Qwen3.5 (Gated DeltaNet + gated attention) | pointer head |
+//! | `kev` | one causal row per question sharing the state | Qwen3.5 (Gated DeltaNet + gated attention) | pointer head, or direct option logits (SemIf) |
+//! | `gemma4` | one causal chat prompt per question | Gemma 4 dense text decoder | direct option logits |
 
 use crate::content::{Modality, Request};
 use crate::json::Value;
-use crate::model::AlignedBuf;
 use crate::pack;
+use crate::store::AlignedBuf;
 use crate::tokenizer::Tokenizer;
 use std::any::Any;
 
@@ -34,12 +37,11 @@ pub trait Model: Any {
 
 pub struct Family {
     pub arch: &'static str,
-    pub about: &'static str,
     pub load: fn(AlignedBuf) -> Result<Box<dyn Model>, String>,
 }
 
 fn load_laya(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
-    Ok(Box::new(crate::engine::Engine::load(b)?))
+    Ok(Box::new(crate::laya::Engine::load(b)?))
 }
 
 fn load_kev(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
@@ -51,9 +53,12 @@ fn load_gemma4(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
 }
 
 pub const FAMILIES: &[Family] = &[
-    Family { arch: "laya", about: "ModernBERT encoder + decision head (convaiinnovations/laya)", load: load_laya },
-    Family { arch: "kev", about: "Qwen3.5 hybrid decoder + pointer head (jaredpalmer/kev)", load: load_kev },
-    Family { arch: "gemma4", about: "Gemma 4 dense text decoder + direct option scoring (Google)", load: load_gemma4 },
+    // ModernBERT encoder + decision head (convaiinnovations/laya)
+    Family { arch: "laya", load: load_laya },
+    // Qwen3.5 hybrid decoder + pointer head (jaredpalmer/kev), or direct option scoring (SemIf)
+    Family { arch: "kev", load: load_kev },
+    // Gemma 4 dense text decoder + direct option scoring (Google)
+    Family { arch: "gemma4", load: load_gemma4 },
 ];
 
 /// The family a pack declares (`laya` when the header predates `config.arch`).

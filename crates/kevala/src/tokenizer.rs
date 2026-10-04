@@ -1,15 +1,19 @@
-//! Byte-level BPE, reproducing the Hugging Face `tokenizers` pipelines of the tokenizers kevala
-//! runs, token for token, with `add_special_tokens=False`: ModernBERT's (Laya) and Qwen2's
-//! (Qwen3.5, the base of Kev).
+//! BPE, reproducing the Hugging Face `tokenizers` pipelines of the tokenizers kevala runs, token
+//! for token, with `add_special_tokens=False`: ModernBERT's (Laya), Qwen2's (Qwen3.5, the base of
+//! Kev and SemIf), and Gemma 4's.
 //!
 //! 1. split the raw text on the added tokens with `normalized: false` (leftmost-longest, with
 //!    their lstrip / rstrip / single_word rules),
-//! 2. NFC each remaining piece and split it on the added tokens with `normalized: true`,
-//! 3. split what is left with the pre-tokenizer regex, one of the known ones below,
-//! 4. BPE each regex piece over its UTF-8 bytes.
+//! 2. normalize each remaining piece (NFC, or Gemma's space to `▁`) and split it on the added
+//!    tokens with `normalized: true`,
+//! 3. split what is left with the pre-tokenizer: one of the known regexes below, or Gemma's split
+//!    on literal spaces,
+//! 4. BPE each piece: over its UTF-8 bytes for the byte-level models, over its characters with
+//!    byte fallback for Gemma.
 //!
-//! The vocabulary is kept as raw bytes: the byte-to-char mapping of the ByteLevel pre-tokenizer
-//! only exists to make bytes printable in tokenizer.json, so it is undone once at load time.
+//! A byte-level vocabulary is kept as raw bytes: the byte-to-char mapping of the ByteLevel
+//! pre-tokenizer only exists to make bytes printable in tokenizer.json, so it is undone once at
+//! load time. Gemma's vocabulary stays literal text.
 
 use std::collections::HashMap;
 use std::hash::{BuildHasherDefault, Hasher};
@@ -763,8 +767,9 @@ impl Tokenizer {
     }
 
     /// Build from a Hugging Face tokenizer.json. Only configurations kevala reproduces exactly are
-    /// accepted: a byte-level BPE model, NFC or no normalizer, and one of the known pre-tokenizer
-    /// regexes; anything else is an error rather than a silent mismatch.
+    /// accepted: a BPE model with one of the known normalizer and pre-tokenizer pairs (byte-level
+    /// with NFC or no normalizer, or Gemma's); anything else is an error rather than a silent
+    /// mismatch.
     ///
     /// For Qwen3.5 (Kev) pass the tokenizer.json `AutoTokenizer` materializes (Kev checkpoints
     /// ship it). The base repo's own file has another regex and 11 fewer added tokens, both of which
@@ -911,6 +916,7 @@ impl Tokenizer {
         Tokenizer::build(kinds, offsets, bytes, merges, added, nfc, pre, None)
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn build(
         kinds: Vec<u8>,
         offsets: Vec<u32>,

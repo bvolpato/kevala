@@ -9,6 +9,10 @@ license = "Apache-2.0"
 repository = "https://github.com/bvolpato/kevala"
 rust-version = "1.85"
 
+[workspace.lints.clippy]
+# The kernels index several buffers with one loop variable. Iterator chains hide that arithmetic.
+needless_range_loop = "allow"
+
 [profile.release]
 opt-level = 3
 lto = "fat"

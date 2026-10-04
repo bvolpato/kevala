@@ -7,15 +7,24 @@
 //!
 //! Strings and results come back through `kevala_out_ptr/len`, errors through `kevala_error_ptr/len`.
 //! Every call that can fail returns 0 on success and 1 on error.
+//!
+//! # Safety
+//!
+//! Every export that takes a pointer is `unsafe`. Unless its own documentation says otherwise, the
+//! pointer must be non-null, aligned for its element type, and valid for reads of the given number
+//! of elements until the call returns. Exports that take ownership say which allocator the buffer
+//! must come from. A WebAssembly instance runs on one thread, so the exports are not reentrant.
 
 use kevala::content::Request;
-use kevala::engine::{Engine, Prepared};
 use kevala::gemma4::Gemma4Engine;
 use kevala::json::Value;
 use kevala::kev::KevEngine;
-use kevala::model::{self, AlignedBuf, Batch, Scratch, Seg, ShardPlan, Trunk};
+use kevala::laya::model::{self, Batch, Scratch, Seg, ShardPlan, Trunk};
+use kevala::laya::{Engine, Prepared};
+use kevala::pack::{coord_layout, trunk_layout};
 use kevala::runtime::{self, Model};
 use kevala::simd::F4;
+use kevala::store::{load_store, AlignedBuf};
 
 #[cfg(feature = "cpu-bench")]
 mod cpu_bench;
@@ -34,10 +43,10 @@ struct State {
     scratch: Scratch,
     out: Vec<u8>,
     err: String,
-    plan: Option<kevala::convert::Plan>,
+    plan: Option<kevala::laya::convert::Plan>,
     pack: Option<AlignedBuf>,
     kev_batch: Option<(Vec<kevala::kev::Encoded>, Vec<Vec<kevala::kev::KevQuestion>>)>,
-    kev_convert: Option<(kevala::convert_kev::KevConvert, Vec<String>)>,
+    kev_convert: Option<(kevala::kev::convert::KevConvert, Vec<String>)>,
     kev_ids: [Vec<u32>; 2],
     gemma4_prepared: Option<kevala::gemma4::Prepared>,
 }
@@ -70,9 +79,22 @@ fn done(r: Result<(), String>) -> u32 {
     }
 }
 
-fn input(ptr: *const u8, len: usize) -> Result<&'static str, String> {
-    let b = unsafe { std::slice::from_raw_parts(ptr, len) };
-    std::str::from_utf8(b).map_err(|_| "input is not UTF-8".to_string())
+/// # Safety
+/// `ptr` must be valid for reads of `len` elements for as long as the returned slice is used.
+unsafe fn slice<'a, T>(ptr: *const T, len: usize) -> &'a [T] {
+    std::slice::from_raw_parts(ptr, len)
+}
+
+/// # Safety
+/// As for [`slice`].
+unsafe fn input<'a>(ptr: *const u8, len: usize) -> Result<&'a str, String> {
+    std::str::from_utf8(slice(ptr, len)).map_err(|_| "input is not UTF-8".to_string())
+}
+
+/// # Safety
+/// As for [`slice`].
+unsafe fn json_input(ptr: *const u8, len: usize) -> Result<Value, String> {
+    Value::parse(input(ptr, len)?).map_err(|e| e.to_string())
 }
 
 #[no_mangle]
@@ -126,7 +148,7 @@ fn add_f32(dst: &mut [f32], src: &[f32]) {
     let mut i = 0;
     unsafe {
         while i + 4 <= n {
-            F4::load(dst.as_ptr().add(i)).add(F4::load(src.as_ptr().add(i))).store(dst.as_mut_ptr().add(i));
+            (F4::load(dst.as_ptr().add(i)) + F4::load(src.as_ptr().add(i))).store(dst.as_mut_ptr().add(i));
             i += 4;
         }
     }
@@ -150,16 +172,18 @@ fn write_layout(out: &mut Vec<u8>, l: &kevala::pack::Layout) {
 
 /// Given the pack header bytes, writes the coordinator layout followed by `count` shard layouts:
 /// per layout `u32 prefix_len, prefix, u32 total, u32 n, n * (src, dst, len, rows, stride)`.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_layouts(ptr: *const u8, len: usize, count: usize) -> u32 {
+pub unsafe extern "C" fn kevala_layouts(ptr: *const u8, len: usize, count: usize) -> u32 {
     done((|| {
-        let bytes = unsafe { std::slice::from_raw_parts(ptr, len) };
-        let h = kevala::pack::parse_header(bytes)?;
+        let h = kevala::pack::parse_header(slice(ptr, len))?;
         let mut out = Vec::new();
-        write_layout(&mut out, &model::coord_layout(&h)?);
+        write_layout(&mut out, &coord_layout(&h)?);
         if h.config().get("arch").and_then(Value::as_str) == Some("kev") {
             // no tensor-parallel shards for Kev: the whole trunk, for the GPU
-            write_layout(&mut out, &model::trunk_layout(&h)?);
+            write_layout(&mut out, &trunk_layout(&h)?);
             st().out = out;
             return Ok(());
         }
@@ -174,10 +198,13 @@ pub extern "C" fn kevala_layouts(ptr: *const u8, len: usize, count: usize) -> u3
 
 /// Takes ownership of a buffer from `kevala_alloc` holding a whole pack of any family this build
 /// knows, or a coordinator sub-pack. Writes `{"arch", "model", "modalities"}`.
+///
+/// # Safety
+/// `ptr`/`len` must come from `kevala_alloc`. The caller must not use or free the buffer afterwards.
 #[no_mangle]
-pub extern "C" fn kevala_engine_load(ptr: *mut u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_engine_load(ptr: *mut u8, len: usize) -> u32 {
     done((|| {
-        let m = runtime::load(unsafe { AlignedBuf::from_raw(ptr, len) })?;
+        let m = runtime::load(AlignedBuf::from_raw(ptr, len))?;
         let s = st();
         s.out = Value::Object(vec![
             ("arch".into(), Value::Str(m.arch().into())),
@@ -191,34 +218,11 @@ pub extern "C" fn kevala_engine_load(ptr: *mut u8, len: usize) -> u32 {
     })())
 }
 
-/// The families this build knows: `[{"arch", "about"}]`.
-#[no_mangle]
-pub extern "C" fn kevala_families() -> u32 {
-    let list = runtime::FAMILIES
-        .iter()
-        .map(|f| {
-            Value::Object(vec![
-                ("arch".into(), Value::Str(f.arch.into())),
-                ("about".into(), Value::Str(f.about.into())),
-            ])
-        })
-        .collect();
-    st().out = Value::Array(list).to_json().into_bytes();
-    0
-}
-
-fn requests(v: &Value) -> Result<Vec<(Value, Value)>, String> {
-    Ok(Request::parse_many(v)?.into_iter().map(|r| (r.state, r.questions)).collect())
-}
-
-fn prepare_json(ptr: *const u8, len: usize) -> Result<(), String> {
+/// # Safety
+/// As for [`slice`].
+unsafe fn prepare_json(ptr: *const u8, len: usize) -> Result<(), String> {
     let e: &Engine = family("a laya model")?;
-    let req = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
-    let rs = requests(&req)?;
-    let pairs: Vec<(&Value, &Value)> = rs.iter().map(|(s, q)| (s, q)).collect();
-    let p = e.prepare(&pairs)?;
-    let qs = rs.into_iter().map(|(_, q)| q).collect();
-    st().prepared = Some((p, qs));
+    st().prepared = Some(e.prepare_requests(&Request::parse_many(&json_input(ptr, len)?)?)?);
     Ok(())
 }
 
@@ -235,11 +239,13 @@ fn respond() -> Result<(), String> {
 
 /// Answers `{"state", "parts"?, "questions"}` or `{"requests": [...]}` with whichever model is
 /// loaded, in one forward pass. Writes a JSON array with one response per request.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_decide(ptr: *const u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_decide(ptr: *const u8, len: usize) -> u32 {
     done((|| {
-        let req = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
-        let rs = Request::parse_many(&req)?;
+        let rs = Request::parse_many(&json_input(ptr, len)?)?;
         let s = st();
         let out = s.model.as_mut().ok_or("no model loaded")?.decide(&rs)?;
         s.out = Value::Array(out).to_json().into_bytes();
@@ -249,8 +255,11 @@ pub extern "C" fn kevala_decide(ptr: *const u8, len: usize) -> u32 {
 
 /// Tokenizes a request for an external trunk. Writes the segment table as u32s:
 /// `tokens, segments, then per segment start, len, qtype, markers, marker positions...`.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_prepare(ptr: *const u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_prepare(ptr: *const u8, len: usize) -> u32 {
     done((|| {
         prepare_json(ptr, len)?;
         let s = st();
@@ -269,12 +278,6 @@ pub extern "C" fn kevala_prepare(ptr: *const u8, len: usize) -> u32 {
         s.out = out;
         Ok(())
     })())
-}
-
-/// Token ids of the prepared batch.
-#[no_mangle]
-pub extern "C" fn kevala_ids_ptr() -> *const u32 {
-    st().prepared.as_ref().map_or(std::ptr::null(), |(p, _)| p.batch.ids.as_ptr())
 }
 
 /// Embeds the prepared batch into the residual buffer and returns it (`tokens * hidden` f32).
@@ -314,10 +317,13 @@ pub extern "C" fn kevala_finish() -> u32 {
 }
 
 /// Takes ownership of a shard sub-pack from `kevala_alloc`.
+///
+/// # Safety
+/// `ptr`/`len` must come from `kevala_alloc`. The caller must not use or free the buffer afterwards.
 #[no_mangle]
-pub extern "C" fn kevala_shard_load(ptr: *mut u8, len: usize, primary: u32) -> u32 {
+pub unsafe extern "C" fn kevala_shard_load(ptr: *mut u8, len: usize, primary: u32) -> u32 {
     done((|| {
-        let (store, h) = model::load_store(unsafe { AlignedBuf::from_raw(ptr, len) })?;
+        let (store, h) = load_store(AlignedBuf::from_raw(ptr, len))?;
         let cfg = model::Config::from_json(h.config())?;
         st().shard = Some(Trunk::new(cfg, std::sync::Arc::new(store), primary != 0)?);
         Ok(())
@@ -326,10 +332,13 @@ pub extern "C" fn kevala_shard_load(ptr: *mut u8, len: usize, primary: u32) -> u
 
 /// Sets the batch a shard computes on from the table `kevala_prepare` wrote, and sizes the
 /// residual buffer. Returns the residual buffer for the caller to fill before each step.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` `u32` values that hold a complete `kevala_prepare` table.
 #[no_mangle]
-pub extern "C" fn kevala_shard_batch(ptr: *const u32, len: usize) -> *mut f32 {
+pub unsafe extern "C" fn kevala_shard_batch(ptr: *const u32, len: usize) -> *mut f32 {
     let s = st();
-    let t = unsafe { std::slice::from_raw_parts(ptr, len) };
+    let t = slice(ptr, len);
     let (tokens, n) = (t[0] as usize, t[1] as usize);
     let mut segs = Vec::with_capacity(n);
     let mut i = 2;
@@ -403,23 +412,15 @@ pub extern "C" fn kevala_reduce_finish() -> u32 {
     })())
 }
 
-/// Token ids for `text`, as a JSON array (debugging and tests).
-/// The WGSL source of a GPU kernel specialized as asked: `{ kernel, f16, subgroups, rows, groups, n, k }`.
+/// The WGSL source of a GPU kernel specialized as asked: `{ kernel, ...spec }`, with the spec fields
+/// that `kevala::gpu::Spec::from_json` reads.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_wgsl(ptr: *const u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_wgsl(ptr: *const u8, len: usize) -> u32 {
     done((|| {
-        let request = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
-        st().out = kevala::gpu::wgsl_json(&request)?.into_bytes();
-        Ok(())
-    })())
-}
-
-#[no_mangle]
-pub extern "C" fn kevala_tokenize(ptr: *const u8, len: usize) -> u32 {
-    done((|| {
-        let tok = st().model.as_ref().ok_or("no model loaded")?.tokenizer();
-        let ids = tok.encode(input(ptr, len)?);
-        st().out = Value::Array(ids.into_iter().map(|i| Value::Int(i.to_string())).collect()).to_json().into_bytes();
+        st().out = kevala::gpu::wgsl_json(&json_input(ptr, len)?)?.into_bytes();
         Ok(())
     })())
 }
@@ -427,9 +428,12 @@ pub extern "C" fn kevala_tokenize(ptr: *const u8, len: usize) -> u32 {
 /// Starts an in-browser conversion. Inputs are the safetensors file from byte 0 through its JSON
 /// header, and the three upstream config files. Allocates the output pack and writes a JSON job
 /// list: `{"total", "pack": ptr, "jobs": [[src_offset, src_len], ...]}` in file order.
+///
+/// # Safety
+/// Each pointer must be valid for reads of the length that follows it.
 #[no_mangle]
 #[allow(clippy::too_many_arguments)]
-pub extern "C" fn kevala_convert_plan(
+pub unsafe extern "C" fn kevala_convert_plan(
     head: *const u8,
     head_len: usize,
     enc: *const u8,
@@ -443,11 +447,16 @@ pub extern "C" fn kevala_convert_plan(
     block: usize,
 ) -> u32 {
     done((|| {
-        let head = unsafe { std::slice::from_raw_parts(head, head_len) };
-        let model = Value::parse(input(model, model_len)?).map_err(|e| e.to_string())?;
-        let opt = kevala::convert::Options { block, model, keep_f32: Vec::new() };
-        let plan =
-            kevala::convert::plan(head, input(enc, enc_len)?, input(agent, agent_len)?, input(tok, tok_len)?, &opt)?;
+        let head = slice(head, head_len);
+        let model = json_input(model, model_len)?;
+        let opt = kevala::laya::convert::Options { block, model, keep_f32: Vec::new() };
+        let plan = kevala::laya::convert::plan(
+            head,
+            input(enc, enc_len)?,
+            input(agent, agent_len)?,
+            input(tok, tok_len)?,
+            &opt,
+        )?;
         let mut pack = AlignedBuf::new(plan.total);
         pack.as_mut_slice()[..plan.prefix.len()].copy_from_slice(&plan.prefix);
         let jobs = plan
@@ -471,8 +480,11 @@ pub extern "C" fn kevala_convert_plan(
 }
 
 /// Converts job `i` from its source bytes into the output pack.
+///
+/// # Safety
+/// `src` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_convert_job(i: usize, src: *const u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_convert_job(i: usize, src: *const u8, len: usize) -> u32 {
     done((|| {
         let s = st();
         let plan = s.plan.as_ref().ok_or("no conversion in progress")?;
@@ -480,22 +492,8 @@ pub extern "C" fn kevala_convert_job(i: usize, src: *const u8, len: usize) -> u3
         if len != job.src_len {
             return Err(format!("job {i} ({}) needs {} bytes, got {len}", job.src, job.src_len));
         }
-        let src = unsafe { std::slice::from_raw_parts(src, len) };
-        kevala::convert::run_job(job, src, plan.block, s.pack.as_mut().unwrap().as_mut_slice());
-        Ok(())
-    })())
-}
-
-/// Hands the finished pack to the engine loader of this same instance (no copy).
-#[no_mangle]
-pub extern "C" fn kevala_convert_finish_load() -> u32 {
-    done((|| {
-        let s = st();
-        s.plan = None;
-        let pack = s.pack.take().ok_or("no converted pack")?;
-        let m = runtime::load(pack)?;
-        s.out = m.info().to_json().into_bytes();
-        s.model = Some(m);
+        let pack = s.pack.as_mut().ok_or("no conversion in progress")?;
+        kevala::laya::convert::run_job(job, slice(src, len), plan.block, pack.as_mut_slice());
         Ok(())
     })())
 }
@@ -512,13 +510,14 @@ pub extern "C" fn kevala_convert_drop() {
 /// Kev on an external trunk: tokenizes a request and writes the batch table as u32s:
 /// `R, T1, T2, rows, R x (state start, state len), B, B x (branch start, branch len, request),
 /// rows x (readout row in stage 2)`.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_kev_prepare(ptr: *const u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_kev_prepare(ptr: *const u8, len: usize) -> u32 {
     done((|| {
-        let req = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
-        let rs = requests(&req)?;
         let e: &KevEngine = family("a kev model")?;
-        let (enc, qs) = e.prepare_all(&rs)?;
+        let (enc, qs) = e.prepare_requests(&Request::parse_many(&json_input(ptr, len)?)?)?;
         let s = st();
         let mut ids1 = Vec::new();
         let mut ids2 = Vec::new();
@@ -557,6 +556,15 @@ pub extern "C" fn kevala_kev_prepare(ptr: *const u8, len: usize) -> u32 {
     })())
 }
 
+/// Token ids of the prepared Kev batch: stage 1 (every state, concatenated) or stage 2.
+#[no_mangle]
+pub extern "C" fn kevala_kev_ids(stage: usize) -> *const u32 {
+    match stage {
+        1 | 2 => st().kev_ids[stage - 1].as_ptr(),
+        _ => std::ptr::null(),
+    }
+}
+
 /// Embeds stage 1 (states) or stage 2 (question branches) of the prepared Kev batch into the
 /// residual buffer and returns it.
 #[no_mangle]
@@ -572,26 +580,30 @@ pub extern "C" fn kevala_kev_embed(stage: usize) -> *mut f32 {
 }
 
 /// Reads the pointer rows (`rows * hidden` f32 at `ptr`) and writes the JSON responses.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `n` `f32` values.
 #[no_mangle]
-pub extern "C" fn kevala_kev_finish(ptr: *const f32, n: usize) -> u32 {
+pub unsafe extern "C" fn kevala_kev_finish(ptr: *const f32, n: usize) -> u32 {
     done((|| {
         let e: &mut KevEngine = family("a kev model")?;
         let s = st();
         let (enc, qs) = s.kev_batch.take().ok_or("nothing prepared")?;
-        let rows = unsafe { std::slice::from_raw_parts(ptr, n) };
-        let logits = e.model.readout(rows, &enc);
+        let logits = e.model.readout(slice(ptr, n), &enc);
         s.out = Value::Array(e.respond(&enc, &qs, &logits)).to_json().into_bytes();
         Ok(())
     })())
 }
 
 /// Writes Gemma's complete prompts as u32s: sequence count, then (length, token IDs) per sequence.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
-pub extern "C" fn kevala_gemma4_prepare(ptr: *const u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_gemma4_prepare(ptr: *const u8, len: usize) -> u32 {
     done((|| {
         st().gemma4_prepared = None;
-        let request = Value::parse(input(ptr, len)?).map_err(|e| e.to_string())?;
-        let requests = Request::parse_many(&request)?;
+        let requests = Request::parse_many(&json_input(ptr, len)?)?;
         let engine: &Gemma4Engine = family("a gemma4 model")?;
         let prepared = engine.prepare_all(&requests)?;
         let mut out = Vec::new();
@@ -610,13 +622,15 @@ pub extern "C" fn kevala_gemma4_prepare(ptr: *const u8, len: usize) -> u32 {
 }
 
 /// Scores one normalized final hidden row per prepared Gemma prompt.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `n` `f32` values.
 #[no_mangle]
-pub extern "C" fn kevala_gemma4_finish(ptr: *const f32, n: usize) -> u32 {
+pub unsafe extern "C" fn kevala_gemma4_finish(ptr: *const f32, n: usize) -> u32 {
     done((|| {
         let prepared = st().gemma4_prepared.take().ok_or("no Gemma4 batch prepared")?;
         let engine: &Gemma4Engine = family("a gemma4 model")?;
-        let rows = unsafe { std::slice::from_raw_parts(ptr, n) };
-        st().out = Value::Array(engine.finish(&prepared, rows)?).to_json().into_bytes();
+        st().out = Value::Array(engine.finish(&prepared, slice(ptr, n))?).to_json().into_bytes();
         Ok(())
     })())
 }
@@ -632,9 +646,12 @@ pub extern "C" fn kevala_alloc_vec(len: usize) -> *mut u8 {
 /// through its header, the base config.json, Kev's tokenizer.json, adapter_model.safetensors,
 /// adapter_config.json, head.pt and the provenance JSON. Allocates the pack and writes
 /// `{"total", "pack", "sources": [[offset, len], ...]}` (base file byte ranges, in file order).
+///
+/// # Safety
+/// Each pointer must be valid for reads of the length that follows it.
 #[no_mangle]
 #[allow(clippy::too_many_arguments)]
-pub extern "C" fn kevala_kev_convert_plan(
+pub unsafe extern "C" fn kevala_kev_convert_plan(
     head: *const u8,
     head_len: usize,
     cfg: *const u8,
@@ -652,23 +669,21 @@ pub extern "C" fn kevala_kev_convert_plan(
     block: usize,
 ) -> u32 {
     done((|| {
-        let bytes = |p: *const u8, n: usize| unsafe { std::slice::from_raw_parts(p, n) };
-        let head = bytes(head, head_len);
-        let n = u64::from_le_bytes(head.get(..8).ok_or("short safetensors")?.try_into().unwrap()) as usize;
-        let model = Value::parse(input(model, model_len)?).map_err(|e| e.to_string())?;
-        let mut c = kevala::convert_kev::KevConvert::new(
+        let head = slice(head, head_len);
+        let model = json_input(model, model_len)?;
+        let mut c = kevala::kev::convert::KevConvert::new(
             head,
             input(cfg, cfg_len)?,
             input(tok, tok_len)?,
-            bytes(adapter, adapter_len),
+            slice(adapter, adapter_len),
             input(acfg, acfg_len)?,
-            bytes(hpt, hpt_len),
+            slice(hpt, hpt_len),
             block,
             model,
         )?;
         let mut pack = AlignedBuf::new(c.total);
         c.begin(pack.as_mut_slice())?;
-        let sources = c.sources(n);
+        let sources = c.sources();
         let s = st();
         s.out = Value::Object(vec![
             ("total".into(), Value::Int(c.total.to_string())),
@@ -693,14 +708,19 @@ pub extern "C" fn kevala_kev_convert_plan(
 
 /// Hands over source `i` (a `kevala_alloc_vec` buffer) and writes every pack tensor it completes.
 /// Writes `1` to the output when the pack is complete.
+///
+/// # Safety
+/// `ptr`/`len` must come from `kevala_alloc_vec`. The caller must not use or free the buffer
+/// afterwards.
 #[no_mangle]
-pub extern "C" fn kevala_kev_convert_source(i: usize, ptr: *mut u8, len: usize) -> u32 {
+pub unsafe extern "C" fn kevala_kev_convert_source(i: usize, ptr: *mut u8, len: usize) -> u32 {
     done((|| {
-        let bytes = unsafe { Vec::from_raw_parts(ptr, len, len) };
+        let bytes = Vec::from_raw_parts(ptr, len, len);
         let s = st();
         let (c, names) = s.kev_convert.as_mut().ok_or("no Kev conversion in progress")?;
         let name = names.get(i).ok_or("no such source")?.clone();
-        c.add_source(&name, bytes, s.pack.as_mut().unwrap().as_mut_slice())?;
+        let pack = s.pack.as_mut().ok_or("no Kev conversion in progress")?;
+        c.add_source(&name, bytes, pack.as_mut_slice())?;
         s.out = if c.finished() { b"1".to_vec() } else { b"0".to_vec() };
         Ok(())
     })())
@@ -730,14 +750,5 @@ pub extern "C" fn kevala_tile_probe() {
             &mut out,
             &mut panel,
         );
-    }
-}
-
-/// Token ids of the prepared Kev batch: stage 1 (every state, concatenated) or stage 2.
-#[no_mangle]
-pub extern "C" fn kevala_kev_ids(stage: usize) -> *const u32 {
-    match stage {
-        1 | 2 => st().kev_ids[stage - 1].as_ptr(),
-        _ => std::ptr::null(),
     }
 }

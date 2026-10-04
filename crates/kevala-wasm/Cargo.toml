@@ -14,5 +14,8 @@ crate-type = ["cdylib"]
 default = []
 cpu-bench = []
 
+[lints]
+workspace = true
+
 [dependencies]
 kevala = { path = "../kevala" }

@@ -6,11 +6,15 @@
 //! once: its recurrent DeltaNet states, conv tails and attention keys/values seed every question
 //! branch, which is exactly Kev's own state-prefix cache.
 
+pub mod convert;
+
+use crate::direct_options;
 use crate::json::{self, Value};
-use crate::kernels::linear;
-use crate::model::{AlignedBuf, Store};
+use crate::kernels::{linear, Rope};
+use crate::math::{argmax, round_to, softmax};
 use crate::pack::{self, TensorInfo};
 use crate::simd::{axpy16, dot16, F4};
+use crate::store::{AlignedBuf, Store};
 use crate::tokenizer::Tokenizer;
 use std::sync::Arc;
 
@@ -303,33 +307,19 @@ pub fn encode(tok: &Tokenizer, cfg: &KevConfig, state: &str, qs: &[KevQuestion])
 
 /// SemIf's direct-options-v1 prompt, using Qwen3.5's non-thinking chat template.
 pub fn encode_semif(tok: &Tokenizer, cfg: &KevConfig, state: &Value, qs: &[KevQuestion]) -> Result<Encoded, String> {
-    const SYSTEM: &str = "Apply the supplied criterion to the supplied evidence. Choose exactly one listed option. Respond with only its uppercase letter, with no explanation or reasoning.";
-    let start = format!("<|im_start|>system\n{SYSTEM}<|im_end|>\n<|im_start|>user\n");
+    let start = format!("<|im_start|>system\n{}<|im_end|>\n<|im_start|>user\n", direct_options::SYSTEM);
     let prefix = format!("{start}{{\"evidence\": {}", state.py_dumps(false));
     let mut shared = tok.encode(&prefix);
     let mut branches = Vec::new();
+    let max_options = direct_options::LABELS.len();
     for q in qs {
-        if q.options.len() > 16 {
-            return Err(format!("SemIf question {:?}: at most 16 options are supported", q.id));
+        if q.options.len() > max_options {
+            return Err(format!("SemIf question {:?}: at most {max_options} options are supported", q.id));
         }
-        let options = q
-            .options
-            .iter()
-            .enumerate()
-            .map(|(i, o)| {
-                Value::Object(vec![
-                    ("letter".into(), Value::Str(char::from(b'A' + i as u8).to_string())),
-                    ("description".into(), Value::Str(o.clone())),
-                ])
-            })
-            .collect();
-        let payload = Value::Object(vec![
-            ("evidence".into(), state.clone()),
-            ("criterion".into(), Value::Str(q.instructions.clone())),
-            ("options".into(), Value::Array(options)),
-        ]);
-        let prompt =
-            format!("{start}{}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n", payload.py_dumps(false));
+        let prompt = format!(
+            "{start}{}<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n",
+            direct_options::payload(state, q).py_dumps(false)
+        );
         let ids = tok.encode(&prompt);
         if ids.len() > cfg.max_branch || ids.is_empty() {
             return Err(format!(
@@ -413,6 +403,8 @@ struct AttnLayer {
     down: TensorInfo,
 }
 
+// A model holds a few dozen layers, so boxing the larger variant would only add a pointer chase.
+#[allow(clippy::large_enum_variant)]
 enum Layer {
     Lin(LinLayer),
     Attn(AttnLayer),
@@ -441,8 +433,7 @@ pub struct KevModel {
     norm: TensorInfo,
     readout: Readout,
     layers: Vec<Layer>,
-    cos: Vec<f32>,
-    sin: Vec<f32>,
+    rope: Rope,
     panel: Vec<f32>,
     /// Carries of recent states, most recent last: a repeated state skips its pass, and a state
     /// that extends a cached one only runs its new tokens.
@@ -451,6 +442,8 @@ pub struct KevModel {
     pub stats: CacheStats,
 }
 
+// One per model.
+#[allow(clippy::large_enum_variant)]
 enum Readout {
     Pointer { q: TensorInfo, qb: TensorInfo, k: TensorInfo, kb: TensorInfo },
     Labels(TensorInfo),
@@ -507,18 +500,8 @@ impl KevModel {
                 })
             });
         }
-        let half = cfg.rotary / 2;
-        let max_pos = cfg.max_state + cfg.max_branch;
-        let inv: Vec<f32> = (0..half).map(|i| 1.0 / cfg.rope_theta.powf((2 * i) as f32 / cfg.rotary as f32)).collect();
-        let mut cos = vec![0.0; max_pos * half];
-        let mut sin = vec![0.0; max_pos * half];
-        for p in 0..max_pos {
-            for i in 0..half {
-                let a = (p as f32 * inv[i]) as f64;
-                cos[p * half + i] = a.cos() as f32;
-                sin[p * half + i] = a.sin() as f32;
-            }
-        }
+        // The first `rotary` dimensions of each head rotate; the rest pass through.
+        let rope = Rope::new(cfg.rope_theta, cfg.rotary, cfg.max_state + cfg.max_branch);
         Ok(KevModel {
             emb: t("emb".into())?,
             norm: t("norm".into())?,
@@ -533,8 +516,7 @@ impl KevModel {
                 }
             },
             layers,
-            cos,
-            sin,
+            rope,
             panel: Vec::new(),
             cache: Vec::new(),
             cache_states: 4,
@@ -554,18 +536,11 @@ impl KevModel {
         x
     }
 
-    fn rope(&self, v: &mut [f32], pos: usize) {
-        let h = self.cfg.rotary / 2;
-        let (c, s) = (&self.cos[pos * h..(pos + 1) * h], &self.sin[pos * h..(pos + 1) * h]);
-        for i in 0..h {
-            let (x1, x2) = (v[i], v[i + h]);
-            v[i] = x1 * c[i] - x2 * s[i];
-            v[i + h] = x2 * c[i] + x1 * s[i];
-        }
+    /// False for a coordinator sub-pack, whose layers run on the GPU.
+    pub fn has_layers(&self) -> bool {
+        !self.layers.is_empty()
     }
 
-    /// Runs every layer over `x` (all segments packed). Prefix segments (`parent == None`) fill
-    /// `carry`; branch segments start from their parent's carry.
     /// Runs every layer over `x` (all segments packed). A segment with `parent: Some(p)` continues
     /// from `parents[p]`; with `fill`, each segment's carry (its parent's plus its own tokens) is
     /// written to `fill[segment]`.
@@ -629,10 +604,8 @@ impl KevModel {
                             },
                             None => vec![0.0; nh * dk * dv],
                         };
-                        let input = |r: usize, c: usize| -> f32 {
-                            // r counts from the segment start; negative rows come from the tail
-                            proj[(seg.start + r) * pw + c]
-                        };
+                        // r counts from the segment start; rows before it come from the tail
+                        let input = |r: usize, c: usize| -> f32 { proj[(seg.start + r) * pw + c] };
                         let mut kv = vec![0.0; dv];
                         let mut delta = vec![0.0; dv];
                         for r in 0..seg.len {
@@ -689,8 +662,7 @@ impl KevModel {
                                     let qi = F4::splat(q[i]);
                                     for jj in (0..dv).step_by(4) {
                                         unsafe {
-                                            let sv = F4::load(srow.as_ptr().add(jj))
-                                                .mul(dvec)
+                                            let sv = (F4::load(srow.as_ptr().add(jj)) * dvec)
                                                 .fma(ki, F4::load(delta.as_ptr().add(jj)));
                                             sv.store(srow.as_mut_ptr().add(jj));
                                             F4::load(o.as_ptr().add(jj)).fma(qi, sv).store(o.as_mut_ptr().add(jj));
@@ -751,12 +723,12 @@ impl KevModel {
                             for hh in 0..nq {
                                 let q = &mut row[qoff + hh * 2 * hd..qoff + hh * 2 * hd + hd];
                                 norm_head(q, qn);
-                                self.rope(q, seg.pos0 + r);
+                                self.rope.apply(q, seg.pos0 + r);
                             }
                             for hh in 0..nkv {
                                 let k = &mut row[koff + hh * hd..koff + (hh + 1) * hd];
                                 norm_head(k, kn);
-                                self.rope(k, seg.pos0 + r);
+                                self.rope.apply(k, seg.pos0 + r);
                             }
                         }
                     }
@@ -940,12 +912,8 @@ impl KevModel {
         }
         let mut x = self.embed(&ids);
         self.run(&mut x, &segs, &parents, None);
-        let mut rows = Vec::new();
-        for (seg, b) in segs.iter().zip(reqs.iter().flat_map(|e| e.branches.iter())) {
-            for r in std::iter::once(b.decide).chain(b.opts.iter().copied()) {
-                rows.extend_from_slice(&x[(seg.start + r) * d..(seg.start + r + 1) * d]);
-            }
-        }
+        let rows: Vec<f32> =
+            Self::readout_rows(reqs).into_iter().flat_map(|r| x[r * d..(r + 1) * d].iter().copied()).collect();
         self.readout(&rows, reqs)
     }
 
@@ -1015,14 +983,7 @@ pub struct KevEngine {
 }
 
 fn r2(x: f64) -> Value {
-    Value::Float(format!("{x:.2}").parse().unwrap_or(x))
-}
-
-fn softmax(z: &[f32]) -> Vec<f32> {
-    let m = z.iter().copied().fold(f32::NEG_INFINITY, f32::max);
-    let e: Vec<f32> = z.iter().map(|v| (v - m).exp()).collect();
-    let s: f32 = e.iter().sum();
-    e.iter().map(|v| v / s).collect()
+    Value::Float(round_to(x, 2))
 }
 
 impl KevEngine {
@@ -1063,18 +1024,28 @@ impl KevEngine {
 
     /// `POST /v1/systemone` for each request, answered in one pass. Answers match kev.api to_answers.
     pub fn decide(&mut self, requests: &[(Value, Value)]) -> Result<Vec<Value>, String> {
-        let mut enc = Vec::new();
-        let mut questions = Vec::new();
-        for (s, q) in requests {
-            let (e, qs) = self.prepare(s, q)?;
-            enc.push(e);
-            questions.push(qs);
-        }
-        let logits = self.model.forward(&enc);
-        Ok(self.respond(&enc, &questions, &logits))
+        let (enc, questions) = self.prepare_all(requests)?;
+        self.answer(&enc, &questions)
     }
 
-    /// Tokenizes every request; the batch an external trunk (the GPU) runs.
+    fn answer(&mut self, enc: &[Encoded], questions: &[Vec<KevQuestion>]) -> Result<Vec<Value>, String> {
+        if !self.model.has_layers() {
+            return Err("Kev pack is coordinator-only; its layers run on WebGPU".into());
+        }
+        let logits = self.model.forward(enc);
+        Ok(self.respond(enc, questions, &logits))
+    }
+
+    /// Checks each request's modalities, folds its text parts into the state, and tokenizes the
+    /// batch. Every backend prepares through this, so they all read the same request.
+    pub fn prepare_requests(
+        &self,
+        requests: &[crate::content::Request],
+    ) -> Result<(Vec<Encoded>, Vec<Vec<KevQuestion>>), String> {
+        self.prepare_all(&crate::runtime::text_requests("kev", &self.modalities, requests, |v| render(v, 0))?)
+    }
+
+    /// Tokenizes every `(state, questions)` pair; the batch an external trunk (the GPU) runs.
     pub fn prepare_all(&self, requests: &[(Value, Value)]) -> Result<(Vec<Encoded>, Vec<Vec<KevQuestion>>), String> {
         let mut enc = Vec::new();
         let mut questions = Vec::new();
@@ -1096,7 +1067,7 @@ impl KevEngine {
                 let p = softmax(z);
                 raw.push(Value::Array(p.iter().map(|&v| Value::Float(v as f64)).collect()));
                 let pd: Vec<f64> = p.iter().map(|&v| v as f64).collect();
-                let best = pd.iter().enumerate().fold(0, |b, (i, &v)| if v > pd[b] { i } else { b });
+                let best = argmax(&pd);
                 let k = pd.len();
                 let a = match q.kind {
                     Kind::Noul => {
@@ -1188,8 +1159,8 @@ impl crate::runtime::Model for KevEngine {
         &self.tok
     }
     fn decide(&mut self, requests: &[crate::content::Request]) -> Result<Vec<Value>, String> {
-        let rs = crate::runtime::text_requests("kev", &self.modalities, requests, |v| render(v, 0))?;
-        KevEngine::decide(self, &rs)
+        let (enc, questions) = self.prepare_requests(requests)?;
+        self.answer(&enc, &questions)
     }
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self

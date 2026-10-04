@@ -71,8 +71,6 @@ pub struct Header {
     pub tensors: Vec<TensorInfo>,
     pub tokenizer_offset: usize,
     pub tokenizer_size: usize,
-    /// Byte offset where tensor data starts.
-    pub data_start: usize,
     /// Total file size implied by the header.
     pub total_size: usize,
 }
@@ -163,7 +161,7 @@ pub fn parse_header(bytes: &[u8]) -> Result<Header, String> {
         end = end.max(info.offset + info.size).max(info.scales_offset + info.scales_size);
         tensors.push(info);
     }
-    Ok(Header { json, tensors, tokenizer_offset, tokenizer_size, data_start: align_up(n), total_size: end })
+    Ok(Header { json, tensors, tokenizer_offset, tokenizer_size, total_size: end })
 }
 
 /// Lays out a pack: tensors are declared first (shapes only), `layout` then fixes every offset,
@@ -207,39 +205,6 @@ impl Writer {
         });
     }
 
-    fn header_json(&self, tok_offset: usize, infos: &[TensorInfo]) -> String {
-        let num = |n: usize| Value::Int(n.to_string());
-        let tensors = infos
-            .iter()
-            .map(|t| {
-                let mut o = vec![
-                    ("name".to_string(), Value::Str(t.name.clone())),
-                    ("dtype".to_string(), Value::Str(t.dtype.name().into())),
-                    ("shape".to_string(), Value::Array(t.shape.iter().map(|&d| num(d)).collect())),
-                    ("offset".to_string(), num(t.offset)),
-                    ("size".to_string(), num(t.size)),
-                ];
-                if t.dtype == DType::Q8 {
-                    o.push(("block".into(), num(t.block)));
-                    o.push(("scales_offset".into(), num(t.scales_offset)));
-                    o.push(("scales_size".into(), num(t.scales_size)));
-                }
-                Value::Object(o)
-            })
-            .collect();
-        let mut h = vec![
-            ("format".to_string(), Value::Str("kevala".into())),
-            ("version".to_string(), num(FORMAT_VERSION as usize)),
-        ];
-        h.extend(self.meta.iter().cloned());
-        h.push((
-            "tokenizer".into(),
-            Value::Object(vec![("offset".into(), num(tok_offset)), ("size".into(), num(self.tokenizer.len()))]),
-        ));
-        h.push(("tensors".into(), Value::Array(tensors)));
-        Value::Object(h).to_json()
-    }
-
     /// Returns the bytes before the first tensor (magic, header, tokenizer), every tensor with
     /// its final offsets, and the total pack size.
     pub fn layout(&self) -> (Vec<u8>, Vec<TensorInfo>, usize) {
@@ -258,16 +223,9 @@ impl Writer {
                     at = align_up(at + info.scales_size);
                 }
             }
-            let json = self.header_json(tok_offset, &infos);
+            let json = header_json(&self.meta, tok_offset, self.tokenizer.len(), &infos);
             if json.len() <= room {
-                let mut prefix = Vec::new();
-                prefix.extend_from_slice(MAGIC);
-                prefix.extend_from_slice(&FORMAT_VERSION.to_le_bytes());
-                prefix.extend_from_slice(&(room as u32).to_le_bytes());
-                prefix.extend_from_slice(&0u32.to_le_bytes());
-                prefix.extend_from_slice(json.as_bytes());
-                // spaces keep the declared header length valid JSON
-                prefix.resize(16 + room, b' ');
+                let mut prefix = header_prefix(&json, room);
                 prefix.resize(tok_offset, 0);
                 prefix.extend_from_slice(&self.tokenizer);
                 let first = infos.first().map_or(at, |t| t.offset);
@@ -279,9 +237,52 @@ impl Writer {
     }
 }
 
-/// Reads a little-endian f32 slice out of pack bytes.
-pub fn read_f32(bytes: &[u8], offset: usize, count: usize) -> Vec<f32> {
-    bytes[offset..offset + count * 4].chunks_exact(4).map(|c| f32::from_le_bytes([c[0], c[1], c[2], c[3]])).collect()
+/// The header JSON: format, version, `meta` (model, config, and any sub-pack fields), the tokenizer
+/// range, and the tensor table.
+fn header_json(meta: &[(String, Value)], tok_offset: usize, tok_size: usize, infos: &[TensorInfo]) -> String {
+    let num = |n: usize| Value::Int(n.to_string());
+    let tensors = infos
+        .iter()
+        .map(|t| {
+            let mut o = vec![
+                ("name".to_string(), Value::Str(t.name.clone())),
+                ("dtype".to_string(), Value::Str(t.dtype.name().into())),
+                ("shape".to_string(), Value::Array(t.shape.iter().map(|&d| num(d)).collect())),
+                ("offset".to_string(), num(t.offset)),
+                ("size".to_string(), num(t.size)),
+            ];
+            if t.dtype == DType::Q8 {
+                o.push(("block".into(), num(t.block)));
+                o.push(("scales_offset".into(), num(t.scales_offset)));
+                o.push(("scales_size".into(), num(t.scales_size)));
+            }
+            Value::Object(o)
+        })
+        .collect();
+    let mut h = vec![
+        ("format".to_string(), Value::Str("kevala".into())),
+        ("version".to_string(), num(FORMAT_VERSION as usize)),
+    ];
+    h.extend(meta.iter().cloned());
+    h.push((
+        "tokenizer".into(),
+        Value::Object(vec![("offset".into(), num(tok_offset)), ("size".into(), num(tok_size))]),
+    ));
+    h.push(("tensors".into(), Value::Array(tensors)));
+    Value::Object(h).to_json()
+}
+
+/// The 16-byte prefix followed by `json`, padded with spaces to `room` bytes: the padding keeps
+/// the declared header length valid JSON.
+fn header_prefix(json: &str, room: usize) -> Vec<u8> {
+    let mut prefix = Vec::with_capacity(16 + room);
+    prefix.extend_from_slice(MAGIC);
+    prefix.extend_from_slice(&FORMAT_VERSION.to_le_bytes());
+    prefix.extend_from_slice(&(room as u32).to_le_bytes());
+    prefix.extend_from_slice(&0u32.to_le_bytes());
+    prefix.extend_from_slice(json.as_bytes());
+    prefix.resize(16 + room, b' ');
+    prefix
 }
 
 pub fn get_f64(cfg: &Value, key: &str) -> Result<f64, String> {
@@ -310,17 +311,6 @@ pub struct Piece {
     pub len: usize,
     pub rows: usize,
     pub stride: usize,
-}
-
-impl Piece {
-    /// One past the last source byte this piece reads.
-    pub fn src_end(&self) -> usize {
-        if self.rows == 0 {
-            self.src
-        } else {
-            self.src + (self.rows - 1) * self.stride + self.len
-        }
-    }
 }
 
 /// A smaller pack assembled from byte ranges of a bigger one: `prefix` goes at offset 0, then
@@ -378,7 +368,8 @@ pub fn subset(
         let nb = if t.dtype == DType::Q8 { k / t.block } else { 0 };
         let mut info = t.clone();
         // (src, len, rows, stride) for data and for scales, destinations assigned below
-        let (data, scales): (Vec<(usize, usize, usize, usize)>, Vec<(usize, usize, usize, usize)>) = match &sl {
+        type Span = (usize, usize, usize, usize);
+        let (data, scales): (Vec<Span>, Vec<Span>) = match &sl {
             Slice::Whole => (vec![(t.offset, t.size, 1, 0)], vec![(t.scales_offset, t.scales_size, 1, 0)]),
             Slice::Rows(ranges) => {
                 let rows: usize = ranges.iter().map(|(a, b)| b - a).sum();
@@ -412,7 +403,10 @@ pub fn subset(
         infos.push(info);
         plans.push((data, if t.dtype == DType::Q8 { scales } else { Vec::new() }));
     }
-    let num = |n: usize| Value::Int(n.to_string());
+    // the source's model and config first, then the caller's fields
+    let mut header_meta: Vec<(String, Value)> =
+        ["model", "config"].iter().filter_map(|k| h.json.get(k).map(|v| (k.to_string(), v.clone()))).collect();
+    header_meta.extend(meta);
     // header size depends on the offsets it lists, so lay out until it fits
     let mut room = 0usize;
     loop {
@@ -423,7 +417,6 @@ pub fn subset(
         if tokenizer {
             pieces.push(Piece { src: h.tokenizer_offset, dst: tok_offset, len: tok_size, rows: 1, stride: 0 });
         }
-        let mut tensors = Vec::new();
         for (info, (data, scales)) in infos.iter_mut().zip(&plans) {
             info.offset = at;
             for &(src, len, rows, stride) in data {
@@ -439,46 +432,145 @@ pub fn subset(
                 }
                 at = align_up(at);
             }
-            let mut o = vec![
-                ("name".to_string(), Value::Str(info.name.clone())),
-                ("dtype".to_string(), Value::Str(info.dtype.name().into())),
-                ("shape".to_string(), Value::Array(info.shape.iter().map(|&d| num(d)).collect())),
-                ("offset".to_string(), num(info.offset)),
-                ("size".to_string(), num(info.size)),
-            ];
-            if info.dtype == DType::Q8 {
-                o.push(("block".into(), num(info.block)));
-                o.push(("scales_offset".into(), num(info.scales_offset)));
-                o.push(("scales_size".into(), num(info.scales_size)));
-            }
-            tensors.push(Value::Object(o));
         }
-        let mut hj = vec![
-            ("format".to_string(), Value::Str("kevala".into())),
-            ("version".to_string(), num(FORMAT_VERSION as usize)),
-        ];
-        for k in ["model", "config"] {
-            if let Some(v) = h.json.get(k) {
-                hj.push((k.to_string(), v.clone()));
-            }
-        }
-        hj.extend(meta.iter().cloned());
-        hj.push((
-            "tokenizer".into(),
-            Value::Object(vec![("offset".into(), num(tok_offset)), ("size".into(), num(tok_size))]),
-        ));
-        hj.push(("tensors".into(), Value::Array(tensors)));
-        let json = Value::Object(hj).to_json();
+        let json = header_json(&header_meta, tok_offset, tok_size, &infos);
         if json.len() <= room {
-            let mut prefix = Vec::with_capacity(16 + room);
-            prefix.extend_from_slice(MAGIC);
-            prefix.extend_from_slice(&FORMAT_VERSION.to_le_bytes());
-            prefix.extend_from_slice(&(room as u32).to_le_bytes());
-            prefix.extend_from_slice(&0u32.to_le_bytes());
-            prefix.extend_from_slice(json.as_bytes());
-            prefix.resize(16 + room, b' ');
-            return Ok(Layout { prefix, pieces, total: align_up(at) });
+            return Ok(Layout { prefix: header_prefix(&json, room), pieces, total: align_up(at) });
         }
         room = json.len() + 256;
+    }
+}
+
+/// The sub-pack the coordinator needs: tokenizer, embeddings, scorer, act head.
+pub fn coord_layout(h: &Header) -> Result<Layout, String> {
+    let select = |t: &TensorInfo| (!is_trunk(&t.name)).then_some(Slice::Whole);
+    subset(h, &select, true, Vec::new())
+}
+
+/// Tensors of the transformer layers, which run in shards or on the GPU.
+pub fn is_trunk(name: &str) -> bool {
+    name.starts_with("enc.") || name.starts_with("head.") || name.starts_with("L.")
+}
+
+/// Every trunk tensor, whole: what a GPU uploads.
+pub fn trunk_layout(h: &Header) -> Result<Layout, String> {
+    let select = |t: &TensorInfo| is_trunk(&t.name).then_some(Slice::Whole);
+    subset(h, &select, false, Vec::new())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A pack with one f32 vector and one q8 matrix `[4, 32]` in blocks of 16, filled so every
+    /// byte says where it came from: `q[r][c] = r * 32 + c`, `scale[r][b] = r * 2 + b`.
+    fn sample() -> (Vec<u8>, Vec<TensorInfo>) {
+        let mut w = Writer::new(Value::Str("m".into()), Value::Object(Vec::new()), b"TOKEN".to_vec());
+        w.add_f32("bias", &[3]);
+        w.add_q8("weight", 4, 32, 16);
+        let (prefix, infos, total) = w.layout();
+        let mut pack = vec![0u8; total];
+        pack[..prefix.len()].copy_from_slice(&prefix);
+        let (bias, weight) = (&infos[0], &infos[1]);
+        for (i, v) in [1.5f32, -2.0, 0.25].iter().enumerate() {
+            pack[bias.offset + i * 4..bias.offset + i * 4 + 4].copy_from_slice(&v.to_le_bytes());
+        }
+        for i in 0..weight.size {
+            pack[weight.offset + i] = i as u8;
+        }
+        for i in 0..weight.scales_size / 4 {
+            pack[weight.scales_offset + i * 4..weight.scales_offset + i * 4 + 4]
+                .copy_from_slice(&(i as f32).to_le_bytes());
+        }
+        (pack, infos)
+    }
+
+    fn scales(pack: &[u8], t: &TensorInfo) -> Vec<f32> {
+        pack[t.scales_offset..t.scales_offset + t.scales_size]
+            .chunks_exact(4)
+            .map(|c| f32::from_le_bytes(c.try_into().unwrap()))
+            .collect()
+    }
+
+    #[test]
+    fn a_written_layout_parses_back_to_the_same_tensor_table() {
+        let (pack, infos) = sample();
+        let h = parse_header(&pack).unwrap();
+        assert_eq!(&pack[h.tokenizer_offset..h.tokenizer_offset + h.tokenizer_size], b"TOKEN");
+        assert_eq!(h.json.get("model").and_then(Value::as_str), Some("m"));
+        assert_eq!(h.tensors.len(), 2);
+        for (parsed, written) in h.tensors.iter().zip(&infos) {
+            assert_eq!(
+                (&parsed.name, parsed.dtype, &parsed.shape, parsed.offset, parsed.size),
+                (&written.name, written.dtype, &written.shape, written.offset, written.size)
+            );
+            assert_eq!(
+                (parsed.block, parsed.scales_offset, parsed.scales_size),
+                (written.block, written.scales_offset, written.scales_size)
+            );
+            assert_eq!(parsed.offset % ALIGN, 0, "{} is not aligned", parsed.name);
+        }
+        let weight = h.tensor("weight").unwrap();
+        assert_eq!((weight.rows(), weight.cols(), weight.scales_size), (4, 32, 4 * 2 * 4));
+        assert_eq!(weight.scales_offset % ALIGN, 0);
+        assert!(h.total_size <= pack.len() && pack.len() - h.total_size < ALIGN);
+        assert!(h.tensor("missing").is_none());
+    }
+
+    #[test]
+    fn damaged_headers_are_rejected_with_the_reason() {
+        let (pack, _) = sample();
+        assert!(header_len(&pack[..15]).unwrap_err().contains("16-byte prefix"));
+        let mut bad = pack.clone();
+        bad[0] = b'X';
+        assert!(parse_header(&bad).unwrap_err().contains("bad magic"));
+        let mut bad = pack.clone();
+        bad[4] = 9;
+        assert!(parse_header(&bad).unwrap_err().contains("unsupported .kevala version 9"));
+        assert!(parse_header(&pack[..40]).unwrap_err().contains("truncated"));
+        // A tensor whose size disagrees with its shape must not load.
+        let text = String::from_utf8(pack[16..header_len(&pack).unwrap()].to_vec()).unwrap();
+        let resized = text.replacen("[3]", "[4]", 1);
+        assert_ne!(resized, text);
+        let mut bad = pack.clone();
+        bad[16..16 + text.len()].copy_from_slice(resized.as_bytes());
+        assert!(parse_header(&bad).unwrap_err().contains("bias: inconsistent layout"));
+    }
+
+    #[test]
+    fn subsets_copy_the_selected_rows_and_columns_with_their_scales() {
+        let (pack, _) = sample();
+        let h = parse_header(&pack).unwrap();
+        let only_weight = |slice: Slice| move |t: &TensorInfo| (t.name == "weight").then(|| slice.clone());
+
+        let rows = subset(&h, &only_weight(Slice::Rows(vec![(1, 3)])), false, Vec::new()).unwrap().apply(&pack);
+        let rh = parse_header(&rows).unwrap();
+        assert_eq!(rh.tensors.len(), 1);
+        let t = &rh.tensors[0];
+        assert_eq!(t.shape, [2, 32]);
+        assert_eq!(rows[t.offset..t.offset + t.size], (32..96).map(|i| i as u8).collect::<Vec<_>>()[..]);
+        assert_eq!(scales(&rows, t), [2.0, 3.0, 4.0, 5.0]);
+        assert_eq!(rh.tokenizer_size, 0, "the tokenizer was not requested");
+
+        let meta = vec![("shard".to_string(), Value::Int("1".into()))];
+        let cols = subset(&h, &only_weight(Slice::Cols(16, 32)), true, meta).unwrap().apply(&pack);
+        let ch = parse_header(&cols).unwrap();
+        let t = &ch.tensors[0];
+        assert_eq!(t.shape, [4, 16]);
+        let want: Vec<u8> = (0..4).flat_map(|r| (16..32).map(move |c| (r * 32 + c) as u8)).collect();
+        assert_eq!(cols[t.offset..t.offset + t.size], want[..]);
+        assert_eq!(scales(&cols, t), [1.0, 3.0, 5.0, 7.0], "the second block of every row");
+        assert_eq!(&cols[ch.tokenizer_offset..ch.tokenizer_offset + ch.tokenizer_size], b"TOKEN");
+        assert_eq!(ch.json.get("shard").and_then(Value::as_usize), Some(1));
+        assert_eq!(ch.json.get("model").and_then(Value::as_str), Some("m"), "the source's model is kept");
+
+        // A slice that keeps everything streams as one plain copy.
+        let whole = subset(&h, &only_weight(Slice::Rows(vec![(0, 2), (2, 4)])), false, Vec::new()).unwrap();
+        assert_eq!(whole.pieces.len(), 2, "one piece for the data and one for the scales");
+
+        let error = |slice: Slice| subset(&h, &only_weight(slice), false, Vec::new()).unwrap_err();
+        assert!(error(Slice::Cols(8, 32)).contains("not on a block boundary"));
+        assert!(error(Slice::Cols(0, 48)).contains("bad column slice"));
+        assert!(error(Slice::Rows(vec![(2, 5)])).contains("row slice out of range"));
     }
 }

@@ -6,29 +6,15 @@
 //! into one matrix each, zero-centred RMSNorm weights are stored as `1 + w`, and `A_log` as
 //! `-exp(A_log)`.
 
-use crate::convert::{f16_to_f32, quantize};
+use crate::convert::{f16_to_f32, num, quantize};
+use crate::direct_options::LABELS;
 use crate::json::Value;
 use crate::pack::Writer;
 use crate::tokenizer::Tokenizer;
 use crate::torchpt::{Py, TorchFile};
 
-pub struct KevCheckpoint<'a> {
-    /// Qwen3.5 base weights.
-    pub base: &'a [u8],
-    /// The base's config.json (a `text_config` inside is used when present).
-    pub base_config: &'a str,
-    pub base_tokenizer: &'a str,
-    /// Kev's adapter_model.safetensors and adapter_config.json.
-    pub adapter: &'a [u8],
-    pub adapter_config: &'a str,
-    /// Kev's head.pt.
-    pub head: &'a [u8],
-}
-
 /// The delimiter tokens Kev reuses (kev/model.py SPECIAL): state, question, option, end of option, decide.
 pub const SPECIAL: [&str; 5] = ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start|>", "<|box_end|>", "<|fim_suffix|>"];
-/// SemIf's direct readout accepts up to sixteen options, represented by these answer slots.
-pub const SEMIF_LABELS: &str = "ABCDEFGHIJKLMNOP";
 
 fn pointer_dimension(root: &Py, hidden: usize) -> Result<usize, String> {
     let Some(Py::Dict(tensors)) = root.get("head") else { return Err("head.pt has no head tensor dictionary".into()) };
@@ -190,14 +176,6 @@ impl St {
     }
 }
 
-fn num(v: f64) -> Value {
-    if v.fract() == 0.0 && v.abs() < 1e15 {
-        Value::Int((v as i64).to_string())
-    } else {
-        Value::Float(v)
-    }
-}
-
 /// A Kev checkpoint being converted while its base weights stream in.
 ///
 /// Everything but the base weights is small and arrives first (config, tokenizer, adapter,
@@ -272,23 +250,9 @@ impl KevConvert {
         )
     }
 
-    /// Builds a SemIf converter from one base safetensors header. SemIf uses the same Qwen3.5
-    /// backbone as Kev, but has no LoRA adapter or pointer head.
-    #[allow(clippy::too_many_arguments)]
-    pub fn new_semif(
-        base_head: &[u8],
-        base_config: &str,
-        base_tokenizer: &str,
-        block: usize,
-        model: Value,
-    ) -> Result<KevConvert, String> {
-        let heads = [base_head];
-        Self::new_inner(&heads, base_config, base_tokenizer, None, None, block, model, true)
-    }
-
-    /// SemIf variant for a sharded Qwen3.5 checkpoint. Only shard headers are retained here;
-    /// tensor bodies are supplied by the caller one range at a time.
-    #[allow(clippy::too_many_arguments)]
+    /// Builds a SemIf converter from the headers of all base safetensors shards. SemIf uses the
+    /// same Qwen3.5 backbone as Kev, but has no LoRA adapter or pointer head. Only shard headers
+    /// are retained here; tensor bodies are supplied by the caller one range at a time.
     pub fn new_semif_sharded(
         base_heads: &[&[u8]],
         base_config: &str,
@@ -393,7 +357,7 @@ impl KevConvert {
             (1.0, 0)
         };
         let label_ids: Vec<u32> = if semif {
-            SEMIF_LABELS
+            LABELS
                 .chars()
                 .map(|label| {
                     let text = label.to_string();
@@ -576,9 +540,9 @@ impl KevConvert {
         Ok(KevConvert { src, plan, infos, done, uses, needs, missing, readers, block, prefix, total })
     }
 
-    /// Base tensors to feed for a single safetensors file, `(name, absolute byte offset, length)`.
-    /// This is retained for the browser's one-file converter.
-    pub fn sources(&self, _header_len: usize) -> Vec<(String, usize, usize)> {
+    /// Base tensors to feed for a single safetensors file, `(name, absolute byte offset, length)`,
+    /// in file order: what the browser's one-file converter streams.
+    pub fn sources(&self) -> Vec<(String, usize, usize)> {
         let mut v: Vec<(String, usize, usize)> = self
             .uses
             .keys()
@@ -699,30 +663,6 @@ impl KevConvert {
     pub fn finished(&self) -> bool {
         self.done.iter().all(|d| *d)
     }
-}
-
-/// Converts a checkpoint held in memory (the command line path), through the same stream.
-pub fn convert(ck: &KevCheckpoint, block: usize, model: Value) -> Result<Vec<u8>, String> {
-    let n = St::header_len(ck.base)?;
-    let mut c = KevConvert::new(
-        &ck.base[..n],
-        ck.base_config,
-        ck.base_tokenizer,
-        ck.adapter,
-        ck.adapter_config,
-        ck.head,
-        block,
-        model,
-    )?;
-    let mut out = vec![0u8; c.total];
-    c.begin(&mut out)?;
-    for (name, at, len) in c.sources(n) {
-        c.add_source(&name, ck.base[at..at + len].to_vec(), &mut out)?;
-    }
-    if !c.finished() {
-        return Err("conversion ended with tensors still missing".into());
-    }
-    Ok(out)
 }
 
 enum Spec {

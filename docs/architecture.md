@@ -18,25 +18,32 @@ for every option without autoregressive text generation. Nothing leaves the tab.
 compiles for native targets and `wasm32-unknown-unknown` alike:
 
 - `json.rs`: JSON parsing plus a byte-exact Python `json.dumps`, because Laya serializes states with it.
-- `unicode.rs`, `tokenizer.rs`: Hugging Face compatible byte-level BPE (NFC normalizer, added tokens,
-  GPT-2 and Qwen2 pre-tokenizer regexes as hand-written scanners). Checked against the `tokenizers`
-  library on fixture corpora and millions of fuzzed strings.
+- `unicode.rs`, `tokenizer.rs`: Hugging Face compatible BPE (NFC normalizer, added tokens, GPT-2 and
+  Qwen2 pre-tokenizer regexes as hand-written scanners, and Gemma's space-split variant with byte
+  fallback). Checked against the `tokenizers` library on fixture corpora and millions of fuzzed strings.
 - `content.rs`: the request model. `state` is text or JSON; `parts` carries typed content by modality.
 - `runtime.rs`: the family registry (`Model` trait, `FAMILIES`), keyed by the pack's `config.arch`.
-- Families: `engine.rs` + `sequence.rs` + `model.rs` (Laya), `kev.rs` (Kev and SemIf), and the
-  Gemma text family. Each owns its template, backbone and readout. SemIf shares Qwen3.5's decoder
-  with Kev, but reads direct option label logits from frozen instruction weights instead of using
-  Kev's LoRA adapter and pointer head.
+- Families, one directory each: `laya/` (the engine, `model.rs` for the encoder and its
+  tensor-parallel shards, `sequence.rs` for the request template), `kev/` (Kev and SemIf), and
+  `gemma4/`. Each owns its template, backbone, readout, and checkpoint converter (`convert.rs`).
+  SemIf shares Qwen3.5's decoder with Kev, but reads direct option label logits from frozen
+  instruction weights instead of using Kev's LoRA adapter and pointer head. `direct_options.rs`
+  holds the prompt that SemIf and Gemma 4 share, and `math.rs` the softmax, argmax and rounding
+  that every family's answers use.
 - `gpu.rs` and `wgsl/*.wgsl`: the WebGPU kernels. WebGPU only runs WGSL, so the kernels are WGSL
   sources compiled into the crate; `gpu.rs` specializes them (f16 tiles, rows and column groups per
   workgroup, subgroup use, optionally the matrix shape) and the WebAssembly binary hands the result
   to the browser runtime (`kevala_wgsl`). `kevala wgsl <kernel>` prints one from the command line.
 - `kernels.rs`, `simd.rs`: CPU kernels over a four-lane vector type that maps to WebAssembly SIMD128
   (with relaxed-SIMD fused multiply-add when available), NEON natively, or plain arrays.
-- `pack.rs`, `convert.rs`, `convert_kev.rs`, `convert_gemma.rs`, `gemma4.rs`, `torchpt.rs`: the `.kevala` format
-  and converters from upstream checkpoints (safetensors, LoRA adapters, `torch.save` files).
-- `kevala-cli/src/conversion.rs`: the common native conversion path and its architecture, adapter,
-  tokenizer and readout validation.
+- `pack.rs`, `store.rs`: the `.kevala` format with its sub-pack layouts, and a loaded pack's tensors.
+- `convert.rs`, `torchpt.rs`: what the family converters share when they read upstream checkpoints
+  (source floats, int8 quantization, `torch.save` files).
+
+**Command line (`crates/kevala-cli`).** `conversion.rs` is the common native conversion path and its
+architecture, adapter, tokenizer and readout validation. `parity/` replays each family's reference
+fixtures, `bench.rs` times requests and kernels, and `sharded.rs` runs Laya's tensor-parallel shards
+in threads.
 
 **WebAssembly ABI (`crates/kevala-wasm`).** A small C ABI: load a pack, decide, plus the entry points the
 GPU and shard backends drive (prepare, embed, finish). Three builds ship: `relaxed` (SIMD128 +
@@ -49,8 +56,8 @@ relaxed-simd), `simd`, and `base`; the runtime picks the best one the browser va
   backend, and packs concurrent requests into shared forward passes.
 - `archs/*.js`: architecture plugins. Each says how its family runs on the GPU or across shards, and
   how to convert its upstream checkpoint in the browser.
-- `gpu.js`, `gpu-kev.js`: the WebGPU trunks: buffers, pipelines built from the binary's kernels,
-  bind groups and dispatches. No kernel code lives here.
+- `gpu.js`, `gpu-kev.js`, `gpu-gemma4.js`: the WebGPU trunks: buffers, pipelines built from the
+  binary's kernels, bind groups and dispatches. No kernel code lives here.
 - `source.js`: model registry, downloads with progress, OPFS/Cache API storage, and the streaming
   layout applier.
 

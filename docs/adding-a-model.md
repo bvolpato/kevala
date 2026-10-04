@@ -3,11 +3,12 @@
 kevala is organised so a new family (a new backbone, head, request template, or modality) plugs in
 without touching the others. A family is identified by the `arch` string in its pack's config.
 Laya is the encoder example; Kev and SemIf share the Qwen3.5 decoder family with different
-decision readouts.
+decision readouts; Gemma 4 is a second decoder family with the same direct option readout as SemIf.
 
 ## 1. Rust: the family
 
-Add a module under `crates/kevala/src/` that implements `runtime::Model`:
+Add a directory under `crates/kevala/src/` (like `laya/`, `kev/`, or `gemma4/`) whose `mod.rs`
+implements `runtime::Model`:
 
 ```rust
 pub trait Model: Any {
@@ -23,40 +24,42 @@ pub trait Model: Any {
 and register it in `runtime::FAMILIES`:
 
 ```rust
-Family { arch: "myfamily", about: "one line", load: load_myfamily },
+Family { arch: "myfamily", load: load_myfamily },
 ```
 
 A family owns three pieces; reuse what exists:
 
 - **Template**: request to token sequences. Laya renders one sequence per question with a `[MASK]`
-  per option (`sequence.rs`); Kev renders causal rows sharing the state (`kev.rs`, `render` /
-  `encode`), while SemIf uses its direct option-label prompt. Match your reference implementation
-  byte for byte and add a golden fixture.
+  per option (`laya/sequence.rs`); Kev renders causal rows sharing the state (`kev/mod.rs`, `render` /
+  `encode`), while SemIf and Gemma 4 use the direct option-label prompt (`direct_options.rs`). Match
+  your reference implementation byte for byte and add a golden fixture.
 - **Backbone**: the layers. `kernels.rs` has int8-weight matmul, layer/RMS norm, attention, rotary
-  embeddings and activations over `simd::F4`; `kev.rs` has causal GQA attention and Gated DeltaNet
-  shared by Kev and SemIf.
+  embeddings and activations over `simd::F4`; `kev/mod.rs` has causal GQA attention and Gated
+  DeltaNet shared by Kev and SemIf.
 - **Head**: hidden states to answer distributions (Laya's marker scorer, Kev's pointer head, or
   SemIf's selected label rows). SemIf uses frozen Qwen weights, without an adapter or extra training.
 
 `runtime::text_requests` checks modalities and folds text parts into the state for text-only
-families.
+families. Call it from one `prepare_requests` method that both `decide` and your GPU entry points
+use, so every backend reads the same request.
 
 ## 2. Rust: the converter
 
 Write the upstream checkpoint into a pack with `pack::Writer` (declare tensors, `layout()`, write the
 bytes). Set `config.arch`, `config.modalities` and whatever config your family reads. If the family
-should be convertible in the browser, make the converter streaming: `convert_kev::KevConvert` shows
+should be convertible in the browser, make the converter streaming: `kev::convert::KevConvert` shows
 the shape (header first, then source tensors in file order, each output tensor written as soon as its
 inputs are complete). Add a CLI command in `crates/kevala-cli`.
 
-Tensors whose names start with `enc.`, `head.` or `L.` are trunk tensors (`model::is_trunk`); the
+Tensors whose names start with `enc.`, `head.` or `L.` are trunk tensors (`pack::is_trunk`); the
 rest belong to the coordinator. Keep that split and the GPU and shard layouts work unchanged.
 
-## 3. JavaScript: the architecture plugin (optional)
+## 3. JavaScript: the architecture plugin
 
-Without a plugin, a family the WebAssembly build knows already runs on the CPU in one instance through
-`kevala_decide`. A plugin adds a GPU trunk, shard support, and in-browser conversion. It is a module whose
-default export follows `js/src/archs/index.js`:
+The browser runtime loads a pack only when a plugin is registered for its `arch`. The smallest plugin
+names the family and runs it on the CPU in one instance through `kevala_decide`. A plugin can also add
+a GPU trunk, shard support, and in-browser conversion. It is a module whose default export follows
+`js/src/archs/index.js`:
 
 ```js
 export default {
@@ -82,7 +85,7 @@ const kevala = await Kevala.load({ model: "https://example.com/my.kevala", plugi
 matmul with length-sized tiles and automatic split-K), and the `gpu.wgsl(kernel, spec)` function
 the worker passes to `createGpu`, which returns any kernel from the binary. New kernels go in
 `crates/kevala/src/wgsl/` as `.wgsl` files, listed in `crates/kevala/src/gpu.rs`; the
-`tests/wgsl.rs` test renders each one for every specialization.
+`crates/kevala/tests/wgsl.rs` test renders each one for every specialization.
 
 ## 4. The model registry
 
@@ -104,8 +107,10 @@ pack's modalities.
 
 ## 6. Prove it
 
-Write a reference dump from the upstream code (see `tools/golden.py`, `tools/golden_kev.py`, and
-`tools/golden_semif.py`), commit the fixture, and add a parity command and a browser parity page.
+Write a reference dump from the upstream code (see `tools/golden.py`, `tools/golden_kev.py`,
+`tools/golden_semif.py`, and `tools/golden_gemma.py`), commit the fixture, and add a parity command
+(`crates/kevala-cli/src/parity/`) and a browser parity page. Add engine tests on a synthetic pack
+(`crates/kevala/tests/support`) for the invariants that need no real weights.
 Token ids must match exactly; report argmax agreement and the maximum probability difference at the
 precision you ship. For a SemIf family, document that the scores are conditional on the listed
 options and are not calibrated decision confidence.

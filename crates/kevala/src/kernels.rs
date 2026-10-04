@@ -101,7 +101,7 @@ unsafe fn micro_4x4(a: *const f32, w: *const f32, k: usize) -> [[f32; 4]; 4] {
 }
 
 /// Which register tile `linear` uses: 0 = 2x4, 1 = 4x4. Native ARM defaults to 4x4; WebAssembly
-/// starts at 2x4 and the host can switch after timing both (`tune`).
+/// starts at 2x4 and the host switches after timing both (`set_tile`).
 static TILE: std::sync::atomic::AtomicU8 =
     std::sync::atomic::AtomicU8::new(if cfg!(target_arch = "aarch64") { 1 } else { 0 });
 
@@ -111,31 +111,6 @@ pub fn set_tile(t: u8) {
 
 pub fn tile() -> u8 {
     TILE.load(std::sync::atomic::Ordering::Relaxed)
-}
-
-/// Times both register tiles on a synthetic matmul and keeps the faster one. Returns the choice.
-pub fn tune(now: &dyn Fn() -> f64) -> u8 {
-    let (t, n, k) = (32, 256, 1024);
-    let x = vec![0.5f32; t * k];
-    let q = vec![1i8; n * k];
-    let s = vec![0.01f32; n * k / 32];
-    let mut out = vec![0.0; t * n];
-    let mut panel = Vec::new();
-    let mut best = (f64::INFINITY, 0);
-    for tile in [0u8, 1] {
-        set_tile(tile);
-        linear(&x, t, Mat::Q8 { n, k, block: 32, q: &q, scales: &s }, None, &mut out, &mut panel);
-        let t0 = now();
-        for _ in 0..3 {
-            linear(&x, t, Mat::Q8 { n, k, block: 32, q: &q, scales: &s }, None, &mut out, &mut panel);
-        }
-        let dt = now() - t0;
-        if dt < best.0 {
-            best = (dt, tile);
-        }
-    }
-    set_tile(best.1);
-    best.1
 }
 
 #[inline(always)]
@@ -150,7 +125,7 @@ unsafe fn dot4(a: *const f32, w: *const f32, k: usize) -> f32 {
     if i < k {
         s0 = s0.fma(F4::load(a.add(i)), F4::load(w.add(i)));
     }
-    s0.add(s1).hsum()
+    (s0 + s1).hsum()
 }
 
 /// out[t][n] = sum_k x[t][k] * w[n][k] (+ bias[n]) for t rows. `k % 4 == 0`, and q8 blocks are
@@ -222,13 +197,13 @@ pub fn layer_norm(x: &[f32], t: usize, d: usize, w: &[f32], b: Option<&[f32]>, e
         let row = &x[r * d..(r + 1) * d];
         let mut s = F4::zero();
         for c in (0..d).step_by(4) {
-            s = s.add(unsafe { F4::load(row.as_ptr().add(c)) });
+            s = s + unsafe { F4::load(row.as_ptr().add(c)) };
         }
         let mean = s.hsum() / d as f32;
         let mv = F4::splat(mean);
         let mut v = F4::zero();
         for c in (0..d).step_by(4) {
-            let e = unsafe { F4::load(row.as_ptr().add(c)) }.sub(mv);
+            let e = unsafe { F4::load(row.as_ptr().add(c)) } - mv;
             v = v.fma(e, e);
         }
         let inv = 1.0 / (v.hsum() / d as f32 + eps).sqrt();
@@ -236,9 +211,9 @@ pub fn layer_norm(x: &[f32], t: usize, d: usize, w: &[f32], b: Option<&[f32]>, e
         let o = &mut out[r * d..(r + 1) * d];
         for c in (0..d).step_by(4) {
             unsafe {
-                let e = F4::load(row.as_ptr().add(c)).sub(mv).mul(iv).mul(F4::load(w.as_ptr().add(c)));
+                let e = (F4::load(row.as_ptr().add(c)) - mv) * iv * F4::load(w.as_ptr().add(c));
                 let e = match b {
-                    Some(b) => e.add(F4::load(b.as_ptr().add(c))),
+                    Some(b) => e + F4::load(b.as_ptr().add(c)),
                     None => e,
                 };
                 e.store(o.as_mut_ptr().add(c));
@@ -248,6 +223,8 @@ pub fn layer_norm(x: &[f32], t: usize, d: usize, w: &[f32], b: Option<&[f32]>, e
 }
 
 /// erf for f32, ported from musl's erff (itself from FreeBSD), accurate to about 1 ulp.
+// The coefficients keep musl's digits so they can be compared with the source.
+#[allow(clippy::excessive_precision)]
 pub fn erf(x: f32) -> f32 {
     const ERX: f32 = 8.4506291151e-01;
     const EFX8: f32 = 1.0270333290e+00;
@@ -419,6 +396,7 @@ impl Rope {
 /// `qkv` rows are `[q heads | k heads | v heads]` with `heads * hd` floats each part and row
 /// stride `3 * heads * hd`; `ctx` receives `heads * hd` floats per row. `window` limits keys to
 /// `|i - j| <= window` (ModernBERT's sliding layers), `None` attends everywhere.
+#[allow(clippy::too_many_arguments)]
 pub fn attention(
     qkv: &[f32],
     seg_start: usize,

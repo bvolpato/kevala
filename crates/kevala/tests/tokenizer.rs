@@ -12,7 +12,10 @@
 //!   Needs tmp/gemma4/E2B/tokenizer.json and/or tmp/gemma4/E4B/tokenizer.json, or the matching
 //!   environment variables.
 //!
-//! None of those files is checked in; without one its tests print a notice and pass.
+//! None of those files is checked in; without one its tests print a notice and pass, unless
+//! `KEVALA_REQUIRE_FIXTURES` is set (see `support::fixture_text`).
+
+mod support;
 
 use std::sync::OnceLock;
 
@@ -26,17 +29,7 @@ const GEMMA4_E2B: (&str, &str) = ("KEVALA_GEMMA4_E2B_TOKENIZER_JSON", "tmp/gemma
 const GEMMA4_E4B: (&str, &str) = ("KEVALA_GEMMA4_E4B_TOKENIZER_JSON", "tmp/gemma4/E4B/tokenizer.json");
 
 fn load(cell: &'static OnceLock<Option<Tokenizer>>, (var, default): (&str, &str)) -> Option<&'static Tokenizer> {
-    cell.get_or_init(|| {
-        let path = std::env::var(var).unwrap_or_else(|_| format!("{}/../../{default}", env!("CARGO_MANIFEST_DIR")));
-        match std::fs::read_to_string(&path) {
-            Ok(s) => Some(Tokenizer::from_hf_json(&s).unwrap_or_else(|e| panic!("{path}: {e}"))),
-            Err(_) => {
-                eprintln!("skipping: no tokenizer.json at {path} (set {var})");
-                None
-            }
-        }
-    })
-    .as_ref()
+    support::fixture_tokenizer(cell, var, default)
 }
 
 fn modernbert() -> Option<&'static Tokenizer> {
@@ -167,13 +160,10 @@ fn qwen_base_file_with_marks_regex() {
 
 #[test]
 fn qwen_checkpoint_config_normalizes_to_autotokenizer_ids() {
-    let path =
-        std::env::var(QWEN_BASE.0).unwrap_or_else(|_| format!("{}/../../{}", env!("CARGO_MANIFEST_DIR"), QWEN_BASE.1));
-    let path = std::path::Path::new(&path);
-    let (Ok(raw), Ok(config)) =
-        (std::fs::read_to_string(path), std::fs::read_to_string(path.with_file_name("tokenizer_config.json")))
-    else {
-        eprintln!("skipping: raw Qwen tokenizer/config unavailable (set {})", QWEN_BASE.0);
+    let (Some(raw), Some(config)) = (
+        support::fixture_text(QWEN_BASE.0, QWEN_BASE.1),
+        support::fixture_text("KEVALA_QWEN_BASE_TOKENIZER_CONFIG_JSON", "tmp/qwen35/tokenizer_config.json"),
+    ) else {
         return;
     };
     let normalized = Tokenizer::normalize_qwen2_json(&raw, &config).unwrap();

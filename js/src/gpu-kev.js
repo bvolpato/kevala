@@ -14,7 +14,7 @@ import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
 let U;
 
-// the cross-request state cache (see KevModel in crates/kevala/src/kev.rs for the CPU twin)
+// the cross-request state cache (see KevModel in crates/kevala/src/kev/mod.rs for the CPU twin)
 const CACHE_SLOTS = 4;
 const SLOT_ROWS = 1024;
 const CACHE_MIN = 32;

@@ -20,29 +20,17 @@ mod imp {
         pub fn splat(v: f32) -> F4 {
             F4(f32x4_splat(v))
         }
+        /// # Safety
+        /// `p` must be valid for reading four `f32` values. It need not be aligned.
         #[inline(always)]
         pub unsafe fn load(p: *const f32) -> F4 {
             F4(core::ptr::read_unaligned(p as *const v128))
         }
+        /// # Safety
+        /// `p` must be valid for writing four `f32` values. It need not be aligned.
         #[inline(always)]
         pub unsafe fn store(self, p: *mut f32) {
             core::ptr::write_unaligned(p as *mut v128, self.0)
-        }
-        #[inline(always)]
-        pub fn add(self, o: F4) -> F4 {
-            F4(f32x4_add(self.0, o.0))
-        }
-        #[inline(always)]
-        pub fn sub(self, o: F4) -> F4 {
-            F4(f32x4_sub(self.0, o.0))
-        }
-        #[inline(always)]
-        pub fn mul(self, o: F4) -> F4 {
-            F4(f32x4_mul(self.0, o.0))
-        }
-        #[inline(always)]
-        pub fn max(self, o: F4) -> F4 {
-            F4(f32x4_pmax(self.0, o.0))
         }
         /// self + a * b
         #[inline(always)]
@@ -63,16 +51,36 @@ mod imp {
             let s = f32x4_add(s, i32x4_shuffle::<1, 0, 3, 2>(s, s));
             f32x4_extract_lane::<0>(s)
         }
+    }
+
+    impl core::ops::Add for F4 {
+        type Output = F4;
         #[inline(always)]
-        pub fn hmax(self) -> f32 {
-            let v = self.0;
-            let s = f32x4_pmax(v, i32x4_shuffle::<2, 3, 0, 1>(v, v));
-            let s = f32x4_pmax(s, i32x4_shuffle::<1, 0, 3, 2>(s, s));
-            f32x4_extract_lane::<0>(s)
+        fn add(self, o: F4) -> F4 {
+            F4(f32x4_add(self.0, o.0))
+        }
+    }
+
+    impl core::ops::Sub for F4 {
+        type Output = F4;
+        #[inline(always)]
+        fn sub(self, o: F4) -> F4 {
+            F4(f32x4_sub(self.0, o.0))
+        }
+    }
+
+    impl core::ops::Mul for F4 {
+        type Output = F4;
+        #[inline(always)]
+        fn mul(self, o: F4) -> F4 {
+            F4(f32x4_mul(self.0, o.0))
         }
     }
 
     /// dst[0..16] = src[0..16] as f32 * scale
+    ///
+    /// # Safety
+    /// `src` must be valid for reading 16 bytes and `dst` for writing 16 `f32` values.
     #[inline(always)]
     pub unsafe fn dequant16(src: *const i8, scale: f32, dst: *mut f32) {
         let v = core::ptr::read_unaligned(src as *const v128);
@@ -107,29 +115,17 @@ mod imp {
         pub fn splat(v: f32) -> F4 {
             unsafe { F4(vdupq_n_f32(v)) }
         }
+        /// # Safety
+        /// `p` must be valid for reading four `f32` values. It need not be aligned.
         #[inline(always)]
         pub unsafe fn load(p: *const f32) -> F4 {
             F4(vld1q_f32(p))
         }
+        /// # Safety
+        /// `p` must be valid for writing four `f32` values. It need not be aligned.
         #[inline(always)]
         pub unsafe fn store(self, p: *mut f32) {
             vst1q_f32(p, self.0)
-        }
-        #[inline(always)]
-        pub fn add(self, o: F4) -> F4 {
-            unsafe { F4(vaddq_f32(self.0, o.0)) }
-        }
-        #[inline(always)]
-        pub fn sub(self, o: F4) -> F4 {
-            unsafe { F4(vsubq_f32(self.0, o.0)) }
-        }
-        #[inline(always)]
-        pub fn mul(self, o: F4) -> F4 {
-            unsafe { F4(vmulq_f32(self.0, o.0)) }
-        }
-        #[inline(always)]
-        pub fn max(self, o: F4) -> F4 {
-            unsafe { F4(vmaxq_f32(self.0, o.0)) }
         }
         #[inline(always)]
         pub fn fma(self, a: F4, b: F4) -> F4 {
@@ -139,12 +135,36 @@ mod imp {
         pub fn hsum(self) -> f32 {
             unsafe { vaddvq_f32(self.0) }
         }
+    }
+
+    impl core::ops::Add for F4 {
+        type Output = F4;
         #[inline(always)]
-        pub fn hmax(self) -> f32 {
-            unsafe { vmaxvq_f32(self.0) }
+        fn add(self, o: F4) -> F4 {
+            unsafe { F4(vaddq_f32(self.0, o.0)) }
         }
     }
 
+    impl core::ops::Sub for F4 {
+        type Output = F4;
+        #[inline(always)]
+        fn sub(self, o: F4) -> F4 {
+            unsafe { F4(vsubq_f32(self.0, o.0)) }
+        }
+    }
+
+    impl core::ops::Mul for F4 {
+        type Output = F4;
+        #[inline(always)]
+        fn mul(self, o: F4) -> F4 {
+            unsafe { F4(vmulq_f32(self.0, o.0)) }
+        }
+    }
+
+    /// dst[0..16] = src[0..16] as f32 * scale
+    ///
+    /// # Safety
+    /// `src` must be valid for reading 16 bytes and `dst` for writing 16 `f32` values.
     #[inline(always)]
     pub unsafe fn dequant16(src: *const i8, scale: f32, dst: *mut f32) {
         let v = vld1q_s8(src);
@@ -172,10 +192,14 @@ mod imp {
         pub fn splat(v: f32) -> F4 {
             F4([v; 4])
         }
+        /// # Safety
+        /// `p` must be valid for reading four `f32` values. It need not be aligned.
         #[inline(always)]
         pub unsafe fn load(p: *const f32) -> F4 {
             F4(core::ptr::read_unaligned(p as *const [f32; 4]))
         }
+        /// # Safety
+        /// `p` must be valid for writing four `f32` values. It need not be aligned.
         #[inline(always)]
         pub unsafe fn store(self, p: *mut f32) {
             core::ptr::write_unaligned(p as *mut [f32; 4], self.0)
@@ -185,35 +209,43 @@ mod imp {
             F4([f(self.0[0], o.0[0]), f(self.0[1], o.0[1]), f(self.0[2], o.0[2]), f(self.0[3], o.0[3])])
         }
         #[inline(always)]
-        pub fn add(self, o: F4) -> F4 {
-            self.map2(o, |a, b| a + b)
-        }
-        #[inline(always)]
-        pub fn sub(self, o: F4) -> F4 {
-            self.map2(o, |a, b| a - b)
-        }
-        #[inline(always)]
-        pub fn mul(self, o: F4) -> F4 {
-            self.map2(o, |a, b| a * b)
-        }
-        #[inline(always)]
-        pub fn max(self, o: F4) -> F4 {
-            self.map2(o, |a, b| if b > a { b } else { a })
-        }
-        #[inline(always)]
         pub fn fma(self, a: F4, b: F4) -> F4 {
-            self.add(a.mul(b))
+            self + a * b
         }
         #[inline(always)]
         pub fn hsum(self) -> f32 {
             (self.0[0] + self.0[2]) + (self.0[1] + self.0[3])
         }
+    }
+
+    impl core::ops::Add for F4 {
+        type Output = F4;
         #[inline(always)]
-        pub fn hmax(self) -> f32 {
-            self.0.iter().copied().fold(f32::NEG_INFINITY, f32::max)
+        fn add(self, o: F4) -> F4 {
+            self.map2(o, |a, b| a + b)
         }
     }
 
+    impl core::ops::Sub for F4 {
+        type Output = F4;
+        #[inline(always)]
+        fn sub(self, o: F4) -> F4 {
+            self.map2(o, |a, b| a - b)
+        }
+    }
+
+    impl core::ops::Mul for F4 {
+        type Output = F4;
+        #[inline(always)]
+        fn mul(self, o: F4) -> F4 {
+            self.map2(o, |a, b| a * b)
+        }
+    }
+
+    /// dst[0..16] = src[0..16] as f32 * scale
+    ///
+    /// # Safety
+    /// `src` must be valid for reading 16 bytes and `dst` for writing 16 `f32` values.
     #[inline(always)]
     pub unsafe fn dequant16(src: *const i8, scale: f32, dst: *mut f32) {
         for i in 0..16 {
@@ -240,7 +272,7 @@ pub fn dot16(a: &[f32], b: &[f32]) -> f32 {
             i += 16;
         }
     }
-    s0.add(s1).add(s2.add(s3)).hsum()
+    ((s0 + s1) + (s2 + s3)).hsum()
 }
 
 /// y += a * x over slices whose length is a multiple of 16.

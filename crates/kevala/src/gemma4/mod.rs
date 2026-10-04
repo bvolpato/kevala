@@ -15,19 +15,22 @@
 //! `num_kv_shared_layers` decoder layers reuse the full-length KV states from the last earlier
 //! layer of the same attention type.
 
+pub mod convert;
+
 use crate::content::{Modality, Request};
+use crate::direct_options;
 use crate::json::Value;
 use crate::kernels::linear;
 use crate::kev::{self, KevQuestion, Kind};
-use crate::model::{AlignedBuf, Store};
+use crate::math::{argmax, round_to, softmax};
 use crate::pack::{self, DType, TensorInfo};
+use crate::store::{AlignedBuf, Store};
 use crate::tokenizer::Tokenizer;
 use std::cell::RefCell;
 use std::sync::Arc;
 
-const DIRECT_OPTIONS_SYSTEM: &str = "Apply the supplied criterion to the supplied evidence. Choose exactly one listed option. Respond with only its uppercase letter, with no explanation or reasoning.";
 const DEFAULT_MAX_INPUT_TOKENS: usize = 4096;
-const MAX_LABELS: usize = 16;
+const MAX_LABELS: usize = direct_options::LABELS.len();
 
 /// Parsed dense Gemma 4 text configuration.
 #[derive(Clone, Debug, PartialEq)]
@@ -39,14 +42,12 @@ pub struct Gemma4Config {
     pub vocab_per_layer: usize,
     pub heads: usize,
     pub kv_heads: usize,
-    pub global_kv_heads: usize,
     pub local_head_dim: usize,
     pub global_head_dim: usize,
     pub layer_types: Vec<LayerType>,
     pub kv_shared_layers: usize,
     pub sliding_window: usize,
     pub eps: f32,
-    pub max_position_embeddings: usize,
     pub max_input_tokens: usize,
     pub final_logit_softcap: Option<f32>,
     pub use_double_wide_mlp: bool,
@@ -77,7 +78,7 @@ impl LayerType {
     }
 }
 
-fn text_config<'a>(c: &'a Value) -> &'a Value {
+fn text_config(c: &Value) -> &Value {
     c.get("text_config").filter(|v| v.as_object().is_some()).unwrap_or(c)
 }
 
@@ -249,7 +250,7 @@ impl Gemma4Config {
         }
         let shared_start = layers - kv_shared_layers;
         for ty in [LayerType::Sliding, LayerType::Full] {
-            if layer_types.iter().any(|&x| x == ty) && !layer_types[..shared_start].contains(&ty) {
+            if layer_types.contains(&ty) && !layer_types[..shared_start].contains(&ty) {
                 return Err(format!(
                     "Gemma4 config: shared {ty:?} attention has no non-shared KV source before layer {shared_start}"
                 ));
@@ -257,11 +258,7 @@ impl Gemma4Config {
         }
         // Gemma only applies num_global_key_value_heads to the alternative K=V attention path.
         // That path is rejected above because this pack stores separate K and V projections, so
-        // the supported path always uses num_key_value_heads for both layer types.
-        let global_kv_heads = kv_heads;
-        if global_kv_heads == 0 || heads % global_kv_heads != 0 {
-            return Err("Gemma4 config: num_global_key_value_heads must divide num_attention_heads".into());
-        }
+        // the supported path uses num_key_value_heads for both layer types.
         let local_rope_theta = rope_value(c, "sliding_attention", "rope_theta", 10_000.0)?;
         let global_rope_theta = rope_value(c, "full_attention", "rope_theta", 1_000_000.0)?;
         let global_partial_rotary = rope_value(c, "full_attention", "partial_rotary_factor", 0.25)?;
@@ -296,14 +293,12 @@ impl Gemma4Config {
             vocab_per_layer,
             heads,
             kv_heads,
-            global_kv_heads,
             local_head_dim,
             global_head_dim,
             layer_types,
             kv_shared_layers,
             sliding_window,
             eps,
-            max_position_embeddings,
             max_input_tokens,
             final_logit_softcap,
             use_double_wide_mlp,
@@ -327,14 +322,6 @@ impl Gemma4Config {
         }
     }
 
-    pub fn kv_heads(&self, layer: usize) -> usize {
-        if self.is_full(layer) {
-            self.global_kv_heads
-        } else {
-            self.kv_heads
-        }
-    }
-
     pub fn is_kv_shared(&self, layer: usize) -> bool {
         layer >= self.layers - self.kv_shared_layers
     }
@@ -354,13 +341,12 @@ pub struct PreparedQuestion {
     pub id: String,
     pub kind: Kind,
     pub keys: Vec<String>,
-    pub legend: Vec<String>,
     pub options: Vec<String>,
 }
 
 impl From<KevQuestion> for PreparedQuestion {
     fn from(q: KevQuestion) -> Self {
-        Self { id: q.id, kind: q.kind, keys: q.keys, legend: Vec::new(), options: q.options }
+        Self { id: q.id, kind: q.kind, keys: q.keys, options: q.options }
     }
 }
 
@@ -384,10 +370,6 @@ pub struct Prepared {
 }
 
 impl Prepared {
-    pub fn tokens(&self) -> usize {
-        self.ids.len()
-    }
-
     pub fn sequence_count(&self) -> usize {
         self.sequences.len()
     }
@@ -398,7 +380,6 @@ impl Prepared {
     }
 }
 
-#[derive(Clone)]
 struct KvCache {
     heads: usize,
     head_dim: usize,
@@ -482,9 +463,8 @@ impl Gemma4Model {
         let mut layers = Vec::with_capacity(cfg.layers);
         for i in 0..cfg.layers {
             let n = |part: &str| need(format!("l.{i}.{part}"));
-            let full = cfg.is_full(i);
             let hd = cfg.head_dim(i);
-            let kv = cfg.kv_heads(i);
+            let kv = cfg.kv_heads;
             let inter = cfg.mlp_intermediate(i);
             let q = n("q")?;
             let qn = n("qn")?;
@@ -549,7 +529,6 @@ impl Gemma4Model {
             let down = n("down")?;
             let ple_gate = n("ple_gate")?;
             let ple_out = n("ple_out")?;
-            let ple_norm = n("ple_norm")?;
             let scalar = n("scalar")?;
             require_f32(&scalar, &format!("l.{i}.scalar"))?;
             if gate.rows() != inter || gate.cols() != cfg.hidden || up.rows() != inter || up.cols() != cfg.hidden {
@@ -575,11 +554,6 @@ impl Gemma4Model {
             }
             if scalar.numel() != 1 {
                 return Err(format!("Gemma4 tensor l.{i}.scalar has shape {:?}, expected [1]", scalar.shape));
-            }
-            // Avoid silently accepting a full layer with the wrong key/value shape even when a
-            // malformed pack happens to contain the optional tensors.
-            if full && cfg.global_head_dim != hd {
-                return Err(format!("Gemma4 layer {i} full attention has inconsistent head dimension"));
             }
             layers.push(LayerWeights {
                 attn_norm,
@@ -651,28 +625,11 @@ impl Gemma4Model {
 
     fn rope_row(&self, row: &mut [f32], pos: usize, full: bool) {
         let hd = row.len();
-        let half = hd / 2;
-        let (theta, rotated) = if full {
+        if full {
             let rotated = ((hd as f32 * self.cfg.global_partial_rotary).floor() as usize / 2) * 2;
-            (self.cfg.global_rope_theta, rotated)
+            rope_row(row, pos, self.cfg.global_rope_theta, rotated);
         } else {
-            (self.cfg.local_rope_theta, hd)
-        };
-        let mut cos = vec![1.0f32; hd];
-        let mut sin = vec![0.0f32; hd];
-        for i in 0..rotated / 2 {
-            let inv = theta.powf(-((2 * i) as f32) / hd as f32);
-            let a = pos as f32 * inv;
-            let (c, s) = (a.cos(), a.sin());
-            cos[i] = c;
-            sin[i] = s;
-            cos[half + i] = c;
-            sin[half + i] = s;
-        }
-        let before = row.to_vec();
-        for i in 0..hd {
-            let j = if i < half { i + half } else { i - half };
-            row[i] = before[i] * cos[i] + if i < half { -before[j] } else { before[j] } * sin[i];
+            rope_row(row, pos, self.cfg.local_rope_theta, hd);
         }
     }
 
@@ -728,7 +685,7 @@ impl Gemma4Model {
     ) -> Vec<f32> {
         let d = self.cfg.hidden;
         let hd = self.cfg.head_dim(layer);
-        let kv_heads = self.cfg.kv_heads(layer);
+        let kv_heads = self.cfg.kv_heads;
         let full = self.cfg.is_full(layer);
         let mut q = vec![0.0; t * self.cfg.heads * hd];
         self.matmul(x, t, &layer_weights.q, &mut q);
@@ -741,9 +698,11 @@ impl Gemma4Model {
             }
         }
         let ty = if full { 1 } else { 0 };
-        let cache = if self.cfg.is_kv_shared(layer) {
-            shared[ty].as_ref().expect("validated Gemma4 shared KV source")
-        } else {
+        if self.cfg.is_kv_shared(layer) {
+            let cache = shared[ty].as_ref().expect("validated Gemma4 shared KV source");
+            return self.attend_with_cache(layer, &q, t, cache, d);
+        }
+        let own = {
             let k_weight = layer_weights.k.as_ref().expect("validated Gemma4 K weight");
             let v_weight = layer_weights.v.as_ref().expect("validated Gemma4 V weight");
             let kn = self.store.f32s(layer_weights.kn.as_ref().expect("validated Gemma4 K norm"));
@@ -760,23 +719,18 @@ impl Gemma4Model {
                     self.rms_row_in_place(vr, None);
                 }
             }
-            let source = KvCache { heads: kv_heads, head_dim: hd, keys: k, values: v };
-            if !self.cfg.is_kv_shared(layer) {
-                let shared_start = self.cfg.layers - self.cfg.kv_shared_layers;
-                let is_source = layer < shared_start
-                    && (layer + 1..shared_start).all(|j| self.cfg.layer_types[j] != self.cfg.layer_types[layer]);
-                if is_source {
-                    shared[ty] = Some(source.clone());
-                }
-            }
-            // Keep this local value alive for the attention below.  It cannot be returned from the
-            // branch above, so the owned cache is handled by the common path below.
-            return self.attend_with_cache(layer, &q, t, source, d);
+            KvCache { heads: kv_heads, head_dim: hd, keys: k, values: v }
         };
-        self.attend_with_cache(layer, &q, t, cache.clone(), d)
+        let out = self.attend_with_cache(layer, &q, t, &own, d);
+        // The last non-shared layer of each attention type feeds the shared layers.
+        let shared_start = self.cfg.layers - self.cfg.kv_shared_layers;
+        if (layer + 1..shared_start).all(|j| self.cfg.layer_types[j] != self.cfg.layer_types[layer]) {
+            shared[ty] = Some(own);
+        }
+        out
     }
 
-    fn attend_with_cache(&self, layer: usize, q: &[f32], t: usize, cache: KvCache, d: usize) -> Vec<f32> {
+    fn attend_with_cache(&self, layer: usize, q: &[f32], t: usize, cache: &KvCache, d: usize) -> Vec<f32> {
         let hd = cache.head_dim;
         let heads = self.cfg.heads;
         let groups = heads / cache.heads;
@@ -815,13 +769,8 @@ impl Gemma4Model {
             }
         }
         let mut projected = vec![0.0; t * d];
-        self.store_matmul(&ctx, t, &self.layers[layer].o, &mut projected);
+        self.matmul(&ctx, t, &self.layers[layer].o, &mut projected);
         projected
-    }
-
-    fn store_matmul(&self, x: &[f32], t: usize, w: &TensorInfo, out: &mut [f32]) {
-        let mut panel = self.panel.borrow_mut();
-        linear(x, t, self.store.mat(w), None, out, &mut panel);
     }
 
     /// Runs a complete dense causal prefill and returns the final-normalized hidden row for the
@@ -898,7 +847,31 @@ impl Gemma4Model {
     }
 }
 
-fn bf16_round(x: f32) -> f32 {
+/// Rotates one head vector in place (rotate_half convention). Only the first `rotated / 2`
+/// frequencies of each half turn; proportional RoPE leaves the remaining dimensions unchanged.
+fn rope_row(row: &mut [f32], pos: usize, theta: f32, rotated: usize) {
+    let hd = row.len();
+    let half = hd / 2;
+    let mut cos = vec![1.0f32; hd];
+    let mut sin = vec![0.0f32; hd];
+    for i in 0..rotated / 2 {
+        let inv = theta.powf(-((2 * i) as f32) / hd as f32);
+        let a = pos as f32 * inv;
+        let (c, s) = (a.cos(), a.sin());
+        cos[i] = c;
+        sin[i] = s;
+        cos[half + i] = c;
+        sin[half + i] = s;
+    }
+    let before = row.to_vec();
+    for i in 0..hd {
+        let j = if i < half { i + half } else { i - half };
+        row[i] = before[i] * cos[i] + if i < half { -before[j] } else { before[j] } * sin[i];
+    }
+}
+
+/// Rounds to the nearest bfloat16 value, ties to even, as the upstream bf16 buffers hold it.
+pub(crate) fn bf16_round(x: f32) -> f32 {
     let bits = x.to_bits();
     let rounded = bits.wrapping_add(0x7fff + ((bits >> 16) & 1)) & 0xffff_0000;
     f32::from_bits(rounded)
@@ -914,28 +887,13 @@ fn prompt_for(state: &Value, q: &KevQuestion) -> Result<String, String> {
     if !(2..=MAX_LABELS).contains(&q.options.len()) {
         return Err(format!("question {:?}: Gemma4 direct scoring requires 2..={MAX_LABELS} options", q.id));
     }
-    let options = q
-        .options
-        .iter()
-        .enumerate()
-        .map(|(i, option)| {
-            Value::Object(vec![
-                ("letter".into(), Value::Str(char::from(b'A' + i as u8).to_string())),
-                ("description".into(), Value::Str(option.clone())),
-            ])
-        })
-        .collect();
-    let payload = Value::Object(vec![
-        ("evidence".into(), state.clone()),
-        ("criterion".into(), Value::Str(q.instructions.clone())),
-        ("options".into(), Value::Array(options)),
-    ]);
     // This is the exact Gemma4 canonical chat template for a non-thinking system + user turn
     // with `add_generation_prompt=True`: BOS, system turn, user turn, then model turn.  The
     // trailing newline is part of `<|turn>model\n` and is therefore tokenized.
     Ok(format!(
-        "<bos><|turn>system\n{DIRECT_OPTIONS_SYSTEM}<turn|>\n<|turn>user\n{}<turn|>\n<|turn>model\n",
-        payload.py_dumps(false)
+        "<bos><|turn>system\n{}<turn|>\n<|turn>user\n{}<turn|>\n<|turn>model\n",
+        direct_options::SYSTEM,
+        direct_options::payload(state, q).py_dumps(false)
     ))
 }
 
@@ -943,8 +901,8 @@ fn request_state(r: &Request) -> Value {
     r.text_with(|v| v.py_dumps(false)).map(Value::Str).unwrap_or_else(|| r.state.clone())
 }
 
-fn encode_one(tok: &Tokenizer, cfg: &Gemma4Config, state: &Value, q: KevQuestion) -> Result<Vec<u32>, String> {
-    let prompt = prompt_for(state, &q)?;
+fn encode_one(tok: &Tokenizer, cfg: &Gemma4Config, state: &Value, q: &KevQuestion) -> Result<Vec<u32>, String> {
+    let prompt = prompt_for(state, q)?;
     let ids = tok.encode(&prompt);
     if ids.is_empty() {
         return Err(format!("question {:?}: Gemma4 prompt tokenized to zero tokens", q.id));
@@ -960,13 +918,6 @@ fn encode_one(tok: &Tokenizer, cfg: &Gemma4Config, state: &Value, q: KevQuestion
     Ok(ids)
 }
 
-fn softmax(z: &[f32]) -> Vec<f32> {
-    let max = z.iter().copied().fold(f32::NEG_INFINITY, f32::max);
-    let exp: Vec<f32> = z.iter().map(|&x| (x - max).exp()).collect();
-    let sum = exp.iter().sum::<f32>();
-    exp.into_iter().map(|x| x / sum).collect()
-}
-
 fn require_finite_row(index: usize, row: &[f32]) -> Result<(), String> {
     if row.iter().any(|value| !value.is_finite()) {
         return Err(format!("Gemma4 finish: normalized hidden row {index} contains a non-finite value"));
@@ -975,12 +926,12 @@ fn require_finite_row(index: usize, row: &[f32]) -> Result<(), String> {
 }
 
 fn round2(x: f64) -> Value {
-    Value::Float(format!("{x:.2}").parse().unwrap_or(x))
+    Value::Float(round_to(x, 2))
 }
 
-fn score_answer(q: &PreparedQuestion, logits: &[f32]) -> Value {
-    let p = softmax(logits);
-    let best = p.iter().enumerate().fold(0, |b, (i, &v)| if v > p[b] { i } else { b });
+/// The reference-shaped answer for one question from its option probabilities.
+fn score_answer(q: &PreparedQuestion, p: &[f32]) -> Value {
+    let best = argmax(p);
     match q.kind {
         Kind::Noul => Value::Object(vec![
             ("type".into(), Value::Str("noul".into())),
@@ -995,7 +946,7 @@ fn score_answer(q: &PreparedQuestion, logits: &[f32]) -> Value {
                 ("confidence".into(), round2(confidence as f64)),
                 (
                     "probabilities".into(),
-                    Value::Object(q.keys.iter().zip(&p).map(|(k, &v)| (k.clone(), round2(v as f64))).collect()),
+                    Value::Object(q.keys.iter().zip(p).map(|(k, &v)| (k.clone(), round2(v as f64))).collect()),
                 ),
             ])
         }
@@ -1014,7 +965,7 @@ fn score_answer(q: &PreparedQuestion, logits: &[f32]) -> Value {
                 ),
                 (
                     "probabilities".into(),
-                    Value::Object(q.keys.iter().zip(&p).map(|(k, &v)| (k.clone(), round2(v as f64))).collect()),
+                    Value::Object(q.keys.iter().zip(p).map(|(k, &v)| (k.clone(), round2(v as f64))).collect()),
                 ),
                 ("confidence".into(), round2(confidence as f64)),
             ])
@@ -1081,7 +1032,7 @@ impl Gemma4Engine {
             let first = prepared.sequences.len();
             for q in questions {
                 let labels = q.options.len();
-                let ids = encode_one(&self.tok, &self.cfg, &state, q.clone())?;
+                let ids = encode_one(&self.tok, &self.cfg, &state, &q)?;
                 let question = prepared.questions.len();
                 prepared.questions.push(q.into());
                 let start = prepared.ids.len();
@@ -1135,7 +1086,7 @@ impl Gemma4Engine {
             if probabilities.iter().any(|value| !value.is_finite()) {
                 return Err(format!("Gemma4 finish: probabilities for sequence {i} are non-finite"));
             }
-            answers[seq.request].push((q.id.clone(), score_answer(q, &logits[i])));
+            answers[seq.request].push((q.id.clone(), score_answer(q, &probabilities)));
             raw_probabilities[seq.request].push((
                 q.id.clone(),
                 Value::Array(probabilities.into_iter().map(|v| Value::Float(v as f64)).collect()),
@@ -1282,7 +1233,6 @@ mod tests {
         assert_ne!(cfg.hidden, cfg.heads * cfg.local_head_dim);
         assert_eq!(cfg.head_dim(0), 8);
         assert_eq!(cfg.head_dim(1), 16);
-        assert_eq!(cfg.kv_heads(1), 1);
         assert!(!cfg.is_kv_shared(1));
         assert!(cfg.is_kv_shared(2));
         assert_eq!(cfg.mlp_intermediate(2), 32);
@@ -1292,10 +1242,7 @@ mod tests {
     fn ignores_global_kv_override_without_alternative_attention() {
         let mut c = cfg_json();
         add_config_field(&mut c, "num_global_key_value_heads", Value::Int("2".into()));
-        let cfg = Gemma4Config::from_json(&c).unwrap();
-        assert_eq!(cfg.kv_heads, 1);
-        assert_eq!(cfg.global_kv_heads, 1);
-        assert_eq!(cfg.kv_heads(1), 1);
+        assert_eq!(Gemma4Config::from_json(&c).unwrap().kv_heads, 1);
     }
 
     #[test]
@@ -1316,19 +1263,27 @@ mod tests {
     }
 
     #[test]
-    fn proportional_rope_keeps_nonrotary_quarters_identity() {
-        let cfg = Gemma4Config::from_json(&cfg_json()).unwrap();
-        let mut row = vec![1.0; cfg.global_head_dim];
-        // At position zero all rotary terms are identity.  At a later position the explicit
-        // zero-filled inverse frequencies must leave the nonrotary portions unchanged.
-        let before = row.clone();
-        // A simple direct check of the invariant used by rope_row: only 25% of each half carries
-        // nonzero frequencies for the proportional full-attention configuration.
-        let rotated = (cfg.global_head_dim as f32 * cfg.global_partial_rotary).floor() as usize;
-        assert_eq!(rotated, 4);
-        assert_eq!(before.len(), row.len());
-        row[rotated..cfg.global_head_dim / 2].fill(2.0);
-        assert!(row[cfg.global_head_dim / 2..].iter().all(|&v| v == 1.0));
+    fn proportional_rope_rotates_only_the_leading_pairs() {
+        // Head width 16 with a 0.25 rotary factor: pairs (0, 8) and (1, 9) rotate, the rest stay.
+        let before: Vec<f32> = (1..=16).map(|v| v as f32).collect();
+        let (theta, pos) = (1_000_000.0f32, 3);
+        let mut row = before.clone();
+        rope_row(&mut row, pos, theta, 4);
+        for i in 0..2 {
+            let angle = pos as f32 * theta.powf(-((2 * i) as f32) / 16.0);
+            let (x, y) = (before[i], before[8 + i]);
+            assert!((row[i] - (x * angle.cos() - y * angle.sin())).abs() < 1e-5, "pair {i}");
+            assert!((row[8 + i] - (y * angle.cos() + x * angle.sin())).abs() < 1e-5, "pair {i}");
+        }
+        for i in (2..8).chain(10..16) {
+            assert_eq!(row[i], before[i], "dimension {i} must not rotate");
+        }
+        // Rotation preserves the length of the vector, and position zero is the identity.
+        let norm = |v: &[f32]| v.iter().map(|x| x * x).sum::<f32>().sqrt();
+        assert!((norm(&row) - norm(&before)).abs() < 1e-3);
+        let mut origin = before.clone();
+        rope_row(&mut origin, 0, theta, 16);
+        assert_eq!(origin, before);
     }
 
     #[test]

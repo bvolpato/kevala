@@ -7,14 +7,13 @@
 //! in particular, embed_tokens_per_layer is split into one pack tensor per decoder layer so
 //! converting it never requires a multi-gigabyte temporary f32 buffer.
 
-use crate::convert::{f16_to_f32, quantize};
+use super::bf16_round;
+use crate::convert::{f16_to_f32, num, quantize};
+use crate::direct_options::LABELS;
 use crate::json::Value;
 use crate::pack::{TensorInfo, Writer};
 use crate::tokenizer::Tokenizer;
 use std::collections::{BTreeMap, HashMap, HashSet};
-
-/// The direct-option readout has the same sixteen answer slots used by SemIf.
-pub const LABELS: &str = "ABCDEFGHIJKLMNOP";
 
 /// Keep source reads comfortably below the size of a large model tensor. Quantization is done
 /// one job at a time, so this also bounds the temporary f32/q8 buffers.
@@ -88,18 +87,6 @@ struct Job {
 #[derive(Clone, Debug)]
 struct Header {
     tensors: HashMap<String, TensorMeta>,
-}
-
-fn num(v: f64) -> Value {
-    if v.fract() == 0.0 && v.abs() < 1e15 {
-        Value::Int((v as i64).to_string())
-    } else {
-        Value::Float(v)
-    }
-}
-
-fn bf16_round(value: f32) -> f32 {
-    f32::from_bits((value.to_bits().wrapping_add(0x8000)) & 0xffff_0000)
 }
 
 fn usize_field(v: &Value, key: &str) -> Result<usize, String> {

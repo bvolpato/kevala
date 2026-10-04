@@ -51,30 +51,32 @@ impl Py {
 
 /// Files of a stored (uncompressed) zip archive.
 pub fn unzip(b: &[u8]) -> Result<HashMap<String, &[u8]>, String> {
-    let u16at = |i: usize| u16::from_le_bytes([b[i], b[i + 1]]) as usize;
-    let u32at = |i: usize| u32::from_le_bytes([b[i], b[i + 1], b[i + 2], b[i + 3]]) as usize;
+    // every offset comes from the file, so every read is checked
+    let bytes = |i: usize, n: usize| i.checked_add(n).and_then(|end| b.get(i..end)).ok_or("zip record out of range");
+    let u16at = |i: usize| bytes(i, 2).map(|s| u16::from_le_bytes([s[0], s[1]]) as usize);
+    let u32at = |i: usize| bytes(i, 4).map(|s| u32::from_le_bytes([s[0], s[1], s[2], s[3]]) as usize);
     let eocd = (0..b.len().saturating_sub(21))
         .rev()
         .find(|&i| b[i..].starts_with(&[0x50, 0x4b, 0x05, 0x06]))
         .ok_or("not a zip file")?;
-    let n = u16at(eocd + 10);
-    let mut at = u32at(eocd + 16);
+    let n = u16at(eocd + 10)?;
+    let mut at = u32at(eocd + 16)?;
     let mut files = HashMap::new();
     for _ in 0..n {
-        if !b[at..].starts_with(&[0x50, 0x4b, 0x01, 0x02]) {
+        if bytes(at, 4)? != [0x50, 0x4b, 0x01, 0x02] {
             return Err("bad zip central directory".into());
         }
-        let method = u16at(at + 10);
-        let size = u32at(at + 20);
-        let (nlen, xlen, clen) = (u16at(at + 28), u16at(at + 30), u16at(at + 32));
-        let local = u32at(at + 42);
-        let name = String::from_utf8_lossy(&b[at + 46..at + 46 + nlen]).to_string();
+        let method = u16at(at + 10)?;
+        let size = u32at(at + 20)?;
+        let (nlen, xlen, clen) = (u16at(at + 28)?, u16at(at + 30)?, u16at(at + 32)?);
+        let local = u32at(at + 42)?;
+        let name = String::from_utf8_lossy(bytes(at + 46, nlen)?).to_string();
         at += 46 + nlen + xlen + clen;
         if method != 0 {
             return Err(format!("{name}: compressed zip entries are not supported"));
         }
-        let data = local + 30 + u16at(local + 26) + u16at(local + 28);
-        files.insert(name, b.get(data..data + size).ok_or("zip entry out of range")?);
+        let (name_len, extra_len) = (u16at(local.saturating_add(26))?, u16at(local.saturating_add(28))?);
+        files.insert(name, bytes(local + 30 + name_len + extra_len, size).map_err(|_| "zip entry out of range")?);
     }
     Ok(files)
 }
@@ -222,7 +224,7 @@ pub fn unpickle(b: &[u8]) -> Result<Py, String> {
                 let items = pop_mark(&mut st);
                 st.push(Py::Tuple(items));
             }
-            0x85 | 0x86 | 0x87 => {
+            0x85..=0x87 => {
                 let n = (op - 0x84) as usize;
                 let items = st.split_off(st.len().saturating_sub(n));
                 st.push(Py::Tuple(items));
@@ -341,5 +343,66 @@ impl<'a> TorchFile<'a> {
         let start = t.offset * elem;
         let bytes = raw.get(start..start + n * elem).ok_or("tensor out of storage range")?;
         Ok(bytes.chunks_exact(elem).map(conv).collect())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A stored (method 0) zip archive holding `files`, as `torch.save` writes one.
+    fn zip(files: &[(&str, &[u8])], method: u16) -> Vec<u8> {
+        let mut out = Vec::new();
+        let mut directory = Vec::new();
+        for (name, data) in files {
+            let local = out.len() as u32;
+            let sizes = [(data.len() as u32).to_le_bytes(), (data.len() as u32).to_le_bytes()].concat();
+            let lengths = [(name.len() as u16).to_le_bytes(), 0u16.to_le_bytes()].concat();
+            // version, flags, method, time, date, crc
+            let common = [&[20, 0, 0, 0][..], &method.to_le_bytes(), &[0; 8]].concat();
+            out.extend_from_slice(&[0x50, 0x4b, 0x03, 0x04]);
+            out.extend_from_slice(&[&common[..], &sizes, &lengths, name.as_bytes(), data].concat());
+            directory.extend_from_slice(&[0x50, 0x4b, 0x01, 0x02, 20, 0]);
+            directory.extend_from_slice(&[&common[..], &sizes, &lengths].concat());
+            directory.extend_from_slice(&[0; 10]); // comment length, disk, attributes
+            directory.extend_from_slice(&local.to_le_bytes());
+            directory.extend_from_slice(name.as_bytes());
+        }
+        let (start, count) = (out.len() as u32, files.len() as u16);
+        out.extend_from_slice(&directory);
+        out.extend_from_slice(&[0x50, 0x4b, 0x05, 0x06, 0, 0, 0, 0]);
+        out.extend_from_slice(&[count.to_le_bytes(), count.to_le_bytes()].concat());
+        out.extend_from_slice(&(directory.len() as u32).to_le_bytes());
+        out.extend_from_slice(&start.to_le_bytes());
+        out.extend_from_slice(&[0, 0]);
+        out
+    }
+
+    #[test]
+    fn stored_zip_entries_are_found_by_name() {
+        let archive = zip(&[("head/data.pkl", b"pickle"), ("head/data/0", &[1, 2, 3, 4])], 0);
+        let files = unzip(&archive).unwrap();
+        assert_eq!(files.len(), 2);
+        assert_eq!(files["head/data.pkl"], b"pickle");
+        assert_eq!(files["head/data/0"], [1, 2, 3, 4]);
+        assert!(unzip(&zip(&[("a", b"x")], 8)).unwrap_err().contains("compressed zip entries"));
+        assert!(unzip(b"definitely not a zip archive, only text").unwrap_err().contains("not a zip file"));
+    }
+
+    #[test]
+    fn a_damaged_archive_is_an_error_and_never_a_panic() {
+        let archive = zip(&[("head/data.pkl", b"pickle"), ("head/data/0", &[1, 2, 3, 4])], 0);
+        // A download cut short at any byte.
+        for end in 0..archive.len() {
+            assert!(unzip(&archive[..end]).is_err(), "a {end}-byte prefix has no end record");
+            assert!(TorchFile::parse(&archive[..end]).is_err());
+        }
+        // Any offset or length field pointing far outside the file.
+        for at in 0..archive.len() - 3 {
+            let mut damaged = archive.clone();
+            damaged[at..at + 4].copy_from_slice(&[0xff, 0xff, 0xff, 0x7f]);
+            let _ = unzip(&damaged);
+            let _ = TorchFile::parse(&damaged);
+        }
     }
 }

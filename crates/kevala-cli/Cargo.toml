@@ -11,5 +11,8 @@ rust-version.workspace = true
 name = "kevala"
 path = "src/main.rs"
 
+[lints]
+workspace = true
+
 [dependencies]
 kevala = { path = "../kevala" }

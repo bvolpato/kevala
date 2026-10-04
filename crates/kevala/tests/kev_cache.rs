@@ -4,7 +4,7 @@
 
 use kevala::json::Value;
 use kevala::kev::KevEngine;
-use kevala::model::AlignedBuf;
+use kevala::store::AlignedBuf;
 
 fn pack() -> Option<Vec<u8>> {
     let p = std::env::var("KEVALA_KEV_PACK")

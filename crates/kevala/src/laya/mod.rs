@@ -1,15 +1,21 @@
-//! Requests in, Laya-shaped answers out.
+//! Laya: a ModernBERT encoder with a decision head. Requests in, Laya-shaped answers out.
 //!
 //! The response matches the upstream `laya` SDK (0.3.5) field for field: `choice` / `score` /
 //! `noul` answers with probabilities rounded to four places, entropy confidence, the act head's
 //! `action.act_probability`, and token usage. Temperatures are clamped to [0.5, 5] exactly as
 //! the SDK does.
 
+pub mod convert;
+pub mod model;
+pub mod sequence;
+
 use crate::json::Value;
-use crate::model::{AlignedBuf, Batch, Config, Coord, Scratch, SegOut, Store, Trunk};
+use crate::math::{argmax, round_to, softmax};
 use crate::pack;
-use crate::sequence::{self, QType, Question};
+use crate::store::{AlignedBuf, Store};
 use crate::tokenizer::Tokenizer;
+use model::{Batch, Config, Coord, Scratch, SegOut, Trunk};
+use sequence::{QType, Question};
 use std::sync::Arc;
 
 pub const TEMP_MIN: f32 = 0.5;
@@ -82,21 +88,11 @@ pub struct Engine {
     pub modalities: Vec<crate::content::Modality>,
     pub tok: Tokenizer,
     pub temps: Temperatures,
-    pub model: Value,
+    /// Provenance from the pack header.
+    pub info: Value,
     pub coord: Coord,
     trunk: Option<Trunk>,
     scratch: Scratch,
-}
-
-fn round4(x: f64) -> f64 {
-    format!("{x:.4}").parse().unwrap_or(x)
-}
-
-fn softmax(z: &[f32]) -> Vec<f32> {
-    let m = z.iter().copied().fold(f32::NEG_INFINITY, f32::max);
-    let e: Vec<f32> = z.iter().map(|v| (v - m).exp()).collect();
-    let s: f32 = e.iter().sum();
-    e.iter().map(|v| v / s).collect()
 }
 
 fn confidence(p: &[f32]) -> f32 {
@@ -120,14 +116,14 @@ impl Engine {
             &buf.as_slice()[header.tokenizer_offset..header.tokenizer_offset + header.tokenizer_size],
         )?;
         let temps = Temperatures::from_config(header.config());
-        let model = header.json.get("model").cloned().unwrap_or(Value::Null);
+        let info = header.json.get("model").cloned().unwrap_or(Value::Null);
         // the trunk and the coordinator read the same bytes in place
         let store = Arc::new(Store::new(buf, header.tensors.clone())?);
         let coord = Coord::new(cfg.clone(), store.clone())?;
         // a coordinator sub-pack has no layers: the trunk then runs in shards or on the GPU
         let trunk = if store.has("enc.0.wqkv") { Some(Trunk::new(cfg.clone(), store, true)?) } else { None };
         let modalities = crate::content::Modality::from_config(header.config());
-        Ok(Engine { cfg, modalities, tok, temps, model, coord, trunk, scratch: Scratch::default() })
+        Ok(Engine { cfg, modalities, tok, temps, info, coord, trunk, scratch: Scratch::default() })
     }
 
     /// Tokenizes every question of every request into one packed batch.
@@ -150,10 +146,33 @@ impl Engine {
         Ok(Prepared { batch, items, requests: requests.len() })
     }
 
-    /// Runs the whole model in this thread.
-    pub fn forward(&mut self, batch: &Batch) -> Vec<SegOut> {
-        let trunk = self.trunk.as_ref().expect("engine was loaded without a trunk");
-        forward(&self.coord, &[trunk], batch, std::slice::from_mut(&mut self.scratch))
+    /// Checks each request's modalities, folds its text parts into the state, and tokenizes the
+    /// batch. Returns the questions next to it, which `respond` echoes criteria from. Every
+    /// backend prepares through this, so they all read the same request.
+    pub fn prepare_requests(&self, requests: &[crate::content::Request]) -> Result<(Prepared, Vec<Value>), String> {
+        let rs = crate::runtime::text_requests("laya", &self.modalities, requests, sequence::serialize_state)?;
+        let pairs: Vec<(&Value, &Value)> = rs.iter().map(|(s, q)| (s, q)).collect();
+        let prepared = self.prepare(&pairs)?;
+        Ok((prepared, rs.into_iter().map(|(_, q)| q).collect()))
+    }
+
+    /// Runs the whole model in this thread. A coordinator sub-pack has no layers to run.
+    pub fn forward(&mut self, batch: &Batch) -> Result<Vec<SegOut>, String> {
+        let trunk =
+            self.trunk.as_ref().ok_or("Laya pack is coordinator-only; its layers run in shards or on WebGPU")?;
+        let cfg = &self.coord.cfg;
+        let mut x = self.coord.embed(batch);
+        let mut out = vec![0.0; batch.tokens() * cfg.hidden];
+        for s in 0..cfg.steps() {
+            if s == 2 * cfg.layers {
+                self.coord.bridge(&mut x, batch);
+            }
+            trunk.step(s, &x, batch, &mut out, &mut self.scratch);
+            for (a, b) in x.iter_mut().zip(&out) {
+                *a += b;
+            }
+        }
+        Ok(self.coord.score(&x, batch))
     }
 
     pub fn score(&self, prepared: &Prepared, outs: &[SegOut]) -> Vec<Scored> {
@@ -197,18 +216,10 @@ impl Engine {
             })
             .collect()
     }
-
-    /// `agent.predict(state, questions)`.
-    pub fn decide(&mut self, state: &Value, questions: &Value) -> Result<Value, String> {
-        let prepared = self.prepare(&[(state, questions)])?;
-        let outs = self.forward(&prepared.batch);
-        let scored = self.score(&prepared, &outs);
-        Ok(self.respond(&prepared, &scored, &[questions]).remove(0))
-    }
 }
 
 fn fnum(x: f64) -> Value {
-    Value::Float(round4(x))
+    Value::Float(round_to(x, 4))
 }
 
 fn format_answer(q: &Question, s: &Scored, raw: Option<&Value>) -> Value {
@@ -216,19 +227,16 @@ fn format_answer(q: &Question, s: &Scored, raw: Option<&Value>) -> Value {
     let action = Value::Object(vec![("act_probability".into(), fnum(s.act_probability as f64))]);
     let conf = fnum(confidence(p) as f64);
     match q.qtype {
-        QType::Choice => {
-            let best = p.iter().enumerate().fold(0, |b, (i, &v)| if v > p[b] { i } else { b });
-            Value::Object(vec![
-                ("type".into(), Value::Str("choice".into())),
-                ("choice".into(), Value::Str(q.keys[best].clone())),
-                (
-                    "probabilities".into(),
-                    Value::Object(q.keys.iter().zip(p).map(|(k, &v)| (k.clone(), fnum(v as f64))).collect()),
-                ),
-                ("confidence".into(), conf),
-                ("action".into(), action),
-            ])
-        }
+        QType::Choice => Value::Object(vec![
+            ("type".into(), Value::Str("choice".into())),
+            ("choice".into(), Value::Str(q.keys[argmax(p)].clone())),
+            (
+                "probabilities".into(),
+                Value::Object(q.keys.iter().zip(p).map(|(k, &v)| (k.clone(), fnum(v as f64))).collect()),
+            ),
+            ("confidence".into(), conf),
+            ("action".into(), action),
+        ]),
         QType::Score => {
             let expected: f64 = p.iter().enumerate().map(|(i, &v)| i as f64 * v as f64).sum();
             // the legend echoes the caller's criteria values, structured ones included
@@ -263,46 +271,12 @@ fn format_answer(q: &Question, s: &Scored, raw: Option<&Value>) -> Value {
     }
 }
 
-/// One pass through the model with the trunk split across `shards` (all in this thread; the
-/// multi-worker drivers call `Trunk::step` themselves). Partial updates are summed in shard
-/// order so the result does not depend on scheduling.
-pub fn forward(coord: &Coord, shards: &[&Trunk], batch: &Batch, scratch: &mut [Scratch]) -> Vec<SegOut> {
-    let cfg = &coord.cfg;
-    let n = batch.tokens() * cfg.hidden;
-    let mut x = coord.embed(batch);
-    let mut out = vec![0.0; n];
-    let mut sum = vec![0.0; n];
-    for s in 0..cfg.steps() {
-        if s == 2 * cfg.layers {
-            coord.bridge(&mut x, batch);
-        }
-        if shards.len() == 1 {
-            shards[0].step(s, &x, batch, &mut out, &mut scratch[0]);
-            for (a, b) in x.iter_mut().zip(&out) {
-                *a += b;
-            }
-        } else {
-            sum.iter_mut().for_each(|v| *v = 0.0);
-            for (sh, sc) in shards.iter().zip(scratch.iter_mut()) {
-                sh.step(s, &x, batch, &mut out, sc);
-                for (a, b) in sum.iter_mut().zip(&out) {
-                    *a += b;
-                }
-            }
-            for (a, b) in x.iter_mut().zip(&sum) {
-                *a += b;
-            }
-        }
-    }
-    coord.score(&x, batch)
-}
-
 impl crate::runtime::Model for Engine {
     fn arch(&self) -> &'static str {
         "laya"
     }
     fn info(&self) -> &Value {
-        &self.model
+        &self.info
     }
     fn modalities(&self) -> &[crate::content::Modality] {
         &self.modalities
@@ -311,13 +285,10 @@ impl crate::runtime::Model for Engine {
         &self.tok
     }
     fn decide(&mut self, requests: &[crate::content::Request]) -> Result<Vec<Value>, String> {
-        let rs = crate::runtime::text_requests("laya", &self.modalities, requests, sequence::serialize_state)?;
-        let pairs: Vec<(&Value, &Value)> = rs.iter().map(|(s, q)| (s, q)).collect();
-        let p = self.prepare(&pairs)?;
-        let outs = self.forward(&p.batch);
+        let (p, questions) = self.prepare_requests(requests)?;
+        let outs = self.forward(&p.batch)?;
         let scored = self.score(&p, &outs);
-        let qs: Vec<&Value> = rs.iter().map(|(_, q)| q).collect();
-        Ok(self.respond(&p, &scored, &qs))
+        Ok(self.respond(&p, &scored, &questions.iter().collect::<Vec<_>>()))
     }
     fn as_any(&mut self) -> &mut dyn std::any::Any {
         self

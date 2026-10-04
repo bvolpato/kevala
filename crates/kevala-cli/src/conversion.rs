@@ -104,7 +104,7 @@ fn convert_sharded(
         shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
     let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
     let mut converter = match mode {
-        StreamMode::Kev { adapter, adapter_config, head } => kevala::convert_kev::KevConvert::new_sharded(
+        StreamMode::Kev { adapter, adapter_config, head } => kevala::kev::convert::KevConvert::new_sharded(
             &refs,
             base_config,
             base_tokenizer,
@@ -115,7 +115,7 @@ fn convert_sharded(
             model,
         )?,
         StreamMode::Semif => {
-            kevala::convert_kev::KevConvert::new_semif_sharded(&refs, base_config, base_tokenizer, block, model)?
+            kevala::kev::convert::KevConvert::new_semif_sharded(&refs, base_config, base_tokenizer, block, model)?
         }
     };
     let mut output_file = File::create(output).map_err(|e| format!("{output}: {e}"))?;
@@ -153,7 +153,8 @@ fn convert_gemma_sharded(
     let headers: Vec<Vec<u8>> =
         shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
     let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
-    let mut converter = kevala::convert_gemma::GemmaConvert::new_sharded(&refs, base_config, tokenizer, block, model)?;
+    let mut converter =
+        kevala::gemma4::convert::GemmaConvert::new_sharded(&refs, base_config, tokenizer, block, model)?;
     let mut out = vec![0u8; converter.total];
     converter.begin(&mut out)?;
     let mut files: Vec<File> = shards
@@ -618,14 +619,14 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
     let pack = if readout == Readout::EncoderHead {
         let safetensors = std::fs::read(base.join("model.safetensors")).map_err(|e| e.to_string())?;
         let agent_config = text(&base.join("rl_agent_config.json"))?;
-        kevala::convert::convert(
-            &kevala::convert::Checkpoint {
+        kevala::laya::convert::convert(
+            &kevala::laya::convert::Checkpoint {
                 safetensors: &safetensors,
                 encoder_config: &config_text,
                 agent_config: &agent_config,
                 tokenizer_json: &tokenizer,
             },
-            &kevala::convert::Options {
+            &kevala::laya::convert::Options {
                 block,
                 model,
                 keep_f32: options

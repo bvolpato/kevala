@@ -2,28 +2,19 @@
 //!
 //! The golden test needs Laya's tokenizer.json, which is not checked in:
 //! tmp/laya/tokenizer/tokenizer.json or $KEVALA_TOKENIZER_JSON. Without it it prints a notice and
-//! passes.
+//! passes, unless `KEVALA_REQUIRE_FIXTURES` is set (see `support::fixture_text`).
+
+mod support;
 
 use std::sync::OnceLock;
 
 use kevala::json::Value;
-use kevala::sequence::{build_sequence, parse_questions, serialize_state, QType};
+use kevala::laya::sequence::{build_sequence, parse_questions, serialize_state, QType};
 use kevala::tokenizer::Tokenizer;
 
 fn tokenizer() -> Option<&'static Tokenizer> {
     static TOK: OnceLock<Option<Tokenizer>> = OnceLock::new();
-    TOK.get_or_init(|| {
-        let path = std::env::var("KEVALA_TOKENIZER_JSON")
-            .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR"), "/../../tmp/laya/tokenizer/tokenizer.json").into());
-        match std::fs::read_to_string(&path) {
-            Ok(s) => Some(Tokenizer::from_hf_json(&s).expect("tokenizer.json should load")),
-            Err(_) => {
-                eprintln!("skipping: no tokenizer.json at {path} (set KEVALA_TOKENIZER_JSON)");
-                None
-            }
-        }
-    })
-    .as_ref()
+    support::fixture_tokenizer(&TOK, "KEVALA_TOKENIZER_JSON", "tmp/laya/tokenizer/tokenizer.json")
 }
 
 fn nums(v: &Value) -> Vec<usize> {
@@ -77,7 +68,7 @@ fn truncate_left_keeps_the_tail() {
     assert_eq!(seq.ids.last(), Some(&tok.sep_id()));
 }
 
-fn one(q: &str) -> Result<kevala::sequence::Question, String> {
+fn one(q: &str) -> Result<kevala::laya::sequence::Question, String> {
     parse_questions(&Value::parse(&format!(r#"{{"q": {q}}}"#)).unwrap()).map(|mut v| v.remove(0))
 }
 
