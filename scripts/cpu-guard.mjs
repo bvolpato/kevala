@@ -6,7 +6,7 @@ import { parseArgs } from "node:util";
 import { BASE_URL, failed, runPage } from "./lib/browser-run.mjs";
 
 const { values, positionals } = parseArgs({ allowPositionals: true, options: {
-  browser: { type: "string", default: "firefox" },
+  browser: { type: "string", default: process.env.KEVALA_BENCH_BROWSER || "firefox" },
   threads: { type: "string", default: "4" },
   flavor: { type: "string", default: "relaxed" },
 } });

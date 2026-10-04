@@ -58,9 +58,10 @@ and range loading, and CORS headers when the host is on another origin.
 
 ## Downloading a pack directly
 
-The packs live in [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs). The runtime
-pins them to one commit (`PACKS` in [`js/src/source.js`](../js/src/source.js)); use the same commit
-to get the exact bytes it loads:
+The packs live in [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs), except the
+Bruv packs, which live in their own model repositories. The runtime pins each pack to a commit
+(`PACKS` and `GEMMA_PACKS` in [`js/src/source.js`](../js/src/source.js), and each Bruv entry of
+`MODELS`). Use the same commit to get the exact bytes it loads:
 
 ```sh
 rev=<commit from js/src/source.js>
@@ -160,7 +161,8 @@ uv run tools/convert_models.py --models gemma-4-e2b gemma-4-e4b
 The default output directory is `tmp/`; `--output-dir` overrides it. Each conversion writes a
 `<model>-q8.kevala` file and a neighboring JSON manifest with its SHA-256, byte size, source
 revisions, and pack metadata. The native converter reads the safetensors index and tensor ranges
-across shards. It still holds the output pack and conversion scratch in RAM, so reserve enough
+across shards. For Laya and Gemma 4 it holds the output pack and conversion scratch in RAM. For
+Qwen3.5 packs it writes tensors to disk as it converts them, as described above. Reserve enough
 disk and memory for the selected checkpoints and run large conversions one at a time.
 
 Kev conversion merges the adapter into the matching base in f32 before quantizing and retains

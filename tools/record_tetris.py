@@ -8,11 +8,11 @@
 Needs the dev server (`pnpm serve --port=8123`), the dev packs in tmp/, ffmpeg, and
 the shared agent Chrome on port 9333 (the script opens its own context there and closes it).
 
-    uv run dev/record-tetris.py                 # 50 s capture, then tmp/tetris.mp4 and tmp/tetris.gif
-    uv run dev/record-tetris.py --mp4 0:29.2 --gif 0:15.6
+    uv run tools/record_tetris.py                 # 50 s capture, then tmp/tetris.mp4 and tmp/tetris.gif
+    uv run tools/record_tetris.py --mp4 0:29.2 --gif 0:15.6
 
 The capture is Chrome's screencast at 1920x1080 (a 1280x720 page at 1.5x). The MP4 (H.264, 30 fps)
-suits X and other social posts; the GIF (880 px, 15 fps) is docs/tetris.gif.
+suits X and other social posts; the GIF (880 px, 15 fps) replaces docs/tetris.gif when you copy it there.
 """
 
 import argparse

@@ -29,7 +29,9 @@ const kevala = await Kevala.load({
 ```
 
 Known names include `bruv1-0.8b`, `bruv1-4b`, `kev-0.8b`, `kev-4b`, `kev-9b`, `semif-qwen3.5-0.8b`,
-`semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
+`semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`. The current npm release
+contains `laya` and `kev-0.8b`. For the other names, import
+`https://bvolpato.github.io/kevala/js/src/index.js` until the next release.
 
 - First visit: Laya downloads a 479 MB int8 pack; Bruv packs are 855 MB or 4.75 GB;
   Kev packs range from 857 MB to 8.96 GB;

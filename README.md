@@ -29,8 +29,8 @@ pack of the model from [Hugging Face](https://huggingface.co/bvolpato/kevala-pac
 [0.8B](https://huggingface.co/bvolpato/bruv1-0.8b) and
 [4B](https://huggingface.co/bvolpato/bruv1-4b) repositories) and keeps it in
 the browser, so there is nothing to host. Laya and Kev-0.8B also support conversion from the
-original checkpoint in the browser. Larger Kev models, SemIf models, and Gemma 4 require a converted
-pack.
+original checkpoint in the browser. Bruv, the larger Kev models, SemIf, and Gemma 4 require a
+converted pack.
 
 ## Quick start
 
@@ -48,6 +48,13 @@ From a CDN, in any page:
   });
   console.log(r.answers.team.choice, r.answers.churn.noul); // "billing" 0.87
 </script>
+```
+
+The current npm release contains Laya and Kev-0.8B. To load Bruv, the larger Kev models, SemIf,
+or Gemma 4 before the next release, import the runtime that the website serves:
+
+```js
+import { Kevala } from "https://bvolpato.github.io/kevala/js/src/index.js";
 ```
 
 Or install from the npm registry with pnpm, with any bundler (Vite, webpack, esbuild) or none:
@@ -308,10 +315,12 @@ use it automatically. CI uses the same pins and requires the committed lockfile.
 
 ```sh
 pnpm install --frozen-lockfile
-pnpm check                                  # JavaScript syntax
+pnpm check                                  # JavaScript syntax, including inline scripts in HTML pages
 pnpm test                                   # JavaScript regression tests
+pnpm lint:rust                              # rustfmt and Clippy
+pnpm test:rust                              # Rust tests
 pnpm build                                  # js/src/kevala-{relaxed,simd,base}.wasm
-pnpm check:wasm                             # validate all three generated modules
+pnpm check:wasm                             # each module exports every function the runtime calls
 pnpm pack --pack-destination dist/package   # prepack rebuilds modules, then creates a tarball
 pnpm check:package dist/package/kevala-*.tgz
 pnpm stage:site                             # stage the allowlisted Pages tree in dist/site
@@ -326,12 +335,16 @@ kevala bench model.kevala --tokens 128
 kevala wgsl matmul --f16 --rows 3                  # a GPU kernel, specialized
 
 pnpm serve                                 # static server at http://127.0.0.1:8080
-uv run dev/record-tetris.py                  # re-record docs/tetris.gif and docs/tetris.mp4 (needs port 8123)
-cargo test --release                         # Rust tests (tokenizer, sequence and cache tests skip without their files)
+pnpm smoke model.kevala                    # one request through the Node entry point
+uv run tools/record_tetris.py              # record tmp/tetris.gif and tmp/tetris.mp4 (needs port 8123)
 ```
 
+[CONTRIBUTING.md](CONTRIBUTING.md) describes the repository layout, the checks that CI runs, and
+the GPU and model checks that need a local machine. The Rust parity tests compare against reference
+tokenizers. `scripts/fetch-test-tokenizers.sh` downloads them, and without them those tests skip.
+
 The repository pins Rust 1.95.0 in [`rust-toolchain.toml`](rust-toolchain.toml), including the
-`wasm32-unknown-unknown` target and `rustfmt`. Python helpers generate reference fixtures and automate
+`wasm32-unknown-unknown` target, `rustfmt`, and Clippy. Python helpers generate reference fixtures and automate
 browser GPU benchmarks through `uv`.
 
 WebAssembly binaries are generated artifacts and are not tracked in Git. After cloning, run
@@ -353,8 +366,8 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
 
 ## Limits
 
-- First visits download 479 MB for Laya, 857 MB to 8.96 GB for Kev, 855 MB to 4.75 GB for SemIf, or
-  5.22 GB to 8.41 GB for Gemma 4, depending on size. Later visits read the cached weights from disk
+- First visits download 479 MB for Laya, 855 MB or 4.75 GB for Bruv, 857 MB to 8.96 GB for Kev,
+  855 MB to 4.75 GB for SemIf, or 5.22 GB to 8.41 GB for Gemma 4, depending on size. Later visits read the cached weights from disk
   and reload them into memory.
   You can also convert once with the CLI and serve the pack from your own host.
 - Without WebGPU, a request takes about a second on a fast laptop core, more on phones. Laya splits
@@ -398,6 +411,7 @@ browser channel and settings; see Mozilla's [WebGPU support notes](https://devel
 
 - Laya is by Nandakishor M, Convai Innovations (Apache-2.0).
 - Kev is by Jared Palmer (Apache-2.0). The Qwen3.5 base and instruction models are by the Qwen team (Apache-2.0).
+- [Bruv](https://github.com/bvolpato/bruv) is by Bruno Volpato (Apache-2.0). It fine-tunes Qwen3.5 instruction models.
 - Gemma 4 E2B and E4B are by Google DeepMind (Apache-2.0). This integration uses their dense text
   trunks and leaves the multimodal towers out of the packs.
 - [SemIf](https://github.com/TheoLeeCJ/SemIf/tree/1f2dea3e25379f9dfc98cb83c324f00ab5deda37),

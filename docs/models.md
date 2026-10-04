@@ -10,7 +10,7 @@ distributed as `.kevala` packs on [Hugging Face](https://huggingface.co/bvolpato
 with Bruv in separate [0.8B](https://huggingface.co/bvolpato/bruv1-0.8b) and
 [4B](https://huggingface.co/bvolpato/bruv1-4b) model repositories.
 
-The catalog pins the [verified pack revision](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f).
+The catalog pins a verified pack revision: [one](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f) for Laya, Kev, and SemIf, and [another](https://huggingface.co/bvolpato/kevala-packs/tree/c70e9136938026e00cbbdec9db027d862963f180) for Gemma 4.
 Load any model below by name. With the development server, `?pack=local#/tetris` loads local files
 from `tmp/` instead.
 
