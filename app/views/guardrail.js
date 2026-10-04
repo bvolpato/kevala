@@ -1,5 +1,5 @@
-import { debounce, fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, js } from "../ui.js";
-import { loadCode } from "../code.js";
+import { debounce, fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css } from "../ui.js";
+import { js, loadCode } from "../code.js";
 import { QUESTIONS, DEFAULT_THRESHOLDS, policySignals, assess } from "./guardrail-policy.js";
 
 const SAMPLES = [

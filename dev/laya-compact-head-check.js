@@ -176,7 +176,7 @@ async function main() {
   const baseline = query.get("baseline");
   if (!baseline) throw new Error("baseline=URL-to-pre-change-gpu.js is required");
   const [candidateModule, baselineModule] = await Promise.all([
-    import(new URL("../js/src/gpu.js", import.meta.url).href),
+    import(new URL("../js/src/gpu-laya.js", import.meta.url).href),
     import(new URL(baseline, location.href).href),
   ]);
   const source = await kernelSource();

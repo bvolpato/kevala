@@ -1,28 +1,18 @@
 #!/usr/bin/env node
-// Check the generated WebAssembly contract used by the browser and Node entrypoints.
+// Check the generated WebAssembly contract used by the browser and Node entrypoints: every build
+// is valid and exports each function the runtime in js/src calls.
 import { readFile } from "node:fs/promises";
+import { assertModule, flavorPath, FLAVORS, requiredExports } from "./lib/wasm-abi.mjs";
 
-const requiredExports = ["memory", "kevala_init", "kevala_prepare", "kevala_decide", "kevala_free",
-  "kevala_reduce_prepare", "kevala_reduce_partial_ptr", "kevala_reduce_add_partial", "kevala_reduce_finish",
-  "kevala_cpu_tune_prepare", "kevala_cpu_tune_input_ptr", "kevala_cpu_tune_input_len",
-  "kevala_cpu_tune_output_ptr", "kevala_cpu_tune_output_len", "kevala_cpu_tune_run", "kevala_cpu_tune_drop",
-  "kevala_gemma4_prepare", "kevala_gemma4_finish"];
-const flavors = ["relaxed", "simd", "base"];
-
-for (const flavor of flavors) {
-  const file = new URL(`../js/src/kevala-${flavor}.wasm`, import.meta.url);
+const required = await requiredExports();
+for (const flavor of FLAVORS) {
+  const path = flavorPath(flavor);
   let bytes;
   try {
-    bytes = await readFile(file);
+    bytes = await readFile(path);
   } catch (error) {
-    throw new Error(`missing generated WebAssembly: ${file.pathname}`, { cause: error });
+    throw new Error(`missing generated WebAssembly: ${path} (run scripts/build-wasm.sh)`, { cause: error });
   }
-  if (!WebAssembly.validate(bytes)) throw new Error(`${file.pathname} is not a valid WebAssembly module`);
-
-  const module = new WebAssembly.Module(bytes);
-  const exports = new Set(WebAssembly.Module.exports(module).map(({ name }) => name));
-  for (const name of requiredExports) {
-    if (!exports.has(name)) throw new Error(`${file.pathname} is missing export ${name}`);
-  }
-  console.log(`${flavor.padEnd(7)} ${String(bytes.byteLength).padStart(8)} bytes  valid`);
+  assertModule(bytes, required, path);
+  console.log(`${flavor.padEnd(7)} ${String(bytes.byteLength).padStart(8)} bytes  valid, ${required.length} exports`);
 }

@@ -178,8 +178,11 @@ for (const errorKind of ["out-of-memory", "validation"]) {
         return buffer;
       },
     };
+    // a GPU sub-pack with no tensors: magic, format version 1, header length, header
     const json = new TextEncoder().encode('{"tensors":[]}');
     const prefix = new Uint8Array(16 + json.length);
+    prefix.set(new TextEncoder().encode("KVLA"));
+    new DataView(prefix.buffer).setUint32(4, 1, true);
     new DataView(prefix.buffer).setUint32(8, json.length, true);
     prefix.set(json, 16);
     const cfg = { hidden: 1024, layers: 2, full: [true, false], intermediate: 3584, heads: 8, kv_heads: 2, lin_key_heads: 16, lin_heads: 16 };

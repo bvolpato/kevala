@@ -22,21 +22,20 @@ export function wasmFlavor(prefer) {
 
 const modules = new Map();
 
-/** Compiles (once per flavor) the module at `${base}kevala-${flavor}.wasm`. */
+/** Compiles (once per flavor) the module at `${base}kevala-${flavor}.wasm`. A failure is not kept, so a retry fetches again. */
 export async function compile(base, flavor) {
   const url = new URL(`kevala-${flavor}.wasm`, base).href;
   if (!modules.has(url)) {
-    modules.set(
-      url,
-      (async () => {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
-        if (WebAssembly.compileStreaming && (res.headers.get("content-type") || "").includes("application/wasm")) {
-          return WebAssembly.compileStreaming(res);
-        }
-        return WebAssembly.compile(await res.arrayBuffer());
-      })(),
-    );
+    const module = (async () => {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+      if (WebAssembly.compileStreaming && (res.headers.get("content-type") || "").includes("application/wasm")) {
+        return WebAssembly.compileStreaming(res);
+      }
+      return WebAssembly.compile(await res.arrayBuffer());
+    })();
+    modules.set(url, module);
+    module.catch(() => modules.delete(url));
   }
   return modules.get(url);
 }
@@ -92,9 +91,7 @@ export class Wasm {
     } catch (e) {
       if (e instanceof WebAssembly.RuntimeError) {
         const msg = this.error();
-        const err = new Error(msg && msg !== "unknown kevala error" ? msg : `kevala trapped: ${e.message}`);
-        err.trapped = true;
-        throw err;
+        throw new Error(msg && msg !== "unknown kevala error" ? msg : `kevala trapped: ${e.message}`, { cause: e });
       }
       throw e;
     }

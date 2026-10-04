@@ -206,7 +206,7 @@ RUSTFLAGS='-C target-feature=+simd128,+relaxed-simd' \
 cargo build --locked -p kevala-wasm --target wasm32-unknown-unknown \
   --profile release-wasm --target-dir target/cpu-profile
 mkdir -p tmp/cpu-profile-runtime
-cp js/src/node.js js/src/wasm.js js/src/cpu-tune.js tmp/cpu-profile-runtime/
+cp js/src/*.js tmp/cpu-profile-runtime/
 cp target/cpu-profile/wasm32-unknown-unknown/release-wasm/kevala_wasm.wasm \
   tmp/cpu-profile-runtime/kevala-relaxed.wasm
 pnpm exec node scripts/profile-cpu.mjs --runtime=tmp/cpu-profile-runtime/node.js \

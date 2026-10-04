@@ -18,6 +18,16 @@ const Q = {
 };
 const flat = (r) => [...r.raw_probabilities.a, ...r.raw_probabilities.b];
 const diff = (a, b) => Math.max(...a.map((v, i) => Math.abs(v - b[i])));
+// More unrelated states than the cache holds, each long enough to be cached: after them the
+// cache has forgotten the states under test, so the same model computes them from scratch.
+const EVICTORS = [
+  "The quarterly maintenance window for the storage cluster moved to Saturday night, and every team must confirm its backup schedule with operations before Thursday at noon.",
+  "Our newsletter this month covers the new office in Lisbon, three open engineering roles, and a short interview with the designer who rebuilt the onboarding flow last spring.",
+  "Please find attached the signed lease renewal for the warehouse on Dock Street, together with the insurance certificate and the updated list of authorized key holders.",
+  "Reminder that the conference badge pickup opens at eight in the morning, the keynote starts at nine thirty, and lunch vouchers are valid only at the two cafes on level one.",
+  "Weather for the weekend looks mild with light wind from the west, a small chance of showers on Sunday afternoon, and temperatures a little above the seasonal average.",
+  "The library extended its opening hours during exams, added forty quiet desks on the third floor, and now lends laptop chargers and noise cancelling headphones at the front desk.",
+];
 try {
   if (!Number.isInteger(repeat) || repeat < 1 || repeat > 32) throw new Error("repeat must be an integer from 1 to 32");
   const base = Array(repeat).fill("Order #4411 arrived two weeks late and the box was crushed on one side. I was also charged twice for it on my credit card, and the second charge is still pending.").join(" ");
@@ -31,12 +41,16 @@ try {
   const hit = await time(base);
   const ext = await time(longer);
   const stats = ext.timing.cache;
+  // The reference runs in this same model, so it uses the kernels this load selected. A second
+  // load calibrates again and can select other kernels, whose rounding differs.
+  for (const state of EVICTORS) await warm.decide(state, Q);
+  const fresh = await warm.decide(longer, Q);
+  const after = fresh.timing.cache;
+  if (stats && (after.misses !== stats.misses + EVICTORS.length + 1 || after.hits !== stats.hits || after.extensions !== stats.extensions)) {
+    throw new Error(`the reference run was not computed from scratch: ${JSON.stringify(after)}`);
+  }
   warm.dispose();
-  const cold = await Kevala.load({ model, backend, threads, flavor });
-  const coldGpuTuning = cold.info.gpuTuning;
-  const fresh = await cold.decide(longer, Q);
-  cold.dispose();
-  window.ct = { ...info, model, repeat, requestedBackend: backend, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true, gpuTuning: { warm: warmGpuTuning, cold: coldGpuTuning }, stats, ms: { miss: t[0], hit: t[1], extension: t[2] }, probabilities: { miss: flat(miss), hit: flat(hit), extension: flat(ext), fresh: flat(fresh) }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)), done: true };
+  window.ct = { ...info, model, repeat, requestedBackend: backend, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true, gpuTuning: warmGpuTuning, stats, statsAfterReference: after || null, ms: { miss: t[0], hit: t[1], extension: t[2] }, probabilities: { miss: flat(miss), hit: flat(hit), extension: flat(ext), fresh: flat(fresh) }, hitVsMiss: diff(flat(hit), flat(miss)), extVsFresh: diff(flat(ext), flat(fresh)), done: true };
 } catch (e) { window.ct = { done: true, error: e.message }; }
 log(JSON.stringify(window.ct));
 </script>

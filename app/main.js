@@ -2,7 +2,7 @@
 // alive. Views are ES modules loaded on first visit; hiding one calls its hide() so games pause
 // and timers stop, and the model keeps loading in the session whatever the tab.
 
-import { session, MODELS, MODEL_NOTES, LOCAL, SHOT, FROM } from "./session.js";
+import { session, MODELS, MODEL_NOTES, LOCAL, SHOT, FROM, requiresWebGPU } from "./session.js";
 import { esc, fmtBytes, fmtMs, backendLabel, cpuReason, logo, REPO } from "./ui.js";
 
 /** A view and its tab in the header. */
@@ -26,7 +26,7 @@ const CARET =
 // Header
 
 const header = document.querySelector("header.nav");
-const navLinks = ROUTES.filter((r) => r.label)
+const navLinks = ROUTES
   .map((r) => `<a href="#/${r.id === "home" ? "" : r.id}" data-route="${r.id}">${esc(r.label)}</a>`)
   .join("");
 const devBadge = LOCAL && !SHOT ? `<span class="badge warn" title="Loading packs from this server's tmp/">dev packs</span>` : "";
@@ -185,7 +185,7 @@ const BACKEND_CHOICES = [
 
 function backendUnavailable(s, backend) {
   if (backend === "webgpu" && !navigator.gpu) return "WebGPU is not available in this browser";
-  if (backend === "wasm" && MODEL_NOTES[s.model]?.requiresWebGPU) return "This model requires WebGPU in the browser";
+  if (backend === "wasm" && requiresWebGPU(s.model)) return "This model requires WebGPU in the browser";
   return "";
 }
 

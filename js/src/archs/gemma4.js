@@ -1,6 +1,6 @@
 // Gemma 4's GPU owns the embeddings and decoder; the coordinator tokenizes and scores labels.
 import { GpuGemma4, gemma4Config } from "../gpu-gemma4.js";
-import { gpuLayouts } from "../kev-layout.js";
+import { gpuLayouts } from "../pack-layout.js";
 
 const enc = new TextEncoder();
 

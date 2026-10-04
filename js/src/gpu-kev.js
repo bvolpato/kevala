@@ -20,8 +20,6 @@ const SLOT_ROWS = 1024;
 const CACHE_MIN = 32;
 const EXTEND_MIN = 16;
 
-/** Kev's own kernels, exported for the kernel benchmarks. */
-
 /** The tiled attention's block table for segments of these lengths: blocks of up to 8 tokens. */
 function attnBlocks(lengths, cap) {
   const table = new Uint32Array(cap * 4);
@@ -87,7 +85,6 @@ export class GpuKev {
     const miss = this.missing();
     if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
     const d = this.device;
-    this.recurTiles = 2;
     const kernels = {
       RMS: ["kev_rms", { subgroups: this.subgroup32 }],
       GATES: ["kev_gates"],
@@ -539,7 +536,6 @@ export class GpuKev {
     });
     // every pass runs in error scopes: a rejected command buffer must be an error, not the
     // previous pass's rows read back
-    const checking = true;
     d.pushErrorScope("validation");
     d.pushErrorScope("out-of-memory");
     q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
@@ -596,10 +592,8 @@ export class GpuKev {
     enc.copyBufferToBuffer(this.gathered, 0, this.readback, 0, bytes);
     q.submit([enc.finish()]);
     if (this.profiler) this.lastProfile = await this.profiler.collect();
-    if (checking) {
-      const [oom, invalid] = [await d.popErrorScope(), await d.popErrorScope()];
-      if (oom || invalid) throw Object.assign(new Error(`WebGPU: ${(oom || invalid).message}`), { code: "WEBGPU_INIT" });
-    }
+    const [passOom, passInvalid] = [await d.popErrorScope(), await d.popErrorScope()];
+    if (passOom || passInvalid) throw Object.assign(new Error(`WebGPU: ${(passOom || passInvalid).message}`), { code: "WEBGPU_INIT" });
     await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
     const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
     this.readback.unmap();

@@ -25,7 +25,7 @@ const HEADER_CONFIG = {
   vocab_size_per_layer_input: 64,
   rms_norm_eps: 1e-6,
   embedding_scale: 1,
-  ple_dim: 32,
+  hidden_size_per_layer_input: 32,
   ple_embedding_scale: 1,
   ple_input_scale: Math.SQRT1_2,
   ple_projection_scale: 0.1,
@@ -94,6 +94,8 @@ function packSynthetic(tensors) {
   }
   const header = new TextEncoder().encode(JSON.stringify({ tensors: metadata }));
   const prefix = new Uint8Array(16 + header.byteLength);
+  prefix.set([0x4b, 0x56, 0x4c, 0x41]); // KVLA
+  new DataView(prefix.buffer).setUint32(4, 1, true); // format version
   new DataView(prefix.buffer).setUint32(8, header.byteLength, true);
   prefix.set(header, 16);
   return { prefix, bytes };

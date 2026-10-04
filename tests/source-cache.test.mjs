@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cacheInfo, isCached, openPack } from "../js/src/source.js";
+import { cacheInfo, isCached, openPack, upstreamKey } from "../js/src/source.js";
 
 function replaceGlobals(t, values) {
   const previous = new Map();
@@ -128,4 +128,12 @@ test("OPFS cache keys prune files evicted behind the index", async (t) => {
   assert.deepEqual(info, { available: true, storage: "opfs", entries: [], bytes: 0 });
   assert.equal(await isCached(key), false);
   assert.equal(new TextDecoder().decode(fixture.files.get("index.json")), "{}");
+});
+
+test("reconverted packs with the same checkpoint get distinct cache keys", () => {
+  const spec = { repo: "Qwen/example", revision: "checkpoint", block: 32 };
+  const first = upstreamKey({ ...spec, packSha256: "first" });
+  const corrected = upstreamKey({ ...spec, packSha256: "corrected" });
+  assert.notEqual(first, corrected);
+  assert.equal(upstreamKey(spec), "https://kevala.cache/Qwen/example/checkpoint/q8-b32.kevala");
 });

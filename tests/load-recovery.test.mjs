@@ -1,53 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Kevala } from "../js/src/index.js";
-
-function workers(t, outcomes, { probe = true } = {}) {
-  const instances = [];
-  const loads = [];
-  const events = [];
-  class Worker {
-    constructor() {
-      this.index = instances.length;
-      this.terminated = false;
-      instances.push(this);
-    }
-    postMessage(message) {
-      if (message.type === "probe") {
-        if (probe !== null) queueMicrotask(() => {
-          if (typeof probe === "function") probe(this);
-          else this.reply({ type: "probe", gpu: probe });
-        });
-        return;
-      }
-      if (message.type !== "load") return;
-      loads.push(message.options);
-      events.push(`load:${this.index}`);
-      const outcome = outcomes[loads.length - 1];
-      assert.ok(outcome, "unexpected load attempt");
-      queueMicrotask(() => {
-        if (typeof outcome === "function") outcome(this, message.options);
-        else this.reply(outcome);
-      });
-    }
-    reply(data) {
-      this.onmessage?.({ data });
-    }
-    terminate() {
-      this.terminated = true;
-      events.push(`terminate:${this.index}`);
-    }
-  }
-  for (const [key, value] of Object.entries({ Worker, navigator: { gpu: {} }, location: { origin: "null" } })) {
-    const previous = Object.getOwnPropertyDescriptor(globalThis, key);
-    Object.defineProperty(globalThis, key, { value, configurable: true });
-    t.after(() => {
-      if (previous) Object.defineProperty(globalThis, key, previous);
-      else delete globalThis[key];
-    });
-  }
-  return { instances, loads, events };
-}
+import { workers } from "./support/fake-worker.mjs";
 
 const gpuError = (message) => ({ type: "error", code: "WEBGPU_INIT", message });
 const ready = (backend = "webgpu") => ({ type: "ready", info: { backend, gpu: backend === "webgpu" ? "Test GPU" : null } });

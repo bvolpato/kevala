@@ -3,20 +3,12 @@ import { test } from "node:test";
 import { mkdtemp, open, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { assertWasmPackSize, gpuLayouts, kevGpuLayouts, packSize } from "../js/src/kev-layout.js";
-import { PieceSink, upstreamKey } from "../js/src/source.js";
+import { assertWasmPackSize, gpuLayouts, packSize, parsePackHeader, readPackHead } from "../js/src/pack-layout.js";
+import { PieceSink } from "../js/src/source.js";
 import { loadFile } from "../js/src/node.js";
 
 const BIG = 2 ** 32;
 const HEAD = 4096;
-
-test("reconverted packs with the same checkpoint get distinct cache keys", () => {
-  const spec = { repo: "Qwen/example", revision: "checkpoint", block: 32 };
-  const first = upstreamKey({ ...spec, packSha256: "first" });
-  const corrected = upstreamKey({ ...spec, packSha256: "corrected" });
-  assert.notEqual(first, corrected);
-  assert.equal(upstreamKey(spec), "https://kevala.cache/Qwen/example/checkpoint/q8-b32.kevala");
-});
 
 function fixture() {
   return {
@@ -31,15 +23,12 @@ function fixture() {
   };
 }
 
-function header(layout) {
-  const size = new DataView(layout.prefix.buffer).getUint32(8, true);
-  return JSON.parse(new TextDecoder().decode(layout.prefix.subarray(16, 16 + size)));
-}
+const header = (layout) => parsePackHeader(layout.prefix);
 
 test("Kev GPU layout rebases coordinator ranges above 4 GiB without truncating source offsets", () => {
   const source = fixture();
   const original = structuredClone(source);
-  const [coord, gpu] = kevGpuLayouts(source, HEAD);
+  const [coord, gpu] = gpuLayouts(source, HEAD);
   assert.deepEqual(source, original);
   assert.deepEqual(header(coord).tensors.map((t) => t.name), ["emb", "semif.labels"]);
   assert.deepEqual(header(gpu).tensors.map((t) => t.name), ["L.0.norm", "L.0.qkv"]);
@@ -69,7 +58,7 @@ test("GPU destination offsets retain precision beyond 4 GiB without allocating t
   source.tensors = Array.from({ length: 5 }, (_, i) => ({
     name: `L.${i}.matrix`, dtype: "f32", shape: [16384, 16384], offset: HEAD + 64 + i * 2 ** 30, size: 2 ** 30,
   }));
-  const [, gpu] = kevGpuLayouts(source, HEAD);
+  const [, gpu] = gpuLayouts(source, HEAD);
   assert.ok(gpu.total > BIG);
   const last = header(gpu).tensors.at(-1);
   assert.ok(last.offset > BIG);
@@ -99,7 +88,7 @@ test("Gemma embedding tables stay on the GPU while only label rows enter WebAsse
 test("unordered tensor metadata streams in increasing destination order", () => {
   const source = fixture();
   source.tensors.reverse();
-  const [, gpu] = kevGpuLayouts(source, HEAD);
+  const [, gpu] = gpuLayouts(source, HEAD);
   const writes = [];
   const sink = new PieceSink(gpu, (dst, bytes) => writes.push([dst, bytes.length]));
   sink.push(new Uint8Array(136), BIG + 64);
@@ -122,7 +111,7 @@ test("invalid tensor sizes and unsafe or overlapping ranges are rejected before 
   for (const [mutate, error] of cases) {
     const source = fixture();
     mutate(source);
-    assert.throws(() => kevGpuLayouts(source, HEAD), error);
+    assert.throws(() => gpuLayouts(source, HEAD), error);
   }
 });
 
@@ -131,7 +120,7 @@ test("oversized CPU packs and coordinator subsets fail with actionable allocatio
   assert.throws(() => assertWasmPackSize(2 ** 31), { code: "WASM_PACK_TOO_LARGE" });
   const source = fixture();
   source.tensors = [{ name: "emb", dtype: "f32", shape: [2 ** 29], offset: HEAD + 64, size: 2 ** 31 }];
-  assert.throws(() => kevGpuLayouts(source, HEAD), /coordinator.*native Kevala CLI/);
+  assert.throws(() => gpuLayouts(source, HEAD), /coordinator.*native Kevala CLI/);
 });
 
 test("Node rejects a large pack by file size before reading weights or compiling WebAssembly", async (t) => {
@@ -145,4 +134,66 @@ test("Node rejects a large pack by file size before reading weights or compiling
     await file.close();
   }
   await assert.rejects(loadFile(path), { code: "WASM_PACK_TOO_LARGE" });
+});
+
+/** A pack prefix: magic, version, header length, and the JSON header padded with spaces. */
+function packBytes(header, { magic = "KVLA", version = 1, room = 96, tail = 8 } = {}) {
+  const json = new TextEncoder().encode(JSON.stringify(header));
+  const bytes = new Uint8Array(16 + room + tail).fill(32, 16, 16 + room);
+  bytes.set(new TextEncoder().encode(magic));
+  const view = new DataView(bytes.buffer);
+  view.setUint32(4, version, true);
+  view.setUint32(8, room, true);
+  bytes.set(json, 16);
+  bytes.fill(0xee, 16 + room);
+  return bytes;
+}
+
+test("a pack header parses from an offset view and names what is wrong with a bad one", () => {
+  const header = { format: "kevala", config: { arch: "kev" }, tensors: [] };
+  const bytes = packBytes(header);
+  const shifted = new Uint8Array(bytes.byteLength + 5);
+  shifted.set(bytes, 5);
+  assert.deepEqual(parsePackHeader(shifted.subarray(5)), header);
+  assert.throws(() => parsePackHeader(packBytes(header, { magic: "GGUF" })), /not a \.kevala pack/);
+  assert.throws(() => parsePackHeader(bytes.subarray(0, 12)), /not a \.kevala pack/);
+  assert.throws(() => parsePackHeader(packBytes(header, { version: 2 })), /unsupported \.kevala version 2, this build reads 1/);
+  assert.throws(() => parsePackHeader(bytes.subarray(0, 60)), /pack ended before its header/);
+});
+
+test("the header is read across any chunking of the stream, and no consumed byte is lost", async () => {
+  const header = { format: "kevala", config: { arch: "laya" }, tensors: [] };
+  const bytes = packBytes(header);
+  const end = 16 + 96;
+  for (const size of [1, 7, 16, 17, end - 1, end, end + 3, bytes.byteLength]) {
+    async function* stream() {
+      for (let at = 0; at < bytes.byteLength; at += size) yield bytes.subarray(at, at + size);
+    }
+    const chunks = stream();
+    const read = await readPackHead(chunks);
+    assert.deepEqual(read.header, header, `chunks of ${size}`);
+    assert.equal(read.headerBytes.byteLength, end);
+    // `head` holds every byte taken from the stream; the rest is still in the stream
+    const rest = [];
+    for await (const chunk of chunks) rest.push(...chunk);
+    assert.deepEqual([...read.head, ...rest], [...bytes], `chunks of ${size}`);
+  }
+  async function* truncated() {
+    yield bytes.subarray(0, 40);
+  }
+  await assert.rejects(readPackHead(truncated()), /pack ended before its header/);
+});
+
+test("a strided piece gathers one column range from every row, whatever the chunk boundaries", () => {
+  // 4 rows of 8 source bytes at offset 100; keep columns 2..5 of every row, as a shard's column slice does.
+  const source = Uint8Array.from({ length: 200 }, (_, i) => i);
+  const layout = { prefix: Uint8Array.of(9, 9), total: 2 + 12, pieces: Uint32Array.of(102, 2, 3, 4, 8) };
+  const want = [9, 9, 102, 103, 104, 110, 111, 112, 118, 119, 120, 126, 127, 128];
+  for (const size of [1, 2, 3, 5, 8, 11, 200]) {
+    const out = new Uint8Array(layout.total);
+    const sink = new PieceSink(layout, (dst, bytes) => out.set(bytes, dst));
+    for (let at = 0; at < source.byteLength; at += size) sink.push(source.subarray(at, at + size), at);
+    assert.deepEqual([...out], want, `chunks of ${size}`);
+    assert.equal(sink.done, true);
+  }
 });

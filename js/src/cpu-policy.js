@@ -1,5 +1,7 @@
 // CPU choices are private to the browser, WASM build family, and model configuration.
 // Bump the revision when CPU kernels or the calibration procedure change.
+import { median } from "./stats.js";
+
 const REVISION = 1;
 const MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 const CACHE = "kevala-cpu-tuning-v1";
@@ -20,11 +22,6 @@ export function threadCandidates(hardware, limit) {
   for (let n = 2; n <= cap; n *= 2) counts.push(n);
   if (counts.at(-1) !== cap) counts.push(cap);
   return counts;
-}
-
-function median(values) {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
 }
 
 /** Prefer fewer workers when their measured latency is within 10% of the fastest. */

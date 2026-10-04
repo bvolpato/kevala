@@ -292,14 +292,12 @@ test("reporter rejects missing full-pack evidence", async (t) => {
   });
   const result = await readResult(results, "kev-0.8b");
   delete result.value.postRunVerification.pack.sha256;
-  const original = result.value.postRunVerification.pack;
   await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
   const reportResult = await runReporter(results, output);
   assert.notEqual(reportResult.code, 0);
   const report = JSON.parse(await readFile(output, "utf8"));
   assert.equal(report.models["kev-0.8b"].pack.verification.recordedFullPackSha256, null);
   assert.match(report.models["kev-0.8b"].validation.issues.join("\n"), /full-pack sha256 is missing or invalid/);
-  assert.equal(original.bytes, 857259584);
 });
 
 test("reporter rejects a corrupted full-pack byte size", async (t) => {
@@ -326,16 +324,24 @@ test("reporter rejects missing, coerced, and nonpositive wall timings", async (c
     await rm(results, { recursive: true, force: true });
     await rm(dirname(output), { recursive: true, force: true });
   });
+  // One bad value per row, so one report names every kind of invalid timing by its row.
   const result = await readResult(results, "kev-0.8b");
-  for (const value of [null, undefined, "100", 0, -1]) {
-    result.value.timingAllRows[0].wallMs = value;
-    await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
-    const reported = await runReporter(results, output);
-    assert.notEqual(reported.code, 0, `wallMs=${JSON.stringify(value)} must fail validation`);
-    const report = JSON.parse(await readFile(output, "utf8"));
-    assert.equal(report.models["kev-0.8b"].latency, null);
-    assert.match(report.models["kev-0.8b"].validation.issues.join("\n"), /wallMs must be a finite positive number/);
-  }
+  const invalid = [null, undefined, "100", 0, -1];
+  const rows = invalid.map((value, index) => {
+    const row = result.value.timingAllRows[index];
+    row.wallMs = value;
+    return row.caseId ?? row.id;
+  });
+  await writeFile(result.path, `${JSON.stringify(result.value)}\n`);
+  const reported = await runReporter(results, output);
+  assert.notEqual(reported.code, 0);
+  const report = JSON.parse(await readFile(output, "utf8"));
+  assert.equal(report.models["kev-0.8b"].latency, null);
+  const issues = report.models["kev-0.8b"].validation.issues.filter((issue) => /wallMs must be a finite positive number/.test(issue));
+  assert.equal(issues.length, invalid.length, issues.join("\n"));
+  for (const [index, id] of rows.entries()) assert.ok(issues.some((issue) => issue.includes(id)), `no issue for wallMs=${JSON.stringify(invalid[index])} (${id})`);
+  // the other models' results are untouched and stay valid
+  assert.notEqual(report.models.laya.latency, null);
 });
 
 test("summary check rejects altered metrics", async (t) => {

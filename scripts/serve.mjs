@@ -1,16 +1,25 @@
 #!/usr/bin/env node
 // A static file server with the right MIME types, no dependencies. `--isolate` adds the
 // COOP/COEP headers that enable SharedArrayBuffer; kevala works without them.
+//
+// usage: node scripts/serve.mjs [directory] [--port 8080] [--isolate] [--cors]
 import { createServer } from "node:http";
 import { createReadStream, statSync } from "node:fs";
-import { extname, join, normalize, resolve } from "node:path";
+import { extname, join, resolve } from "node:path";
+import { parseArgs } from "node:util";
+import { resolveRequestPath } from "./lib/static-path.mjs";
 
-const args = process.argv.slice(2);
-const root = resolve(args.find((a) => !a.startsWith("--")) || ".");
-const port = Number(args.find((a) => a.startsWith("--port="))?.slice(7) || 8080);
-const isolate = args.includes("--isolate");
+const { values: options, positionals } = parseArgs({
+  allowPositionals: true,
+  options: { port: { type: "string", default: "8080" }, isolate: { type: "boolean", default: false }, cors: { type: "boolean", default: false } },
+});
+if (positionals.length > 1) throw new Error("serve one directory");
+const root = resolve(positionals[0] || ".");
+const port = Number(options.port);
+if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error(`--port must be a port number, not ${options.port}`);
+const isolate = options.isolate;
 // --cors: answer like a CDN (Access-Control-Allow-Origin: *), to test cross-origin embedding
-const cors = args.includes("--cors");
+const cors = options.cors;
 const types = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8", ".json": "application/json", ".wasm": "application/wasm", ".svg": "image/svg+xml",
@@ -19,9 +28,9 @@ const types = {
 };
 
 createServer((req, res) => {
-  const url = new URL(req.url, "http://x");
-  let path = normalize(join(root, decodeURIComponent(url.pathname)));
-  if (!path.startsWith(root)) return res.writeHead(403).end();
+  const resolved = resolveRequestPath(root, new URL(req.url, "http://x").pathname);
+  if (resolved.status) return res.writeHead(resolved.status).end();
+  let { path } = resolved;
   let st;
   try {
     st = statSync(path);

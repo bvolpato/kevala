@@ -80,7 +80,7 @@ function parseArgs(argv) {
     else if (value === "--check-summary") args.checkSummary = resolvePath(next());
     else if (value === "--probability-tolerance") args.probabilityTolerance = Number(next());
     else if (value === "--help" || value === "-h") {
-      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--repeat-results DIR ...] [--include-model NAME ...] [--reference FILE ... | --no-references] [--output FILE] [--markdown FILE] [--check-summary FILE] [--readme FILE | --check-readme FILE]");
+      console.log("Usage: pnpm exec node scripts/report-decisions.mjs [--results DIR] [--repeat-results DIR ...] [--fixtures DIR] [--include-model NAME ...] [--reference FILE ... | --no-references] [--probability-tolerance N] [--output FILE] [--markdown FILE] [--check-summary FILE] [--readme FILE | --check-readme FILE]");
       process.exit(0);
     } else throw new Error(`unknown argument ${value}`);
   }

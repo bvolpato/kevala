@@ -4,26 +4,16 @@
 // loaded comes back by itself when its pack is cached.
 
 import { Kevala, MODELS, cacheInfo, clearCache, isCached } from "../js/src/index.js";
+import { assertWasmPackSize } from "../js/src/pack-layout.js";
+import { fmtBytes } from "./format.js";
 
 export { MODELS };
 
 export const params = new URLSearchParams(location.search);
 
-/** `?pack=local` loads the dev packs from /tmp instead of converting from Hugging Face. */
+/** `?pack=local` loads the dev packs from this server's tmp/ instead of downloading them. */
 export const LOCAL = params.get("pack") === "local";
-const LOCAL_PACKS = {
-  laya: new URL("../tmp/laya-q8.kevala", import.meta.url).href,
-  "bruv1-0.8b": new URL("../tmp/bruv1-0.8b-q8.kevala", import.meta.url).href,
-  "bruv1-4b": new URL("../tmp/bruv1-4b-q8.kevala", import.meta.url).href,
-  "kev-0.8b": new URL("../tmp/kev-0.8b-q8.kevala", import.meta.url).href,
-  "kev-4b": new URL("../tmp/kev-4b-q8.kevala", import.meta.url).href,
-  "kev-9b": new URL("../tmp/kev-9b-q8.kevala", import.meta.url).href,
-  "semif-qwen3.5-0.8b": new URL("../tmp/semif-qwen3.5-0.8b-q8.kevala", import.meta.url).href,
-  "semif-qwen3.5-2b": new URL("../tmp/semif-qwen3.5-2b-q8.kevala", import.meta.url).href,
-  "semif-qwen3.5-4b": new URL("../tmp/semif-qwen3.5-4b-q8.kevala", import.meta.url).href,
-  "gemma-4-e2b": new URL("../tmp/gemma-4-e2b-q8.kevala", import.meta.url).href,
-  "gemma-4-e4b": new URL("../tmp/gemma-4-e4b-q8.kevala", import.meta.url).href,
-};
+const localPack = (model) => new URL(`../tmp/${model}-q8.kevala`, import.meta.url).href;
 /** `?from=checkpoint` converts the original weights in the browser instead of downloading the pack. */
 export const FROM = params.get("from") === "checkpoint" ? "checkpoint" : "pack";
 /** `?shot=1` hides dev-only chrome, for README screenshots taken with dev packs. */
@@ -78,15 +68,25 @@ export const MODEL_NOTES = {
     name: "Gemma 4 E2B",
     short: "Direct option scores from Gemma 4 E2B instruction weights; text only",
     large: true,
-    requiresWebGPU: true,
   },
   "gemma-4-e4b": {
     name: "Gemma 4 E4B",
     short: "Direct option scores from Gemma 4 E4B instruction weights; text only",
     large: true,
-    requiresWebGPU: true,
   },
 };
+
+/** Whether a model's pack is larger than one WebAssembly instance can hold, so only WebGPU runs it. */
+export function requiresWebGPU(model) {
+  const bytes = MODELS[model]?.pack;
+  if (!bytes) return false;
+  try {
+    assertWasmPackSize(bytes);
+    return false;
+  } catch {
+    return true;
+  }
+}
 
 const BACKENDS = ["auto", "webgpu", "wasm"];
 const SESSION_KEY = "kevala.session";
@@ -112,14 +112,6 @@ function initialModel(saved) {
 function initialBackend(saved) {
   const fromUrl = params.get("backend");
   return BACKENDS.includes(fromUrl) ? fromUrl : saved.backend || "auto";
-}
-
-// a copy of ui.js's fmtBytes: ui.js imports this module, so this one cannot import it back
-function fmtBytes(n) {
-  if (!n) return "0 B";
-  if (n >= 1e9) return `${(n / 1e9).toFixed(2)} GB`;
-  if (n >= 1e6) return `${Math.round(n / 1e6)} MB`;
-  return `${Math.round(n / 1e3)} KB`;
 }
 
 /** The progress line for one `onProgress` event of Kevala.load, or null to leave it as is. */
@@ -156,7 +148,7 @@ class Session extends EventTarget {
     this.#saved = readSaved();
     this.model = initialModel(this.#saved);
     this.backend = initialBackend(this.#saved);
-    if (this.backend === "wasm" && MODEL_NOTES[this.model]?.requiresWebGPU) this.backend = "auto";
+    if (this.backend === "wasm" && requiresWebGPU(this.model)) this.backend = "auto";
     this.customUrl = this.#saved.customUrl || "";
     /** idle | loading | ready | error */
     this.status = "idle";
@@ -207,7 +199,7 @@ class Session extends EventTarget {
   /** The value to pass as `model` to Kevala.load. */
   source(model = this.model) {
     if (model === "custom") return this.customUrl || null;
-    if (LOCAL && LOCAL_PACKS[model]) return LOCAL_PACKS[model];
+    if (LOCAL && MODEL_NOTES[model]) return localPack(model);
     return model;
   }
 
@@ -242,7 +234,7 @@ class Session extends EventTarget {
     this.cancel();
     this.unload();
     this.model = model;
-    if (this.backend === "wasm" && MODEL_NOTES[model]?.requiresWebGPU) this.backend = "auto";
+    if (this.backend === "wasm" && requiresWebGPU(model)) this.backend = "auto";
     this.error = null;
     this.#persist();
     this.#emit();
@@ -253,7 +245,7 @@ class Session extends EventTarget {
    * a second, and a model still downloading finishes first (its pack is stored), then reopens.
    */
   setBackend(backend) {
-    if (backend === "wasm" && MODEL_NOTES[this.model]?.requiresWebGPU) return;
+    if (backend === "wasm" && requiresWebGPU(this.model)) return;
     if (backend === this.backend) return;
     this.backend = backend;
     this.#persist();

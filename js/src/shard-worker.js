@@ -2,6 +2,7 @@
 // over a MessagePort and never sees token ids, only the residual stream.
 
 import { Wasm } from "./wasm.js";
+import { parsePackHeader } from "./pack-layout.js";
 
 let w = null;
 let ptr = 0;
@@ -44,9 +45,7 @@ async function handle(port, m) {
         break;
       case "load": {
         w.call(() => w.check(w.x.kevala_shard_load(ptr, total, m.primary ? 1 : 0)));
-        const dv = new DataView(w.memory, ptr);
-        const h = JSON.parse(new TextDecoder().decode(w.bytes(ptr + 16, dv.getUint32(8, true))));
-        hidden = h.config.hidden_size;
+        hidden = parsePackHeader(w.bytes(ptr, total)).config.hidden_size;
         port.postMessage({ seq: m.seq, type: "ok" });
         break;
       }

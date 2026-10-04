@@ -32,7 +32,6 @@ for (const t of TYPES) {
   for (let r = 1; r < 4; r++) states.push(states[r - 1].map(([x, y]) => [n - 1 - y, x]));
   SHAPES[t] = states.map((s) => s.slice().sort((a, b) => a[1] - b[1] || a[0] - b[0]));
 }
-export const BOX = Object.fromEntries(TYPES.map((t) => [t, SPAWN[t].n]));
 
 // SRS kick tests, written as in the SRS reference (y up) and flipped to y down below
 const KICKS_JLSTZ = {

@@ -2,7 +2,8 @@
 // persistent cache: Firefox may expose an anonymous adapter, so a profile can belong to another
 // physical GPU on the next load.
 
-import { dispatchMatmul, matmulPipelines, mmSplits, rowsPerThread } from "./gpu.js";
+import { bufferUsage, dispatchMatmul, inErrorScopes, matmulPipelines, mmSplits, rowsPerThread, scratchBuffer } from "./gpu.js";
+import { median } from "./stats.js";
 
 export const GPU_TUNING_REVISION = 1;
 export const MATMUL_TOKENS = [16, 32, 48, 128, 512];
@@ -31,11 +32,6 @@ export function matmulTuningKey(N, K, tokens) {
 
 export function selectedMatmulKernel(selection, N, K, tokens) {
   return selection?.get(matmulTuningKey(N, K, tokens)) || "generic";
-}
-
-function median(values) {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
 }
 
 /** Wide needs a stable >=5% paired win. Any incomplete or noisy measurement stays generic. */
@@ -75,15 +71,6 @@ export function matmulShapes(weights, maxShapes = MAX_SHAPES) {
   });
 }
 
-function usage() {
-  if (!globalThis.GPUBufferUsage) throw new Error("WebGPU buffer usage constants are unavailable");
-  return globalThis.GPUBufferUsage;
-}
-
-function buffer(device, size, flags, label) {
-  return device.createBuffer({ label, size: Math.max(16, size), usage: flags });
-}
-
 async function pipelinesFor(device, wgsl, kind, supplied) {
   if (supplied?.[kind]) return supplied[kind];
   return matmulPipelines(device, wgsl, kind === "wide" ? "matmul_wide" : "matmul");
@@ -111,7 +98,7 @@ function encodePass(encoder, op, tokens, querySet, queryIndex, repetitions = 1) 
 }
 
 async function measureShape(device, shape, pipes) {
-  const U = usage();
+  const U = bufferUsage();
   const maxT = Math.max(...MATMUL_TOKENS);
   const points = MATMUL_TOKENS.map((tokens) => ({ tokens, rows: rowsPerThread(tokens) }));
   const xBytes = maxT * shape.K * 4;
@@ -129,7 +116,7 @@ async function measureShape(device, shape, pipes) {
   const owned = [];
   let querySet;
   try {
-    const make = (size, flags, label) => (owned.push(buffer(device, size, flags, label)), owned.at(-1));
+    const make = (size, flags, label) => (owned.push(scratchBuffer(device, size, flags, label)), owned.at(-1));
     const x = make(xBytes, U.STORAGE | U.COPY_DST, `${shape.name}.tune.x`);
     const y = make(yBytes, U.STORAGE | U.COPY_SRC | U.COPY_DST, `${shape.name}.tune.y`);
     const bias = make(shape.N * 4, U.STORAGE | U.COPY_DST, `${shape.name}.tune.bias`);
@@ -175,23 +162,6 @@ async function measureShape(device, shape, pipes) {
   }
 }
 
-async function isolated(device, work) {
-  device.pushErrorScope("validation");
-  device.pushErrorScope("internal");
-  device.pushErrorScope("out-of-memory");
-  let value;
-  let failure;
-  try {
-    value = await work();
-  } catch (error) {
-    failure = error;
-  }
-  const scopes = await Promise.allSettled([device.popErrorScope(), device.popErrorScope(), device.popErrorScope()]);
-  const scoped = scopes.map((s) => s.status === "fulfilled" ? s.value : s.reason).find(Boolean);
-  if (failure || scoped) throw failure || scoped;
-  return value;
-}
-
 /** Build and, when possible, measure both candidates on up to six real loaded projection shapes. */
 export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const kernel = options.kernel || "auto";
@@ -212,7 +182,7 @@ export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   }
   let wide;
   try {
-    wide = await isolated(device, () => pipelinesFor(device, wgsl, "wide", options.pipelines));
+    wide = await inErrorScopes(device, () => pipelinesFor(device, wgsl, "wide", options.pipelines));
   } catch (error) {
     if (kernel === "wide") throw error;
     diagnostics.reason = "wide-pipeline-failed";
@@ -231,7 +201,7 @@ export async function calibrateMatmul(device, wgsl, weights, options = {}) {
     }
     const record = { shape: `${shape.N}x${shape.K}`, name: shape.name, points: [] };
     try {
-      const result = await isolated(device, () => measureShape(device, shape, pipes));
+      const result = await inErrorScopes(device, () => measureShape(device, shape, pipes));
       record.points = result.points.map((point) => ({ ...point, elapsedMs: result.elapsedMs }));
       for (const point of result.points) selection.set(point.key, point.kernel);
     } catch (error) {

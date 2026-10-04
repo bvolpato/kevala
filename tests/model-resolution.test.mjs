@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { validatePackArchitecture } from "../js/src/archs/index.js";
 import { MODELS, openPack, resolveModel } from "../js/src/source.js";
 
 function replaceFetch(t, fn) {
@@ -58,11 +59,13 @@ test("known source overrides do not retain hosted pack provenance", () => {
   assert.equal(resolved.browserConvert, true);
 });
 
-test("an explicit empty hosted value falls back to conversion", async () => {
+test("an explicit empty hosted value falls back to conversion", async (t) => {
+  replaceFetch(t, async (url) => {
+    throw new Error(`unexpected network request for ${url}`);
+  });
   let received;
   const pack = await openPack({ name: "laya", hosted: null }, {
     cache: false,
-    from: "checkpoint",
     convert: async (spec) => {
       received = spec;
       return Uint8Array.of(1, 2, 3);
@@ -131,12 +134,6 @@ test("default and registered model names retain their existing specs", async () 
   assert.equal(converted, MODELS.laya);
   assert.equal(pack.expectedArch, "laya");
 });
-
-const previousSelf = Object.getOwnPropertyDescriptor(globalThis, "self");
-Object.defineProperty(globalThis, "self", { configurable: true, writable: true, value: { postMessage() {} } });
-const { validatePackArchitecture } = await import("../js/src/engine-worker.js?model-resolution-test");
-if (previousSelf) Object.defineProperty(globalThis, "self", previousSelf);
-else delete globalThis.self;
 
 test("pack architecture is rejected before execution when unknown", () => {
   assert.throws(

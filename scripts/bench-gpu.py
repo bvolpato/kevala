@@ -145,10 +145,9 @@ def result_is_done(result: object, kind: str) -> bool:
         return result.get("done") is True
     if "status" in result:
         return result.get("status") in {"done", "error"}
-    if kind == "gpu":
-        return result.get("status") in {"done", "error"}
-    if kind == "kernels":
-        return result.get("done") is True
+    if kind in {"gpu", "kernels"}:
+        # these pages report `status` or `done`; without either the page is still running
+        return False
     if kind == "tetris":
         return isinstance(result.get("summary"), dict) and isinstance(result.get("games"), list)
     return isinstance(result.get("backend"), str)
@@ -178,7 +177,7 @@ def validate_backend(result: dict, expected: str) -> int | None:
     actual_threads = int(match.group(2) or "1")
     if actual_threads <= 0:
         raise ValueError(f"result backend reports invalid thread count: {backend!r}")
-    if reported is not None and reported != actual_threads:
+    if reported != actual_threads:
         raise ValueError(f"result threads {reported} disagree with backend {backend!r}")
     return reported
 

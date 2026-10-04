@@ -2,6 +2,9 @@
 // uncached 128- and 512-token segments. A separate private stage-1 fixture checks candidate CORE
 // and STATE output against the compiled four-lane pipeline before timings can select a candidate.
 
+import { bufferUsage, inErrorScopes, scratchBuffer } from "./gpu.js";
+import { median } from "./stats.js";
+
 export const RECUR_TUNING_REVISION = 3;
 
 const TOKENS = [128, 512];
@@ -17,11 +20,6 @@ const NUMERICAL_ATOL = 2e-5;
 const NUMERICAL_RTOL = 2e-5;
 const SUPPORTED_LANES = [4, 8, 16];
 const now = () => (typeof performance === "undefined" ? Date.now() : performance.now());
-
-function median(values) {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
-}
 
 function validSamples(values) {
   return Array.isArray(values) && values.length === SAMPLES && values.every((value) => Number.isFinite(value) && value > 0);
@@ -114,15 +112,6 @@ function fallback(reason, extra = {}) {
       ...extra,
     },
   };
-}
-
-function usage() {
-  if (!globalThis.GPUBufferUsage) throw new Error("WebGPU buffer usage constants are unavailable");
-  return globalThis.GPUBufferUsage;
-}
-
-function buffer(device, size, flags, label) {
-  return device.createBuffer({ label, size: Math.max(16, size), usage: flags });
 }
 
 function random(seed) {
@@ -247,24 +236,6 @@ function compareGuardOutput(actual, expected, seededState) {
   };
 }
 
-async function scoped(device, work) {
-  if (!device.pushErrorScope || !device.popErrorScope) return work();
-  device.pushErrorScope("validation");
-  device.pushErrorScope("internal");
-  device.pushErrorScope("out-of-memory");
-  let value;
-  let failure;
-  try {
-    value = await work();
-  } catch (error) {
-    failure = error;
-  }
-  const scopes = await Promise.allSettled([device.popErrorScope(), device.popErrorScope(), device.popErrorScope()]);
-  const error = scopes.map((result) => result.status === "fulfilled" ? result.value : result.reason).find(Boolean);
-  if (failure || error) throw failure || error;
-  return value;
-}
-
 function encodePass(encoder, candidate, bindGroup, linHeads, querySet, queryIndex, repetitions) {
   const pass = querySet
     ? encoder.beginComputePass({ timestampWrites: { querySet, beginningOfPassWriteIndex: queryIndex, endOfPassWriteIndex: queryIndex + 1 } })
@@ -292,7 +263,7 @@ async function resolveCandidatePipelines(device, candidates, onResolved) {
 }
 
 async function benchmark(device, candidates, config, tokens) {
-  const U = usage();
+  const U = bufferUsage();
   const { linKeyHeads, linHeads } = config;
   const input = makeInput(linKeyHeads, linHeads, tokens);
   const segment = new Uint32Array([0, tokens, NO_STATE, 0, 0, 0, 0, 0]);
@@ -318,7 +289,7 @@ async function benchmark(device, candidates, config, tokens) {
   let read;
   device.addEventListener?.("uncapturederror", onUncaptured);
   try {
-    const make = (size, flags, label) => (owned.push(buffer(device, size, flags, label)), owned.at(-1));
+    const make = (size, flags, label) => (owned.push(scratchBuffer(device, size, flags, label)), owned.at(-1));
     const prefix = `recur.tune.t${tokens}`;
     const C = make(cBytes, U.STORAGE | U.COPY_DST, `${prefix}.C`);
     const AB = make(abBytes, U.STORAGE | U.COPY_DST, `${prefix}.AB`);
@@ -425,7 +396,7 @@ export async function calibrateRecurrence(device, candidates, config) {
   const started = now();
   let resolvedFallback = fallbackPipeline;
   try {
-    const measured = await scoped(device, async () => {
+    const measured = await inErrorScopes(device, async () => {
       const resolved = await resolveCandidatePipelines(device, variants, (candidate) => {
         if (candidate.lanes === 4) resolvedFallback = candidate.pipeline;
       });

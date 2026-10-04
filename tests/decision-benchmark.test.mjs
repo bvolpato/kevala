@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -61,24 +62,23 @@ function familyCounts(rows) {
   ]));
 }
 
-test("the frozen fixture manifest and source counts are complete", () => {
-  assert.deepEqual(manifest.counts, {
-    kevala_authored: 36,
-    semif_authored: 144,
-    semif_perturbations: 108,
-  });
-  assert.deepEqual(manifest.expanded_counts, {
-    kevala_authored: 108,
-    semif_authored: 432,
-    semif_perturbations: 324,
-    total: 864,
-  });
-  assert.equal(manifest.semif.revision, "1f2dea3e25379f9dfc98cb83c324f00ab5deda37");
-  assert.equal(manifest.semif.license, "MIT");
-  assert.deepEqual(manifest.permutations, ["identity", "rotate1", "rotate2"]);
-  assert.equal(manifest.kevala.sha256, "2b1c67080104f910412457ef77a6d37575be0b07d4e9d47c15a3da24346233c2");
-  assert.equal(manifest.semif.fixtures[0].sha256, "8162d1c73f925af64453f1ec05ef36d583b3815bf698e60f0d454bd11537e079");
-  assert.equal(manifest.semif.fixtures[1].sha256, "1dd7ccf80518d0e34886478ca23982aa726e9daccd343b9e95cedaf6b569bec4");
+test("the manifest describes the fixture files as they are on disk", async () => {
+  // The published scores cite these digests: a fixture edited without its manifest must fail here.
+  const entries = [[manifest.kevala, kevala], [manifest.semif.fixtures[0], semifAuthored], [manifest.semif.fixtures[1], semifPerturbations]];
+  for (const [entry, rows] of entries) {
+    const bytes = await readFile(resolve(decisionDir, entry.path));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), entry.sha256, `${entry.path} changed without its manifest entry`);
+    assert.equal(entry.rows, rows.length, entry.path);
+    assert.deepEqual(entry.families, familyCounts(rows), entry.path);
+    assert.equal(entry.groups, new Set(rows.map((row) => row.provenance?.source_group_id ?? row.group_id)).size, entry.path);
+  }
+  assert.deepEqual(manifest.counts, { kevala_authored: kevala.length, semif_authored: semifAuthored.length, semif_perturbations: semifPerturbations.length });
+  assert.deepEqual(manifest.permutations, DEFAULT_PERMUTATIONS);
+  const expanded = Object.fromEntries(Object.entries(manifest.counts).map(([name, rows]) => [name, rows * manifest.permutations.length]));
+  assert.deepEqual(manifest.expanded_counts, { ...expanded, total: Object.values(expanded).reduce((a, b) => a + b, 0) });
+});
+
+test("every fixture row has three distinct options and a balanced family mix", () => {
   assert.deepEqual(familyCounts(semifAuthored), {
     candidate_selection: 48,
     evidence_interpretation: 48,

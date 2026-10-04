@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Build the three WebAssembly flavors into js/src, next to the runtime that loads them.
 #
-# The source tree keeps these files during the migration to release-time artifact
-# generation. That keeps the static site and package usable from a checkout while
-# making `pnpm pack` and CI rebuild the exact same files from the pinned toolchain.
+# The binaries are not tracked: `pnpm pack` (through prepack) and CI build them from the pinned
+# toolchain, and a checkout builds them once with this script to run the site, the Node entry
+# point, or the tests that need them.
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"

@@ -5,7 +5,7 @@
 import { GpuKev, kevConfig, parseKevBatch } from "../gpu-kev.js";
 import { Wasm } from "../wasm.js";
 import { fetchBytes, fetchRange, hfFile } from "../source.js";
-import { kevGpuLayouts } from "../kev-layout.js";
+import { gpuLayouts } from "../pack-layout.js";
 
 const enc = new TextEncoder();
 const now = () => performance.now();
@@ -14,10 +14,13 @@ export default {
   arch: "kev",
   about: "Qwen3.5 hybrid decoder + pointer head",
 
+  /** A state's recurrent carries and attention keys are kept for the next request about it. */
+  stateCache: true,
+
   /** Not split across WebAssembly workers yet: on the CPU one instance runs every layer. */
   maxShards: () => 1,
 
-  gpuLayouts: kevGpuLayouts,
+  gpuLayouts: (header, headerBytes) => gpuLayouts(header, headerBytes),
 
   createGpu: (gpu, layout, header) => new GpuKev(gpu, layout, kevConfig(header)),
 
@@ -98,9 +101,16 @@ export default {
     const adapter = await fetchBytes(kev("adapter_model.safetensors"), "adapter_model.safetensors", opts);
     const head = await fetchBytes(kev("head.pt"), "head.pt", opts);
     const url = base(files[0]);
-    const first = new Uint8Array(await (await fetch(url, { signal, headers: { range: "bytes=0-7" } })).arrayBuffer());
-    const n = Number(new DataView(first.buffer).getBigUint64(0, true));
-    const stHead = new Uint8Array(await (await fetch(url, { signal, headers: { range: `bytes=0-${8 + n - 1}` } })).arrayBuffer());
+    // An error page must not be read as the safetensors header length.
+    const range = async (lo, hi) => {
+      const r = await fetch(url, { signal, headers: { range: `bytes=${lo}-${hi}` } });
+      if (r.status !== 206) throw new Error(`${url}: HTTP ${r.status} for a byte range`);
+      const bytes = new Uint8Array(await r.arrayBuffer());
+      if (bytes.byteLength !== hi - lo + 1) throw new Error(`${url}: got ${bytes.byteLength} of ${hi - lo + 1} bytes`);
+      return bytes;
+    };
+    const n = Number(new DataView((await range(0, 7)).buffer).getBigUint64(0, true));
+    const stHead = await range(0, 8 + n - 1);
     const model = JSON.stringify({
       name: spec.name || spec.repo.split("/").pop(),
       source: spec.source || (spec.repo ? `https://huggingface.co/${spec.repo}` : undefined),

@@ -25,15 +25,6 @@
 .view-how .how-points p { margin: 0; }
 .view-how .plug { margin: 24px 0 0; }
 
-.view-how .bench-card { overflow: hidden; margin-top: 18px; }
-.view-how .bench-card .scroll-x { padding: 4px 8px; }
-.view-how .bench-card tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
-.view-how .bench-card tbody tr:last-child td { border-bottom: 0; }
-.view-how .bench-empty { padding: 30px; display: grid; gap: 8px; justify-items: start; }
-.view-how .bench-empty h3 { margin: 0; }
-.view-how .bench-note { margin: 10px 0 0; }
-.view-how .ibar { display: inline-block; vertical-align: middle; height: 6px; border-radius: 4px; background: var(--accent); margin-right: 8px; min-width: 2px; }
-
 .view-how .tiles { margin: 26px 0 18px; }
 .view-how .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: grid; gap: 4px; }
 .view-how .tile .tl { font-size: 0.74rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; }

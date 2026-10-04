@@ -1,7 +1,13 @@
-// Kev's GPU trunk can exceed wasm32's address space. Keep source ranges in JavaScript
-// numbers and only pass the rebased coordinator pack to WebAssembly.
+// The `.kevala` pack as the JavaScript side reads it: the header, the size checks that run before
+// any byte crosses into WebAssembly, and the coordinator/GPU split of whole tensors.
+//
+// A GPU trunk can exceed wasm32's address space, so source ranges stay JavaScript numbers here
+// and only the rebased coordinator pack is passed to WebAssembly.
 
 const ALIGN = 64;
+const MAGIC = "KVLA";
+const FORMAT_VERSION = 1;
+const dec = new TextDecoder();
 // Rust's aligned allocations are limited by isize::MAX, including alignment padding.
 const MAX_WASM_PACK_BYTES = 0x7fffffc0;
 const enc = new TextEncoder();
@@ -14,6 +20,39 @@ function integer(value, label) {
 const add = (a, b, label) => integer(a + b, label);
 const align = (n) => integer(Math.ceil(n / ALIGN) * ALIGN, "aligned offset");
 const trunk = (name) => name.startsWith("L.") || name.startsWith("enc.") || name.startsWith("head.");
+
+/** Bytes of the 16-byte prefix plus the JSON header it announces. `bytes` holds at least the prefix. */
+export function packHeaderLength(bytes) {
+  return 16 + new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(8, true);
+}
+
+/** The JSON header of a pack or sub-pack whose leading bytes are `bytes`. */
+export function parsePackHeader(bytes) {
+  if (bytes.byteLength < 16 || dec.decode(bytes.subarray(0, 4)) !== MAGIC) throw new Error("not a .kevala pack");
+  const version = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(4, true);
+  if (version !== FORMAT_VERSION) throw new Error(`unsupported .kevala version ${version}, this build reads ${FORMAT_VERSION}`);
+  const end = packHeaderLength(bytes);
+  if (bytes.byteLength < end) throw new Error("pack ended before its header");
+  return JSON.parse(dec.decode(bytes.subarray(16, end)));
+}
+
+/**
+ * Reads the header from the front of a pack arriving as chunks, keeping every byte it consumed:
+ * `head` (all of them, which may run past the header), the parsed `header`, and `headerBytes`.
+ */
+export async function readPackHead(chunks) {
+  let head = new Uint8Array(0);
+  const need = () => (head.byteLength < 16 ? 16 : packHeaderLength(head));
+  while (head.byteLength < need()) {
+    const { done, value } = await chunks.next();
+    if (done) throw new Error("pack ended before its header");
+    const grown = new Uint8Array(head.byteLength + value.byteLength);
+    grown.set(head);
+    grown.set(value, head.byteLength);
+    head = grown;
+  }
+  return { head, header: parsePackHeader(head), headerBytes: head.subarray(0, packHeaderLength(head)) };
+}
 
 /** Validates byte ranges before any of them cross a wasm32 boundary. */
 export function packSize(header, headerBytes) {
@@ -89,15 +128,15 @@ function subset(header, keepTrunk, isTrunk) {
       pieces.push(part.src, at, part.size, 1, 0);
       at = align(add(at, part.size, "subset size"));
     }
-    const json = enc.encode(JSON.stringify({ format: "kevala", version: 1, model: header.model, config: header.config, tokenizer, tensors }));
+    const json = enc.encode(JSON.stringify({ format: "kevala", version: FORMAT_VERSION, model: header.model, config: header.config, tokenizer, tensors }));
     if (json.byteLength > room) {
       room = json.byteLength + 256;
       continue;
     }
     const prefix = new Uint8Array(16 + room);
-    prefix.set([75, 86, 76, 65]); // KVLA
+    prefix.set(enc.encode(MAGIC));
     const view = new DataView(prefix.buffer);
-    view.setUint32(4, 1, true);
+    view.setUint32(4, FORMAT_VERSION, true);
     view.setUint32(8, room, true);
     prefix.fill(32, 16);
     prefix.set(json, 16);
@@ -105,13 +144,12 @@ function subset(header, keepTrunk, isTrunk) {
   }
 }
 
-/** The same whole-tensor split as Rust coord_layout/trunk_layout, without u32 offsets. */
-export function kevGpuLayouts(header, headerBytes) {
-  return gpuLayouts(header, headerBytes, trunk);
-}
-
-/** Splits whole tensors using the family's placement rule, retaining safe source offsets. */
-export function gpuLayouts(header, headerBytes, isTrunk) {
+/**
+ * The coordinator and GPU layouts of a pack: whole tensors, placed by `isTrunk(name)`. The default
+ * rule is the one of Rust's `pack::coord_layout` and `pack::trunk_layout`. Unlike those, the
+ * source offsets here are not limited to u32.
+ */
+export function gpuLayouts(header, headerBytes, isTrunk = trunk) {
   packSize(header, headerBytes);
   const coord = subset(header, false, isTrunk);
   assertWasmPackSize(coord.total, "coordinator");

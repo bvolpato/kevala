@@ -4,6 +4,7 @@
 import { cp, lstat, mkdir, mkdtemp, readFile, readdir, rename, rm } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertModule, FLAVORS, requiredExports } from "./lib/wasm-abi.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = join(root, "dist");
@@ -11,40 +12,8 @@ const destination = join(dist, "site");
 // site/index.html redirects the site's old /site/ address to the root
 const publicFiles = [".nojekyll", "LICENSE", "THIRD_PARTY_NOTICES", "README.md", "BENCHMARK.md", "package.json", "bench.html", "index.html", "parity.html", "parity-kev.html", "site/index.html"];
 const publicDirectories = ["app", "assets", "benchmarks/decisions", "benchmarks/results", "docs", "examples", "js/src", "skills", "tests/fixtures"];
-const publicHarnesses = [
-  "dev/activation-check.html",
-  "dev/activation-check.js",
-  "dev/attn-bench.html",
-  "dev/attn-bench.js",
-  "dev/cache-test.html",
-  "dev/convert-test.html",
-  "dev/decision-bench.html",
-  "dev/decision-bench.js",
-  "dev/gemma-attn-bench.html",
-  "dev/gemma-attn-bench.js",
-  "dev/gemma-gelu-check.html",
-  "dev/gemma-gelu-check.js",
-  "dev/gemma-rms-check.html",
-  "dev/gemma-rms-check.js",
-  "dev/gemma-tail-check.html",
-  "dev/gemma-tail-check.js",
-  "dev/gpu-bench.html",
-  "dev/gpu-bench.js",
-  "dev/kernels.html",
-  "dev/kernel-bench.html",
-  "dev/kernel-bench.js",
-  "dev/kernel-compile-check.html",
-  "dev/kernel-compile-check.js",
-  "dev/kev-attn-bench.html",
-  "dev/kev-attn-bench.js",
-  "dev/matmul-bench.html",
-  "dev/recur-bench.html",
-  "dev/recur-check.html",
-  "dev/recur-check.js",
-  "dev/tetris-eval.html",
-  "dev/wgsl.js",
-];
-const flavors = ["relaxed", "simd", "base"];
+// Every harness page in dev/ and its script: the published benchmark reports link to them.
+const publicHarnesses = (await readdir(join(root, "dev"))).filter((name) => /\.(?:html|js)$/.test(name)).sort().map((name) => `dev/${name}`);
 const forbidden = /^(?:node_modules|target|tmp|crates|packs|.*\.kevala)$/;
 
 async function existingStat(path) {
@@ -88,9 +57,9 @@ try {
   for (const directory of publicDirectories) await copy(join(root, directory), join(temporary, directory));
   await assertNoForbidden(temporary);
 
-  for (const flavor of flavors) {
-    const bytes = await readFile(join(temporary, "js/src", `kevala-${flavor}.wasm`));
-    if (!WebAssembly.validate(bytes)) throw new Error(`staged ${flavor} module is invalid WebAssembly`);
+  const exportsNeeded = await requiredExports();
+  for (const flavor of FLAVORS) {
+    assertModule(await readFile(join(temporary, "js/src", `kevala-${flavor}.wasm`)), exportsNeeded, `staged ${flavor} module`);
   }
 
   const finalStat = await existingStat(destination);

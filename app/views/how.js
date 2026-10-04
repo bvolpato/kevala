@@ -1,9 +1,8 @@
 // How it works: the architecture, latency, the fidelity numbers and the limits. Static; no model
 // needed.
 
-import { css, REPO } from "../ui.js";
+import { css, DOCS, REPO } from "../ui.js";
 
-const DOCS = `${REPO}/blob/main/docs`;
 
 const ARCH_ALT =
   "Diagram: pinned Hugging Face checkpoints stream into an in-browser int8 converter and a cached .kevala pack; " +

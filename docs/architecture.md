@@ -52,12 +52,15 @@ relaxed-simd), `simd`, and `base`; the runtime picks the best one the browser va
 **Browser runtime (`js/src`, plain ES modules, no dependencies).**
 
 - `index.js`: the public API (`Kevala.load`, `decide`, `decideMany`, `dispose`).
-- `engine-worker.js`: family-agnostic pipeline. Resolves the pack source, streams it, chooses the
-  backend, and packs concurrent requests into shared forward passes.
+- `engine-worker.js`: family-agnostic pipeline. Resolves the pack source, streams it, and chooses
+  the backend. `request-queue.js` packs concurrent requests into shared forward passes.
 - `archs/*.js`: architecture plugins. Each says how its family runs on the GPU or across shards, and
   how to convert its upstream checkpoint in the browser.
-- `gpu.js`, `gpu-kev.js`, `gpu-gemma4.js`: the WebGPU trunks: buffers, pipelines built from the
-  binary's kernels, bind groups and dispatches. No kernel code lives here.
+- `gpu-laya.js`, `gpu-kev.js`, `gpu-gemma4.js`: the WebGPU trunks: buffers, pipelines built from the
+  binary's kernels, bind groups and dispatches. `gpu.js` holds what they share (the device, weight
+  upload, the matmul with its split-K reduce, profiling), and `gpu-tuning.js` and
+  `gpu-recur-tuning.js` pick kernel variants at load time. No kernel code lives here.
+- `pack-layout.js`: the pack header, size checks, and the coordinator/GPU split of whole tensors.
 - `source.js`: model registry, downloads with progress, OPFS/Cache API storage, and the streaming
   layout applier.
 
@@ -175,8 +178,8 @@ layer and returns only the rows the head reads. Kernels:
 
 Where the time goes is visible per kernel: `kevala.profile(true)` adds `timing.gpu` (milliseconds
 per kernel) to every response, and the Playground's Profile tab shows it for any request.
-`dev/matmul-bench.html` times matmul variants (tile rows, column groups, split-K target, f16
-tiles) on the models' shapes, best of several trials, and checks they agree.
+`dev/gpu-bench.html` times matmul variants (tile rows, column groups, split-K target, f16
+tiles) on the models' shapes and checks each one against a CPU reference.
 
 A pass over more than 256 tokens goes out as a few command buffers, waiting for the queue between
 them, so a big batch does not freeze the page's rendering while the GPU works.
@@ -202,7 +205,8 @@ sequence is valid for another's. What kevala reuses:
   resident (in GPU buffers on WebGPU, in memory on the CPU). A repeated state skips its pass. A
   state that extends a cached one (a growing conversation, a log with new lines, a document with a
   new paragraph) runs only its new tokens, continuing the cached carry. Both are exact: the tests
-  check them against a cold engine (`crates/kevala/tests/kev_cache.rs`, `dev/cache-test.html`).
+  check them against a run from scratch (`crates/kevala/tests/kev_model.rs` on a synthetic pack,
+  `kev_cache.rs` on the real one, and `dev/cache-test.html` in the browser).
   On WebGPU a repeated 512-token state answers in 28 ms instead of 334 ms.
 - **Short single-question rows** (states under 32 tokens) are run as one causal row instead, which
   halves the GPU dispatches; they are cheaper to recompute than to cache.

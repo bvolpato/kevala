@@ -69,12 +69,13 @@ export class Kevala {
    * Loads the model.
    *
    * options:
-   *   model       a known model name ("laya", "kev-0.8b", "kev-4b", "kev-9b", or a
+   *   model       a known model name ("laya", "kev-0.8b", "kev-4b", "kev-9b", or a "bruv1-*",
    *               "semif-qwen3.5-*" or "gemma-4-e*" name; see MODELS); or the URL of a .kevala
    *               pack; or an ArrayBuffer/Blob of one (default: "laya")
    *   from        for a known model: "pack" downloads its pinned int8 pack from Hugging Face, and
    *               converts the original weights when the pack is unreachable (default);
-   *               "checkpoint" always downloads the original weights and converts them here
+   *               "checkpoint" converts the original weights here unless that conversion is
+   *               already stored (Laya and Kev-0.8B only)
    *   backend     "auto" (WebGPU when available, else WebAssembly), "webgpu", or "wasm"
    *   onPage      run the engine on the page instead of in a worker (default: only when the
    *               browser offers WebGPU to pages but not to workers)
@@ -88,14 +89,21 @@ export class Kevala {
    *   submit      WebGPU scheduling: "await" drains each long-pass chunk (default);
    *               "split" queues separate chunks without waiting, reducing latency at a
    *               possible cost to UI responsiveness; "none" uses one command buffer
-   *   cache       keep the pack in the Cache API (default true)
+   *   cache       keep the pack in browser storage (the Origin Private File System, or the
+   *               Cache API where that is missing) and reuse it on later loads (default true)
    *   onProgress  receives { phase, file, loaded, total, message }
    *   signal      AbortSignal that cancels loading
    *   wasmBase    where the .wasm files live (default: next to this module)
    *   plugins     URLs of extra architecture plugin modules (see js/src/archs/index.js)
+   *
+   * For measurements and tests: `flavor` ("relaxed", "simd", "base") picks the WebAssembly build,
+   * `gpuBaseline: true` asks for a WebGPU device without optional features, `gpuFeatures` lists
+   * the optional features to ask for, and `profile: true` starts with per-kernel GPU timing on.
    */
   static async load(options = {}) {
     cpuOptions(options);
+    if (options.backend != null && !["auto", "webgpu", "wasm"].includes(options.backend)) throw new Error('backend must be "auto", "webgpu", or "wasm"');
+    if (options.submit != null && !["await", "split", "none"].includes(options.submit)) throw new Error('submit must be "await", "split", or "none"');
     if (options.gpuKernel !== undefined && !["auto", "generic", "wide"].includes(options.gpuKernel)) throw new Error('gpuKernel must be "auto", "generic", or "wide"');
     if (options.stateCache !== undefined && typeof options.stateCache !== "boolean") throw new TypeError("stateCache must be a boolean");
     const w = new Kevala();
@@ -108,7 +116,9 @@ export class Kevala {
   #pending = new Map();
   #seq = 0;
   #ready = null;
+  /** What loaded and how: backend, threads, tuning, pack, and timings. */
   info = null;
+  /** The `timing` of the most recent answered request. */
   lastTiming = null;
 
   async #start(o) {
@@ -121,8 +131,11 @@ export class Kevala {
     const abort = () => this.dispose(cancelled());
     signal?.addEventListener("abort", abort, { once: true });
     // a relative pack URL means relative to the page, not to the worker script
-    const model = typeof opts.model === "string" && !MODELS[opts.model] && typeof document !== "undefined" ? new URL(opts.model, document.baseURI).href : opts.model;
-    const plugins = (opts.plugins || []).map((u) => (typeof document !== "undefined" ? new URL(u, document.baseURI).href : u));
+    const onPageUrl = (url) => (typeof document !== "undefined" ? new URL(url, document.baseURI).href : url);
+    let model = opts.model;
+    if (typeof model === "string" && !Object.hasOwn(MODELS, model)) model = onPageUrl(model);
+    else if (typeof model?.url === "string") model = { ...model, url: onPageUrl(model.url) };
+    const plugins = (opts.plugins || []).map(onPageUrl);
     const options = { ...opts, model, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
     try {
       let worker = spawn("./engine-worker.js");
@@ -229,7 +242,7 @@ export class Kevala {
       case "result": {
         const p = this.#pending.get(m.id);
         this.#pending.delete(m.id);
-        this.lastTiming = m.timing;
+        if (m.timing) this.lastTiming = m.timing;
         p?.resolve(m);
         break;
       }

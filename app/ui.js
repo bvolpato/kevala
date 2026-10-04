@@ -1,31 +1,14 @@
 // Small UI helpers shared by the views: formatting, the answer bars, syntax highlighting and
 // the "load a model" gate. Nothing here talks to the network.
 
-import { session, MODELS } from "./session.js";
+import { session } from "./session.js";
 
-export const $ = (sel, root = document) => root.querySelector(sel);
-export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+export { fmtBytes, fmtMs } from "./format.js";
 
 const HTML_ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 
 export function esc(s) {
   return String(s).replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch]);
-}
-
-export function fmtBytes(n) {
-  if (!n) return "0 B";
-  if (n >= 1e9) return `${(n / 1e9).toFixed(2)} GB`;
-  if (n >= 1e6) return `${Math.round(n / 1e6)} MB`;
-  if (n >= 1e3) return `${Math.round(n / 1e3)} KB`;
-  return `${n} B`;
-}
-
-export function fmtMs(ms) {
-  if (ms == null || !isFinite(ms)) return "–";
-  if (ms >= 10000) return `${(ms / 1000).toFixed(1)} s`;
-  if (ms >= 1000) return `${(ms / 1000).toFixed(2)} s`;
-  if (ms >= 100) return `${Math.round(ms)} ms`;
-  return `${ms.toFixed(1)} ms`;
 }
 
 export function debounce(fn, ms) {
@@ -256,6 +239,8 @@ export function css(href) {
 }
 
 export const REPO = "https://github.com/bvolpato/kevala";
+/** Where the guides live; the views link to them. */
+export const DOCS = `${REPO}/blob/main/docs`;
 
 /** The kevala mark; `id` names its gradient, so two marks on one page need different ids. */
 export function logo(id) {
@@ -270,7 +255,3 @@ export function logo(id) {
     `</svg>`,
   ].join("");
 }
-
-export { js } from "./code.js";
-
-export { session, MODELS };

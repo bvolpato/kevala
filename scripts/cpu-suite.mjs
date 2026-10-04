@@ -1,7 +1,9 @@
-import { spawnSync } from "node:child_process";
+// Time Laya and Kev-0.8B on the CPU backend serially. Start scripts/serve.mjs and download the
+// local packs first.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parseArgs } from "node:util";
+import { BASE_URL, failed, geometricMean, runPage } from "./lib/browser-run.mjs";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -19,7 +21,6 @@ if (positionals.length > 1) throw new Error("expected one output directory");
 const models = values.models.split(",");
 if (!models.length || models.some((m) => !["laya", "kev-0.8b"].includes(m))) throw new Error("unknown model");
 const out = resolve(positionals[0] || "tmp/cpu-suite");
-const base = process.env.KEVALA_BENCH_URL || "http://127.0.0.1:18086";
 mkdirSync(out, { recursive: true });
 const results = [];
 for (const model of models) {
@@ -27,10 +28,8 @@ for (const model of models) {
   const hash = new URLSearchParams({ auto: "1", backend: "wasm", pack: "local", model,
     threads: values.threads, flavor: values.flavor, runs: values.runs, warmups: values.warmups,
     unique: "1", shapes: values.shapes });
-  const args = ["run", "scripts/bench-gpu.py", "--backend", "wasm", "--browser", values.browser,
-    "--result", "latency", "--timeout", "900", "--url", `${base}/bench.html#${hash}`, "--output", output];
-  const run = spawnSync("uv", args, { encoding: "utf8", timeout: 950000 });
-  if (run.error || run.status !== 0) {
+  const run = runPage({ result: "latency", url: `${BASE_URL}/bench.html#${hash}`, output, backend: "wasm", browser: values.browser, timeoutSeconds: 900, stdio: "pipe" });
+  if (failed(run)) {
     console.error(run.error || run.stderr || run.stdout);
     process.exit(1);
   }
@@ -40,6 +39,6 @@ for (const model of models) {
   console.error(`${model}: ${result.metricMs.toFixed(3)} ms, ${result.backend}, ${result.threads} workers`);
 }
 const medians = results.flatMap((result) => result.p50CaseMediansMs);
-const metricMs = Math.exp(medians.reduce((sum, ms) => sum + Math.log(ms), 0) / medians.length);
+const metricMs = geometricMean(medians);
 writeFileSync(resolve(out, "summary.json"), JSON.stringify({ metricMs, options: values, models: results }, null, 2) + "\n");
 console.log(metricMs);

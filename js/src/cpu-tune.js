@@ -1,11 +1,8 @@
+import { median } from "./stats.js";
+
 const WARMUP_PROBES = 4;
 const MEASURED_PROBES = 4;
 const ROUNDS = 3;
-
-const median = (values) => {
-  const sorted = [...values].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length / 2)];
-};
 
 /** Selects the faster CPU register tile and leaves the export state on that tile. */
 export function selectCpuTile(exports, now = () => performance.now()) {

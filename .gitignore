@@ -6,4 +6,3 @@ node_modules/
 __pycache__/
 *.kevala
 .DS_Store
-/js/dist/wasm-build/

@@ -1,40 +1,13 @@
 // Inbox triage: twelve emails and the laya SDK's email questions, sent in growing batches so
 // rows fill in as answers arrive. Sort, filter, open one to see every probability.
 
-import { fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, decideStream, js } from "../ui.js";
+import { fmtMs, esc, highlight, wireCopy, modelGate, backendLabel, css, decideStream } from "../ui.js";
 import { renderAnswers } from "../answers.js";
-import { loadCode } from "../code.js";
+import { js, loadCode } from "../code.js";
+import * as presets from "../../js/src/presets.js";
 
-// the laya SDK's email questions, written out
-const QUESTIONS = {
-  category: {
-    type: "choice",
-    instructions: "Which team should handle the email in `body`?",
-    criteria: {
-      billing: "invoices, payments, refunds",
-      technical: "bugs, outages, integrations",
-      sales: "pricing, demos, new purchases",
-      security: "phishing, scams, account compromise",
-      hr: "hiring, leave, payroll",
-      other: "none of the above",
-    },
-  },
-  is_spam: {
-    type: "noul",
-    instructions: "Is this email unsolicited spam or bulk marketing?",
-  },
-  is_phishing: {
-    type: "noul",
-    instructions: "Is this email a phishing or scam attempt to steal money, credentials, or personal data?",
-    criteria: { true: "phishing, scam, or fraud", false: "a legitimate email" },
-  },
-  urgency: {
-    type: "score",
-    instructions: "How urgent is the request in `body`?",
-    criteria: ["no time pressure", "needs attention soon", "blocking issue or hard deadline"],
-  },
-  needs_reply: { type: "noul", instructions: "Does the sender expect a reply?" },
-};
+// the laya SDK's email questions
+const QUESTIONS = presets.email();
 
 const now = Date.now();
 const minutesAgo = (m) => now - m * 60000;

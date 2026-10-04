@@ -1,9 +1,11 @@
-import { spawnSync } from "node:child_process";
+// GPU numerical guards: every kernel compiles, the kernels match their CPU references, and the
+// models match their PyTorch fixtures on WebGPU. Start scripts/serve.mjs and download the local
+// packs first. A check whose GPU feature this device lacks is recorded as skipped.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { BASE_URL, failed, runPage } from "./lib/browser-run.mjs";
 
 const out = resolve(process.argv[2] || "tmp/gpu-guard");
-const base = process.env.KEVALA_BENCH_URL || "http://127.0.0.1:18086";
 mkdirSync(out, { recursive: true });
 const registry = readFileSync(new URL("../crates/kevala/src/gpu.rs", import.meta.url), "utf8").match(/pub const KERNELS:.*?= &\[([\s\S]*?)\];/)?.[1];
 const kernels = [...(registry || "").matchAll(/"([a-z0-9_]+)"/g)].map((match) => match[1]);
@@ -43,11 +45,8 @@ for (const [name, kind, path, tolerance, required = []] of checks) {
     console.log(`${name} skipped: missing ${missing.join(", ")}`);
     continue;
   }
-  const args = ["run", "scripts/bench-gpu.py", "--result", kind, "--timeout", "600", "--url", base + path, "--output", resolve(out, `${name}.json`)];
-  if (process.env.KEVALA_BENCH_CDP) args.push("--cdp-default-context");
-  if (tolerance) args.push("--max-dp", tolerance);
-  const run = spawnSync("uv", args, { stdio: "inherit", timeout: 650000 });
-  if (run.error || run.status !== 0) {
+  const run = runPage({ result: kind, url: BASE_URL + path, output: resolve(out, `${name}.json`), maxDp: tolerance, cdpDefaultContext: true });
+  if (failed(run)) {
     console.error(`${name} failed`, run.error || "");
     process.exit(1);
   }

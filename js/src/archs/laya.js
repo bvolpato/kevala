@@ -6,7 +6,7 @@
 
 import { Wasm, parseSegments } from "../wasm.js";
 import { fetchUpstream } from "../source.js";
-import { GpuTrunk } from "../gpu.js";
+import { GpuTrunk } from "../gpu-laya.js";
 
 const enc = new TextEncoder();
 const now = () => performance.now();
@@ -25,7 +25,6 @@ function trunkConfig(header) {
     norm_eps: c.norm_eps,
     head_layers: c.head_layers,
     head_ff: c.head_ff,
-    head_heads: c.head_heads,
     head_norm_eps: c.head_norm_eps,
     steps: 2 * (c.num_hidden_layers + c.head_layers),
   };

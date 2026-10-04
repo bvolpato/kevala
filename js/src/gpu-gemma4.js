@@ -33,97 +33,105 @@ function bf16Round(value) {
   return f[0];
 }
 
+/** The text config: the flat pack config, or the `text_config` nested in an upstream config. */
 function textConfig(header) {
   const c = header?.config || {};
-  return c.text_config || c.textConfig || c;
+  return c.text_config || c;
 }
 
-/** Converts either the flat native config or HF's nested text_config to GPU fields. */
+const invalid = (what) => new Error(`Gemma 4 GPU config ${what}`);
+const positiveInteger = (n) => Number.isSafeInteger(n) && n > 0;
+
+/**
+ * Reads the pack's text config (Hugging Face field names, as the converter copies them) into the
+ * fields the GPU trunk uses. It accepts what the Rust `Gemma4Config` accepts, so a pack the
+ * coordinator cannot load fails here with the same reason.
+ */
 export function gemma4Config(header) {
   const c = textConfig(header);
-  const layers = Number(c.num_hidden_layers ?? c.layers ?? c.num_layers);
-  const rawLayerTypes = c.layer_types ?? c.layerTypes;
-  const layerTypes = Array.isArray(rawLayerTypes) ? rawLayerTypes.map((t) => String(t === "global_attention" ? "full_attention" : t)) : null;
-  const full = layerTypes?.map((t) => t === "full_attention");
-  const hidden = Number(c.hidden_size ?? c.hidden);
-  const localHeadDim = Number(c.head_dim ?? 256);
-  const globalHeadDim = Number(c.global_head_dim ?? c.globalHeadDim ?? 512);
-  const kvHeads = Number(c.num_key_value_heads ?? c.kv_heads);
-  const globalKvHeads = kvHeads; // Separate K/V projections use the same head count in both layer types.
-  const rope = c.rope_parameters || c.ropeParameters || {};
-  const localRope = rope.sliding_attention || rope.sliding || {};
-  const globalRope = rope.full_attention || rope.full || {};
-  const layersShared = Number(c.num_kv_shared_layers ?? c.kv_shared_layers ?? 0);
-  const sharedStart = Math.max(0, layers - layersShared);
-  const boolField = (key) => {
+  const flag = (key) => {
     if (!Object.hasOwn(c, key)) return false;
-    if (typeof c[key] !== "boolean") throw new Error(`Gemma 4 GPU config ${key} must be boolean`);
+    if (typeof c[key] !== "boolean") throw invalid(`${key} must be boolean`);
     return c[key];
   };
-  if (Object.hasOwn(c, "hidden_activation") && c.hidden_activation !== "gelu_pytorch_tanh") throw new Error("Gemma 4 GPU config supports only hidden_activation=gelu_pytorch_tanh");
-  const attentionBias = boolField("attention_bias");
-  const attentionKEqV = boolField("attention_k_eq_v");
-  const enableMoe = boolField("enable_moe_block");
-  if (attentionBias) throw new Error("Gemma 4 GPU config does not support attention_bias=true");
-  if (attentionKEqV) throw new Error("Gemma 4 GPU config does not support attention_k_eq_v=true");
-  if (enableMoe) throw new Error("Gemma 4 GPU config does not support enable_moe_block=true");
-  if (!Number.isSafeInteger(layers) || layers <= 0 || !Number.isSafeInteger(hidden) || hidden <= 0 || !Number.isSafeInteger(Number(c.intermediate_size ?? c.intermediate)) || Number(c.intermediate_size ?? c.intermediate) <= 0) throw new Error("Gemma 4 GPU config has invalid model dimensions");
-  if (!Number.isSafeInteger(Number(c.num_attention_heads ?? c.heads)) || Number(c.num_attention_heads ?? c.heads) <= 0 || !Number.isSafeInteger(kvHeads) || kvHeads <= 0 || !Number.isSafeInteger(globalKvHeads) || globalKvHeads <= 0) throw new Error("Gemma 4 GPU config has invalid attention head count");
-  if (Number(c.num_attention_heads ?? c.heads) % kvHeads || Number(c.num_attention_heads ?? c.heads) % globalKvHeads) throw new Error("Gemma 4 GPU config requires attention heads divisible by KV heads");
-  if (!Number.isSafeInteger(localHeadDim) || localHeadDim <= 0 || localHeadDim > 256 || localHeadDim % 2 || !Number.isSafeInteger(globalHeadDim) || globalHeadDim <= 0 || globalHeadDim > 512 || globalHeadDim % 2) throw new Error("Gemma 4 GPU config supports even local head dimensions up to 256 and global dimensions up to 512");
-  if (!Number.isSafeInteger(layersShared) || layersShared < 0 || layersShared >= layers) throw new Error("Gemma 4 GPU config has invalid KV sharing count");
-  if (!Number.isSafeInteger(Number(c.max_position_embeddings ?? c.max_position ?? 131072)) || Number(c.max_position_embeddings ?? c.max_position ?? 131072) <= 0) throw new Error("Gemma 4 GPU config has invalid position limit");
-  const pleDim = Number(c.hidden_size_per_layer_input ?? c.ple_dim ?? 256);
-  const vocab = Number(c.vocab_size ?? c.vocab ?? 262144);
-  const pleVocab = Number(c.vocab_size_per_layer_input ?? c.ple_vocab ?? vocab);
-  if (!Number.isSafeInteger(pleDim) || pleDim <= 0 || !Number.isSafeInteger(vocab) || vocab <= 0 || !Number.isSafeInteger(pleVocab) || pleVocab <= 0) throw new Error("Gemma 4 GPU config has invalid PLE or vocabulary dimensions");
-  const intermediate = Number(c.intermediate_size ?? c.intermediate);
-  if (hidden % 4 || intermediate % 4 || pleDim % 4) throw new Error("Gemma 4 GPU config requires hidden, intermediate, and PLE dimensions divisible by four");
-  if (c.use_bidirectional_attention != null) throw new Error("Gemma 4 GPU config does not support use_bidirectional_attention for direct scoring");
-  if (!layerTypes || layerTypes.length !== layers) throw new Error("Gemma 4 GPU config requires layer_types for every decoder layer");
-  if (layerTypes.some((t) => t !== "sliding_attention" && t !== "full_attention")) throw new Error("Gemma 4 GPU config has invalid layer_types");
-  if (layerTypes.at(-1) !== "full_attention") throw new Error("Gemma 4 GPU config requires the final decoder layer to be full_attention");
-  const prefixTypes = new Set(layerTypes.slice(0, sharedStart));
-  for (const type of new Set(layerTypes.slice(sharedStart))) {
-    if (!prefixTypes.has(type)) throw new Error(`Gemma 4 GPU config has no non-shared KV source for ${type}`);
+  if (Object.hasOwn(c, "hidden_activation") && c.hidden_activation !== "gelu_pytorch_tanh") throw invalid("supports only hidden_activation=gelu_pytorch_tanh");
+  for (const unsupported of ["attention_bias", "attention_k_eq_v", "enable_moe_block"]) {
+    if (flag(unsupported)) throw invalid(`does not support ${unsupported}=true`);
   }
-  const window = Number(c.sliding_window ?? c.window ?? 512);
-  if (!Number.isSafeInteger(window) || window <= 0) throw new Error("Gemma 4 GPU config has invalid sliding window");
+
+  const layers = Number(c.num_hidden_layers);
+  const hidden = Number(c.hidden_size);
+  const intermediate = Number(c.intermediate_size);
+  if (![layers, hidden, intermediate].every(positiveInteger)) throw invalid("has invalid model dimensions");
+  const heads = Number(c.num_attention_heads);
+  // The K=V attention path, the only one with a separate global head count, is rejected above.
+  const kvHeads = Number(c.num_key_value_heads);
+  if (!positiveInteger(heads) || !positiveInteger(kvHeads)) throw invalid("has invalid attention head count");
+  if (heads % kvHeads) throw invalid("requires attention heads divisible by KV heads");
+  const localHeadDim = Number(c.head_dim ?? 256);
+  const globalHeadDim = Number(c.global_head_dim ?? 512);
+  const headDim = (n, limit) => positiveInteger(n) && n <= limit && n % 2 === 0;
+  if (!headDim(localHeadDim, 256) || !headDim(globalHeadDim, 512)) throw invalid("supports even local head dimensions up to 256 and global dimensions up to 512");
+  const kvSharedLayers = Number(c.num_kv_shared_layers ?? 0);
+  if (!Number.isSafeInteger(kvSharedLayers) || kvSharedLayers < 0 || kvSharedLayers >= layers) throw invalid("has invalid KV sharing count");
+  const maxPosition = Number(c.max_position_embeddings ?? 131072);
+  if (!positiveInteger(maxPosition)) throw invalid("has invalid position limit");
+  const pleDim = Number(c.hidden_size_per_layer_input ?? 256);
+  const vocab = Number(c.vocab_size ?? 262144);
+  const pleVocab = Number(c.vocab_size_per_layer_input ?? vocab);
+  if (![pleDim, vocab, pleVocab].every(positiveInteger)) throw invalid("has invalid PLE or vocabulary dimensions");
+  if (hidden % 4 || intermediate % 4 || pleDim % 4) throw invalid("requires hidden, intermediate, and PLE dimensions divisible by four");
+  if (c.use_bidirectional_attention != null) throw invalid("does not support use_bidirectional_attention for direct scoring");
+
+  const layerTypes = Array.isArray(c.layer_types) ? c.layer_types.map(String) : null;
+  if (!layerTypes || layerTypes.length !== layers) throw invalid("requires layer_types for every decoder layer");
+  if (layerTypes.some((t) => t !== "sliding_attention" && t !== "full_attention")) throw invalid("has invalid layer_types");
+  if (layerTypes.at(-1) !== "full_attention") throw invalid("requires the final decoder layer to be full_attention");
+  // The last layers reuse the keys and values of the last earlier layer of their attention type.
+  const sharedStart = layers - kvSharedLayers;
+  const sources = new Set(layerTypes.slice(0, sharedStart));
+  for (const type of new Set(layerTypes.slice(sharedStart))) {
+    if (!sources.has(type)) throw invalid(`has no non-shared KV source for ${type}`);
+  }
+  const window = Number(c.sliding_window ?? 512);
+  if (!positiveInteger(window)) throw invalid("has invalid sliding window");
+
+  const rope = c.rope_parameters || {};
+  const localRope = rope.sliding_attention || {};
+  const globalRope = rope.full_attention || {};
   const localRopeType = typeof localRope.rope_type === "string" ? localRope.rope_type : "default";
   const globalRopeType = typeof globalRope.rope_type === "string" ? globalRope.rope_type : "proportional";
-  if (localRopeType !== "default" || globalRopeType !== "proportional") throw new Error(`Gemma 4 GPU config supports only sliding rope_type=default and full rope_type=proportional (got ${localRopeType}/${globalRopeType})`);
-  const globalFraction = Number(c.global_partial_rotary ?? c.globalPartialRotary ?? globalRope.partial_rotary_factor ?? globalRope.partialRotaryFactor ?? 0.25);
-  if (!Number.isFinite(globalFraction) || globalFraction < 0 || globalFraction > 1 || Math.floor((globalHeadDim * globalFraction) / 2) * 2 > 256) throw new Error("Gemma 4 GPU config has unsupported global proportional RoPE");
+  if (localRopeType !== "default" || globalRopeType !== "proportional") throw invalid(`supports only sliding rope_type=default and full rope_type=proportional (got ${localRopeType}/${globalRopeType})`);
+  const ropeGlobalFraction = Number(globalRope.partial_rotary_factor ?? 0.25);
+  if (!Number.isFinite(ropeGlobalFraction) || ropeGlobalFraction < 0 || ropeGlobalFraction > 1 || Math.floor((globalHeadDim * ropeGlobalFraction) / 2) * 2 > 256) throw invalid("has unsupported global proportional RoPE");
+
   return {
     hidden,
     layers,
     intermediate,
-    heads: Number(c.num_attention_heads ?? c.heads),
+    heads,
     kvHeads,
-    globalKvHeads,
     localHeadDim,
     globalHeadDim,
-    maxHeadDim: Math.max(localHeadDim, globalHeadDim),
-    maxQ: Number(c.num_attention_heads ?? c.heads) * Math.max(localHeadDim, globalHeadDim),
-    maxKV: Math.max(kvHeads, globalKvHeads) * Math.max(localHeadDim, globalHeadDim),
     layerTypes,
-    full,
+    full: layerTypes.map((t) => t === "full_attention"),
     sharedStart,
-    kvSharedLayers: layersShared,
+    kvSharedLayers,
     window,
-    maxPosition: Number(c.max_position_embeddings ?? c.max_position ?? 131072),
+    maxPosition,
     vocab,
     pleDim,
     pleVocab,
-    eps: Number(c.rms_norm_eps ?? c.eps ?? 1e-6),
+    eps: Number(c.rms_norm_eps ?? 1e-6),
+    // the converter records these scales; an older pack without them gets the same values
     embeddingScale: Number(c.embedding_scale ?? bf16Round(Math.sqrt(hidden))),
     pleEmbeddingScale: Number(c.ple_embedding_scale ?? bf16Round(Math.sqrt(pleDim))),
     pleInputScale: Number(c.ple_input_scale ?? Math.SQRT1_2),
     pleProjectionScale: Number(c.ple_projection_scale ?? 1 / Math.sqrt(hidden)),
-    useDoubleWideMlp: !!(c.use_double_wide_mlp ?? c.useDoubleWideMlp),
-    ropeLocalTheta: Number(localRope.rope_theta ?? localRope.ropeTheta ?? c.rope_theta ?? 10000),
-    ropeGlobalTheta: Number(globalRope.rope_theta ?? globalRope.ropeTheta ?? c.rope_theta ?? 1000000),
-    ropeGlobalFraction: globalFraction,
+    useDoubleWideMlp: !!c.use_double_wide_mlp,
+    ropeLocalTheta: Number(localRope.rope_theta ?? c.rope_theta ?? 10000),
+    ropeGlobalTheta: Number(globalRope.rope_theta ?? c.rope_theta ?? 1000000),
+    ropeGlobalFraction,
     causal: 1,
   };
 }
@@ -147,7 +155,6 @@ export class GpuGemma4 {
       if (t.scales_size) this.checkBuffer(t.scales_size, `${t.name}.scales`);
     }
     this.capacity = 0;
-    this.owned = [];
     this.uniforms = [];
     this.ropeMax = 0;
     this.shared = new Map();
@@ -172,9 +179,7 @@ export class GpuGemma4 {
 
   buffer(floats, extra = 0, label = "Gemma 4 scratch") {
     this.checkBuffer(floats * 4, label);
-    const b = this.device.createBuffer({ label, size: Math.max(16, floats * 4), usage: U.STORAGE | extra });
-    this.owned.push(b);
-    return b;
+    return this.device.createBuffer({ label, size: Math.max(16, floats * 4), usage: U.STORAGE | extra });
   }
 
   staticBuffer(arr, label) {
@@ -209,11 +214,9 @@ export class GpuGemma4 {
     this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;
     this.globals = d.createBuffer({ label: "Gemma 4 globals", size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.owned.push(this.globals);
     // A zero bias and fallback scale buffer. Normal Gemma projection tensors are Q8;
     // the fallback keeps bind groups valid if a future converter emits an unscaled bias.
     this.zeros = this.staticBuffer(new Float32Array(16384), "Gemma 4 zero constants");
-    this.owned.push(this.zeros);
     await this.ensureRope(64);
     this.ensure(64);
     this.initialized = true;
@@ -279,7 +282,7 @@ export class GpuGemma4 {
     };
     const D = cfg.hidden;
     const Q = cfg.heads * cfg.globalHeadDim;
-    const KV = Math.max(cfg.kvHeads, cfg.globalKvHeads) * cfg.globalHeadDim;
+    const KV = cfg.kvHeads * cfg.globalHeadDim;
     const maxI = cfg.intermediate * (cfg.useDoubleWideMlp ? 2 : 1);
     const P = cfg.pleDim;
     this.x = make(cap * D, U.COPY_DST | U.COPY_SRC, "Gemma 4 hidden states");
@@ -339,7 +342,6 @@ export class GpuGemma4 {
       return b;
     };
     const globals = d.createBuffer({ label: "Gemma 4 compact tail globals", size: 16, usage: U.UNIFORM | U.COPY_DST });
-    this.owned.push(globals);
     this.dynamic.push(globals);
     buffers.push(globals);
     this.tailBuffers = buffers;
@@ -405,7 +407,7 @@ export class GpuGemma4 {
     const appendLayer = (ops, target, i, compact) => {
       const type = cfg.full[i] ? "full_attention" : "sliding_attention";
       const headDim = cfg.full[i] ? cfg.globalHeadDim : cfg.localHeadDim;
-      const kvHeads = cfg.full[i] ? cfg.globalKvHeads : cfg.kvHeads;
+      const kvHeads = cfg.kvHeads;
       const shared = compact || i >= cfg.sharedStart;
       const kvWidth = kvHeads * headDim;
       const rotary = cfg.full[i] ? Math.floor((cfg.globalHeadDim * cfg.ropeGlobalFraction) / 2) * 2 : cfg.localHeadDim;

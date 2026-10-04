@@ -114,8 +114,6 @@ export const MODELS = {
   }])),
 };
 
-export const UPSTREAM = MODELS.laya;
-
 const SOURCE_IDENTITY_FIELDS = ["repo", "revision", "base", "hosted", "download", "pack", "packSha256", "source"];
 const DERIVED_SOURCE_FIELDS = ["hosted", "download", "pack", "packSha256"];
 const PROVENANCE_FIELDS = ["author", "license"];
@@ -166,12 +164,12 @@ export function resolveModel(model) {
   return { spec: { ...model } };
 }
 
-/**
- * Pack storage. The Origin Private File System takes multi-hundred-megabyte files as streamed
- * writes (the Cache API rejects entries that large in some browsers); the Cache API is the
- * fallback where OPFS is missing. Both expose match(key) -> Response | null, put(key, Response),
- * keys() and remove(key).
- */
+// Pack storage. The Origin Private File System takes multi-hundred-megabyte files as streamed
+// writes (the Cache API rejects entries that large in some browsers); the Cache API is the
+// fallback where OPFS is missing. Both expose match(key) -> Response | null, put(key, Response),
+// keys() and remove(key).
+
+/** The OPFS file name of a cache key: a hash for uniqueness, the last path segment for people. */
 function fileName(key) {
   let h = 0x811c9dc5;
   for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 0x01000193) >>> 0;
@@ -386,10 +384,6 @@ function modelCacheKey(model, which) {
   return upstreamKey(which.spec);
 }
 
-function hfUrl(up, file) {
-  return `https://huggingface.co/${up.repo}/resolve/${up.revision}/${file}`;
-}
-
 async function checked(res, url) {
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   return res;
@@ -540,9 +534,9 @@ async function acceptsRanges(url, signal) {
 
 /** Fetches the upstream files a conversion needs, reporting progress. */
 export async function fetchUpstream(up, { signal, onProgress }) {
-  const text = async (file) => (await checked(await fetch(hfUrl(up, file), { signal }), file)).text();
+  const text = async (file) => (await checked(await fetch(hfFile(up.repo, up.revision, file), { signal }), file)).text();
   const [enc, agent, tok] = await Promise.all([text("encoder/config.json"), text("rl_agent_config.json"), text("tokenizer/tokenizer.json")]);
-  const url = hfUrl(up, "model.safetensors");
+  const url = hfFile(up.repo, up.revision, "model.safetensors");
   const total = await remoteSize(url, signal);
   return { enc, agent, tok, total, chunks: () => fetchRange(url, 0, total, "model.safetensors", { signal, onProgress }) };
 }

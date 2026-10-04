@@ -1,7 +1,7 @@
-// Run the two real models serially. Start scripts/serve.mjs and download the local packs first.
-import { spawnSync } from "node:child_process";
+// Run Laya and Kev-0.8B serially. Start scripts/serve.mjs and download the local packs first.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { BASE_URL, failed, geometricMean, runPage } from "./lib/browser-run.mjs";
 
 const positional = process.argv.slice(2);
 const outArg = positional[0]?.startsWith("--") ? undefined : positional.shift();
@@ -16,7 +16,6 @@ if (unknown.length) {
   process.exit(2);
 }
 const out = resolve(outArg || "tmp/gpu-suite");
-const base = process.env.KEVALA_BENCH_URL || "http://127.0.0.1:18086";
 mkdirSync(out, { recursive: true });
 const resultKind = wall ? "latency" : "bench";
 const profile = wall ? 0 : 1;
@@ -24,10 +23,9 @@ const modeLabel = wall ? "wall-clock" : "GPU-profiled";
 const models = [];
 for (const model of ["laya", "kev-0.8b"]) {
   const file = resolve(out, `${model}.json`);
-  const url = `${base}/bench.html#auto&backend=webgpu&pack=local&model=${model}&runs=5&profile=${profile}&unique=1&shapes=0,1,2&submit=${submit}${baseline ? "&baseline=1" : ""}`;
-  // KEVALA_BENCH_CDP=http://127.0.0.1:9333 runs in that Chrome instead of a headless Firefox
-  const run = spawnSync("uv", ["run", "scripts/bench-gpu.py", "--result", resultKind, "--timeout", "600", "--url", url, "--output", file], { encoding: "utf8", timeout: 650000 });
-  if (run.error || run.status !== 0) {
+  const url = `${BASE_URL}/bench.html#auto&backend=webgpu&pack=local&model=${model}&runs=5&profile=${profile}&unique=1&shapes=0,1,2&submit=${submit}${baseline ? "&baseline=1" : ""}`;
+  const run = runPage({ result: resultKind, url, output: file, stdio: "pipe" });
+  if (failed(run)) {
     console.error(run.error || run.stderr || run.stdout);
     process.exit(1);
   }
@@ -35,6 +33,6 @@ for (const model of ["laya", "kev-0.8b"]) {
   models.push(result);
   console.error(`${model}: ${result.metricMs.toFixed(3)} ms ${modeLabel} geometric mean`);
 }
-const metricMs = Math.exp(models.reduce((sum, model) => sum + Math.log(model.metricMs), 0) / models.length);
+const metricMs = geometricMean(models.map((model) => model.metricMs));
 writeFileSync(resolve(out, "summary.json"), JSON.stringify({ metricMs, mode: modeLabel, result: resultKind, submit, models }, null, 2) + "\n");
 console.log(metricMs);
