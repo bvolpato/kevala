@@ -303,6 +303,8 @@ The website size picker has a separate weight-free browser check:
 uv run scripts/check-model-picker.py
 ```
 
-It verifies both families, their smallest defaults, saved and URL-selected sizes, keyboard focus,
-switching from loaded/cached models, explicit loading, and mobile width. GPU and CPU guards remain
-serial model checks; the picker test does not fetch model weights.
+It verifies family defaults, saved and URL-selected sizes, keyboard focus, switching from
+loaded/cached models, explicit loading, and mobile width. It also checks Reaction Recorder's
+image-only choices, route changes that preserve loaded models, published and custom vision URLs,
+and explicit reloads from text-only Gemma to image mode. GPU and CPU guards remain serial model
+checks; the picker check does not fetch model weights.

@@ -37,8 +37,12 @@ The E2B image path combines the existing 5,217,421,952-byte Q8 decoder with a
 337,302,144-byte BF16 vision companion. The companion preserves the source matrix and positional
 table values; normalization weights and clipping bounds are stored in FP32. Its GPU activation
 arithmetic is FP32. It must match the decoder's source repository, pinned revision, and hidden
-width. The public decoder pack is published; the vision companion currently needs local conversion
-and serving.
+width. Both packs are public. The runtime catalog pins the
+[vision companion](https://huggingface.co/bvolpato/kevala-packs/blob/712955050042ee5980ba3c37e2da53d79c51d9fe/gemma-4-e2b-vision-bf16.kevala)
+and its adjacent provenance manifest to an immutable commit. The companion's SHA-256 is
+`6556225c040a5b1d0bc8874a2833ce17cb7579d390f3225995c09ae589214d04`.
+Reaction Recorder's model picker shows only implemented image models and loads the published
+companion by default. Other tabs retain the full preview catalog and optional text-only loading.
 
 Encoded image inputs accept opaque PNG, JPEG, and WebP with bounded dimensions checked
 before decompression. Pass raw RGBA or ImageData for alpha-bearing images and other
@@ -56,7 +60,8 @@ measure available memory or include scratch buffers. Temporary PLE files are rem
 disposal, even with pack caching disabled. A bounded cache retains up to 16 MiB of GPU PLE
 row uploads for repeated prompts, avoiding disk reads and embedding expansion on warmed frames.
 
-Fetch only the pinned vision tower and projector, then convert them:
+To reproduce the published companion locally, fetch only the pinned vision tower and projector,
+then convert them:
 
 ```sh
 uv run tools/fetch_gemma_vision.py --output-dir tmp/gemma4-vision/E2B
@@ -74,9 +79,11 @@ It validates HTTP ranges and source identity, and writes a manifest with the pin
 counts, and hashes. Generated weights stay in `tmp/`. `convert-vision` currently accepts BF16 only.
 
 ```js
+import { Kevala, MODELS } from "kevala";
+
 const kevala = await Kevala.load({
   model: "gemma-4-e2b",
-  vision: "http://127.0.0.1:8080/tmp/gemma-4-e2b-vision-bf16.kevala",
+  vision: MODELS["gemma-4-e2b"].vision.hosted,
   imageTokens: 70,
   backend: "webgpu",
 });

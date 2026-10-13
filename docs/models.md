@@ -7,6 +7,9 @@ Kev-9B, Clef-flash, and Gemma 4 E4B remain available through
 the JS runtime API but are not shown in the picker while that cap is active.
 Kev v1.0 starts at 0.8B; SemIf starts at 0.8B. Changing a size waits for **Load** before fetching
 weights. Gemma 4 has E2B and E4B dense text models in the runtime catalog.
+On the Reaction Recorder tab, the picker shows only models with an implemented image companion.
+It currently offers Gemma 4 E2B and enables images when loading it from that tab. Visiting the
+tab preserves an already loaded text model until you explicitly choose and load an image model.
 For refreshed Kev and the new models, BF16 is the default precision and Q8 is an explicit option.
 Saved choices and explicit model URLs retain their selected size. The model picker shows actual
 local pack availability when running the development server. It discovers validated `tmp/` packs
@@ -14,6 +17,8 @@ automatically; `?pack=local` makes the preview local-only and disables variants 
 matching local pack.
 
 The published pack catalog pins [Laya and SemIf](https://huggingface.co/bvolpato/kevala-packs/tree/45da41504c6c117eca940103e49dd5eb1c3eab4f) and [Gemma 4](https://huggingface.co/bvolpato/kevala-packs/tree/c70e9136938026e00cbbdec9db027d862963f180). Kev v1.0, H2O-Lightning, and Clef-flash use newer pinned checkpoints and do not point to the older Kev pack bytes. Their converted packs are not published yet.
+The [Gemma 4 E2B BF16 vision companion](https://huggingface.co/bvolpato/kevala-packs/tree/712955050042ee5980ba3c37e2da53d79c51d9fe)
+has its own immutable publication pin and a provenance manifest with its exact size and SHA-256.
 The JS runtime registers every model below. Published packs load by name, supported checkpoints can
 convert in the browser, and native-only models without published packs need a converted `.kevala`
 URL. With the development server, the picker automatically discovers validated local files from
@@ -43,7 +48,8 @@ browser conversion. Kev-4B/9B, H2O-Lightning, and Clef-flash need native convers
 browser conversion paths exist. Their first-load path fails fast while no matching pack is
 published; load a converted `.kevala` URL when you have one.
 Gemma 4 E2B image decisions add a separately loaded 337,302,144-byte BF16 vision companion on
-WebGPU. That companion is not published yet; see [conversion and loading](gemma4.md#vision-companion).
+WebGPU. The picker uses its published URL automatically, with optional local or custom URLs;
+see [conversion and loading](gemma4.md#vision-companion).
 Gate image controls on the loaded `info.modalities`, not the model name or upstream capabilities.
 
 ```js

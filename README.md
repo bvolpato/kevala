@@ -302,14 +302,17 @@ integrations are text-only here.
 
 ### Images with Gemma 4 E2B
 
-Use the current repository runtime with the published Q8 decoder and a locally served BF16 vision
-companion. The companion is 337,302,144 bytes and is not published in the public pack catalog.
-[Convert it from the pinned source](docs/gemma4.md#vision-companion) and serve the resulting file:
+Use the current repository runtime with the published Q8 decoder and BF16 vision companion.
+The companion is 337,302,144 bytes and preserves the source vision weights without added
+quantization. The Reaction Recorder picker offers image models and loads this companion by
+default. The API accepts its pinned URL explicitly:
 
 ```js
+import { Kevala, MODELS } from "kevala";
+
 const kevala = await Kevala.load({
   model: "gemma-4-e2b",
-  vision: "http://127.0.0.1:8080/tmp/gemma-4-e2b-vision-bf16.kevala",
+  vision: MODELS["gemma-4-e2b"].vision.hosted,
   imageTokens: 70,
   backend: "webgpu",
 });

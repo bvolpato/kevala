@@ -171,10 +171,14 @@ class Session extends EventTarget {
     this.customUrlModel = this.#saved.customUrlModel || this.model;
     this.visionUrl = typeof this.#saved.visionUrl === "string" ? this.#saved.visionUrl : "";
     this.visionUrlModel = this.#saved.visionUrlModel || this.#saved.model || "";
-    this.visionEnabled = this.model === IMAGE_MODEL && this.#saved.model === this.model
-      && typeof this.#saved.visionEnabled === "boolean"
+    const savedVisionModel = this.#saved.visionEnabledModel || (this.#saved.model === IMAGE_MODEL ? IMAGE_MODEL : "");
+    this.visionPreference = savedVisionModel === IMAGE_MODEL && typeof this.#saved.visionEnabled === "boolean"
       ? this.#saved.visionEnabled
-      : !!this.localVisionPackFor(this.model);
+      : null;
+    this.visionEnabled = this.model === IMAGE_MODEL
+      ? (this.visionPreference ?? (!!this.localVisionPackFor(this.model) || !!MODELS[this.model]?.vision?.hosted))
+      : false;
+    if (this.model === IMAGE_MODEL) this.visionPreference = this.visionEnabled;
     /** idle | loading | ready | error */
     this.status = "idle";
     /** { frac, indet, label } while loading */
@@ -234,7 +238,8 @@ class Session extends EventTarget {
     if (!MODELS[model]?.modalities?.includes("image")) return "";
     const local = this.localVisionPackFor(model);
     if (local) return local.url;
-    return this.visionUrlModel === model ? this.visionUrl.trim() : "";
+    const custom = this.visionUrlModel === model ? this.visionUrl.trim() : "";
+    return custom || MODELS[model]?.vision?.hosted || "";
   }
 
   visionUrlError(url = this.visionUrlFor()) {
@@ -250,7 +255,7 @@ class Session extends EventTarget {
     return "";
   }
 
-  loadUnavailable() {
+  loadUnavailable(requireVision = this.visionEnabledFor()) {
     const spec = MODELS[this.model];
     if (explicitLocal && MODEL_NOTES[this.model] && !this.localPackFor()) {
       return `No matching ${this.precisionFor().toUpperCase()} pack is available in this local preview.`;
@@ -259,7 +264,7 @@ class Session extends EventTarget {
     if (spec?.nativeConversion && !this.customPackUrl() && !this.localPackFor() && !hostedPackAvailable) {
       return "A converted .kevala URL is required; no matching pack is available for this precision.";
     }
-    if (this.visionEnabledFor()) {
+    if (requireVision) {
       if (!this.visionUrlFor()) return "An image vision-pack URL is required; paste a BF16 vision pack URL or turn off Enable images to load text only.";
       const visionUrlError = this.visionUrlError();
       if (visionUrlError) return visionUrlError;
@@ -288,10 +293,12 @@ class Session extends EventTarget {
   }
 
   #persist() {
+    const visionPreference = this.model === IMAGE_MODEL ? this.visionEnabledFor() : this.visionPreference;
     const choice = {
       model: this.model, backend: this.backend, precision: this.precision,
       customUrl: this.customUrl, customUrlModel: this.customUrlModel,
-      visionEnabled: this.visionEnabledFor(), visionUrl: this.visionUrl, visionUrlModel: this.visionUrlModel,
+      visionUrl: this.visionUrl, visionUrlModel: this.visionUrlModel,
+      ...(typeof visionPreference === "boolean" ? { visionEnabled: visionPreference, visionEnabledModel: IMAGE_MODEL } : {}),
     };
     const active = this.status === "ready" || this.status === "loading";
     try {
@@ -320,10 +327,12 @@ class Session extends EventTarget {
     const values = await Promise.all(requests.map(async ({ model, source, precision }) => {
       if (model !== this.model || !this.visionEnabledFor(model)) return isCached(source, precision).catch(() => false);
       const vision = this.visionUrlFor(model);
-      if (!vision || this.localVisionPackFor(model) || this.localPackFor(model, precision)) return false;
+      if (!vision) return false;
+      const localDecoder = !!this.localPackFor(model, precision);
+      const localVision = !!this.localVisionPackFor(model);
       const [decoderCached, visionCached] = await Promise.all([
-        isCached(source, precision).catch(() => false),
-        isCached(vision, "bf16").catch(() => false),
+        localDecoder ? true : isCached(source, precision).catch(() => false),
+        localVision ? true : isCached(vision, "bf16").catch(() => false),
       ]);
       return decoderCached && visionCached;
     }));
@@ -356,15 +365,23 @@ class Session extends EventTarget {
     for (const resolve of this.#waiters.splice(0)) resolve(kevala);
   }
 
-  select(model) {
+  select(model, { enableVision = false } = {}) {
     if (!MODELS[model]) return;
-    if (model === this.model) return;
+    if (model === this.model) {
+      if (enableVision && !this.visionEnabledFor(model)) this.setVisionEnabled(true);
+      return;
+    }
     const previousModel = this.model;
     this.cancel();
     this.unload();
     this.model = model;
     this.precision = defaultPrecision(model);
-    this.visionEnabled = !!this.localVisionPackFor(model);
+    if (MODELS[model]?.modalities?.includes("image")) {
+      this.visionEnabled = enableVision || (this.visionPreference ?? (!!this.localVisionPackFor(model) || !!MODELS[model]?.vision?.hosted));
+      this.visionPreference = this.visionEnabled;
+    } else {
+      this.visionEnabled = false;
+    }
     this.#invalidateCache(previousModel, model);
     if (this.backend === "wasm" && requiresWebGPU(model, this.precision)) this.backend = "auto";
     this.error = null;
@@ -422,12 +439,13 @@ class Session extends EventTarget {
       this.unload();
     }
     this.visionEnabled = next;
+    this.visionPreference = next;
     if (this.status === "error") {
       this.status = "idle";
       this.error = null;
       this.errorKind = null;
     }
-    this.cached[this.model] = false;
+    this.#invalidateCache(this.model);
     this.#persist();
     this.#emit();
     this.refreshCache();
@@ -436,7 +454,8 @@ class Session extends EventTarget {
   setVisionUrl(url, model = this.model) {
     if (!MODELS[model]?.modalities?.includes("image")) return;
     const next = url.trim();
-    if (next === this.visionUrlFor(model) && this.visionUrlModel === model) return;
+    const currentCustom = this.visionUrlModel === model ? this.visionUrl.trim() : "";
+    if (next === currentCustom) return;
     if (model === this.model && this.visionEnabledFor(model) && (this.status === "loading" || this.status === "ready")) {
       this.cancel();
       this.unload();
@@ -448,9 +467,10 @@ class Session extends EventTarget {
       this.error = null;
       this.errorKind = null;
     }
-    this.cached[model] = false;
+    this.#invalidateCache(model);
     this.#persist();
     this.#emit();
+    this.refreshCache();
   }
 
   async load(model) {

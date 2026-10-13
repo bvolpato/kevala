@@ -36,9 +36,9 @@ def selected(model):
     assert label == driver.execute_script("return 'Load ' + kevala_site.session.nameOf()")
 
 
-def open_page(query=""):
+def open_page(query="", route="how"):
     driver.get("about:blank")
-    driver.get(args.url.rstrip("/") + "/" + query + "#/how")
+    driver.get(args.url.rstrip("/") + "/" + query + f"#/{route}")
     wait.until(lambda d: d.execute_script("return !!window.kevala_site?.session.storage && !!document.querySelector('.mchip')"))
     click(".mchip")
 
@@ -242,14 +242,34 @@ try:
     driver.execute_script("kevala_site.session.gpuAvailable = true; kevala_site.session.dispatchEvent(new Event('change')); ")
     vision_checkbox = driver.find_element(By.CSS_SELECTOR, '[data-vision-enabled]')
     local_vision = driver.execute_script("return kevala_site.session.localVisionPackFor()")
+    default_vision_url = driver.execute_script("return kevala_site.session.visionUrlFor()")
     vision_status = driver.find_element(By.CSS_SELECTOR, "[data-vision-status]").text
     if local_vision:
         assert vision_checkbox.is_selected(), "a matching local vision pack enables the Reaction demo by default"
         assert "ready on this server" in vision_status
         assert not driver.find_elements(By.CSS_SELECTOR, "[data-vision-url]")
+    elif default_vision_url:
+        assert vision_checkbox.is_selected(), "a published hosted companion enables images by default"
+        assert "Published vision companion" in vision_status
+        details = driver.find_element(By.CSS_SELECTOR, ".mp-vision-override")
+        assert "Optional custom vision-pack URL" in details.text
+        vision_url = details.find_element(By.CSS_SELECTOR, "[data-vision-url]")
+        assert not vision_url.is_displayed(), "the custom URL stays optional under collapsed details"
+        details.find_element(By.CSS_SELECTOR, "summary").click()
+        vision_url = details.find_element(By.CSS_SELECTOR, "[data-vision-url]")
+        custom_url = "https://example.test/gemma-4-e2b-vision-bf16.kevala"
+        driver.execute_script("kevala_site.session.cached['gemma-4-e2b'] = true")
+        vision_url.send_keys(custom_url)
+        assert driver.execute_script("return kevala_site.session.cached['gemma-4-e2b']") is False, "a companion URL override invalidates the image cache entry"
+        assert driver.execute_script("return kevala_site.session.visionUrlFor()") == custom_url
+        driver.execute_script("kevala_site.session.cached['gemma-4-e2b'] = true")
+        vision_url.send_keys(Keys.CONTROL, "a")
+        vision_url.send_keys(Keys.BACKSPACE)
+        assert driver.execute_script("return kevala_site.session.cached['gemma-4-e2b']") is False, "resetting a custom URL invalidates the image cache entry"
+        assert driver.execute_script("return kevala_site.session.visionUrlFor()") == default_vision_url, "clearing a custom URL restores the published companion"
     else:
-        assert not vision_checkbox.is_selected(), "image mode stays off without a matching local vision pack"
-        assert "No local vision pack" in vision_status and "Text mode still works" in vision_status
+        assert not vision_checkbox.is_selected(), "image mode stays off when no companion is available"
+        assert "No hosted vision companion" in vision_status and "Text mode works" in vision_status
         vision_url = driver.find_element(By.CSS_SELECTOR, "[data-vision-url]")
         assert vision_url.is_displayed(), "the required companion URL is visible without Advanced"
         assert driver.execute_script("return kevala_site.session.loadUnavailable()") == ""
@@ -260,6 +280,18 @@ try:
         assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled(), "a valid vision URL enables explicit image-mode loading"
         vision_checkbox.click()
         assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled(), "text-only mode remains loadable without a vision pack"
+    driver.execute_script("""
+      const s = kevala_site.session;
+      window.imageLoads = [];
+      s.load = () => imageLoads.push({model: s.model, vision: s.visionEnabledFor() ? s.visionUrlFor() : ""});
+    """)
+    click('[data-act="load"]')
+    image_load = driver.execute_script("return window.imageLoads.at(-1)")
+    assert image_load["model"] == "gemma-4-e2b"
+    if vision_checkbox.is_selected():
+        assert image_load["vision"] == driver.execute_script("return kevala_site.session.visionUrlFor()"), "image-mode loading passes the effective companion URL"
+    else:
+        assert image_load["vision"] == "", "text-only loading omits the companion URL"
     assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
 
     click('[data-model="laya"]')
@@ -301,6 +333,110 @@ try:
     assert "Up to 4B" in availability and "Gemma E2B image pilot" in availability
     driver.execute_script("kevala_site.session.select('clef-flash'); kevala_site.session.select('kev-9b');")
     selected("kev-4b")
-    print("Model picker passed: retired Bruv fallback, visible families, precision defaults, custom native pack URLs, local BF16/Q8 paths, sizes, focus, loaded/cached switch, explicit loading, saved/URL choice, mobile selection, checkpoint choices.")
+
+    # A saved explicit text-only choice survives other model selections outside Reaction.
+    open_page("?model=gemma-4-e2b")
+    saved_text_only = {"model": "gemma-4-e2b", "backend": "auto", "visionEnabled": False, "visionEnabledModel": "gemma-4-e2b"}
+    driver.execute_script("""
+      const saved = arguments[0];
+      sessionStorage.setItem('kevala.session', JSON.stringify(saved));
+      localStorage.setItem('kevala.pref', JSON.stringify(saved));
+    """, saved_text_only)
+    driver.refresh()
+    wait.until(lambda d: d.execute_script("return !!window.kevala_site?.session.storage && !!document.querySelector('.mchip')"))
+    click(".mchip")
+    selected("gemma-4-e2b")
+    assert not driver.find_element(By.CSS_SELECTOR, "[data-vision-enabled]").is_selected(), "saved text-only mode remains selected on normal tabs"
+    driver.execute_script("kevala_site.session.select('laya'); kevala_site.session.select('gemma-4-e2b');")
+    assert not driver.execute_script("return kevala_site.session.visionEnabledFor()"), "saved text-only mode survives switching away and back"
+    driver.execute_script("""
+      const s = kevala_site.session;
+      s.select('laya');
+      s.gpuAvailable = true;
+      window.disposedOnReactionSelect = false;
+      s.kevala = {info: {backend: 'webgpu', gpu: 'test GPU', loadMs: 1}, dispose() { window.disposedOnReactionSelect = true; }};
+      s.status = 'ready';
+      s.dispatchEvent(new Event('change'));
+    """)
+    assert driver.execute_script("return kevala_site.session.model") == "laya"
+    assert driver.execute_script("return kevala_site.session.status") == "ready"
+    driver.execute_script("location.hash = '#/reaction'")
+    wait.until(lambda d: d.execute_script("return location.hash === '#/reaction' && !document.querySelector('.mpanel').classList.contains('hidden') && !!document.querySelector('[data-family=gemma4]') && !document.querySelector('[data-family=kev]')"))
+    assert driver.execute_script("return kevala_site.session.model") == "laya", "navigation preserves the global text-model selection"
+    assert driver.execute_script("return kevala_site.session.status") == "ready"
+    assert not driver.execute_script("return window.disposedOnReactionSelect"), "navigation preserves the loaded text model"
+    availability = driver.find_element(By.CSS_SELECTOR, "[data-local-availability]").text
+    assert "Image models only" in availability and "Up to 4B" not in availability
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-family-card="gemma4"]')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-model]')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-precision], [data-native-pack-url], [data-be], [data-act="load"]')
+    assert "Select Gemma 4 E2B to use images" in driver.find_element(By.CSS_SELECTOR, ".mpanel").text
+
+    driver.execute_script("location.hash = '#/how'")
+    wait.until(lambda d: d.execute_script("return location.hash === '#/how' && !!document.querySelector('[data-model=laya]')"))
+    driver.execute_script("""
+      const s = kevala_site.session;
+      s.kevala = null;
+      s.status = 'loading';
+      s.progress = {frac: 0.4, indet: false, label: 'Fake text-model load'};
+      s.dispatchEvent(new Event('change'));
+    """)
+    driver.execute_script("location.hash = '#/reaction'")
+    wait.until(lambda d: d.execute_script("return location.hash === '#/reaction' && document.title === 'Reaction Recorder · kevala'"))
+    assert driver.execute_script("return kevala_site.session.model") == "laya"
+    assert driver.execute_script("return kevala_site.session.status") == "loading"
+    assert driver.execute_script("return kevala_site.session.progress.label") == "Fake text-model load"
+    assert "current load continues" in driver.find_element(By.CSS_SELECTOR, ".mpanel").text
+    driver.execute_script("""
+      const s = kevala_site.session;
+      s.status = 'ready';
+      s.progress = null;
+      s.kevala = {info: {backend: 'webgpu', gpu: 'test GPU', loadMs: 1}, dispose() { window.disposedOnReactionSelect = true; }};
+      s.dispatchEvent(new Event('change'));
+    """)
+
+    driver.execute_script("kevala_site.session.gpuAvailable = true; kevala_site.session.dispatchEvent(new Event('change')); ")
+    click('[data-family="gemma4"]')
+    assert driver.execute_script("return kevala_site.session.model") == "gemma-4-e2b"
+    assert driver.execute_script("return kevala_site.session.visionEnabledFor()"), "explicit Gemma selection in Reaction enables its companion"
+    assert driver.execute_script("return window.disposedOnReactionSelect"), "an explicit model choice unloads the previous model"
+
+    local_vision = driver.execute_script("return kevala_site.session.localVisionPackFor()")
+    if not local_vision:
+        driver.execute_script("kevala_site.session.setVisionUrl('https://example.test/reaction-gemma-vision.kevala')")
+    driver.execute_script("""
+      const s = kevala_site.session;
+      window.reactionLoads = [];
+      s.load = () => reactionLoads.push({model: s.model, vision: s.visionEnabledFor() ? s.visionUrlFor() : ""});
+    """)
+    image_button = driver.find_element(By.CSS_SELECTOR, '[data-act="load"]')
+    assert image_button.is_enabled(), "the selected image model is loadable with its companion"
+    click('[data-act="load"]')
+    reaction_load = driver.execute_script("return window.reactionLoads.at(-1)")
+    assert reaction_load == {"model": "gemma-4-e2b", "vision": driver.execute_script("return kevala_site.session.visionUrlFor()")}
+
+    vision_checkbox = driver.find_element(By.CSS_SELECTOR, "[data-vision-enabled]")
+    vision_checkbox.click()
+    assert not driver.execute_script("return kevala_site.session.visionEnabledFor()")
+    driver.execute_script("""
+      const s = kevala_site.session;
+      window.reloadedTextOnly = false;
+      s.kevala = {info: {backend: 'webgpu', gpu: 'test GPU', loadMs: 1}, dispose() { window.reloadedTextOnly = true; }};
+      s.status = 'ready';
+      s.dispatchEvent(new Event('change'));
+    """)
+    reload_button = driver.find_element(By.CSS_SELECTOR, '[data-act="load-images"]')
+    assert reload_button.text == "Reload with images", "a loaded text-only Gemma offers a clear image reload action"
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-act="load"]'), "Reaction does not offer a text-only Load action"
+    click('[data-act="load-images"]')
+    assert driver.execute_script("return kevala_site.session.visionEnabledFor()")
+    assert driver.execute_script("return window.reloadedTextOnly"), "Reload with images disposes the old text-only model"
+    assert driver.execute_script("return window.reactionLoads.at(-1).vision") == driver.execute_script("return kevala_site.session.visionUrlFor()")
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+
+    driver.execute_script("location.hash = '#/how'")
+    wait.until(lambda d: d.execute_script("return location.hash === '#/how' && !!document.querySelector('[data-model=laya]') && !!document.querySelector('[data-family=kev]')"))
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-model="laya"]'), "normal picker choices return outside Reaction"
+    print("Model picker passed: standard and reaction-specific choices, route refresh and model preservation, hosted/custom vision URLs, text-only preference, image reload, precision defaults, local packs, focus, explicit loading, and checkpoint choices.")
 finally:
     driver.quit()

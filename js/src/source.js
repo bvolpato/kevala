@@ -9,6 +9,7 @@ export const CACHE_NAME = "kevala-v1";
 /** Published packs of the models below, pinned to one commit of their Hugging Face repo. */
 const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/45da41504c6c117eca940103e49dd5eb1c3eab4f";
 const GEMMA_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/c70e9136938026e00cbbdec9db027d862963f180";
+const GEMMA_VISION_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/712955050042ee5980ba3c37e2da53d79c51d9fe";
 
 /**
  * Known models, by name. A matching published pack is used when available; browserConvert models
@@ -138,7 +139,7 @@ export const MODELS = {
       vision: {
         arch: "gemma4-vision", precision: "bf16", pack: 337302144,
         packSha256: "6556225c040a5b1d0bc8874a2833ce17cb7579d390f3225995c09ae589214d04",
-        hosted: null,
+        hosted: `${GEMMA_VISION_PACKS}/gemma-4-e2b-vision-bf16.kevala`,
       },
     } : {}),
   }])),

@@ -6,6 +6,8 @@ tags:
   - webgpu
   - webassembly
   - int8
+  - bf16
+  - image-classification
 base_model:
   - convaiinnovations/laya
   - jaredpalmer/kev-0.8b
@@ -20,9 +22,10 @@ base_model:
 
 # kevala packs
 
-Pre-converted int8 packs for [kevala](https://github.com/bvolpato/kevala), which runs decision models
-in the browser on WebGPU or WebAssembly. Loading a pack from here skips the in-browser conversion and
-downloads about half the bytes of the original checkpoints.
+Pre-converted Q8 decoder packs and a BF16 vision companion for
+[kevala](https://github.com/bvolpato/kevala), which runs decision models in the browser on
+WebGPU or WebAssembly. Loading a published pack skips in-browser conversion. Q8 packs
+download about half the bytes of the original checkpoints; the vision companion preserves BF16 weights.
 
 | file | model | from | size |
 |---|---|---|---:|
@@ -35,6 +38,7 @@ downloads about half the bytes of the original checkpoints.
 | `semif-qwen3.5-4b-q8.kevala` | SemIf Qwen3.5-4B | [Qwen/Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) at `851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a` | 4.75 GB |
 | `gemma-4-e2b-q8.kevala` | Gemma 4 E2B | [google/gemma-4-E2B-it](https://huggingface.co/google/gemma-4-E2B-it) at `3e22461f65e89153144f8adb70e3b8c2cc9845a7` | 5.217 GB |
 | `gemma-4-e4b-q8.kevala` | Gemma 4 E4B | [google/gemma-4-E4B-it](https://huggingface.co/google/gemma-4-E4B-it) at `ee0ef6023621cff504d758262d4e04895a5af4a2` | 8.407 GB |
+| `gemma-4-e2b-vision-bf16.kevala` | Gemma 4 E2B vision companion | [google/gemma-4-E2B-it](https://huggingface.co/google/gemma-4-E2B-it) at `3e22461f65e89153144f8adb70e3b8c2cc9845a7` | 337.302 MB |
 
 The Laya, Kev, and SemIf packs were made with the kevala command line: weights are
 int8 with one f32 scale per 32 values (symmetric absmax); norms, biases, gates and decision heads stay
@@ -53,6 +57,14 @@ The Gemma 4 E2B and E4B packs are also text-only. They use the common `kevala co
 `convert-gemma` retained as a compatibility alias) to
 extract the dense language model from Google's multimodal checkpoints and do not include the
 vision or audio towers. The sizes above are the converted text pack sizes.
+
+Load `gemma-4-e2b-vision-bf16.kevala` alongside the matching E2B Q8 decoder to enable images
+on WebGPU. This companion contains the pinned vision tower and image projector, with BF16 matrix
+and positional weights, FP32 norms and clipping bounds, and FP32 arithmetic. It adds no quantization.
+Its exact size is 337,302,144 bytes and SHA-256 is
+`6556225c040a5b1d0bc8874a2833ce17cb7579d390f3225995c09ae589214d04`.
+The adjacent JSON manifest records source identity, configuration, and validation provenance.
+E4B image loading and audio input are not implemented by this companion.
 
 ## SemIf method
 
@@ -92,6 +104,13 @@ CPU and Node WebAssembly loading require packs under 2 GiB; use the native 64-bi
 larger packs. WebGPU needs sufficient GPU memory and per-buffer limits. Large packs remain opt-in
 and are not downloaded by routine CI. Caching avoids later downloads, but loading still transfers
 weights to the GPU and needs working memory.
+
+The E2B BF16 vision companion matches the pinned Transformers F32 reference with maximum
+absolute error 1.9908e-5 and relative L2 error 1.9567e-6, within a 1e-4 guard. Its isolated
+encoder benchmark improved from 901 ms to 99 ms median after the vision kernel and scheduling
+changes. These component measurements exclude the decoder and camera path; full webcam FPS
+and person/expression classification accuracy remain unverified. See the
+[retained measurements](https://github.com/bvolpato/kevala/blob/main/docs/gemma4-vision-performance.md).
 
 Use a Kevala runtime that supports the pack's architecture. Older published packages can reject
 newer packs; the current source and hosted demo include the architectures listed here.

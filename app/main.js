@@ -99,8 +99,19 @@ const FAMILY_BY_MODEL = Object.fromEntries(
   Object.entries(MODEL_FAMILIES).flatMap(([family, spec]) => spec.models.map(([id]) => [id, family])),
 );
 
-function familyModels(family) {
-  return MODEL_FAMILIES[family].models.filter(([id]) => MODELS[id] && (LOCAL || (FROM === "checkpoint"
+function pickerMode() {
+  return location.hash.replace(/^#\/?/, "").split("/")[0] === "reaction" ? "reaction" : "all";
+}
+
+function hasVisionCompanion(id) {
+  const spec = MODELS[id];
+  return !!spec?.modalities?.includes("image") && typeof spec.vision?.arch === "string";
+}
+
+function familyModels(family, mode = pickerMode()) {
+  return MODEL_FAMILIES[family].models.filter(([id]) => MODELS[id]
+    && (mode !== "reaction" || hasVisionCompanion(id))
+    && (LOCAL || (FROM === "checkpoint"
     ? MODELS[id].browserConvert
     : MODELS[id].browserConvert || MODELS[id].hosted || MODELS[id].nativeConversion)));
 }
@@ -172,15 +183,19 @@ function visionControls(s, id) {
   const spec = MODELS[id];
   if (!spec?.modalities?.includes("image") || !spec.vision) return "";
   const local = s.localVisionPackFor(id);
+  const hosted = !!spec.vision.hosted;
   const enabled = s.visionEnabledFor(id);
-  const url = !local && s.visionUrlModel === id ? s.visionUrl : "";
+  const url = s.visionUrlModel === id ? s.visionUrl : "";
   const decoderBytes = spec.pack ? `${fmtBytes(spec.pack)} Q8 decoder` : "Q8 decoder";
   const visionBytes = spec.vision.pack ? fmtBytes(spec.vision.pack) : "about 337 MB";
+  const urlControl = local ? "" : hosted
+    ? `<details class="mp-vision-override"><summary class="tiny muted">Optional custom vision-pack URL</summary><label class="mp-pack-url">Custom BF16 vision-pack URL<input type="url" data-vision-url aria-label="Custom BF16 vision-pack URL" value="${esc(url)}" spellcheck="false" autocomplete="url"><span class="tiny faint">Leave blank to use the published companion. Nothing downloads until you press Load.</span></label></details>`
+    : `<label class="mp-pack-url">BF16 vision-pack URL (required for images)<input type="url" data-vision-url aria-label="BF16 vision-pack URL" value="${esc(url)}" spellcheck="false" autocomplete="url"><span class="tiny faint">Nothing downloads until you press Load.</span></label>`;
   return [
     `<div class="mf-control" data-vision-controls="${id}">`,
     `<label class="tiny muted"><input type="checkbox" data-vision-enabled${enabled ? " checked" : ""}> Enable images</label>`,
     `<span class="tiny mf-info" data-vision-status></span>`,
-    local ? "" : `<label class="mp-pack-url">BF16 vision-pack URL (required for images)<input type="url" data-vision-url aria-label="BF16 vision-pack URL" value="${esc(url)}" spellcheck="false" autocomplete="url"><span class="tiny faint">Nothing downloads until you press Load.</span></label>`,
+    urlControl,
     `<span class="tiny mf-info">${esc(decoderBytes)} + ${esc(visionBytes)} BF16 vision pack. Images require WebGPU. Allow 3 GB VRAM plus browser memory; storage access reduces memory use.</span>`,
     `</div>`,
   ].join("");
@@ -226,11 +241,13 @@ function familyOption(s, family) {
   ].join("");
 }
 
-function modelChoices(s) {
+function modelChoices(s, mode = pickerMode()) {
   // Entries without a published pack remain visible when they have a pinned native conversion path.
-  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || MODELS[id].nativeConversion || LOCAL));
-  const renderLaya = known.includes("laya") ? modelOption(s, "laya") : "";
-  const renderFamily = (family) => familyModels(family).some(([id]) => known.includes(id)) ? familyOption(s, family) : "";
+  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id]
+    && (mode !== "reaction" || hasVisionCompanion(id))
+    && (MODELS[id].hosted || MODELS[id].browserConvert || MODELS[id].nativeConversion || LOCAL));
+  const renderLaya = mode !== "reaction" && known.includes("laya") ? modelOption(s, "laya") : "";
+  const renderFamily = (family) => familyModels(family, mode).some(([id]) => known.includes(id)) ? familyOption(s, family) : "";
   const models = [renderLaya, ...Object.keys(MODEL_FAMILIES).map(renderFamily)].filter(Boolean).join("");
   return `<div class="mp-models">${models}</div>`;
 }
@@ -247,7 +264,8 @@ function backendUnavailable(s, backend) {
   return "";
 }
 
-function precisionSelector(s) {
+function precisionSelector(s, visible = true) {
+  if (!visible) return "";
   const choices = s.precisionChoices();
   if (choices.length < 2) return "";
   const value = s.precisionFor();
@@ -258,7 +276,8 @@ function precisionSelector(s) {
   return `<label class="mp-precision">Precision<select data-precision aria-label="Pack precision">${options.join("")}</select><span class="tiny faint" data-precision-note>BF16 is unquantized. Q8 saves memory; probabilities may change.</span></label>`;
 }
 
-function nativePackUrlControl() {
+function nativePackUrlControl(visible = true) {
+  if (!visible) return "";
   return `<div class="mp-pack-override" data-native-pack-url-wrap hidden><label class="mp-pack-url">Converted .kevala pack URL<input type="url" data-native-pack-url aria-label="Converted pack URL (required)" value="" spellcheck="false" autocomplete="url"><span class="tiny faint">No pack is available for this precision. Paste the URL of a converted pack.</span></label></div>`;
 }
 
@@ -273,6 +292,17 @@ function backendSwitch(s) {
 
 /** The bottom of the panel: progress while loading, the backend once loaded, else a load button. */
 function panelAction(s) {
+  if (pickerMode() === "reaction" && !hasVisionCompanion(s.model)) {
+    const state = s.status === "ready"
+      ? "the current model stays loaded until then."
+      : s.status === "loading" ? "the current load continues until then." : "to load images.";
+    return `<p class="tiny mp-note">Select Gemma 4 E2B to use images; ${state}</p>`;
+  }
+  if (pickerMode() === "reaction" && hasVisionCompanion(s.model) && !s.visionEnabledFor()) {
+    const unavailable = s.loadUnavailable(true);
+    const label = s.status === "ready" ? "Reload with images" : s.status === "loading" ? "Switch to image mode" : "Load with images";
+    return `<p class="tiny mp-note">Gemma is currently in text-only mode.</p><button type="button" class="btn primary wide" data-act="load-images"${unavailable ? ` disabled title="${esc(unavailable)}"` : ""}>${label}</button>${unavailable ? `<p class="tiny mp-note">${esc(unavailable)}</p>` : ""}`;
+  }
   if (s.status === "loading") {
     return [
       `<div class="mp-load">`,
@@ -376,14 +406,16 @@ function syncPanelSelection(s) {
       const localVision = s.localVisionPackFor(selected);
       if (status) status.textContent = localVision
         ? `Vision pack ready on this server · BF16 · ${fmtBytes(localVision.bytes)}`
+        : s.visionUrlModel === selected && s.visionUrl.trim()
+          ? "Custom vision-pack URL supplied. It is checked when you press Load."
         : s.visionUrlFor(selected)
-          ? "Vision-pack URL supplied. The pack is checked when you press Load."
-          : "No local vision pack is available. Text mode still works. Paste a BF16 vision-pack URL to enable images.";
+          ? "Published vision companion available. It downloads only when you enable images and load."
+          : "No hosted vision companion is available. Text mode works; provide a BF16 vision-pack URL to enable images.";
       const url = vision.querySelector("[data-vision-url]");
       if (url) {
         const value = s.visionUrlModel === selected ? s.visionUrl : "";
         if (url.value !== value) url.value = value;
-        url.setAttribute("aria-required", String(s.visionEnabledFor(selected)));
+        url.setAttribute("aria-required", String(s.visionEnabledFor(selected) && !MODELS[selected]?.vision?.hosted));
       }
     }
   }
@@ -392,6 +424,12 @@ function syncPanelSelection(s) {
   if (loadButton) {
     loadButton.disabled = !!s.loadUnavailable();
     loadButton.title = s.loadUnavailable();
+  }
+  const imageLoadButton = panel.querySelector('[data-act="load-images"]');
+  if (imageLoadButton) {
+    const unavailable = s.loadUnavailable(true);
+    imageLoadButton.disabled = !!unavailable;
+    imageLoadButton.title = unavailable;
   }
   const precision = panel.querySelector("[data-precision]");
   if (precision) {
@@ -423,7 +461,9 @@ function renderPanel(s) {
   // Keep the model controls mounted across load, error, backend, and storage changes. In
   // particular, replacing a focused range input after each arrow press makes browser automation
   // and keyboard users lose the control even when focus is restored to its replacement.
-  const key = FAMILY_BY_MODEL[s.model] || s.model;
+  const mode = pickerMode();
+  const key = `${mode}|${FAMILY_BY_MODEL[s.model] || s.model}`;
+  const controlsVisible = mode !== "reaction" || hasVisionCompanion(s.model);
   let focus = null;
   if (key !== panelKey) {
     if (sliderPointerActive && panel.childElementCount) {
@@ -434,14 +474,15 @@ function renderPanel(s) {
     focus = panelFocus();
     panelKey = key;
     const stored = s.storage?.available ? `Stored packs: ${fmtBytes(s.storage.bytes)}` : "No persistent storage";
+    const availability = mode === "reaction" ? "Image models only · Load on demand" : "Up to 4B · Gemma E2B image pilot · Load on demand";
     panel.innerHTML = `<div class="mp-h">Choose a model</div>
-      <p class="mp-availability tiny" data-local-availability>Up to 4B · Gemma E2B image pilot · Load on demand${LOCAL ? " · Local packs are marked below" : ""}</p>
-      ${modelChoices(s)}
-      ${precisionSelector(s)}
-      ${nativePackUrlControl()}
+      <p class="mp-availability tiny" data-local-availability>${availability}${LOCAL ? " · Local packs are marked below" : ""}</p>
+      ${modelChoices(s, mode)}
+      ${precisionSelector(s, controlsVisible)}
+      ${nativePackUrlControl(controlsVisible)}
       <div data-panel-action></div>
       <details class="mp-advanced" data-advanced><summary class="tiny muted">Advanced</summary><div class="mp-advanced-controls">
-        <div class="mp-be"><span class="tiny muted">Backend</span>${backendSwitch(s)}</div>
+        ${controlsVisible ? `<div class="mp-be"><span class="tiny muted">Backend</span>${backendSwitch(s)}</div>` : ""}
         <div class="mp-foot">
           <span class="tiny faint" data-storage-label>${stored}</span>
           <button type="button" class="linkbtn" data-act="clear">Clear stored packs</button>
@@ -449,7 +490,7 @@ function renderPanel(s) {
       </div></details>`;
     panelActionKey = "";
   }
-  const actionKey = [s.status, s.model, s.precisionFor(), s.backend, s.loadUnavailable(), s.error, s.storageError, s.info?.backend, s.info?.gpu, s.info?.loadMs, s.info?.pack?.cached].join("|");
+  const actionKey = [mode, s.status, s.model, s.precisionFor(), s.backend, s.loadUnavailable(), mode === "reaction" && hasVisionCompanion(s.model) ? s.loadUnavailable(true) : "", s.visionEnabledFor(), s.error, s.storageError, s.info?.backend, s.info?.gpu, s.info?.loadMs, s.info?.pack?.cached].join("|");
   if (actionKey !== panelActionKey) {
     panel.querySelector("[data-panel-action]").innerHTML = panelAction(s);
     panelActionKey = actionKey;
@@ -461,10 +502,13 @@ function renderPanel(s) {
   syncPanelSelection(s);
   restorePanelFocus(focus);
   if (s.status === "loading") {
-    panel.querySelector('[data-f="label"]').textContent = s.progress?.label || "";
+    const label = panel.querySelector('[data-f="label"]');
     const bar = panel.querySelector(".mp-load .progress");
-    bar.classList.toggle("indet", !!s.progress?.indet);
-    bar.firstElementChild.style.width = `${Math.round((s.progress?.frac || 0) * 100)}%`;
+    if (label && bar) {
+      label.textContent = s.progress?.label || "";
+      bar.classList.toggle("indet", !!s.progress?.indet);
+      bar.firstElementChild.style.width = `${Math.round((s.progress?.frac || 0) * 100)}%`;
+    }
   }
 }
 
@@ -502,37 +546,52 @@ panel.addEventListener("input", (e) => {
   if (!slider) return;
   const models = familyModels(slider.dataset.familySlider);
   const id = models[Number(slider.value)]?.[0];
-  if (id && id !== session.model) session.select(id);
+  if (id && id !== session.model) session.select(id, { enableVision: pickerMode() === "reaction" });
 });
 panel.addEventListener("change", (e) => {
   const precision = e.target.closest("[data-precision]")?.value;
   const visionEnabled = e.target.closest("[data-vision-enabled]");
   if (precision) session.setPrecision(precision);
-  if (visionEnabled) session.setVisionEnabled(visionEnabled.checked);
+  if (visionEnabled) {
+    const model = visionEnabled.closest("[data-vision-controls]")?.dataset.visionControls || session.model;
+    if (model !== session.model) {
+      session.select(model, { enableVision: pickerMode() === "reaction" && visionEnabled.checked });
+      if (!visionEnabled.checked && session.visionEnabledFor(model)) session.setVisionEnabled(false);
+    } else session.setVisionEnabled(visionEnabled.checked);
+  }
   if (e.target.closest("[data-native-pack-url]")) session.refreshCache();
 });
 panel.addEventListener("input", (e) => {
   const input = e.target.closest("[data-native-pack-url]");
   if (input) session.setCustomUrl(input.value, session.model);
   const visionUrl = e.target.closest("[data-vision-url]");
-  if (visionUrl) session.setVisionUrl(visionUrl.value, session.model);
+  if (visionUrl) {
+    const model = visionUrl.closest("[data-vision-controls]")?.dataset.visionControls || session.model;
+    session.setVisionUrl(visionUrl.value, model);
+  }
 });
 panel.addEventListener("click", async (e) => {
   const model = e.target.closest("[data-model]")?.dataset.model;
   if (model) {
-    session.select(model);
+    session.select(model, { enableVision: pickerMode() === "reaction" });
     return;
   }
   const family = e.target.closest("[data-family]")?.dataset.family;
   if (family) {
     const models = familyModels(family);
     const defaultModel = models[0]?.[0];
-    if (defaultModel && FAMILY_BY_MODEL[session.model] !== family) session.select(defaultModel);
+    if (defaultModel && (FAMILY_BY_MODEL[session.model] !== family || pickerMode() === "reaction")) {
+      session.select(defaultModel, { enableVision: pickerMode() === "reaction" });
+    }
     return;
   }
   const backend = e.target.closest("[data-be]")?.dataset.be;
   if (backend) return session.setBackend(backend);
   const action = e.target.closest("[data-act]")?.dataset.act;
+  if (action === "load-images") {
+    session.setVisionEnabled(true);
+    session.load();
+  }
   if (action === "load") session.load();
   if (action === "cancel") session.cancel();
   if (action === "unload") session.unload();
@@ -608,6 +667,7 @@ let showCount = 0;
 async function show() {
   const { route, anchor } = parseHash();
   const ticket = ++showCount;
+  if (!panel.classList.contains("hidden")) renderPanel(session);
   document.title = route.title;
   for (const link of header.querySelectorAll("[data-route]")) {
     link.toggleAttribute("aria-current", link.dataset.route === route.id);
