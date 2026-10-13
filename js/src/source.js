@@ -112,7 +112,7 @@ export const MODELS = {
     precisions: ["bf16", "f32", "q8"],
     download: 19063259136,
     precisionPackBytes: { bf16: 18414969408, q8: 10586832640, f32: 38140000000 },
-    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    precisionPackApprox: { bf16: true, q8: true, f32: true },
     block: 32,
   },
   ...Object.fromEntries([

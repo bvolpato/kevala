@@ -26,14 +26,14 @@ disabled.
 | `kev-4b` | Qwen3.5-4B-Base with Kev v1.0's merged LoRA adapter | Trained pointer head | 8.43 GB BF16; 4.76 GB Q8 |
 | `kev-9b` | Qwen3.5-9B-Base with Kev v1.0's merged LoRA adapter | Trained pointer head | 15.90 GB BF16; 8.96 GB Q8 |
 | `h2o-lightning-4b` | H2O-Lightning-4B, based on Qwen3.5-4B | H2O prompt, label readout, and calibration | 8.43 GB BF16; 4.75 GB Q8 |
-| `clef-flash` | Cloudflare Clef-flash, based on Qwen3.5-9B | Joint decision head | 18.41 GB BF16; 10.59 GB Q8 |
+| `clef-flash` | Cloudflare Clef-flash, based on Qwen3.5-9B | Joint decision head | About 18.41 GB BF16; 10.59 GB Q8 |
 | `semif-qwen3.5-0.8b` | Frozen Qwen3.5-0.8B instruction model | Native option-label logits | 855 MB |
 | `semif-qwen3.5-2b` | Frozen Qwen3.5-2B instruction model | Native option-label logits | 2.13 GB |
 | `semif-qwen3.5-4b` | Frozen Qwen3.5-4B instruction model | Native option-label logits | 4.75 GB |
 | `gemma-4-e2b` | Frozen Gemma 4 E2B instruction model, text-only | Native option-label logits | 5.22 GB |
 | `gemma-4-e4b` | Frozen Gemma 4 E4B instruction model, text-only | Native option-label logits | 8.41 GB |
 
-All listed BF16/Q8 sizes are exact from local native conversions or published pack manifests; runtime memory is higher.
+Clef sizes are estimates; the other BF16/Q8 sizes come from exact local conversions or published pack manifests. Runtime memory is higher.
 Model names describe parameter sizes, not download sizes or memory requirements. The runtime's
 [`MODELS`](../js/src/source.js) catalog pins source revisions; conversion writes a manifest with
 the actual byte count, SHA-256, precision, source revisions, and configuration. The Gemma packs are

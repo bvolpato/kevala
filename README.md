@@ -86,14 +86,14 @@ weights in the browser. To serve weights yourself, pass the URL of a `.kevala` f
 | Kev v1.0 | `kev-4b` | Trained pointer head | 8.43 GB BF16; 4.76 GB Q8 |
 | Kev v1.0 | `kev-9b` | Trained pointer head | 15.90 GB BF16; 8.96 GB Q8 |
 | H2O-Lightning | `h2o-lightning-4b` | Calibrated option-label scores | 8.43 GB BF16; 4.75 GB Q8 |
-| Cloudflare | `clef-flash` | Joint decision head | 18.41 GB BF16; 10.59 GB Q8 |
+| Cloudflare | `clef-flash` | Joint decision head | About 18.41 GB BF16; 10.59 GB Q8 |
 | SemIf | `semif-qwen3.5-0.8b` | Native option-label logits | 855 MB |
 | SemIf | `semif-qwen3.5-2b` | Native option-label logits | 2.13 GB |
 | SemIf | `semif-qwen3.5-4b` | Native option-label logits | 4.75 GB |
 | Gemma 4 | `gemma-4-e2b` | Native option-label logits | 5.22 GB |
 | Gemma 4 | `gemma-4-e4b` | Native option-label logits | 8.41 GB |
 
-All listed BF16/Q8 output sizes are exact from local native conversions or published pack manifests.
+Clef sizes are estimates; the other BF16/Q8 output sizes come from exact local conversions or published pack manifests.
 The local conversions also write SHA-256 manifests; the new packs are not published yet. The refreshed Kev, H2O, and Clef
 packs default to BF16. Pass `precision: "q8"` to opt into quantization and a smaller download;
 probabilities can change. H2O and Clef are text-only in this runtime, even though their upstream
