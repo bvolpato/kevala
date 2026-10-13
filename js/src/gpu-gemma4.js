@@ -148,18 +148,22 @@ export class GpuGemma4 {
     this.gpuKernel = gpu.kernel || "auto";
     this.cfg = cfg;
     const hostTables = cfg.hostPle === true ? Array.from({ length: cfg.layers }, (_, i) => `ple.${i}.embed`) : [];
-    this.weights = new GpuWeights(gpu.device, layout, { hostTables });
+    if (cfg.hostWord) hostTables.push("embed");
+    this.weights = new GpuWeights(gpu.device, layout, { hostTables, hostStore: cfg.hostStore });
+    this.pleCache = new Map();
+    this.pleCacheBytes = 0;
     this.tensors = this.weights.tensors;
     this.memory = {
       hostWeights: 0,
+      opfsWeights: 0,
       gpuWeights: 0,
-      embeddingStorage: cfg.hostPle === true ? "host-q8-rows" : "gpu-q8",
+      embeddingStorage: cfg.hostStore ? "opfs-q8-rows" : cfg.hostPle === true ? "host-q8-rows" : "gpu-q8",
     };
     for (const t of this.weights.header.tensors) {
       if (t.dtype === "q8" && Number(t.block) !== 32) throw new Error(`Gemma 4 WebGPU requires block-32 q8 tensors; ${t.name} declares block ${t.block}`);
       if (t.dtype === "q8" && (!Array.isArray(t.shape) || t.shape.length !== 2 || Number(t.shape[1]) % 32)) throw new Error(`Gemma 4 WebGPU requires q8 matrix columns divisible by 32; ${t.name} has shape ${JSON.stringify(t.shape)}`);
       const bytes = t.size + (t.scales_size || 0);
-      if (this.tensors.get(t.name).hostTable) this.memory.hostWeights += bytes;
+      if (this.tensors.get(t.name).hostTable) this.memory[cfg.hostStore ? "opfsWeights" : "hostWeights"] += bytes;
       else {
         this.memory.gpuWeights += bytes;
         this.checkBuffer(t.size, t.name);
@@ -176,6 +180,16 @@ export class GpuGemma4 {
 
   write(dst, bytes) {
     this.weights.write(dst, bytes);
+  }
+
+  async flushWrites() { await this.cfg.hostStore?.flush(); }
+
+  async finishWeights() { await this.cfg.hostStore?.finish(); }
+
+  dispose() {
+    for (const entry of this.pleCache.values()) entry.buffer.destroy();
+    this.pleCache.clear();
+    this.pleCacheBytes = 0;
   }
 
   missing() {
@@ -426,7 +440,7 @@ export class GpuGemma4 {
       const rotary = cfg.full[i] ? Math.floor((cfg.globalHeadDim * cfg.ropeGlobalFraction) / 2) * 2 : cfg.localHeadDim;
       const n = (s) => `l.${i}.${s}`;
       const store = cfg.kvSharedLayers > 0 && !compact && !shared && cfg.layerTypes.slice(0, cfg.sharedStart).findIndex((t) => t === cfg.layerTypes[i]) >= 0 && cfg.layerTypes.slice(0, cfg.sharedStart).map(String).lastIndexOf(cfg.layerTypes[i]) === i;
-      // PLE projection is computed from the original scaled token embedding, then
+      // PLE projection uses the image-injected input embedding, then is
       // combined immediately before this layer consumes it.
       ops.push(mm(target, `ple.${i}.proj`, target.input, target.pleProj, 0, "mm.ple.proj"));
       const pleEmbed = this.weight(`ple.${i}.embed`);
@@ -497,7 +511,8 @@ export class GpuGemma4 {
     const ops = [];
     const embed = this.weight("embed");
     const embedWidth = Number(embed.info.shape[1]);
-    ops.push(custom(full, "EMBED", [embedWidth, Math.ceil(embedWidth / 32), f32(cfg.embeddingScale), 0], [full.ids, embed.buf, embed.sbuf || this.zeros, full.x], "embed", (pass) => pass.dispatchWorkgroups(this.T)));
+    if (cfg.hostWord) ops.push({ kind: "copy-embed", label: "embed.stored" });
+    else ops.push(custom(full, "EMBED", [embedWidth, Math.ceil(embedWidth / 32), f32(cfg.embeddingScale), 0], [full.ids, embed.buf, embed.sbuf || this.zeros, full.x], "embed", (pass) => pass.dispatchWorkgroups(this.T)));
     ops.push({ kind: "copy-images", label: "embed.images" });
     ops.push({ kind: "copy-input", label: "embed.copy", src: this.x, dst: this.input });
     let prefixOps = null;
@@ -548,9 +563,10 @@ export class GpuGemma4 {
     let pass = prof ? null : enc.beginComputePass();
     for (const op of ops) {
       if (op.kind === "copy-images" && !this.imageSpans?.length) continue;
-      if (op.kind === "copy-input" || op.kind === "copy-kv" || op.kind === "copy-images" || op.kind === "copy-ple") {
+      if (op.kind === "copy-input" || op.kind === "copy-kv" || op.kind === "copy-images" || op.kind === "copy-ple" || op.kind === "copy-embed") {
         pass?.end();
-        if (op.kind === "copy-images") {
+        if (op.kind === "copy-embed") enc.copyBufferToBuffer(this.hostPleUpload, 0, this.x, 0, T * this.cfg.hidden * 4);
+        else if (op.kind === "copy-images") {
           for (const span of this.imageSpans) enc.copyBufferToBuffer(this.imageUpload, span.offset, this.x, span.start * this.cfg.hidden * 4, span.len * this.cfg.hidden * 4);
         } else if (op.kind === "copy-ple") enc.copyBufferToBuffer(this.hostPleUpload, this.hostPleOffsets[op.layer], op.dst, 0, T * this.cfg.pleDim * 4);
         else if (op.kind === "copy-input") enc.copyBufferToBuffer(op.src, 0, op.dst, 0, T * this.cfg.hidden * 4);
@@ -633,21 +649,48 @@ export class GpuGemma4 {
     }
     try {
       if (this.cfg.hostPle === true) {
+        const pleStarted = performance.now();
         const prefixLayers = useTail ? this.cfg.sharedStart : this.cfg.layers;
         const tailIds = useTail ? Uint32Array.from(selected, (row) => pleIds[row]) : null;
-        const floats = (prefixLayers * T + (this.cfg.layers - prefixLayers) * (tailIds?.length || 0)) * this.cfg.pleDim;
+        const embedFloats = this.cfg.hostWord ? T * this.cfg.hidden : 0;
+        const floats = embedFloats + (prefixLayers * T + (this.cfg.layers - prefixLayers) * (tailIds?.length || 0)) * this.cfg.pleDim;
         this.checkBuffer(floats * 4, "Gemma 4 host PLE row upload");
-        const hostRows = new Float32Array(floats);
-        this.hostPleOffsets = [];
-        let offset = 0;
-        for (let layer = 0; layer < this.cfg.layers; layer++) {
-          const lookupIds = layer < prefixLayers ? pleIds : tailIds;
-          this.hostPleOffsets[layer] = offset * 4;
-          this.weights.gatherHostRows(`ple.${layer}.embed`, lookupIds, this.cfg.pleEmbeddingScale, hostRows, offset);
-          offset += lookupIds.length * this.cfg.pleDim;
+        const key = JSON.stringify([prefixLayers, Array.from(pleIds), this.cfg.hostWord ? Array.from(ids) : null, tailIds && Array.from(tailIds)]);
+        let cached = this.pleCache.get(key);
+        const hit = !!cached;
+        if (cached) {
+          this.pleCache.delete(key);
+          this.pleCache.set(key, cached);
+        } else {
+          const hostRows = new Float32Array(floats);
+          const offsets = [];
+          if (this.cfg.hostWord) await this.weights.gatherStoredRows("embed", ids, this.cfg.embeddingScale, hostRows, 0);
+          let offset = embedFloats;
+          for (let layer = 0; layer < this.cfg.layers; layer++) {
+            const lookupIds = layer < prefixLayers ? pleIds : tailIds;
+            offsets[layer] = offset * 4;
+            await this.weights.gatherStoredRows(`ple.${layer}.embed`, lookupIds, this.cfg.pleEmbeddingScale, hostRows, offset);
+            offset += lookupIds.length * this.cfg.pleDim;
+          }
+          const buffer = this.device.createBuffer({ label: "Gemma 4 cached PLE rows", size: hostRows.byteLength, usage: U.COPY_SRC | U.COPY_DST });
+          q.writeBuffer(buffer, 0, hostRows);
+          cached = { buffer, offsets, bytes: hostRows.byteLength };
+          if (cached.bytes <= 16 * 1024 * 1024) {
+            while (this.pleCache.size >= 8 || this.pleCacheBytes + cached.bytes > 16 * 1024 * 1024) {
+              const oldest = this.pleCache.keys().next().value;
+              const entry = this.pleCache.get(oldest);
+              this.pleCacheBytes -= entry.bytes;
+              entry.buffer.destroy();
+              this.pleCache.delete(oldest);
+            }
+            this.pleCache.set(key, cached);
+            this.pleCacheBytes += cached.bytes;
+          } else cached.temporary = true;
         }
-        this.hostPleUpload = this.device.createBuffer({ label: "Gemma 4 host PLE rows", size: hostRows.byteLength, usage: U.COPY_SRC | U.COPY_DST });
-        q.writeBuffer(this.hostPleUpload, 0, hostRows);
+        this.hostPleUpload = cached.buffer;
+        this.hostPleOffsets = cached.offsets;
+        this.hostPleTemporary = !!cached.temporary;
+        this.lastPle = { ms: performance.now() - pleStarted, cacheHit: hit, bytes: cached.bytes };
       }
       if (imageBytes) {
         this.checkBuffer(imageBytes, "Gemma 4 image embedding upload");
@@ -677,9 +720,10 @@ export class GpuGemma4 {
       this.imageUpload?.destroy();
       this.imageUpload = null;
       this.imageSpans = [];
-      this.hostPleUpload?.destroy();
+      if (this.hostPleTemporary) this.hostPleUpload?.destroy();
       this.hostPleUpload = null;
       this.hostPleOffsets = null;
+      this.hostPleTemporary = false;
     }
   }
 }

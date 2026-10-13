@@ -9,6 +9,7 @@
 
 import { MODELS } from "./source.js";
 import { cpuOptions } from "./cpu-policy.js";
+import { createGemma4PleResource } from "./gemma4-ple-store.js";
 export { cacheInfo, clearCache, defaultPrecision, isCached, MODELS, precisionOptions } from "./source.js";
 export * as presets from "./presets.js";
 
@@ -61,6 +62,16 @@ async function pageEngine() {
     port2.close();
   };
   return port1;
+}
+
+async function removeOwnedFile({ directory, name }) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try { await directory.removeEntry(name); return; }
+    catch (error) {
+      if (error?.name === "NotFoundError") return;
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
+    }
+  }
 }
 
 /** A loaded model. Create with `Kevala.load()`. */
@@ -123,6 +134,7 @@ export class Kevala {
 
   #worker = null;
   #shards = [];
+  #files = [];
   #pending = new Map();
   #seq = 0;
   #ready = null;
@@ -167,7 +179,14 @@ export class Kevala {
           throw cancelled();
         }
         try {
-          this.info = await this.#connect(engine, { ...options, ...(onPage ? { backend: "webgpu" } : {}), gpuPowerPreference }, onProgress);
+          this.#worker = engine;
+          let startupError = null;
+          engine.onerror = (event) => { startupError = new Error(event.message || "kevala worker failed to start"); };
+          const hostStoreResource = options.vision != null ? await createGemma4PleResource() : null;
+          if (hostStoreResource) this.#files.push(hostStoreResource);
+          if (signal?.aborted) throw cancelled();
+          if (startupError) throw startupError;
+          this.info = await this.#connect(engine, { ...options, hostStoreResource, ...(onPage ? { backend: "webgpu" } : {}), gpuPowerPreference }, onProgress);
           if (signal?.aborted) throw cancelled();
           if (onPage) this.info.onPage = true;
           return;
@@ -219,6 +238,9 @@ export class Kevala {
 
   #onMessage(m, onProgress) {
     switch (m.type) {
+      case "owned-file":
+        if (!this.#files.some((file) => file.name === m.resource.name)) this.#files.push(m.resource);
+        break;
       case "progress":
         onProgress?.(m);
         break;
@@ -333,6 +355,7 @@ export class Kevala {
     for (const s of this.#shards) s.terminate();
     this.#worker = null;
     this.#shards = [];
+    for (const resource of this.#files.splice(0)) void removeOwnedFile(resource);
     this.#ready?.reject(reason);
     this.#ready = null;
     for (const p of this.#pending.values()) p.reject(reason);

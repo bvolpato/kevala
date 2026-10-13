@@ -325,13 +325,19 @@ An image part's `data` accepts `ImageData`, `{ width, height, data }` containing
 a `Blob`, encoded image bytes (`ArrayBuffer` or a typed array), or an HTTP/HTTPS/blob/data URL.
 Use absolute image URLs; remote images must permit browser fetching. There are at most four images
 per request, 8192 pixels per side, 16 megapixels per image, and 32 MiB per encoded image.
+Encoded files must be opaque PNG, JPEG, or WebP so dimensions can be checked before
+decompression. Alpha-bearing encoded files require conversion to raw RGBA or ImageData:
+browser decoders can discard or round their RGB values. The raw path preserves RGB and
+the model's preprocessing ignores alpha.
 `imageTokens` sets the maximum soft tokens per image; actual counts depend on resized dimensions.
 The runtime default is 70. Check the loaded
 `kevala.info.modalities`, which includes `"image"` only after a compatible companion loads.
 The returned scores are conditional option scores, not calibrated decision confidence.
-Image sessions keep the original Q8 per-layer embedding tables in system RAM and upload only
-the rows needed for inference, reducing GPU weight storage by about 2.6 GB. `info.memory`
-reports GPU and host weight bytes; scratch buffers and browser overhead need additional space.
+Image sessions keep original Q8 per-layer embedding tables in a temporary OPFS file, or system
+RAM when OPFS is unavailable, and upload only the rows needed for inference. OPFS sessions
+also store token embeddings on disk, reducing GPU weight storage by about 3.1 GB in total.
+Repeated prompts reuse a bounded GPU row cache. `info.memory`
+reports GPU, host, and OPFS weight bytes; scratch buffers and browser overhead need additional space.
 
 Server side, the same engine runs in Node.js, Deno or Bun without workers or a GPU:
 

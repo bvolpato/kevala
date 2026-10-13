@@ -5,6 +5,8 @@
 import { Profiler, requestDevice } from "../js/src/gpu.js";
 import { GpuGemma4, gemma4Config } from "../js/src/gpu-gemma4.js";
 import { kernelSource } from "./wgsl.js";
+import { createGemma4PleStore } from "../js/src/gemma4-ple-store.js";
+import { parsePackHeader } from "../js/src/pack-layout.js";
 
 const logNode = document.getElementById("log");
 const log = (line) => { logNode.textContent += `${line}\n`; };
@@ -127,11 +129,15 @@ async function main() {
   runtime.wgsl = source;
   runtime.kernel = "generic";
   const packed = packSynthetic(syntheticTensors());
-  const makeModel = async (config, { hostPle = false } = {}) => {
+  const makeModel = async (config, { hostPle = false, hostStore = null, hostWord = false } = {}) => {
     const cfg = gemma4Config({ config });
     cfg.hostPle = hostPle;
+    cfg.hostStore = hostStore;
+    cfg.hostWord = hostWord;
     const model = new GpuGemma4(runtime, { prefix: packed.prefix }, cfg);
     model.write(0, packed.bytes);
+    await model.flushWrites();
+    await model.finishWeights();
     await model.init();
     model.profiler = runtime.device.features.has("timestamp-query") ? new Profiler(runtime.device) : null;
     return { cfg, model };
@@ -261,6 +267,44 @@ async function main() {
   const densePleTokens = await read(model.pleToken, imageIds.length * cfg.pleDim);
   for (let i = 0; i < densePleTokens.length; i++) if (densePleTokens[i] !== hostPleTokens[i]) throw new Error(`host PLE row differs from the GPU lookup at ${i}`);
   await compareHost(imageIds, imageSelected, imageSpans);
+  let storedPle = { supported: false };
+  const store = await createGemma4PleStore(parsePackHeader(packed.prefix).tensors.filter((t) => /^ple\.\d+\.embed$/.test(t.name) || t.name === "embed"));
+  if (store) {
+    let storedModel;
+    try {
+      ({ model: storedModel } = await makeModel(HEADER_CONFIG, { hostPle: true, hostStore: store, hostWord: true }));
+      let storedMaxAbs = 0;
+      for (const length of [1, 31, 257]) {
+        const ids = Uint32Array.from({ length }, (_, i) => (3 + i * 7) % HEADER_CONFIG.vocab_size);
+        for (const selected of [selectedRows(length), ...(length === 31 ? [Array.from({ length }, (_, i) => i)] : [])]) {
+          const expected = await hostModel.forward(ids, selected);
+          const actual = await storedModel.forward(ids, selected);
+          assertFinalRows(actual, selected.length, `stored PLE T=${length}`);
+          for (let i = 0; i < actual.length; i++) storedMaxAbs = Math.max(storedMaxAbs, Math.abs(actual[i] - expected[i]));
+        }
+      }
+      const first = await storedModel.forward(imageIds, [4], imageSpans);
+      const second = await storedModel.forward(imageIds, [4], [{ start: 1, len: 2, rows: changedImageRows }]);
+      if (!storedModel.lastPle.cacheHit) throw new Error("unchanged prompt did not reuse its PLE upload");
+      const expected = await hostModel.forward(imageIds, [4], [{ start: 1, len: 2, rows: changedImageRows }]);
+      let changed = 0;
+      for (let i = 0; i < second.length; i++) {
+        storedMaxAbs = Math.max(storedMaxAbs, Math.abs(second[i] - expected[i]));
+        changed = Math.max(changed, Math.abs(first[i] - second[i]));
+      }
+      const padIds = Uint32Array.from([3, 0, 0, 4, 5]);
+      const padExpected = await hostModel.forward(padIds, [4]);
+      const padActual = await storedModel.forward(padIds, [4]);
+      if (storedModel.lastPle.cacheHit) throw new Error("different word identities reused image-placeholder embeddings");
+      for (let i = 0; i < padActual.length; i++) storedMaxAbs = Math.max(storedMaxAbs, Math.abs(padActual[i] - padExpected[i]));
+      const word = parsePackHeader(packed.prefix).tensors.find((t) => t.name === "embed");
+      if (storedMaxAbs !== 0 || changed <= 1e-6 || storedModel.memory.hostWeights !== 0 || storedModel.memory.opfsWeights !== hostModel.memory.hostWeights + word.size + word.scales_size) throw new Error(`stored PLE mismatch: maxAbs=${storedMaxAbs}, imageDelta=${changed}`);
+      storedPle = { supported: true, bitExact: true, imageHiddenDelta: changed, warmedCacheHit: true, opfsWeights: storedModel.memory.opfsWeights, cacheBytes: storedModel.pleCacheBytes };
+    } finally {
+      storedModel?.dispose();
+      await store.dispose();
+    }
+  }
   const expectedHostBytes = 4 * HEADER_CONFIG.vocab_size * cfg.pleDim * 1.125;
   if (hostModel.memory.hostWeights !== expectedHostBytes || hostModel.memory.gpuWeights !== model.memory.gpuWeights - expectedHostBytes) throw new Error("host PLE weight accounting differs from original pack bytes");
   if (hostModel.weights.missing().length || [...hostModel.tensors.values()].some((entry) => entry.hostTable && (entry.buf || entry.sbuf || !entry.host))) throw new Error("host PLE tables are incomplete or still allocated on the GPU");
@@ -294,7 +338,7 @@ async function main() {
 
   const metricMs = Math.exp(metricSamples.reduce((sum, value) => sum + Math.log(value), 0) / metricSamples.length);
   const info = runtime.adapter.info || {};
-  const correctness = { ...window.gpuBench.correctness, ok: true, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
+  const correctness = { ...window.gpuBench.correctness, ok: true, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, storedPle, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
   const adapter = {
     name: runtime.name,
     vendor: info.vendor || null,

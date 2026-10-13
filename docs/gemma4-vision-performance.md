@@ -42,11 +42,29 @@ See the [control](benchmarks/gemma4-vision-2026-10-13/control.json) and
 - Vision submits separate command buffers after every two layers and waits for the
   final readback. It avoids a queue-completion round trip after every pair of layers.
   An explicit `submit: "await"` override retains the previous synchronization policy.
-- Image sessions retain the decoder's original Q8 per-layer embedding tables in
-  system RAM and upload only requested rows. This moves 2,642,411,520 weight bytes
+- Image sessions stream the decoder's original Q8 per-layer embedding tables to a
+  temporary OPFS file, with a system RAM fallback when OPFS is unavailable, and upload
+  only requested rows. This moves 2,642,411,520 weight bytes
   off the GPU; combined decoder and vision GPU weights occupy 2,902,743,948 bytes.
+  OPFS sessions also retain the Q8 token embedding table in that file, removing a further
+  452,984,832 GPU weight bytes and bringing the combined weights to 2,449,759,116 bytes.
+
+Dedicated workers use OPFS synchronous access handles and reusable read buffers. The
+bounded [row-store benchmark](benchmarks/gemma4-vision-2026-10-13/ple-store.json) compared
+seven-table Q8 gather batches in Chrome 153: repeated median time was 67.5 ms for the
+Window writable-stream/Blob path and 1.3 ms for the worker access-handle path, with
+bit-identical output. Each batch selects 256 rows, including duplicates and PAD, from
+9 MiB of stored tables. These are lookup and dequantization timings, excluding model
+inference, GPU uploads, and the GPU row cache. The first gather follows file creation;
+the OS cache was not evicted. Other workloads remained active and API call counters
+were enabled during measurement. Reproduce at `dev/gemma4-ple-store-check.html?autorun=1`.
 
 The vision weights remain BF16 and arithmetic remains F32. No new quantization was used.
+Repeated decoder prompts reuse at most 16 MiB of GPU PLE row uploads; image projections and
+decoder output are recomputed for every frame. The real OPFS-backed GPU guard is bit-exact
+with host and GPU lookup, including changed images with a warmed prompt cache. The recorder
+schedules the next frame immediately when inference exceeds its 33 ms minimum start interval,
+rather than adding the former 200 ms delay after each inference.
 Score-dot attention is the largest remaining measured vision kernel. CPU-to-GPU image
 upload and projected-row readback remain separate from the text decoder. Further fusion
 or shared decoder prefixes need fresh measurements and numerical validation.
@@ -63,6 +81,9 @@ The [tiny tower checks](benchmarks/gemma4-vision-2026-10-13/tiny.json) cover cli
 standardization, and reordered padding. The [decoder checks](benchmarks/gemma4-vision-2026-10-13/decoder.json)
 verify finite, nonzero final rows, image-sensitive output, duplicate row selection,
 chunked sequences, and bit-exact host versus GPU per-layer embedding lookup.
+The [OPFS decoder guard](benchmarks/gemma4-vision-2026-10-13/decoder-opfs.json) also
+checks stored word embeddings, changed images with a warmed prompt cache, and literal
+PAD token identities without reusing image-placeholder word rows.
 These component checks do not measure person or expression classification accuracy.
 
 ## Reproduction
@@ -86,4 +107,6 @@ not download model weights. Full-model checks are explicit opt-in through
 
 `kevala.profile(true)` includes `vision.*` and decoder labels in `timing.gpu`.
 Image responses also report `timing.image.decode`, `preprocess`, and `forward`, plus
-tokenization and readout wall times. Turn profiling off when measuring normal latency.
+tokenization and readout wall times. `timing.ple` reports embedding lookup/upload wall
+time and cache hits; `timing.decoder` reports final-row RMS values for image requests.
+Turn profiling off when measuring normal latency.

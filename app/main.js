@@ -181,7 +181,7 @@ function visionControls(s, id) {
     `<label class="tiny muted"><input type="checkbox" data-vision-enabled${enabled ? " checked" : ""}> Enable images</label>`,
     `<span class="tiny mf-info" data-vision-status></span>`,
     local ? "" : `<label class="mp-pack-url">BF16 vision-pack URL (required for images)<input type="url" data-vision-url aria-label="BF16 vision-pack URL" value="${esc(url)}" spellcheck="false" autocomplete="url"><span class="tiny faint">Nothing downloads until you press Load.</span></label>`,
-    `<span class="tiny mf-info">${esc(decoderBytes)} + ${esc(visionBytes)} BF16 vision pack. Images require WebGPU and about 2.9 GB of GPU weights. Browser RAM reached 6 GB in local testing; leave extra working space.</span>`,
+    `<span class="tiny mf-info">${esc(decoderBytes)} + ${esc(visionBytes)} BF16 vision pack. Images require WebGPU. Allow 3 GB VRAM plus browser memory; storage access reduces memory use.</span>`,
     `</div>`,
   ].join("");
 }

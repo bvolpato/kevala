@@ -3,7 +3,7 @@ import { createLatestFrameScheduler, supportsImage } from "./reaction-scheduler.
 
 const FRAME_WIDTH = 320;
 const FRAME_HEIGHT = 240;
-const MIN_FRAME_INTERVAL_MS = 200;
+const MIN_FRAME_INTERVAL_MS = 33;
 const STATE = "Classify this camera frame.";
 
 const BASE_QUESTIONS = {

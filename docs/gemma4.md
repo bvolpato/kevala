@@ -40,12 +40,21 @@ arithmetic is FP32. It must match the decoder's source repository, pinned revisi
 width. The public decoder pack is published; the vision companion currently needs local conversion
 and serving.
 
-Image sessions keep the decoder's original Q8 per-layer embedding tables in system RAM and
-upload only the rows needed for each frame. This moves 2,642,411,520 bytes off the GPU without
-changing the weights or embedding math. The decoder and vision tower use about 2.9 GB of GPU
+Encoded image inputs accept opaque PNG, JPEG, and WebP with bounded dimensions checked
+before decompression. Pass raw RGBA or ImageData for alpha-bearing images and other
+formats. Raw input retains RGB values; preprocessing ignores alpha.
+
+Image sessions stream the decoder's original Q8 per-layer embedding tables into a temporary
+OPFS file and upload only the rows needed for each frame. The same store keeps the Q8 token
+embedding table off the GPU. Together these move 3,095,396,352 bytes off the GPU without
+changing the weights or embedding math. The decoder and vision tower use about 2.45 GB of GPU
 weights; scratch buffers, transfer staging, and browser overhead need additional memory.
-The tables use about 2.6 GB of system RAM. `info.memory` reports weight placement; it does not
-measure available memory or include scratch buffers.
+When OPFS is unavailable, PLE tables use about 2.6 GB of system RAM instead and token
+embeddings remain on the GPU, bringing GPU weights to about 2.9 GB. `info.memory`
+reports `gpuWeights`, `hostWeights`, `opfsWeights`, and `embeddingStorage`; it does not
+measure available memory or include scratch buffers. Temporary PLE files are removed on
+disposal, even with pack caching disabled. A bounded cache retains up to 16 MiB of GPU PLE
+row uploads for repeated prompts, avoiding disk reads and embedding expansion on warmed frames.
 
 Fetch only the pinned vision tower and projector, then convert them:
 

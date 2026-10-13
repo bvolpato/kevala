@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma 4 PLE storage check</title>
+<p>This check compares exact Q8 row lookup in a Window and a dedicated worker. It uses 9 MiB of temporary storage and bounded buffers, with no model or GPU.</p>
+<button id="run" type="button">Run PLE storage check</button>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-ple-store-check.js"></script>

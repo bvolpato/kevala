@@ -1,9 +1,10 @@
 // Gemma 4's GPU owns the embeddings and decoder; the coordinator tokenizes and scores labels.
 import { GpuGemma4, gemma4Config } from "../gpu-gemma4.js";
-import { gpuLayouts } from "../pack-layout.js";
+import { gpuLayouts, parsePackHeader } from "../pack-layout.js";
 import { loadGemma4Vision } from "../gemma4-vision-pack.js";
 import { assertImageCount, imagePixels } from "../images.js";
 import { prepareGemma4Image } from "../gemma4-image.js";
+import { createGemma4PleStore } from "../gemma4-ple-store.js";
 
 const enc = new TextEncoder();
 
@@ -12,7 +13,17 @@ export default {
   about: "Gemma 4 dense text decoder with direct option scoring",
   maxShards: () => 1,
   gpuLayouts: (header, bytes) => gpuLayouts(header, bytes, (name) => name !== "readout.labels"),
-  createGpu: (gpu, layout, header, engine) => new GpuGemma4(gpu, layout, { ...gemma4Config(header), hostPle: !!engine?.vision }),
+  async createGpu(gpu, layout, header, engine) {
+    const cfg = { ...gemma4Config(header), hostPle: !!engine?.vision };
+    if (cfg.hostPle) {
+      const tensors = parsePackHeader(layout.prefix).tensors;
+      const word = tensors.find((t) => t.name === "embed");
+      cfg.hostStore = await createGemma4PleStore(tensors.filter((t) => /^ple\.\d+\.embed$/.test(t.name) || (t === word && t.dtype === "q8")), engine.hostStoreResource);
+      cfg.hostWord = !!cfg.hostStore && word?.dtype === "q8";
+      if (cfg.hostStore) engine.registerResource(cfg.hostStore);
+    }
+    return new GpuGemma4(gpu, layout, cfg);
+  },
   async initGpu(engine) {
     await engine.gpu.init();
     if (engine.vision) {
@@ -66,6 +77,7 @@ export default {
       const rows = new Float32Array(count * width);
       const ready = performance.now();
       const profile = { ...visionProfile };
+      const pleTiming = { ms: 0, cacheHits: 0, sequences: count };
       let offset = 1;
       let tokens = 0;
       for (let i = 0; i < count; i++) {
@@ -75,12 +87,25 @@ export default {
         tokens += length;
         const spans = hasImages ? sequences[i].image_spans.map((span) => ({ start: span.start, len: span.len, rows: images[span.image_index] })) : [];
         rows.set(await engine.gpu.forward(ids, null, spans), i * width);
+        if (engine.gpu.lastPle) {
+          pleTiming.ms += engine.gpu.lastPle.ms;
+          pleTiming.cacheHits += Number(engine.gpu.lastPle.cacheHit);
+        }
         for (const [kernel, ms] of Object.entries(engine.gpu.lastProfile || {})) {
           profile[kernel] = (profile[kernel] || 0) + ms;
         }
       }
       engine.gpu.lastProfile = Object.keys(profile).length ? profile : null;
       const finished = performance.now();
+      let minFinalRms = Infinity;
+      let maxFinalRms = 0;
+      if (hasImages) for (let i = 0; i < count; i++) {
+        let sum = 0;
+        for (const value of rows.subarray(i * width, (i + 1) * width)) sum += value * value;
+        const rms = Math.sqrt(sum / width);
+        minFinalRms = Math.min(minFinalRms, rms);
+        maxFinalRms = Math.max(maxFinalRms, rms);
+      }
       const [ptr, bytes] = coord.put(new Uint8Array(rows.buffer));
       try {
         coord.call(() => coord.check(coord.x.kevala_gemma4_finish(ptr, rows.length)));
@@ -91,7 +116,7 @@ export default {
         responses: JSON.parse(coord.outText()),
         timing: {
           prepare: ready - start, forward: finished - ready, total: performance.now() - start, tokens,
-          ...(hasImages ? { image: imageTiming, tokenize: ready - tokenizeStart, readout: performance.now() - finished } : {}),
+          ...(hasImages ? { image: imageTiming, ple: pleTiming, decoder: { minFinalRms, maxFinalRms }, tokenize: ready - tokenizeStart, readout: performance.now() - finished } : {}),
         },
       };
     } finally {

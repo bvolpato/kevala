@@ -1,0 +1,308 @@
+{
+  "status": "done",
+  "done": true,
+  "measuredAt": "2026-10-13T15:58:21.534Z",
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "method": "wall-clock batch of seven direct OPFS store gathers, including Q8 dequantization; validation and writes excluded",
+  "coldDefinition": "first gather after writing and finishing a new tempfile; OS storage cache was not evicted",
+  "warmDefinition": "five repeated gathers with identical token IDs; no assembled GPU upload cache is involved",
+  "correctness": {
+    "bitExactReference": true,
+    "bitExactAcrossPaths": true,
+    "duplicateIds": true,
+    "padId": 0
+  },
+  "window": {
+    "scope": "window",
+    "storagePath": "opfs-writable-stream-and-blob",
+    "setupMs": 64.80000019073486,
+    "cold": {
+      "label": "first-gather",
+      "gatherMs": 73.70000004768372,
+      "bitExact": true,
+      "outputBitsFingerprint": "972eac4c",
+      "calls": {
+        "createWritable": 0,
+        "getFile": 0,
+        "arrayBuffer": 896
+      }
+    },
+    "warm": [
+      {
+        "label": "repeat-1",
+        "gatherMs": 67.5,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createWritable": 0,
+          "getFile": 0,
+          "arrayBuffer": 896
+        }
+      },
+      {
+        "label": "repeat-2",
+        "gatherMs": 69.60000014305115,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createWritable": 0,
+          "getFile": 0,
+          "arrayBuffer": 896
+        }
+      },
+      {
+        "label": "repeat-3",
+        "gatherMs": 67,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createWritable": 0,
+          "getFile": 0,
+          "arrayBuffer": 896
+        }
+      },
+      {
+        "label": "repeat-4",
+        "gatherMs": 69.59999990463257,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createWritable": 0,
+          "getFile": 0,
+          "arrayBuffer": 896
+        }
+      },
+      {
+        "label": "repeat-5",
+        "gatherMs": 67.40000009536743,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createWritable": 0,
+          "getFile": 0,
+          "arrayBuffer": 896
+        }
+      }
+    ],
+    "warmMedianMs": 67.5,
+    "bitExact": true,
+    "outputBitsFingerprint": "972eac4c",
+    "totalCalls": {
+      "createWritable": 1,
+      "getFile": 1,
+      "arrayBuffer": 5376
+    },
+    "crossOriginIsolated": false,
+    "dataset": {
+      "tables": [
+        {
+          "name": "ple.0.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.1.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.2.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.3.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.4.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.5.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "emb",
+          "rows": 4096,
+          "width": 512
+        }
+      ],
+      "tableBytes": 9437184,
+      "selectedRowsPerTable": 256,
+      "uniqueRowsPerTable": 64,
+      "padId": 0,
+      "padSelectionsPerTable": 23,
+      "outputFloats": 524296,
+      "conservativeApplicationBufferBoundBytes": 7471170,
+      "limitBytes": 33554432,
+      "conservativeCombinedContextBufferBoundBytes": 14942340
+    },
+    "cleanup": {
+      "removed": true,
+      "name": "kevala-ple-02c04e6e-2c93-40a9-b396-713d1850011a.tmp"
+    }
+  },
+  "worker": {
+    "scope": "worker",
+    "storagePath": "opfs-sync-access-handle",
+    "setupMs": 75.5,
+    "cold": {
+      "label": "first-gather",
+      "gatherMs": 5,
+      "bitExact": true,
+      "outputBitsFingerprint": "972eac4c",
+      "calls": {
+        "createSyncAccessHandle": 0,
+        "write": 0,
+        "flush": 0,
+        "getSize": 0,
+        "read": 896
+      }
+    },
+    "warm": [
+      {
+        "label": "repeat-1",
+        "gatherMs": 1.7999999523162842,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createSyncAccessHandle": 0,
+          "write": 0,
+          "flush": 0,
+          "getSize": 0,
+          "read": 896
+        }
+      },
+      {
+        "label": "repeat-2",
+        "gatherMs": 1.3000001907348633,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createSyncAccessHandle": 0,
+          "write": 0,
+          "flush": 0,
+          "getSize": 0,
+          "read": 896
+        }
+      },
+      {
+        "label": "repeat-3",
+        "gatherMs": 1.2000000476837158,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createSyncAccessHandle": 0,
+          "write": 0,
+          "flush": 0,
+          "getSize": 0,
+          "read": 896
+        }
+      },
+      {
+        "label": "repeat-4",
+        "gatherMs": 1.2999999523162842,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createSyncAccessHandle": 0,
+          "write": 0,
+          "flush": 0,
+          "getSize": 0,
+          "read": 896
+        }
+      },
+      {
+        "label": "repeat-5",
+        "gatherMs": 1.3000001907348633,
+        "bitExact": true,
+        "outputBitsFingerprint": "972eac4c",
+        "calls": {
+          "createSyncAccessHandle": 0,
+          "write": 0,
+          "flush": 0,
+          "getSize": 0,
+          "read": 896
+        }
+      }
+    ],
+    "warmMedianMs": 1.3000001907348633,
+    "bitExact": true,
+    "outputBitsFingerprint": "972eac4c",
+    "totalCalls": {
+      "createSyncAccessHandle": 1,
+      "write": 160,
+      "flush": 5,
+      "getSize": 1,
+      "read": 5376,
+      "close": 1
+    },
+    "crossOriginIsolated": false,
+    "dataset": {
+      "tables": [
+        {
+          "name": "ple.0.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.1.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.2.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.3.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.4.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "ple.5.embed",
+          "rows": 4096,
+          "width": 256
+        },
+        {
+          "name": "emb",
+          "rows": 4096,
+          "width": 512
+        }
+      ],
+      "tableBytes": 9437184,
+      "selectedRowsPerTable": 256,
+      "uniqueRowsPerTable": 64,
+      "padId": 0,
+      "padSelectionsPerTable": 23,
+      "outputFloats": 524296,
+      "conservativeApplicationBufferBoundBytes": 7471170,
+      "limitBytes": 33554432,
+      "conservativeCombinedContextBufferBoundBytes": 14942340
+    },
+    "cleanup": {
+      "removed": true,
+      "name": "kevala-ple-85f8043d-1013-4479-bae1-1c95369fcefa.tmp"
+    }
+  },
+  "firstGatherRatio": 14.740000009536743,
+  "repeatedGatherMedianRatio": 51.923069304969594,
+  "runner": {
+    "browser": "Chrome/153.0.8010.12",
+    "method": "CDP attach to existing Chrome; owned hidden target in default context",
+    "url": "http://127.0.0.1:18086/dev/gemma4-ple-store-check.html?autorun=1",
+    "cdp": "http://127.0.0.1:18929",
+    "concurrentWorkloadNote": "The existing Chrome was shared with the parent GPU guard run; no workload controls were applied for this store benchmark."
+  },
+  "instrumentation": "native API wrappers count each storage call; these counters remain active during timed gathers"
+}

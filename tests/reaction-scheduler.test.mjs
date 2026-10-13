@@ -82,9 +82,7 @@ test("latest-frame scheduler never overlaps inference and captures the newest fr
 
   resolvers.shift()();
   await flush();
-  await clock.advance(199);
-  assert.deepEqual(captures, [0]);
-  await clock.advance(1);
+  await clock.advance(0);
   assert.deepEqual(captures, [0, 8], "the next inference reads the latest camera frame");
 
   await clock.advance(250);
@@ -95,6 +93,30 @@ test("latest-frame scheduler never overlaps inference and captures the newest fr
   assert.equal(results.length, 2);
   assert.equal(results[1].metrics.latencyMs, 250);
   assert.ok(results[1].metrics.fps > 0);
+  scheduler.stop();
+});
+
+test("fast inference respects the minimum interval between frame starts", async () => {
+  const clock = fakeClock();
+  let captures = 0;
+  let finish;
+  const scheduler = createLatestFrameScheduler({
+    capture: () => ++captures,
+    infer: () => new Promise((resolve) => { finish = resolve; }),
+    intervalMs: 200,
+    now: clock.now,
+    setTimer: clock.setTimer,
+    clearTimer: clock.clearTimer,
+  });
+  scheduler.start();
+  await clock.advance(0);
+  await clock.advance(30);
+  finish({});
+  await flush();
+  await clock.advance(169);
+  assert.equal(captures, 1);
+  await clock.advance(1);
+  assert.equal(captures, 2);
   scheduler.stop();
 });
 

@@ -137,3 +137,112 @@ test("dispose rejects requests in flight and every later call", async (t) => {
   await assert.rejects(model.profile(), /kevala was disposed/);
   assert.ok(state.instances.every((w) => w.terminated));
 });
+
+test("disposal removes owned weight files after terminating the worker", async (t) => {
+  const { model, state } = await loaded(t, () => {});
+  const removed = [];
+  state.instances.at(-1).reply({ type: "owned-file", resource: { name: "owned-weights", directory: {
+    async removeEntry(name) {
+      assert.ok(state.instances.every((w) => w.terminated));
+      removed.push(name);
+    },
+  } } });
+  await new Promise((resolve) => setImmediate(resolve));
+  model.dispose();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.deepEqual(removed, ["owned-weights"]);
+  model.dispose();
+  assert.deepEqual(removed, ["owned-weights"]);
+});
+
+test("cancellation during image-file allocation removes the file without sending a load", async (t) => {
+  const state = workers(t, []);
+  const controller = new AbortController();
+  let finish;
+  let allocated;
+  const removed = [];
+  navigator.storage = { async getDirectory() { return {
+    async getFileHandle(name, { create = false } = {}) {
+      if (!create) throw new DOMException("Missing", "NotFoundError");
+      allocated = name;
+      await new Promise((resolve) => { finish = resolve; });
+      return {};
+    },
+    async removeEntry(name) {
+      assert.ok(state.instances.every((worker) => worker.terminated));
+      removed.push(name);
+    },
+  }; } };
+  const loading = Kevala.load({ backend: "webgpu", vision: "vision.kevala", cache: false, signal: controller.signal });
+  const rejected = assert.rejects(loading, /cancelled image load/);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(finish);
+  controller.abort(new Error("cancelled image load"));
+  finish();
+  await rejected;
+  assert.deepEqual(state.loads, []);
+  assert.deepEqual(removed, [allocated]);
+});
+
+test("image adapter retries allocate distinct files and clean each attempt", async (t) => {
+  const state = workers(t, [
+    { type: "error", message: "first adapter failed", code: "WEBGPU_INIT" },
+    ready,
+  ]);
+  const files = new Set();
+  const removed = [];
+  navigator.storage = { async getDirectory() { return {
+    async getFileHandle(name, { create = false } = {}) {
+      if (!create) throw new DOMException("Missing", "NotFoundError");
+      files.add(name);
+      return {};
+    },
+    async removeEntry(name) { removed.push(name); files.delete(name); },
+  }; } };
+  const model = await Kevala.load({ backend: "webgpu", vision: "vision.kevala", cache: false });
+  const names = state.loads.map((options) => options.hostStoreResource.name);
+  assert.equal(new Set(names).size, 2);
+  assert.deepEqual(removed, [names[0]]);
+  model.dispose();
+  assert.deepEqual(removed, names);
+  assert.equal(files.size, 0);
+});
+
+test("worker startup errors during image-file allocation reject and clean the retry", async (t) => {
+  const state = workers(t, [
+    { type: "error", message: "first adapter failed", code: "WEBGPU_INIT" },
+    () => {},
+  ]);
+  const OriginalWorker = globalThis.Worker;
+  Object.defineProperty(globalThis, "Worker", { configurable: true, value: class extends OriginalWorker {
+    constructor() {
+      super();
+      if (this.index === 1) setImmediate(() => this.onerror?.({ message: "retry worker startup failed" }));
+    }
+  } });
+  let allocations = 0;
+  let finish;
+  const created = [];
+  const removed = [];
+  navigator.storage = { async getDirectory() {
+    if (++allocations === 2) await new Promise((resolve) => { finish = resolve; });
+    return {
+      async getFileHandle(name, { create = false } = {}) {
+        if (!create) throw new DOMException("Missing", "NotFoundError");
+        created.push(name);
+        return {};
+      },
+      async removeEntry(name) { removed.push(name); },
+    };
+  } };
+  const loading = Kevala.load({ backend: "webgpu", vision: "vision.kevala", cache: false });
+  const rejected = assert.rejects(loading, /retry worker startup failed/);
+  await new Promise((resolve) => setImmediate(resolve));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.ok(finish);
+  finish();
+  await rejected;
+  assert.equal(state.loads.length, 1);
+  assert.deepEqual(removed, created);
+  assert.ok(state.instances.every((worker) => worker.terminated));
+});

@@ -27,6 +27,7 @@ let E = null; // the loaded engine
 let loadController = null;
 let activeGpu = null;
 let packIterator = null;
+let fileResources = [];
 const shardPorts = [];
 const shardClients = [];
 let shardWaiters = null;
@@ -77,6 +78,8 @@ export function dispose() {
   if (E?.vision) E.vision.profiler = null;
   activeGpu?.device.destroy();
   activeGpu = null;
+  E?.gpu?.dispose?.();
+  for (const store of fileResources.splice(0)) store.dispose().catch(() => {});
   packIterator?.return?.().catch(() => {});
   packIterator = null;
   releaseShards();
@@ -249,7 +252,10 @@ async function load(o) {
   if (gpu && plugin.gpuLayouts) layouts = plugin.gpuLayouts(header, headerBytes.byteLength);
   else if (external) layouts = parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice())));
   const sinks = [];
-  const engine = { arch, plugin, header, coord, signal, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached } };
+  const engine = { arch, plugin, header, coord, signal, hostStoreResource: o.hostStoreResource ?? null, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached }, registerResource(store) {
+    fileResources.push(store);
+    post({ type: "owned-file", resource: store.resource });
+  } };
   if (o.vision != null) {
     progress({ phase: "init", message: "loading vision companion before decoder weights" });
     await withGpuErrors(gpu, () => plugin.loadVision(engine, o, gpu, signal, progress), "loading vision companion");
@@ -309,26 +315,35 @@ async function load(o) {
     at += chunk.byteLength;
   };
   const upload = async () => {
-    feed(head);
-    let pendingBytes = head.byteLength;
+    let pendingBytes = 0;
     const drain = async () => {
       if (!gpu) return;
+      await engine.gpu.flushWrites?.();
       gpu.device.queue.submit([]);
       await gpu.device.queue.onSubmittedWorkDone();
       checkCancelled();
       pendingBytes = 0;
     };
+    // Cached/local packs can arrive faster than transfers finish. Bound both
+    // staging uploads and copied disk-write fragments before accepting more bytes.
+    const boundedFeed = async (chunk) => {
+      if (!gpu) { feed(chunk); return; }
+      for (let offset = 0; offset < chunk.byteLength; offset += 16 * 1024 * 1024) {
+        const piece = chunk.subarray(offset, offset + 16 * 1024 * 1024);
+        feed(piece);
+        pendingBytes += piece.byteLength;
+        if (pendingBytes >= 64 * 1024 * 1024) await drain();
+      }
+    };
+    await boundedFeed(head);
     for (;;) {
       const { done, value } = await it.next();
       checkCancelled();
       if (done) break;
-      feed(value);
-      // Cached/local packs can arrive faster than transfers finish. Bound the staging
-      // allocations so loading a large model does not temporarily double its GPU memory.
-      pendingBytes += value.byteLength;
-      if (gpu && pendingBytes >= 64 * 1024 * 1024) await drain();
+      await boundedFeed(value);
     }
     await drain();
+    await engine.gpu?.finishWeights?.();
     if (at < fullSize) throw new Error(`pack is truncated: ${at} of ${fullSize} bytes`);
     packIterator = null;
     for (const s of sinks) s.batcher?.flush();

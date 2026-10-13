@@ -234,10 +234,11 @@ let U;
  * Selected Q8 row tables can retain their original bytes on the host instead.
  */
 export class GpuWeights {
-  constructor(device, layout, { rowTables = [], hostTables = [] } = {}) {
+  constructor(device, layout, { rowTables = [], hostTables = [], hostStore = null } = {}) {
     U = GPUBufferUsage;
     this.device = device;
     this.header = parsePackHeader(layout.prefix);
+    this.hostStore = hostStore;
     this.tensors = new Map();
     // destination ranges -> tensor parts, for routing streamed fragments
     this.parts = [];
@@ -298,6 +299,13 @@ export class GpuWeights {
         this.writeRows(part, at - part.lo, bytes.subarray(off, off + n));
         e.filled += n;
         off += n;
+        continue;
+      }
+      if (e.hostTable && this.hostStore) {
+        this.hostStore.write(e.info.name, key, at - part.lo, bytes.subarray(off, off + n));
+        e.filled += n;
+        off += n;
+        if (e.filled === e.need) e.host = { stored: true };
         continue;
       }
       if (!e[key]) e[key] = new Uint8Array(part.hi - part.lo);
@@ -392,6 +400,12 @@ export class GpuWeights {
       for (let col = 0; col < width; col++) target[offset + row * width + col] = Math.fround(Math.fround(data[id * width + col] * scales[id * blocks + Math.floor(col / 32)]) * factor);
     }
     return target;
+  }
+
+  async gatherStoredRows(name, ids, scale, target, offset) {
+    const e = this.get(name);
+    if (!e.hostTable || !e.host || e.filled !== e.need) throw new Error(`host row table ${name} is incomplete`);
+    return this.hostStore ? this.hostStore.gather(name, ids, scale, target, offset) : this.gatherHostRows(name, ids, scale, target, offset);
   }
 
   missing() {

@@ -61,7 +61,7 @@ export function createLatestFrameScheduler({
         } catch {}
       }
       running = false;
-      if (active && !stopped) schedule(intervalMs);
+      if (active && !stopped) schedule(Math.max(0, intervalMs - (now() - startedAt)));
     }
   }
 

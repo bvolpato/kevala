@@ -49,6 +49,7 @@ async function main() {
       model: new URL(inventory.q8.url, location.href).href,
       vision: new URL(inventory.vision.url, location.href).href,
       backend: "webgpu", cache: false, gpuKernel: "generic", imageTokens: 70,
+      profile: new URLSearchParams(location.search).get("profile") === "1",
       signal: AbortSignal.timeout(180000),
       onProgress: (progress) => {
         window.gpuBench.phase = progress.phase;
@@ -61,7 +62,8 @@ async function main() {
       adapter: { ...adapterDetails, name: model.info.gpu },
     });
     if (model.info.backend !== "webgpu" || !model.info.modalities.includes("image")) throw new Error("the loaded runtime does not expose WebGPU image support");
-    if (model.info.memory?.hostWeights !== 2642411520 || model.info.memory.gpuWeights < 2800000000 || model.info.memory.gpuWeights > 3000000000) throw new Error(`unexpected image memory placement: ${JSON.stringify(model.info.memory)}`);
+    const offGpu = model.info.memory?.hostWeights + (model.info.memory.opfsWeights || 0);
+    if ((offGpu !== 2642411520 && offGpu !== 3095396352) || model.info.memory.gpuWeights < 2400000000 || model.info.memory.gpuWeights > 3000000000) throw new Error(`unexpected image memory placement: ${JSON.stringify(model.info.memory)}`);
     log(`loaded in ${(loadMs / 1000).toFixed(2)}s; ${model.info.gpu}`);
     log(`memory: ${JSON.stringify(model.info.memory)}`);
     window.gpuBench.phase = "decide";
@@ -99,6 +101,7 @@ async function main() {
     if (new URLSearchParams(location.search).get("profile") === "1") {
       const pixels = frame("red");
       try {
+        await model.profile(false);
         const demoStarted = performance.now();
         const demoResult = await model.decide("Classify this camera frame.", Object.fromEntries(noulKeys.map((key) => [key, questions[key]])), { parts: [{ type: "image", data: pixels }] });
         demoSample = { elapsedMs: performance.now() - demoStarted, timing: demoResult.timing, answers: demoResult.answers };
