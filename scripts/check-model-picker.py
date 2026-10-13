@@ -240,6 +240,15 @@ try:
     selected("gemma-4-e2b")
     assert driver.find_elements(By.CSS_SELECTOR, '[data-family-card="gemma4"] [data-vision-controls]')
     driver.execute_script("kevala_site.session.gpuAvailable = true; kevala_site.session.dispatchEvent(new Event('change')); ")
+    driver.execute_script("""
+      const s = kevala_site.session;
+      window.originalLocalVisionPackFor = s.localVisionPackFor;
+      s.localVisionPackFor = () => null;
+      location.hash = '#/reaction';
+    """)
+    wait.until(lambda d: d.execute_script("return location.hash === '#/reaction' && document.title === 'Reaction Recorder · kevala'"))
+    driver.execute_script("location.hash = '#/how'")
+    wait.until(lambda d: d.execute_script("return location.hash === '#/how' && !!document.querySelector('[data-family-card=gemma4] [data-vision-controls]')"))
     vision_checkbox = driver.find_element(By.CSS_SELECTOR, '[data-vision-enabled]')
     local_vision = driver.execute_script("return kevala_site.session.localVisionPackFor()")
     default_vision_url = driver.execute_script("return kevala_site.session.visionUrlFor()")
@@ -258,15 +267,32 @@ try:
         details.find_element(By.CSS_SELECTOR, "summary").click()
         vision_url = details.find_element(By.CSS_SELECTOR, "[data-vision-url]")
         custom_url = "https://example.test/gemma-4-e2b-vision-bf16.kevala"
+        driver.execute_script("""
+          const s = kevala_site.session;
+          window.cacheRefreshCalls = 0;
+          const refresh = s.refreshCache.bind(s);
+          s.refreshCache = (...args) => { window.cacheRefreshCalls++; return refresh(...args); };
+        """)
         driver.execute_script("kevala_site.session.cached['gemma-4-e2b'] = true")
         vision_url.send_keys(custom_url)
         assert driver.execute_script("return kevala_site.session.cached['gemma-4-e2b']") is False, "a companion URL override invalidates the image cache entry"
         assert driver.execute_script("return kevala_site.session.visionUrlFor()") == custom_url
+        assert driver.execute_script("return window.cacheRefreshCalls") == 0, "typing a companion URL does not scan model caches"
+        driver.execute_script("arguments[0].dispatchEvent(new Event('change', {bubbles: true}))", vision_url)
+        assert driver.execute_script("return window.cacheRefreshCalls") == 1, "committing a companion URL refreshes cache state once"
         driver.execute_script("kevala_site.session.cached['gemma-4-e2b'] = true")
         vision_url.send_keys(Keys.CONTROL, "a")
         vision_url.send_keys(Keys.BACKSPACE)
         assert driver.execute_script("return kevala_site.session.cached['gemma-4-e2b']") is False, "resetting a custom URL invalidates the image cache entry"
+        assert driver.execute_script("return window.cacheRefreshCalls") == 1, "reset typing does not scan model caches"
+        driver.execute_script("arguments[0].dispatchEvent(new Event('change', {bubbles: true}))", vision_url)
+        assert driver.execute_script("return window.cacheRefreshCalls") == 2, "committing a reset refreshes cache state once"
         assert driver.execute_script("return kevala_site.session.visionUrlFor()") == default_vision_url, "clearing a custom URL restores the published companion"
+        driver.execute_script("""
+          const s = kevala_site.session;
+          s.localVisionPackFor = window.originalLocalVisionPackFor;
+          delete window.originalLocalVisionPackFor;
+        """)
     else:
         assert not vision_checkbox.is_selected(), "image mode stays off when no companion is available"
         assert "No hosted vision companion" in vision_status and "Text mode works" in vision_status

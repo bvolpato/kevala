@@ -470,7 +470,6 @@ class Session extends EventTarget {
     this.#invalidateCache(model);
     this.#persist();
     this.#emit();
-    this.refreshCache();
   }
 
   async load(model) {

@@ -559,7 +559,7 @@ panel.addEventListener("change", (e) => {
       if (!visionEnabled.checked && session.visionEnabledFor(model)) session.setVisionEnabled(false);
     } else session.setVisionEnabled(visionEnabled.checked);
   }
-  if (e.target.closest("[data-native-pack-url]")) session.refreshCache();
+  if (e.target.closest("[data-native-pack-url], [data-vision-url]")) session.refreshCache();
 });
 panel.addEventListener("input", (e) => {
   const input = e.target.closest("[data-native-pack-url]");
