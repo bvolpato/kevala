@@ -1,14 +1,14 @@
 # How kevala works
 
-kevala runs System 1 decision models (Laya, Bruv, Kev, SemIf, and Gemma 4) inside a web page.
+kevala runs System 1 decision models (Laya, Kev, H2O-Lightning, Clef-flash, SemIf, and Gemma 4) inside a web page.
 A request is a state plus typed questions (`noul`, `choice`, `score`), and the answer is a probability
 for every option without autoregressive text generation. Nothing leaves the tab.
 
 ```
  page ──► index.js ──postMessage──► engine worker ──► coordinator (WebAssembly, Rust)
-                                        │                tokenizer · request template · embeddings · head · response
+                                        │                tokenizer · request template · readout · response
                                         │
-                                        ├──► WebGPU trunk (WGSL kernels, the whole pass on the GPU)
+                                        ├──► WebGPU trunk and embedding row gathers (WGSL kernels)
                                         └──► WebAssembly shard workers (tensor parallel, CPU)
 ```
 
@@ -24,10 +24,12 @@ compiles for native targets and `wasm32-unknown-unknown` alike:
 - `content.rs`: the request model. `state` is text or JSON; `parts` carries typed content by modality.
 - `runtime.rs`: the family registry (`Model` trait, `FAMILIES`), keyed by the pack's `config.arch`.
 - Families, one directory each: `laya/` (the engine, `model.rs` for the encoder and its
-  tensor-parallel shards, `sequence.rs` for the request template), `kev/` (Kev and SemIf), and
-  `gemma4/`. Each owns its template, backbone, readout, and checkpoint converter (`convert.rs`).
+  tensor-parallel shards, `sequence.rs` for the request template), `kev/` (Kev, H2O-Lightning, and
+  SemIf), `clef/` (Cloudflare's joint decision head), and `gemma4/`. Each owns its template,
+  backbone, readout, and checkpoint converter (`convert.rs`).
   SemIf shares Qwen3.5's decoder with Kev, but reads direct option label logits from frozen
-  instruction weights instead of using Kev's LoRA adapter and pointer head. `direct_options.rs`
+  instruction weights instead of using Kev's LoRA adapter and pointer head. H2O-Lightning uses its
+  own decision prompt, label readout, and calibration with the Kev decoder. `direct_options.rs`
   holds the prompt that SemIf and Gemma 4 share, and `math.rs` the softmax, argmax and rounding
   that every family's answers use.
 - `gpu.rs` and `wgsl/*.wgsl`: the WebGPU kernels. WebGPU only runs WGSL, so the kernels are WGSL
@@ -38,7 +40,7 @@ compiles for native targets and `wasm32-unknown-unknown` alike:
   (with relaxed-SIMD fused multiply-add when available), NEON natively, or plain arrays.
 - `pack.rs`, `store.rs`: the `.kevala` format with its sub-pack layouts, and a loaded pack's tensors.
 - `convert.rs`, `torchpt.rs`: what the family converters share when they read upstream checkpoints
-  (source floats, int8 quantization, `torch.save` files).
+  (source floats, Q8 quantization, `torch.save` files).
 
 **Command line (`crates/kevala-cli`).** `conversion.rs` is the common native conversion path and its
 architecture, adapter, tokenizer and readout validation. `parity/` replays each family's reference
@@ -70,8 +72,9 @@ One file per model: a 16-byte prefix (`KVLA`, format version, header length), a 
 model provenance, the family config and a tensor table, the tokenizer blob, then tensors, each 64-byte
 aligned so a loader can hand them to WebAssembly or WebGPU without reshuffling.
 
-Tensors are `f32` or `q8`: int8 row-major weights with one f32 scale per 32 weights of a row
-(symmetric absmax). Matrices are q8; norms, biases, small gate projections and decision heads stay f32.
+Tensors can be `f32`, `bf16`, or `q8`. Q8 uses int8 row-major weights with one f32 scale per 32
+weights of a row (symmetric absmax). BF16 stores matrix weights unquantized in two bytes per value.
+Norms, biases, small gate projections, and decision heads stay f32.
 
 Because every tensor's offset is in the header, a pack can be split while it streams: the runtime
 computes *layouts* (lists of byte-range copies) for the coordinator, for a GPU trunk, or for each
@@ -79,18 +82,19 @@ tensor-parallel shard, and applies them to the stream so no worker ever holds by
 
 ## Where the weights come from
 
-`Kevala.load({ model: "laya" })` downloads the model's int8 pack from
+`Kevala.load({ model: "laya" })` downloads the model's Q8 pack from
 [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs), pinned to one commit, stores it
 in the Origin Private File System and loads it. Later visits read it from disk. Packs can be converted
 with `kevala convert` and checked against the same parity fixtures as a fresh conversion. The
 family-specific `convert-kev`, `convert-semif`, and `convert-gemma` commands remain compatibility
 aliases that use the same validated conversion path.
 
-When the pack is unreachable, Laya and Kev-0.8B can download their upstream checkpoints at pinned
-revisions and convert them in the browser, with the same Rust converter the CLI uses, compiled to
-WebAssembly. Larger Kev and all SemIf choices require a previously converted pack. Both paths store
-the pack under the same key, so either one serves later loads. You can also serve a `.kevala` file
-yourself: `Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
+The refreshed Kev models, H2O-Lightning, and Clef-flash default to BF16. `precision: "q8"` opts into
+smaller quantized weights; `precision: "f32"` requests f32 matrix weights through the API and native
+converter. Precision is part of each browser cache key. Laya and Kev-0.8B can convert their pinned
+checkpoints in the browser. Larger outputs need native conversion while they exceed the browser's
+WebAssembly allocation limit. You can serve a `.kevala` file yourself:
+`Kevala.load({ model: "https://example.com/laya-q8.kevala" })`.
 [Packs](packs.md) has the commands to download, convert, check and publish them.
 
 ## Converting checkpoints
@@ -104,13 +108,13 @@ kevala convert <checkpoint-dir> -o out.kevala
 The converter reads `config.json` and selects the architecture from its model identifiers, including
 nested text configuration where present. It does not infer a family from a repository name or a
 parameter count. A plain Qwen3.5 or Gemma 4 text decoder defaults to the `direct-options` readout.
-A complete Qwen3.5 LoRA adapter with its pointer head uses `pointer`, and a Laya encoder checkpoint
-uses `encoder-head`. `--readout direct-options|pointer|encoder-head` is optional, but an explicit
+A complete Qwen3.5 LoRA adapter with its pointer head uses `pointer`, H2O-Lightning uses
+`h2o-lightning`, and a Laya encoder checkpoint uses `encoder-head`. `--readout` is optional, but an explicit
 choice must agree with the detected architecture and the files supplied.
 
 The stable pack keys are `laya` for the ModernBERT decision head, `kev` for the Qwen3.5 decoder
-(including both pointer and direct-options readouts), and `gemma4` for the Gemma text decoder. These
-are format architecture keys, not repository-name lookups.
+(Kev, SemIf, and H2O-Lightning readouts), `clef` for Cloudflare's joint head, and `gemma4` for the
+Gemma text decoder. These are format architecture keys, not repository-name lookups.
 
 An adapter directory can be supplied in either form:
 
@@ -130,8 +134,9 @@ by Qwen3.5, so ordinary conversion needs no Python tokenizer materialization ste
 path. New scripts should use `kevala convert` so config-driven validation stays consistent.
 
 Kev's conversion downloads only the byte range of the Qwen3.5 base that holds the language model (the
-vision tower and the multi-token-prediction head are skipped), merges Kev's LoRA adapter in f32 and
-quantizes each tensor as it arrives.
+vision tower and the multi-token-prediction head are skipped), merges Kev's LoRA adapter in f32, and
+stores matrix weights at the selected precision. Kev v1.0 defaults to BF16; pass `--precision q8`
+to quantize the matrices.
 
 SemIf uses the same Qwen3.5 decoder without an adapter or additional training step. Its pinned
 `direct-options-v1` prompt labels up to 16 choices `A` through `P`; kevala reads those final label

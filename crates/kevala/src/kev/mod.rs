@@ -43,6 +43,8 @@ pub struct KevConfig {
     /// `<state> <q> <opt> </opt> <decide>`
     pub tokens: [u32; 5],
     pub semif: bool,
+    pub response_v1: bool,
+    pub h2o: Option<crate::h2o::Config>,
 }
 
 impl KevConfig {
@@ -92,6 +94,12 @@ impl KevConfig {
             max_branch: u("max_branch").unwrap_or(8192),
             tokens,
             semif: c.get("readout").and_then(Value::as_str) == Some("semif"),
+            response_v1: c.get("response_version").and_then(Value::as_usize) == Some(1),
+            h2o: if c.get("readout").and_then(Value::as_str) == Some("h2o-lightning") {
+                Some(crate::h2o::Config::from_json(c.get("h2o_config").ok_or("H2O pack: missing h2o_config")?)?)
+            } else {
+                None
+            },
         })
     }
     fn lin_dim(&self) -> usize {
@@ -164,6 +172,7 @@ pub struct KevQuestion {
     pub keys: Vec<String>,
     pub instructions: String,
     pub options: Vec<String>,
+    pub threshold: Option<f64>,
 }
 
 pub fn parse_questions(qs: &Value) -> Result<Vec<KevQuestion>, String> {
@@ -224,7 +233,7 @@ pub fn parse_questions(qs: &Value) -> Result<Vec<KevQuestion>, String> {
             }
             other => return Err(format!("question {id:?}: unknown type {other:?}")),
         };
-        out.push(KevQuestion { id: id.clone(), kind, keys, instructions, options });
+        out.push(KevQuestion { id: id.clone(), kind, keys, instructions, options, threshold: None });
     }
     Ok(out)
 }
@@ -429,7 +438,7 @@ struct Seg {
 pub struct KevModel {
     pub cfg: KevConfig,
     store: Arc<Store>,
-    emb: TensorInfo,
+    emb: Option<TensorInfo>,
     norm: TensorInfo,
     readout: Readout,
     layers: Vec<Layer>,
@@ -445,6 +454,7 @@ pub struct KevModel {
 // One per model.
 #[allow(clippy::large_enum_variant)]
 enum Readout {
+    Hidden,
     Pointer { q: TensorInfo, qb: TensorInfo, k: TensorInfo, kb: TensorInfo },
     Labels(TensorInfo),
 }
@@ -466,6 +476,16 @@ pub const EXTEND_MIN_TOKENS: usize = 16;
 
 impl KevModel {
     pub fn new(cfg: KevConfig, store: Arc<Store>) -> Result<KevModel, String> {
+        Self::new_inner(cfg, store, false)
+    }
+
+    /// A shared Qwen3.5 trunk for a family with its own decision head. GPU coordinators omit
+    /// embeddings because GPU row gathers supply them directly.
+    pub fn new_trunk(cfg: KevConfig, store: Arc<Store>) -> Result<KevModel, String> {
+        Self::new_inner(cfg, store, true)
+    }
+
+    fn new_inner(cfg: KevConfig, store: Arc<Store>, trunk_only: bool) -> Result<KevModel, String> {
         let t = |n: String| store.info(&n).cloned();
         let mut layers = Vec::new();
         // a coordinator sub-pack has no layers: they run on the GPU
@@ -503,10 +523,14 @@ impl KevModel {
         // The first `rotary` dimensions of each head rotate; the rest pass through.
         let rope = Rope::new(cfg.rope_theta, cfg.rotary, cfg.max_state + cfg.max_branch);
         Ok(KevModel {
-            emb: t("emb".into())?,
+            emb: if trunk_only && !store.has("emb") { None } else { Some(t("emb".into())?) },
             norm: t("norm".into())?,
-            readout: if cfg.semif {
+            readout: if trunk_only {
+                Readout::Hidden
+            } else if cfg.semif {
                 Readout::Labels(t("semif.labels".into())?)
+            } else if cfg.h2o.is_some() {
+                Readout::Labels(t("h2o.labels".into())?)
             } else {
                 Readout::Pointer {
                     q: t("ptr.q".into())?,
@@ -529,11 +553,38 @@ impl KevModel {
     pub fn embed(&self, ids: &[u32]) -> Vec<f32> {
         let d = self.cfg.hidden;
         let mut x = vec![0.0; ids.len() * d];
-        let vocab = self.emb.rows();
+        let emb = self.emb.as_ref().expect("GPU coordinator embeddings must be supplied by its backend");
+        let vocab = emb.rows();
         for (i, &id) in ids.iter().enumerate() {
-            self.store.row(&self.emb, (id as usize).min(vocab - 1), &mut x[i * d..(i + 1) * d]);
+            self.store.row(emb, (id as usize).min(vocab - 1), &mut x[i * d..(i + 1) * d]);
         }
         x
+    }
+
+    /// All last-layer rows of one causal text sequence, with the backbone's final RMSNorm.
+    /// Clef uses every row for evidence routing and cannot use Kev's prefix-carry cache.
+    pub fn forward_hidden(&mut self, ids: &[u32]) -> Vec<f32> {
+        let mut x = self.embed(ids);
+        self.run(&mut x, &[Seg { start: 0, len: ids.len(), pos0: 0, parent: None }], &[], None);
+        self.normalize_hidden(&mut x);
+        x
+    }
+
+    /// Apply Qwen's final normalization to rows returned by an external backbone.
+    pub fn normalize_hidden(&self, rows: &mut [f32]) {
+        let mut normalized = vec![0.; rows.len()];
+        rms_norm(rows, self.cfg.hidden, self.store.f32s(&self.norm), self.cfg.eps, &mut normalized);
+        rows.copy_from_slice(&normalized);
+    }
+
+    /// Run this trunk on existing causal hidden rows without applying the final norm. A
+    /// layer-streaming verifier can load one layer at a time and normalize after the last one.
+    pub fn forward_rows(&mut self, rows: &mut [f32]) -> Result<(), String> {
+        if self.cfg.hidden == 0 || rows.is_empty() || rows.len() % self.cfg.hidden != 0 || !self.has_layers() {
+            return Err("Qwen trunk rows must be nonempty, match hidden width, and have loaded layers".into());
+        }
+        self.run(rows, &[Seg { start: 0, len: rows.len() / self.cfg.hidden, pos0: 0, parent: None }], &[], None);
+        Ok(())
     }
 
     /// False for a coordinator sub-pack, whose layers run on the GPU.
@@ -982,8 +1033,17 @@ pub struct KevEngine {
     pub modalities: Vec<crate::content::Modality>,
 }
 
-fn r2(x: f64) -> Value {
-    Value::Float(round_to(x, 2))
+fn score_confidence_v1(p: &[f64]) -> f64 {
+    if p.len() == 1 {
+        return 1.0;
+    }
+    let sum: f64 = p.iter().sum();
+    let normalized: Vec<_> = p.iter().map(|v| if sum == 0.0 { 1.0 / p.len() as f64 } else { v / sum }).collect();
+    let mode = argmax(&normalized);
+    let mean = (p.len() - 1) as f64 / 2.0;
+    let uniform_deviation = (0..p.len()).map(|i| (i as f64 - mean).abs()).sum::<f64>() / p.len() as f64;
+    let spread = normalized.iter().enumerate().map(|(i, v)| v * (i as f64 - mode as f64).abs()).sum::<f64>();
+    (1.0 - spread / uniform_deviation).max(0.0)
 }
 
 impl KevEngine {
@@ -1001,6 +1061,10 @@ impl KevEngine {
     }
 
     pub fn prepare(&self, state: &Value, questions: &Value) -> Result<(Encoded, Vec<KevQuestion>), String> {
+        if let Some(h2o) = &self.model.cfg.h2o {
+            let qs = h2o.parse_questions(questions)?;
+            return Ok((h2o.encode(&self.tok, self.model.cfg.max_branch, state, &qs)?, qs));
+        }
         let qs = parse_questions(questions)?;
         let mut e = if self.model.cfg.semif {
             encode_semif(&self.tok, &self.model.cfg, state, &qs)?
@@ -1042,7 +1106,9 @@ impl KevEngine {
         &self,
         requests: &[crate::content::Request],
     ) -> Result<(Vec<Encoded>, Vec<Vec<KevQuestion>>), String> {
-        self.prepare_all(&crate::runtime::text_requests("kev", &self.modalities, requests, |v| render(v, 0))?)
+        self.prepare_all(&crate::runtime::text_requests("kev", &self.modalities, requests, |v| {
+            self.model.cfg.h2o.as_ref().map_or_else(|| render(v, 0), |h2o| h2o.state_text(v))
+        })?)
     }
 
     /// Tokenizes every `(state, questions)` pair; the batch an external trunk (the GPU) runs.
@@ -1059,7 +1125,48 @@ impl KevEngine {
 
     /// Kev-shaped responses from pointer logits.
     pub fn respond(&self, enc: &[Encoded], questions: &[Vec<KevQuestion>], logits: &[Vec<Vec<f32>>]) -> Vec<Value> {
+        if let Some(h2o) = &self.model.cfg.h2o {
+            return enc
+                .iter()
+                .zip(questions)
+                .zip(logits)
+                .map(|((e, qs), lg)| {
+                    let mut answers = Vec::new();
+                    let mut raw = Vec::new();
+                    for (q, z) in qs.iter().zip(lg) {
+                        let (answer, probabilities) = h2o.answer(q, z);
+                        answers.push((q.id.clone(), answer));
+                        raw.push((q.id.clone(), Value::Array(probabilities.into_iter().map(Value::Float).collect())));
+                    }
+                    Value::Object(vec![
+                        ("model".into(), Value::Str(h2o.model.clone())),
+                        ("answers".into(), Value::Object(answers)),
+                        ("probability_source".into(), Value::Str("native".into())),
+                        (
+                            "probability_status".into(),
+                            Value::Str("conditional option scores; noul includes the upstream commit floor".into()),
+                        ),
+                        (
+                            "effort_used".into(),
+                            Value::Object(vec![
+                                ("tier".into(), Value::Str("fast".into())),
+                                ("passes_per_decision".into(), Value::Int("1".into())),
+                            ]),
+                        ),
+                        (
+                            "usage".into(),
+                            Value::Object(vec![
+                                ("input_tokens".into(), Value::Int(e.tokens().to_string())),
+                                ("output_tokens".into(), Value::Int("0".into())),
+                            ]),
+                        ),
+                        ("raw_probabilities".into(), Value::Object(raw)),
+                    ])
+                })
+                .collect();
+        }
         let mut out = Vec::new();
+        let round = |x: f64| Value::Float(round_to(x, if self.model.cfg.response_v1 { 4 } else { 2 }));
         for ((e, qs), lg) in enc.iter().zip(questions).zip(logits) {
             let mut answers = Vec::new();
             let mut raw = Vec::new();
@@ -1071,17 +1178,19 @@ impl KevEngine {
                 let k = pd.len();
                 let a = match q.kind {
                     Kind::Noul => {
-                        Value::Object(vec![("type".into(), Value::Str("noul".into())), ("noul".into(), r2(pd[1]))])
+                        Value::Object(vec![("type".into(), Value::Str("noul".into())), ("noul".into(), round(pd[1]))])
                     }
                     Kind::Choice => {
-                        let conf = if k == 1 { 1.0 } else { (pd[best] - 1.0 / k as f64) / (1.0 - 1.0 / k as f64) };
+                        let total = if self.model.cfg.response_v1 { pd.iter().sum() } else { 1.0 };
+                        let conf =
+                            if k == 1 { 1.0 } else { (pd[best] / total - 1.0 / k as f64) / (1.0 - 1.0 / k as f64) };
                         Value::Object(vec![
                             ("type".into(), Value::Str("choice".into())),
                             ("choice".into(), Value::Str(q.keys[best].clone())),
-                            ("confidence".into(), r2(conf)),
+                            ("confidence".into(), round(conf)),
                             (
                                 "probabilities".into(),
-                                Value::Object(q.keys.iter().zip(&pd).map(|(k, &v)| (k.clone(), r2(v))).collect()),
+                                Value::Object(q.keys.iter().zip(&pd).map(|(k, &v)| (k.clone(), round(v))).collect()),
                             ),
                         ])
                     }
@@ -1090,7 +1199,7 @@ impl KevEngine {
                         let spread: f64 = pd.iter().enumerate().map(|(i, v)| v * (i as f64 - best as f64).abs()).sum();
                         Value::Object(vec![
                             ("type".into(), Value::Str("score".into())),
-                            ("score".into(), r2(score)),
+                            ("score".into(), round(score)),
                             (
                                 "legend".into(),
                                 Value::Object(
@@ -1103,9 +1212,16 @@ impl KevEngine {
                             ),
                             (
                                 "probabilities".into(),
-                                Value::Object(q.keys.iter().zip(&pd).map(|(k, &v)| (k.clone(), r2(v))).collect()),
+                                Value::Object(q.keys.iter().zip(&pd).map(|(k, &v)| (k.clone(), round(v))).collect()),
                             ),
-                            ("confidence".into(), r2(1.0 - spread / (k as f64 - 1.0))),
+                            (
+                                "confidence".into(),
+                                round(if self.model.cfg.response_v1 {
+                                    score_confidence_v1(&pd)
+                                } else {
+                                    1.0 - spread / (k as f64 - 1.0)
+                                }),
+                            ),
                         ])
                     }
                 };

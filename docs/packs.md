@@ -1,31 +1,35 @@
 # Packs: loading, converting and publishing
 
-A pack (`.kevala`) is a model's weights, tokenizer and config in one file: int8 matrix weights with
-one f32 scale per 32 values, selected tensors in f32, and a header that records the source, revision,
-author, license and conversion.
+A pack (`.kevala`) is a model's weights, tokenizer and config in one file. Matrix weights can be
+BF16 by default for refreshed Kev, H2O-Lightning, and Clef-flash, or Q8 when requested; selected
+tensors such as norms and decision heads remain f32. A header records the source, revision, author,
+license, precision, and conversion.
 The engine only ever runs packs. This page covers where they come from and how to make new ones.
 
-## Three ways to load a model
+## Loading a model
 
 ```js
 import { Kevala } from "kevala";
 
-// 1. By name: the pinned int8 pack from Hugging Face (479 MB for Laya, 857 MB for Kev-0.8B,
-//    5.22 GB for Gemma 4 E2B, or 8.41 GB for Gemma 4 E4B).
-//    Laya and Kev-0.8B can fall back to browser conversion if the hosted pack is unavailable.
+// 1. By name: a published Q8 pack for Laya, SemIf, and Gemma 4. Refreshed Kev defaults to BF16.
 const kevala = await Kevala.load({ model: "laya" });
 
 // 2. From the original weights: downloads the authors' checkpoint at its pinned revision
-//    (843 MB for Laya, 1.6 GB for Kev-0.8B) and converts it in the browser.
-//    This option is supported only for Laya and Kev-0.8B.
+//    (843 MB for Laya, about 1.6 GB for Kev-0.8B) and converts it in the browser.
+//    Browser conversion is supported only for Laya and Kev-0.8B.
 const fromCheckpoint = await Kevala.load({ model: "laya", from: "checkpoint" });
 
-// 3. A .kevala file you host or already have: a URL, an ArrayBuffer, or a Blob.
+// 3. BF16 is the default for refreshed Kev, H2O-Lightning, and Clef-flash. Q8 is opt-in.
+const kev = await Kevala.load({ model: "kev-0.8b" });
+const kevQ8 = await Kevala.load({ model: "kev-0.8b", precision: "q8" });
+
+// 4. A .kevala file you host or already have: a URL, an ArrayBuffer, or a Blob.
 const own = await Kevala.load({ model: "https://example.com/laya-q8.kevala" });
 ```
 
 For a registry entry you own, include the architecture and source identity explicitly. The pack
 header must declare the same architecture; the runtime rejects an unknown or mismatched value.
+Q8 blocks must be positive multiples of 16; the default block size is 32.
 
 ```js
 const custom = await Kevala.load({ model: {
@@ -41,13 +45,29 @@ const custom = await Kevala.load({ model: {
 Use the URL form when you only need to load a hosted pack and do not have upstream conversion
 metadata. Do not rely on a repository name or model size to select an architecture.
 
-Kev-4B, Kev-9B, the SemIf Qwen models, and Gemma 4 require a converted `.kevala` pack. They do not
-download and convert a large checkpoint automatically when a hosted pack is unavailable. See
+Kev-4B, Kev-9B, H2O-Lightning, and Clef-flash currently have no published pack and stop before a
+browser download because their conversion outputs exceed the browser converter's WebAssembly limit.
+Convert them with the native CLI and pass the resulting URL. Within its 4B preview cap, the site
+picker exposes a required converted-pack URL field for Kev-4B and H2O-Lightning-4B when no matching
+local pack is available. Kev-9B and Clef-flash are outside that picker cap; load their packs through
+the runtime API. Use `{ name, url }` to retain a registered architecture while loading your file.
+SemIf and Gemma 4 use their published packs. See
 [the model guide](models.md) for names, readout differences, and memory limits.
 
-Named loading keys packs by source/base revisions and block size. The additional model entries
-also include `packSha256`, so changing their converted bytes selects a new cache entry. Later visits
-read the cached file whichever way it arrived. To convert again when a pack is already stored,
+```js
+const h2o = await Kevala.load({ model: {
+  name: "h2o-lightning-4b",
+  url: "https://example.com/h2o-lightning-4b-bf16.kevala",
+} });
+```
+
+If you pass `precision` with a pack URL, Kevala checks that requested format against the header
+before uploading model weights. Omit it when the URL points to a pack whose precision you do not
+know in advance.
+
+Named checkpoint loads key packs by source/base revisions, readout, block size, and precision. A
+user-supplied pack URL is cached by that URL because its precision and bytes are embedded in the
+file. Later visits read the cached file whichever way it arrived. To convert again when a pack is already stored,
 clear it first (`clearCache()`, or "Clear stored packs" on the site) or pass `cache: false`. The
 site takes `?from=checkpoint` to do the same, for example
 `https://bvolpato.github.io/kevala/?from=checkpoint`.
@@ -58,14 +78,14 @@ and range loading, and CORS headers when the host is on another origin.
 
 ## Downloading a pack directly
 
-The packs live in [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs), except the
-Bruv packs, which live in their own model repositories. The runtime pins each pack to a commit
-(`PACKS` and `GEMMA_PACKS` in [`js/src/source.js`](../js/src/source.js), and each Bruv entry of
-`MODELS`). Use the same commit to get the exact bytes it loads:
+The published runtime packs live in [bvolpato/kevala-packs](https://huggingface.co/bvolpato/kevala-packs).
+Their commits are pinned by `PACKS` and `GEMMA_PACKS` in [`js/src/source.js`](../js/src/source.js).
+Refreshed Kev, H2O-Lightning, and Clef-flash do not have published packs in this catalog. Download
+only files listed by a model's current `hosted` URL:
 
 ```sh
 rev=<commit from js/src/source.js>
-uvx --from huggingface-hub hf download bvolpato/kevala-packs laya-q8.kevala kev-0.8b-q8.kevala \
+uvx --from huggingface-hub hf download bvolpato/kevala-packs laya-q8.kevala \
   --revision "$rev" --local-dir packs
 # or, without the Hugging Face CLI
 curl -L -o laya-q8.kevala "https://huggingface.co/bvolpato/kevala-packs/resolve/$rev/laya-q8.kevala"
@@ -103,22 +123,23 @@ uvx --from huggingface-hub hf download convaiinnovations/laya model.safetensors 
 $kevala convert ckpt/laya -o packs/laya-q8.kevala --name laya --source convaiinnovations/laya \
   --revision 1c5edc17a7acd8701df6fc341c0d179f1c62c982 --author "Nandakishor M, Convai Innovations" --license apache-2.0
 
-# Kev-0.8B: its LoRA adapter and pointer head, and the Qwen3.5 base they apply to
+# Kev v1.0 0.8B: its LoRA adapter and pointer head, and the Qwen3.5 base they apply to
 uvx --from huggingface-hub hf download jaredpalmer/kev-0.8b adapter_config.json adapter_model.safetensors head.pt tokenizer.json \
-  --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 --local-dir ckpt/kev-0.8b
+  --revision 9a45d25eb2ab761841196625383fa1dff0e56c1e --local-dir ckpt/kev-0.8b
 uvx --from huggingface-hub hf download Qwen/Qwen3.5-0.8B-Base config.json model.safetensors-00001-of-00001.safetensors \
   --revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 --local-dir ckpt/qwen3.5-0.8b-base
-$kevala convert ckpt/qwen3.5-0.8b-base --adapter ckpt/kev-0.8b -o packs/kev-0.8b-q8.kevala \
-  --name kev-0.8b --source jaredpalmer/kev-0.8b --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 \
+$kevala convert ckpt/qwen3.5-0.8b-base --adapter ckpt/kev-0.8b -o packs/kev-0.8b-bf16.kevala \
+  --name kev-0.8b --source jaredpalmer/kev-0.8b --revision 9a45d25eb2ab761841196625383fa1dff0e56c1e \
   --base-source Qwen/Qwen3.5-0.8B-Base --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 \
   --author "Jared Palmer" --license apache-2.0
+# Add --precision q8 and change the filename to kev-0.8b-q8.kevala only when you want quantization.
 ```
 
 An adapter directory can also be the positional checkpoint when the base is supplied separately:
 
 ```sh
-$kevala convert ckpt/kev-0.8b --base ckpt/qwen3.5-0.8b-base -o packs/kev-0.8b-q8.kevala \
-  --name kev-0.8b --source jaredpalmer/kev-0.8b --revision 54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8 \
+$kevala convert ckpt/kev-0.8b --base ckpt/qwen3.5-0.8b-base -o packs/kev-0.8b-bf16.kevala \
+  --name kev-0.8b --source jaredpalmer/kev-0.8b --revision 9a45d25eb2ab761841196625383fa1dff0e56c1e \
   --base-source Qwen/Qwen3.5-0.8B-Base --base-revision dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68 \
   --author "Jared Palmer" --license apache-2.0
 ```
@@ -140,33 +161,37 @@ common path. New scripts should use `kevala convert`.
 <a id="optional-kev-and-semif-style-models"></a>
 <a id="optional-kev-and-semif-models"></a>
 
-### Optional Kev, SemIf, and Gemma 4 models
+### Optional and refreshed models
 
-Use [`tools/convert_models.py`](../tools/convert_models.py) for Kev-4B, Kev-9B, the SemIf
-Qwen3.5-0.8B, 2B, and 4B packs, and Gemma 4 E2B and E4B. Its source manifest,
+Use [`tools/convert_models.py`](../tools/convert_models.py) for refreshed Kev, H2O-Lightning,
+Clef-flash, SemIf, and Gemma 4. Its source manifest,
 [`tools/model-sources.json`](../tools/model-sources.json), pins every model revision, the exact base
-checkpoint for each Kev adapter, and the SemIf method revision.
+checkpoint for each Kev adapter, base provenance for H2O/Clef, and the SemIf method revision.
 
 ```sh
 cargo build --release -p kevala-cli
-uv run tools/convert_models.py --models kev-4b semif-qwen3.5-0.8b
+uv run tools/convert_models.py --models kev-0.8b kev-4b h2o-lightning-4b clef-flash
+
+# Q8 quantization is optional. BF16 is the default for these Qwen3.5 models.
+uv run tools/convert_models.py --models kev-4b h2o-lightning-4b clef-flash --precision q8
 
 # Optional larger conversions. Each selected model is converted serially.
 uv run tools/convert_models.py --models kev-9b semif-qwen3.5-2b semif-qwen3.5-4b semif-qwen3.5-9b
 
-# Gemma 4 E2B and E4B, converted as text-only dense packs
-uv run tools/convert_models.py --models gemma-4-e2b gemma-4-e4b
+# Gemma 4 currently supports Q8 output in this converter.
+uv run tools/convert_models.py --models gemma-4-e2b gemma-4-e4b --precision q8
 ```
 
 The default output directory is `tmp/`; `--output-dir` overrides it. Each conversion writes a
-`<model>-q8.kevala` file and a neighboring JSON manifest with its SHA-256, byte size, source
-revisions, and pack metadata. The native converter reads the safetensors index and tensor ranges
+`<model>-<precision>.kevala` file and a neighboring JSON manifest with its SHA-256, byte size,
+precision, source revisions, and pack metadata. The native converter reads the safetensors index and tensor ranges
 across shards. For Laya and Gemma 4 it holds the output pack and conversion scratch in RAM. For
 Qwen3.5 packs it writes tensors to disk as it converts them, as described above. Reserve enough
 disk and memory for the selected checkpoints and run large conversions one at a time.
 
-Kev conversion merges the adapter into the matching base in f32 before quantizing and retains
-the trained pointer head. SemIf conversion uses a frozen Qwen instruction model with no
+Kev conversion merges the adapter into the matching base in f32 and retains the trained pointer
+head. BF16 is the default matrix format; pass `--precision q8` to quantize the backbone. SemIf
+conversion uses a frozen Qwen instruction model with no
 adapter, stores native output rows for labels `A` through `P` in f32, and records the method's
 provenance. The text backbone is packed; the vision tower and multi-token-prediction weights are
 not part of the inference pack. Gemma conversion uses Google's frozen E2B or E4B instruction
@@ -192,7 +217,7 @@ before publishing it. The existing Laya and Kev-0.8B commands are:
 ```sh
 $kevala inspect packs/laya-q8.kevala                                # header, sizes, provenance
 $kevala parity packs/laya-q8.kevala tests/fixtures/golden.json      # want argmax 41/41, max|dp| < 0.03
-$kevala parity-kev packs/kev-0.8b-q8.kevala tests/fixtures/golden-kev.json   # want argmax 13/13
+$kevala parity-kev tmp/kev-0.8b-bf16.kevala tests/fixtures/golden-kev.json # want argmax 13/13
 $kevala parity-semif tmp/semif-qwen3.5-0.8b-q8.kevala tests/fixtures/golden-semif.json --max-dp 0.05
 ```
 
@@ -208,7 +233,7 @@ routine PR checks need not download and run every checkpoint. For seeded game co
 [the Tetris evaluation instructions](models.md#conversion-and-validation).
 
 `parity-semif` requires exact prompt IDs, matching choices, and a maximum absolute score difference
-of 0.05 by default. This is a separate int8 fidelity threshold: the checked 0.8B pack differs from
+of 0.05 by default. This is a separate Q8 fidelity threshold: the checked 0.8B pack differs from
 its float32 reference by up to 0.0311 on WebGPU, above Laya's 0.03 gate. The threshold does not
 establish decision accuracy or calibration. Use `--max-dp` to impose a stricter application limit.
 
@@ -224,7 +249,7 @@ After validating optional packs, publish the existing files and their manifests 
 again:
 
 ```sh
-uv run tools/convert_models.py --models kev-4b kev-9b \
+uv run tools/convert_models.py --models kev-0.8b kev-4b kev-9b h2o-lightning-4b clef-flash \
   semif-qwen3.5-0.8b semif-qwen3.5-2b semif-qwen3.5-4b \
   --upload-only --publish bvolpato/kevala-packs --model-card docs/pack-model-card.md
 ```
@@ -238,7 +263,7 @@ For manual uploads, the Hugging Face CLI is also available through `uvx`:
 ```sh
 uvx --from huggingface-hub hf repo create bvolpato/kevala-packs --exist-ok
 uvx --from huggingface-hub hf upload bvolpato/kevala-packs packs . --include "*.kevala" --include README.md \
-  --commit-message "Laya and Kev-0.8B int8 packs"
+  --commit-message "Laya and Kev-0.8B Q8 packs"
 curl -s https://huggingface.co/api/models/bvolpato/kevala-packs | jq -r .sha   # the commit to pin
 ```
 
@@ -252,10 +277,12 @@ Then point the runtime at that commit:
    purge each file after publishing: `https://purge.jsdelivr.net/npm/kevala@latest/js/src/<file>`.
 
 A pack is pinned by commit, never by `main`, so a later upload never changes what an existing
-release loads. New entries include the pack hash in their cache key (`upstreamKey` in
-`js/src/source.js`). Laya and Kev-0.8B retain their legacy revision/block keys while their bytes are
-unchanged. If republishing either with different bytes, add or update `packSha256` as well as the
-hosted pin; changing the hosted URL alone does not invalidate a named model's legacy cache entry.
+release loads. `packSha256` is part of a named source's cache key when that metadata is available;
+otherwise the key includes source/base revisions, readout, block size, and precision. The refreshed
+Kev pins use new source revisions, so their caches do not collide with older Kev packs. Laya retains
+its existing revision/block key while its published bytes are unchanged. If republishing Laya with
+different bytes, add or update `packSha256` as well as the hosted pin; changing its hosted URL alone
+does not invalidate its legacy cache entry.
 
 Commit converter source, pinned input manifests, documentation, and small reference fixtures to
 Git. Publish weight binaries and their conversion manifests to Hugging Face. `.kevala` packs are

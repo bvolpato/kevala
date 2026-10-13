@@ -29,7 +29,7 @@ const header = document.querySelector("header.nav");
 const navLinks = ROUTES
   .map((r) => `<a href="#/${r.id === "home" ? "" : r.id}" data-route="${r.id}">${esc(r.label)}</a>`)
   .join("");
-const devBadge = LOCAL && !SHOT ? `<span class="badge warn" title="Loading packs from this server's tmp/">dev packs</span>` : "";
+const devBadge = LOCAL && !SHOT ? `<span class="badge good" title="Converted model packs are served by this preview">local packs</span>` : "";
 const chipParts = `<span class="mc-dot"></span><span class="mc-name"></span><span class="mc-state"></span>${CARET}`;
 
 header.innerHTML = `<div class="wrap">
@@ -67,19 +67,24 @@ function renderChip(s) {
 }
 
 const MODEL_FAMILIES = {
-  bruv: {
-    name: "Bruv",
-    short: "Locally fine-tuned Qwen3.5 decision model; experimental",
-    models: [["bruv1-0.8b", "0.8B"], ["bruv1-4b", "4B"]],
-  },
   kev: {
     name: "Kev",
-    short: "Qwen3.5 hybrid decoder + trained pointer head",
+    short: "Trained decision head · v1.0",
     models: [["kev-0.8b", "0.8B"], ["kev-4b", "4B"], ["kev-9b", "9B"]],
+  },
+  h2o: {
+    name: "H2O-Lightning",
+    short: "Calibrated decisions · 4B",
+    models: [["h2o-lightning-4b", "4B"]],
+  },
+  clef: {
+    name: "Cloudflare Clef-flash",
+    short: "Qwen3.5 with Cloudflare's joint decision head",
+    models: [["clef-flash", "Flash"]],
   },
   semif: {
     name: "SemIf",
-    short: "Frozen Qwen3.5 model with direct option scoring",
+    short: "Direct option scoring",
     models: [["semif-qwen3.5-0.8b", "0.8B"], ["semif-qwen3.5-2b", "2B"], ["semif-qwen3.5-4b", "4B"]],
   },
   gemma4: {
@@ -94,38 +99,72 @@ const FAMILY_BY_MODEL = Object.fromEntries(
 );
 
 function familyModels(family) {
-  return MODEL_FAMILIES[family].models.filter(([id]) => MODELS[id] &&
-    (LOCAL || (FROM === "checkpoint" ? MODELS[id].browserConvert : MODELS[id].hosted || MODELS[id].browserConvert)));
+  return MODEL_FAMILIES[family].models.filter(([id]) => MODELS[id] && (LOCAL || (FROM === "checkpoint"
+    ? MODELS[id].browserConvert
+    : MODELS[id].browserConvert || MODELS[id].hosted || MODELS[id].nativeConversion)));
 }
 
 function modelPackBytes(id) {
   const spec = MODELS[id];
-  return spec && (LOCAL || FROM === "pack") ? spec.pack : spec?.download;
+  const precision = session.precisionFor(id);
+  if (!spec) return 0;
+  if (session.customPackUrl(id)) return 0;
+  if (session.localPackFor(id)) return session.localPackFor(id).bytes;
+  if (precision === "q8" && FROM === "pack" && spec.hosted && spec.pack) return spec.pack;
+  return spec.precisionPackBytes?.[precision] || spec.download || spec.pack;
 }
 
 function modelSizeLabel(id) {
+  const spec = MODELS[id];
+  const precision = session.precisionFor(id);
+  if (session.customPackUrl(id)) return "Custom pack";
+  if (session.localOnly && !session.localPackFor(id)) return "Local pack not found";
+  if (FROM === "checkpoint" && spec?.browserConvert) return `${spec.downloadApprox ? "about " : ""}${fmtBytes(spec.download)} source checkpoint`;
   const bytes = modelPackBytes(id);
-  return bytes ? `${fmtBytes(bytes)} ${!LOCAL && FROM === "checkpoint" ? "checkpoint" : "int8 pack"}` : "Pack size unavailable";
+  if (!bytes) return "Pack size unavailable";
+  if (session.localPackFor(id)) return `${fmtBytes(bytes)} · ${precision.toUpperCase()}`;
+  if (precision === "q8" && spec?.hosted && FROM === "pack" && spec.pack) return `${fmtBytes(bytes)} · Q8`;
+  if (spec?.precisionPackBytes?.[precision]) {
+    const approx = spec.precisionPackApprox?.[precision] !== false;
+    return `${approx ? "about " : ""}${fmtBytes(bytes)} · ${precision.toUpperCase()}`;
+  }
+  return `${fmtBytes(bytes)} source checkpoint`;
 }
 
 function modelBadge(s, id) {
   if (s.model === id && s.status === "ready") return `<span class="badge good">loaded</span>`;
   if (s.cached[id]) return `<span class="badge">cached</span>`;
+  if (s.customPackUrl(id)) return `<span class="badge faint-b">custom pack</span>`;
+  if (s.localPackFor(id)) return `<span class="badge good">ready</span>`;
+  if (s.localOnly) return `<span class="badge faint-b">not found locally</span>`;
+  const nativePackMissing = MODELS[id]?.nativeConversion
+    && !(FROM === "pack" && session.precisionFor(id) === "q8" && MODELS[id]?.hosted);
+  if (nativePackMissing) return `<span class="badge faint-b">pack URL required</span>`;
   const bytes = modelPackBytes(id);
-  return bytes ? `<span class="badge faint-b">${fmtBytes(bytes)} download</span>` : "";
+  if (!bytes) return "";
+  const spec = MODELS[id];
+  const size = !spec.hosted && spec.browserConvert ? `${spec.downloadApprox ? "about " : ""}${fmtBytes(spec.download)} source` : `${fmtBytes(bytes)} download`;
+  return `<span class="badge faint-b">${size}</span>`;
 }
 
 function modelStateLine(s, id) {
   if (s.model === id && s.status === "ready" && s.info) {
-    return `${backendLabel(s.info)} · ready in ${fmtMs(s.info.loadMs)}`;
+    return `${backendLabel(s.info)} · loaded`;
   }
-  return s.costLine(id);
+  if (s.customPackUrl(id)) return "Precision declared by your pack";
+  if (s.localPackFor(id)) return requiresWebGPU(id, s.precisionFor(id)) ? "WebGPU required" : "WebGPU or CPU";
+  if (s.localOnly) return "No matching local pack found";
+  if (s.cached[id]) return "Stored in this browser";
+  if (FROM === "checkpoint") return "Converts in the browser";
+  if (MODELS[id]?.nativeConversion) return "Pack URL required";
+  return MODELS[id]?.hosted ? "Downloads on first load" : "Converts on first load";
 }
 
 function familyValueText(s, id) {
   const note = MODEL_NOTES[id];
-  const state = s.model === id && s.status === "ready" ? "loaded" : s.cached[id] ? "cached" : "available to download";
-  return `${note?.name || id}; ${modelSizeLabel(id)}; ${state}`;
+  const state = s.model === id && s.status === "ready" ? "loaded" : s.localPackFor(id) ? "ready on this server" : s.localOnly ? "local pack missing" : s.cached[id] ? "cached" : MODELS[id]?.nativeConversion ? "native pack required" : "available";
+  const precision = session.customPackUrl(id) ? "fixed pack precision" : `${session.precisionFor(id)} precision`;
+  return `${note?.name || id}; ${modelSizeLabel(id)}; ${state}; ${precision}`;
 }
 
 function modelOption(s, id) {
@@ -136,8 +175,8 @@ function modelOption(s, id) {
   return [
     `<button type="button" class="mopt" data-model="${id}" aria-pressed="${active}">`,
     `<span class="mo-t"><b>${esc(note.name)}</b><span data-model-status>${modelBadge(s, id)}</span></span>`,
-    `<span class="mo-d">${esc(note.short)}</span>`,
-    `<span class="mo-d" data-model-cost>${esc(modelStateLine(s, id))}</span>`,
+    `<span class="mo-d">Fast encoder · 421M</span>`,
+    `<span class="mo-d mo-meta" data-model-cost>${esc(modelSizeLabel(id))} · ${esc(modelStateLine(s, id))}</span>`,
     `</button>`,
   ].join("");
 }
@@ -157,20 +196,19 @@ function familyOption(s, family) {
     `<span class="mo-t"><b>${esc(spec.name)}</b><span data-family-status>${modelBadge(s, selected)}</span></span>`,
     `<span class="mo-d">${esc(spec.short)}</span>`,
     `</button>`,
-    `<div class="mf-control">`,
-    `<div class="mf-size-line"><span class="tiny muted">Model size</span><b data-family-size>${esc(MODEL_NOTES[selected]?.name || selected)}</b></div>`,
+    `<div class="mf-control" role="group" aria-label="${esc(spec.name)} settings">`,
+    models.length > 1 ? `<div class="mf-size-line"><span class="tiny muted" data-family-size-label>${esc(spec.name)} size</span><b data-family-size>${esc(models[selectedIndex][1])}</b></div>` : "",
     models.length > 1 ? `<input type="range" class="mf-slider" data-family-slider="${family}" min="0" max="${models.length - 1}" step="1" value="${selectedIndex}" aria-label="${esc(spec.name)} model size" aria-valuetext="${esc(familyValueText(s, selected))}" aria-describedby="${infoId}">` : "",
     models.length > 1 ? `<div class="mf-ticks" aria-hidden="true">${ticks}</div>` : "",
-    `<span class="tiny mf-pack" data-family-pack>${esc(modelSizeLabel(selected))}</span>`,
-    `<p class="tiny mf-info" id="${infoId}" data-family-info>${esc(modelStateLine(s, selected))}</p>`,
+    `<div class="mf-meta"><span class="tiny mf-pack" data-family-pack>${esc(modelSizeLabel(selected))}</span><span class="tiny mf-info" id="${infoId}" data-family-info>${esc(modelStateLine(s, selected))}</span></div>`,
     `</div>`,
     `</div>`,
   ].join("");
 }
 
 function modelChoices(s) {
-  // a model without a published pack is offered only in dev mode, which loads packs from tmp/
-  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || LOCAL));
+  // Entries without a published pack remain visible when they have a pinned native conversion path.
+  const known = Object.keys(MODEL_NOTES).filter((id) => MODELS[id] && (MODELS[id].hosted || MODELS[id].browserConvert || MODELS[id].nativeConversion || LOCAL));
   const renderLaya = known.includes("laya") ? modelOption(s, "laya") : "";
   const renderFamily = (family) => familyModels(family).some(([id]) => known.includes(id)) ? familyOption(s, family) : "";
   const models = [renderLaya, ...Object.keys(MODEL_FAMILIES).map(renderFamily)].filter(Boolean).join("");
@@ -184,9 +222,24 @@ const BACKEND_CHOICES = [
 ];
 
 function backendUnavailable(s, backend) {
-  if (backend === "webgpu" && !navigator.gpu) return "WebGPU is not available in this browser";
-  if (backend === "wasm" && requiresWebGPU(s.model)) return "This model requires WebGPU in the browser";
+  if (backend === "webgpu" && (!navigator.gpu || s.gpuAvailable === false)) return "WebGPU is not available in this browser";
+  if (backend === "wasm" && requiresWebGPU(s.model, s.precisionFor())) return "This model and precision exceed the WebAssembly pack limit";
   return "";
+}
+
+function precisionSelector(s) {
+  const choices = s.precisionChoices();
+  if (choices.length < 2) return "";
+  const value = s.precisionFor();
+  const options = choices.map((precision) => {
+    const label = precision === "bf16" ? "BF16 · default" : precision === "q8" ? "Q8 · quantized, smaller" : `${precision.toUpperCase()} · full precision`;
+    return `<option value="${precision}"${precision === value ? " selected" : ""}>${label}</option>`;
+  });
+  return `<label class="mp-precision">Precision<select data-precision aria-label="Pack precision">${options.join("")}</select><span class="tiny faint" data-precision-note>BF16 is unquantized. Q8 saves memory; probabilities may change.</span></label>`;
+}
+
+function nativePackUrlControl() {
+  return `<div class="mp-pack-override" data-native-pack-url-wrap hidden><label class="mp-pack-url">Converted .kevala pack URL<input type="url" data-native-pack-url aria-label="Converted pack URL (required)" value="" spellcheck="false" autocomplete="url"><span class="tiny faint">No pack is available for this precision. Paste the URL of a converted pack.</span></label></div>`;
 }
 
 function backendSwitch(s) {
@@ -225,13 +278,16 @@ function panelAction(s) {
     ].join("");
   }
   const failed = s.status === "error";
+  const unavailable = s.loadUnavailable();
   return [
     failed ? `<p class="gate-err">Could not load: ${esc(s.error)}</p>` : "",
-    `<button type="button" class="btn primary wide" data-act="load">${failed ? "Retry" : `Load ${esc(s.nameOf())}`}</button>`,
+    unavailable && !failed ? `<p class="tiny mp-note">${esc(unavailable)}</p>` : "",
+    `<button type="button" class="btn primary wide" data-act="load"${unavailable ? ` disabled title="${esc(unavailable)}"` : ""}>${failed ? "Retry" : `Load ${esc(s.nameOf())}`}</button>`,
   ].join("");
 }
 
 let panelKey = "";
+let panelActionKey = "";
 let sliderPointerActive = false;
 let panelRenderPending = false;
 
@@ -265,7 +321,7 @@ function syncPanelSelection(s) {
     const status = option.querySelector("[data-model-status]");
     const cost = option.querySelector("[data-model-cost]");
     if (status) status.innerHTML = modelBadge(s, id);
-    if (cost) cost.textContent = modelStateLine(s, id);
+    if (cost) cost.textContent = `${modelSizeLabel(id)} · ${modelStateLine(s, id)}`;
   }
   for (const card of panel.querySelectorAll("[data-family-card]")) {
     const family = card.dataset.familyCard;
@@ -288,17 +344,47 @@ function syncPanelSelection(s) {
     const pack = card.querySelector("[data-family-pack]");
     const info = card.querySelector("[data-family-info]");
     if (status) status.innerHTML = modelBadge(s, selected);
-    if (size) size.textContent = MODEL_NOTES[selected]?.name || selected;
+    if (size) size.textContent = models[selectedIndex][1];
     if (pack) pack.textContent = modelSizeLabel(selected);
     if (info) info.textContent = modelStateLine(s, selected);
   }
   const loadButton = panel.querySelector('[data-act="load"]');
   if (loadButton && s.status !== "error") loadButton.textContent = `Load ${s.nameOf()}`;
+  if (loadButton) {
+    loadButton.disabled = !!s.loadUnavailable();
+    loadButton.title = s.loadUnavailable();
+  }
+  const precision = panel.querySelector("[data-precision]");
+  if (precision) {
+    const fixedPack = !!s.customPackUrl();
+    if (fixedPack && !precision.disabled) {
+      precision.dataset.formatOptions = precision.innerHTML;
+      precision.innerHTML = '<option value="">Fixed by pack</option>';
+    } else if (!fixedPack && precision.disabled && precision.dataset.formatOptions) {
+      precision.innerHTML = precision.dataset.formatOptions;
+    }
+    precision.disabled = fixedPack;
+    precision.value = fixedPack ? "" : s.precisionFor();
+    precision.title = precision.disabled ? "The supplied .kevala pack has a fixed precision." : "";
+    const note = panel.querySelector("[data-precision-note]");
+    if (note) note.textContent = precision.disabled
+      ? "The supplied pack declares its precision."
+      : "BF16 is unquantized. Q8 saves memory; probabilities may change.";
+  }
+  const packUrl = panel.querySelector("[data-native-pack-url]");
+  const packUrlWrap = panel.querySelector("[data-native-pack-url-wrap]");
+  if (packUrl && packUrlWrap) {
+    packUrlWrap.hidden = !MODELS[s.model]?.nativeConversion || s.localOnly || !!s.localPackFor(s.model);
+    const value = s.customPackUrl();
+    if (packUrl.value !== value) packUrl.value = value;
+  }
 }
 
 function renderPanel(s) {
-  // rebuild only when what the panel shows changes; progress updates below touch the bar alone
-  const key = `${s.status}|${s.backend}|${s.error}|${s.storageError}|${s.storage?.bytes}`;
+  // Keep the model controls mounted across load, error, backend, and storage changes. In
+  // particular, replacing a focused range input after each arrow press makes browser automation
+  // and keyboard users lose the control even when focus is restored to its replacement.
+  const key = FAMILY_BY_MODEL[s.model] || s.model;
   let focus = null;
   if (key !== panelKey) {
     if (sliderPointerActive && panel.childElementCount) {
@@ -309,15 +395,30 @@ function renderPanel(s) {
     focus = panelFocus();
     panelKey = key;
     const stored = s.storage?.available ? `Stored packs: ${fmtBytes(s.storage.bytes)}` : "No persistent storage";
-    panel.innerHTML = `<div class="mp-h">Model <span class="tiny faint">shared by every page, kept for this session</span></div>
+    panel.innerHTML = `<div class="mp-h">Choose a model</div>
+      <p class="mp-availability tiny" data-local-availability>4B and smaller${LOCAL ? " · Local packs are marked below" : ""} · Load on demand</p>
       ${modelChoices(s)}
-      <div class="mp-be"><span class="tiny muted">Backend</span>${backendSwitch(s)}</div>
-      ${panelAction(s)}
-      <div class="mp-foot">
-        <span class="tiny faint">${stored}</span>
-        <button type="button" class="linkbtn" data-act="clear">Clear stored packs</button>
-      </div>`;
+      ${precisionSelector(s)}
+      ${nativePackUrlControl()}
+      <div data-panel-action></div>
+      <details class="mp-advanced" data-advanced><summary class="tiny muted">Advanced</summary><div class="mp-advanced-controls">
+        <div class="mp-be"><span class="tiny muted">Backend</span>${backendSwitch(s)}</div>
+        <div class="mp-foot">
+          <span class="tiny faint" data-storage-label>${stored}</span>
+          <button type="button" class="linkbtn" data-act="clear">Clear stored packs</button>
+        </div>
+      </div></details>`;
+    panelActionKey = "";
   }
+  const actionKey = [s.status, s.model, s.precisionFor(), s.backend, s.loadUnavailable(), s.error, s.storageError, s.info?.backend, s.info?.gpu, s.info?.loadMs, s.info?.pack?.cached].join("|");
+  if (actionKey !== panelActionKey) {
+    panel.querySelector("[data-panel-action]").innerHTML = panelAction(s);
+    panelActionKey = actionKey;
+  }
+  const stored = s.storage?.available ? `Stored packs: ${fmtBytes(s.storage.bytes)}` : "No persistent storage";
+  panel.querySelector("[data-storage-label]").textContent = stored;
+  const precision = panel.querySelector("[data-precision]");
+  if (precision) precision.value = s.precisionFor();
   syncPanelSelection(s);
   restorePanelFocus(focus);
   if (s.status === "loading") {
@@ -359,6 +460,15 @@ panel.addEventListener("input", (e) => {
   const models = familyModels(slider.dataset.familySlider);
   const id = models[Number(slider.value)]?.[0];
   if (id && id !== session.model) session.select(id);
+});
+panel.addEventListener("change", (e) => {
+  const precision = e.target.closest("[data-precision]")?.value;
+  if (precision) session.setPrecision(precision);
+  if (e.target.closest("[data-native-pack-url]")) session.refreshCache();
+});
+panel.addEventListener("input", (e) => {
+  const input = e.target.closest("[data-native-pack-url]");
+  if (input) session.setCustomUrl(input.value, session.model);
 });
 panel.addEventListener("click", async (e) => {
   const model = e.target.closest("[data-model]")?.dataset.model;

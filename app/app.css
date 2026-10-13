@@ -37,6 +37,7 @@
   box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.7); display: grid; gap: 12px;
 }
 .mp-h { font-weight: 700; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.mp-availability { margin: -6px 0 0; color: var(--muted); line-height: 1.4; }
 .mp-models { display: grid; gap: 8px; }
 .mopt {
   text-align: left; font: inherit; color: inherit; cursor: pointer; display: grid; gap: 3px;
@@ -47,13 +48,17 @@
 .mopt[aria-pressed="true"] { border-color: var(--accent); background: rgba(122, 162, 255, 0.07); box-shadow: 0 0 0 3px rgba(122, 162, 255, 0.12); }
 .mopt .mo-t { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .mopt .mo-d { font-size: 0.76rem; color: var(--muted); line-height: 1.4; }
+.mopt[aria-pressed="false"] .mo-meta { display: none; }
 .badge.faint-b { color: var(--muted); background: transparent; }
-.mfamily { display: grid; gap: 7px; }
-.mfamily .mopt { width: 100%; }
+.mfamily { display: grid; gap: 0; background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 11px; }
+.mfamily:hover { border-color: #3a475d; }
+.mfamily.active { border-color: var(--accent); background: rgba(122, 162, 255, 0.07); }
+.mfamily .mopt { width: 100%; background: transparent; border: 0; box-shadow: none; }
+.mf-select:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
 .mfamily:not(.active) .mf-control { display: none; }
 .mf-control {
-  display: grid; gap: 5px; margin-top: -1px; padding: 9px 12px 10px;
-  background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border); border-radius: 10px;
+  display: grid; gap: 5px; margin: 0; padding: 10px 12px;
+  border-top: 1px solid rgba(122, 162, 255, 0.2);
 }
 .mf-size-line { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .mf-size-line b { font-size: 0.82rem; color: var(--text-2); text-align: right; }
@@ -63,7 +68,19 @@
 .mf-ticks span:nth-child(2) { text-align: center; }
 .mf-ticks span:last-child { text-align: right; }
 .mf-pack { color: var(--text-2); }
-.mf-info { margin: 2px 0 0; color: var(--muted); line-height: 1.4; }
+.mf-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 10px; padding-top: 3px; }
+.mf-info { color: var(--muted); line-height: 1.4; }
+.mp-precision { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 12px; color: var(--text-2); font-size: 0.8rem; }
+.mp-precision select { width: 100%; padding: 8px 10px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 9px; font: 0.82rem var(--sans); }
+.mp-precision span { grid-column: 1 / -1; line-height: 1.4; }
+.mp-precision select:disabled { opacity: 0.55; cursor: not-allowed; }
+.mp-pack-url { display: grid; gap: 6px; color: var(--text-2); font-size: 0.8rem; }
+.mp-pack-url input { width: 100%; min-width: 0; padding: 8px 10px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-2); border-radius: 9px; font: 0.78rem var(--mono); }
+.mp-pack-url span { line-height: 1.4; }
+.mp-pack-override summary { cursor: pointer; }
+.mp-pack-override[open] summary { margin-bottom: 8px; }
+.mp-advanced summary { cursor: pointer; }
+.mp-advanced-controls { display: grid; gap: 12px; padding-top: 12px; }
 .mp-be { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .seg { display: inline-flex; background: var(--bg-2); border: 1px solid var(--border-2); border-radius: 10px; padding: 2px; gap: 2px; }
 .seg button { font: 600 0.78rem var(--sans); color: var(--muted); background: none; border: 0; border-radius: 8px; padding: 6px 10px; cursor: pointer; }

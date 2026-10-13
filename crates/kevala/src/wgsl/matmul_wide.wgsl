@@ -1,4 +1,4 @@
-// Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
+// Y[T, N] = X[T, K] . W[N, K]^T (+ bias), with Q8, BF16, or F32 stored weights.
 //
 // Shared Q8 projection kernel with 64-value staging and named accumulator vectors.
 // Keeping each row in a named vector avoids dynamic private-array indexing.
@@ -32,6 +32,7 @@ const W_SWIZZLE: u32 = select(7u, 15u, {{ROWS}}u == 4u);
 const W_SWIZZLE: u32 = 7u;
 //#endif
 
+//#if WEIGHT_Q8
 // Four int8 weights as f32, exactly and without int-to-float conversions (Marlin's trick): the
 // xor makes each byte b + 128, and a byte in the low mantissa bits of 2^23 reads as 2^23 + b + 128
 fn sx(w: u32) -> vec4<f32> {
@@ -39,6 +40,12 @@ fn sx(w: u32) -> vec4<f32> {
   let bytes = vec4<u32>(u, u >> 8u, u >> 16u, u >> 24u) & vec4<u32>(0xFFu);
   return bitcast<vec4<f32>>(bytes | vec4<u32>(0x4B000000u)) - vec4<f32>(8388736.0);
 }
+//#endif
+//#if WEIGHT_BF16
+fn bf16(w: vec2<u32>) -> vec4<f32> {
+  return bitcast<vec4<f32>>(vec4<u32>(w.x << 16u, w.x & 0xffff0000u, w.y << 16u, w.y & 0xffff0000u));
+}
+//#endif
 
 //#include splits
 
@@ -91,11 +98,23 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       wv1 = vec4<f32>(0.0);
       let wrow = n0 + lr;
       if (kb < kb1 && wrow < N) {
+//#if WEIGHT_Q8
         let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
         let scale = S[wrow * nb + kb];
         let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
         wv0 = sx(lo.x) * scale;
         wv1 = sx(lo.y) * scale;
+//#endif
+//#if WEIGHT_BF16
+        let v = W[(wrow * K + kb * 32u) / 8u + lq];
+        wv0 = bf16(v.xy);
+        wv1 = bf16(v.zw);
+//#endif
+//#if WEIGHT_F32
+        let base = (wrow * K + kb * 32u) / 4u + lq * 2u;
+        wv0 = bitcast<vec4<f32>>(W[base]);
+        wv1 = bitcast<vec4<f32>>(W[base + 1u]);
+//#endif
       }
 
       if (lr < {{BM}}u) {

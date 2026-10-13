@@ -1,5 +1,5 @@
 // What every WebGPU trunk shares: the device, streamed weight buffers, compiled pipelines, the
-// int8 matmul with its split-K reduce, per-kernel profiling, and long-pass submission. The trunks
+// typed matmul with its split-K reduce, per-kernel profiling, and long-pass submission. The trunks
 // themselves are gpu-laya.js, gpu-kev.js and gpu-gemma4.js.
 //
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl), specialized by the
@@ -79,12 +79,15 @@ export function reduceLayout(device) {
  * limits this kernel (1.6-1.75x faster on Apple GPUs); products and sums stay f32, and the
  * rounding (about 3e-4 relative) is far below the int8 weight quantization.
  */
-export async function matmulPipelines(device, wgsl, kernel = "matmul") {
+export async function matmulPipelines(device, wgsl, kernel = "matmul", weights = "q8") {
+  if (!["q8", "bf16", "f32"].includes(weights)) throw new Error(`unsupported GPU matrix dtype ${weights}`);
   const layout = matmulLayout(device);
   const rlayout = reduceLayout(device);
   const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
   const rpl = device.createPipelineLayout({ bindGroupLayouts: [rlayout] });
-  const config = matmulConfig(device);
+  // BF16 has the full F32 exponent range. F16 tiles would narrow that range and
+  // change otherwise unquantized weights, so these paths retain F32 tiles.
+  const config = weights === "q8" ? matmulConfig(device) : { ...matmulConfig(device), f16: false, weights };
   const mm = [];
   const reduce = [];
   const [mm56] = await Promise.all([
@@ -231,16 +234,35 @@ let U;
  * scales), as the pack goes by.
  */
 export class GpuWeights {
-  constructor(device, layout) {
+  constructor(device, layout, { rowTables = [] } = {}) {
     U = GPUBufferUsage;
     this.device = device;
     this.header = parsePackHeader(layout.prefix);
     this.tensors = new Map();
     // destination ranges -> tensor parts, for routing streamed fragments
     this.parts = [];
+    const tables = new Set(rowTables);
     for (const t of this.header.tensors) {
       const e = { info: t, data: null, scales: null, filled: 0, need: t.size + (t.scales_size || 0), buf: null, sbuf: null, host: null };
       this.tensors.set(t.name, e);
+      if (tables.has(t.name)) {
+        const [rows, width] = t.shape;
+        const limit = Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / 16) * 16;
+        const stride = width * (t.dtype === "bf16" ? 2 : t.dtype === "f32" ? 4 : 1);
+        const scaleStride = t.dtype === "q8" ? width / t.block * 4 : 0;
+        const perShard = Math.floor(Math.min(limit / stride, scaleStride ? limit / scaleStride : Infinity));
+        if (t.shape.length !== 2 || rows < 1 || width < 4 || !perShard || width % 4) throw new Error(`GPU row table ${t.name} has unsupported dimensions or exceeds the device buffer limit`);
+        e.shards = [];
+        for (let start = 0; start < rows; start += perShard) {
+          const count = Math.min(rows - start, perShard);
+          const shard = { start, count, buf: null, sbuf: null };
+          e.shards.push(shard);
+          const part = (lo, size, key) => this.parts.push({ lo, hi: lo + size, e, part: key, shard, written: 0, tail: new Uint8Array(4), tailLength: 0 });
+          part(t.offset + start * stride, count * stride, "data");
+          if (scaleStride) part(t.scales_offset + start * scaleStride, count * scaleStride, "scales");
+        }
+        continue;
+      }
       this.parts.push({ lo: t.offset, hi: t.offset + t.size, e, part: "data" });
       if (t.dtype === "q8") this.parts.push({ lo: t.scales_offset, hi: t.scales_offset + t.scales_size, e, part: "scales" });
     }
@@ -265,6 +287,12 @@ export class GpuWeights {
       const n = Math.min(bytes.byteLength - off, part.hi - at);
       const e = part.e;
       const key = part.part;
+      if (part.shard) {
+        this.writeRows(part, at - part.lo, bytes.subarray(off, off + n));
+        e.filled += n;
+        off += n;
+        continue;
+      }
       if (!e[key]) e[key] = new Uint8Array(part.hi - part.lo);
       e[key].set(bytes.subarray(off, off + n), at - part.lo);
       e.filled += n;
@@ -273,11 +301,51 @@ export class GpuWeights {
     }
   }
 
+  writeRows(part, offset, bytes) {
+    if (offset !== part.written) throw new Error(`GPU row table ${part.e.info.name} arrived out of order`);
+    const key = part.part === "data" ? "buf" : "sbuf";
+    const shard = part.shard;
+    shard[key] ||= this.device.createBuffer({ label: `${part.e.info.name}.${shard.start}.${part.part}`, size: Math.max(16, Math.ceil((part.hi - part.lo) / 16) * 16), usage: U.STORAGE | U.COPY_DST });
+    if (!part.e[key]) part.e[key] = shard[key];
+    let at = 0;
+    if (part.tailLength) {
+      const old = part.tailLength;
+      const take = Math.min(4 - old, bytes.byteLength);
+      part.tail.set(bytes.subarray(0, take), old);
+      at += take;
+      part.tailLength += take;
+      if (part.tailLength === 4) {
+        this.device.queue.writeBuffer(shard[key], offset - old, part.tail);
+        part.tailLength = 0;
+      }
+    }
+    const whole = Math.floor((bytes.byteLength - at) / 4) * 4;
+    if (whole) {
+      this.device.queue.writeBuffer(shard[key], offset + at, bytes.buffer, bytes.byteOffset + at, whole);
+      at += whole;
+    }
+    if (at < bytes.byteLength) {
+      part.tail.set(bytes.subarray(at), part.tailLength);
+      part.tailLength += bytes.byteLength - at;
+    }
+    part.written += bytes.byteLength;
+    if (part.written === part.hi - part.lo && part.tailLength) {
+      part.tail.fill(0, part.tailLength);
+      this.device.queue.writeBuffer(shard[key], part.written - part.tailLength, part.tail);
+      part.tailLength = 0;
+    }
+  }
+
   upload(e) {
     const mk = (bytes, label) => {
       const size = Math.max(16, Math.ceil(bytes.byteLength / 16) * 16);
       const b = this.device.createBuffer({ label, size, usage: U.STORAGE | U.COPY_DST });
-      this.device.queue.writeBuffer(b, 0, bytes.buffer, bytes.byteOffset, bytes.byteLength & ~3);
+      // WebGPU writes must cover whole words, including an odd BF16 element.
+      if (bytes.byteLength % 4) {
+        const padded = new Uint8Array(Math.ceil(bytes.byteLength / 4) * 4);
+        padded.set(bytes);
+        this.device.queue.writeBuffer(b, 0, padded);
+      } else this.device.queue.writeBuffer(b, 0, bytes.buffer, bytes.byteOffset, bytes.byteLength);
       return b;
     };
     e.buf = mk(e.data, e.info.name);
@@ -294,7 +362,7 @@ export class GpuWeights {
   }
 
   missing() {
-    return [...this.tensors.values()].filter((e) => !e.buf).map((e) => e.info.name);
+    return [...this.tensors.values()].filter((e) => !e.buf || e.filled !== e.need).map((e) => e.info.name);
   }
 }
 

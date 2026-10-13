@@ -6,16 +6,18 @@
 """Check the website's size picker in an isolated Firefox, without downloading weights."""
 
 import argparse
+from pathlib import Path
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.firefox.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--url", default="http://127.0.0.1:18086/")
+parser.add_argument("--screenshot-dir", type=Path)
 args = parser.parse_args()
 options = Options()
 options.add_argument("-headless")
@@ -42,25 +44,47 @@ def open_page(query=""):
 
 
 try:
+    driver.set_window_size(1280, 960)
+    if args.screenshot_dir:
+        args.screenshot_dir.mkdir(parents=True, exist_ok=True)
     open_page("?model=laya")
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-family="bruv"]')
+    driver.execute_script("""
+      sessionStorage.setItem('kevala.session', JSON.stringify({model: 'bruv1-4b', backend: 'auto', active: true}));
+      localStorage.setItem('kevala.pref', JSON.stringify({model: 'bruv1-0.8b', backend: 'auto'}));
+    """)
+    open_page("?model=bruv1-4b")
+    selected("laya")
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+    open_page()
+    selected("laya")
     semif = driver.find_element(By.CSS_SELECTOR, '[data-family="semif"]')
     assert semif.is_displayed(), "SemIf must be visible when the model menu opens"
     assert semif.find_element(By.CSS_SELECTOR, "b").text == "SemIf"
-    driver.execute_script("window.loadCalls = 0; kevala_site.session.load = () => { window.loadCalls++; };")
+    driver.execute_script("window.loadCalls = 0; kevala_site.session.gpuAvailable = true; kevala_site.session.load = () => { window.loadCalls++; };")
     for family, models in [
-        ("kev", ["kev-0.8b", "kev-4b", "kev-9b"]),
+        ("kev", ["kev-0.8b", "kev-4b"]),
         ("semif", ["semif-qwen3.5-0.8b", "semif-qwen3.5-2b", "semif-qwen3.5-4b"]),
     ]:
         click(f'[data-family="{family}"]')
         selected(models[0])
         slider = driver.find_element(By.CSS_SELECTOR, f'[data-family-slider="{family}"]')
-        slider.send_keys(Keys.ARROW_RIGHT)
-        selected(models[1])
-        slider.send_keys(Keys.ARROW_RIGHT)
-        selected(models[2])
+        title = driver.find_element(By.CSS_SELECTOR, f'[data-family="{family}"] b').text
+        assert driver.find_element(By.CSS_SELECTOR, f'[data-family-card="{family}"] [data-family-size-label]').text == f"{title} size"
+        assert driver.execute_script("""
+          const slider = arguments[0], card = slider.closest('[data-family-card]');
+          const a = slider.getBoundingClientRect(), b = card.getBoundingClientRect();
+          return card.classList.contains('active') && a.left >= b.left && a.right <= b.right && a.top >= b.top && a.bottom <= b.bottom;
+        """, slider), "The size slider belongs inside the selected family card"
+        for model in models[1:]:
+            slider.send_keys(Keys.ARROW_RIGHT)
+            selected(model)
         assert driver.switch_to.active_element == slider
         click(f'[data-family="{family}"]')
-        selected(models[2])
+        selected(models[-1])
+        assert len([el for el in driver.find_elements(By.CSS_SELECTOR, '[data-family-slider]') if el.is_displayed()]) == 1
+        if args.screenshot_dir and family == "kev":
+            driver.save_screenshot(str(args.screenshot_dir / "concise-picker-desktop.png"))
 
     # A loaded model is disposed on a size change, including when the next size is cached.
     driver.execute_script("""
@@ -77,7 +101,7 @@ try:
     assert driver.execute_script("return window.disposed")
     assert driver.switch_to.active_element.get_attribute("data-family-slider") == "semif"
     assert driver.execute_script("return window.loadCalls") == 0
-    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.includes('.kevala')).length") == 0
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
     click('.mpanel [data-act="load"]')
     calls = driver.execute_script("return window.loadCalls")
     assert calls == 1, f"explicit Load called the loader {calls} times"
@@ -86,8 +110,8 @@ try:
     open_page()
     selected("semif-qwen3.5-2b")
     open_page("?model=kev-9b")
-    selected("kev-9b")
-    assert driver.find_element(By.CSS_SELECTOR, '[data-family-slider="kev"]').get_attribute("value") == "2"
+    selected("semif-qwen3.5-2b")
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-family="clef"], [data-family="gemma4"]')
     click('[data-model="laya"]')
     click('[data-family="kev"]')
     selected("kev-0.8b")
@@ -99,11 +123,155 @@ try:
     click('[data-family="semif"]')
     selected("semif-qwen3.5-0.8b")
     assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').text == "Load SemIf-0.8B"
+    if args.screenshot_dir:
+        driver.save_screenshot(str(args.screenshot_dir / "concise-picker-mobile.png"))
     open_page("?from=checkpoint&model=kev-0.8b")
-    slider = driver.find_element(By.CSS_SELECTOR, '[data-family-slider="kev"]')
-    assert slider.get_attribute("max") == "0"
-    assert "checkpoint" in slider.get_attribute("aria-valuetext")
+    selected("kev-0.8b")
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-family-slider="kev"]')
+    assert "checkpoint" in driver.find_element(By.CSS_SELECTOR, '[data-family-pack]').text
     assert not driver.find_elements(By.CSS_SELECTOR, '[data-family="semif"]')
-    print("Model picker passed: visible SemIf, sizes, defaults, focus, loaded/cached switch, explicit loading, saved/URL choice, mobile selection, checkpoint choices.")
+
+    open_page("?model=h2o-lightning-4b")
+    selected("h2o-lightning-4b")
+    assert driver.find_element(By.CSS_SELECTOR, '[data-family="h2o"] b').text == "H2O-Lightning"
+    precision = driver.find_element(By.CSS_SELECTOR, "[data-precision]")
+    assert precision.get_attribute("value") == "bf16", f"unexpected precision selector: {precision.text!r}, session precision {driver.execute_script('return kevala_site.session.precision')}"
+    precision_options = precision.find_elements(By.TAG_NAME, "option")
+    assert [option.get_attribute("value") for option in precision_options] == ["bf16", "q8"]
+    assert [option.text for option in precision_options] == ["BF16 · default", "Q8 · quantized, smaller"]
+    local_h2o = driver.execute_script("return kevala_site.session.localPackFor()")
+    assert not driver.find_element(By.CSS_SELECTOR, "[data-advanced]").get_attribute("open"), "advanced controls start collapsed"
+    pack_url = driver.find_element(By.CSS_SELECTOR, "[data-native-pack-url]")
+    if local_h2o:
+        assert not pack_url.is_displayed(), "a ready local pack keeps the custom URL control hidden"
+    else:
+        assert pack_url.is_displayed(), "a missing native-only pack must show its URL field directly"
+        assert not driver.find_element(By.CSS_SELECTOR, "[data-advanced]").get_attribute("open"), "the URL action must not require Advanced"
+        driver.execute_script("kevala_site.session.gpuAvailable = true; kevala_site.session.dispatchEvent(new Event('change'))")
+        load_button = driver.find_element(By.CSS_SELECTOR, '[data-act="load"]')
+        assert not load_button.is_enabled(), "native-only models without a pack URL must not start loading"
+        assert "URL is required" in driver.find_element(By.CSS_SELECTOR, ".mp-note").text
+        pack_url.send_keys("https://example.test/h2o-bf16.kevala")
+        assert driver.execute_script("return kevala_site.session.source().url") == "https://example.test/h2o-bf16.kevala"
+        assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled(), "a supplied URL makes the pack loadable when WebGPU is available"
+        assert precision.get_attribute("disabled") is not None, "a supplied pack has its precision fixed"
+        assert precision.get_attribute("value") == "" and precision.text == "Fixed by pack", "the picker must not label a user-supplied pack as BF16 or Q8"
+        assert "declares its precision" in driver.find_element(By.CSS_SELECTOR, "[data-precision-note]").text
+        assert "Precision declared by your pack" in driver.find_element(By.CSS_SELECTOR, '[data-family-card="h2o"] [data-family-info]').text
+        assert driver.find_element(By.CSS_SELECTOR, '[data-family-card="h2o"] [data-family-pack]').text == "Custom pack"
+        pack_url.send_keys(Keys.CONTROL, "a")
+        pack_url.send_keys(Keys.BACKSPACE)
+        source_after_clear = driver.execute_script("return kevala_site.session.source()")
+        assert source_after_clear == "h2o-lightning-4b", f"clearing the URL should restore the model source, got {source_after_clear!r}"
+        assert not driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled(), "clearing the URL must disable loading again"
+    click('[data-family="kev"]')
+    selected("kev-0.8b")
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+
+    driver.execute_script("""
+      const saved = {model: 'kev-0.8b', backend: 'auto', precision: 'bf16', customUrl: 'https://example.test/kev-q8.kevala', customUrlModel: 'kev-0.8b'};
+      for (const storage of [sessionStorage, localStorage]) {
+        storage.setItem('kevala.session', JSON.stringify(saved));
+        storage.setItem('kevala.pref', JSON.stringify(saved));
+      }
+    """)
+    open_page("?pack=local&model=kev-0.8b")
+    selected("kev-0.8b")
+    assert driver.execute_script("return kevala_site.session.customPackUrl()") == "", "saved custom URLs must not fix precision in local-pack mode"
+    precision = driver.find_element(By.CSS_SELECTOR, "[data-precision]")
+    assert precision.get_attribute("value") == "bf16", "local refreshed Kev should default to BF16"
+    assert precision.get_attribute("disabled") is None, "local BF16/Q8 selection remains available with a saved custom URL"
+
+    def assert_local_variant(precision_name):
+        available = driver.execute_script("return !!kevala_site.session.localPackFor()")
+        pack_label = driver.find_element(By.CSS_SELECTOR, '[data-family-card="kev"] [data-family-pack]').text
+        load_button = driver.find_element(By.CSS_SELECTOR, '[data-act="load"]')
+        if available:
+            assert f"· {precision_name.upper()}" in pack_label
+            assert "ready" in driver.find_element(By.CSS_SELECTOR, '[data-family-card="kev"] [data-family-status]').text
+            assert load_button.is_enabled(), f"an available local {precision_name.upper()} pack should be loadable"
+        else:
+            assert pack_label == "Local pack not found"
+            assert "not found locally" in driver.find_element(By.CSS_SELECTOR, '[data-family-card="kev"] [data-family-status]').text
+            assert not load_button.is_enabled(), f"a missing local {precision_name.upper()} pack must stay disabled"
+            assert f"No matching {precision_name.upper()} pack" in driver.find_element(By.CSS_SELECTOR, ".mp-note").text
+
+    local_source = driver.execute_script("return kevala_site.session.source()")
+    assert local_source["name"] == "kev-0.8b" and local_source["url"].endswith("/kev-0.8b-bf16.kevala")
+    assert_local_variant("bf16")
+    Select(precision).select_by_value("q8")
+    assert driver.execute_script("return kevala_site.session.precisionFor()") == "q8"
+    local_source = driver.execute_script("return kevala_site.session.source()")
+    assert local_source["url"].endswith("/kev-0.8b-q8.kevala")
+    assert_local_variant("q8")
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+
+    open_page("?pack=local&model=laya")
+    selected("laya")
+    assert not driver.find_elements(By.CSS_SELECTOR, "[data-precision]"), "existing local Q8-only models keep their single format"
+    local_source = driver.execute_script("return kevala_site.session.source()")
+    assert local_source["name"] == "laya" and local_source["url"].endswith("/laya-q8.kevala")
+
+    # The normal preview discovers ready packs with no query flag or URL to paste.
+    open_page("?model=h2o-lightning-4b")
+    if driver.execute_script("return !!kevala_site.session.localPackFor()"):
+        assert "Local packs are marked below" in driver.find_element(By.CSS_SELECTOR, "[data-local-availability]").text
+        assert "ready" in driver.find_element(By.CSS_SELECTOR, '[data-family-card="h2o"] [data-family-status]').text
+        assert not driver.find_element(By.CSS_SELECTOR, "[data-native-pack-url]").is_displayed()
+        for family, model in [("h2o", "h2o-lightning-4b"), ("kev", "kev-0.8b")]:
+            click(f'[data-family="{family}"]')
+            selected(model)
+            assert driver.execute_script("return kevala_site.session.source().url").endswith(f"/{model}-bf16.kevala")
+            Select(driver.find_element(By.CSS_SELECTOR, "[data-precision]")).select_by_value("q8")
+            assert driver.execute_script("return kevala_site.session.source().url").endswith(f"/{model}-q8.kevala")
+        assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+
+        # Unavailable GPU choices explain the requirement before any model download starts.
+        click('[data-family="h2o"]')
+        driver.execute_script("kevala_site.session.gpuAvailable = false; kevala_site.session.dispatchEvent(new Event('change'));")
+        assert not driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled()
+        assert "needs WebGPU" in driver.find_element(By.CSS_SELECTOR, ".mpanel").text
+        click('[data-model="laya"]')
+        assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled()
+
+    click('[data-model="laya"]')
+    driver.execute_script("""
+      const s = kevala_site.session;
+      s.backend = 'webgpu';
+      s.gpuAvailable = undefined;
+      s.dispatchEvent(new Event('change'));
+    """)
+    assert not driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled()
+    assert "Checking WebGPU availability" in driver.find_element(By.CSS_SELECTOR, ".mpanel").text
+    driver.execute_script("""
+      const s = kevala_site.session;
+      s.backend = 'auto';
+      s.gpuAvailable = true;
+      s.dispatchEvent(new Event('change'));
+    """)
+    assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled()
+
+    # A cached Q8 variant must not label the BF16 default as cached after a size/family switch.
+    driver.execute_script("""
+      const s = kevala_site.session;
+      s.cached['kev-0.8b'] = true;
+      s.precision = 'q8';
+      s.select('laya');
+      s.select('kev-0.8b');
+      window.cacheResetWasImmediate = s.precisionFor() === 'bf16' && s.cached['kev-0.8b'] === false;
+    """)
+    assert driver.execute_script("return window.cacheResetWasImmediate"), "switching precision/model must clear stale cache status immediately"
+
+    # Refreshing an active saved 4B choice and the old autoload flag never load weights.
+    driver.execute_script("""
+      sessionStorage.setItem('kevala.session', JSON.stringify({model: 'kev-4b', backend: 'auto', precision: 'bf16', active: true}));
+    """)
+    open_page("?model=kev-4b&autoload=1")
+    selected("kev-4b")
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+    assert "4B and smaller" in driver.find_element(By.CSS_SELECTOR, "[data-local-availability]").text
+    driver.execute_script("kevala_site.session.select('clef-flash'); kevala_site.session.select('kev-9b');")
+    selected("kev-4b")
+    print("Model picker passed: retired Bruv fallback, visible families, precision defaults, custom native pack URLs, local BF16/Q8 paths, sizes, focus, loaded/cached switch, explicit loading, saved/URL choice, mobile selection, checkpoint choices.")
 finally:
     driver.quit()

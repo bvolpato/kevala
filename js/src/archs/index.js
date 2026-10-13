@@ -22,6 +22,7 @@
 import laya from "./laya.js";
 import kev from "./kev.js";
 import gemma4 from "./gemma4.js";
+import clef from "./clef.js";
 
 const ARCHS = new Map();
 
@@ -54,3 +55,4 @@ export function validatePackArchitecture(header, expectedArch = null) {
 registerArch(laya);
 registerArch(kev);
 registerArch(gemma4);
+registerArch(clef);

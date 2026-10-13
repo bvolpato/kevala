@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>kevala parity check: Kev and SemIf</title>
+<title>kevala parity check: Kev, H2O, Clef, and SemIf</title>
 <style>
   body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
   td, th { padding: 2px 10px; text-align: right; border-bottom: 1px solid #1f2630; } td:first-child { text-align: left; }
@@ -11,12 +11,12 @@
 </style>
 </head>
 <body>
-<h1>kevala parity: Kev and SemIf against their reference outputs</h1>
+<h1>kevala parity: Kev, H2O, Clef, and SemIf against their reference outputs</h1>
 <p>
   backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
   weights <select id="pack">
-    <option value="pack">int8 pack from Hugging Face (model-dependent)</option>
-    <option value="checkpoint">original Kev-0.8B checkpoint, converted here (1.6 GB)</option>
+    <option value="pack">default pack or upstream conversion (model-dependent)</option>
+    <option value="checkpoint">original Kev-0.8B checkpoint, converted here</option>
     <option value="local">dev pack in tmp/ (local server only)</option>
   </select>
   <button id="run">run</button>
@@ -49,9 +49,10 @@ async function run() {
   const name = q.get("model") || "kev-0.8b";
   const model = url || (choice === "local" ? `./tmp/${name}-q8.kevala` : name);
   const from = choice === "checkpoint" ? "checkpoint" : "pack";
+  const precision = q.get("precision") || undefined;
   const t0 = performance.now();
   const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
-  const kevala = await Kevala.load({ model, from, backend, threads, flavor, gpuKernel: q.get("gpuKernel") || "auto", cache: q.get("cache") !== "0", gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+  const kevala = await Kevala.load({ model, from, precision, backend, threads, flavor, gpuKernel: q.get("gpuKernel") || "auto", cache: q.get("cache") !== "0", gpuBaseline: q.get("baseline") === "1", gpuFeatures });
   log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
   const reference = q.get("reference") || "./tests/fixtures/golden-kev.json";
   const response = await fetch(reference);
@@ -63,9 +64,13 @@ async function run() {
   for (const c of golden.cases) {
     const r = await kevala.decide(c.state, c.questions);
     times.push(r.timing.forward);
-    Object.keys(c.questions).forEach((qid, i) => {
+    const fields = c.encoded_questions || Object.keys(c.questions).map((id) => ({ id }));
+    fields.forEach(({ id: qid, option_ids: optionIds }, i) => {
       const want = c.probs[i];
-      const got = r.raw_probabilities[qid];
+      const answer = r.answers[qid];
+      const got = r.raw_probabilities?.[qid] || (optionIds && optionIds.map((id) => answer.type === "noul"
+        ? id === "true" ? answer.noul : 1 - answer.noul
+        : answer.probabilities[id]));
       if (!got || got.length !== want.length || !got.every(Number.isFinite)) throw new Error(`${c.id}/${qid}: invalid probabilities`);
       const dp = Math.max(...want.map((v, k) => Math.abs(v - got[k])));
       const am = (v) => v.indexOf(Math.max(...v));

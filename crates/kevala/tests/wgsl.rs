@@ -2,7 +2,7 @@
 //! placeholder left behind, one compute entry point, and the options actually changing the
 //! source where they should.
 
-use kevala::gpu::{wgsl, KevSpec, Spec, KERNELS};
+use kevala::gpu::{wgsl, KevSpec, Spec, WeightType, KERNELS};
 
 fn specs() -> Vec<Spec> {
     let mut out = Vec::new();
@@ -17,6 +17,11 @@ fn specs() -> Vec<Spec> {
     }
     out.push(Spec { row56: true, ..Default::default() });
     out.push(Spec { shape: Some((3072, 1024)), ..Default::default() });
+    for weights in [WeightType::Bf16, WeightType::F32] {
+        for rows in 1..=4 {
+            out.push(Spec { weights, rows, ..Default::default() });
+        }
+    }
     for hidden in [2048, 2560, 4096] {
         let kev = if hidden == 2048 {
             KevSpec { hidden, ..Default::default() }
@@ -74,6 +79,8 @@ fn bad_requests_are_errors() {
     assert!(wgsl("nope", &Spec::default()).is_err());
     let json = kevala::json::Value::parse(r#"{"kernel": "matmul", "rows": 5}"#).unwrap();
     assert!(kevala::gpu::wgsl_json(&json).is_err());
+    let json = kevala::json::Value::parse(r#"{"kernel":"matmul","weights":"f16"}"#).unwrap();
+    assert_eq!(kevala::gpu::wgsl_json(&json).unwrap_err(), "weights must be q8, bf16, or f32");
     for fields in [r#""f16":true"#, r#""rows":3"#, r#""groups":2"#] {
         let json = kevala::json::Value::parse(&format!(r#"{{"kernel":"matmul","row56":true,{fields}}}"#)).unwrap();
         assert_eq!(kevala::gpu::wgsl_json(&json).unwrap_err(), "row56 requires f32 rows=4 groups=1");

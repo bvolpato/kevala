@@ -64,9 +64,9 @@ already-running agent Chrome; no browser process was launched.
   Local command-line tools were Node 26.0.0 and Rust 1.95.0. These counts describe
   local runs; PR CI is reported separately.
 
-### Fresh model replay
+### Historical 11-model replay (September 24, 2026)
 
-All **11 current catalog models**, including both Bruv sizes and both Gemma sizes,
+All **11 models in the September 24, 2026 catalog**, including both Bruv sizes and both Gemma sizes,
 completed load/warmup and **108 decisions each** on the 36-case Kevala suite in
 three option orders. All **1,188 decisions** returned valid normalized probabilities
 without inference errors. Kev-9B's first download failed with `network error` during

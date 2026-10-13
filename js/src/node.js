@@ -26,9 +26,21 @@ export async function loadFile(path, { flavor, cpuKernel = "auto", threads = "au
   w.call(() => w.check(w.x.kevala_engine_load(ptr, length)));
   const meta = JSON.parse(w.outText());
   const run = (requests) => w.withInput(JSON.stringify({ requests }), (p, l) => (w.check(w.x.kevala_decide(p, l)), JSON.parse(w.outText())));
+  const validateMedia = (request) => {
+    if ([request.images, request.videos].some((value) => value != null && (!Array.isArray(value) || value.length))) {
+      throw new Error('images/videos are not supported; use typed content in "parts" for modalities supported by the loaded model.');
+    }
+  };
   return {
     info: { ...meta, flavor: f, threads: 1, cpuTiles: [tile], cpuTuning: { kernel: CPU_KERNELS[tile], threads: 1, kernelSource: cpuKernel === "auto" ? "measured" : "override", threadSource: "model-limit" } },
-    decide: (state, questions, { parts } = {}) => run([{ state, questions, ...(parts ? { parts } : {}) }])[0],
-    decideMany: (items) => run(items),
+    decide: (state, questions, options = {}) => {
+      validateMedia(options);
+      const { parts } = options;
+      return run([{ state, questions, ...(parts ? { parts } : {}) }])[0];
+    },
+    decideMany: (items) => {
+      items.forEach(validateMedia);
+      return run(items);
+    },
   };
 }

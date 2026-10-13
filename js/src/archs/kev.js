@@ -81,11 +81,13 @@ export default {
   /**
    * Converts from the upstream repos: Kev's adapter, head and tokenizer, and the Qwen3.5 base
    * weights, of which only the language model's byte range is downloaded (the vision tower and
-   * the multi-token-prediction head are skipped). Tensors are merged and quantized as they
+   * the multi-token-prediction head are skipped). Tensors are merged and stored as they
    * arrive; the pack streams out of WebAssembly memory without a second full copy.
    */
   async convert(module, spec, opts) {
     const { signal, onProgress } = opts;
+    const precision = opts.precision || "bf16";
+    if (!["bf16", "f32", "q8"].includes(precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
     const kev = (f) => hfFile(spec.repo, spec.revision, f);
     const base = (f) => hfFile(spec.base.repo, spec.base.revision, f);
     const text = async (url) => {
@@ -96,21 +98,34 @@ export default {
     onProgress?.({ phase: "download", file: "configs", loaded: 0, total: 0 });
     const [cfg, acfg, index] = await Promise.all([text(base("config.json")), text(kev("adapter_config.json")), text(base("model.safetensors.index.json"))]);
     const files = [...new Set(Object.values(JSON.parse(index).weight_map))];
-    if (files.length !== 1) throw new Error(`base weights are split in ${files.length} files; one is supported`);
+    if (!files.length) throw new Error("base checkpoint index has no weight files");
     const tok = await fetchBytes(kev("tokenizer.json"), "tokenizer.json", opts);
     const adapter = await fetchBytes(kev("adapter_model.safetensors"), "adapter_model.safetensors", opts);
     const head = await fetchBytes(kev("head.pt"), "head.pt", opts);
-    const url = base(files[0]);
     // An error page must not be read as the safetensors header length.
-    const range = async (lo, hi) => {
+    const range = async (url, lo, hi) => {
       const r = await fetch(url, { signal, headers: { range: `bytes=${lo}-${hi}` } });
       if (r.status !== 206) throw new Error(`${url}: HTTP ${r.status} for a byte range`);
       const bytes = new Uint8Array(await r.arrayBuffer());
       if (bytes.byteLength !== hi - lo + 1) throw new Error(`${url}: got ${bytes.byteLength} of ${hi - lo + 1} bytes`);
       return bytes;
     };
-    const n = Number(new DataView((await range(0, 7)).buffer).getBigUint64(0, true));
-    const stHead = await range(0, 8 + n - 1);
+    const heads = await Promise.all(files.map(async (file) => {
+      const url = base(file);
+      const n = Number(new DataView((await range(url, 0, 7)).buffer).getBigUint64(0, true));
+      if (!Number.isSafeInteger(n) || n < 2 || n > 32 * 1024 * 1024) throw new Error(`${file}: invalid safetensors header length ${n}`);
+      return range(url, 0, 8 + n - 1);
+    }));
+    const stHead = files.length === 1 ? heads[0] : new Uint8Array(heads.reduce((sum, h) => sum + 4 + h.byteLength, 0));
+    if (files.length > 1) {
+      const view = new DataView(stHead.buffer);
+      let at = 0;
+      for (const h of heads) {
+        view.setUint32(at, h.byteLength, true);
+        stHead.set(h, at + 4);
+        at += 4 + h.byteLength;
+      }
+    }
     const model = JSON.stringify({
       name: spec.name || spec.repo.split("/").pop(),
       source: spec.source || (spec.repo ? `https://huggingface.co/${spec.repo}` : undefined),
@@ -120,44 +135,60 @@ export default {
       author: spec.author,
       license: spec.license,
       converter: "kevala (in-browser)",
-      quantization: `LoRA merged in f32, then int8 symmetric absmax, one f32 scale per ${spec.block} weights; norms, gates, conv, pointer head in f32`,
+      precision,
+      quantization: precision === "q8"
+        ? `LoRA merged in f32, then int8 symmetric absmax, one f32 scale per ${spec.block || 32} weights; norms, gates, conv, pointer head in f32`
+        : `LoRA merged in f32, then ${precision.toUpperCase()} matrices without quantization; norms, gates, conv, pointer head in f32`,
     });
     const w = await Wasm.create(module, 0);
     const args = [stHead, cfg, tok, adapter, acfg, head, model].map((d) => w.put(typeof d === "string" ? enc.encode(d) : d));
-    w.call(() => w.check(w.x.kevala_kev_convert_plan(...args.flat(), spec.block)));
+    const precisionArg = w.put(enc.encode(precision));
+    try {
+      const plan = files.length === 1 ? w.x.kevala_kev_convert_plan_precision : w.x.kevala_kev_convert_plan_sharded_precision;
+      if (plan) w.call(() => w.check(plan(...args.flat(), spec.block || 32, ...precisionArg)));
+      else if (precision === "q8" && files.length === 1) w.call(() => w.check(w.x.kevala_kev_convert_plan(...args.flat(), spec.block || 32)));
+      else throw new Error(`This WebAssembly build does not support ${precision} Kev conversion for this checkpoint. Rebuild Kevala.`);
+    } finally {
+      w.x.kevala_free(...precisionArg);
+    }
     for (const [p, l] of args) w.x.kevala_free(p, l);
     const plan = JSON.parse(w.outText());
-    const sources = plan.sources.map(([o, l]) => [Number(o), Number(l)]);
-    const lo = sources[0][0];
-    const hi = sources[sources.length - 1][0] + sources[sources.length - 1][1];
+    const sources = plan.sources.map((s) => (s.length === 2 ? [0, ...s] : s).map(Number));
     let si = 0;
-    let ptr = 0;
-    let fill = -1;
-    let at = lo;
-    for await (const chunk of await fetchRange(url, lo, hi, files[0], opts)) {
-      let p = 0;
-      while (p < chunk.byteLength && si < sources.length) {
-        const [o, l] = sources[si];
-        if (at + p < o) {
-          p += Math.min(chunk.byteLength - p, o - (at + p));
-          continue;
+    for (let shard = 0; shard < files.length; shard++) {
+      const shardSources = sources.filter(([file]) => file === shard);
+      if (!shardSources.length) continue;
+      const lo = shardSources[0][1];
+      const hi = shardSources.at(-1)[1] + shardSources.at(-1)[2];
+      let ptr = 0;
+      let fill = -1;
+      let at = lo;
+      for await (const chunk of await fetchRange(base(files[shard]), lo, hi, files[shard], opts)) {
+        let p = 0;
+        while (p < chunk.byteLength && si < sources.length && sources[si][0] === shard) {
+          const [, o, l] = sources[si];
+          if (at + p < o) {
+            p += Math.min(chunk.byteLength - p, o - (at + p));
+            continue;
+          }
+          if (fill < 0) {
+            ptr = w.x.kevala_alloc_vec(l);
+            fill = 0;
+          }
+          const k = Math.min(chunk.byteLength - p, l - fill);
+          w.bytes(ptr + fill, k).set(chunk.subarray(p, p + k));
+          fill += k;
+          p += k;
+          if (fill === l) {
+            w.call(() => w.check(w.x.kevala_kev_convert_source(si, ptr, l)));
+            fill = -1;
+            si++;
+            onProgress?.({ phase: "convert", loaded: si, total: sources.length });
+          }
         }
-        if (fill < 0) {
-          ptr = w.x.kevala_alloc_vec(l);
-          fill = 0;
-        }
-        const k = Math.min(chunk.byteLength - p, l - fill);
-        w.bytes(ptr + fill, k).set(chunk.subarray(p, p + k));
-        fill += k;
-        p += k;
-        if (fill === l) {
-          w.call(() => w.check(w.x.kevala_kev_convert_source(si, ptr, l)));
-          fill = -1;
-          si++;
-          onProgress?.({ phase: "convert", loaded: si, total: sources.length });
-        }
+        at += chunk.byteLength;
       }
-      at += chunk.byteLength;
+      if (fill >= 0 || (si < sources.length && sources[si][0] === shard)) throw new Error(`conversion stopped before ${files[shard]} ended`);
     }
     if (w.outText() !== "1") throw new Error(`conversion stopped at source ${si} of ${sources.length}`);
     const total = Number(plan.total);

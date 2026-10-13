@@ -148,7 +148,6 @@ for (let pass = 1; pass <= passes; pass++) {
 if (models.length === Object.keys(MODELS).length) {
   const reporterArgs = ["scripts/report-decisions.mjs", "--results", directories[0], "--no-references", "--output", resolve(output, "summary.json"), "--markdown", resolve(output, "report.md")];
   for (const directory of directories.slice(1)) reporterArgs.push("--repeat-results", directory);
-  for (const model of models.filter((model) => model.startsWith("bruv1-"))) reporterArgs.push("--include-model", model);
   await runCommand(process.execPath, reporterArgs);
 } else {
   console.error("Partial model smoke only; not a complete publishable comparison table.");

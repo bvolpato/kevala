@@ -6,7 +6,7 @@
 //! into one matrix each, zero-centred RMSNorm weights are stored as `1 + w`, and `A_log` as
 //! `-exp(A_log)`.
 
-use crate::convert::{f16_to_f32, num, quantize};
+use crate::convert::{f16_to_f32, f32_to_bf16, num, quantize, Precision};
 use crate::direct_options::LABELS;
 use crate::json::Value;
 use crate::pack::Writer;
@@ -15,6 +15,24 @@ use crate::torchpt::{Py, TorchFile};
 
 /// The delimiter tokens Kev reuses (kev/model.py SPECIAL): state, question, option, end of option, decide.
 pub const SPECIAL: [&str; 5] = ["<|fim_prefix|>", "<|fim_middle|>", "<|box_start|>", "<|box_end|>", "<|fim_suffix|>"];
+
+/// A decision readout attached to the shared Qwen3.5 backbone.
+pub struct CustomReadout {
+    /// Overrides added to the canonical backbone configuration.
+    pub config: Value,
+    /// Custom decision tensors retained in f32: (pack name, shape, values).
+    pub tensors: Vec<(String, Vec<usize>, Vec<f32>)>,
+    /// Whole source matrices stored at the requested precision: (pack name, source name).
+    pub matrices: Vec<(String, String)>,
+    /// Selected source matrix rows retained in f32: (pack name, source name, row indices).
+    pub rows: Vec<(String, String, Vec<usize>)>,
+}
+
+impl Default for CustomReadout {
+    fn default() -> Self {
+        Self { config: Value::Object(Vec::new()), tensors: Vec::new(), matrices: Vec::new(), rows: Vec::new() }
+    }
+}
 
 fn pointer_dimension(root: &Py, hidden: usize) -> Result<usize, String> {
     let Some(Py::Dict(tensors)) = root.get("head") else { return Err("head.pt has no head tensor dictionary".into()) };
@@ -221,6 +239,8 @@ impl KevConvert {
             block,
             model,
             false,
+            Precision::Q8,
+            None,
         )
     }
 
@@ -247,6 +267,8 @@ impl KevConvert {
             block,
             model,
             false,
+            Precision::Q8,
+            None,
         )
     }
 
@@ -260,7 +282,92 @@ impl KevConvert {
         block: usize,
         model: Value,
     ) -> Result<KevConvert, String> {
-        Self::new_inner(base_heads, base_config, base_tokenizer, None, None, block, model, true)
+        Self::new_semif_sharded_with_precision(base_heads, base_config, base_tokenizer, block, model, Precision::Q8)
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_with_precision(
+        base_head: &[u8],
+        base_config: &str,
+        base_tokenizer: &str,
+        adapter: &[u8],
+        adapter_config: &str,
+        head_pt: &[u8],
+        block: usize,
+        model: Value,
+        precision: Precision,
+    ) -> Result<Self, String> {
+        Self::new_sharded_with_precision(
+            &[base_head],
+            base_config,
+            base_tokenizer,
+            adapter,
+            adapter_config,
+            head_pt,
+            block,
+            model,
+            precision,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_sharded_with_precision(
+        base_heads: &[&[u8]],
+        base_config: &str,
+        base_tokenizer: &str,
+        adapter: &[u8],
+        adapter_config: &str,
+        head_pt: &[u8],
+        block: usize,
+        model: Value,
+        precision: Precision,
+    ) -> Result<Self, String> {
+        Self::new_inner(
+            base_heads,
+            base_config,
+            base_tokenizer,
+            Some((adapter, adapter_config)),
+            Some(head_pt),
+            block,
+            model,
+            false,
+            precision,
+            None,
+        )
+    }
+
+    pub fn new_semif_sharded_with_precision(
+        base_heads: &[&[u8]],
+        base_config: &str,
+        base_tokenizer: &str,
+        block: usize,
+        model: Value,
+        precision: Precision,
+    ) -> Result<Self, String> {
+        Self::new_inner(base_heads, base_config, base_tokenizer, None, None, block, model, true, precision, None)
+    }
+
+    pub fn new_custom_sharded(
+        base_heads: &[&[u8]],
+        base_config: &str,
+        base_tokenizer: &str,
+        block: usize,
+        model: Value,
+        precision: Precision,
+        custom: CustomReadout,
+    ) -> Result<Self, String> {
+        Self::new_inner(
+            base_heads,
+            base_config,
+            base_tokenizer,
+            None,
+            None,
+            block,
+            model,
+            false,
+            precision,
+            Some(custom),
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -273,12 +380,17 @@ impl KevConvert {
         block: usize,
         model: Value,
         semif: bool,
+        precision: Precision,
+        custom: Option<CustomReadout>,
     ) -> Result<KevConvert, String> {
         if base_heads.is_empty() {
             return Err("no base safetensors shards".into());
         }
         if block == 0 {
             return Err("quantization block must be positive".into());
+        }
+        if precision == Precision::Q8 && block % 16 != 0 {
+            return Err("q8 quantization block must be a multiple of 16".into());
         }
         let mut base = Vec::with_capacity(base_heads.len());
         let mut base_index = std::collections::HashMap::new();
@@ -317,7 +429,7 @@ impl KevConvert {
         if semif && head.is_some() {
             return Err("SemIf conversion does not accept a pointer head".into());
         }
-        if !semif && head.is_none() {
+        if !semif && custom.is_none() && head.is_none() {
             return Err("Kev conversion needs head.pt".into());
         }
         let tok = Tokenizer::from_hf_json(base_tokenizer)?;
@@ -374,7 +486,7 @@ impl KevConvert {
         if label_ids.iter().collect::<std::collections::HashSet<_>>().len() != label_ids.len() {
             return Err("SemIf answer tokens collide".into());
         }
-        let template_ids: Vec<Value> = if semif {
+        let template_ids: Vec<Value> = if semif || custom.is_some() {
             SPECIAL.iter().map(|_| Value::Int("0".into())).collect()
         } else {
             SPECIAL
@@ -409,6 +521,7 @@ impl KevConvert {
             ("max_state".into(), num(8192.0)),
             ("max_branch".into(), num(8192.0)),
             ("block".into(), num(block as f64)),
+            ("precision".into(), Value::Str(precision.name().into())),
             (
                 "template".into(),
                 Value::Object(vec![
@@ -418,6 +531,9 @@ impl KevConvert {
                 ]),
             ),
         ];
+        if head.is_some() {
+            config_fields.push(("response_version".into(), Value::Int("1".into())));
+        }
         if semif {
             config_fields.push(("readout".into(), Value::Str("semif".into())));
             config_fields.push(("prompt_version".into(), Value::Str("direct-options-v1".into())));
@@ -425,6 +541,15 @@ impl KevConvert {
                 "label_token_ids".into(),
                 Value::Array(label_ids.iter().map(|&id| Value::Int(id.to_string())).collect()),
             ));
+        }
+        if let Some(custom) = &custom {
+            for (key, value) in custom.config.as_object().ok_or("custom readout config must be an object")? {
+                if let Some((_, existing)) = config_fields.iter_mut().find(|(name, _)| name == key) {
+                    *existing = value.clone();
+                } else {
+                    config_fields.push((key.clone(), value.clone()));
+                }
+            }
         }
         let config = Value::Object(config_fields);
 
@@ -478,12 +603,22 @@ impl KevConvert {
                 "semif.labels".into(),
                 Spec::Rows(label_source, label_ids.iter().map(|&id| id as usize).collect()),
             ));
-        } else {
+        } else if custom.is_none() {
             for (dst, head_name) in
                 [("ptr.q", "q.weight"), ("ptr.q.b", "q.bias"), ("ptr.k", "k.weight"), ("ptr.k.b", "k.bias")]
             {
                 plan.push((dst.into(), Spec::Head(head_name)));
             }
+        }
+        if let Some(custom) = custom {
+            for (name, shape, values) in custom.tensors {
+                if shape.iter().product::<usize>() != values.len() {
+                    return Err(format!("{name}: custom tensor shape does not match its values"));
+                }
+                plan.push((name, Spec::Custom(values, shape)));
+            }
+            plan.extend(custom.matrices.into_iter().map(|(name, source)| (name, Spec::Matrix(source))));
+            plan.extend(custom.rows.into_iter().map(|(name, source, rows)| (name, Spec::Rows(source, rows))));
         }
         for (i, lt) in layer_types.iter().enumerate() {
             let l = format!("layers.{i}");
@@ -516,15 +651,26 @@ impl KevConvert {
         }
         for (name, spec) in &plan {
             match src.shape(spec)? {
-                (shape, true) if shape.len() == 2 && shape[1] % block == 0 => w.add_q8(name, shape[0], shape[1], block),
-                (shape, true) => {
+                (shape, true) if precision == Precision::Q8 && shape.len() == 2 && shape[1] % block == 0 => {
+                    w.add_q8(name, shape[0], shape[1], block)
+                }
+                (shape, true) if precision == Precision::Q8 => {
                     return Err(format!(
                     "{name}: quantized shape must be a matrix with columns divisible by block {block}, got {shape:?}"
                 ))
                 }
+                (shape, true) if precision == Precision::Bf16 => w.add_bf16(name, &shape),
+                (shape, true) => w.add_f32(name, &shape),
                 (shape, false) => w.add_f32(name, &shape),
             }
         }
+        let tensor_bytes = w
+            .tensor_bytes_checked()
+            .ok_or("conversion pack exceeds this platform's address space; use native kevala convert")?;
+        tensor_bytes
+            .checked_add(tok.to_bytes().len())
+            .and_then(|n| n.checked_add(1024 * 1024))
+            .ok_or("conversion pack exceeds this platform's address space; use native kevala convert")?;
         let (prefix, infos, total) = w.layout();
         let mut uses = std::collections::HashMap::new();
         let mut readers: std::collections::HashMap<String, Vec<usize>> = std::collections::HashMap::new();
@@ -585,12 +731,15 @@ impl KevConvert {
                 write(info.offset + first, &bytes)?;
                 let bytes: Vec<u8> = scales.iter().flat_map(|x| x.to_le_bytes()).collect();
                 write(info.scales_offset + first / self.block * 4, &bytes)
+            } else if info.dtype == crate::pack::DType::Bf16 {
+                let bytes: Vec<u8> = values.iter().flat_map(|&x| f32_to_bf16(x).to_le_bytes()).collect();
+                write(info.offset + first * 2, &bytes)
             } else {
                 let bytes: Vec<u8> = values.iter().flat_map(|x| x.to_le_bytes()).collect();
                 write(info.offset + first * 4, &bytes)
             }
         };
-        if let Spec::Embed(name) = &self.plan[i].1 {
+        if let Spec::Embed(name) | Spec::Matrix(name) = &self.plan[i].1 {
             // Bound widening scratch to 16 MiB and preserve quantization block boundaries.
             let rows_per_chunk = (4 * 1024 * 1024 / info.cols()).max(1);
             for first_row in (0..info.rows()).step_by(rows_per_chunk) {
@@ -667,6 +816,8 @@ impl KevConvert {
 
 enum Spec {
     Embed(String),
+    Matrix(String),
+    Custom(Vec<f32>, Vec<usize>),
     /// Selected rows of an embedding or language-model head, kept in f32 for SemIf readout.
     Rows(String, Vec<usize>),
     /// zero-centred RMSNorm weight, stored as 1 + w
@@ -764,10 +915,16 @@ impl Sources {
     /// Base tensors a spec reads.
     fn needs(&self, spec: &Spec) -> Vec<String> {
         match spec {
-            Spec::Embed(n) | Spec::Rows(n, _) | Spec::PlusOne(n) | Spec::Raw(n) | Spec::NegExp(n) | Spec::Conv(n) => {
+            Spec::Embed(n)
+            | Spec::Matrix(n)
+            | Spec::Rows(n, _)
+            | Spec::PlusOne(n)
+            | Spec::Raw(n)
+            | Spec::NegExp(n)
+            | Spec::Conv(n) => {
                 vec![n.clone()]
             }
-            Spec::Head(_) => Vec::new(),
+            Spec::Head(_) | Spec::Custom(_, _) => Vec::new(),
             Spec::Merged(m) => vec![format!("{}{m}.weight", self.pre)],
             Spec::Fused(ms) => ms.iter().map(|m| format!("{}{m}.weight", self.pre)).collect(),
         }
@@ -776,7 +933,7 @@ impl Sources {
     /// Shape and whether the tensor is quantized.
     fn shape(&self, spec: &Spec) -> Result<(Vec<usize>, bool), String> {
         Ok(match spec {
-            Spec::Embed(n) => {
+            Spec::Embed(n) | Spec::Matrix(n) => {
                 let s = self.base_shape(n)?;
                 if s.len() != 2 {
                     return Err(format!("{n}: embedding must be rank 2, got {s:?}"));
@@ -806,6 +963,7 @@ impl Sources {
                 (vec![s[0], s[2]], false)
             }
             Spec::Head(k) => (self.head_tensor(k)?.1, false),
+            Spec::Custom(_, shape) => (shape.clone(), false),
             Spec::Merged(m) => {
                 let name = format!("{}{m}.weight", self.pre);
                 let s = self.base_shape(&name)?;
@@ -878,7 +1036,8 @@ impl Sources {
 
     fn data(&self, spec: &Spec) -> Result<Vec<f32>, String> {
         Ok(match spec {
-            Spec::Embed(n) | Spec::Raw(n) | Spec::Conv(n) => self.base_st(n)?.f32(n)?,
+            Spec::Embed(n) | Spec::Matrix(n) | Spec::Raw(n) | Spec::Conv(n) => self.base_st(n)?.f32(n)?,
+            Spec::Custom(values, _) => values.clone(),
             Spec::Rows(n, rows) => {
                 let shape = self.base_shape(n)?;
                 let width = shape[1];
@@ -906,6 +1065,63 @@ impl Sources {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn backbone_precision_preserves_bf16_and_keeps_custom_heads_f32() {
+        let words: Vec<u16> = (0..32).map(|i| 0x3f00 + i).collect();
+        let embedding: Vec<u8> = words.iter().flat_map(|value| value.to_le_bytes()).collect();
+        let norm: Vec<u8> = [0u16; 32].iter().flat_map(|value| value.to_le_bytes()).collect();
+        let header = r#"{"model.embed_tokens.weight":{"dtype":"BF16","shape":[1,32],"data_offsets":[0,64]},"model.norm.weight":{"dtype":"BF16","shape":[32],"data_offsets":[64,128]}}"#;
+        let head: Vec<u8> = (header.len() as u64).to_le_bytes().into_iter().chain(header.bytes()).collect();
+        let config = r#"{"hidden_size":32,"intermediate_size":32,"num_attention_heads":1,"num_key_value_heads":1,"head_dim":32,"vocab_size":1,"linear_num_key_heads":1,"linear_num_value_heads":1,"linear_key_head_dim":1,"linear_value_head_dim":1,"linear_conv_kernel_dim":1,"layer_types":[],"rope_parameters":{"rope_theta":10000}}"#;
+        let tokenizer = r#"{"pre_tokenizer":{"type":"ByteLevel","add_prefix_space":false,"use_regex":true},"model":{"type":"BPE","vocab":{"a":0},"merges":[]}}"#;
+        let small_block = |precision| {
+            KevConvert::new_custom_sharded(
+                &[&head],
+                config,
+                tokenizer,
+                8,
+                Value::Null,
+                precision,
+                CustomReadout::default(),
+            )
+        };
+        assert!(small_block(Precision::Q8).err().unwrap().contains("multiple of 16"));
+        assert!(small_block(Precision::Bf16).is_ok());
+        for (precision, dtype) in [
+            (Precision::Bf16, crate::pack::DType::Bf16),
+            (Precision::F32, crate::pack::DType::F32),
+            (Precision::Q8, crate::pack::DType::Q8),
+        ] {
+            let custom = CustomReadout {
+                config: Value::Object(vec![("readout".into(), Value::Str("custom".into()))]),
+                tensors: vec![("decision".into(), vec![1, 4], vec![1.0, -2.0, 0.5, 0.0])],
+                ..Default::default()
+            };
+            let mut converter =
+                KevConvert::new_custom_sharded(&[&head], config, tokenizer, 32, Value::Null, precision, custom)
+                    .unwrap();
+            let mut output = vec![0u8; converter.total];
+            converter.begin(&mut output).unwrap();
+            converter.add_source("model.embed_tokens.weight", embedding.clone(), &mut output).unwrap();
+            converter.add_source("model.norm.weight", norm.clone(), &mut output).unwrap();
+            assert!(converter.finished());
+            let h = crate::pack::parse_header(&output).unwrap();
+            let emb = h.tensor("emb").unwrap();
+            assert_eq!(emb.dtype, dtype);
+            assert_eq!(h.tensor("norm").unwrap().dtype, crate::pack::DType::F32);
+            assert_eq!(h.tensor("decision").unwrap().dtype, crate::pack::DType::F32);
+            if precision == Precision::Bf16 {
+                assert_eq!(&output[emb.offset..emb.offset + emb.size], embedding);
+            } else if precision == Precision::F32 {
+                let expected: Vec<u8> =
+                    words.iter().flat_map(|&value| crate::convert::bf16_to_f32(value).to_le_bytes()).collect();
+                assert_eq!(&output[emb.offset..emb.offset + emb.size], expected);
+            } else {
+                assert_eq!(emb.scales_size, 4);
+            }
+        }
+    }
 
     #[test]
     fn pointer_heads_require_all_four_exact_shapes_and_consume_every_tensor() {

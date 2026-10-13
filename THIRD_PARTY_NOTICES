@@ -34,3 +34,26 @@ usage conditions:
 https://huggingface.co/google/gemma-4-E2B-it
 https://huggingface.co/google/gemma-4-E4B-it
 https://ai.google.dev/gemma/apache_2
+
+H2O-Lightning-4B
+----------------
+
+The text prompt and answer postprocessing are adapted from H2O.ai's serving
+shim and configuration at revision acaf0d4ea251e54de928c75ef4352670d33192d3.
+The source code and model weights are distributed under the Apache License,
+Version 2.0. Kevala implements the text decision path in Rust.
+
+https://huggingface.co/h2oai/h2o-lightning-4b
+https://huggingface.co/h2oai/h2o-lightning-4b/blob/acaf0d4ea251e54de928c75ef4352670d33192d3/h2o_lightning_shim.py
+
+Cloudflare Clef-flash
+---------------------
+
+The text record encoder and joint schema head are adapted from Cloudflare's
+joint_schema_model.py at revision 8b2e5fd17c09fd49bc2880b805d5323ec7ff4ff3.
+The source code and model weights are distributed under the Apache License,
+Version 2.0. Kevala implements the text encoder and head in Rust and uses its
+Qwen3.5 backbone for native, WebAssembly, and WebGPU execution.
+
+https://huggingface.co/Cloudflare/clef-flash
+https://huggingface.co/Cloudflare/clef-flash/blob/8b2e5fd17c09fd49bc2880b805d5323ec7ff4ff3/joint_schema_model.py

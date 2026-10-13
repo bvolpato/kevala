@@ -1,3 +1,4 @@
+use kevala::convert::Precision;
 use kevala::json::Value;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -89,13 +90,17 @@ fn output_pack(path: &str, pack: &[u8], started: Instant) -> Result<(), String> 
 enum StreamMode {
     Kev { adapter: Vec<u8>, adapter_config: String, head: Vec<u8> },
     Semif,
+    Clef { head_config: String, head: Vec<u8> },
+    H2o { serve_config: String },
 }
 
+#[allow(clippy::too_many_arguments)]
 fn convert_sharded(
     shards: &[PathBuf],
     base_config: &str,
     base_tokenizer: &str,
     block: usize,
+    precision: Precision,
     model: Value,
     mode: StreamMode,
     output: &str,
@@ -104,19 +109,46 @@ fn convert_sharded(
         shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
     let refs: Vec<&[u8]> = headers.iter().map(Vec::as_slice).collect();
     let mut converter = match mode {
-        StreamMode::Kev { adapter, adapter_config, head } => kevala::kev::convert::KevConvert::new_sharded(
+        StreamMode::Kev { adapter, adapter_config, head } => {
+            kevala::kev::convert::KevConvert::new_sharded_with_precision(
+                &refs,
+                base_config,
+                base_tokenizer,
+                &adapter,
+                &adapter_config,
+                &head,
+                block,
+                model,
+                precision,
+            )?
+        }
+        StreamMode::Semif => kevala::kev::convert::KevConvert::new_semif_sharded_with_precision(
             &refs,
             base_config,
             base_tokenizer,
-            &adapter,
-            &adapter_config,
+            block,
+            model,
+            precision,
+        )?,
+        StreamMode::Clef { head_config, head } => kevala::clef::convert::plan(
+            &refs,
+            base_config,
+            base_tokenizer,
+            &head_config,
             &head,
             block,
             model,
+            precision,
         )?,
-        StreamMode::Semif => {
-            kevala::kev::convert::KevConvert::new_semif_sharded(&refs, base_config, base_tokenizer, block, model)?
-        }
+        StreamMode::H2o { serve_config } => kevala::h2o::convert::new_sharded(
+            &refs,
+            base_config,
+            base_tokenizer,
+            &serve_config,
+            block,
+            model,
+            precision,
+        )?,
     };
     let mut output_file = File::create(output).map_err(|e| format!("{output}: {e}"))?;
     output_file.set_len(converter.total as u64).map_err(|e| format!("{output}: {e}"))?;
@@ -186,6 +218,8 @@ enum Readout {
     EncoderHead,
     Pointer,
     DirectOptions,
+    Clef,
+    H2oLightning,
 }
 
 impl Readout {
@@ -194,7 +228,11 @@ impl Readout {
             "encoder-head" => Ok(Self::EncoderHead),
             "pointer" => Ok(Self::Pointer),
             "direct-options" => Ok(Self::DirectOptions),
-            _ => Err(format!("unsupported readout {value:?}; expected direct-options, pointer, or encoder-head")),
+            "clef" => Ok(Self::Clef),
+            "h2o-lightning" => Ok(Self::H2oLightning),
+            _ => Err(format!(
+                "unsupported readout {value:?}; expected direct-options, pointer, encoder-head, clef, or h2o-lightning"
+            )),
         }
     }
 }
@@ -234,7 +272,7 @@ impl Options {
                 "--kev-revision" if command == "convert-kev" => "--revision",
                 "-o" | "--block" | "--keep-f32" | "--tokenizer" | "--base" | "--adapter" | "--readout" | "--name"
                 | "--source" | "--revision" | "--base-source" | "--base-revision" | "--author" | "--license"
-                | "--method-revision" => arg,
+                | "--method-revision" | "--precision" => arg,
                 _ => return Err(format!("unknown convert option {arg}")),
             };
             let value =
@@ -247,6 +285,9 @@ impl Options {
             checkpoint.or_else(|| values.get("--base").cloned()).ok_or("convert needs <checkpoint-dir>")?;
         if !values.contains_key("-o") {
             return Err("convert needs -o <out.kevala>".into());
+        }
+        if let Some(value) = values.get("--precision") {
+            Precision::parse(value)?;
         }
         let alias = match command {
             "convert-kev" => {
@@ -353,12 +394,32 @@ fn validate_qwen_config(config: &Value) -> Result<(), String> {
     Ok(())
 }
 
+#[cfg(test)]
 fn check_readout(arch: Architecture, adapter: bool, requested: Option<&str>) -> Result<Readout, String> {
-    let inferred = match (arch, adapter) {
-        (Architecture::Encoder, false) => Readout::EncoderHead,
-        (Architecture::Qwen35, true) => Readout::Pointer,
-        (_, false) => Readout::DirectOptions,
-        _ => return Err("pointer adapters are currently supported only by the Qwen3.5 architecture".into()),
+    checkpoint_readout(arch, adapter, false, false, requested)
+}
+
+fn checkpoint_readout(
+    arch: Architecture,
+    adapter: bool,
+    clef: bool,
+    h2o: bool,
+    requested: Option<&str>,
+) -> Result<Readout, String> {
+    if (clef && h2o) || ((clef || h2o) && (adapter || arch != Architecture::Qwen35)) {
+        return Err("conflicting or unsupported decision-head checkpoint files".into());
+    }
+    let inferred = if clef {
+        Readout::Clef
+    } else if h2o {
+        Readout::H2oLightning
+    } else {
+        match (arch, adapter) {
+            (Architecture::Encoder, false) => Readout::EncoderHead,
+            (Architecture::Qwen35, true) => Readout::Pointer,
+            (_, false) => Readout::DirectOptions,
+            _ => return Err("pointer adapters are currently supported only by the Qwen3.5 architecture".into()),
+        }
     };
     if let Some(requested) = requested {
         let readout = Readout::parse(requested)?;
@@ -466,12 +527,26 @@ fn metadata(options: &Options, config: &Value, readout: Readout, block: usize) -
             .unwrap_or("checkpoint")
             .to_string()
     });
+    let precision = if block == 0 {
+        "f32"
+    } else {
+        options.get("--precision").unwrap_or_else(|| {
+            if architecture(config) == Ok(Architecture::Qwen35) {
+                "bf16"
+            } else {
+                "q8"
+            }
+        })
+    };
     let mut fields = vec![
         ("name".into(), Value::Str(name)),
         ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
+        ("precision".into(), Value::Str(precision.into())),
         (
             "quantization".into(),
-            Value::Str(if block == 0 {
+            Value::Str(if precision == "bf16" {
+                "unquantized BF16 backbone weights; norms, recurrent gates, and decision heads in f32".into()
+            } else if precision == "f32" || block == 0 {
                 "f32 reference pack".into()
             } else {
                 format!("int8 symmetric absmax, one f32 scale per {block} weights; architecture-specific norms and decision heads in f32")
@@ -482,7 +557,7 @@ fn metadata(options: &Options, config: &Value, readout: Readout, block: usize) -
         (
             "source",
             options.get("--source").or_else(|| {
-                if readout == Readout::DirectOptions {
+                if matches!(readout, Readout::DirectOptions | Readout::Clef | Readout::H2oLightning) {
                     declared_source(config)
                 } else {
                     None
@@ -543,7 +618,11 @@ fn validate_tokenizer(arch: Architecture, tokenizer: &str) -> Result<(), String>
 pub fn run(command: &str, args: &[String]) -> Result<(), String> {
     let options = Options::parse(command, args)?;
     let checkpoint = Path::new(&options.checkpoint);
-    let has_adapter = checkpoint.join("adapter_config.json").is_file();
+    let has_merged_readout =
+        ["serve_config.json", "serve-config.json", "joint_head_config.json", "joint_head.safetensors"]
+            .iter()
+            .any(|name| checkpoint.join(name).is_file());
+    let has_adapter = checkpoint.join("adapter_config.json").is_file() && !has_merged_readout;
     let adapter =
         match (options.get("--adapter"), has_adapter) {
             (Some(_), true) => return Err(
@@ -562,6 +641,13 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
         }
         checkpoint
     };
+    let clef_config = base.join("joint_head_config.json");
+    let clef_head = base.join("joint_head.safetensors");
+    if clef_config.is_file() != clef_head.is_file() {
+        return Err("Clef conversion requires both joint_head_config.json and joint_head.safetensors".into());
+    }
+    let h2o_config =
+        ["serve_config.json", "serve-config.json"].iter().map(|name| base.join(name)).find(|path| path.is_file());
     let encoder_layout = base.join("encoder/config.json").is_file();
     let agent_layout = base.join("rl_agent_config.json").is_file();
     if encoder_layout != agent_layout {
@@ -571,6 +657,14 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
     let config_text = text(&config_path)?;
     let config = Value::parse(&config_text).map_err(|error| format!("{}: {error}", config_path.display()))?;
     let arch = architecture(&config)?;
+    let precision = Precision::parse(options.get("--precision").unwrap_or(if arch == Architecture::Qwen35 {
+        "bf16"
+    } else {
+        "q8"
+    }))?;
+    if arch != Architecture::Qwen35 && precision != Precision::Q8 {
+        return Err("--precision bf16|f32 is currently supported only by Qwen3.5 decoder conversion".into());
+    }
     reject_quantized_or_moe(&config)?;
     if arch == Architecture::Qwen35 {
         validate_qwen_config(&config)?;
@@ -578,7 +672,13 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
     if encoder_layout != (arch == Architecture::Encoder) {
         return Err("ModernBERT conversion requires the encoder decision-head checkpoint layout".into());
     }
-    let readout = check_readout(arch, adapter.is_some(), options.get("--readout"))?;
+    let readout = checkpoint_readout(
+        arch,
+        adapter.is_some(),
+        clef_config.is_file(),
+        h2o_config.is_some(),
+        options.get("--readout"),
+    )?;
     options.validate_alias(arch, readout)?;
     if options.get("--keep-f32").is_some() && readout != Readout::EncoderHead {
         return Err("--keep-f32 is currently supported only by encoder-head conversion".into());
@@ -599,6 +699,9 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
         }
     }
     let block: usize = options.get("--block").unwrap_or("32").parse().map_err(|_| "bad --block")?;
+    if precision == Precision::Q8 && block != 0 && block % 16 != 0 {
+        return Err("--block for q8 must be a positive multiple of 16".into());
+    }
     let tokenizer_path = options.get("--tokenizer").map(PathBuf::from).unwrap_or_else(|| {
         adapter
             .map(|dir| dir.join("tokenizer.json"))
@@ -650,10 +753,17 @@ pub fn run(command: &str, args: &[String]) -> Result<(), String> {
                         head: std::fs::read(dir.join("head.pt")).map_err(|e| e.to_string())?,
                     }
                 } else {
-                    StreamMode::Semif
+                    match readout {
+                        Readout::Clef => StreamMode::Clef {
+                            head_config: text(&clef_config)?,
+                            head: std::fs::read(&clef_head).map_err(|e| format!("{}: {e}", clef_head.display()))?,
+                        },
+                        Readout::H2oLightning => StreamMode::H2o { serve_config: text(h2o_config.as_ref().unwrap())? },
+                        _ => StreamMode::Semif,
+                    }
                 };
                 let output = options.get("-o").unwrap();
-                let len = convert_sharded(&shards, &config_text, &tokenizer, block, model, mode, output)?;
+                let len = convert_sharded(&shards, &config_text, &tokenizer, block, precision, model, mode, output)?;
                 eprintln!("wrote {output}: {:.1} MB in {:.1}s", len as f64 / 1e6, started.elapsed().as_secs_f64());
                 return Ok(());
             }
@@ -673,6 +783,22 @@ mod tests {
 
     fn args(values: &[&str]) -> Vec<String> {
         values.iter().map(|value| value.to_string()).collect()
+    }
+
+    #[test]
+    fn decoder_precision_is_optional_and_rejects_unknown_values() {
+        for precision in ["bf16", "f32", "q8"] {
+            let options = Options::parse("convert", &args(&["base", "-o", "out", "--precision", precision])).unwrap();
+            assert_eq!(options.get("--precision"), Some(precision));
+            let model = metadata(&options, &json(r#"{"model_type":"qwen3_5_text"}"#), Readout::DirectOptions, 32);
+            assert_eq!(model.get("precision").and_then(Value::as_str), Some(precision));
+        }
+        let options = Options::parse("convert", &args(&["base", "-o", "out"])).unwrap();
+        let model = metadata(&options, &json(r#"{"model_type":"qwen3_5_text"}"#), Readout::DirectOptions, 32);
+        assert_eq!(model.get("precision").and_then(Value::as_str), Some("bf16"));
+        assert!(Options::parse("convert", &args(&["base", "-o", "out", "--precision", "q4"]))
+            .unwrap_err()
+            .contains("expected bf16, f32, or q8"));
     }
 
     #[test]
@@ -731,6 +857,11 @@ mod tests {
         assert!(check_readout(Architecture::Gemma4, true, None).is_err());
         assert!(check_readout(Architecture::Qwen35, true, Some("direct-options")).is_err());
         assert!(check_readout(Architecture::Qwen35, false, Some("pointer")).is_err());
+        assert_eq!(checkpoint_readout(Architecture::Qwen35, false, true, false, None).unwrap(), Readout::Clef);
+        assert_eq!(checkpoint_readout(Architecture::Qwen35, false, false, true, None).unwrap(), Readout::H2oLightning);
+        assert!(checkpoint_readout(Architecture::Qwen35, true, false, true, None).is_err());
+        assert!(checkpoint_readout(Architecture::Gemma4, false, true, false, None).is_err());
+        assert!(checkpoint_readout(Architecture::Qwen35, false, true, true, None).is_err());
     }
 
     #[test]
@@ -877,6 +1008,13 @@ mod tests {
         std::fs::write(dir.join("head.pt"), []).unwrap();
         let result = run("convert", &args(&[dir.to_str().unwrap(), "-o", output.to_str().unwrap()]));
         assert!(result.unwrap_err().contains("incomplete pointer adapter"));
+        assert!(!output.exists());
+        std::fs::remove_file(dir.join("head.pt")).unwrap();
+        let result = run(
+            "convert",
+            &args(&[dir.to_str().unwrap(), "-o", output.to_str().unwrap(), "--precision", "q8", "--block", "8"]),
+        );
+        assert!(result.unwrap_err().contains("--block for q8 must be a positive multiple of 16"));
         assert!(!output.exists());
         std::fs::remove_dir_all(dir).unwrap();
     }

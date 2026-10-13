@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { mkdtemp, open, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { assertWasmPackSize, gpuLayouts, packSize, parsePackHeader, readPackHead } from "../js/src/pack-layout.js";
+import { assertPackPrecision, assertWasmPackSize, gpuLayouts, packPrecision, packSize, parsePackHeader, readPackHead } from "../js/src/pack-layout.js";
 import { PieceSink } from "../js/src/source.js";
 import { loadFile } from "../js/src/node.js";
 
@@ -24,6 +24,17 @@ function fixture() {
 }
 
 const header = (layout) => parsePackHeader(layout.prefix);
+
+test("explicit pack precision is checked from metadata or legacy tensor dtypes", () => {
+  const legacyQ8 = { model: {}, tensors: [{ dtype: "q8" }, { dtype: "f32" }] };
+  assert.equal(packPrecision(legacyQ8), "q8");
+  assert.doesNotThrow(() => assertPackPrecision(legacyQ8, "q8"));
+  assert.throws(() => assertPackPrecision(legacyQ8, "bf16"), (error) =>
+    error.code === "PRECISION_MISMATCH" && /expected bf16, but the pack is q8/.test(error.message));
+  assert.throws(() => assertPackPrecision({ model: {}, tensors: [] }, "f32"), (error) =>
+    error.code === "PRECISION_MISMATCH" && /does not declare a supported precision/.test(error.message));
+  assert.doesNotThrow(() => assertPackPrecision({ model: { precision: "bf16" }, tensors: [] }, "bf16"));
+});
 
 test("Kev GPU layout rebases coordinator ranges above 4 GiB without truncating source offsets", () => {
   const source = fixture();
@@ -83,6 +94,23 @@ test("Gemma embedding tables stay on the GPU while only label rows enter WebAsse
   assert.ok(coord.total < 128 * 1024);
   assert.equal(coord.pieces.at(-5), BIG + 134217728);
   assert.equal(gpu.pieces.at(-5), BIG + 64 + 67108864);
+});
+
+test("Clef BF16 embedding and lexical tables stay outside the coordinator allocation", () => {
+  const source = fixture();
+  source.config.readout = "clef";
+  source.tensors = [
+    { name: "emb", dtype: "bf16", shape: [248320, 4096], offset: HEAD + 64, size: 2034237440 },
+    { name: "clef.lexical", dtype: "bf16", shape: [248320, 4096], offset: BIG + 64, size: 2034237440 },
+    { name: "clef.norm", dtype: "f32", shape: [4096], offset: 2 * BIG + 64, size: 16384 },
+  ];
+  const [coord, gpu] = gpuLayouts(source, HEAD);
+  assert.deepEqual(header(coord).tensors.map((t) => t.name), ["clef.norm"]);
+  assert.deepEqual(header(gpu).tensors.map((t) => t.name), ["emb", "clef.lexical"]);
+  assert.ok(coord.total < 65536);
+  assert.ok(gpu.total > 2 ** 31);
+  source.tensors[0].size--;
+  assert.throws(() => gpuLayouts(source, HEAD), /emb has an inconsistent size/);
 });
 
 test("unordered tensor metadata streams in increasing destination order", () => {

@@ -20,7 +20,7 @@ fetch() {
 hf=https://huggingface.co
 qwen=$hf/Qwen/Qwen3.5-0.8B-Base/resolve/dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68
 fetch tmp/laya/tokenizer/tokenizer.json "$hf/convaiinnovations/laya/resolve/1c5edc17a7acd8701df6fc341c0d179f1c62c982/tokenizer/tokenizer.json"
-fetch tmp/kev/tokenizer.json "$hf/jaredpalmer/kev-0.8b/resolve/54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8/tokenizer.json"
+fetch tmp/kev/tokenizer.json "$hf/jaredpalmer/kev-0.8b/resolve/9a45d25eb2ab761841196625383fa1dff0e56c1e/tokenizer.json"
 fetch tmp/qwen35/tokenizer.json "$qwen/tokenizer.json"
 fetch tmp/qwen35/tokenizer_config.json "$qwen/tokenizer_config.json"
 fetch tmp/gemma4/E2B/tokenizer.json "$hf/google/gemma-4-E2B-it/resolve/3e22461f65e89153144f8adb70e3b8c2cc9845a7/tokenizer.json"

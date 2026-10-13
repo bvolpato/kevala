@@ -20,8 +20,12 @@ export function js(value, indent = "") {
 }
 
 export function loadCode(selection) {
-  const model = selection.model === "custom" ? selection.customUrl || "https://example.com/model.kevala" : selection.model;
+  const source = typeof selection.source === "function" ? selection.source() : undefined;
+  const model = source ?? (selection.model === "custom" ? selection.customUrl || "https://example.com/model.kevala" : selection.model);
   const options = { model };
+  const customPack = selection.model === "custom" || !!selection.customPackUrl?.();
+  const precision = selection.precisionFor?.() ?? selection.precision;
+  if (!customPack && precision) options.precision = precision;
   if (selection.backend && selection.backend !== "auto") options.backend = selection.backend;
   if (selection.from && selection.from !== "pack") options.from = selection.from;
   return `import { Kevala } from ${JSON.stringify(RUNTIME_URL)};\n\nconst kevala = await Kevala.load(${js(options)});`;

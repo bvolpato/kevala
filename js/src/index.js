@@ -1,4 +1,4 @@
-// kevala: System 1 decision models (Laya, Bruv, Kev, SemIf, Gemma 4) in the browser, no server, no dependencies.
+// kevala: System 1 decision models in the browser, no server, no dependencies.
 //
 //   import { Kevala } from "kevala";
 //   const kevala = await Kevala.load({ onProgress: (p) => console.log(p) });
@@ -9,7 +9,7 @@
 
 import { MODELS } from "./source.js";
 import { cpuOptions } from "./cpu-policy.js";
-export { cacheInfo, clearCache, isCached, MODELS } from "./source.js";
+export { cacheInfo, clearCache, defaultPrecision, isCached, MODELS, precisionOptions } from "./source.js";
 export * as presets from "./presets.js";
 
 export const VERSION = "0.1.3";
@@ -69,13 +69,15 @@ export class Kevala {
    * Loads the model.
    *
    * options:
-   *   model       a known model name ("laya", "kev-0.8b", "kev-4b", "kev-9b", or a "bruv1-*",
-   *               "semif-qwen3.5-*" or "gemma-4-e*" name; see MODELS); or the URL of a .kevala
-   *               pack; or an ArrayBuffer/Blob of one (default: "laya")
-   *   from        for a known model: "pack" downloads its pinned int8 pack from Hugging Face, and
-   *               converts the original weights when the pack is unreachable (default);
+   *   model       a known model name ("laya", Kev, H2O-Lightning, Clef-flash, SemIf, or Gemma 4;
+   *               see MODELS); a .kevala URL; { name, url } to load a pack with a known architecture;
+   *               or an ArrayBuffer/Blob of one (default: "laya")
+   *   from        for a known model: "pack" uses a published pack at its declared precision, or
+   *               converts the pinned source when no matching pack is available (default);
    *               "checkpoint" converts the original weights here unless that conversion is
    *               already stored (Laya and Kev-0.8B only)
+   *   precision   "bf16", "f32", or "q8" for models that support conversion at that precision;
+   *               updated Kev, H2O-Lightning, and Clef default to BF16, with Q8 as an explicit option
    *   backend     "auto" (WebGPU when available, else WebAssembly), "webgpu", or "wasm"
    *   onPage      run the engine on the page instead of in a worker (default: only when the
    *               browser offers WebGPU to pages but not to workers)
@@ -106,6 +108,7 @@ export class Kevala {
     if (options.submit != null && !["await", "split", "none"].includes(options.submit)) throw new Error('submit must be "await", "split", or "none"');
     if (options.gpuKernel !== undefined && !["auto", "generic", "wide"].includes(options.gpuKernel)) throw new Error('gpuKernel must be "auto", "generic", or "wide"');
     if (options.stateCache !== undefined && typeof options.stateCache !== "boolean") throw new TypeError("stateCache must be a boolean");
+    if (options.precision != null && !["bf16", "f32", "q8"].includes(options.precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
     const w = new Kevala();
     await w.#start(options);
     return w;
@@ -263,6 +266,9 @@ export class Kevala {
 
   #send(requests) {
     if (!this.#worker) return Promise.reject(new Error("kevala was disposed"));
+    if (requests.some((r) => [r.images, r.videos].some((value) => value != null && (!Array.isArray(value) || value.length)))) {
+      throw new Error('images/videos are not supported; use typed content in "parts" for modalities supported by the loaded model.');
+    }
     const id = ++this.#seq;
     const norm = requests.map((r) => ({ state: r.state ?? "", ...(r.parts ? { parts: r.parts } : {}), questions: r.questions }));
     return new Promise((resolve, reject) => {
@@ -276,9 +282,10 @@ export class Kevala {
    * `agent.predict(state, questions)`). `state` is text or any JSON value. `options.parts` adds
    * typed content (`{ type: "text", text }`, and `image` / `audio` parts for packs whose
    * `info.modalities` list them); a part the model cannot read is an error, never dropped.
+   * Legacy `options.images` and `options.videos` are rejected; put supported content in `parts`.
    */
   async decide(state, questions, options = {}) {
-    const m = await this.#send([{ state, questions, parts: options.parts }]);
+    const m = await this.#send([{ state, questions, parts: options.parts, images: options.images, videos: options.videos }]);
     return { ...m.responses[0], timing: m.timing };
   }
 

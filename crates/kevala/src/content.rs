@@ -61,6 +61,15 @@ pub struct Request {
 impl Request {
     pub fn parse(v: &Value) -> Result<Request, String> {
         let questions = v.get("questions").cloned().ok_or("request has no questions")?;
+        for field in ["images", "videos"] {
+            if let Some(value) = v.get(field) {
+                if !matches!(value, Value::Null) && value.as_array().is_none_or(|items| !items.is_empty()) {
+                    return Err(format!(
+                        "request.{field} is unsupported; use typed parts with a pack that supports that modality"
+                    ));
+                }
+            }
+        }
         let mut parts = Vec::new();
         if let Some(ps) = v.get("parts") {
             for (i, p) in ps.as_array().ok_or("parts must be an array")?.iter().enumerate() {
@@ -117,5 +126,30 @@ impl Request {
             s.push_str(t);
         }
         Some(s)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_media_is_rejected_before_it_can_be_dropped() {
+        for field in ["images", "videos"] {
+            let value =
+                Value::parse(&format!(r#"{{"questions":{{}},"{field}":["https://example.com/media"]}}"#)).unwrap();
+            let error = Request::parse(&value).unwrap_err();
+            assert_eq!(
+                error,
+                format!("request.{field} is unsupported; use typed parts with a pack that supports that modality")
+            );
+        }
+        let empty = Value::parse(r#"{"questions":{},"images":[],"videos":null}"#).unwrap();
+        assert!(Request::parse(&empty).is_ok());
+        let typed =
+            Value::parse(r#"{"questions":{},"parts":[{"type":"image","url":"https://example.com/media"}]}"#).unwrap();
+        let request = Request::parse(&typed).unwrap();
+        assert_eq!(request.parts[0].modality, Modality::Image);
+        assert!(request.check("clef", &[Modality::Text]).unwrap_err().starts_with("part 0 is image"));
     }
 }

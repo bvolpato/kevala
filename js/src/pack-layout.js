@@ -36,6 +36,27 @@ export function parsePackHeader(bytes) {
   return JSON.parse(dec.decode(bytes.subarray(16, end)));
 }
 
+/** Precision declared by a pack, with dtype inference for older headers that lacked metadata. */
+export function packPrecision(header) {
+  const declared = header.model?.precision ?? header.config?.precision;
+  if (["bf16", "f32", "q8"].includes(declared)) return declared;
+  const dtypes = new Set(header.tensors?.map((tensor) => tensor.dtype) || []);
+  if (dtypes.has("q8")) return "q8";
+  if (dtypes.has("bf16")) return "bf16";
+  if (dtypes.size && [...dtypes].every((dtype) => dtype === "f32")) return "f32";
+  return null;
+}
+
+/** Rejects an explicit precision request before the pack's tensors reach a backend. */
+export function assertPackPrecision(header, expected) {
+  if (expected == null) return;
+  const actual = packPrecision(header);
+  if (actual !== expected) {
+    const detail = actual ? `the pack is ${actual}` : "the pack does not declare a supported precision";
+    throw Object.assign(new Error(`pack precision mismatch: expected ${expected}, but ${detail}`), { code: "PRECISION_MISMATCH" });
+  }
+}
+
 /**
  * Reads the header from the front of a pack arriving as chunks, keeping every byte it consumed:
  * `head` (all of them, which may run past the header), the parsed `header`, and `headerBytes`.
@@ -77,8 +98,8 @@ export function packSize(header, headerBytes) {
     names.add(name);
     if (!Array.isArray(shape)) throw new Error(`pack: ${name} has no shape`);
     const elements = shape.reduce((n, dim) => integer(n * integer(dim, `${name} dimension`), `${name} element count`), 1);
-    if (dtype === "f32") {
-      if (tensor.size !== integer(elements * 4, `${name} byte count`)) throw new Error(`pack: ${name} has an inconsistent size`);
+    if (dtype === "f32" || dtype === "bf16") {
+      if (tensor.size !== integer(elements * (dtype === "bf16" ? 2 : 4), `${name} byte count`)) throw new Error(`pack: ${name} has an inconsistent size`);
     } else if (dtype === "q8") {
       const block = integer(tensor.block, `${name} block`);
       if (shape.length !== 2 || !block || shape[1] % block || tensor.size !== elements ||
@@ -149,8 +170,9 @@ function subset(header, keepTrunk, isTrunk) {
  * rule is the one of Rust's `pack::coord_layout` and `pack::trunk_layout`. Unlike those, the
  * source offsets here are not limited to u32.
  */
-export function gpuLayouts(header, headerBytes, isTrunk = trunk) {
+export function gpuLayouts(header, headerBytes, isTrunk) {
   packSize(header, headerBytes);
+  isTrunk ||= (name) => trunk(name) || (header.config?.readout === "clef" && (name === "emb" || name === "clef.lexical"));
   const coord = subset(header, false, isTrunk);
   assertWasmPackSize(coord.total, "coordinator");
   return [coord, subset(header, true, isTrunk)];

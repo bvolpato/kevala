@@ -32,6 +32,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("attention_tile_f32", include_str!("wgsl/attention_tile_f32.wgsl")),
     ("geglu", include_str!("wgsl/geglu.wgsl")),
     ("gather", include_str!("wgsl/gather.wgsl")),
+    ("weight_rows", include_str!("wgsl/weight_rows.wgsl")),
     ("kev_common", include_str!("wgsl/kev_common.wgsl")),
     ("kev_gather", include_str!("wgsl/kev_gather.wgsl")),
     ("kev_rms", include_str!("wgsl/kev_rms.wgsl")),
@@ -72,6 +73,7 @@ pub const KERNELS: &[&str] = &[
     "attention_tile_f32",
     "geglu",
     "gather",
+    "weight_rows",
     "kev_rms",
     "kev_gather",
     "kev_gates",
@@ -103,6 +105,8 @@ pub const KERNELS: &[&str] = &[
 pub struct Spec {
     /// Matmul: keep the workgroup tiles in f16 (half the workgroup-memory traffic).
     pub f16: bool,
+    /// Stored matrix weights. BF16 expands exactly to F32; F16 only selects tile storage.
+    pub weights: WeightType,
     /// Kev attention: reduce inside 32-lane subgroups.
     pub subgroups: bool,
     /// Matmul and reduce: rows per thread, 1 to 4 (a tile covers 16 * rows rows).
@@ -116,6 +120,13 @@ pub struct Spec {
     /// Matmul: N and K compiled in as constants instead of read from the uniform.
     pub shape: Option<(u32, u32)>,
     pub kev: KevSpec,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum WeightType {
+    Q8,
+    Bf16,
+    F32,
 }
 
 /// Qwen3.5 text dimensions. The optimized kernels use 256-wide attention heads,
@@ -140,6 +151,7 @@ impl Default for Spec {
     fn default() -> Spec {
         Spec {
             f16: false,
+            weights: WeightType::Q8,
             subgroups: false,
             rows: 4,
             row56: false,
@@ -159,6 +171,14 @@ impl Spec {
         let number = |key: &str| v.get(key).and_then(Value::as_usize).map(|n| n as u32);
         if let Some(f) = flag("f16") {
             s.f16 = f;
+        }
+        if let Some(w) = v.get("weights") {
+            s.weights = match w.as_str() {
+                Some("q8") => WeightType::Q8,
+                Some("bf16") => WeightType::Bf16,
+                Some("f32") => WeightType::F32,
+                _ => return Err("weights must be q8, bf16, or f32".into()),
+            };
         }
         if let Some(f) = flag("subgroups") {
             s.subgroups = f;
@@ -229,6 +249,9 @@ impl Spec {
         let (n, k) = self.shape.unwrap_or((0, 0));
         vec![
             ("F16", flag(self.f16)),
+            ("WEIGHT_Q8", flag(self.weights == WeightType::Q8)),
+            ("WEIGHT_BF16", flag(self.weights == WeightType::Bf16)),
+            ("WEIGHT_F32", flag(self.weights == WeightType::F32)),
             ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
             ("GENERIC_UNROLL", flag(!self.f16 && self.groups == 1)),
             ("ROWS_GE_2", flag(self.rows >= 2)),

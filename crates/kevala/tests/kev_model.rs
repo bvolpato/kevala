@@ -167,3 +167,30 @@ fn caller_text_cannot_forge_a_template_delimiter() {
         assert!(branch.opts.iter().all(|&o| branch.ids[o] == close_id));
     }
 }
+
+#[test]
+fn kev_v1_responses_match_current_precision_and_score_confidence() {
+    let mut e = engine();
+    let qs = Value::parse(
+        r#"{
+        "n": {"type":"noul","instructions":"True?"},
+        "s": {"type":"score","instructions":"Level?","criteria":["low","mid","high"]}
+    }"#,
+    )
+    .unwrap();
+    let (encoded, parsed) = e.prepare(&Value::Str("sample".into()), &qs).unwrap();
+    let logits = vec![vec![vec![0.0, 0.1], vec![0.2f32.ln(), 0.6f32.ln(), 0.2f32.ln()]]];
+    let enc = vec![encoded];
+    let questions = vec![parsed];
+    let answer = |responses: Vec<Value>, id: &str, key: &str| {
+        responses[0].get("answers").unwrap().get(id).unwrap().get(key).unwrap().as_f64().unwrap()
+    };
+    e.model.cfg.response_v1 = true;
+    assert_eq!(answer(e.respond(&enc, &questions, &logits), "n", "noul"), 0.525);
+    assert_eq!(answer(e.respond(&enc, &questions, &logits), "s", "confidence"), 0.4);
+    let uniform = vec![vec![vec![0.0, 0.1], vec![0.0; 3]]];
+    assert_eq!(answer(e.respond(&enc, &questions, &uniform), "s", "confidence"), 0.0);
+    e.model.cfg.response_v1 = false;
+    assert_eq!(answer(e.respond(&enc, &questions, &logits), "n", "noul"), 0.52);
+    assert_eq!(answer(e.respond(&enc, &questions, &logits), "s", "confidence"), 0.8);
+}

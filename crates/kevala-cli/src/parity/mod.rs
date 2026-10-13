@@ -1,6 +1,7 @@
 //! Parity commands: replay reference fixtures recorded from each family's upstream PyTorch code
 //! through the native engine, and fail when token ids or probabilities drift.
 
+pub mod clef;
 pub mod gemma;
 pub mod kev;
 pub mod laya;

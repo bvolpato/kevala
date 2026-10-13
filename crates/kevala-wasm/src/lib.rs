@@ -49,6 +49,7 @@ struct State {
     kev_convert: Option<(kevala::kev::convert::KevConvert, Vec<String>)>,
     kev_ids: [Vec<u32>; 2],
     gemma4_prepared: Option<kevala::gemma4::Prepared>,
+    clef_records: Option<Vec<kevala::clef::encoding::Record>>,
 }
 
 static mut STATE: Option<State> = None;
@@ -181,7 +182,7 @@ pub unsafe extern "C" fn kevala_layouts(ptr: *const u8, len: usize, count: usize
         let h = kevala::pack::parse_header(slice(ptr, len))?;
         let mut out = Vec::new();
         write_layout(&mut out, &coord_layout(&h)?);
-        if h.config().get("arch").and_then(Value::as_str) == Some("kev") {
+        if matches!(h.config().get("arch").and_then(Value::as_str), Some("kev" | "clef")) {
             // no tensor-parallel shards for Kev: the whole trunk, for the GPU
             write_layout(&mut out, &trunk_layout(&h)?);
             st().out = out;
@@ -595,6 +596,87 @@ pub unsafe extern "C" fn kevala_kev_finish(ptr: *const f32, n: usize) -> u32 {
     })())
 }
 
+/// Clef records are complete causal sequences. The GPU consumes every hidden row and gathers
+/// lexical output embeddings separately; the coordinator holds only the joint head.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn kevala_clef_prepare(ptr: *const u8, len: usize) -> u32 {
+    done((|| {
+        st().clef_records = None;
+        let requests = Request::parse_many(&json_input(ptr, len)?)?;
+        let e: &kevala::clef::ClefEngine = family("a clef model")?;
+        let records = e.prepare(&requests)?;
+        let mut ids = Vec::new();
+        let mut lengths = Vec::new();
+        let mut spans = Vec::new();
+        for record in &records {
+            let offset = ids.len();
+            ids.extend(record.ids.iter().map(|id| Value::Int(id.to_string())));
+            lengths.push(Value::Int(record.ids.len().to_string()));
+            for q in &record.questions {
+                for (a, b) in &q.option_spans {
+                    spans.push(Value::Array(vec![
+                        Value::Int((offset + a).to_string()),
+                        Value::Int((offset + b).to_string()),
+                    ]));
+                }
+            }
+        }
+        st().out = Value::Object(vec![
+            ("ids".into(), Value::Array(ids)),
+            ("lengths".into(), Value::Array(lengths)),
+            ("option_spans".into(), Value::Array(spans)),
+        ])
+        .to_json()
+        .into_bytes();
+        st().clef_records = Some(records);
+        Ok(())
+    })())
+}
+
+/// Read every last-layer row plus one mean output-embedding row per encoded option.
+///
+/// # Safety
+/// `ptr` and `lexical_ptr` must be valid for reads of their respective `f32` counts.
+#[no_mangle]
+pub unsafe extern "C" fn kevala_clef_finish(
+    ptr: *const f32,
+    n: usize,
+    lexical_ptr: *const f32,
+    lexical_n: usize,
+) -> u32 {
+    done((|| {
+        let records = st().clef_records.take().ok_or("nothing prepared")?;
+        let e: &mut kevala::clef::ClefEngine = family("a clef model")?;
+        let d = e.model.cfg.hidden;
+        let tokens: usize = records.iter().map(|r| r.ids.len()).sum();
+        let options: usize = records.iter().flat_map(|r| &r.questions).map(|q| q.option_spans.len()).sum();
+        if tokens.checked_mul(d) != Some(n) || options.checked_mul(d) != Some(lexical_n) {
+            return Err("clef finish: hidden or lexical row count does not match prepared records".into());
+        }
+        let mut hidden = slice(ptr, n).to_vec();
+        e.model.normalize_hidden(&mut hidden);
+        let lexical = slice(lexical_ptr, lexical_n);
+        let mut responses = Vec::new();
+        let (mut token, mut option) = (0, 0);
+        for record in &records {
+            let count: usize = record.questions.iter().map(|q| q.option_spans.len()).sum();
+            let logits = e.head.forward_with_lexical(
+                &hidden[token * d..(token + record.ids.len()) * d],
+                record,
+                &lexical[option * d..(option + count) * d],
+            )?;
+            responses.push(e.respond(record, &logits)?);
+            token += record.ids.len();
+            option += count;
+        }
+        st().out = Value::Array(responses).to_json().into_bytes();
+        Ok(())
+    })())
+}
+
 /// Writes Gemma's complete prompts as u32s: sequence count, then (length, token IDs) per sequence.
 ///
 /// # Safety
@@ -642,6 +724,62 @@ pub extern "C" fn kevala_alloc_vec(len: usize) -> *mut u8 {
     v.as_mut_ptr()
 }
 
+fn conversion_heads(bytes: &[u8]) -> Result<Vec<&[u8]>, String> {
+    let mut heads = Vec::new();
+    let mut at = 0;
+    while at < bytes.len() {
+        let len = u32::from_le_bytes(bytes.get(at..at + 4).ok_or("truncated shard header length")?.try_into().unwrap())
+            as usize;
+        at += 4;
+        let end = at.checked_add(len).ok_or("shard header length overflows usize")?;
+        heads.push(bytes.get(at..end).ok_or("truncated shard header")?);
+        at = end;
+    }
+    if heads.is_empty() {
+        return Err("no base safetensors shard headers".into());
+    }
+    Ok(heads)
+}
+
+fn validate_decoder_pack_size(total: usize) -> Result<(), String> {
+    // The aligned allocation must stay within wasm32's signed pointer range.
+    const MAX_BROWSER_PACK_BYTES: usize = (i32::MAX as usize) & !(kevala::pack::ALIGN - 1);
+    if total > MAX_BROWSER_PACK_BYTES {
+        return Err("browser checkpoint conversion is limited to 2 GiB output packs; use native kevala convert --precision bf16 (or explicitly choose --precision q8), then load the resulting .kevala pack".into());
+    }
+    Ok(())
+}
+
+fn start_decoder_convert(mut c: kevala::kev::convert::KevConvert, sharded: bool) -> Result<(), String> {
+    validate_decoder_pack_size(c.total)?;
+    let mut pack = AlignedBuf::new(c.total);
+    c.begin(pack.as_mut_slice())?;
+    let ranges = c.source_ranges()?;
+    let sources = ranges
+        .iter()
+        .map(|(shard, _, at, len)| {
+            let mut values = Vec::new();
+            if sharded {
+                values.push(Value::Int(shard.to_string()));
+            }
+            values.push(Value::Int(at.to_string()));
+            values.push(Value::Int(len.to_string()));
+            Value::Array(values)
+        })
+        .collect();
+    let s = st();
+    s.out = Value::Object(vec![
+        ("total".into(), Value::Int(c.total.to_string())),
+        ("pack".into(), Value::Int((pack.as_mut_ptr() as usize).to_string())),
+        ("sources".into(), Value::Array(sources)),
+    ])
+    .to_json()
+    .into_bytes();
+    s.kev_convert = Some((c, ranges.into_iter().map(|x| x.1).collect()));
+    s.pack = Some(pack);
+    Ok(())
+}
+
 /// Starts converting a Kev checkpoint in the browser. Inputs: the base safetensors from byte 0
 /// through its header, the base config.json, Kev's tokenizer.json, adapter_model.safetensors,
 /// adapter_config.json, head.pt and the provenance JSON. Allocates the pack and writes
@@ -671,7 +809,7 @@ pub unsafe extern "C" fn kevala_kev_convert_plan(
     done((|| {
         let head = slice(head, head_len);
         let model = json_input(model, model_len)?;
-        let mut c = kevala::kev::convert::KevConvert::new(
+        let c = kevala::kev::convert::KevConvert::new(
             head,
             input(cfg, cfg_len)?,
             input(tok, tok_len)?,
@@ -681,28 +819,156 @@ pub unsafe extern "C" fn kevala_kev_convert_plan(
             block,
             model,
         )?;
-        let mut pack = AlignedBuf::new(c.total);
-        c.begin(pack.as_mut_slice())?;
-        let sources = c.sources();
-        let s = st();
-        s.out = Value::Object(vec![
-            ("total".into(), Value::Int(c.total.to_string())),
-            ("pack".into(), Value::Int((pack.as_mut_ptr() as usize).to_string())),
-            (
-                "sources".into(),
-                Value::Array(
-                    sources
-                        .iter()
-                        .map(|(_, a, l)| Value::Array(vec![Value::Int(a.to_string()), Value::Int(l.to_string())]))
-                        .collect(),
-                ),
-            ),
-        ])
-        .to_json()
-        .into_bytes();
-        s.kev_convert = Some((c, sources.into_iter().map(|x| x.0).collect()));
-        s.pack = Some(pack);
-        Ok(())
+        start_decoder_convert(c, false)
+    })())
+}
+
+/// Starts Kev conversion with explicit bf16, f32, or q8 weight storage.
+///
+/// # Safety
+/// Every pointer must be valid for reads of its following length.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn kevala_kev_convert_plan_precision(
+    head: *const u8,
+    head_len: usize,
+    cfg: *const u8,
+    cfg_len: usize,
+    tok: *const u8,
+    tok_len: usize,
+    adapter: *const u8,
+    adapter_len: usize,
+    acfg: *const u8,
+    acfg_len: usize,
+    hpt: *const u8,
+    hpt_len: usize,
+    model: *const u8,
+    model_len: usize,
+    block: usize,
+    precision: *const u8,
+    precision_len: usize,
+) -> u32 {
+    done((|| {
+        let c = kevala::kev::convert::KevConvert::new_with_precision(
+            slice(head, head_len),
+            input(cfg, cfg_len)?,
+            input(tok, tok_len)?,
+            slice(adapter, adapter_len),
+            input(acfg, acfg_len)?,
+            slice(hpt, hpt_len),
+            block,
+            json_input(model, model_len)?,
+            kevala::convert::Precision::parse(input(precision, precision_len)?)?,
+        )?;
+        start_decoder_convert(c, false)
+    })())
+}
+
+/// Starts sharded Kev conversion. `heads` is repeated u32 little-endian length plus header bytes.
+/// Source ranges are returned as [shard index, offset, length].
+///
+/// # Safety
+/// Every pointer must be valid for reads of its following length.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn kevala_kev_convert_plan_sharded_precision(
+    heads: *const u8,
+    heads_len: usize,
+    cfg: *const u8,
+    cfg_len: usize,
+    tok: *const u8,
+    tok_len: usize,
+    adapter: *const u8,
+    adapter_len: usize,
+    acfg: *const u8,
+    acfg_len: usize,
+    hpt: *const u8,
+    hpt_len: usize,
+    model: *const u8,
+    model_len: usize,
+    block: usize,
+    precision: *const u8,
+    precision_len: usize,
+) -> u32 {
+    done((|| {
+        let heads = conversion_heads(slice(heads, heads_len))?;
+        let c = kevala::kev::convert::KevConvert::new_sharded_with_precision(
+            &heads,
+            input(cfg, cfg_len)?,
+            input(tok, tok_len)?,
+            slice(adapter, adapter_len),
+            input(acfg, acfg_len)?,
+            slice(hpt, hpt_len),
+            block,
+            json_input(model, model_len)?,
+            kevala::convert::Precision::parse(input(precision, precision_len)?)?,
+        )?;
+        start_decoder_convert(c, true)
+    })())
+}
+
+/// Starts direct-options conversion for a single Qwen3.5 safetensors file.
+///
+/// # Safety
+/// Every pointer must be valid for reads of its following length.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn kevala_semif_convert_plan_precision(
+    head: *const u8,
+    head_len: usize,
+    cfg: *const u8,
+    cfg_len: usize,
+    tok: *const u8,
+    tok_len: usize,
+    model: *const u8,
+    model_len: usize,
+    block: usize,
+    precision: *const u8,
+    precision_len: usize,
+) -> u32 {
+    done((|| {
+        let c = kevala::kev::convert::KevConvert::new_semif_sharded_with_precision(
+            &[slice(head, head_len)],
+            input(cfg, cfg_len)?,
+            input(tok, tok_len)?,
+            block,
+            json_input(model, model_len)?,
+            kevala::convert::Precision::parse(input(precision, precision_len)?)?,
+        )?;
+        start_decoder_convert(c, false)
+    })())
+}
+
+/// Starts direct-options conversion with length-prefixed shard headers.
+///
+/// # Safety
+/// Every pointer must be valid for reads of its following length.
+#[no_mangle]
+#[allow(clippy::too_many_arguments)]
+pub unsafe extern "C" fn kevala_semif_convert_plan_sharded_precision(
+    heads: *const u8,
+    heads_len: usize,
+    cfg: *const u8,
+    cfg_len: usize,
+    tok: *const u8,
+    tok_len: usize,
+    model: *const u8,
+    model_len: usize,
+    block: usize,
+    precision: *const u8,
+    precision_len: usize,
+) -> u32 {
+    done((|| {
+        let heads = conversion_heads(slice(heads, heads_len))?;
+        let c = kevala::kev::convert::KevConvert::new_semif_sharded_with_precision(
+            &heads,
+            input(cfg, cfg_len)?,
+            input(tok, tok_len)?,
+            block,
+            json_input(model, model_len)?,
+            kevala::convert::Precision::parse(input(precision, precision_len)?)?,
+        )?;
+        start_decoder_convert(c, true)
     })())
 }
 
@@ -750,5 +1016,19 @@ pub extern "C" fn kevala_tile_probe() {
             &mut out,
             &mut panel,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decoder_conversion_rejects_the_wasm32_allocation_boundary() {
+        assert!(validate_decoder_pack_size(0x7fff_ffc0).is_ok());
+        for total in [0x7fff_ffc1, 0x8000_0000] {
+            let error = validate_decoder_pack_size(total).unwrap_err();
+            assert!(error.contains("use native kevala convert --precision bf16"));
+        }
     }
 }

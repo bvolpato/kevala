@@ -72,10 +72,25 @@ pub struct Store {
 impl Store {
     pub fn new(buf: AlignedBuf, tensors: Vec<TensorInfo>) -> Result<Store, String> {
         for t in &tensors {
-            let end = t.offset + t.size;
-            let send = t.scales_offset + t.scales_size;
-            if end > buf.len() || (t.dtype == DType::Q8 && send > buf.len()) {
+            if t.dtype == DType::Q8 && (t.block == 0 || t.block % 16 != 0) {
+                return Err(format!("tensor {}: q8 block must be a positive multiple of 16", t.name));
+            }
+            let end = t.offset.checked_add(t.size);
+            let send = t.scales_offset.checked_add(t.scales_size);
+            if end.is_none_or(|end| end > buf.len()) || (t.dtype == DType::Q8 && send.is_none_or(|end| end > buf.len()))
+            {
                 return Err(format!("tensor {} lies outside the pack ({} bytes)", t.name, buf.len()));
+            }
+            let element = match t.dtype {
+                DType::F32 => 4,
+                DType::Bf16 => 2,
+                DType::Q8 => 1,
+            };
+            if t.offset % element != 0
+                || t.size % element != 0
+                || (t.dtype == DType::Q8 && (t.scales_offset % 4 != 0 || t.scales_size % 4 != 0))
+            {
+                return Err(format!("tensor {} has an unaligned typed view", t.name));
             }
         }
         Ok(Store { buf, tensors })
@@ -102,6 +117,11 @@ impl Store {
         let (n, k) = (t.rows(), t.cols());
         match t.dtype {
             DType::F32 => Mat::F32 { n, k, w: self.f32s(t) },
+            DType::Bf16 => Mat::Bf16 {
+                n,
+                k,
+                w: unsafe { std::slice::from_raw_parts(self.buf.ptr.add(t.offset) as *const u16, t.size / 2) },
+            },
             DType::Q8 => unsafe {
                 Mat::Q8 {
                     n,
@@ -117,10 +137,15 @@ impl Store {
         }
     }
 
-    /// Row `r` of a matrix as f32 (dequantized for q8).
+    /// Row `r` of a matrix as f32 (widened for bf16, dequantized for q8).
     pub fn row(&self, t: &TensorInfo, r: usize, out: &mut [f32]) {
         match self.mat(t) {
             Mat::F32 { k, w, .. } => out.copy_from_slice(&w[r * k..(r + 1) * k]),
+            Mat::Bf16 { k, w, .. } => {
+                for (value, dst) in w[r * k..(r + 1) * k].iter().zip(out) {
+                    *dst = crate::convert::bf16_to_f32(*value);
+                }
+            }
             Mat::Q8 { k, block, q, scales, .. } => {
                 let nb = k / block;
                 for (c, o) in out.iter_mut().enumerate() {
@@ -138,4 +163,25 @@ pub fn load_store(buf: AlignedBuf) -> Result<(Store, Header), String> {
         return Err(format!("pack is truncated: {} of {} bytes", buf.len(), h.total_size));
     }
     Ok((Store::new(buf, h.tensors.clone())?, h))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_invalid_bf16_typed_view_ranges() {
+        let tensor = |offset, size| TensorInfo {
+            name: "weight".into(),
+            dtype: DType::Bf16,
+            shape: vec![64],
+            offset,
+            size,
+            block: 0,
+            scales_offset: 0,
+            scales_size: 0,
+        };
+        assert!(Store::new(AlignedBuf::new(128), vec![tensor(usize::MAX - 63, 128)]).is_err());
+        assert!(Store::new(AlignedBuf::new(128), vec![tensor(1, 2)]).is_err());
+    }
 }

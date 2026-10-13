@@ -13,7 +13,47 @@ import {
   goldOptionId,
   summarizeLatencies,
 } from "../benchmarks/decisions/metrics.js";
-import { MODELS } from "../js/src/source.js";
+import { MODELS as ACTIVE_MODELS } from "../js/src/source.js";
+
+// Historical reports keep their original checkpoint and full-pack identity.
+const ARCHIVED_MODELS = {
+  "kev-0.8b": {
+    arch: "kev", repo: "jaredpalmer/kev-0.8b",
+    revision: "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+    pack: 857259584,
+    packSha256: "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2",
+  },
+  "kev-4b": {
+    arch: "kev", repo: "jaredpalmer/kev-4b",
+    revision: "485ace8703592fcf405488b262449990824cfed1",
+    pack: 4756384192,
+    packSha256: "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+  },
+  "kev-9b": {
+    arch: "kev", repo: "jaredpalmer/kev-9b",
+    revision: "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+    pack: 8963899968,
+    packSha256: "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+  },
+  "bruv1-0.8b": {
+    arch: "kev", repo: "bvolpato/bruv1-0.8b",
+    revision: "178d1cd9b3965e32a50aba1c812b6795e8dc74bb",
+    pack: 855225920,
+    packSha256: "263504207975b9b739c110dc2a40d84c3e5c4ed8abb1dd8167d460189d9f4ad4",
+  },
+  "bruv1-4b": {
+    arch: "kev", repo: "bvolpato/bruv1-4b",
+    revision: "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
+    pack: 4751303168,
+    packSha256: "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
+  },
+};
+
+function expectedModel(data, model) {
+  const archived = ARCHIVED_MODELS[model];
+  return archived?.revision === data.metadata?.modelInfo?.revision
+    ? archived : ACTIVE_MODELS[model] ?? archived ?? {};
+}
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BASE_MODEL_FILES = Object.freeze({
@@ -481,7 +521,7 @@ function probabilitiesAgree(left, right, expectedOptions, issues, label, toleran
 }
 
 function validatePackVerification(data, model, issues) {
-  const expected = MODELS[model] ?? {};
+  const expected = expectedModel(data, model);
   const recorded = data.postRunVerification?.pack
     ?? data.metadata?.postRunVerification?.pack
     ?? null;
@@ -612,6 +652,7 @@ function packReport(data, verification) {
 }
 
 function validateModelMetadata(data, model, issues) {
+  const expected = expectedModel(data, model);
   if (data.metadata?.batch !== 1) addIssue(issues, "benchmark must explicitly report batch:1");
   if (data.metadata?.profileDuringMeasurements === true || (Array.isArray(data.timingAllRows) && data.timingAllRows.some((row) => row.timing?.gpu != null))) addIssue(issues, "decision latency must be measured with GPU profiling disabled");
   const cachePolicy = data.cachePolicy ?? data.metadata?.stateCache ?? data.stateCache ?? null;
@@ -630,13 +671,13 @@ function validateModelMetadata(data, model, issues) {
   } else {
     if (modelInfo.name !== model) addIssue(issues, `model metadata name ${modelInfo.name ?? "<missing>"} does not match ${model}`);
     if (typeof modelInfo.revision !== "string" || !modelInfo.revision) addIssue(issues, "model metadata revision is missing");
-    const expectedRevision = MODELS[model]?.revision ?? null;
+    const expectedRevision = expected.revision ?? null;
     if (expectedRevision && modelInfo.revision !== expectedRevision) addIssue(issues, `model metadata revision ${modelInfo.revision} does not match MODELS[${model}]`);
-    const expectedSource = MODELS[model]?.repo ? `https://huggingface.co/${MODELS[model].repo}` : null;
+    const expectedSource = expected.repo ? `https://huggingface.co/${expected.repo}` : null;
     if (modelInfo.source !== undefined && expectedSource && modelInfo.source !== expectedSource) addIssue(issues, `model metadata source ${modelInfo.source} does not match MODELS[${model}]`);
   }
   const modelArch = data.modelArch ?? data.metadata?.modelArch;
-  const expectedArch = MODELS[model]?.arch ?? null;
+  const expectedArch = expected.arch ?? null;
   if (modelArch !== undefined && expectedArch && modelArch !== expectedArch) addIssue(issues, `model architecture ${modelArch} does not match MODELS[${model}]`);
   return {
     backend: data.backend ?? null,
@@ -646,8 +687,8 @@ function validateModelMetadata(data, model, issues) {
     modelInfo: modelInfo ?? null,
     modelArch: modelArch ?? null,
     expectedArch,
-    expectedSource: MODELS[model]?.repo ? `https://huggingface.co/${MODELS[model].repo}` : null,
-    expectedRevision: MODELS[model]?.revision ?? null,
+    expectedSource: expected.repo ? `https://huggingface.co/${expected.repo}` : null,
+    expectedRevision: expected.revision ?? null,
   };
 }
 

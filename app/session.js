@@ -1,21 +1,24 @@
 // One model for the whole site. The header picks and loads it; every view reads it from here.
 // Loading lives in this module, not in a view, so switching tabs never interrupts a download.
 // The choice sticks for the browser session (sessionStorage): after a reload, a model that was
-// loaded comes back by itself when its pack is cached.
+// selected stays unloaded until the user presses Load.
 
-import { Kevala, MODELS, cacheInfo, clearCache, isCached } from "../js/src/index.js";
+import { Kevala, MODELS as CATALOG_MODELS, cacheInfo, clearCache, defaultPrecision, isCached, precisionOptions } from "../js/src/index.js";
 import { assertWasmPackSize } from "../js/src/pack-layout.js";
 import { fmtBytes } from "./format.js";
+import { discoverLocalPacks } from "./model-packs.js";
+import { PREVIEW_MODEL_IDS } from "./model-policy.js";
 
-export { MODELS };
+export const MODELS = Object.fromEntries(Object.entries(CATALOG_MODELS).filter(([id]) => PREVIEW_MODEL_IDS.has(id)));
 
 export const params = new URLSearchParams(location.search);
 
-/** `?pack=local` loads the dev packs from this server's tmp/ instead of downloading them. */
-export const LOCAL = params.get("pack") === "local";
-const localPack = (model) => new URL(`../tmp/${model}-q8.kevala`, import.meta.url).href;
 /** `?from=checkpoint` converts the original weights in the browser instead of downloading the pack. */
 export const FROM = params.get("from") === "checkpoint" ? "checkpoint" : "pack";
+const explicitLocal = params.get("pack") === "local";
+const localPacks = FROM === "pack" ? await discoverLocalPacks(import.meta.url) : {};
+/** The preview server advertises its packs automatically; the old query flag also works. */
+export const LOCAL = explicitLocal || Object.keys(localPacks).length > 0;
 /** `?shot=1` hides dev-only chrome, for README screenshots taken with dev packs. */
 export const SHOT = params.get("shot") === "1";
 
@@ -24,16 +27,6 @@ export const MODEL_NOTES = {
   laya: {
     name: "Laya",
     short: "ModernBERT-large encoder + decision head, 421M",
-  },
-  "bruv1-0.8b": {
-    name: "Bruv1-0.8B",
-    short: "Locally fine-tuned Qwen3.5 decision model; experimental",
-    large: true,
-  },
-  "bruv1-4b": {
-    name: "Bruv1-4B",
-    short: "Locally fine-tuned Qwen3.5 decision model; experimental",
-    large: true,
   },
   "kev-0.8b": {
     name: "Kev-0.8B",
@@ -47,6 +40,16 @@ export const MODEL_NOTES = {
   "kev-9b": {
     name: "Kev-9B",
     short: "Qwen3.5-9B hybrid decoder + pointer head",
+    large: true,
+  },
+  "h2o-lightning-4b": {
+    name: "H2O-Lightning-4B",
+    short: "Qwen3.5-4B with H2O's decision prompt and calibrated label scores; text only",
+    large: true,
+  },
+  "clef-flash": {
+    name: "Clef-flash",
+    short: "Qwen3.5-9B with Cloudflare's joint decision head; text only",
     large: true,
   },
   "semif-qwen3.5-0.8b": {
@@ -77,8 +80,9 @@ export const MODEL_NOTES = {
 };
 
 /** Whether a model's pack is larger than one WebAssembly instance can hold, so only WebGPU runs it. */
-export function requiresWebGPU(model) {
-  const bytes = MODELS[model]?.pack;
+export function requiresWebGPU(model, precision = defaultPrecision(model)) {
+  const spec = MODELS[model];
+  const bytes = spec?.precisionPackBytes?.[precision] ?? spec?.pack;
   if (!bytes) return false;
   try {
     assertWasmPackSize(bytes);
@@ -105,7 +109,7 @@ function readSaved() {
 function initialModel(saved) {
   const fromUrl = params.get("model");
   if (MODELS[fromUrl]) return fromUrl;
-  if (MODEL_NOTES[saved.model] || saved.model === "custom") return saved.model;
+  if (MODELS[saved.model]) return saved.model;
   return "laya";
 }
 
@@ -114,20 +118,31 @@ function initialBackend(saved) {
   return BACKENDS.includes(fromUrl) ? fromUrl : saved.backend || "auto";
 }
 
+function initialPrecision(saved, model) {
+  if (saved.model !== model) return defaultPrecision(model);
+  const choices = pickerPrecisionOptions(model);
+  return choices.includes(saved.precision) ? saved.precision : defaultPrecision(model);
+}
+
+function pickerPrecisionOptions(model) {
+  return precisionOptions(model).filter((precision) => precision === "bf16" || precision === "q8");
+}
+
 /** The progress line for one `onProgress` event of Kevala.load, or null to leave it as is. */
-function progressOf(event, { startedAt, convertNote, downloadTotal }) {
+function progressOf(event, { startedAt, convertNote, downloadTotal, precision, local }) {
   const { phase, loaded, total } = event;
   if (phase === "download" && total) {
     const secs = (performance.now() - startedAt) / 1000;
     const rate = secs > 0.5 ? ` · ${fmtBytes(loaded / secs)}/s` : "";
-    const label = `Downloading ${fmtBytes(loaded)} of ${fmtBytes(total)}${rate}${convertNote}`;
+    const label = `${local ? "Loading from this server:" : "Downloading"} ${fmtBytes(loaded)} of ${fmtBytes(total)}${rate}${convertNote}`;
     return { frac: loaded / total, indet: false, label };
   }
   if (phase === "download") return { frac: 0, indet: true, label: `Fetching ${event.file || "files"}…` };
   if (phase === "convert") {
     // conversion runs while the download streams; it gets its own bar only when nothing downloads
     if (downloadTotal) return null;
-    return { frac: loaded / total, indet: false, label: `Converting to int8: ${loaded}/${total} tensors` };
+    const format = precision === "q8" ? "Q8 (quantized)" : precision?.toUpperCase() || "the selected";
+    return { frac: loaded / total, indet: false, label: `Converting to ${format}: ${loaded}/${total} tensors` };
   }
   if (phase === "cache") {
     const label = loaded ? `Reading ${fmtBytes(total)} from browser storage…` : "Saving the pack to browser storage…";
@@ -141,6 +156,7 @@ function progressOf(event, { startedAt, convertNote, downloadTotal }) {
 class Session extends EventTarget {
   #saved;
   #abort = null;
+  #cacheGeneration = 0;
   #waiters = [];
 
   constructor() {
@@ -148,8 +164,10 @@ class Session extends EventTarget {
     this.#saved = readSaved();
     this.model = initialModel(this.#saved);
     this.backend = initialBackend(this.#saved);
-    if (this.backend === "wasm" && requiresWebGPU(this.model)) this.backend = "auto";
+    this.precision = initialPrecision(this.#saved, this.model);
+    if (this.backend === "wasm" && requiresWebGPU(this.model, this.precisionFor(this.model))) this.backend = "auto";
     this.customUrl = this.#saved.customUrl || "";
+    this.customUrlModel = this.#saved.customUrlModel || this.model;
     /** idle | loading | ready | error */
     this.status = "idle";
     /** { frac, indet, label } while loading */
@@ -172,6 +190,46 @@ class Session extends EventTarget {
     return FROM;
   }
 
+  get localOnly() {
+    return explicitLocal;
+  }
+
+  precisionFor(model = this.model) {
+    if (model !== this.model) return defaultPrecision(model);
+    const choices = pickerPrecisionOptions(model);
+    return choices.includes(this.precision) ? this.precision : defaultPrecision(model);
+  }
+
+  precisionChoices(model = this.model) {
+    return pickerPrecisionOptions(model);
+  }
+
+  customPackUrl(model = this.model) {
+    return !explicitLocal && MODELS[model]?.nativeConversion && this.customUrlModel === model ? this.customUrl : "";
+  }
+
+  localPackFor(model = this.model, precision = this.precisionFor(model)) {
+    if (this.customPackUrl(model)) return null;
+    return localPacks[model]?.[precision] || null;
+  }
+
+  loadUnavailable() {
+    const spec = MODELS[this.model];
+    if (explicitLocal && MODEL_NOTES[this.model] && !this.localPackFor()) {
+      return `No matching ${this.precisionFor().toUpperCase()} pack is available in this local preview.`;
+    }
+    const hostedPackAvailable = FROM === "pack" && this.precisionFor() === "q8" && spec?.hosted;
+    if (spec?.nativeConversion && !this.customPackUrl() && !this.localPackFor() && !hostedPackAvailable) {
+      return "A converted .kevala URL is required; no matching pack is available for this precision.";
+    }
+    const needsGpu = this.backend === "webgpu" || requiresWebGPU(this.model, this.precisionFor());
+    if (needsGpu && this.gpuAvailable === undefined) return "Checking WebGPU availability…";
+    if (needsGpu && this.gpuAvailable === false) {
+      return "This model needs WebGPU. Open this page in a browser with WebGPU enabled, or choose Laya or Kev-0.8B for CPU use.";
+    }
+    return "";
+  }
+
   nameOf(model = this.model) {
     return MODEL_NOTES[model]?.name || "Custom pack";
   }
@@ -188,7 +246,7 @@ class Session extends EventTarget {
   }
 
   #persist() {
-    const choice = { model: this.model, backend: this.backend, customUrl: this.customUrl };
+    const choice = { model: this.model, backend: this.backend, precision: this.precision, customUrl: this.customUrl, customUrlModel: this.customUrlModel };
     const active = this.status === "ready" || this.status === "loading";
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...choice, active }));
@@ -199,23 +257,39 @@ class Session extends EventTarget {
   /** The value to pass as `model` to Kevala.load. */
   source(model = this.model) {
     if (model === "custom") return this.customUrl || null;
-    if (LOCAL && MODEL_NOTES[model]) return localPack(model);
+    if (MODELS[model]?.nativeConversion && this.customPackUrl(model)) return { name: model, url: this.customPackUrl(model) };
+    const local = this.localPackFor(model);
+    if (local) return { name: model, url: local.url };
+    if (explicitLocal && MODEL_NOTES[model]) return { name: model, url: new URL(`../tmp/${model}-${this.precisionFor(model)}.kevala`, import.meta.url).href };
     return model;
   }
 
   async refreshCache() {
-    for (const model of Object.keys(MODEL_NOTES)) {
-      this.cached[model] = await isCached(this.source(model)).catch(() => false);
-    }
-    this.storage = await cacheInfo().catch(() => ({ available: false, bytes: 0, entries: [] }));
+    const generation = ++this.#cacheGeneration;
+    const requests = Object.keys(MODELS).map((model) => ({
+      model,
+      precision: this.precisionFor(model),
+      source: this.source(model),
+    }));
+    const values = await Promise.all(requests.map(({ source, precision }) =>
+      isCached(source, precision).catch(() => false),
+    ));
+    const storage = await cacheInfo().catch(() => ({ available: false, bytes: 0, entries: [] }));
+    if (generation !== this.#cacheGeneration) return;
+    this.cached = Object.fromEntries(requests.map(({ model }, index) => [model, values[index]]));
+    this.storage = storage;
     this.#emit();
   }
 
-  /** Reloads the model of the last visit when it was loaded and is cached (or local). */
+  #invalidateCache(...models) {
+    this.#cacheGeneration += 1;
+    for (const model of models) if (model) this.cached[model] = false;
+  }
+
+  /** Check capabilities and storage without loading model weights. */
   async boot() {
+    this.gpuAvailable = !!(await navigator.gpu?.requestAdapter().catch(() => null));
     await this.refreshCache();
-    const wasActive = this.#saved.active && (LOCAL || this.cached[this.model]);
-    if (params.get("autoload") === "1" || wasActive) this.load();
   }
 
   /** Resolves with the loaded Kevala, or null when loading fails or is cancelled. */
@@ -230,40 +304,70 @@ class Session extends EventTarget {
   }
 
   select(model) {
+    if (!MODELS[model]) return;
     if (model === this.model) return;
+    const previousModel = this.model;
     this.cancel();
     this.unload();
     this.model = model;
-    if (this.backend === "wasm" && requiresWebGPU(model)) this.backend = "auto";
+    this.precision = defaultPrecision(model);
+    this.#invalidateCache(previousModel, model);
+    if (this.backend === "wasm" && requiresWebGPU(model, this.precision)) this.backend = "auto";
     this.error = null;
     this.#persist();
     this.#emit();
+    this.refreshCache();
   }
 
-  /**
-   * Switching backend never downloads again: a loaded model reopens from browser storage in about
-   * a second, and a model still downloading finishes first (its pack is stored), then reopens.
-   */
+  /** Changing backend releases the current model; press Load to reopen it. */
   setBackend(backend) {
-    if (backend === "wasm" && requiresWebGPU(this.model)) return;
+    if (backend === "wasm" && requiresWebGPU(this.model, this.precisionFor())) return;
     if (backend === this.backend) return;
     this.backend = backend;
     this.#persist();
     if (this.status === "ready") {
       this.unload();
-      this.load();
     } else this.#emit();
   }
 
-  setCustomUrl(url) {
-    this.customUrl = url.trim();
+  setPrecision(precision) {
+    if (this.customPackUrl() || !this.precisionChoices().includes(precision) || precision === this.precisionFor()) return;
+    this.cancel();
+    this.unload();
+    this.precision = precision;
+    this.#invalidateCache(this.model);
+    if (this.backend === "wasm" && requiresWebGPU(this.model, precision)) this.backend = "auto";
+    this.error = null;
+    this.#persist();
+    this.#emit();
+    this.refreshCache();
+  }
+
+  setCustomUrl(url, model = this.model) {
+    const next = url.trim();
+    if (next === this.customPackUrl(model)) return;
+    if (model === this.model && (this.status === "loading" || this.status === "ready")) {
+      this.cancel();
+      this.unload();
+    }
+    this.customUrl = next;
+    this.customUrlModel = model;
+    this.#invalidateCache(model);
     this.#persist();
     this.#emit();
   }
 
   async load(model) {
+    if (model && !MODELS[model]) return null;
     if (model && model !== this.model) this.select(model);
     if (this.kevala || this.#abort) return this.whenReady();
+    const unavailable = this.loadUnavailable();
+    if (unavailable) {
+      this.status = "error";
+      this.error = unavailable;
+      this.#emit();
+      return null;
+    }
     const src = this.source();
     if (!src) {
       this.status = "error";
@@ -278,7 +382,9 @@ class Session extends EventTarget {
     this.progress = { frac: 0, indet: true, label: "Starting…" };
     this.#persist();
     this.#emit();
-    const tracking = { startedAt: performance.now(), convertNote: "", downloadTotal: 0 };
+    const customPack = this.model === "custom" || (MODELS[this.model]?.nativeConversion && this.customPackUrl());
+    const selectedPrecision = customPack ? undefined : this.precisionFor();
+    const tracking = { startedAt: performance.now(), convertNote: "", downloadTotal: 0, precision: selectedPrecision, local: !!this.localPackFor() };
     this.storageError = null;
     const onProgress = (event) => {
       if (abort.signal.aborted) return;
@@ -288,7 +394,7 @@ class Session extends EventTarget {
         return;
       }
       if (event.phase === "download" && event.total) tracking.downloadTotal = event.total;
-      if (event.phase === "convert") tracking.convertNote = ` · ${event.loaded}/${event.total} tensors converted`;
+      if (event.phase === "convert") tracking.convertNote = ` · ${tracking.precision.toUpperCase()} conversion ${event.loaded}/${event.total} tensors`;
       const progress = progressOf(event, tracking);
       if (!progress) return;
       this.progress = progress;
@@ -296,7 +402,7 @@ class Session extends EventTarget {
     };
     const backend = this.backend;
     try {
-      const kevala = await Kevala.load({ model: src, from: FROM, backend, signal: abort.signal, onProgress });
+      const kevala = await Kevala.load({ model: src, from: FROM, ...(selectedPrecision ? { precision: selectedPrecision } : {}), ...(this.localPackFor() ? { cache: false } : {}), backend, signal: abort.signal, onProgress });
       if (this.#abort !== abort) {
         kevala.dispose();
         return null;
@@ -308,7 +414,7 @@ class Session extends EventTarget {
         return this.load();
       }
       this.kevala = kevala;
-      this.loadedOptions = { model: src, from: FROM, backend };
+      this.loadedOptions = { model: src, from: FROM, precision: selectedPrecision, backend };
       this.status = "ready";
       this.progress = null;
       this.#persist();
@@ -352,24 +458,42 @@ class Session extends EventTarget {
   }
 
   async clearCache() {
+    this.#invalidateCache(...Object.keys(MODELS));
     await clearCache();
     await this.refreshCache();
   }
 
   /** A one-line description of what loading the current choice costs. */
-  costLine(model = this.model) {
+  costLine(model = this.model, precision = this.precisionFor(model)) {
     const spec = MODELS[model];
-    if (LOCAL && !SHOT) return "Dev mode: loads the local pack from this server.";
+    const local = this.localPackFor(model, precision);
+    if (local) {
+      const gpuNote = requiresWebGPU(model, precision) ? " Requires WebGPU." : " Runs on WebGPU or CPU.";
+      const memoryNote = model === "clef-flash" && precision === "bf16" ? " The weights exceed a 16 GB GPU; choose Q8 if you need a smaller pack." : "";
+      return `Ready on this server: ${fmtBytes(local.bytes)} ${precision.toUpperCase()}. Select and press Load; no conversion needed.${gpuNote}${memoryNote}`;
+    }
+    if (explicitLocal && !SHOT) return "Loads the local pack from this server.";
+    if (spec?.nativeConversion && this.customPackUrl(model)) {
+      return "Loads your converted .kevala URL and caches it in this browser. Its precision is embedded in the pack.";
+    }
     if (this.cached[model]) {
       return MODEL_NOTES[model]?.large ? "Cached in this browser: reopens locally." : "Cached in this browser: loads in about a second.";
     }
     if (!spec) return "Loads the pack from its URL and caches it.";
-    if (spec.hosted && FROM === "pack") {
+    const outputBytes = spec.precisionPackBytes?.[precision] ?? spec.pack;
+    const outputApprox = spec.precisionPackBytes?.[precision] && spec.precisionPackApprox?.[precision] !== false;
+    const outputSize = outputBytes ? `${outputApprox ? "about " : ""}${fmtBytes(outputBytes)} ${precision.toUpperCase()}` : `${precision.toUpperCase()} pack`;
+    const gpuNote = requiresWebGPU(model, precision) ? " WebGPU is required at this size and precision." : "";
+    if (spec.hosted && FROM === "pack" && precision === "q8") {
       return spec.pack
-        ? `First load: a ${fmtBytes(spec.pack)} int8 pack from Hugging Face, then cached in this browser.`
-        : "First load: an int8 pack from Hugging Face, then cached in this browser.";
+        ? `First load: a ${fmtBytes(spec.pack)} Q8 pack from Hugging Face, then cached in this browser.`
+        : "First load: a Q8 pack from Hugging Face, then cached in this browser.";
     }
-    return `First load: ${fmtBytes(spec.download)} from Hugging Face, converted to a ${fmtBytes(spec.pack)} int8 pack and cached.`;
+    if (spec.browserConvert === false) {
+      return `No published ${precision.toUpperCase()} pack yet. Convert the pinned checkpoint with the native CLI, then load its .kevala URL.${gpuNote}`;
+    }
+    const sourceBytes = spec.download ? `${spec.downloadApprox ? "about " : ""}${fmtBytes(spec.download)}` : "the pinned checkpoint";
+    return `First load: ${sourceBytes} from Hugging Face, converted to an estimated ${outputSize} pack and cached.${gpuNote}`;
   }
 }
 

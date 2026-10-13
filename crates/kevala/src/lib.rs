@@ -1,18 +1,20 @@
-//! kevala: a dependency-free engine for System 1 decision models (Laya, Kev, SemIf, Gemma 4), built
+//! kevala: a dependency-free engine for System 1 decision models (Laya, Kev, SemIf, H2O, Clef, Gemma 4), built
 //! for WebAssembly and WebGPU.
 //!
 //! - Requests and families: [`content`] (the request model), [`runtime`] (the family registry),
-//!   and one module per family: [`laya`], [`kev`] (Kev and SemIf), [`gemma4`]. Each family owns
+//!   and one module per family: [`laya`], [`kev`] (Kev, SemIf and H2O), [`clef`], [`gemma4`]. Each family owns
 //!   its request template, its layers, its readout, and its checkpoint converter.
 //! - Weights: [`pack`] (the `.kevala` format and sub-pack layouts), [`store`] (a loaded pack),
 //!   [`convert`] and [`torchpt`] (what the converters share).
 //! - Text: [`json`], [`unicode`], [`tokenizer`].
 //! - Numbers: [`simd`] and [`kernels`] (CPU), [`gpu`] (the WGSL kernels), [`math`].
+pub mod clef;
 pub mod content;
 pub mod convert;
 pub mod direct_options;
 pub mod gemma4;
 pub mod gpu;
+pub mod h2o;
 pub mod json;
 pub mod kernels;
 pub mod kev;

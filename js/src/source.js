@@ -6,14 +6,13 @@ import { clearTuning } from "./cpu-policy.js";
 
 export const CACHE_NAME = "kevala-v1";
 
-/** Pre-converted int8 packs of the models below, pinned to one commit of their Hugging Face repo. */
+/** Published packs of the models below, pinned to one commit of their Hugging Face repo. */
 const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/45da41504c6c117eca940103e49dd5eb1c3eab4f";
 const GEMMA_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/c70e9136938026e00cbbdec9db027d862963f180";
 
 /**
- * Known models, by name. Each downloads its pre-converted pack (`hosted`); when that is
- * unreachable, models with browserConvert can convert their pinned upstream checkpoint. A model
- * whose pack is not uploaded yet has no `hosted` URL: load it from a .kevala file you have.
+ * Known models, by name. A matching published pack is used when available; browserConvert models
+ * can convert their pinned source, while nativeConversion models need a supplied .kevala URL.
  */
 export const MODELS = {
   laya: {
@@ -32,66 +31,89 @@ export const MODELS = {
     packSha256: "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
     block: 32,
   },
-  "bruv1-0.8b": {
-    arch: "kev",
-    label: "Bruv1-0.8B, locally fine-tuned Qwen3.5 decision model",
-    repo: "bvolpato/bruv1-0.8b",
-    revision: "178d1cd9b3965e32a50aba1c812b6795e8dc74bb",
-    author: "Bruno Volpato",
-    base: { repo: "Qwen/Qwen3.5-0.8B", revision: "2fc06364715b967f1860aea9cf38778875588b17" },
-    license: "apache-2.0",
-    hosted: "https://huggingface.co/bvolpato/bruv1-0.8b/resolve/f01b18c1df270080fb789bf4c3bc4cf2fb70d58f/bruv1-0.8b-q8.kevala",
-    browserConvert: false,
-    pack: 855225920,
-    packSha256: "263504207975b9b739c110dc2a40d84c3e5c4ed8abb1dd8167d460189d9f4ad4",
-    block: 32,
-  },
-  "bruv1-4b": {
-    arch: "kev",
-    label: "Bruv1-4B, locally fine-tuned Qwen3.5 decision model",
-    repo: "bvolpato/bruv1-4b",
-    revision: "3cf3bb511de9c3aa2c0a18692e7ec832f5334867",
-    author: "Bruno Volpato",
-    base: { repo: "Qwen/Qwen3.5-4B", revision: "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a" },
-    license: "apache-2.0",
-    hosted: "https://huggingface.co/bvolpato/bruv1-4b/resolve/4358588de0bec4cb9662dc8ef004d9a85065941a/bruv1-4b-q8.kevala",
-    browserConvert: false,
-    pack: 4751303168,
-    packSha256: "ccbf575a60d33c3cce2b20e76a015b095a0ea149cdc80e29f954ad1ee432c0eb",
-    block: 32,
-  },
   "kev-0.8b": {
     arch: "kev",
-    label: "Kev-0.8B, Qwen3.5-0.8B decoder with a pointer head",
+    label: "Kev-0.8B v1.0, Qwen3.5-0.8B decoder with a pointer head",
     repo: "jaredpalmer/kev-0.8b",
-    revision: "54f4f8777356cd5bbbb6c6919c657f26e6f2f6d8",
+    revision: "9a45d25eb2ab761841196625383fa1dff0e56c1e",
     author: "Jared Palmer",
     base: { repo: "Qwen/Qwen3.5-0.8B-Base", revision: "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68" },
     license: "apache-2.0",
-    hosted: `${PACKS}/kev-0.8b-q8.kevala`,
     browserConvert: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
     download: 1620000000,
-    pack: 857259584,
-    packSha256: "8c4859f55d38b29bb5a024791b781f9ed978bd90f88ce9bce16219bd4461eca2",
+    downloadApprox: true,
+    precisionPackBytes: { bf16: 1514645952, q8: 857259648, f32: 3430000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
     block: 32,
   },
   "kev-4b": {
-    arch: "kev", label: "Kev-4B, Qwen3.5 decoder with a trained pointer head",
-    repo: "jaredpalmer/kev-4b", revision: "485ace8703592fcf405488b262449990824cfed1",
+    arch: "kev", label: "Kev-4B v1.0, Qwen3.5 decoder with a trained pointer head",
+    repo: "jaredpalmer/kev-4b", revision: "139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
     author: "Jared Palmer",
     base: { repo: "Qwen/Qwen3.5-4B-Base", revision: "1001bb4d826a52d1f399e183466143f4da7b741b" },
-    license: "apache-2.0", hosted: `${PACKS}/kev-4b-q8.kevala`,
-    browserConvert: false, download: 9502534940, pack: 4756384192, block: 32,
-    packSha256: "f75af1de41025a0c4d8656980521c6284031dc5b1c8480f183b2d92b5eb4319c",
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 9500000000,
+    downloadApprox: true,
+    precisionPackBytes: { bf16: 8432127168, q8: 4756384256, f32: 19020000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
   },
   "kev-9b": {
-    arch: "kev", label: "Kev-9B, Qwen3.5 decoder with a trained pointer head",
-    repo: "jaredpalmer/kev-9b", revision: "2629c06a5aeb0feb3b9783bafed17ed8f39ecf5c",
+    arch: "kev", label: "Kev-9B v1.0, Qwen3.5 decoder with a trained pointer head",
+    repo: "jaredpalmer/kev-9b", revision: "b5d8c18e44c60888d138b65cb6507ff0a5a448a0",
     author: "Jared Palmer",
     base: { repo: "Qwen/Qwen3.5-9B-Base", revision: "68c46c4b3498877f3ef123c856ecfde50c39f404" },
-    license: "apache-2.0", hosted: `${PACKS}/kev-9b-q8.kevala`,
-    browserConvert: false, download: 19530970823, pack: 8963899968, block: 32,
-    packSha256: "65ed43e644e895519f9c4987642ef52e1d97d25e7edcf93b0c01212fe17a5185",
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 19500000000,
+    downloadApprox: true,
+    precisionPackBytes: { bf16: 15902057920, q8: 8963900032, f32: 38140000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
+  },
+  "h2o-lightning-4b": {
+    arch: "kev",
+    readout: "h2o-lightning",
+    label: "H2O-Lightning-4B, Qwen3.5-4B with H2O's decision prompt and calibration",
+    repo: "h2oai/h2o-lightning-4b",
+    revision: "acaf0d4ea251e54de928c75ef4352670d33192d3",
+    baseSource: { repo: "Qwen/Qwen3.5-4B", revision: "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a" },
+    author: "H2O.ai",
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 9078620536,
+    precisionPackBytes: { bf16: 8429496384, q8: 4753753472, f32: 18160000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
+  },
+  "clef-flash": {
+    arch: "clef",
+    label: "Cloudflare Clef-flash, Qwen3.5-9B with a joint decision head",
+    repo: "Cloudflare/clef-flash",
+    revision: "8b2e5fd17c09fd49bc2880b805d5323ec7ff4ff3",
+    baseSource: { repo: "Qwen/Qwen3.5-9B" },
+    author: "Cloudflare",
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 19063259136,
+    precisionPackBytes: { bf16: 18414969408, q8: 10586832640, f32: 38140000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
   },
   ...Object.fromEntries([
     ["0.8b", "0.8B", "2fc06364715b967f1860aea9cf38778875588b17", 1769980465, 855225984, "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a"],
@@ -114,8 +136,8 @@ export const MODELS = {
   }])),
 };
 
-const SOURCE_IDENTITY_FIELDS = ["repo", "revision", "base", "hosted", "download", "pack", "packSha256", "source"];
-const DERIVED_SOURCE_FIELDS = ["hosted", "download", "pack", "packSha256"];
+const SOURCE_IDENTITY_FIELDS = ["repo", "revision", "base", "baseSource", "readout", "hosted", "download", "pack", "packSha256", "source"];
+const DERIVED_SOURCE_FIELDS = ["hosted", "download", "pack", "packSha256", "precisionPackBytes", "precisionPackApprox"];
 const PROVENANCE_FIELDS = ["author", "license"];
 
 function hasOwn(value, key) {
@@ -145,6 +167,7 @@ function knownOverride(name, known, model) {
   for (const key of PROVENANCE_FIELDS) if (!hasOwn(model, key)) delete spec[key];
   if (hasOwn(model, "repo") && !hasOwn(model, "revision")) delete spec.revision;
   if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "base")) delete spec.base;
+  if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "baseSource")) delete spec.baseSource;
   if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "label")) delete spec.label;
   return spec;
 }
@@ -159,9 +182,33 @@ export function resolveModel(model) {
   }
   const known = registeredModel(model.name);
   if (known) checkKnownArch(model.name, known, model);
-  if (model.url) return { url: model.url };
+  // Keep a registered model's architecture when its locally converted pack is supplied by URL.
+  if (model.url) return { url: model.url, ...(known ? { spec: knownOverride(model.name, known, model) } : {}) };
   if (known) return { spec: knownOverride(model.name, known, model) };
   return { spec: { ...model } };
+}
+
+const PRECISIONS = ["bf16", "f32", "q8"];
+
+export function defaultPrecision(model) {
+  const { spec } = resolveModel(model);
+  return spec?.defaultPrecision || "q8";
+}
+
+/** The precision choices shown for a known model. Older hosted packs stay at their declared format. */
+export function precisionOptions(model) {
+  const { spec } = resolveModel(model);
+  return (spec?.precisions || [spec?.defaultPrecision || "q8"]).filter((precision) => precision === "bf16" || precision === "q8");
+}
+
+function selectPrecision(spec, requested) {
+  const precision = requested || spec?.defaultPrecision || "q8";
+  if (!PRECISIONS.includes(precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
+  const supported = spec?.precisions || [spec?.defaultPrecision || "q8"];
+  if (!supported.includes(precision)) {
+    throw new Error(`${spec?.label || spec?.repo || "This model"} supports ${supported.join(" or ")} precision, not ${precision}.`);
+  }
+  return precision;
 }
 
 // Pack storage. The Origin Private File System takes multi-hundred-megabyte files as streamed
@@ -357,11 +404,13 @@ async function openCache(enabled) {
   return null;
 }
 
-/** Cache key for a converted upstream checkpoint: revision and quantization both matter. */
-export function upstreamKey(up) {
-  const base = up.base ? `+${up.base.repo}@${up.base.revision}` : "";
+/** Cache key for a converted upstream checkpoint: source, readout, revision, and precision matter. */
+export function upstreamKey(up, precision = up?.defaultPrecision || "q8") {
+  const baseInfo = up.base || up.baseSource;
+  const base = baseInfo ? `+${baseInfo.repo}@${baseInfo.revision}` : "";
+  const readout = up.readout ? `-${up.readout}` : "";
   const artifact = up.packSha256 ? `-${up.packSha256}` : "";
-  return `https://kevala.cache/${up.repo}/${up.revision}${base}/q8-b${up.block}${artifact}.kevala`;
+  return `https://kevala.cache/${up.repo}/${up.revision}${base}${readout}/${precision}-b${up.block}${artifact}.kevala`;
 }
 
 function absoluteUrl(url) {
@@ -378,10 +427,10 @@ function hasReplacementHosted(model, spec) {
 }
 
 /** Cache a custom or explicitly replaced hosted pack by URL, avoiding undefined identity keys. */
-function modelCacheKey(model, which) {
+function modelCacheKey(model, which, precision = "q8") {
   if (which.url) return absoluteUrl(which.url);
   if (hasReplacementHosted(model, which.spec)) return absoluteUrl(which.spec.hosted);
-  return upstreamKey(which.spec);
+  return upstreamKey(which.spec, precision);
 }
 
 async function checked(res, url) {
@@ -409,25 +458,32 @@ async function* body(res, file, total, onProgress, signal) {
 
 /**
  * Resolves a pack source to `{ size, chunks(), cached, key, expectedArch? }`.
- * `model` is a URL string, an ArrayBuffer / Uint8Array / Blob, or `{ repo, revision, block }`
- * naming an upstream checkpoint (the default). For a known model, `from` picks where its weights
- * come from: "pack" (its hosted int8 pack, the default) or "checkpoint" (the original weights,
- * converted here).
+ * `model` is a URL string, an ArrayBuffer / Uint8Array / Blob, `{ name, url }` with a known
+ * architecture, or `{ repo, revision, block }` naming an upstream checkpoint (the default). For a
+ * known model, `from` picks where its weights come from: "pack" uses a matching hosted pack when
+ * available, and "checkpoint" requests conversion from the pinned original weights.
  */
-export async function openPack(model, { cache = true, from = "pack", signal, onProgress, convert } = {}) {
+export async function openPack(model, { cache = true, from = "pack", precision, signal, onProgress, convert } = {}) {
   if (from !== "pack" && from !== "checkpoint") throw new Error(`from must be "pack" or "checkpoint", not ${JSON.stringify(from)}`);
+  if (precision != null && !PRECISIONS.includes(precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
   if (model instanceof ArrayBuffer || ArrayBuffer.isView(model)) {
     const bytes = model instanceof ArrayBuffer ? new Uint8Array(model) : new Uint8Array(model.buffer, model.byteOffset, model.byteLength);
-    return { size: bytes.byteLength, cached: false, key: null, async *chunks() { yield bytes; } };
+    return { size: bytes.byteLength, cached: false, key: null, ...(precision != null ? { expectedPrecision: precision } : {}), async *chunks() { yield bytes; } };
   }
   if (typeof Blob !== "undefined" && model instanceof Blob) {
-    return fromResponse(new Response(model), "pack", model.size, false, null, onProgress, signal);
+    return { ...fromResponse(new Response(model), "pack", model.size, false, null, onProgress, signal), ...(precision != null ? { expectedPrecision: precision } : {}) };
   }
   const store = await openCache(cache);
   const which = resolveModel(model);
+  const selectedPrecision = which.spec ? selectPrecision(which.spec, precision) : precision || "q8";
   const expectedArch = which.spec?.arch || (model && typeof model === "object" ? model.arch || registeredModel(model.name)?.arch : null);
-  const withExpectedArch = (pack) => expectedArch ? { ...pack, expectedArch } : pack;
-  const key = modelCacheKey(model, which);
+  const withExpectedArch = (pack) => ({
+    ...pack,
+    ...(!which.url ? { precision: selectedPrecision } : {}),
+    ...(expectedArch ? { expectedArch } : {}),
+    ...(which.url && precision != null ? { expectedPrecision: selectedPrecision } : {}),
+  });
+  const key = modelCacheKey(model, which, selectedPrecision);
   if (store) {
     const hit = await store.match(key).catch(() => null);
     if (hit) {
@@ -449,18 +505,22 @@ export async function openPack(model, { cache = true, from = "pack", signal, onP
   const up = which.spec;
   // a model with a hosted int8 pack downloads that (about half the bytes of the checkpoint and no
   // conversion); if it is missing or unreachable, convert from the upstream checkpoint instead
-  if (up.hosted && from === "pack") {
+  if (up.hosted && from === "pack" && selectedPrecision === "q8") {
     const size = await remoteSize(up.hosted, signal).catch((e) => (signal?.aborted ? Promise.reject(e) : 0));
     if (size) return withExpectedArch(streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress }));
   }
   // upstream checkpoint: convert, cache, and hand back the finished bytes
   if (up.browserConvert === false) {
-    if (!up.hosted) throw new Error(`${up.label || up.repo} has no published pack yet: pass the URL of its .kevala file.`);
+    if (!up.hosted) throw new Error(`${up.label || up.repo} has no published ${selectedPrecision.toUpperCase()} pack and cannot be converted in the browser yet. Convert the pinned source with the native CLI, then pass the resulting .kevala URL.`);
     throw new Error(from === "checkpoint"
-      ? `${up.label || up.repo} requires offline conversion; load its hosted .kevala pack with from: "pack".`
+      ? `${up.label || up.repo} requires native ${selectedPrecision} conversion; load its hosted .kevala pack with from: "pack".`
       : `The hosted pack for ${up.label || up.repo} is unavailable. Retry the download or pass a local .kevala URL.`);
   }
-  const made = await convert(up, { signal, onProgress });
+  const estimatedOutputBytes = up.precisionPackBytes?.[selectedPrecision];
+  if (estimatedOutputBytes > 0x7fffffc0) {
+    throw Object.assign(new Error(`${up.label || up.repo} ${selectedPrecision.toUpperCase()} output is estimated at ${(estimatedOutputBytes / 2 ** 30).toFixed(2)} GiB and exceeds the browser conversion limit (under 2 GiB). Convert with the native Kevala CLI, then pass the resulting .kevala URL.`), { code: "BROWSER_CONVERSION_TOO_LARGE" });
+  }
+  const made = await convert(up, { precision: selectedPrecision, signal, onProgress });
   if (!(made instanceof Uint8Array)) return withExpectedArch(streamIntoCache(store, key, made.size, made.chunks(), { signal, onProgress, file: "converted pack" }));
   const bytes = made;
   if (store) {
@@ -471,7 +531,7 @@ export async function openPack(model, { cache = true, from = "pack", signal, onP
       onProgress?.({ phase: "cache-failed", message: String(e?.message || e) });
     }
   }
-  return withExpectedArch({ size: bytes.byteLength, cached: false, key, async *chunks() { yield bytes; } });
+  return withExpectedArch({ size: bytes.byteLength, cached: false, key, precision: selectedPrecision, async *chunks() { yield bytes; } });
 }
 
 /**
@@ -550,11 +610,12 @@ export async function cacheInfo() {
 }
 
 /** Whether a model (a MODELS name, a spec, or a pack URL) is already stored locally. */
-export async function isCached(model) {
+export async function isCached(model, precision) {
   const store = await openCache(true);
   if (!store) return false;
   const which = resolveModel(model);
-  const key = modelCacheKey(model, which);
+  const selectedPrecision = which.spec ? selectPrecision(which.spec, precision) : precision || "q8";
+  const key = modelCacheKey(model, which, selectedPrecision);
   return (await store.keys()).some((e) => e.key === key);
 }
 

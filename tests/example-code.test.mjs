@@ -35,6 +35,29 @@ test("copied single requests preserve custom URLs and JSON values", async () => 
   assert.equal(Object.hasOwn(result.calls[0].state, "__proto__"), true);
 });
 
+test("copied setup retains selected precision and local model source", async () => {
+  const model = { name: "kev-0.8b", url: "http://localhost:8080/tmp/kev-0.8b-q8.kevala" };
+  const selection = {
+    model: "kev-0.8b", precision: "bf16", source: () => model,
+    precisionFor: () => "q8", customPackUrl: () => "", backend: "webgpu",
+  };
+  assert.deepEqual((await execute(loadCode(selection))).options, { model, precision: "q8", backend: "webgpu" });
+  assert.deepEqual((await execute(loadCode({ model: "kev-0.8b", precision: "bf16" }))).options,
+    { model: "kev-0.8b", precision: "bf16" });
+});
+
+test("copied named custom pack URLs leave precision in the pack header", async () => {
+  const url = "https://example.com/clef-flash-q8.kevala";
+  const model = { name: "clef-flash", url };
+  const selection = {
+    model: "clef-flash", source: () => model, precisionFor: () => "bf16",
+    customPackUrl: () => url,
+  };
+  assert.deepEqual((await execute(loadCode(selection))).options, { model });
+  assert.deepEqual((await execute(loadCode({ model: "custom", customUrl: url, precision: "bf16" }))).options,
+    { model: url });
+});
+
 test("copied batches retain state types, order, and shared questions", async () => {
   const states = ["A plain string", { value: 4 }, ["array", false, null]];
   const questions = { urgent: { type: "noul", instructions: "Is it urgent?" } };

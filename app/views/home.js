@@ -6,6 +6,7 @@ import { esc, fmtMs, debounce, backendBadge, highlight, wireCopy, modelGate, css
 import { renderAnswers } from "../answers.js";
 import { loadCode } from "../code.js";
 import * as presets from "../../js/src/presets.js";
+import { session as modelSession, MODEL_NOTES } from "../session.js";
 
 const pick = (set, keys) => Object.fromEntries(keys.map((key) => [key, set[key]]));
 
@@ -94,7 +95,7 @@ const HERO = `<section class="hero">
     <div class="hero-copy">
       <div class="eyebrow">Open source · Apache-2.0</div>
       <h1>Ask questions about text, <span class="grad-text">answered on the user's own GPU</span></h1>
-      <p class="lede">kevala runs <b>Laya</b>, <b>Bruv</b>, <b>Kev</b>, <b>SemIf</b>, and <b>Gemma 4</b> decision models inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option without generating an answer token by token. There is no server to run, and the text stays on the device.</p>
+      <p class="lede">This preview runs <b>Laya</b>, <b>Kev v1.0</b>, <b>H2O-Lightning-4B</b>, and <b>SemIf</b> models up to 4B inside a web page. Give it a message, an email or a JSON record and a few typed questions (yes or no, pick one, rate it), and it returns a score or probability for every option without generating an answer token by token. The text stays on the device. Models load only when you press Load.</p>
       <div class="row cta">
         <a class="btn primary" href="#/playground">Open the playground</a>
         <a class="btn" href="#/tetris">Watch it play Tetris</a>
@@ -103,7 +104,7 @@ const HERO = `<section class="hero">
       <ul class="facts">
         <li><b>0</b><span>runtime dependencies</span></li>
         <li><b>WebGPU</b><span>or WebAssembly SIMD</span></li>
-        <li><b>int8</b><span>packs, cached locally</span></li>
+        <li><b>BF16</b><span>Kev &amp; H2O default</span></li>
         <li><b>Apache-2.0</b><span>models</span></li>
       </ul>
     </div>
@@ -135,7 +136,7 @@ const EMBED = `<section class="tight" id="embed">
     <div>
       <div class="eyebrow">Embed</div>
       <h2>Add it to a page</h2>
-      <p class="muted">The snippet uses this website’s runtime and your selected model, size and backend. It needs no build step. The first load downloads the model pack from Hugging Face and caches it in the browser.</p>
+      <p class="muted">The snippet uses this website’s runtime and your selected model, precision, pack URL and backend. It needs no build step. Published packs load directly, supported checkpoints convert in the browser, and native-only models need a converted pack URL. The development preview can serve validated local packs.</p>
       <div class="code"><pre data-f="install"></pre></div>
       <p class="muted small">The <code>kevala@latest</code> npm release currently supports Laya and Kev-0.8B. Use the website import for the other models.</p>
       <p class="muted small">Questions work best when they ask what the text <em>says</em>. Compute numbers and comparisons in code and state them in words, and describe every option.</p>
@@ -218,16 +219,23 @@ const DEMOS = `<section id="demos">
       </a>
       <a class="card pad mini-card" href="#/how">
         <h3>How it works</h3>
-        <p class="muted small">The Rust engine, the WebGPU kernels, the packs, and how closely int8 matches the original models.</p>
+        <p class="muted small">The Rust engine, WebGPU kernels, pack formats, and how closely verified conversions match their references.</p>
       </a>
     </div>
   </div>
 </section>`;
 
+const localModelCount = Object.keys(MODEL_NOTES).filter((id) => modelSession.localPackFor(id)).length;
+const loadingText = (model, fallback) => modelSession.localPackFor(model)
+  ? "Ready to load from this server. Choose the model and precision in the picker, then press Load. No conversion or URL needed."
+  : fallback;
+
 const MODEL_CARDS = `<section class="tight" id="models">
   <div class="wrap">
     <div class="eyebrow">Models</div>
-    <h2>Laya, Bruv, Kev, SemIf, and Gemma 4</h2>
+    <h2>Choose a decision model</h2>
+    <p class="lede">This preview is limited to 4B and smaller models. Kev v1.0 and H2O-Lightning-4B keep their weights in BF16 by default. Choose Q8 in the model menu for a smaller pack. One model loads at a time.</p>
+    ${localModelCount ? `<p class="model-availability">${localModelCount} model variants are ready on this server. Open the model picker, choose a size and press Load. Inference runs on your device.</p>` : ""}
     <div class="grid-3">
       <div class="card pad model-card">
         <div class="row"><h3>Laya</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
@@ -241,27 +249,28 @@ const MODEL_CARDS = `<section class="tight" id="models">
         </dl>
       </div>
       <div class="card pad model-card">
-        <div class="row"><h3>Bruv</h3><span class="badge gpu"><span class="dot"></span>WebGPU</span></div>
-        <p class="muted small">A local Qwen3.5 fine-tune for choosing among labeled options. It follows the public Tev1 data recipe with Kevala's direct option scoring objective. Experimental, with the source checkpoint and evaluations published openly.</p>
+        <div class="row"><h3>Kev v1.0</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
+        <p class="muted small">Kev v1.0 pairs the Qwen3.5 hybrid decoder and merged LoRA with a trained pointer head. Start with 0.8B, or select 4B in the model menu.</p>
         <dl class="specs">
           <div><dt>Parameters</dt><dd>0.8B (default) or 4B</dd></div>
-          <div><dt>Pack download</dt><dd>855 MB or 4.75 GB int8. Runtime memory is higher.</dd></div>
-          <div><dt>Scores</dt><dd>Relative scores for up to 16 options per question, not calibrated decision confidence.</dd></div>
-          <div><dt>Evaluation</dt><dd>0.8B: 652/864 correct; 4B: 799/864 on the separate browser decision suite. <a href="${REPO}/blob/main/BENCHMARK.md">See all suites</a>.</dd></div>
-          <div><dt>Source</dt><dd><a href="https://github.com/bvolpato/bruv">Bruv training code</a> · <a href="https://huggingface.co/bvolpato/bruv1-0.8b">0.8B checkpoint and pack</a> · <a href="https://huggingface.co/bvolpato/bruv1-4b">4B checkpoint and pack</a>.</dd></div>
-        </dl>
-      </div>
-      <div class="card pad model-card">
-        <div class="row"><h3>Kev</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
-        <p class="muted small">Qwen3.5 hybrid decoder with Kev's LoRA merged and a pointer head that reads the answer options. Start with 0.8B, or select 4B or 9B with the size slider in the model menu.</p>
-        <dl class="specs">
-          <div><dt>Parameters</dt><dd>0.8B (default), 4B, or 9B</dd></div>
-          <div><dt>Pack download</dt><dd>857 MB, 4.76 GB, or 8.96 GB int8, depending on size. Runtime memory is higher.</dd></div>
-          <div><dt>Loading</dt><dd>Choose a size, then press Load. The pack is kept in browser storage for later visits.</dd></div>
-          <div><dt>0.8B speed</dt><dd>WebGPU on an M4 Max: 11 ms for a short request, 32 ms at 125 tokens, 116 ms at 533 tokens. The CPU fallback takes seconds.</dd></div>
-          <div><dt>State cache</dt><dd>The KV and DeltaNet states of the 4 latest states stay in memory. A repeated state takes about half the time, and an extended one runs only its new tokens.</dd></div>
+          <div><dt>Precision</dt><dd>BF16 by default; Q8 is an explicit smaller-pack option. Kev-0.8B is 1.51 GB BF16 or 857 MB Q8; Kev-4B is 8.43 GB or 4.76 GB.</dd></div>
+          <div><dt>Loading</dt><dd>${loadingText("kev-0.8b", "0.8B converts its pinned source files in the browser. Larger variants require a converted .kevala pack URL.")}</dd></div>
+          <div><dt>Reference check</dt><dd>0.8B matches all 13 fixture decisions with BF16 and Q8 on WebGPU. <a href="#/how/fidelity">See probability differences</a>.</dd></div>
+          <div><dt>State cache</dt><dd>Recent state prefixes can be reused for repeated or extended inputs.</dd></div>
           <div><dt>By</dt><dd>Jared Palmer · base by the Qwen team · Apache-2.0</dd></div>
         </dl>
+        <p class="small"><a href="?model=kev-0.8b#/playground">Choose Kev v1.0 →</a></p>
+      </div>
+      <div class="card pad model-card">
+        <div class="row"><h3>H2O-Lightning-4B</h3><span class="badge gpu"><span class="dot"></span>Text only · WebGPU</span></div>
+        <p class="muted small">A Qwen3.5-4B decision model with H2O's own prompt, label scoring, and per-question calibration.</p>
+        <dl class="specs">
+          <div><dt>Precision</dt><dd>BF16 default, 8.43 GB; optional Q8, 4.75 GB. These converted pack sizes are exact.</dd></div>
+          <div><dt>Loading</dt><dd>${loadingText("h2o-lightning-4b", "Convert the pinned source with the native CLI, then supply its .kevala pack URL in the model picker.")}</dd></div>
+          <div><dt>Reference check</dt><dd>3/3 fixture decisions match upstream with BF16 and Q8 on WebGPU. <a href="#/how/fidelity">See the results</a>.</dd></div>
+          <div><dt>Source</dt><dd><a href="https://huggingface.co/h2oai/h2o-lightning-4b">H2O.ai · Apache-2.0</a>. Image input is not supported here.</dd></div>
+        </dl>
+        <p class="small"><a href="?model=h2o-lightning-4b#/playground">Choose H2O-Lightning-4B →</a></p>
       </div>
       <div class="card pad model-card">
         <div class="row"><h3>SemIf</h3><span class="badge gpu"><span class="dot"></span>WebGPU + WebAssembly</span></div>
@@ -272,17 +281,6 @@ const MODEL_CARDS = `<section class="tight" id="models">
           <div><dt>Loading</dt><dd>Select SemIf in the model menu, choose a size, then press Load.</dd></div>
           <div><dt>Scores</dt><dd>Relative scores for up to 16 options per question, not calibrated decision confidence.</dd></div>
           <div><dt>Credits</dt><dd>Adapted from <a href="https://github.com/TheoLeeCJ/SemIf">SemIf</a> · MIT. Qwen3.5 weights · Apache-2.0.</dd></div>
-        </dl>
-      </div>
-      <div class="card pad model-card">
-        <div class="row"><h3>Gemma 4</h3><span class="badge gpu"><span class="dot"></span>WebGPU + native CPU</span></div>
-        <p class="muted small">Dense Gemma 4 E2B and E4B instruction weights with per-layer embeddings and direct option scoring. The packs keep the text trunk only, without the source checkpoint's vision or audio towers, and do not use a SemIf adapter.</p>
-        <dl class="specs">
-          <div><dt>Parameters</dt><dd>E2B (default) or E4B</dd></div>
-          <div><dt>Pack download</dt><dd>5.22 GB (5,217,421,952 bytes) or 8.41 GB (8,407,043,136 bytes) int8. Runtime memory is higher.</dd></div>
-          <div><dt>Loading</dt><dd>Choose E2B or E4B in the model menu, then press Load. Browser use requires WebGPU; native 64-bit CPU loading is supported.</dd></div>
-          <div><dt>Context</dt><dd>Up to 4096 input tokens per question in Kevala.</dd></div>
-          <div><dt>Notes</dt><dd><a href="${DOCS}/gemma4.md">Gemma 4 integration notes</a>. Google DeepMind weights · Apache-2.0. Direct option scoring adapted from <a href="https://github.com/TheoLeeCJ/SemIf">SemIf</a> · MIT.</dd></div>
         </dl>
       </div>
     </div>
@@ -297,12 +295,12 @@ const HOOD = `<section class="tight" id="under-the-hood">
     <div class="grid-4 hood">
       <a class="card pad mini-card" href="#/how">
         <h3>Architecture</h3>
-        <p class="muted small">A Rust core compiled to WebAssembly, WGSL kernels on WebGPU, and int8 packs converted in the tab where supported.</p>
+        <p class="muted small">A Rust core compiled to WebAssembly, WGSL kernels on WebGPU, and BF16 or Q8 packs converted in the tab where supported.</p>
         <span class="go">Read →</span>
       </a>
       <a class="card pad mini-card" href="${REPO}/blob/main/BENCHMARK.md">
         <h3>Benchmarks</h3>
-        <p class="muted small">Decision accuracy, option-order stability, and WebGPU latency across the supported model packs, with the raw results.</p>
+        <p class="muted small">Decision accuracy, option-order stability, and WebGPU latency for the previously measured packs, with the raw results.</p>
         <span class="go">See the numbers →</span>
       </a>
       <a class="card pad mini-card" href="#/how/fidelity">
@@ -332,6 +330,10 @@ const CREDITS = `<section class="tight" id="credits">
         <p class="muted small">By Jared Palmer: <a href="https://huggingface.co/jaredpalmer/kev-0.8b">Kev-0.8B</a>, <a href="https://huggingface.co/jaredpalmer/kev-4b">Kev-4B</a>, and <a href="https://huggingface.co/jaredpalmer/kev-9b">Kev-9B</a> · Apache-2.0.</p>
       </div>
       <div class="card pad">
+        <h3>H2O-Lightning and Clef-flash</h3>
+        <p class="muted small"><a href="https://huggingface.co/h2oai/h2o-lightning-4b">H2O-Lightning-4B</a> by H2O.ai and <a href="https://huggingface.co/Cloudflare/clef-flash">Clef-flash</a> by Cloudflare · Apache-2.0.</p>
+      </div>
+      <div class="card pad">
         <h3>SemIf and Qwen3.5</h3>
         <p class="muted small">SemIf's direct option scoring method · <a href="https://github.com/TheoLeeCJ/SemIf">MIT</a>. Qwen3.5 base checkpoints for Kev: <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B-Base">0.8B</a>, <a href="https://huggingface.co/Qwen/Qwen3.5-4B-Base">4B</a>, and <a href="https://huggingface.co/Qwen/Qwen3.5-9B-Base">9B</a>. Qwen3.5 instruction checkpoints for SemIf: <a href="https://huggingface.co/Qwen/Qwen3.5-0.8B">0.8B</a>, <a href="https://huggingface.co/Qwen/Qwen3.5-2B">2B</a>, and <a href="https://huggingface.co/Qwen/Qwen3.5-4B">4B</a> · Apache-2.0.</p>
       </div>
@@ -340,7 +342,7 @@ const CREDITS = `<section class="tight" id="credits">
         <p class="muted small">Google DeepMind's <a href="https://huggingface.co/google/gemma-4-E2B-it">E2B</a> and <a href="https://huggingface.co/google/gemma-4-E4B-it">E4B</a> instruction weights · Apache-2.0. The Kevala packs keep the dense text trunks and omit the multimodal towers.</p>
       </div>
     </div>
-    <p class="tiny faint credits-note">The packs are int8 conversions of the authors' checkpoints at pinned revisions, under the models' own licenses, at <a href="https://huggingface.co/bvolpato/kevala-packs">huggingface.co/bvolpato/kevala-packs</a>. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>
+        <p class="tiny faint credits-note">Published packs use Q8. Refreshed Kev, H2O-Lightning, and Clef-flash default to BF16, with optional Q8 conversion, under each model's license. Model outputs are the models' own; check them on your data before acting on them. Source: <a href="${REPO}">github.com/bvolpato/kevala</a>.</p>
   </div>
 </section>`;
 

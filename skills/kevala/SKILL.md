@@ -1,14 +1,15 @@
 ---
 name: kevala
-description: Add fast, private, typed decisions to a web page with kevala, which runs Laya, Bruv, Kev, SemIf, and Gemma 4 in the browser on WebGPU, with WebAssembly support for smaller packs, no server, and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Bruv, Kev, SemIf, Gemma 4, typed decisions, or a System One API in the browser.
+description: Add fast, private, typed decisions to a web page with kevala, which runs Laya, Kev, H2O-Lightning, Clef-flash, SemIf, and Gemma 4 in the browser on WebGPU, with WebAssembly support for smaller packs, no server, and no dependencies. Use when a site needs to classify, route, score, moderate, or gate text on the client (comment moderation, prompt-injection guards, ticket triage, form spam, game AI that reads a described state), or when the user mentions kevala, Laya, Kev, H2O-Lightning, Clef-flash, SemIf, Gemma 4, typed decisions, or a System One API in the browser.
 ---
 
 # Integrating kevala
 
 kevala answers typed questions about a piece of text inside the page. You pass a `state` (text or JSON)
 and a dict of questions; it returns a probability for every option of every question in one
-request. It never generates text. Weights download once from Hugging Face as an int8 pack and stay in
-the site's origin storage; nothing is sent anywhere.
+request. It never generates text. Existing models download published Q8 packs. Refreshed Kev,
+H2O-Lightning, and Clef-flash default to BF16 conversion, with Q8 available as an explicit smaller
+option. Weights stay in the site's origin storage; nothing is sent anywhere.
 
 Reach for it when the page needs a decision (which queue, is this toxic, how urgent, should this
 prompt be blocked). Do not use it for free-form answers, extraction, arithmetic or multi-step
@@ -23,26 +24,29 @@ with a bundler.
 import { Kevala } from "https://cdn.jsdelivr.net/npm/kevala@latest/js/src/index.js";
 
 const kevala = await Kevala.load({
-  model: "laya",               // or a Bruv, Kev, SemIf, or Gemma 4 model name, or a hosted .kevala URL
+  model: "laya",               // or a Kev, H2O-Lightning, Clef-flash, SemIf, or Gemma 4 name, or pack URL
   onProgress: (p) => show(p),  // {phase, file, loaded, total}: download, convert, cache, init, warmup
 });
 ```
 
-Known names include `bruv1-0.8b`, `bruv1-4b`, `kev-0.8b`, `kev-4b`, `kev-9b`, `semif-qwen3.5-0.8b`,
-`semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`. The current npm release
-contains `laya` and `kev-0.8b`. For the other names, import
+Known names include `kev-0.8b`, `kev-4b`, `kev-9b`, `h2o-lightning-4b`, `clef-flash`,
+`semif-qwen3.5-0.8b`, `semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
+The current npm release contains `laya` and `kev-0.8b`. For the other names, import
 `https://bvolpato.github.io/kevala/js/src/index.js` until the next release.
 
-- First visit: Laya downloads a 479 MB int8 pack; Bruv packs are 855 MB or 4.75 GB;
-  Kev packs range from 857 MB to 8.96 GB;
+- First visit: Laya downloads a 479 MB Q8 pack. Refreshed Kev outputs range from 1.51 GB to
+  15.90 GB in BF16; Q8 output is smaller. H2O-Lightning is 8.43 GB BF16, and Clef-flash is 18.41 GB
+  BF16. The exact sizes appear in the model picker and model guide.
   SemIf Qwen3.5 packs range from 855 MB to 4.75 GB; and Gemma 4 packs are 5.22 GB or 8.41 GB.
-  `from: "checkpoint"` downloads and converts
-  original weights in the browser for Laya and Kev-0.8B only. The larger Kev, SemIf, and Gemma choices
-  use converted packs. Later visits reuse browser storage and avoid another download; small packs
+  `from: "checkpoint"` converts original weights in the browser for Laya and Kev-0.8B only. Larger
+  Kev, H2O-Lightning, and Clef-flash currently need native conversion when a matching pack is not
+  published. Paste a converted `.kevala` URL into the model picker, or pass `{ name, url }` in API code.
+  Its precision is embedded in the pack; an explicit API `precision` request is checked against the
+  header. SemIf and Gemma use their existing converted packs. Later visits reuse browser storage and avoid another download; small packs
   often load in under a second. Always show progress and load on a user action (a button), never on
   page load for every visitor.
 - `kevala.info.backend` is `webgpu` or `wasm-*`. Performance depends on the model and hardware.
-  Gemma 4 requires WebGPU in the browser. Other large packs can also exceed WebAssembly's
+  Large BF16 and Q8 packs exceed WebAssembly's
   allocation limits; consult the model's memory requirements before offering CPU fallback.
 - Call `kevala.dispose()` when the feature goes away.
 
@@ -66,7 +70,8 @@ automatically. The backend determines the number of forward passes; Gemma curren
 one full pass per question.
 
 Responses follow each model's reference format: Laya rounds to 4 places and adds `confidence` and
-`action.act_probability`; Kev rounds to 2 places and adds `raw_probabilities` at full precision;
+`action.act_probability`; Kev v1.0 rounds to 4 places and uses a revised normalized `confidence`,
+while older Kev packs retain their former response format. Kev adds `raw_probabilities` at full precision;
 SemIf and Gemma use the Kev-shaped response, add `raw_probabilities`, and report conditional option scores
 that are not calibrated decision confidence.
 
@@ -94,9 +99,9 @@ that are not calibrated decision confidence.
 Pick thresholds from labelled examples, not 0.5 by default, and send the unsure middle somewhere
 slower (a person, an LLM). Probabilities are the product; accuracy out of the box is modest on nuanced
 or graded questions. Measure on 50-200 of the site's own examples and report the numbers.
-The [decision benchmark](https://github.com/bvolpato/kevala/blob/main/BENCHMARK.md) compares all
-supported packs and tests sensitivity to option order. It is a starting point for evaluation,
-not a guarantee for a different task.
+The [decision benchmark](https://github.com/bvolpato/kevala/blob/main/BENCHMARK.md) compares the
+model variants in its evaluation snapshot and tests sensitivity to option order. It is a starting
+point for evaluation, not a guarantee for a different task.
 
 ## Server side
 

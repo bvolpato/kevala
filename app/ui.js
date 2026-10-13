@@ -184,12 +184,14 @@ function gateLoadingHTML(name) {
 
 function gateIdleHTML(s, name, what) {
   const failed = s.status === "error";
+  const unavailable = s.loadUnavailable();
   return [
     `<div class="gate-row">`,
     `<div class="gate-t"><b>Load ${name} to ${esc(what)}</b><span>${esc(s.costLine())}</span></div>`,
-    `<button type="button" class="btn primary" data-act="load">${failed ? "Retry" : `Load ${name}`}</button>`,
+    `<button type="button" class="btn primary" data-act="load"${unavailable ? ` disabled title="${esc(unavailable)}"` : ""}>${failed ? "Retry" : `Load ${name}`}</button>`,
     `</div>`,
     failed ? `<p class="gate-err">Could not load: ${esc(s.error || "unknown error")}</p>` : "",
+    unavailable && !failed ? `<p class="tiny mp-note">${esc(unavailable)}</p>` : "",
   ].join("");
 }
 
@@ -205,7 +207,7 @@ export function modelGate(el, what = "run this demo") {
     el.classList.toggle("hidden", s.ready);
     if (s.ready) return (builtFor = "ready");
     // rebuild only when the card's content changes, so progress updates do not flicker
-    const key = `${s.status}|${s.model}|${s.cached[s.model]}|${s.error}`;
+    const key = `${s.status}|${s.model}|${s.precisionFor()}|${s.customPackUrl()}|${s.loadUnavailable()}|${s.cached[s.model]}|${s.error}`;
     if (key !== builtFor) {
       builtFor = key;
       const name = esc(s.nameOf());

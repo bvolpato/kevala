@@ -99,6 +99,27 @@ test("GPU tuning keeps generic when optional features are unavailable", async ()
   await assert.rejects(calibrateMatmul({ features: new Set() }, null, null, { kernel: "wide" }), /requires.*shader-f16/);
 });
 
+test("unquantized matrix pipelines retain F32 tiles on a shader-f16 device", async (t) => {
+  const previous = globalThis.GPUShaderStage;
+  globalThis.GPUShaderStage = { COMPUTE: 4 };
+  t.after(() => previous === undefined ? delete globalThis.GPUShaderStage : globalThis.GPUShaderStage = previous);
+  const device = {
+    features: new Set(["shader-f16"]),
+    createBindGroupLayout: (layout) => layout,
+    createPipelineLayout: (layout) => layout,
+    createShaderModule: (module) => module,
+    createComputePipelineAsync: async (p) => p,
+  };
+  for (const dtype of ["bf16", "f32"]) {
+    const requests = [];
+    const pipes = await matmulPipelines(device, (name, spec) => { requests.push({ name, spec }); return ""; }, "matmul", dtype);
+    assert.equal(pipes.f16, false);
+    assert.equal(pipes.weights, dtype);
+    assert.ok(requests.every(({ spec }) => spec.f16 === false && spec.weights === dtype));
+  }
+  await assert.rejects(matmulPipelines(device, null, "matmul", "f16"), /unsupported GPU matrix dtype f16/);
+});
+
 test("a wide pipeline failure falls back only for automatic selection", async (t) => {
   const previous = globalThis.GPUShaderStage;
   globalThis.GPUShaderStage = { COMPUTE: 4 };

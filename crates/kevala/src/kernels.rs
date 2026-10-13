@@ -12,17 +12,18 @@ use crate::simd::{dequant16, dot16, F4};
 pub enum Mat<'a> {
     Q8 { n: usize, k: usize, block: usize, q: &'a [i8], scales: &'a [f32] },
     F32 { n: usize, k: usize, w: &'a [f32] },
+    Bf16 { n: usize, k: usize, w: &'a [u16] },
 }
 
 impl Mat<'_> {
     pub fn n(&self) -> usize {
         match *self {
-            Mat::Q8 { n, .. } | Mat::F32 { n, .. } => n,
+            Mat::Q8 { n, .. } | Mat::F32 { n, .. } | Mat::Bf16 { n, .. } => n,
         }
     }
     pub fn k(&self) -> usize {
         match *self {
-            Mat::Q8 { k, .. } | Mat::F32 { k, .. } => k,
+            Mat::Q8 { k, .. } | Mat::F32 { k, .. } | Mat::Bf16 { k, .. } => k,
         }
     }
 }
@@ -135,10 +136,8 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
     let tb = ((1024 * 1024) / (k * 4)).clamp(8, 512) & !1;
-    if let Mat::Q8 { .. } = m {
-        if panel.len() < NR * k {
-            panel.resize(NR * k, 0.0);
-        }
+    if matches!(m, Mat::Q8 { .. } | Mat::Bf16 { .. }) && panel.len() < NR * k {
+        panel.resize(NR * k, 0.0);
     }
     let mut t0 = 0;
     while t0 < t {
@@ -152,6 +151,12 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
                     panel.as_ptr()
                 }
                 Mat::F32 { w, .. } => w[n0 * k..].as_ptr(),
+                Mat::Bf16 { w, .. } => {
+                    for (value, dst) in w[n0 * k..(n0 + rows) * k].iter().zip(panel.iter_mut()) {
+                        *dst = crate::convert::bf16_to_f32(*value);
+                    }
+                    panel.as_ptr()
+                }
             };
             let b = |j: usize| bias.map_or(0.0, |b| b[n0 + j]);
             let mut r = t0;
@@ -501,6 +506,21 @@ mod tests {
             let erfc = (-ax * ax).exp() / std::f64::consts::PI.sqrt() / (ax + f);
             (1.0 - erfc) * x.signum()
         }
+    }
+
+    #[test]
+    fn linear_bf16_matches_exactly_widened_f32() {
+        let (t, n, k) = (5, 7, 12);
+        let x: Vec<f32> = (0..t * k).map(|i| ((i % 11) as f32 - 5.0) / 3.0).collect();
+        let bf16: Vec<u16> = (0..n * k).map(|i| crate::convert::f32_to_bf16(((i % 19) as f32 - 9.0) / 7.0)).collect();
+        let f32s: Vec<f32> = bf16.iter().map(|&v| crate::convert::bf16_to_f32(v)).collect();
+        let bias: Vec<f32> = (0..n).map(|i| i as f32 / 8.0).collect();
+        let mut got = vec![0.0; t * n];
+        let mut expected = got.clone();
+        let mut panel = Vec::new();
+        linear(&x, t, Mat::Bf16 { n, k, w: &bf16 }, Some(&bias), &mut got, &mut panel);
+        linear(&x, t, Mat::F32 { n, k, w: &f32s }, Some(&bias), &mut expected, &mut panel);
+        assert_eq!(got, expected);
     }
 
     #[test]

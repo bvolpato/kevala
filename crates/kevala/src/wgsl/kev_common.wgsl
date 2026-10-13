@@ -40,6 +40,13 @@ fn silu(value: f32) -> f32 {
 fn softplus(value: f32) -> f32 {
   if (value > 20.0) { return value; }
   let magnitude = exp(value);
+  if (magnitude <= 0.25) {
+    // log1p(m) = 2 * atanh(m / (2 + m)); avoid GPU log's error near one.
+    // Here r <= 1/9, so the omitted terms are smaller than f32 rounding.
+    let r = magnitude / (2.0 + magnitude);
+    let r2 = r * r;
+    return 2.0 * r * (1.0 + r2 * (1.0 / 3.0 + r2 * (1.0 / 5.0 + r2 / 7.0)));
+  }
   let shifted = 1.0 + magnitude;
   if (shifted == 1.0) { return magnitude; }
   return log(shifted) * (magnitude / (shifted - 1.0));

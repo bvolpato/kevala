@@ -1294,6 +1294,7 @@ mod tests {
             instructions: "choose".into(),
             keys: vec!["yes".into(), "no".into()],
             options: vec!["yes".into(), "no".into()],
+            threshold: None,
         };
         let prompt = prompt_for(&Value::Str("evidence".into()), &q).unwrap();
         assert!(prompt.starts_with("<bos><|turn>system\n"));

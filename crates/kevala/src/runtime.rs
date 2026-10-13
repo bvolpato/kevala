@@ -14,6 +14,7 @@
 //! | `laya` | one bidirectional sequence per question, a `[MASK]` per option | ModernBERT encoder | 2-layer transformer, marker scorer, act head |
 //! | `kev` | one causal row per question sharing the state | Qwen3.5 (Gated DeltaNet + gated attention) | pointer head, or direct option logits (SemIf) |
 //! | `gemma4` | one causal chat prompt per question | Gemma 4 dense text decoder | direct option logits |
+//! | `clef` | one complete causal record, all fields together | Qwen3.5 text decoder | evidence routing and joint field transformer |
 
 use crate::content::{Modality, Request};
 use crate::json::Value;
@@ -52,6 +53,10 @@ fn load_gemma4(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
     Ok(Box::new(crate::gemma4::Gemma4Engine::load(b)?))
 }
 
+fn load_clef(b: AlignedBuf) -> Result<Box<dyn Model>, String> {
+    Ok(Box::new(crate::clef::ClefEngine::load(b)?))
+}
+
 pub const FAMILIES: &[Family] = &[
     // ModernBERT encoder + decision head (convaiinnovations/laya)
     Family { arch: "laya", load: load_laya },
@@ -59,6 +64,8 @@ pub const FAMILIES: &[Family] = &[
     Family { arch: "kev", load: load_kev },
     // Gemma 4 dense text decoder + direct option scoring (Google)
     Family { arch: "gemma4", load: load_gemma4 },
+    // Qwen3.5 text backbone + joint schema transformer head (Cloudflare)
+    Family { arch: "clef", load: load_clef },
 ];
 
 /// The family a pack declares (`laya` when the header predates `config.arch`).

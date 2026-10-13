@@ -8,7 +8,7 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, inErrorScopes, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
 import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
@@ -53,8 +53,12 @@ export class GpuKev {
       attentionProj: 2 * (cfg.heads + cfg.kv_heads) * 256,
       kv: 2 * cfg.kv_heads * 256,
     };
-    this.weights = new GpuWeights(gpu.device, layout);
+    this.weights = new GpuWeights(gpu.device, layout, { rowTables: ["emb", "clef.lexical"] });
     for (const t of this.weights.header.tensors) {
+      if (this.weights.get(t.name).shards) continue;
+      if (t.dtype === "q8" && t.block !== 32) {
+        throw Object.assign(new Error(`Qwen WebGPU projections require Q8 block size 32; ${t.name} has block size ${t.block}. Convert with block 32 or use the native CPU runtime.`), { code: "WEBGPU_INIT" });
+      }
       this.checkBuffer(t.size, t.name);
       if (t.scales_size) this.checkBuffer(t.scales_size, `${t.name}.scales`);
     }
@@ -101,8 +105,21 @@ export class GpuKev {
     };
     const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
     this.p = Object.fromEntries(built);
-    this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
-    this.mm = this.tuning.pipelines.generic;
+    const projectionNames = new Set(["qkv", "qkvz", "o", "out", "gate_up", "down"]);
+    const dtypes = new Set(this.weights.header.tensors.filter((t) => projectionNames.has(t.name.split(".").at(-1))).map((t) => t.dtype));
+    this.precisionMm = new Map();
+    if (dtypes.has("q8")) {
+      this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
+      this.precisionMm.set("q8", this.tuning.pipelines.generic);
+    }
+    for (const dtype of dtypes) {
+      if (dtype === "q8") continue;
+      this.precisionMm.set(dtype, await matmulPipelines(d, this.wgsl, this.gpuKernel === "wide" ? "matmul_wide" : "matmul", dtype));
+    }
+    this.mm = this.precisionMm.values().next().value;
+    if (!this.mm) throw new Error("Qwen GPU trunk has no projection matrices");
+    this.tuning ||= { pipelines: { generic: this.mm, wide: null }, selection: new Map(), diagnostics: { method: "generic", reason: "unquantized-weights", points: [] } };
+    this.tuning.diagnostics.weightPrecision = [...dtypes];
     const recurrence = await calibrateRecurrence(d, [
       { lanes: 4, pipeline: this.p.RECUR },
       ...[8, 16].map((lanes) => ({
@@ -155,6 +172,64 @@ export class GpuKev {
     }
     this.rope = f32buf(cs);
     this.zeros = f32buf(new Float32Array(16));
+    this.rowPipelines = new Map();
+  }
+
+  /** Reads selected embedding or lexical rows without placing the full table in WebAssembly. */
+  async weightRows(name, ids) {
+    const e = this.weights.get(name);
+    const [count, width] = e.info.shape;
+    if (!e.shards) throw new Error(`GPU tensor ${name} is not a row table`);
+    if (ids.some((id) => !Number.isInteger(id) || id < 0 || id >= count)) throw new Error(`GPU row table ${name} received an out-of-range row`);
+    const out = new Float32Array(ids.length * width);
+    if (!ids.length) return out;
+    const dtype = e.info.dtype;
+    if (!this.rowPipelines.has(dtype)) {
+      const layout = this.device.createBindGroupLayout({ entries: ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "storage"].map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
+      const pl = this.device.createPipelineLayout({ bindGroupLayouts: [layout] });
+      this.rowPipelines.set(dtype, await pipeline(this.device, this.wgsl("weight_rows", { weights: dtype }), `weight_rows_${dtype}`, pl));
+    }
+    const p = this.rowPipelines.get(dtype);
+    const d = this.device;
+    return inErrorScopes(d, async () => {
+      for (const shard of e.shards) {
+        const positions = [];
+        for (let i = 0; i < ids.length; i++) if (ids[i] >= shard.start && ids[i] < shard.start + shard.count) positions.push(i);
+        if (!positions.length) continue;
+        const bytes = positions.length * width * 4;
+        this.checkBuffer(bytes, `${name} gathered rows`);
+        const owned = [];
+        const make = (size, usage) => {
+          const b = d.createBuffer({ size: Math.max(16, size), usage });
+          owned.push(b);
+          return b;
+        };
+        try {
+          const params = make(16, U.UNIFORM | U.COPY_DST);
+          const tokenIds = make(positions.length * 4, U.STORAGE | U.COPY_DST);
+          const gathered = make(bytes, U.STORAGE | U.COPY_SRC);
+          const read = make(bytes, U.MAP_READ | U.COPY_DST);
+          d.queue.writeBuffer(params, 0, new Uint32Array([positions.length, width, e.info.block || 0, shard.start]));
+          d.queue.writeBuffer(tokenIds, 0, new Uint32Array(positions.map((i) => ids[i])));
+          const group = d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: [params, tokenIds, shard.buf, shard.sbuf || this.zeros, gathered].map((buffer, binding) => ({ binding, resource: { buffer } })) });
+          const enc = d.createCommandEncoder();
+          const pass = enc.beginComputePass();
+          pass.setPipeline(p);
+          pass.setBindGroup(0, group);
+          pass.dispatchWorkgroups(positions.length);
+          pass.end();
+          enc.copyBufferToBuffer(gathered, 0, read, 0, bytes);
+          d.queue.submit([enc.finish()]);
+          await read.mapAsync(GPUMapMode.READ, 0, bytes);
+          const values = new Float32Array(read.getMappedRange(0, bytes));
+          positions.forEach((position, i) => out.set(values.subarray(i * width, (i + 1) * width), position * width));
+          read.unmap();
+        } finally {
+          for (const b of owned) b.destroy();
+        }
+      }
+      return out;
+    });
   }
 
   uni(values) {
@@ -353,7 +428,9 @@ export class GpuKev {
         label: "mm." + w.split(".").pop(),
         N,
         K,
-        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.g, u, input, e.buf, e.sbuf, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        dtype: e.info.dtype,
+        pipes: this.precisionMm.get(e.info.dtype),
+        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.g, u, input, e.buf, e.sbuf || this.zeros, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
         reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [this.g, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
@@ -407,8 +484,10 @@ export class GpuKev {
       pass.setBindGroup(0, op.group);
       switch (op.k) {
         case "mm": {
-          const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, T) : this.gpuKernel;
-          encodeMatmul(pass, this.tuning.pipelines[kernel], op, T);
+          if (op.dtype === "q8") {
+            const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, T) : this.gpuKernel;
+            encodeMatmul(pass, this.tuning.pipelines[kernel], op, T);
+          } else encodeMatmul(pass, op.pipes, op, T);
           break;
         }
         case "rms":
@@ -499,7 +578,7 @@ export class GpuKev {
     d.pushErrorScope("out-of-memory");
     let plan, P, T1, setupError;
     try {
-      this.ensureCarries(CACHE_SLOTS + batch.states.length, CACHE_SLOTS * SLOT_ROWS + batch.T1);
+      this.ensureCarries(batch.T1 ? CACHE_SLOTS + batch.states.length : 1, batch.T1 ? CACHE_SLOTS * SLOT_ROWS + batch.T1 : 16);
       plan = this.plan(batch, ids);
       P = plan.segs.length;
       T1 = plan.segs.reduce((a, g) => a + g.len, 0);

@@ -136,4 +136,6 @@ test("reconverted packs with the same checkpoint get distinct cache keys", () =>
   const corrected = upstreamKey({ ...spec, packSha256: "corrected" });
   assert.notEqual(first, corrected);
   assert.equal(upstreamKey(spec), "https://kevala.cache/Qwen/example/checkpoint/q8-b32.kevala");
+  assert.notEqual(upstreamKey(spec, "bf16"), upstreamKey(spec, "q8"));
+  assert.equal(upstreamKey(spec, "bf16"), "https://kevala.cache/Qwen/example/checkpoint/bf16-b32.kevala");
 });

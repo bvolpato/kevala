@@ -6,8 +6,9 @@
 """Convert pinned optional models serially; publishing is a separate explicit flag.
 
 Build the native CLI first: cargo build --release -p kevala-cli
-Run: uv run tools/convert_models.py --models kev-4b semif-qwen3.5-0.8b
-After validation: uv run tools/convert_models.py --models kev-4b --upload-only --publish bvolpato/kevala-packs
+Run: uv run tools/convert_models.py --models kev-4b h2o-lightning-4b
+Quantized output is opt-in: uv run tools/convert_models.py --models kev-4b --precision q8
+After validation: uv run tools/convert_models.py --models kev-4b --upload-only --precision bf16 --publish bvolpato/kevala-packs
 """
 import argparse
 import hashlib
@@ -27,13 +28,18 @@ def snapshot(spec):
     return snapshot_download(spec["repo"], revision=spec["revision"], allow_patterns=PATTERNS, max_workers=1)
 
 
-def conversion_command(cli, name, spec, source, base, output):
+def conversion_command(cli, name, spec, source, base, output, precision):
+    base_source = spec.get("base", spec.get("baseSource", spec))
     command = [str(cli), "convert", source, "--name", name,
                "--source", spec["repo"], "--revision", spec["revision"],
-               "--base-source", spec.get("base", spec)["repo"],
-               "--base-revision", spec.get("base", spec)["revision"], "-o", str(output)]
+               "--base-source", base_source["repo"],
+               "--precision", precision, "-o", str(output)]
+    if "revision" in base_source:
+        command += ["--base-revision", base_source["revision"]]
     if "base" in spec:
         command += ["--base", base]
+    if "readout" in spec:
+        command += ["--readout", spec["readout"]]
     for field in ("author", "license"):
         if field in spec:
             command += [f"--{field}", spec[field]]
@@ -42,7 +48,7 @@ def conversion_command(cli, name, spec, source, base, output):
     return command
 
 
-def inspect(path, source):
+def inspect(path, source, precision):
     with path.open("rb") as stream:
         prefix = stream.read(16)
         if prefix[:4] != b"KVLA" or struct.unpack_from("<I", prefix, 4)[0] != 1:
@@ -52,17 +58,30 @@ def inspect(path, source):
         sha = hashlib.file_digest(stream, "sha256").hexdigest()
     if header["model"]["revision"] != source["revision"]:
         raise ValueError(f"{path}: source revision does not match tools/model-sources.json")
-    if header["model"].get("base_revision") != source.get("base", source)["revision"]:
+    if header["model"].get("precision") != precision:
+        raise ValueError(f"{path}: pack precision does not match requested {precision}")
+    base_source = source.get("base", source.get("baseSource", source))
+    base_repo = base_source["repo"]
+    if header["model"].get("base") not in (base_repo, f"https://huggingface.co/{base_repo}"):
+        raise ValueError(f"{path}: base source does not match tools/model-sources.json")
+    if header["model"].get("base_revision") != base_source.get("revision"):
         raise ValueError(f"{path}: base revision does not match tools/model-sources.json")
     if "method" in source and header["model"].get("method_revision") != source["method"]["revision"]:
         raise ValueError(f"{path}: method revision does not match tools/model-sources.json")
     return {"file": path.name, "bytes": path.stat().st_size, "sha256": sha,
-            "source": source, "model": header["model"], "config": header["config"]}
+            "precision": precision, "source": source, "model": header["model"], "config": header["config"]}
+
+
+def default_precision(name):
+    # Gemma 4 is Q8-only in the current converter. Qwen3.5 families keep BF16 by default.
+    return "q8" if name.startswith("gemma-4-") else "bf16"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--models", nargs="+", choices=list(SOURCES), required=True)
+    parser.add_argument("--precision", choices=("bf16", "f32", "q8"),
+                        help="converted tensor format (default: bf16; Gemma 4 defaults to q8)")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "tmp")
     parser.add_argument("--cli", type=Path, default=ROOT / "target/release/kevala")
     parser.add_argument("--publish", metavar="HF_REPO", help="upload converted packs and per-pack manifests to this repository")
@@ -77,12 +96,13 @@ def main():
     operations = []
     for name in args.models:
         spec = SOURCES[name]
-        path = args.output_dir / f"{name}-q8.kevala"
+        precision = args.precision or default_precision(name)
+        path = args.output_dir / f"{name}-{precision}.kevala"
         if not args.upload_only:
             source = snapshot(spec)
             base = snapshot(spec["base"]) if "base" in spec else source
-            subprocess.run(conversion_command(args.cli, name, spec, source, base, path), check=True, cwd=ROOT)
-        record = inspect(path, spec)
+            subprocess.run(conversion_command(args.cli, name, spec, source, base, path, precision), check=True, cwd=ROOT)
+        record = inspect(path, spec, precision)
         manifest = path.with_suffix(".json")
         manifest.write_text(json.dumps(record, indent=2) + "\n")
         print(json.dumps({k: record[k] for k in ("file", "bytes", "sha256")}), flush=True)

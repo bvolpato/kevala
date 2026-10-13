@@ -18,16 +18,18 @@ test("options with a fixed set of values are rejected before a worker starts", a
   const state = workers(t, []);
   await assert.rejects(Kevala.load({ backend: "gpu" }), /backend must be "auto", "webgpu", or "wasm"/);
   await assert.rejects(Kevala.load({ submit: "later" }), /submit must be "await", "split", or "none"/);
+  await assert.rejects(Kevala.load({ precision: "int8" }), /precision must be "bf16", "f32", or "q8"/);
   await assert.rejects(Kevala.load({ stateCache: "no" }), /stateCache must be a boolean/);
   assert.equal(state.instances.length, 0);
 });
 
 test("valid backend and submit values reach the engine unchanged", async (t) => {
   const state = workers(t, [ready]);
-  const model = await Kevala.load({ backend: "wasm", submit: "split", cache: false });
+  const model = await Kevala.load({ backend: "wasm", submit: "split", precision: "q8", cache: false });
   t.after(() => model.dispose());
   assert.equal(state.loads[0].backend, "wasm");
   assert.equal(state.loads[0].submit, "split");
+  assert.equal(state.loads[0].precision, "q8");
 });
 
 test("decide sends one normalized request and returns its response with the pass timing", async (t) => {
@@ -55,6 +57,15 @@ test("decideMany keeps item order and gives every response the shared timing", a
   assert.equal(state.posted.length, 1, "one message for the whole batch");
   assert.deepEqual(responses.map((r) => r.answers), ["a", { b: 1 }, ["c"]]);
   assert.ok(responses.every((r) => r.timing.batched === 3));
+});
+
+test("legacy images and videos reject instead of disappearing before typed-part validation", async (t) => {
+  const { model, state } = await loaded(t, () => {});
+  await assert.rejects(model.decide("text", QUESTIONS, { images: ["image.png"] }), /use typed content in "parts"/);
+  await assert.rejects(model.decide("text", QUESTIONS, { videos: ["clip.mp4"] }), /use typed content in "parts"/);
+  await assert.rejects(model.decideMany([{ state: "text", questions: QUESTIONS, images: ["image.png"] }]), /use typed content in "parts"/);
+  await assert.rejects(model.decideMany([{ state: "text", questions: QUESTIONS, videos: ["clip.mp4"] }]), /use typed content in "parts"/);
+  assert.equal(state.posted.filter((message) => message.type === "decide").length, 0);
 });
 
 test("replies are matched to requests by id, whatever order they arrive in", async (t) => {

@@ -16,7 +16,7 @@ use std::time::Instant;
 const USAGE: &str = "kevala: local decision models without Python
 
 usage:
-  kevala convert <checkpoint-dir> -o <out.kevala> [--adapter <dir>] [--base <dir>] [--readout direct-options|pointer|encoder-head] [--block 32]
+  kevala convert <checkpoint-dir> -o <out.kevala> [--adapter <dir>] [--base <dir>] [--readout direct-options|pointer|encoder-head|h2o-lightning|clef] [--precision bf16|f32|q8] [--block 32]
     [--tokenizer <tokenizer.json>] [--name <name>] [--source <url>] [--revision <sha>]
     [--base-source <url>] [--base-revision <sha>] [--author <author>] [--license <license>] [--method-revision <sha>] [--keep-f32 <prefixes>]
   kevala decide <pack.kevala> --state <json|text> --questions <json>
@@ -24,6 +24,7 @@ usage:
   kevala parity-kev <pack.kevala> <golden-kev.json>
   kevala parity-semif <pack.kevala> <golden-semif.json> [--max-dp 0.05]
   kevala parity-gemma <pack.kevala> <golden-gemma.json> [--max-dp 0.03]
+  kevala parity-clef <pack.kevala> <golden-clef.json> [--max-dp 0.03] [--stream-layers]
   kevala bench <pack.kevala> [--tokens 64] [--questions 1] [--runs 5] [--shards N] [--warm]
   kevala kbench
   kevala inspect <pack.kevala>
@@ -39,6 +40,7 @@ fn main() {
         Some("parity-kev") => parity::kev::run(&args[1..]),
         Some("parity-semif") => parity::semif::run(&args[1..]),
         Some("parity-gemma") => parity::gemma::run(&args[1..]),
+        Some("parity-clef") => parity::clef::run(&args[1..]),
         Some("bench") => bench::run(&args[1..]),
         Some("kbench") => bench::kernels(),
         Some("inspect") => inspect(&args[1..]),
@@ -59,7 +61,7 @@ fn flag<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
 }
 
 /// Options that take no value; every other `--option` consumes the argument after it.
-const SWITCHES: [&str; 3] = ["--warm", "--f16", "--subgroups"];
+const SWITCHES: [&str; 4] = ["--warm", "--f16", "--subgroups", "--stream-layers"];
 
 /// The `n`th argument that is neither an option nor an option's value.
 fn positional(args: &[String], n: usize) -> Result<&str, String> {
@@ -134,17 +136,19 @@ fn inspect(args: &[String]) -> Result<(), String> {
     let h = kevala::pack::parse_header(&bytes)?;
     println!("model  {}", h.json.get("model").map(Value::to_json).unwrap_or_default());
     println!("config {}", h.config().to_json());
-    let (mut q8, mut f32s) = (0usize, 0usize);
+    let (mut q8, mut bf16, mut f32s) = (0usize, 0usize, 0usize);
     for t in &h.tensors {
         match t.dtype {
             kevala::pack::DType::Q8 => q8 += t.numel(),
             kevala::pack::DType::F32 => f32s += t.numel(),
+            kevala::pack::DType::Bf16 => bf16 += t.numel(),
         }
     }
     println!(
-        "tensors {}  q8 params {:.1}M  f32 params {:.1}M  file {:.1} MB",
+        "tensors {}  q8 params {:.1}M  bf16 params {:.1}M  f32 params {:.1}M  file {:.1} MB",
         h.tensors.len(),
         q8 as f64 / 1e6,
+        bf16 as f64 / 1e6,
         f32s as f64 / 1e6,
         bytes.len() as f64 / 1e6
     );

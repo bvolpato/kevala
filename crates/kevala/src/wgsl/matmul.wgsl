@@ -1,4 +1,4 @@
-// Y[T, N] = X[T, K] . W[N, K]^T (+ bias), W int8 in u32 words with one f32 scale per 32 weights.
+// Y[T, N] = X[T, K] . W[N, K]^T (+ bias), with Q8, BF16, or F32 stored weights.
 //
 //#if GENERIC_UNROLL
 //#if ROWS_GE_4
@@ -39,6 +39,7 @@ struct P { N: u32, K: u32, mode: u32, bias: u32 }
 var<workgroup> xs: array<vec4<{{TILE}}>, 512>; // [m][k/4]
 var<workgroup> ws: array<vec4<{{TILE}}>, {{WS_LEN}}>; // [n][(k/4) ^ (n & 7)], swizzled
 
+//#if WEIGHT_Q8
 //#if GENERIC_UNROLL
 // Sign-extend each packed int8 lane, then convert the exact integer values to f32.
 fn sx(w: u32) -> vec4<f32> {
@@ -52,6 +53,12 @@ fn sx(w: u32) -> vec4<f32> {
   let u = w ^ 0x80808080u;
   let bytes = vec4<u32>(u, u >> 8u, u >> 16u, u >> 24u) & vec4<u32>(0xFFu);
   return bitcast<vec4<f32>>(bytes | vec4<u32>(0x4B000000u)) - vec4<f32>(8388736.0);
+}
+//#endif
+//#endif
+//#if WEIGHT_BF16
+fn bf16(w: vec2<u32>) -> vec4<f32> {
+  return bitcast<vec4<f32>>(vec4<u32>(w.x << 16u, w.x & 0xffff0000u, w.y << 16u, w.y & 0xffff0000u));
 }
 //#endif
 
@@ -136,11 +143,23 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_id) lid:
       wv[2u * gg] = vec4<f32>(0.0);
       wv[2u * gg + 1u] = vec4<f32>(0.0);
       if (wrow < N) {
+//#if WEIGHT_Q8
         let v = W[(wrow * K + kb * 32u) / 16u + lq / 2u];
         let s = S[wrow * nb + kb];
         let lo = select(v.xy, v.zw, (lq & 1u) == 1u);
         wv[2u * gg] = sx(lo.x) * s;
         wv[2u * gg + 1u] = sx(lo.y) * s;
+//#endif
+//#if WEIGHT_BF16
+        let v = W[(wrow * K + kb * 32u) / 8u + lq];
+        wv[2u * gg] = bf16(v.xy);
+        wv[2u * gg + 1u] = bf16(v.zw);
+//#endif
+//#if WEIGHT_F32
+        let base = (wrow * K + kb * 32u) / 4u + lq * 2u;
+        wv[2u * gg] = bitcast<vec4<f32>>(W[base]);
+        wv[2u * gg + 1u] = bitcast<vec4<f32>>(W[base + 1u]);
+//#endif
       }
     }
     if (lr < {{PHYSICAL_BM}}u) {

@@ -1,5 +1,7 @@
 import { kernelSource } from "./wgsl.js";
 import { dispatchMatmul, matmulConfig, matmulLayout, mmSplits, reduceLayout, requestDevice, rowsPerThread, pipeline } from "../js/src/gpu.js";
+import { GpuKev } from "../js/src/gpu-kev.js";
+import { gpuLayouts, parsePackHeader } from "../js/src/pack-layout.js";
 
 const logNode = document.getElementById("log");
 const log = (line) => {
@@ -91,20 +93,45 @@ function makeRng(seed) {
   };
 }
 
-function makeInput(T, N, K, seed) {
+function makeInput(T, N, K, seed, weights) {
   if (K % 32) throw new Error(`K must be a multiple of 32, got ${K}`);
   const random = makeRng(seed);
   const x = new Float32Array(T * K);
-  const w = new Uint8Array(N * K);
+  const w = weights === "q8" ? new Uint8Array(N * K) : weights === "bf16" ? new Uint16Array(N * K) : new Float32Array(N * K);
+  const referenceWeights = weights === "q8" ? null : new Float32Array(N * K);
   const scales = new Float32Array(N * (K / 32));
   const bias = new Float32Array(N);
   const residual = new Float32Array(T * N);
   for (let i = 0; i < x.length; i++) x[i] = Math.fround((random() - 0.5) * 0.8);
-  for (let i = 0; i < w.length; i++) w[i] = Math.floor(random() * 256);
+  if (weights === "q8") {
+    for (let i = 0; i < w.length; i++) w[i] = Math.floor(random() * 256);
+  } else {
+    const f = new Float32Array(1);
+    const bits = new Uint32Array(f.buffer);
+    for (let i = 0; i < w.length; i++) {
+      f[0] = (random() - 0.5) * 2;
+      if (weights === "bf16") {
+        w[i] = bits[0] >>> 16;
+        bits[0] = w[i] << 16;
+      } else w[i] = f[0];
+      referenceWeights[i] = f[0];
+    }
+    // These products remain one, but their weights exceed F16's exponent range.
+    for (let row = 0; row < N; row++) {
+      w[row * K] = weights === "bf16" ? 0x4980 : 2 ** 20;
+      w[row * K + K - 1] = weights === "bf16" ? 0x3080 : 2 ** -30;
+      referenceWeights[row * K] = 2 ** 20;
+      referenceWeights[row * K + K - 1] = 2 ** -30;
+    }
+    for (let row = 0; row < T; row++) {
+      x[row * K] = 2 ** -20;
+      x[row * K + K - 1] = 2 ** 30;
+    }
+  }
   for (let i = 0; i < scales.length; i++) scales[i] = Math.fround(0.005 + random() * 0.012);
   for (let i = 0; i < bias.length; i++) bias[i] = Math.fround((random() - 0.5) * 0.2);
   for (let i = 0; i < residual.length; i++) residual[i] = Math.fround((random() - 0.5) * 0.4);
-  return { T, N, K, x, w, scales, bias, residual };
+  return { T, N, K, x, w, scales, bias, residual, weights, referenceWeights };
 }
 
 function signedByte(value) {
@@ -116,7 +143,7 @@ function cpuValue(input, row, col, mode, withBias) {
   let sum = 0;
   const blocks = K / 32;
   for (let k = 0; k < K; k++) {
-    const weight = signedByte(w[col * K + k]) * scales[col * blocks + Math.floor(k / 32)];
+    const weight = input.weights === "q8" ? signedByte(w[col * K + k]) * scales[col * blocks + Math.floor(k / 32)] : input.referenceWeights[col * K + k];
     sum = Math.fround(sum + Math.fround(x[row * K + k] * weight));
   }
   if (withBias) sum = Math.fround(sum + bias[col]);
@@ -259,6 +286,44 @@ function makeBuffer(device, size, usage, label) {
   return device.createBuffer({ label, size: Math.max(16, size), usage });
 }
 
+async function checkWeightRows(device, source, input) {
+  const { N, K, weights, w, scales } = input;
+  const offset = 4096;
+  const scalesOffset = Math.ceil((offset + w.byteLength) / 64) * 64;
+  const tensor = { name: "emb", dtype: weights, shape: [N, K], offset, size: w.byteLength,
+    ...(weights === "q8" ? { block: 32, scales_offset: scalesOffset, scales_size: scales.byteLength } : {}) };
+  const header = { config: { readout: "clef" }, model: {}, tokenizer: { offset: 4096, size: 0 }, tensors: [tensor] };
+  const [, layout] = gpuLayouts(header, 4096);
+  const info = parsePackHeader(layout.prefix).tensors[0];
+  // Use small real GPU buffers to exercise the same row-sharding path as a 2 GiB table.
+  const shardLimit = Math.max(128, Math.ceil((w.byteLength / N * 3) / 16) * 16);
+  const loaderDevice = { features: device.features, limits: { maxBufferSize: shardLimit, maxStorageBufferBindingSize: shardLimit }, queue: device.queue, createBuffer: device.createBuffer.bind(device) };
+  const trunk = new GpuKev({ device: loaderDevice, wgsl: source }, layout, { layers: 0, full: [], hidden: K, heads: 4, kv_heads: 1, lin_key_heads: 2, lin_heads: 2 });
+  trunk.device = device;
+  trunk.rowPipelines = new Map();
+  trunk.zeros = makeBuffer(device, 16, U.STORAGE, "weight_rows.zeros");
+  const feed = (at, data) => {
+    const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+    for (let i = 0; i < bytes.length; i += 307) trunk.write(at + i, bytes.subarray(i, i + 307));
+  };
+  try {
+    feed(info.offset, w);
+    if (weights === "q8") feed(info.scales_offset, scales);
+    const ids = [N - 1, 0, Math.min(3, N - 1), N - 1];
+    const result = await trunk.weightRows("emb", ids);
+    let mismatches = 0;
+    for (let row = 0; row < ids.length; row++) for (let col = 0; col < K; col++) {
+      const at = ids[row] * K + col;
+      const expected = weights === "q8" ? Math.fround(signedByte(w[at]) * scales[Math.floor(at / 32)]) : input.referenceWeights[at];
+      if (result[row * K + col] !== expected) mismatches++;
+    }
+    return { ok: mismatches === 0, mismatches, samples: result.length, shards: trunk.weights.get("emb").shards.length };
+  } finally {
+    trunk.zeros.destroy();
+    for (const shard of trunk.weights.get("emb").shards) { shard.buf?.destroy(); shard.sbuf?.destroy(); }
+  }
+}
+
 async function readOutput(device, output, bytes, uncaptured, label) {
   const readback = makeBuffer(device, bytes, U.MAP_READ | U.COPY_DST, `${label}.readback`);
   try {
@@ -325,6 +390,8 @@ async function main() {
   const warmups = numberParam(query, "warmups", 2, 0, 10);
   const samples = numberParam(query, "samples", 7, 3, 20);
   const requestedKernels = (query.get("kernels") || "runtime").split(",").filter(Boolean);
+  const weights = query.get("weights") || "q8";
+  if (!["q8", "bf16", "f32"].includes(weights)) throw new Error("weights must be q8, bf16, or f32");
   const baselineWasmParam = query.get("baselineWasm");
   const baselineWasm = baselineWasmParam ? new URL(baselineWasmParam, document.baseURI).href : null;
   const baselineRequested = requestedKernels.some((raw) => kernelName(raw).endsWith("_baseline"));
@@ -356,7 +423,7 @@ async function main() {
     const shaderSource = variant.baseline ? baselineSource : source;
     const key = `${variant.label}|${variant.wasmUrl}|${T}`;
     if (!pipelineCache.has(key)) {
-      const code = shaderSource(variant.name, { f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, row56: variant.row56 });
+      const code = shaderSource(variant.name, { weights, f16: variant.f16, rows: variant.rows, groups: variant.groups, splitTarget: variant.target, row56: variant.row56 });
       const reduceCode = shaderSource("reduce", { rows: variant.rows, groups: variant.groups, splitTarget: variant.target });
       shaderHashes[key] = { matmul: await sourceHash(code), reduce: await sourceHash(reduceCode) };
       pipelineCache.set(key, Promise.all([
@@ -368,7 +435,7 @@ async function main() {
     return { pMatmul, pReduce };
   };
   const variantsFor = (T) => requestedKernels.map((name) => {
-    const variant = parseKernel(name, T, matmulConfig(device));
+    const variant = parseKernel(name, T, { ...matmulConfig(device), ...(weights === "q8" ? {} : { f16: false }) });
     const shaderSource = variant.baseline ? baselineSource : source;
     return { ...variant, provenance: variant.baseline ? "baseline" : "current", wasmUrl: shaderSource.wasmUrl };
   });
@@ -376,7 +443,7 @@ async function main() {
   const labels = allVariants.map((variant) => variant.label);
   if (new Set(labels).size !== labels.length) throw new Error("kernels contains a duplicate variant");
   const cases = [];
-  const correctness = { ok: true, cpu: [], variants: [], row56: [], rowTiles: [], errors: [] };
+  const correctness = { ok: true, cpu: [], variants: [], row56: [], rowTiles: [], gatheredWeights: [], errors: [] };
   const medians = [];
   const variantTolerance = { abs: device.features.has("shader-f16") ? 0.03 : 0.0005, relative: device.features.has("shader-f16") ? 0.002 : 0.0001 };
 
@@ -390,7 +457,12 @@ async function main() {
       const splits = mmSplits(T, N, K, variant.target, 16 * variant.rows, 64 * variant.groups);
       return splits > 1 ? splits * T * N : 0;
     }));
-    const input = makeInput(T, N, K, (seed + shapeIndex * 0x9e3779b9) >>> 0);
+    const input = makeInput(T, N, K, (seed + shapeIndex * 0x9e3779b9) >>> 0, weights);
+    if (query.get("gather") === "1") {
+      const gathered = await checkWeightRows(device, source, input);
+      correctness.gatheredWeights.push({ shape: caseLabel(shape), ...gathered });
+      if (!gathered.ok) correctness.ok = false;
+    }
     const bytes = T * N * 4;
     const X = makeBuffer(device, input.x.byteLength, U.STORAGE | U.COPY_DST, `${caseLabel(shape)}.X`);
     const W = makeBuffer(device, input.w.byteLength, U.STORAGE | U.COPY_DST, `${caseLabel(shape)}.W`);
@@ -506,6 +578,7 @@ async function main() {
     warmups,
     samples,
     kernels: labels,
+    weights,
     baselineWasm,
     variantProvenance: Object.fromEntries(allVariants.map((variant) => [variant.label, { source: variant.provenance, wasmUrl: variant.wasmUrl, kernel: variant.name }])),
     sourceTransforms: { sourceCommit: query.get("sourceCommit"), row56: "WASM-rendered physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic", shaderHashes },

@@ -19,7 +19,7 @@ import { archPlugin, registerArch, validatePackArchitecture } from "./archs/inde
 import { RemoteShard } from "./shard-client.js";
 import { CPU_KERNELS, cpuOptions, readTuning, threadCandidates, tuningKey, writeTuning } from "./cpu-policy.js";
 import { calibrateThreads } from "./cpu-calibrate.js";
-import { assertWasmPackSize, packSize, parsePackHeader, readPackHead } from "./pack-layout.js";
+import { assertPackPrecision, assertWasmPackSize, packSize, parsePackHeader, readPackHead } from "./pack-layout.js";
 import { requestQueue } from "./request-queue.js";
 
 const enc = new TextEncoder();
@@ -190,6 +190,7 @@ async function load(o) {
   const pack = await openPack(o.model ?? null, {
     cache: o.cache !== false,
     from: o.from,
+    precision: o.precision,
     signal,
     onProgress: progress,
     convert: (spec, opts) => {
@@ -202,6 +203,7 @@ async function load(o) {
   const it = (packIterator = pack.chunks());
   const { head, header, headerBytes } = await readPackHead(it);
   const { arch, plugin } = validatePackArchitecture(header, pack.expectedArch);
+  assertPackPrecision(header, pack.expectedPrecision);
   const fullSize = packSize(header, headerBytes.byteLength);
   checkCancelled();
   const requestedStateCache = o.stateCache !== false;

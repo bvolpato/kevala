@@ -77,8 +77,9 @@ async function run() {
       return Math.sign(value) * (1 - polynomial * Math.exp(-magnitude * magnitude));
     };
     await check("erf GELU tails", "geglu", {}, [globals(1), uniform(new Uint32Array([values.length, 0, 0, 0])), paired], Float32Array.from(values, (value) => 0.5 * value * (1 + erf(value / Math.SQRT2))), [1]);
-    const gates = new Float32Array([-1000, -100, -30, -20, -18, -16, -10, -1, 0, 1, 10, 20, 100, 1000]);
-    for (const decay of [-1, -1e8]) {
+    const smallExpBoundary = -Math.log(4);
+    const gates = new Float32Array([-1000, -100, -30, -20, -18, -16, -10, -5, -2, smallExpBoundary - 1e-6, smallExpBoundary, smallExpBoundary + 1e-6, -1, 0, 1, 10, 20, 100, 1000]);
+    for (const decay of [-1, -100, -1e4, -1e8]) {
       const hidden = new Float32Array(gates.length * configuration.hidden);
       gates.forEach((value, index) => { hidden[index * configuration.hidden] = value; });
       const weights = new Float32Array(configuration.hidden * 2 * configuration.lin_heads);

@@ -5,15 +5,15 @@ import { css, DOCS, REPO } from "../ui.js";
 
 
 const ARCH_ALT =
-  "Diagram: pinned Hugging Face checkpoints stream into an in-browser int8 converter and a cached .kevala pack; " +
-  "the Rust core compiled to WebAssembly runs Laya, Bruv, Kev, SemIf, or Gemma 4 on WebGPU; Laya can also use tensor-parallel WebAssembly workers; " +
+  "Diagram: pinned Hugging Face checkpoints convert to a BF16 or Q8 .kevala pack; " +
+  "the Rust core compiled to WebAssembly runs Laya, Kev, H2O-Lightning, Clef-flash, SemIf, or Gemma 4 on WebGPU; Laya can also use tensor-parallel WebAssembly workers; " +
   "your page gets typed answers.";
 
 const TEMPLATE = `<div class="wrap">
   <div class="page-head">
     <div class="eyebrow">How it works</div>
     <h1>From a Hugging Face checkpoint to an answer, in the browser</h1>
-    <p>kevala streams pinned int8 packs, converts supported checkpoints in the tab, and runs Laya, Bruv, Kev, SemIf, or Gemma 4 with a dependency-free Rust core. WebGPU runs the browser path; native 64-bit CPU support covers larger packs, while Gemma 4 requires WebGPU in the browser or native CPU. Laya can split its CPU layers across workers; Bruv, Kev, and SemIf use one CPU instance when that path is available. This page covers each step, the latency, and how close the results stay to the PyTorch reference.</p>
+    <p>kevala loads pinned Q8 packs or converts supported checkpoints to BF16/Q8, then runs Laya, Kev, H2O-Lightning, Clef-flash, SemIf, or Gemma 4 with a dependency-free Rust core. Large BF16 packs need WebGPU in the browser or the native 64-bit CPU CLI. The current browser converter handles Laya and Kev-0.8B; larger checkpoints need native conversion. This page covers each step, the latency, and how closely the verified packs match their references.</p>
     <nav class="how-toc" aria-label="On this page">
       <a href="#/how/architecture">Architecture</a>
       <a href="#/how/bench">Speed</a>
@@ -34,11 +34,11 @@ const TEMPLATE = `<div class="wrap">
       </div>
       <div>
         <span class="n">2</span><h3>Streamed packs</h3>
-        <p class="muted small">The int8 pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in the browser (Origin Private File System, with the Cache API as a fallback). Laya and Kev-0.8B can also quantize their original checkpoints in the browser when the pack is unreachable; Bruv, larger Kev, all SemIf choices, and Gemma 4 use converted packs.</p>
+        <p class="muted small">A published pack streams from Hugging Face at a pinned commit, six byte ranges at a time, and is stored in browser storage. Refreshed Kev defaults to BF16; Q8 is optional. Laya and Kev-0.8B can convert their original checkpoints in the browser. Kev-4B/9B, H2O-Lightning, and Clef-flash need native conversion until their full output fits the browser converter.</p>
       </div>
       <div>
         <span class="n">3</span><h3>WebGPU or workers</h3>
-        <p class="muted small">On WebGPU, WGSL kernels run every transformer layer of Laya, Bruv, Kev, SemIf, and Gemma 4. Without it, Laya's layers split across tensor-parallel WebAssembly workers, with two exchanges per layer; Bruv, Kev, and SemIf run in one CPU instance. Gemma 4 needs WebGPU in the browser or the native 64-bit CPU CLI.</p>
+        <p class="muted small">On WebGPU, WGSL kernels run every supported transformer layer. Without it, Laya's layers split across tensor-parallel WebAssembly workers; smaller Kev packs can use one CPU instance. Packs over the WebAssembly allocation limit need WebGPU in the browser or the native 64-bit CPU CLI.</p>
       </div>
       <div>
         <span class="n">4</span><h3>Batching</h3>
@@ -51,8 +51,8 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="bench">
     <div class="eyebrow">Speed</div>
     <h2>Latency</h2>
-    <p class="muted">For decision quality and current NVIDIA WebGPU measurements across the supported packs, read the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a>.</p>
-    <p class="muted">Apple M4 Max, WebGPU in Chrome, cold requests unless noted.</p>
+    <p class="muted">For decision quality and NVIDIA WebGPU measurements across the previously validated packs, read the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a>. It does not measure the refreshed Kev, H2O-Lightning, or Clef-flash checkpoints yet.</p>
+    <p class="muted">Earlier Q8 packs on Apple M4 Max, WebGPU in Chrome, cold requests unless noted.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Laya, short request</span><b>11 ms</b><span class="ts">one question, about 45 tokens</span></div>
       <div class="tile"><span class="tl">Kev-0.8B, short request</span><b>13 ms</b><span class="ts">one question, about 30 tokens</span></div>
@@ -65,7 +65,25 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="fidelity">
     <div class="eyebrow">Fidelity</div>
     <h2>Conversion fidelity</h2>
-    <p class="lede">The dedicated parity fixtures below are generated with each model's reference code and replayed through kevala. Their decisions match at int8. The broader <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark</a> found one changed E2B answer across 108 option orders, with a material probability shift. These measurements do not establish calibrated confidence.</p>
+    <p class="lede">The refreshed Kev, H2O-Lightning and Clef-flash implementations match all decisions in their checked upstream fixtures. The results below measure agreement with pinned reference outputs. General decision accuracy and confidence calibration need evaluation on representative data.</p>
+    <div class="reference-table" role="region" aria-label="Current model reference checks" tabindex="0">
+      <table class="data">
+        <caption>Reference checks · October 12, 2026</caption>
+        <thead><tr><th scope="col">Model</th><th scope="col">Precision</th><th scope="col">Backend</th><th scope="col" class="num">Decisions matched</th><th scope="col" class="num">Max probability difference</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Kev v1.0 0.8B</th><td>BF16 · default</td><td>WebGPU</td><td class="num">13 / 13</td><td class="num">0.002812</td></tr>
+          <tr><th scope="row">Kev v1.0 0.8B</th><td>Q8 · optional</td><td>WebGPU</td><td class="num">13 / 13</td><td class="num">0.006653</td></tr>
+          <tr><th scope="row">H2O-Lightning-4B</th><td>BF16 · default</td><td>WebGPU</td><td class="num">3 / 3</td><td class="num">0.004328</td></tr>
+          <tr><th scope="row">H2O-Lightning-4B</th><td>Q8 · optional</td><td>WebGPU</td><td class="num">3 / 3</td><td class="num">0.007322</td></tr>
+          <tr><th scope="row">Cloudflare Clef-flash</th><td>BF16 · default</td><td>Native CPU, streamed layers</td><td class="num">5 / 5</td><td class="num">0.009297</td></tr>
+          <tr><th scope="row">Cloudflare Clef-flash</th><td>Q8 · optional</td><td>Native CPU</td><td class="num">5 / 5</td><td class="num">0.028130</td></tr>
+          <tr><th scope="row">Cloudflare Clef-flash</th><td>Q8 · optional</td><td>WebGPU</td><td class="num">5 / 5</td><td class="num">0.028167</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="muted small">Kev compares against upstream F32 outputs; H2O and Clef compare against upstream BF16 backbones with their original readouts. Kev includes browser checkpoint conversion. Clef's browser probabilities are rounded to four decimals. <a href="${DOCS}/models.md#conversion-and-validation">Reference details and memory requirements →</a></p>
+    <h3>Earlier Q8 results</h3>
+    <p class="muted small">These measurements cover previously validated packs. The broader <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark</a> found one changed E2B answer across 108 option orders, with a material probability shift.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Token ids</span><b>tracked</b><span class="ts">Laya, Qwen, and Gemma reference tokenizers used by the fixtures</span></div>
       <div class="tile"><span class="tl">Laya argmax</span><b>41 / 41</b><span class="ts">questions agree with PyTorch</span></div>
@@ -74,7 +92,7 @@ const TEMPLATE = `<div class="wrap">
       <div class="tile"><span class="tl">Gemma E2B GPU</span><b>12 / 12</b><span class="ts">max |Δp| 0.01906186</span></div>
       <div class="tile"><span class="tl">Gemma E4B GPU</span><b>12 / 12</b><span class="ts">max |Δp| 0.0120864</span></div>
       <div class="tile"><span class="tl">Gemma E2B native</span><b>12 / 12</b><span class="ts">max |Δp| 0.019120</span></div>
-      <div class="tile"><span class="tl">Max |Δp| at int8 (7 models)</span><b>≈0.031</b><span class="ts">Laya, Kev, and SemIf · <a href="${DOCS}/semif-matmul.md">GPU report</a> · <a href="${DOCS}/gemma4.md#verification">Gemma checks</a></span></div>
+      <div class="tile"><span class="tl">Max |Δp| at Q8 (7 older packs)</span><b>≈0.031</b><span class="ts">Previously validated Laya, Kev, and SemIf packs · <a href="${DOCS}/semif-matmul.md">GPU report</a> · <a href="${DOCS}/gemma4.md#verification">Gemma checks</a></span></div>
     </div>
     <p class="small parity-links">
       <a href="parity.html">Replay the Laya fixtures in your browser →</a>
@@ -90,9 +108,9 @@ const TEMPLATE = `<div class="wrap">
         <p class="muted">kevala is new. These are its limits today.</p>
       </div>
       <ul class="limit-list">
-        <li><b>Large first download.</b> Laya downloads a 479 MB int8 pack and keeps it in browser storage. The weights also occupy GPU or WebAssembly memory while loaded.</li>
-        <li><b>Larger sizes need more memory.</b> Kev packs range from 857 MB to 8.96 GB; SemIf Qwen3.5 packs range from 855 MB to 4.75 GB; Gemma 4 packs are 5.22 GB (E2B) or 8.41 GB (E4B). Runtime memory is higher. Kev and SemIf sliders start at 0.8B, Gemma 4 starts at E2B, and loading begins when you press Load.</li>
-        <li><b>WebGPU is not available in every browser.</b> For compatible packs, kevala falls back to WebAssembly, which gives the same answers several times slower: a short Laya request takes about 160 ms on 8 CPU workers, against tens of ms on WebGPU. Large Gemma packs require WebGPU in the browser or native 64-bit CPU.</li>
+        <li><b>Large first download.</b> Laya downloads a 479 MB Q8 pack. Refreshed Kev, H2O-Lightning, and Clef-flash default to much larger BF16 packs; Q8 is available as an explicit smaller option. Runtime memory is higher.</li>
+        <li><b>Large models need more memory.</b> Kev v1.0 BF16 outputs range from 1.51 GB to 15.90 GB. H2O-Lightning-4B is 8.43 GB; Clef-flash is 18.41 GB. Existing SemIf and Gemma 4 packs retain their published Q8 sizes. Kev and SemIf sliders start at their smallest size, and loading begins when you press Load.</li>
+        <li><b>WebGPU is not available in every browser.</b> For compatible packs, kevala falls back to WebAssembly, which gives the same answers several times slower. Packs above the under-2-GiB WebAssembly allocation limit require WebGPU in the browser or native 64-bit CPU.</li>
         <li><b>No multi-step reasoning.</b> These are System 1 models: they score or read what a text says in one pass. SemIf scores are conditional on the listed options and are not calibrated decision confidence. Compute facts in code and state them in words, and do not ask the model to do arithmetic or plan.</li>
         <li><b>Context limits.</b> Laya reads up to 512 tokens per state and is trained on English. Gemma 4 accepts up to 4096 input tokens in Kevala.</li>
         <li><b>Quantization changes probabilities.</b> Differences depend on the model and input. The decision benchmark includes an E2B difference of 0.53 against BF16 on one case. Validate decisions and thresholds on your own data; see the <a href="${DOCS}/quantization.md">precision comparison</a>.</li>
@@ -106,7 +124,7 @@ const TEMPLATE = `<div class="wrap">
     <div class="grid-3 more">
       <a class="card pad link-card" href="${DOCS}/packs.md">
         <h3>Packs</h3>
-        <p class="muted small">Load an int8 pack or, for Laya and Kev-0.8B, original weights; then convert, check and publish packs. Gemma 4 uses text-only converted packs.</p>
+        <p class="muted small">Load a published Q8 pack or convert pinned checkpoints to BF16 by default. Choose Q8 explicitly for smaller packs. Large models use native conversion.</p>
         <span class="go">docs/packs.md →</span>
       </a>
       <a class="card pad link-card" href="bench.html">

@@ -150,6 +150,23 @@ test("a rejected GPU pass cannot leave a reusable carry for the next request", a
   assert.deepEqual(retry.copies, []);
 });
 
+test("a full-sequence pass with no prefix reserves only a minimal carry", async (t) => {
+  const old = Object.getOwnPropertyDescriptor(globalThis, "GPUMapMode");
+  Object.defineProperty(globalThis, "GPUMapMode", { configurable: true, value: { READ: 1 } });
+  t.after(() => old ? Object.defineProperty(globalThis, "GPUMapMode", old) : delete globalThis.GPUMapMode);
+  const gpu = cache();
+  fakeForward(gpu);
+  gpu.readback.getMappedRange = (_offset, bytes) => new ArrayBuffer(bytes);
+  gpu.stateCacheEnabled = false;
+  const allocations = [];
+  gpu.ensureCarries = (slots, rows) => allocations.push([slots, rows]);
+  const b = batch([[]]);
+  const result = await gpu.forward(new Float32Array(), new Float32Array(1), b, new Uint32Array());
+  assert.equal(result.length, 1);
+  assert.deepEqual(allocations, [[1, 16]]);
+  assert.deepEqual(gpu.lru, []);
+});
+
 for (const errorKind of ["out-of-memory", "validation"]) {
   test(`a setup ${errorKind} error rebuilds buffers for a smaller retry`, async (t) => {
     for (const [key, value] of Object.entries({ GPUBufferUsage: { STORAGE: 1, COPY_DST: 2, COPY_SRC: 4, UNIFORM: 8, MAP_READ: 16 }, GPUMapMode: { READ: 1 } })) {

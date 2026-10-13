@@ -6,7 +6,7 @@ This page shows where the code lives and which checks to run before a change lan
 
 | Path | Contents |
 |---|---|
-| `crates/kevala` | The Rust engine, with zero dependencies. Each model family has a directory: `laya/`, `kev/` (Kev and SemIf), and `gemma4/`. Shared code covers the pack format, the tokenizer, the CPU kernels, and the WGSL kernels in `src/wgsl/`. |
+| `crates/kevala` | The Rust engine, with zero dependencies. Each model family has a directory: `laya/`, `kev/` (Kev and SemIf), `h2o/`, `clef/`, and `gemma4/`. Shared code covers the pack format, the tokenizer, the CPU kernels, and the WGSL kernels in `src/wgsl/`. |
 | `crates/kevala-wasm` | The C ABI that the JavaScript runtime calls. |
 | `crates/kevala-cli` | The `kevala` command: `convert`, `decide`, `parity`, `bench`, `inspect`, and `wgsl`. |
 | `js/src` | The browser and Node runtime. npm publishes this directory. |

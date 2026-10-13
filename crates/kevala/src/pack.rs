@@ -12,6 +12,7 @@
 //!
 //! Tensor dtypes:
 //! - `f32`: little-endian f32, row-major.
+//! - `bf16`: little-endian bfloat16, row-major, widened exactly to f32 at execution.
 //! - `q8`:  `[n, k]` int8 row-major, followed at `scales_offset` by `[n, k / block]` f32 scales.
 //!   Weight `w[r][c] = q[r][c] * scale[r][c / block]`, symmetric, per row block.
 
@@ -24,6 +25,7 @@ pub const ALIGN: usize = 64;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DType {
     F32,
+    Bf16,
     Q8,
 }
 
@@ -31,6 +33,7 @@ impl DType {
     pub fn name(self) -> &'static str {
         match self {
             DType::F32 => "f32",
+            DType::Bf16 => "bf16",
             DType::Q8 => "q8",
         }
     }
@@ -104,7 +107,7 @@ pub fn header_len(prefix: &[u8]) -> Result<usize, String> {
     if version != FORMAT_VERSION {
         return Err(format!("unsupported .kevala version {version}, this build reads {FORMAT_VERSION}"));
     }
-    Ok(16 + u32_at(prefix, 8) as usize)
+    16usize.checked_add(u32_at(prefix, 8) as usize).ok_or_else(|| "pack header length overflows usize".into())
 }
 
 pub fn parse_header(bytes: &[u8]) -> Result<Header, String> {
@@ -119,11 +122,12 @@ pub fn parse_header(bytes: &[u8]) -> Result<Header, String> {
     let tok = json.get("tokenizer").ok_or("pack header: missing tokenizer")?;
     let (tokenizer_offset, tokenizer_size) = (need(tok, "offset")?, need(tok, "size")?);
     let mut tensors = Vec::new();
-    let mut end = tokenizer_offset + tokenizer_size;
+    let mut end = tokenizer_offset.checked_add(tokenizer_size).ok_or("tokenizer range overflows usize")?;
     for t in json.get("tensors").and_then(Value::as_array).ok_or("pack header: missing tensors")? {
         let name = t.get("name").and_then(Value::as_str).ok_or("tensor without a name")?.to_string();
         let dtype = match t.get("dtype").and_then(Value::as_str) {
             Some("f32") => DType::F32,
+            Some("bf16") => DType::Bf16,
             Some("q8") => DType::Q8,
             other => return Err(format!("tensor {name}: unsupported dtype {other:?}")),
         };
@@ -144,21 +148,38 @@ pub fn parse_header(bytes: &[u8]) -> Result<Header, String> {
             dtype,
             shape,
         };
-        let numel = info.numel();
+        let numel = info
+            .shape
+            .iter()
+            .try_fold(1usize, |n, &d| n.checked_mul(d))
+            .ok_or_else(|| format!("tensor {}: shape overflows usize", info.name))?;
         let ok = match dtype {
-            DType::F32 => info.size == numel * 4,
+            DType::F32 => numel.checked_mul(4) == Some(info.size),
+            DType::Bf16 => numel.checked_mul(2) == Some(info.size),
             DType::Q8 => {
                 info.shape.len() == 2
                     && info.block > 0
+                    && info.block % 16 == 0
                     && info.cols() % info.block == 0
                     && info.size == numel
-                    && info.scales_size == info.rows() * (info.cols() / info.block) * 4
+                    && info.rows().checked_mul(info.cols() / info.block).and_then(|n| n.checked_mul(4))
+                        == Some(info.scales_size)
+                    && info.scales_offset % ALIGN == 0
             }
         };
         if !ok || info.offset % ALIGN != 0 {
             return Err(format!("tensor {}: inconsistent layout", info.name));
         }
-        end = end.max(info.offset + info.size).max(info.scales_offset + info.scales_size);
+        let data_end =
+            info.offset.checked_add(info.size).ok_or_else(|| format!("tensor {}: range overflows usize", info.name))?;
+        end = end.max(data_end);
+        if dtype == DType::Q8 {
+            let scales_end = info
+                .scales_offset
+                .checked_add(info.scales_size)
+                .ok_or_else(|| format!("tensor {}: scales range overflows usize", info.name))?;
+            end = end.max(scales_end);
+        }
         tensors.push(info);
     }
     Ok(Header { json, tensors, tokenizer_offset, tokenizer_size, total_size: end })
@@ -203,6 +224,26 @@ impl Writer {
             scales_offset: 0,
             scales_size: rows * (cols / block) * 4,
         });
+    }
+
+    pub fn add_bf16(&mut self, name: &str, shape: &[usize]) {
+        self.tensors.push(TensorInfo {
+            name: name.into(),
+            dtype: DType::Bf16,
+            shape: shape.to_vec(),
+            offset: 0,
+            size: shape.iter().product::<usize>() * 2,
+            block: 0,
+            scales_offset: 0,
+            scales_size: 0,
+        });
+    }
+
+    /// Includes alignment so converters can reject layouts outside a platform's address space.
+    pub(crate) fn tensor_bytes_checked(&self) -> Option<usize> {
+        self.tensors.iter().try_fold(0usize, |total, tensor| {
+            total.checked_add(tensor.size)?.checked_add(tensor.scales_size)?.checked_add(2 * ALIGN)
+        })
     }
 
     /// Returns the bytes before the first tensor (magic, header, tokenizer), every tensor with
@@ -363,7 +404,11 @@ pub fn subset(
             }
             _ => {}
         }
-        let elem = if t.dtype == DType::Q8 { 1 } else { 4 };
+        let elem = match t.dtype {
+            DType::Q8 => 1,
+            DType::Bf16 => 2,
+            DType::F32 => 4,
+        };
         let (n, k) = if t.shape.len() == 2 { (t.rows(), t.cols()) } else { (t.numel(), 1) };
         let nb = if t.dtype == DType::Q8 { k / t.block } else { 0 };
         let mut info = t.clone();
@@ -443,7 +488,7 @@ pub fn subset(
 
 /// The sub-pack the coordinator needs: tokenizer, embeddings, scorer, act head.
 pub fn coord_layout(h: &Header) -> Result<Layout, String> {
-    let select = |t: &TensorInfo| (!is_trunk(&t.name)).then_some(Slice::Whole);
+    let select = |t: &TensorInfo| (!is_gpu_tensor(h, &t.name)).then_some(Slice::Whole);
     subset(h, &select, true, Vec::new())
 }
 
@@ -452,15 +497,105 @@ pub fn is_trunk(name: &str) -> bool {
     name.starts_with("enc.") || name.starts_with("head.") || name.starts_with("L.")
 }
 
+fn is_gpu_tensor(h: &Header, name: &str) -> bool {
+    is_trunk(name)
+        || (h.json.get("config").and_then(|c| c.get("readout")).and_then(Value::as_str) == Some("clef")
+            && matches!(name, "emb" | "clef.lexical"))
+}
+
 /// Every trunk tensor, whole: what a GPU uploads.
 pub fn trunk_layout(h: &Header) -> Result<Layout, String> {
-    let select = |t: &TensorInfo| is_trunk(&t.name).then_some(Slice::Whole);
+    let select = |t: &TensorInfo| is_gpu_tensor(h, &t.name).then_some(Slice::Whole);
     subset(h, &select, false, Vec::new())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn clef_gpu_tables_are_excluded_from_the_cpu_coordinator() {
+        let config = Value::parse(r#"{"arch":"kev","readout":"clef"}"#).unwrap();
+        let mut writer = Writer::new(Value::Null, config, vec![1, 2]);
+        writer.add_bf16("emb", &[3, 4]);
+        writer.add_bf16("clef.lexical", &[3, 4]);
+        writer.add_f32("clef.norm", &[4]);
+        writer.add_bf16("L.0.qkv", &[4, 32]);
+        let (prefix, _, total) = writer.layout();
+        let mut bytes = vec![0; total];
+        bytes[..prefix.len()].copy_from_slice(&prefix);
+        let source = parse_header(&bytes).unwrap();
+        let coord = coord_layout(&source).unwrap().apply(&bytes);
+        let gpu = trunk_layout(&source).unwrap().apply(&bytes);
+        let names = |b: &[u8]| parse_header(b).unwrap().tensors.into_iter().map(|t| t.name).collect::<Vec<_>>();
+        assert_eq!(names(&coord), ["clef.norm"]);
+        assert_eq!(names(&gpu), ["emb", "clef.lexical", "L.0.qkv"]);
+    }
+
+    #[test]
+    fn q8_blocks_must_match_the_native_kernel_load_width() {
+        for block in [1, 8] {
+            let mut writer = Writer::new(Value::Null, Value::Null, Vec::new());
+            writer.add_q8("weight", 1, 16, block);
+            let (prefix, _, _) = writer.layout();
+            assert!(parse_header(&prefix).is_err());
+        }
+        let mut writer = Writer::new(Value::Null, Value::Null, Vec::new());
+        writer.add_q8("weight", 1, 16, 16);
+        let (prefix, _, _) = writer.layout();
+        assert!(parse_header(&prefix).is_ok());
+    }
+
+    #[test]
+    fn malformed_bf16_layout_arithmetic_returns_errors() {
+        let header = |shape: &str, offset: usize, size: usize| {
+            let json = format!(
+                r#"{{"tokenizer":{{"offset":64,"size":0}},"tensors":[{{"name":"weight","dtype":"bf16","shape":{shape},"offset":{offset},"size":{size}}}]}}"#
+            );
+            header_prefix(&json, json.len())
+        };
+        #[cfg(target_pointer_width = "32")]
+        assert!(parse_header(&header("[64]", usize::MAX - 63, 128)).is_err());
+        let large = 1usize << (usize::BITS - 2);
+        assert!(parse_header(&header(&format!("[{large},8]"), 64, 0)).is_err());
+        assert!(parse_header(&header(&format!("[{large},2]"), 64, 0)).is_err());
+    }
+
+    #[test]
+    fn bf16_layout_and_slices_preserve_two_byte_values() {
+        let mut writer = Writer::new(Value::Null, Value::Null, Vec::new());
+        writer.add_bf16("weight", &[3, 8]);
+        let (prefix, tensors, total) = writer.layout();
+        let mut bytes = vec![0; total];
+        bytes[..prefix.len()].copy_from_slice(&prefix);
+        let values: Vec<u16> = (0..24).map(|i| 0x3f80 + i).collect();
+        let raw: Vec<u8> = values.iter().flat_map(|value| value.to_le_bytes()).collect();
+        bytes[tensors[0].offset..tensors[0].offset + raw.len()].copy_from_slice(&raw);
+        let h = parse_header(&bytes).unwrap();
+        for (slice, expected) in [
+            (Slice::Rows(vec![(1, 3)]), values[8..].to_vec()),
+            (Slice::Cols(1, 5), values.chunks_exact(8).flat_map(|row| row[1..5].iter().copied()).collect()),
+        ] {
+            let out = subset(&h, &|_| Some(slice.clone()), false, Vec::new()).unwrap().apply(&bytes);
+            let header = parse_header(&out).unwrap();
+            let tensor = &header.tensors[0];
+            assert_eq!(tensor.dtype, DType::Bf16);
+            assert_eq!(tensor.scales_size, 0);
+            let got: Vec<u16> = out[tensor.offset..tensor.offset + tensor.size]
+                .chunks_exact(2)
+                .map(|v| u16::from_le_bytes(v.try_into().unwrap()))
+                .collect();
+            assert_eq!(got, expected);
+            let store =
+                crate::store::Store::new(crate::store::AlignedBuf::from_slice(&out), header.tensors.clone()).unwrap();
+            let mut row = vec![0.0; tensor.cols()];
+            store.row(tensor, 0, &mut row);
+            assert_eq!(
+                row,
+                expected[..tensor.cols()].iter().map(|&v| crate::convert::bf16_to_f32(v)).collect::<Vec<_>>()
+            );
+        }
+    }
 
     /// A pack with one f32 vector and one q8 matrix `[4, 32]` in blocks of 16, filled so every
     /// byte says where it came from: `q[r][c] = r * 32 + c`, `scale[r][b] = r * 2 + b`.

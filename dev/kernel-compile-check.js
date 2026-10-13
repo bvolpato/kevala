@@ -16,6 +16,7 @@ async function run() {
     const specifications = [];
     for (const f16 of [false, true]) for (const subgroups of [false, true]) for (const rows of [1, 2, 3, 4]) for (const groups of [1, 2]) specifications.push({ f16, subgroups, rows, groups });
     specifications.push({ row56: true }, { n: 3072, k: 1024 });
+    for (const weights of ["bf16", "f32"]) for (const rows of [1, 2, 3, 4]) specifications.push({ weights, rows });
     for (const hidden of [2048, 2560, 4096]) specifications.push({ kev: hidden === 2048 ? { hidden } : { hidden, heads: 16, kv_heads: 4, lin_heads: 32 } });
     const compiled = [];
     const skipped = [];

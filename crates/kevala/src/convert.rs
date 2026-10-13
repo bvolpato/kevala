@@ -4,6 +4,50 @@
 use crate::json::Value;
 use crate::tokenizer::Tokenizer;
 
+/// Weight storage for decoder backbones. Norms, recurrent gates, and decision heads stay f32.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Precision {
+    #[default]
+    Bf16,
+    F32,
+    Q8,
+}
+
+impl Precision {
+    pub fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "bf16" => Ok(Self::Bf16),
+            "f32" => Ok(Self::F32),
+            "q8" => Ok(Self::Q8),
+            _ => Err(format!("unsupported precision {value:?}; expected bf16, f32, or q8")),
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Bf16 => "bf16",
+            Self::F32 => "f32",
+            Self::Q8 => "q8",
+        }
+    }
+}
+
+pub fn bf16_to_f32(value: u16) -> f32 {
+    f32::from_bits((value as u32) << 16)
+}
+
+/// Round to nearest, ties to even. Values widened from BF16 retain their exact bits.
+pub fn f32_to_bf16(value: f32) -> u16 {
+    let bits = value.to_bits();
+    if bits & 0xffff == 0 {
+        return (bits >> 16) as u16;
+    }
+    if bits & 0x7fff_ffff > 0x7f80_0000 {
+        return (bits >> 16) as u16 | 0x0040;
+    }
+    (bits.wrapping_add(0x7fff + ((bits >> 16) & 1)) >> 16) as u16
+}
+
 pub(crate) fn text_tensor_prefix(has: impl Fn(&str) -> bool) -> Result<&'static str, String> {
     let mut prefixes = ["model.language_model.", "language_model.", "model."]
         .into_iter()
@@ -89,6 +133,16 @@ pub(crate) fn num(v: f64) -> Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bf16_rounding_preserves_values_and_uses_ties_to_even() {
+        for bits in [0x0000, 0x8000, 0x0001, 0x3f80, 0xbf80, 0x7f7f, 0x7f80, 0xff80, 0x7f81, 0xffff] {
+            assert_eq!(f32_to_bf16(bf16_to_f32(bits)), bits);
+        }
+        assert_eq!(f32_to_bf16(f32::from_bits(0x3f80_8000)), 0x3f80);
+        assert_eq!(f32_to_bf16(f32::from_bits(0x3f81_8000)), 0x3f82);
+        assert!(bf16_to_f32(f32_to_bf16(f32::NAN)).is_nan());
+    }
 
     #[test]
     fn f16_roundtrip_edges() {

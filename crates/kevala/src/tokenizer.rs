@@ -1367,6 +1367,25 @@ impl Tokenizer {
         ids.retain(|&id| id != NONE);
     }
 
+    /// Decode byte-level tokens, retaining special tokens and replacing incomplete UTF-8 at
+    /// a token-slice boundary, as the Hugging Face ByteLevel decoder does.
+    pub fn decode(&self, ids: &[u32]) -> Result<String, String> {
+        if matches!(self.pre, PreTokenizer::Gemma) {
+            return Err("byte-level decoding is unavailable for the Gemma tokenizer".into());
+        }
+        let mut bytes = Vec::new();
+        for &id in ids {
+            if let Some(a) = self.added.iter().find(|a| a.id == id) {
+                bytes.extend_from_slice(a.content.as_bytes());
+            } else if self.kinds.get(id as usize).is_some_and(|&k| k != KIND_ABSENT) {
+                bytes.extend_from_slice(self.entry(id as usize));
+            } else {
+                return Err(format!("tokenizer cannot decode token ID {id}"));
+            }
+        }
+        Ok(String::from_utf8_lossy(&bytes).into_owned())
+    }
+
     /// The id of a token given as tokenizer.json spells it: an added token's content, or a vocab
     /// key in the byte-level alphabet (`Ġthe`).
     pub fn token_id(&self, content: &str) -> Option<u32> {

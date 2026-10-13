@@ -180,6 +180,17 @@ fn write_tensor(pack: &mut [u8], info: &TensorInfo, fill: Fill) {
                 put(info.offset + i * 4, v);
             }
         }
+        DType::Bf16 => {
+            for i in 0..info.size / 2 {
+                let value = match fill {
+                    Fill::Around(amplitude) => amplitude * rng.unit(),
+                    Fill::NearOne => 1.0 + 0.1 * rng.unit(),
+                    Fill::Between(lo, hi) => lo + (hi - lo) * (rng.unit() + 1.0) / 2.0,
+                };
+                let at = info.offset + i * 2;
+                pack[at..at + 2].copy_from_slice(&kevala::convert::f32_to_bf16(value).to_le_bytes());
+            }
+        }
     }
 }
 
