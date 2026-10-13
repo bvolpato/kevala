@@ -88,7 +88,7 @@ async function main() {
       } finally { pixels.data.fill(0); }
     }
     const maxScoreDelta = Math.max(...noulKeys.map((key) => Math.abs(cases[0].scores[key] - cases[1].scores[key])));
-    const maxProbabilityDelta = Math.max(...Object.keys(questions).map((key) => Math.abs(cases[0].probabilities[key][1] - cases[1].probabilities[key][1])));
+    const maxProbabilityDelta = Math.max(...Object.keys(questions).flatMap((key) => cases[0].probabilities[key].map((value, i) => Math.abs(value - cases[1].probabilities[key][i]))));
     const colorProbabilityDelta = Math.abs(cases[0].probabilities.dominant_color[0] - cases[1].probabilities.dominant_color[0]);
     const colorCorrect = cases.every((row) => row.dominantColor === row.expectedColor);
     Object.assign(window.gpuBench.correctness, { frames: cases.length, maxScoreDelta, maxProbabilityDelta, colorProbabilityDelta, colorCorrect, changed: maxProbabilityDelta > 0 });
