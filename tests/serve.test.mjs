@@ -54,6 +54,7 @@ test("local pack manifest discovers exact catalog packs and serves ranges throug
     "fixture-model": {
       precisionPackBytes: { bf16: 12, q8: 4 },
       precisionPackApprox: { f32: true },
+      vision: { arch: "gemma4-vision", precision: "bf16", pack: 8 },
     },
   };
   const { server, url } = await startServer(directory, models);
@@ -119,6 +120,15 @@ test("local pack manifest discovers exact catalog packs and serves ranges throug
       url: "/.kevala/packs/fixture-model-q8.kevala",
       bytes: 4,
     });
+    await writeFile(join(packDirectory, "fixture-model-vision-bf16.kevala"), "partial");
+    assert.equal((await (await fetch(manifestUrl)).json()).models["fixture-model"].vision, undefined);
+    await writeFile(join(packDirectory, "fixture-model-vision-bf16.kevala"), "12345678");
+    assert.deepEqual((await (await fetch(manifestUrl)).json()).models["fixture-model"].vision, {
+      url: "/.kevala/packs/fixture-model-vision-bf16.kevala", bytes: 8, precision: "bf16",
+    });
+    const vision = await fetch(`${url}/.kevala/packs/fixture-model-vision-bf16.kevala`, { headers: { range: "bytes=2-4" } });
+    assert.equal(vision.status, 206);
+    assert.equal(await vision.text(), "345");
   } finally {
     await closeServer(server);
     await rm(directory, { recursive: true, force: true });

@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { MODELS } from "../js/src/source.js";
 import { discoverLocalPacks } from "../app/model-packs.js";
 
 const base = "http://127.0.0.1:18086/app/session.js";
@@ -37,4 +38,31 @@ test("discovery excludes unknown models, unsupported precisions and external or 
     "clef-flash": { bf16: pack("clef-flash", "bf16", 18414969408) },
   };
   assert.deepEqual(await discoverLocalPacks(base, async () => Response.json({ models })), {});
+});
+
+test("the Gemma E2B vision companion requires an exact local alias and matching bounded size", {
+  skip: !Number.isSafeInteger(MODELS["gemma-4-e2b"]?.vision?.pack),
+}, async () => {
+  const bytes = MODELS["gemma-4-e2b"].vision.pack;
+  const vision = { url: "/.kevala/packs/gemma-4-e2b-vision-bf16.kevala", bytes };
+  const found = await discoverLocalPacks(base, async () => Response.json({ models: { "gemma-4-e2b": { vision } } }));
+  assert.deepEqual(found["gemma-4-e2b"].vision, {
+    url: "http://127.0.0.1:18086/.kevala/packs/gemma-4-e2b-vision-bf16.kevala", bytes, precision: "bf16",
+  });
+
+  for (const invalid of [
+    { ...vision, url: "/.kevala/packs/other.kevala" },
+    { ...vision, url: "/.kevala/packs/gemma-4-e2b-vision-bf16.kevala?redirect=1" },
+    { ...vision, url: "https://example.test/.kevala/packs/gemma-4-e2b-vision-bf16.kevala" },
+    { ...vision, bytes: bytes + 1 },
+    { ...vision, bytes: 1024 ** 3 + 1 },
+  ]) {
+    const rejected = await discoverLocalPacks(base, async () => Response.json({ models: { "gemma-4-e2b": { vision: invalid } } }));
+    assert.equal(rejected["gemma-4-e2b"]?.vision, undefined);
+  }
+  const malformed = await discoverLocalPacks(base, async () => Response.json({ models: {
+    laya: { q8: pack("laya", "q8", 478886720) },
+    "gemma-4-e2b": { vision: { ...vision, url: "http://[" } },
+  } }));
+  assert.equal(malformed.laya.q8.bytes, 478886720, "a malformed vision alias does not hide valid decoder packs");
 });

@@ -58,6 +58,14 @@ const SOURCES: &[(&str, &str)] = &[
     ("gemma4_ple", include_str!("wgsl/gemma4_ple.wgsl")),
     ("gemma4_residual", include_str!("wgsl/gemma4_residual.wgsl")),
     ("gemma4_gather", include_str!("wgsl/gemma4_gather.wgsl")),
+    ("gemma4_vision_position", include_str!("wgsl/gemma4_vision_position.wgsl")),
+    ("gemma4_vision_norm", include_str!("wgsl/gemma4_vision_norm.wgsl")),
+    ("gemma4_vision_clip", include_str!("wgsl/gemma4_vision_clip.wgsl")),
+    ("gemma4_vision_rope", include_str!("wgsl/gemma4_vision_rope.wgsl")),
+    ("gemma4_vision_scores", include_str!("wgsl/gemma4_vision_scores.wgsl")),
+    ("gemma4_vision_attention", include_str!("wgsl/gemma4_vision_attention.wgsl")),
+    ("gemma4_vision_gelu", include_str!("wgsl/gemma4_vision_gelu.wgsl")),
+    ("gemma4_vision_pool", include_str!("wgsl/gemma4_vision_pool.wgsl")),
 ];
 
 /// The kernels a runtime can ask for (everything but the snippets).
@@ -98,6 +106,14 @@ pub const KERNELS: &[&str] = &[
     "gemma4_ple",
     "gemma4_residual",
     "gemma4_gather",
+    "gemma4_vision_position",
+    "gemma4_vision_norm",
+    "gemma4_vision_clip",
+    "gemma4_vision_rope",
+    "gemma4_vision_scores",
+    "gemma4_vision_attention",
+    "gemma4_vision_gelu",
+    "gemma4_vision_pool",
 ];
 
 /// What a kernel is specialized for. Kernels ignore the fields they do not use.
@@ -297,6 +313,9 @@ pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     }
     if kernel == "matmul_wide" && spec.groups != 1 {
         return Err("matmul_wide requires groups=1".into());
+    }
+    if kernel == "gemma4_vision_position" && spec.weights == WeightType::Q8 {
+        return Err("gemma4_vision_position requires bf16 or f32 weights".into());
     }
     if spec.row56 && (spec.f16 || spec.rows != 4 || spec.groups != 1) {
         return Err("row56 requires f32 rows=4 groups=1".into());

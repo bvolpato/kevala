@@ -28,7 +28,71 @@ E2B doubles the feed-forward width in the layers that share keys and values. The
 require a Gemma backend; selecting a different checkpoint in the Qwen backend is insufficient.
 
 The implementation follows the pinned [Transformers Gemma 4 reference](https://github.com/huggingface/transformers/blob/2c4914fb939fe9de0d8e7a798af4684d552f18b4/src/transformers/models/gemma4/modeling_gemma4.py).
-The separate converter omits the vision and audio towers and declares only the text modality.
+The decoder converter omits the vision and audio towers and declares only the text modality.
+E2B can load a separate vision companion for browser image decisions on WebGPU.
+
+## Vision companion
+
+The E2B image path combines the existing 5,217,421,952-byte Q8 decoder with a
+337,302,144-byte BF16 vision companion. The companion preserves the source matrix and positional
+table values; normalization weights and clipping bounds are stored in FP32. Its GPU activation
+arithmetic is FP32. It must match the decoder's source repository, pinned revision, and hidden
+width. The public decoder pack is published; the vision companion currently needs local conversion
+and serving.
+
+Image sessions keep the decoder's original Q8 per-layer embedding tables in system RAM and
+upload only the rows needed for each frame. This moves 2,642,411,520 bytes off the GPU without
+changing the weights or embedding math. The decoder and vision tower use about 2.9 GB of GPU
+weights; scratch buffers, transfer staging, and browser overhead need additional memory.
+The tables use about 2.6 GB of system RAM. `info.memory` reports weight placement; it does not
+measure available memory or include scratch buffers.
+
+Fetch only the pinned vision tower and projector, then convert them:
+
+```sh
+uv run tools/fetch_gemma_vision.py --output-dir tmp/gemma4-vision/E2B
+cargo build --release -p kevala-cli
+target/release/kevala convert-vision tmp/gemma4-vision/E2B \
+  -o tmp/gemma-4-e2b-vision-bf16.kevala --name gemma-4-e2b-vision \
+  --source google/gemma-4-E2B-it --revision 3e22461f65e89153144f8adb70e3b8c2cc9845a7 \
+  --precision bf16 --author "Google DeepMind" --license apache-2.0
+pnpm build
+pnpm serve
+```
+
+The range extractor downloads 337,089,408 original tensor bytes without fetching the decoder.
+It validates HTTP ranges and source identity, and writes a manifest with the pin, offsets, byte
+counts, and hashes. Generated weights stay in `tmp/`. `convert-vision` currently accepts BF16 only.
+
+```js
+const kevala = await Kevala.load({
+  model: "gemma-4-e2b",
+  vision: "http://127.0.0.1:8080/tmp/gemma-4-e2b-vision-bf16.kevala",
+  imageTokens: 70,
+  backend: "webgpu",
+});
+```
+
+Pass images through `decide(state, questions, { parts: [{ type: "image", data: image }] })`.
+See the [image API](../README.md#images-with-gemma-4-e2b) for accepted data forms and limits.
+Use the loaded `info.modalities` to gate image controls. Loading the decoder alone leaves it
+text-only, and other model families need their own implemented image hook and encoder.
+
+The runtime defaults to a 70-token image budget; 140, 280, 560, and 1120 are also accepted.
+The larger budgets require larger GPU buffers; loading checks the requested attention buffer
+against the device's limits before uploading the weights.
+
+The vision encoder skips padded patches and submits separate command buffers after every two
+layers without waiting for every chunk. An explicit `submit: "await"` override retains awaited
+chunks. Optional GPU profiles include `vision.*` kernel labels alongside the text decoder;
+image responses also separate decoding, preprocessing, vision, tokenization, and readout wall
+times. See the [vision measurements and numerical guards](gemma4-vision-performance.md).
+The pinned image processor's default is 280. Actual token counts depend on resized dimensions;
+a square image at budget 70 yields 64 tokens. Preprocessing follows the pinned RGB bicubic resize,
+16-pixel patches, and 3-by-3 pooling. E2B retains its causal decoder attention. Image placeholders
+use PAD identity for per-layer embeddings and the projected image rows for contextual embeddings.
+Image scores use the same uncalibrated option readout as text; the text benchmark below does not
+measure image quality or latency. Image placeholders count toward the 4096-token input limit.
 
 ## Decision method
 
@@ -50,7 +114,7 @@ per-layer table into one tensor per layer, keeping individual buffers within bro
 limits. WebGPU owns the embeddings and transformer weights. The WebAssembly coordinator
 holds the tokenizer and the small set of answer-label weights.
 
-Packs use symmetric INT8 weights with an FP32 scale per 32 values. Norms and answer-label
+Decoder packs use symmetric INT8 weights with an FP32 scale per 32 values. Norms and answer-label
 rows remain FP32. Matrix kernels decode weights into floating-point tiles and accumulate in
 FP32; INT8 storage does not imply INT8 activation arithmetic. Converted weights and generated
 WebAssembly binaries are build or distribution artifacts, not source files tracked in Git.

@@ -20,13 +20,13 @@ const HEADER_CONFIG = {
   head_dim: 32,
   global_head_dim: 32,
   sliding_window: 4,
-  max_position_embeddings: 128,
-  vocab_size: 64,
-  vocab_size_per_layer_input: 64,
+  max_position_embeddings: 512,
+  vocab_size: 262144,
+  vocab_size_per_layer_input: 262144,
   rms_norm_eps: 1e-6,
-  embedding_scale: 1,
+  embedding_scale: 2,
   hidden_size_per_layer_input: 32,
-  ple_embedding_scale: 1,
+  ple_embedding_scale: 1.125,
   ple_input_scale: Math.SQRT1_2,
   ple_projection_scale: 0.1,
   rope_parameters: {
@@ -39,6 +39,26 @@ function product(shape) {
   return shape.reduce((a, b) => a * b, 1);
 }
 
+function rowStats(values, width) {
+  let minRms = Infinity;
+  let maxRms = 0;
+  let maxAbs = 0;
+  let nonfinite = 0;
+  for (let row = 0; row < values.length / width; row++) {
+    let sum = 0;
+    for (let d = 0; d < width; d++) {
+      const value = values[row * width + d];
+      if (!Number.isFinite(value)) nonfinite++;
+      sum += value * value;
+      maxAbs = Math.max(maxAbs, Math.abs(value));
+    }
+    const rms = Math.sqrt(sum / width);
+    minRms = Math.min(minRms, rms);
+    maxRms = Math.max(maxRms, rms);
+  }
+  return { rows: values.length / width, minRms, maxRms, maxAbs, nonfinite };
+}
+
 function tensor(name, dtype, shape) {
   const elements = product(shape);
   // Q8 packs four signed bytes into each u32, but the pack format still reserves
@@ -49,10 +69,10 @@ function tensor(name, dtype, shape) {
 }
 
 function syntheticTensors() {
-  const out = [tensor("embed", "q8", [64, 32]), tensor("ple.norm", "f32", [32]), tensor("norm", "f32", [32])];
+  const out = [tensor("embed", "q8", [HEADER_CONFIG.vocab_size, 32]), tensor("ple.norm", "f32", [32]), tensor("norm", "f32", [32])];
   for (let i = 0; i < 4; i++) {
     const n = (part) => `l.${i}.${part}`;
-    out.push(tensor(`ple.${i}.proj`, "q8", [32, 32]), tensor(`ple.${i}.embed`, "q8", [64, 32]));
+    out.push(tensor(`ple.${i}.proj`, "q8", [32, 32]), tensor(`ple.${i}.embed`, "q8", [HEADER_CONFIG.vocab_size, 32]));
     for (const part of ["attn_norm", "attn_post_norm", "ffn_norm", "ffn_post_norm", "ple_norm"]) out.push(tensor(n(part), "f32", [32]));
     out.push(tensor(n("q"), "q8", [32, 32]), tensor(n("qn"), "f32", [32]), tensor(n("o"), "q8", [32, 32]));
     // Keep K/V for every layer so the same synthetic pack can exercise the
@@ -107,8 +127,9 @@ async function main() {
   runtime.wgsl = source;
   runtime.kernel = "generic";
   const packed = packSynthetic(syntheticTensors());
-  const makeModel = async (config) => {
+  const makeModel = async (config, { hostPle = false } = {}) => {
     const cfg = gemma4Config({ config });
+    cfg.hostPle = hostPle;
     const model = new GpuGemma4(runtime, { prefix: packed.prefix }, cfg);
     model.write(0, packed.bytes);
     await model.init();
@@ -117,6 +138,29 @@ async function main() {
   };
   const { cfg, model } = await makeModel(HEADER_CONFIG);
   const cases = [];
+  const finalRows = [];
+  window.gpuBench.correctness = { ok: false, cases, finalRows };
+  const assertFinalRows = (values, rows, label) => {
+    const stats = { label, ...rowStats(values, cfg.hidden) };
+    finalRows.push(stats);
+    // These synthetic final-norm weights are in [1, 1.04]. A zero readback can
+    // make two graph comparisons agree, but cannot satisfy this independent bound.
+    if (values.length !== rows * cfg.hidden || stats.nonfinite || stats.minRms < 0.9 || stats.maxRms > 1.1) {
+      throw new Error(`invalid normalized final rows: ${JSON.stringify(stats)}`);
+    }
+  };
+  const read = async (buffer, floats) => {
+    const copy = runtime.device.createBuffer({ size: floats * 4, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+    try {
+      const encoder = runtime.device.createCommandEncoder();
+      encoder.copyBufferToBuffer(buffer, 0, copy, 0, floats * 4);
+      runtime.device.queue.submit([encoder.finish()]);
+      await copy.mapAsync(GPUMapMode.READ);
+      const values = new Float32Array(copy.getMappedRange().slice(0));
+      copy.unmap();
+      return values;
+    } finally { copy.destroy(); }
+  };
   const metricSamples = [];
   let maxAbs = 0;
   const lengths = [1, 31, 65];
@@ -128,11 +172,20 @@ async function main() {
       const allRows = Uint32Array.from({ length }, (_, i) => i);
       const selected = Uint32Array.from(selectedRows(length));
       const all = await model.forward(ids, allRows);
+      if (length === 1) {
+        window.gpuBench.correctness.inputStates = {
+          embedding: rowStats(await read(model.input, cfg.hidden), cfg.hidden),
+          pleToken: rowStats(await read(model.pleToken, cfg.pleDim), cfg.pleDim),
+          residual: rowStats(await read(model.x, cfg.hidden), cfg.hidden),
+        };
+      }
+      assertFinalRows(all, length, `shared all T=${length}`);
       const selectedStarted = performance.now();
       const picked = await model.forward(ids, selected);
       const selectedElapsed = performance.now() - selectedStarted;
       const profileMs = model.lastProfile ? Object.values(model.lastProfile).reduce((sum, value) => sum + value, 0) : 0;
       metricSamples.push(profileMs > 0 ? profileMs : Math.max(0.001, selectedElapsed));
+      assertFinalRows(picked, selected.length, `shared selected T=${length}`);
       let caseMaxAbs = 0;
       for (let row = 0; row < selected.length; row++) for (let d = 0; d < cfg.hidden; d++) {
         caseMaxAbs = Math.max(caseMaxAbs, Math.abs(picked[row * cfg.hidden + d] - all[selected[row] * cfg.hidden + d]));
@@ -145,6 +198,72 @@ async function main() {
     }
   };
   await runShared();
+
+  // Check both the independent embedding contract and the selected-row graph with images.
+  const imageIds = Uint32Array.from([3, 258880, 258880, 4, 5]);
+  const imageRows = Float32Array.from({ length: 2 * cfg.hidden }, (_, i) => Math.sin(i * 0.17));
+  const imageSpans = [{ start: 1, len: 2, rows: imageRows }];
+  const imageAll = await model.forward(imageIds, [0, 1, 2, 3, 4], imageSpans);
+  assertFinalRows(imageAll, imageIds.length, "image all");
+  const injected = await read(model.input, imageIds.length * cfg.hidden);
+  for (let i = 0; i < imageRows.length; i++) if (injected[cfg.hidden + i] !== imageRows[i]) throw new Error("image rows were scaled or injected after the PLE input copy");
+  const pleTokens = await read(model.pleToken, imageIds.length * cfg.pleDim);
+  const ple = model.weight("ple.3.embed").info;
+  const view = new DataView(packed.bytes.buffer);
+  for (let row = 1; row <= 2; row++) for (let d = 0; d < cfg.pleDim; d++) {
+    const byte = packed.bytes[ple.offset + d];
+    const expected = Math.fround(Math.fround((byte < 128 ? byte : byte - 256) * view.getFloat32(ple.scales_offset, true)) * cfg.pleEmbeddingScale);
+    if (Math.abs(pleTokens[row * cfg.pleDim + d] - expected) > 1e-7) throw new Error("image PLE lookup did not use PAD identity");
+  }
+  const imageSelected = [1, 4, 1];
+  const imagePicked = await model.forward(imageIds, imageSelected, imageSpans);
+  assertFinalRows(imagePicked, imageSelected.length, "image selected");
+  let imageMaxAbs = 0;
+  for (let row = 0; row < imageSelected.length; row++) for (let d = 0; d < cfg.hidden; d++) imageMaxAbs = Math.max(imageMaxAbs, Math.abs(imagePicked[row * cfg.hidden + d] - imageAll[imageSelected[row] * cfg.hidden + d]));
+  if (!Number.isFinite(imageMaxAbs) || imageMaxAbs > 2e-5) throw new Error(`image selected-tail mismatch maxAbs=${imageMaxAbs}`);
+  cases.push({ tokens: imageIds.length, selected: imageSelected, imageRows: 2, causal: true, sharedKv: true, maxAbs: imageMaxAbs });
+  const changedImageRows = Float32Array.from(imageRows, (value, i) => 2.5 * Math.cos(i * 0.13) - value);
+  const changedImage = await model.forward(imageIds, [4], [{ start: 1, len: 2, rows: changedImageRows }]);
+  assertFinalRows(changedImage, 1, "changed image selected");
+  let imageHiddenDelta = 0;
+  for (let d = 0; d < cfg.hidden; d++) imageHiddenDelta = Math.max(imageHiddenDelta, Math.abs(changedImage[d] - imageAll[4 * cfg.hidden + d]));
+  window.gpuBench.correctness.imageHiddenDelta = imageHiddenDelta;
+  if (!Number.isFinite(imageHiddenDelta) || imageHiddenDelta <= 1e-6) throw new Error(`changing projected image rows did not change the final text row: maxAbs=${imageHiddenDelta}`);
+
+  // The host mode retains the pack's exact Q8 bytes, then copies independent
+  // per-layer row slices before PLE combine. Compare full, compact and chunked graphs.
+  const { model: hostModel } = await makeModel(HEADER_CONFIG, { hostPle: true });
+  let hostPleMaxAbs = 0;
+  let hostPleExact = true;
+  const hostCases = [];
+  const compareHost = async (ids, selected, spans = []) => {
+    const dense = await model.forward(ids, selected, spans);
+    const host = await hostModel.forward(ids, selected, spans);
+    assertFinalRows(dense, selected.length, `dense PLE T=${ids.length} R=${selected.length}`);
+    assertFinalRows(host, selected.length, `host PLE T=${ids.length} R=${selected.length}`);
+    let maxAbs = 0;
+    for (let i = 0; i < dense.length; i++) {
+      maxAbs = Math.max(maxAbs, Math.abs(dense[i] - host[i]));
+      hostPleExact &&= dense[i] === host[i];
+    }
+    if (!Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`host PLE mismatch T=${ids.length} selected=${selected.length} maxAbs=${maxAbs}`);
+    if (hostModel.hostPleUpload !== null || hostModel.hostPleOffsets !== null) throw new Error("host PLE temporary upload survived a forward");
+    hostPleMaxAbs = Math.max(hostPleMaxAbs, maxAbs);
+    hostCases.push({ tokens: ids.length, selected: selected.length, images: spans.length, maxAbs });
+  };
+  for (const length of [1, 31, 65, 257]) {
+    const ids = Uint32Array.from({ length }, (_, i) => (3 + i * 7) % HEADER_CONFIG.vocab_size);
+    await compareHost(ids, Uint32Array.from({ length }, (_, i) => i));
+    await compareHost(ids, selectedRows(length));
+  }
+  await compareHost(imageIds, [0, 1, 2, 3, 4], imageSpans);
+  const hostPleTokens = await read(hostModel.pleToken, imageIds.length * cfg.pleDim);
+  const densePleTokens = await read(model.pleToken, imageIds.length * cfg.pleDim);
+  for (let i = 0; i < densePleTokens.length; i++) if (densePleTokens[i] !== hostPleTokens[i]) throw new Error(`host PLE row differs from the GPU lookup at ${i}`);
+  await compareHost(imageIds, imageSelected, imageSpans);
+  const expectedHostBytes = 4 * HEADER_CONFIG.vocab_size * cfg.pleDim * 1.125;
+  if (hostModel.memory.hostWeights !== expectedHostBytes || hostModel.memory.gpuWeights !== model.memory.gpuWeights - expectedHostBytes) throw new Error("host PLE weight accounting differs from original pack bytes");
+  if (hostModel.weights.missing().length || [...hostModel.tensors.values()].some((entry) => entry.hostTable && (entry.buf || entry.sbuf || !entry.host))) throw new Error("host PLE tables are incomplete or still allocated on the GPU");
 
   // Native Gemma scoring rejects bidirectional text attention. Keep that
   // contract explicit while still exercising the parser's failure path.
@@ -164,6 +283,8 @@ async function main() {
   const fallbackSelected = Uint32Array.from([fallbackLength - 1, 1, fallbackLength - 1]);
   const fallbackAll = await fallbackModel.forward(fallbackIds, Uint32Array.from({ length: fallbackLength }, (_, i) => i));
   const fallbackPicked = await fallbackModel.forward(fallbackIds, fallbackSelected);
+  assertFinalRows(fallbackAll, fallbackLength, "no-shared all");
+  assertFinalRows(fallbackPicked, fallbackSelected.length, "no-shared selected");
   let fallbackMaxAbs = 0;
   for (let row = 0; row < fallbackSelected.length; row++) for (let d = 0; d < fallbackCfg.hidden; d++) {
     fallbackMaxAbs = Math.max(fallbackMaxAbs, Math.abs(fallbackPicked[row * fallbackCfg.hidden + d] - fallbackAll[fallbackSelected[row] * fallbackCfg.hidden + d]));
@@ -173,7 +294,7 @@ async function main() {
 
   const metricMs = Math.exp(metricSamples.reduce((sum, value) => sum + Math.log(value), 0) / metricSamples.length);
   const info = runtime.adapter.info || {};
-  const correctness = { ok: true, cases, maxAbs: Math.max(maxAbs, fallbackMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true };
+  const correctness = { ...window.gpuBench.correctness, ok: true, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
   const adapter = {
     name: runtime.name,
     vendor: info.vendor || null,

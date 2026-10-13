@@ -11,6 +11,7 @@ const defineRoute = (id, label, title) => ({ id, label, title, load: () => impor
 const ROUTES = [
   defineRoute("home", "Home", "kevala · decision models that run in the page"),
   defineRoute("playground", "Playground", "Playground · kevala"),
+  defineRoute("reaction", "Reaction Recorder", "Reaction Recorder · kevala"),
   defineRoute("tetris", "Tetris", "Model-guided Tetris · kevala"),
   defineRoute("guardrail", "Injection gate", "Prompt injection gate · kevala"),
   defineRoute("inbox", "Inbox", "Inbox triage · kevala"),
@@ -89,8 +90,8 @@ const MODEL_FAMILIES = {
   },
   gemma4: {
     name: "Gemma 4",
-    short: "Google's instruction model with direct option scoring. Requires WebGPU.",
-    models: [["gemma-4-e2b", "E2B"], ["gemma-4-e4b", "E4B"]],
+    short: "Images · E2B · direct option scoring",
+    models: [["gemma-4-e2b", "E2B"]],
   },
 };
 
@@ -167,6 +168,24 @@ function familyValueText(s, id) {
   return `${note?.name || id}; ${modelSizeLabel(id)}; ${state}; ${precision}`;
 }
 
+function visionControls(s, id) {
+  const spec = MODELS[id];
+  if (!spec?.modalities?.includes("image") || !spec.vision) return "";
+  const local = s.localVisionPackFor(id);
+  const enabled = s.visionEnabledFor(id);
+  const url = !local && s.visionUrlModel === id ? s.visionUrl : "";
+  const decoderBytes = spec.pack ? `${fmtBytes(spec.pack)} Q8 decoder` : "Q8 decoder";
+  const visionBytes = spec.vision.pack ? fmtBytes(spec.vision.pack) : "about 337 MB";
+  return [
+    `<div class="mf-control" data-vision-controls="${id}">`,
+    `<label class="tiny muted"><input type="checkbox" data-vision-enabled${enabled ? " checked" : ""}> Enable images</label>`,
+    `<span class="tiny mf-info" data-vision-status></span>`,
+    local ? "" : `<label class="mp-pack-url">BF16 vision-pack URL (required for images)<input type="url" data-vision-url aria-label="BF16 vision-pack URL" value="${esc(url)}" spellcheck="false" autocomplete="url"><span class="tiny faint">Nothing downloads until you press Load.</span></label>`,
+    `<span class="tiny mf-info">${esc(decoderBytes)} + ${esc(visionBytes)} BF16 vision pack. Images require WebGPU and about 2.9 GB of GPU weights. Browser RAM reached 6 GB in local testing; leave extra working space.</span>`,
+    `</div>`,
+  ].join("");
+}
+
 function modelOption(s, id) {
   const note = MODEL_NOTES[id];
   const spec = MODELS[id];
@@ -201,6 +220,7 @@ function familyOption(s, family) {
     models.length > 1 ? `<input type="range" class="mf-slider" data-family-slider="${family}" min="0" max="${models.length - 1}" step="1" value="${selectedIndex}" aria-label="${esc(spec.name)} model size" aria-valuetext="${esc(familyValueText(s, selected))}" aria-describedby="${infoId}">` : "",
     models.length > 1 ? `<div class="mf-ticks" aria-hidden="true">${ticks}</div>` : "",
     `<div class="mf-meta"><span class="tiny mf-pack" data-family-pack>${esc(modelSizeLabel(selected))}</span><span class="tiny mf-info" id="${infoId}" data-family-info>${esc(modelStateLine(s, selected))}</span></div>`,
+    visionControls(s, selected),
     `</div>`,
     `</div>`,
   ].join("");
@@ -279,8 +299,9 @@ function panelAction(s) {
   }
   const failed = s.status === "error";
   const unavailable = s.loadUnavailable();
+  const failureLabel = s.errorKind === "runtime" ? "Model unavailable" : "Could not load";
   return [
-    failed ? `<p class="gate-err">Could not load: ${esc(s.error)}</p>` : "",
+    failed ? `<p class="gate-err">${failureLabel}: ${esc(s.error)}</p>` : "",
     unavailable && !failed ? `<p class="tiny mp-note">${esc(unavailable)}</p>` : "",
     `<button type="button" class="btn primary wide" data-act="load"${unavailable ? ` disabled title="${esc(unavailable)}"` : ""}>${failed ? "Retry" : `Load ${esc(s.nameOf())}`}</button>`,
   ].join("");
@@ -347,6 +368,24 @@ function syncPanelSelection(s) {
     if (size) size.textContent = models[selectedIndex][1];
     if (pack) pack.textContent = modelSizeLabel(selected);
     if (info) info.textContent = modelStateLine(s, selected);
+    const vision = card.querySelector("[data-vision-controls]");
+    if (vision) {
+      const enabled = vision.querySelector("[data-vision-enabled]");
+      if (enabled) enabled.checked = s.visionEnabledFor(selected);
+      const status = vision.querySelector("[data-vision-status]");
+      const localVision = s.localVisionPackFor(selected);
+      if (status) status.textContent = localVision
+        ? `Vision pack ready on this server · BF16 · ${fmtBytes(localVision.bytes)}`
+        : s.visionUrlFor(selected)
+          ? "Vision-pack URL supplied. The pack is checked when you press Load."
+          : "No local vision pack is available. Text mode still works. Paste a BF16 vision-pack URL to enable images.";
+      const url = vision.querySelector("[data-vision-url]");
+      if (url) {
+        const value = s.visionUrlModel === selected ? s.visionUrl : "";
+        if (url.value !== value) url.value = value;
+        url.setAttribute("aria-required", String(s.visionEnabledFor(selected)));
+      }
+    }
   }
   const loadButton = panel.querySelector('[data-act="load"]');
   if (loadButton && s.status !== "error") loadButton.textContent = `Load ${s.nameOf()}`;
@@ -396,7 +435,7 @@ function renderPanel(s) {
     panelKey = key;
     const stored = s.storage?.available ? `Stored packs: ${fmtBytes(s.storage.bytes)}` : "No persistent storage";
     panel.innerHTML = `<div class="mp-h">Choose a model</div>
-      <p class="mp-availability tiny" data-local-availability>4B and smaller${LOCAL ? " · Local packs are marked below" : ""} · Load on demand</p>
+      <p class="mp-availability tiny" data-local-availability>Up to 4B · Gemma E2B image pilot · Load on demand${LOCAL ? " · Local packs are marked below" : ""}</p>
       ${modelChoices(s)}
       ${precisionSelector(s)}
       ${nativePackUrlControl()}
@@ -435,6 +474,10 @@ function openPanel(open) {
   if (open) renderPanel(session);
 }
 chip.addEventListener("click", () => openPanel(panel.classList.contains("hidden")));
+document.addEventListener("kevala:open-model-picker", () => {
+  openPanel(true);
+  chip.focus({ preventScroll: true });
+});
 document.addEventListener("pointerdown", (e) => {
   if (!panel.classList.contains("hidden") && !e.target.closest(".mm")) openPanel(false);
 });
@@ -463,12 +506,16 @@ panel.addEventListener("input", (e) => {
 });
 panel.addEventListener("change", (e) => {
   const precision = e.target.closest("[data-precision]")?.value;
+  const visionEnabled = e.target.closest("[data-vision-enabled]");
   if (precision) session.setPrecision(precision);
+  if (visionEnabled) session.setVisionEnabled(visionEnabled.checked);
   if (e.target.closest("[data-native-pack-url]")) session.refreshCache();
 });
 panel.addEventListener("input", (e) => {
   const input = e.target.closest("[data-native-pack-url]");
   if (input) session.setCustomUrl(input.value, session.model);
+  const visionUrl = e.target.closest("[data-vision-url]");
+  if (visionUrl) session.setVisionUrl(visionUrl.value, session.model);
 });
 panel.addEventListener("click", async (e) => {
   const model = e.target.closest("[data-model]")?.dataset.model;

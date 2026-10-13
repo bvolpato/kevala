@@ -23,6 +23,7 @@ inside the browser.
 You give it text or JSON and typed questions (`noul` for yes/no, `choice`, `score`), and it scores
 the options without generating an answer token by token. There is no model server, no API key,
 and no data leaving the tab.
+Gemma 4 E2B also accepts images when you load its compatible vision companion on WebGPU.
 
 The engine is Rust with zero dependencies, compiled to WebAssembly, plus WebGPU kernels written for
 these models. The browser runtime is a few plain ES modules. Existing Laya, SemIf, and Gemma packs
@@ -115,7 +116,8 @@ Kev-4B and H2O-Lightning expose a required URL field when no matching local pack
 Kev-9B and Clef-flash are outside the picker cap.
 
 The website preview picker is limited to 4B and smaller: Laya, Kev-0.8B/4B, H2O-Lightning-4B,
-and SemIf 0.8B/2B/4B. Kev-9B, Clef-flash, and Gemma 4 remain in the runtime catalog but are not
+and SemIf 0.8B/2B/4B, with Gemma 4 E2B as an explicit exception for the image demo.
+Kev-9B, Clef-flash, and Gemma 4 E4B remain in the runtime catalog but are not
 shown in this picker while the preview cap is active. Use the JS API with a published pack by name
 or a converted pack URL for those models. Selecting a family starts at its smallest size; changing
 sizes waits for **Load** before downloading.
@@ -129,8 +131,9 @@ writes a SHA-256 manifest alongside its pack.
 The Gemma packs are exactly
 5,217,421,952 bytes (E2B) and 8,407,043,136 bytes (E4B). Load these as pre-converted
 packs published on Hugging Face at a pinned revision. Browser checkpoint conversion is available
-only for Laya and Kev-0.8B. Gemma 4 is text-only here and requires WebGPU in the browser or the
-native 64-bit CPU CLI; its maximum input is 4096 tokens.
+only for Laya and Kev-0.8B. Gemma 4 requires WebGPU in the browser or the
+native 64-bit CPU CLI for text decisions; its maximum input is 4096 tokens.
+E2B image decisions require the separate vision companion and WebGPU.
 
 Families are pluggable: see [Adding a model family](docs/adding-a-model.md).
 
@@ -239,6 +242,10 @@ generator; see the [Gemma 4 notes](docs/gemma4.md#verification). Open
   and educational context, then recommends allow, block, or review with adjustable thresholds.
 - [Inbox](https://bvolpato.github.io/kevala/#/inbox): triage a mailbox, with rows filling in as each
   batch of answers returns.
+- Reaction Recorder (`#/reaction`): scores visible people and facial expressions with an
+  image-capable loaded model. Camera access starts only after **Start camera**. It processes one
+  frame at a time without queuing older frames; Pause stops camera tracks. Its visible-cue scores
+  are uncalibrated and do not establish a person's inner mood. Frames are not recorded or uploaded.
 - [`examples/`](examples/): complete single-file pages you can copy into a site: a minimal page, a
   comment form that blocks toxic posts, an LLM cascade that escalates only the unsure cases, a game
   loop.
@@ -292,6 +299,39 @@ Requests may carry typed `parts` (`{ type: "text", text }`; `image` and `audio` 
 whose `info.modalities` list them). Legacy `images` and `videos` fields are rejected; a part the
 model cannot read is an error, never silently dropped. The newly added H2O-Lightning and Clef-flash
 integrations are text-only here.
+
+### Images with Gemma 4 E2B
+
+Use the current repository runtime with the published Q8 decoder and a locally served BF16 vision
+companion. The companion is 337,302,144 bytes and is not published in the public pack catalog.
+[Convert it from the pinned source](docs/gemma4.md#vision-companion) and serve the resulting file:
+
+```js
+const kevala = await Kevala.load({
+  model: "gemma-4-e2b",
+  vision: "http://127.0.0.1:8080/tmp/gemma-4-e2b-vision-bf16.kevala",
+  imageTokens: 70,
+  backend: "webgpu",
+});
+if (!kevala.info.modalities.includes("image")) throw new Error("Image input is unavailable");
+
+const result = await kevala.decide("Classify the visible contents of this image.", {
+  person: { type: "noul", instructions: "Is a person visibly present?" },
+}, { parts: [{ type: "image", data: imageData }] }); // ImageData from your canvas
+console.log(result.answers.person.noul);
+```
+
+An image part's `data` accepts `ImageData`, `{ width, height, data }` containing RGBA bytes,
+a `Blob`, encoded image bytes (`ArrayBuffer` or a typed array), or an HTTP/HTTPS/blob/data URL.
+Use absolute image URLs; remote images must permit browser fetching. There are at most four images
+per request, 8192 pixels per side, 16 megapixels per image, and 32 MiB per encoded image.
+`imageTokens` sets the maximum soft tokens per image; actual counts depend on resized dimensions.
+The runtime default is 70. Check the loaded
+`kevala.info.modalities`, which includes `"image"` only after a compatible companion loads.
+The returned scores are conditional option scores, not calibrated decision confidence.
+Image sessions keep the original Q8 per-layer embedding tables in system RAM and upload only
+the rows needed for inference, reducing GPU weight storage by about 2.6 GB. `info.memory`
+reports GPU and host weight bytes; scratch buffers and browser overhead need additional space.
 
 Server side, the same engine runs in Node.js, Deno or Bun without workers or a GPU:
 
@@ -418,13 +458,16 @@ For CPU profiles, worker scaling, SIMD validation, and retained optimization res
   fixture checks do not establish general decision quality or confidence calibration. See the
   [model guide](docs/models.md#interpreting-the-scores) and the upstream Laya, Kev, Qwen, and Gemma
   model cards before choosing a threshold.
-- Image and video input are not supported by the models in this release. Requests using legacy
-  `images` or `videos` fields are rejected; typed parts must match the loaded model's modalities.
+- Image input currently uses Gemma 4 E2B with its separately loaded BF16 vision companion on
+  WebGPU. Video and audio inference are unavailable. Requests using legacy `images` or `videos`
+  fields are rejected; typed parts must match the loaded model's modalities.
 
 On Linux, Firefox's WebGPU backend uses [Vulkan](https://searchfox.org/firefox-main/source/gfx/wgpu_bindings/Cargo.toml),
 not CUDA. Check the WebGPU entries in `about:support` and the GPU's available memory when a load
 fails. `Buffer with '' label is invalid` can be a later symptom of a failed allocation; Kevala now
-captures allocation errors while uploading weights and initializing kernels. Free GPU memory by
+captures allocation errors while uploading weights, initializing kernels, and running Gemma
+inference. The Reaction Recorder stops the camera and unloads the model on a GPU failure.
+Free GPU memory by
 closing other GPU-heavy applications, then retry. Browser storage caching saves the download but
 does not reduce the GPU memory needed to load the model. Firefox Linux support also depends on the
 browser channel and settings; see Mozilla's [WebGPU support notes](https://developer.mozilla.org/en-US/docs/Mozilla/Firefox/Experimental_features#webgpu_api).
@@ -434,8 +477,8 @@ browser channel and settings; see Mozilla's [WebGPU support notes](https://devel
 - Laya is by Nandakishor M, Convai Innovations (Apache-2.0).
 - Kev is by Jared Palmer (Apache-2.0). The Qwen3.5 base and instruction models are by the Qwen team (Apache-2.0).
 - H2O-Lightning-4B is by H2O.ai and Clef-flash is by Cloudflare (Apache-2.0 each); both are text-only in this runtime.
-- Gemma 4 E2B and E4B are by Google DeepMind (Apache-2.0). This integration uses their dense text
-  trunks and leaves the multimodal towers out of the packs.
+- Gemma 4 E2B and E4B are by Google DeepMind (Apache-2.0). The decoder packs contain their dense
+  text trunks; the E2B vision tower and projector are available as a separate BF16 companion.
 - [SemIf](https://github.com/TheoLeeCJ/SemIf/tree/1f2dea3e25379f9dfc98cb83c324f00ab5deda37),
   by TheoLeeCJ (MIT), informed the direct option-token readout and scoring method used by the
   SemIf and Gemma integrations. The SemIf Qwen packs retain SemIf's prompt contract and evidence

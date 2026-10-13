@@ -230,11 +230,11 @@ export async function inErrorScopes(device, work) {
 let U;
 
 /**
- * Trunk weights streamed straight into GPU buffers, one buffer per tensor (and one for q8
- * scales), as the pack goes by.
+ * Trunk weights streamed into GPU buffers, one buffer per tensor (and one for q8 scales).
+ * Selected Q8 row tables can retain their original bytes on the host instead.
  */
 export class GpuWeights {
-  constructor(device, layout, { rowTables = [] } = {}) {
+  constructor(device, layout, { rowTables = [], hostTables = [] } = {}) {
     U = GPUBufferUsage;
     this.device = device;
     this.header = parsePackHeader(layout.prefix);
@@ -242,9 +242,16 @@ export class GpuWeights {
     // destination ranges -> tensor parts, for routing streamed fragments
     this.parts = [];
     const tables = new Set(rowTables);
+    const host = new Set(hostTables);
     for (const t of this.header.tensors) {
       const e = { info: t, data: null, scales: null, filled: 0, need: t.size + (t.scales_size || 0), buf: null, sbuf: null, host: null };
       this.tensors.set(t.name, e);
+      if (host.has(t.name)) {
+        if (tables.has(t.name)) throw new Error(`GPU row table ${t.name} cannot be both sharded and host-resident`);
+        const [rows, width] = t.shape || [];
+        if (t.dtype !== "q8" || t.shape.length !== 2 || !Number.isSafeInteger(rows) || rows < 1 || !Number.isSafeInteger(width) || width < 32 || width % 32 || Number(t.block) !== 32 || t.size !== rows * width || t.scales_size !== rows * (width / 32) * 4) throw new Error(`host row table ${t.name} requires a block-32 Q8 matrix with complete scales`);
+        e.hostTable = true;
+      }
       if (tables.has(t.name)) {
         const [rows, width] = t.shape;
         const limit = Math.floor(Math.min(device.limits.maxStorageBufferBindingSize, device.limits.maxBufferSize) / 16) * 16;
@@ -337,6 +344,14 @@ export class GpuWeights {
   }
 
   upload(e) {
+    if (e.hostTable) {
+      e.host = {
+        data: new Int8Array(e.data.buffer, e.data.byteOffset, e.data.byteLength),
+        scales: new Float32Array(e.scales.buffer, e.scales.byteOffset, e.scales.byteLength / 4),
+      };
+      e.data = e.scales = null;
+      return;
+    }
     const mk = (bytes, label) => {
       const size = Math.max(16, Math.ceil(bytes.byteLength / 16) * 16);
       const b = this.device.createBuffer({ label, size, usage: U.STORAGE | U.COPY_DST });
@@ -361,8 +376,26 @@ export class GpuWeights {
     return e;
   }
 
+  /** Gather original Q8 rows using the same two F32 products as gemma4_embed.wgsl. */
+  gatherHostRows(name, ids, scale = 1, target = null, offset = 0) {
+    const e = this.get(name);
+    if (!e.hostTable || !e.host || e.filled !== e.need) throw new Error(`host row table ${name} is incomplete`);
+    const [rows, width] = e.info.shape;
+    if (!Number.isFinite(scale) || !Number.isSafeInteger(offset) || offset < 0 || Array.from(ids).some((id) => !Number.isSafeInteger(id) || id < 0 || id >= rows)) throw new Error(`host row table ${name} has an invalid row selection or scale`);
+    target ||= new Float32Array(offset + ids.length * width);
+    if (!(target instanceof Float32Array) || offset + ids.length * width > target.length) throw new Error(`host row table ${name} has an undersized F32 destination`);
+    const { data, scales } = e.host;
+    const blocks = width / 32;
+    const factor = Math.fround(scale);
+    for (let row = 0; row < ids.length; row++) {
+      const id = ids[row];
+      for (let col = 0; col < width; col++) target[offset + row * width + col] = Math.fround(Math.fround(data[id * width + col] * scales[id * blocks + Math.floor(col / 32)]) * factor);
+    }
+    return target;
+  }
+
   missing() {
-    return [...this.tensors.values()].filter((e) => !e.buf || e.filled !== e.need).map((e) => e.info.name);
+    return [...this.tensors.values()].filter((e) => !(e.hostTable ? e.host : e.buf) || e.filled !== e.need).map((e) => e.info.name);
   }
 }
 
@@ -378,6 +411,8 @@ export class Profiler {
     this.resolved = device.createBuffer({ size: 16 * max, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
     this.read = device.createBuffer({ size: 16 * max, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST });
     this.labels = [];
+    this.destroyPending = false;
+    this.destroyed = false;
   }
 
   pass(enc, label) {
@@ -397,15 +432,35 @@ export class Profiler {
   async collect() {
     const n = this.labels.length;
     const out = {};
-    if (n) {
-      await this.read.mapAsync(GPUMapMode.READ, 0, 16 * n);
-      const t = new BigInt64Array(this.read.getMappedRange(0, 16 * n));
-      this.labels.forEach((l, i) => (out[l] = (out[l] || 0) + Number(t[2 * i + 1] - t[2 * i]) / 1e6));
-      this.read.unmap();
+    let mapped = false;
+    try {
+      if (n) {
+        await this.read.mapAsync(GPUMapMode.READ, 0, 16 * n);
+        mapped = true;
+        const t = new BigInt64Array(this.read.getMappedRange(0, 16 * n));
+        this.labels.forEach((l, i) => (out[l] = (out[l] || 0) + Number(t[2 * i + 1] - t[2 * i]) / 1e6));
+      }
+    } finally {
+      if (mapped) this.read.unmap();
+      this.labels = [];
+      if (this.destroyPending) this.release();
     }
-    this.labels = [];
     for (const k of Object.keys(out)) out[k] = Math.round(out[k] * 1000) / 1000;
     return out;
+  }
+
+  destroy() {
+    if (this.destroyed) return;
+    if (this.labels.length) this.destroyPending = true;
+    else this.release();
+  }
+
+  release() {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.qs.destroy?.();
+    this.resolved.destroy?.();
+    this.read.destroy?.();
   }
 }
 
@@ -424,10 +479,10 @@ export const YIELD_CHUNKS = 6;
 export const SUBMIT = { mode: "await" };
 
 /** Ends a chunk of a long pass according to SUBMIT.mode. */
-export async function endChunk(device, enc) {
-  if (SUBMIT.mode === "none") return enc;
+export async function endChunk(device, enc, mode = SUBMIT.mode) {
+  if (mode === "none") return enc;
   device.queue.submit([enc.finish()]);
-  if (SUBMIT.mode === "await") await device.queue.onSubmittedWorkDone();
+  if (mode === "await") await device.queue.onSubmittedWorkDone();
   return device.createCommandEncoder();
 }
 

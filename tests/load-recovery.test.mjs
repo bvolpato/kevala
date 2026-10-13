@@ -50,6 +50,17 @@ test("explicit WebGPU retries but rejects with both reasons instead of using the
   assert.ok(state.instances.every((w) => w.terminated));
 });
 
+test("image loading preserves GPU failures without attempting an unsupported CPU fallback", async (t) => {
+  const state = workers(t, [gpuError("out of memory"), gpuError("adapter unavailable")]);
+  await assert.rejects(Kevala.load({ vision: "https://example.com/vision.kevala", backend: "auto", cache: false }), (error) => {
+    assert.equal(error.code, "WEBGPU_INIT");
+    assert.match(error.message, /high-performance: out of memory; low-power: adapter unavailable/);
+    return true;
+  });
+  assert.equal(state.loads.length, 2);
+  assert.ok(state.instances.every((w) => w.terminated));
+});
+
 for (const message of ["HTTP 503", "not a .kevala pack", "GPU trunk is missing 2 tensors (enc.0.wqkv...)", "WebGPU: application plugin rejected its input"]) {
   test(`does not retry an untagged load error: ${message}`, async (t) => {
     const state = workers(t, [{ type: "error", message }]);

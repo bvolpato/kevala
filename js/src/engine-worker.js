@@ -20,7 +20,7 @@ import { RemoteShard } from "./shard-client.js";
 import { CPU_KERNELS, cpuOptions, readTuning, threadCandidates, tuningKey, writeTuning } from "./cpu-policy.js";
 import { calibrateThreads } from "./cpu-calibrate.js";
 import { assertPackPrecision, assertWasmPackSize, packSize, parsePackHeader, readPackHead } from "./pack-layout.js";
-import { requestQueue } from "./request-queue.js";
+import { MAX_BATCH_REQUESTS, requestQueue } from "./request-queue.js";
 
 const enc = new TextEncoder();
 let E = null; // the loaded engine
@@ -37,7 +37,11 @@ let port = self;
 const post = (m, t) => port.postMessage(m, t || []);
 const progress = (p) => post({ type: "progress", ...p });
 // Requests that arrive while a pass runs are packed into the next pass together.
-const decideQueue = requestQueue((batch) => run(batch), post);
+const decideQueue = requestQueue((batch) => run(batch), post, MAX_BATCH_REQUESTS, (message) => {
+  for (const request of message.requests) for (const part of Array.isArray(request.parts) ? request.parts : []) {
+    if (part?.type === "image" && (part.data?.data instanceof Uint8Array || part.data?.data instanceof Uint8ClampedArray)) part.data.data.fill(0);
+  }
+});
 
 async function onMessage(ev) {
   const m = ev.data;
@@ -69,6 +73,8 @@ export function serve(p) {
 /** Frees the model; a worker gets the same by being terminated. */
 export function dispose() {
   loadController?.abort();
+  E?.gpu?.profiler?.destroy?.();
+  if (E?.vision) E.vision.profiler = null;
   activeGpu?.device.destroy();
   activeGpu = null;
   packIterator?.return?.().catch(() => {});
@@ -207,6 +213,7 @@ async function load(o) {
   const fullSize = packSize(header, headerBytes.byteLength);
   checkCancelled();
   const requestedStateCache = o.stateCache !== false;
+  if (o.vision != null && !plugin.loadVision) throw new Error(`${arch} does not yet support a vision companion`);
 
   // backend choice: WebGPU when the family has a GPU trunk, else shards when it can split
   let gpu = null;
@@ -226,6 +233,7 @@ async function load(o) {
     }
   }
   if (!gpu && o.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
+  if (o.vision != null && !gpu) throw new Error("image inference currently requires WebGPU");
   if (!gpu && plugin.stateCache && !requestedStateCache) {
     throw Object.assign(new Error("stateCache: false requires WebGPU for Kev and SemIf; their WASM backend cannot disable the cache"), { code: "STATE_CACHE" });
   }
@@ -241,7 +249,12 @@ async function load(o) {
   if (gpu && plugin.gpuLayouts) layouts = plugin.gpuLayouts(header, headerBytes.byteLength);
   else if (external) layouts = parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice())));
   const sinks = [];
-  const engine = { arch, plugin, header, coord, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached } };
+  const engine = { arch, plugin, header, coord, signal, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached } };
+  if (o.vision != null) {
+    progress({ phase: "init", message: "loading vision companion before decoder weights" });
+    await withGpuErrors(gpu, () => plugin.loadVision(engine, o, gpu, signal, progress), "loading vision companion");
+    checkCancelled();
+  }
 
   if (!external) {
     // one instance holds the whole pack
@@ -263,7 +276,7 @@ async function load(o) {
     sinks.push(new PieceSink(cl, (dst, bytes) => coord.bytes(engine.coordPtr + dst, bytes.byteLength).set(bytes)));
     if (gpu) {
       progress({ phase: "init", message: `WebGPU: ${gpu.name}` });
-      engine.gpu = await withGpuErrors(gpu, () => plugin.createGpu(gpu, layouts[1], header), "creating the model");
+      engine.gpu = await withGpuErrors(gpu, () => plugin.createGpu(gpu, layouts[1], header, engine), "creating the model");
       engine.gpu.stateCacheEnabled = requestedStateCache;
       checkCancelled();
       sinks.push(new PieceSink(layouts[1], (dst, bytes) => engine.gpu.write(dst, bytes)));
@@ -336,7 +349,7 @@ async function load(o) {
   if (engine.gpu) {
     await withGpuErrors(gpu, async () => {
       await plugin.initGpu(engine);
-      if (o.profile) engine.gpu.profiler = new Profiler(gpu.device);
+      if (o.profile && gpu.device.features.has("timestamp-query")) setEngineProfiler(engine, true);
     }, "initializing GPU kernels");
     checkCancelled();
     // module state: a second load on this page must not inherit the first one's choice
@@ -378,10 +391,16 @@ async function load(o) {
       cpuTuning,
       gpuTuning: engine.gpu?.tuning?.diagnostics || null,
       stateCache,
-      modalities: meta.modalities,
+      modalities: engine.vision ? [...new Set([...meta.modalities, "image"])] : meta.modalities,
+      vision: engine.visionPack || null,
+      imageTokens: engine.vision ? engine.imageTokens : null,
       model: header.model,
       config: header.config,
       pack: engine.pack,
+      memory: engine.gpu?.memory ? {
+        ...engine.gpu.memory,
+        gpuWeights: engine.gpu.memory.gpuWeights + (engine.visionHeader?.tensors.reduce((sum, tensor) => sum + tensor.size + (tensor.scales_size || 0), 0) || 0),
+      } : null,
       loadMs: now() - t0,
       warmupMs: warm,
     },
@@ -406,7 +425,18 @@ async function run(requests) {
 function setProfiling(m) {
   const gpu = E?.gpu;
   const supported = !!gpu && gpu.device.features.has("timestamp-query");
-  if (supported) gpu.profiler = m.on ? new Profiler(gpu.device) : null;
-  if (gpu && !m.on) gpu.lastProfile = null;
+  if (E && supported) setEngineProfiler(E, m.on);
   post({ type: "result", id: m.id, supported, responses: [] });
+}
+
+function setEngineProfiler(engine, on) {
+  const previous = engine.gpu?.profiler;
+  const next = on ? new Profiler(engine.gpu.device) : null;
+  if (engine.gpu) engine.gpu.profiler = next;
+  if (engine.vision) {
+    engine.vision.profiler = next;
+    if (!on) engine.vision.lastProfile = null;
+  }
+  if (!on && engine.gpu) engine.gpu.lastProfile = null;
+  if (previous && previous !== next) previous.destroy?.();
 }

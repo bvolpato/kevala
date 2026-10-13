@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { MAX_BATCH_REQUESTS, requestQueue } from "../js/src/request-queue.js";
 
 /** A queue whose passes are released by hand, so a test controls what arrives while one runs. */
-function harness({ fails = () => null, limit } = {}) {
+function harness({ fails = () => null, limit, onSettled } = {}) {
   const passes = [];
   const posted = [];
   const gates = [];
@@ -15,7 +15,7 @@ function harness({ fails = () => null, limit } = {}) {
       else resolve({ responses: requests.map((r) => `answer:${r}`), timing: { forward: 1 } });
     });
   });
-  const queue = requestQueue(run, (m) => posted.push(m), limit);
+  const queue = requestQueue(run, (m) => posted.push(m), limit, onSettled);
   const release = async () => {
     gates.shift()();
     for (let i = 0; i < 6; i++) await Promise.resolve();
@@ -97,4 +97,36 @@ test("clear drops the messages that have not started", async () => {
   h.queue.push({ id: 3, requests: ["c"] });
   await h.settle();
   assert.deepEqual(h.posted.map((m) => m.id), [1, 3]);
+});
+
+test("request resources remain intact through isolated retries and release after final outcomes", async () => {
+  const pixels = new Uint8Array([10, 20, 30]);
+  const good = { pixels };
+  const bad = { invalid: true };
+  const released = [];
+  const h = harness({
+    fails: (requests) => {
+      if (requests.includes(good)) assert.deepEqual(Array.from(good.pixels), [10, 20, 30]);
+      return requests.includes(bad) ? new Error("invalid neighbor") : null;
+    },
+    onSettled: (message) => { released.push(message.id); for (const request of message.requests) request.pixels?.fill(0); },
+  });
+  h.queue.push({ id: 0, requests: ["warm"] });
+  h.queue.push({ id: 1, requests: [good] });
+  h.queue.push({ id: 2, requests: [bad] });
+  await h.settle();
+  assert.deepEqual(h.posted.map((m) => [m.type, m.id]), [["result", 0], ["result", 1], ["error", 2]]);
+  assert.deepEqual(released, [0, 1, 2]);
+  assert.deepEqual(Array.from(pixels), [0, 0, 0]);
+});
+
+test("clear releases queued resources without releasing the running request early", async () => {
+  const released = [];
+  const h = harness({ onSettled: (message) => released.push(message.id) });
+  h.queue.push({ id: 1, requests: ["running"] });
+  h.queue.push({ id: 2, requests: ["queued"] });
+  h.queue.clear();
+  assert.deepEqual(released, [2]);
+  await h.settle();
+  assert.deepEqual(released, [2, 1]);
 });

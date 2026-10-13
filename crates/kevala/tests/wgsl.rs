@@ -41,6 +41,10 @@ fn every_kernel_renders_completely() {
                 assert!(wgsl(kernel, &spec).is_err());
                 continue;
             }
+            if *kernel == "gemma4_vision_position" && spec.weights == WeightType::Q8 {
+                assert_eq!(wgsl(kernel, &spec).unwrap_err(), "gemma4_vision_position requires bf16 or f32 weights");
+                continue;
+            }
             let src = wgsl(kernel, &spec).unwrap_or_else(|e| panic!("{kernel} {spec:?}: {e}"));
             assert!(!src.contains("{{") && !src.contains("//#"), "{kernel} {spec:?} left a template marker");
             assert_eq!(src.matches("@compute").count(), 1, "{kernel} {spec:?}: one entry point");

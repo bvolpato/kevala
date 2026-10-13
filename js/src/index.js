@@ -88,11 +88,15 @@ export class Kevala {
    *               cross-request reuse while retaining duplicate sharing within one pass. It is
    *               ignored by model families without a state cache; Kev/SemIf WASM rejects false
    *   retune      ignore the cached CPU tuning profile and measure again (default false)
-   *   submit      WebGPU scheduling: "await" drains each long-pass chunk (default);
+   *   submit      WebGPU scheduling: "await" drains each long-pass chunk (decoder default);
    *               "split" queues separate chunks without waiting, reducing latency at a
-   *               possible cost to UI responsiveness; "none" uses one command buffer
+   *               possible cost to UI responsiveness; "none" uses one command buffer.
+   *               Vision defaults to "split" unless this option is set explicitly
    *   cache       keep the pack in browser storage (the Origin Private File System, or the
    *               Cache API where that is missing) and reuse it on later loads (default true)
+   *   vision      optional Gemma 4 vision companion .kevala URL, Blob, or ArrayBuffer;
+   *               image inference currently requires WebGPU
+   *   imageTokens maximum soft tokens per image: 70 (default), 140, 280, 560, or 1120
    *   onProgress  receives { phase, file, loaded, total, message }
    *   signal      AbortSignal that cancels loading
    *   wasmBase    where the .wasm files live (default: next to this module)
@@ -109,6 +113,9 @@ export class Kevala {
     if (options.gpuKernel !== undefined && !["auto", "generic", "wide"].includes(options.gpuKernel)) throw new Error('gpuKernel must be "auto", "generic", or "wide"');
     if (options.stateCache !== undefined && typeof options.stateCache !== "boolean") throw new TypeError("stateCache must be a boolean");
     if (options.precision != null && !["bf16", "f32", "q8"].includes(options.precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
+    if (options.vision != null && !(typeof options.vision === "string" || options.vision instanceof Blob || options.vision instanceof ArrayBuffer)) throw new TypeError("vision must be a companion pack URL, Blob, or ArrayBuffer");
+    if (options.imageTokens != null && ![70, 140, 280, 560, 1120].includes(options.imageTokens)) throw new Error("imageTokens must be 70, 140, 280, 560, or 1120");
+    if (options.vision != null && options.backend === "wasm") throw new Error("image inference currently requires WebGPU");
     const w = new Kevala();
     await w.#start(options);
     return w;
@@ -139,7 +146,8 @@ export class Kevala {
     if (typeof model === "string" && !Object.hasOwn(MODELS, model)) model = onPageUrl(model);
     else if (typeof model?.url === "string") model = { ...model, url: onPageUrl(model.url) };
     const plugins = (opts.plugins || []).map(onPageUrl);
-    const options = { ...opts, model, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
+    const vision = typeof opts.vision === "string" ? onPageUrl(opts.vision) : opts.vision;
+    const options = { ...opts, model, vision, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
     try {
       let worker = spawn("./engine-worker.js");
       this.#worker = worker;
@@ -173,7 +181,7 @@ export class Kevala {
       }
       if (signal?.aborted) throw cancelled();
       const gpuUnavailable = failures.join("; ");
-      if (opts.backend === "webgpu") throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
+      if (opts.backend === "webgpu" || opts.vision != null) throw Object.assign(new Error(`WebGPU: ${gpuUnavailable}`), { code: "WEBGPU_INIT" });
       onProgress?.({ phase: "init", message: "WebGPU unavailable; loading on the CPU" });
       if (signal?.aborted) throw cancelled();
       this.info = { ...(await this.#connect(spawn("./engine-worker.js"), { ...options, backend: "wasm" }, onProgress)), gpuUnavailable };
@@ -266,14 +274,23 @@ export class Kevala {
 
   #send(requests) {
     if (!this.#worker) return Promise.reject(new Error("kevala was disposed"));
+    if (requests.some((r) => r.parts != null && !Array.isArray(r.parts))) throw new TypeError("parts must be an array of typed content");
     if (requests.some((r) => [r.images, r.videos].some((value) => value != null && (!Array.isArray(value) || value.length)))) {
       throw new Error('images/videos are not supported; use typed content in "parts" for modalities supported by the loaded model.');
     }
     const id = ++this.#seq;
-    const norm = requests.map((r) => ({ state: r.state ?? "", ...(r.parts ? { parts: r.parts } : {}), questions: r.questions }));
+    const norm = requests.map((r) => ({
+      state: r.state ?? "",
+      ...(r.parts ? { parts: r.parts.map((part) => part?.type === "image" && part.data instanceof URL ? { ...part, data: part.data.href } : part) } : {}),
+      questions: r.questions,
+    }));
+    if (norm.some((r) => r.parts?.some((p) => p?.type === "image")) && !this.info?.modalities?.includes("image")) {
+      throw new Error("The loaded model does not support images. Load an image-capable model with its vision companion pack.");
+    }
     return new Promise((resolve, reject) => {
       this.#pending.set(id, { resolve, reject });
-      this.#worker.postMessage({ type: "decide", id, requests: norm });
+      try { this.#worker.postMessage({ type: "decide", id, requests: norm }); }
+      catch (error) { this.#pending.delete(id); reject(error); }
     });
   }
 

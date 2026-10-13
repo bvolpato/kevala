@@ -8,7 +8,7 @@ export const MAX_BATCH_REQUESTS = 64;
  * `{ responses, timing }`; `post` receives one `result` or `error` message per queued message.
  * Messages are answered in arrival order.
  */
-export function requestQueue(run, post, limit = MAX_BATCH_REQUESTS) {
+export function requestQueue(run, post, limit = MAX_BATCH_REQUESTS, release = () => {}) {
   let queue = [];
   let busy = false;
 
@@ -50,6 +50,8 @@ export function requestQueue(run, post, limit = MAX_BATCH_REQUESTS) {
             fail(m, alone);
           }
         }
+      } finally {
+        for (const m of batch) release(m);
       }
     }
     busy = false;
@@ -62,6 +64,7 @@ export function requestQueue(run, post, limit = MAX_BATCH_REQUESTS) {
     },
     /** Drops every message that has not started; a pass that is running finishes. */
     clear() {
+      for (const m of queue) release(m);
       queue = [];
     },
   };

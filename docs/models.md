@@ -2,7 +2,8 @@
 
 The runtime catalog registers Laya, Kev v1.0, H2O-Lightning-4B, Clef-flash, SemIf, and Gemma 4.
 The website preview picker is currently limited to 4B and smaller: it offers Laya, Kev-0.8B/4B,
-H2O-Lightning-4B, and SemIf 0.8B/2B/4B. Kev-9B, Clef-flash, and Gemma 4 remain available through
+H2O-Lightning-4B, and SemIf 0.8B/2B/4B, with Gemma 4 E2B as an image-demo exception.
+Kev-9B, Clef-flash, and Gemma 4 E4B remain available through
 the JS runtime API but are not shown in the picker while that cap is active.
 Kev v1.0 starts at 0.8B; SemIf starts at 0.8B. Changing a size waits for **Load** before fetching
 weights. Gemma 4 has E2B and E4B dense text models in the runtime catalog.
@@ -30,7 +31,7 @@ disabled.
 | `semif-qwen3.5-0.8b` | Frozen Qwen3.5-0.8B instruction model | Native option-label logits | 855 MB |
 | `semif-qwen3.5-2b` | Frozen Qwen3.5-2B instruction model | Native option-label logits | 2.13 GB |
 | `semif-qwen3.5-4b` | Frozen Qwen3.5-4B instruction model | Native option-label logits | 4.75 GB |
-| `gemma-4-e2b` | Frozen Gemma 4 E2B instruction model, text-only | Native option-label logits | 5.22 GB |
+| `gemma-4-e2b` | Frozen Gemma 4 E2B instruction decoder; optional vision companion | Native option-label logits | 5.22 GB decoder |
 | `gemma-4-e4b` | Frozen Gemma 4 E4B instruction model, text-only | Native option-label logits | 8.41 GB |
 
 Clef sizes are estimates; the other BF16/Q8 sizes come from exact local conversions or published pack manifests. Runtime memory is higher.
@@ -41,6 +42,9 @@ exactly 5,217,421,952 bytes (E2B) and 8,407,043,136 bytes (E4B). Only Laya and K
 browser conversion. Kev-4B/9B, H2O-Lightning, and Clef-flash need native conversion until smaller
 browser conversion paths exist. Their first-load path fails fast while no matching pack is
 published; load a converted `.kevala` URL when you have one.
+Gemma 4 E2B image decisions add a separately loaded 337,302,144-byte BF16 vision companion on
+WebGPU. That companion is not published yet; see [conversion and loading](gemma4.md#vision-companion).
+Gate image controls on the loaded `info.modalities`, not the model name or upstream capabilities.
 
 ```js
 import { Kevala } from "kevala";

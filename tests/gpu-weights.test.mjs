@@ -85,3 +85,50 @@ test("an odd BF16 vector keeps its final element in a padded GPU write", (t) => 
   assert.deepEqual(weights.get(info.name).buf.bytes.subarray(0, 6), bytes);
   assert.deepEqual(weights.missing(), []);
 });
+
+test("host Q8 tables retain streamed bytes without a GPU allocation and gather exact F32 rows", (t) => {
+  const gpu = layout({ name: "ple.0.embed", dtype: "q8", shape: [3, 64], offset: 4096, size: 192, block: 32, scales_offset: 4288, scales_size: 24 });
+  const info = parsePackHeader(gpu.prefix).tensors[0];
+  const d = device(t, 128);
+  d.createBuffer = () => { throw new Error("a host table must not allocate on the GPU"); };
+  const weights = new GpuWeights(d, gpu, { hostTables: [info.name] });
+  const signed = Int8Array.from({ length: info.size }, (_, i) => i % 255 - 128);
+  const bytes = new Uint8Array(signed.buffer);
+  const scales = new Float32Array([0.123456789, 0.321654987, -0.045678912, 0.009876543, 0.333333333, 0.777777777]);
+  for (let at = 0; at < bytes.length; at += 7) weights.write(info.offset + at, bytes.subarray(at, at + 7));
+  assert.deepEqual(weights.missing(), [info.name]);
+  assert.throws(() => weights.gatherHostRows(info.name, [0]), /is incomplete/);
+  const scaleBytes = new Uint8Array(scales.buffer);
+  for (let at = 0; at < scaleBytes.length; at += 3) weights.write(info.scales_offset + at, scaleBytes.subarray(at, at + 3));
+  const entry = weights.get(info.name);
+  assert.deepEqual(weights.missing(), []);
+  assert.equal(entry.buf, null);
+  assert.equal(entry.sbuf, null);
+  assert.equal(entry.data, null);
+  assert.equal(entry.scales, null);
+  assert.deepEqual(entry.host.data, signed);
+  assert.deepEqual(entry.host.scales, scales);
+  const ids = [2, 0, 2, 1];
+  const factor = 1.123456789;
+  const target = new Float32Array(5 + ids.length * 64 + 3).fill(100);
+  assert.equal(weights.gatherHostRows(info.name, ids, factor, target, 5), target);
+  for (let row = 0; row < ids.length; row++) for (let col = 0; col < 64; col++) {
+    const expected = Math.fround(Math.fround(signed[ids[row] * 64 + col] * scales[ids[row] * 2 + Math.floor(col / 32)]) * Math.fround(factor));
+    assert.equal(target[5 + row * 64 + col], expected);
+  }
+  assert.deepEqual([...target.subarray(0, 5)], [100, 100, 100, 100, 100]);
+  assert.deepEqual([...target.subarray(-3)], [100, 100, 100]);
+  for (const ids of [[-1], [3], [0.5], [NaN]]) assert.throws(() => weights.gatherHostRows(info.name, ids), /invalid row selection/);
+  assert.throws(() => weights.gatherHostRows(info.name, [0], Infinity), /invalid row selection/);
+  assert.throws(() => weights.gatherHostRows(info.name, [0], 1, new Float32Array(63)), /undersized F32 destination/);
+});
+
+test("host Q8 row tables reject unsupported storage modes before allocating", (t) => {
+  const d = device(t);
+  for (const tensor of [
+    { name: "emb", dtype: "bf16", shape: [2, 32], offset: 4096, size: 128 },
+    { name: "emb", dtype: "q8", shape: [2, 32], offset: 4096, size: 64, block: 16, scales_offset: 4160, scales_size: 16 },
+  ]) assert.throws(() => new GpuWeights(d, layout(tensor), { hostTables: ["emb"] }), /requires a block-32 Q8 matrix/);
+  const gpu = layout({ name: "emb", dtype: "q8", shape: [2, 32], offset: 4096, size: 64, block: 32, scales_offset: 4160, scales_size: 8 });
+  assert.throws(() => new GpuWeights(d, gpu, { hostTables: ["emb"], rowTables: ["emb"] }), /cannot be both sharded and host-resident/);
+});

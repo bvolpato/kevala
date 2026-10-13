@@ -1,0 +1,70 @@
+{
+  "adapter": {
+    "architecture": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "timestampQuery": false,
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 18,
+        "elapsedMs": 97,
+        "id": "rectangular",
+        "maxAbs": 6.854534149169922e-06,
+        "patches": 36,
+        "relativeL2": 1.9518456296555467e-06,
+        "softTokens": 2
+      },
+      {
+        "activePatches": 18,
+        "elapsedMs": 100,
+        "id": "reordered",
+        "maxAbs": 6.854534149169922e-06,
+        "patches": 36,
+        "relativeL2": 2.061327087147612e-06,
+        "softTokens": 2
+      },
+      {
+        "activePatches": 9,
+        "elapsedMs": 101,
+        "id": "resized-square",
+        "maxAbs": 2.264976501464844e-06,
+        "patches": 18,
+        "relativeL2": 1.001494804229619e-06,
+        "softTokens": 1
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 3e-05
+  },
+  "done": true,
+  "metricMs": 99.33333333333331,
+  "options": {
+    "compactPatches": true,
+    "submitMode": "split"
+  },
+  "profile": false,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

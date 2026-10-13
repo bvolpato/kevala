@@ -26,6 +26,7 @@ export function loadCode(selection) {
   const customPack = selection.model === "custom" || !!selection.customPackUrl?.();
   const precision = selection.precisionFor?.() ?? selection.precision;
   if (!customPack && precision) options.precision = precision;
+  if (typeof selection.vision === "string" && selection.vision) options.vision = selection.vision;
   if (selection.backend && selection.backend !== "auto") options.backend = selection.backend;
   if (selection.from && selection.from !== "pack") options.from = selection.from;
   return `import { Kevala } from ${JSON.stringify(RUNTIME_URL)};\n\nconst kevala = await Kevala.load(${js(options)});`;

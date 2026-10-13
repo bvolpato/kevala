@@ -1,0 +1,704 @@
+{
+  "adapter": {
+    "architecture": null,
+    "device": null,
+    "deviceFeatures": [
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxComputeWorkgroupSizeX": 256,
+      "maxComputeWorkgroupStorageSize": 16384
+    },
+    "name": "WebGPU",
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "compile": {
+    "metadataErrorScopes": true,
+    "ok": true,
+    "source": "current kevala-base.wasm rendered production WGSL",
+    "workgroupSize": 256
+  },
+  "correctness": {
+    "cases": [
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 32,
+        "cpuProbabilitySumError": 0,
+        "dim": 32,
+        "head4": 8,
+        "heads": 1,
+        "keyLanes": 32,
+        "kvHeads": 1,
+        "label": "r1-h1-kv1-d32",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 128,
+        "cpuProbabilitySumError": 0,
+        "dim": 32,
+        "head4": 8,
+        "heads": 4,
+        "keyLanes": 32,
+        "kvHeads": 2,
+        "label": "r1-h4-kv2-d32",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 544,
+        "cpuProbabilitySumError": 2.2325548343360427e-07,
+        "dim": 32,
+        "head4": 8,
+        "heads": 1,
+        "keyLanes": 32,
+        "kvHeads": 1,
+        "label": "r17-h1-kv1-d32",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008553171509153057,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 2.073204481423119e-07,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.9709063987180432,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 2176,
+        "cpuProbabilitySumError": 2.3507163859903815e-07,
+        "dim": 32,
+        "head4": 8,
+        "heads": 4,
+        "keyLanes": 32,
+        "kvHeads": 2,
+        "label": "r17-h4-kv2-d32",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008287300967621945,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 2.2316868053540162e-07,
+          "maxSumError": 4.440892098500626e-16,
+          "maximum": 0.9781380653151026,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 8224,
+        "cpuProbabilitySumError": 6.689806468784809e-07,
+        "dim": 32,
+        "head4": 8,
+        "heads": 1,
+        "keyLanes": 32,
+        "kvHeads": 1,
+        "label": "r257-h1-kv1-d32",
+        "ok": true,
+        "output": {
+          "maxAbs": 6.556510925292969e-07,
+          "maxScaledError": 0.021344064499875658,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 3.226825118218813e-07,
+          "maxSumError": 1.3322676295501878e-15,
+          "maximum": 0.5366401427943397,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 32896,
+        "cpuProbabilitySumError": 8.328061085194349e-07,
+        "dim": 32,
+        "head4": 8,
+        "heads": 4,
+        "keyLanes": 32,
+        "kvHeads": 2,
+        "label": "r257-h4-kv2-d32",
+        "ok": true,
+        "output": {
+          "maxAbs": 8.344650268554688e-07,
+          "maxScaledError": 0.027257045975588663,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 3.863428320038942e-07,
+          "maxSumError": 1.3322676295501878e-15,
+          "maximum": 0.5437594007026125,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 252,
+        "checkedOutputs": 48,
+        "cpuProbabilitySumError": 0,
+        "dim": 48,
+        "head4": 12,
+        "heads": 1,
+        "keyLanes": 21,
+        "kvHeads": 1,
+        "label": "r1-h1-kv1-d48",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 252,
+        "checkedOutputs": 192,
+        "cpuProbabilitySumError": 0,
+        "dim": 48,
+        "head4": 12,
+        "heads": 4,
+        "keyLanes": 21,
+        "kvHeads": 2,
+        "label": "r1-h4-kv2-d48",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 252,
+        "checkedOutputs": 816,
+        "cpuProbabilitySumError": 2.734013833105564e-07,
+        "dim": 48,
+        "head4": 12,
+        "heads": 1,
+        "keyLanes": 21,
+        "kvHeads": 1,
+        "label": "r17-h1-kv1-d48",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.384185791015625e-07,
+          "maxScaledError": 0.006505998432965216,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 2.530341788320456e-07,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.9630710764518712,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 252,
+        "checkedOutputs": 3264,
+        "cpuProbabilitySumError": 2.8690556064248085e-07,
+        "dim": 48,
+        "head4": 12,
+        "heads": 4,
+        "keyLanes": 21,
+        "kvHeads": 2,
+        "label": "r17-h4-kv2-d48",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.384185791015625e-07,
+          "maxScaledError": 0.006778009020852205,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 2.695116300133194e-07,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.9699941293789048,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 252,
+        "checkedOutputs": 12336,
+        "cpuProbabilitySumError": 6.646732799708843e-07,
+        "dim": 48,
+        "head4": 12,
+        "heads": 1,
+        "keyLanes": 21,
+        "kvHeads": 1,
+        "label": "r257-h1-kv1-d48",
+        "ok": true,
+        "output": {
+          "maxAbs": 7.152557373046875e-07,
+          "maxScaledError": 0.02396336528641743,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 3.078841288584045e-07,
+          "maxSumError": 1.1102230246251563e-15,
+          "maximum": 0.5308136869900322,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 252,
+        "checkedOutputs": 49344,
+        "cpuProbabilitySumError": 8.709466783329844e-07,
+        "dim": 48,
+        "head4": 12,
+        "heads": 4,
+        "keyLanes": 21,
+        "kvHeads": 2,
+        "label": "r257-h4-kv2-d48",
+        "ok": true,
+        "output": {
+          "maxAbs": 7.748603820800781e-07,
+          "maxScaledError": 0.02530578242189497,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 4.52375819137707e-07,
+          "maxSumError": 1.3322676295501878e-15,
+          "maximum": 0.5386553165106495,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 64,
+        "cpuProbabilitySumError": 0,
+        "dim": 64,
+        "head4": 16,
+        "heads": 1,
+        "keyLanes": 16,
+        "kvHeads": 1,
+        "label": "r1-h1-kv1-d64",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 256,
+        "cpuProbabilitySumError": 0,
+        "dim": 64,
+        "head4": 16,
+        "heads": 4,
+        "keyLanes": 16,
+        "kvHeads": 2,
+        "label": "r1-h4-kv2-d64",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 1088,
+        "cpuProbabilitySumError": 9.615905582904817e-08,
+        "dim": 64,
+        "head4": 16,
+        "heads": 1,
+        "keyLanes": 16,
+        "kvHeads": 1,
+        "label": "r17-h1-kv1-d64",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008266354097081187,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 9.167306147528365e-08,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.972754613094612,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 4352,
+        "cpuProbabilitySumError": 2.0774314180016523e-07,
+        "dim": 64,
+        "head4": 16,
+        "heads": 4,
+        "keyLanes": 16,
+        "kvHeads": 2,
+        "label": "r17-h4-kv2-d64",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008362896171298873,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 1.887690045387913e-07,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.9688342272227788,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 16448,
+        "cpuProbabilitySumError": 7.804919732734561e-07,
+        "dim": 64,
+        "head4": 16,
+        "heads": 1,
+        "keyLanes": 16,
+        "kvHeads": 1,
+        "label": "r257-h1-kv1-d64",
+        "ok": true,
+        "output": {
+          "maxAbs": 7.152557373046875e-07,
+          "maxScaledError": 0.02457138495136995,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 3.704515884606075e-07,
+          "maxSumError": 1.4432899320127037e-15,
+          "maximum": 0.5300211709663635,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 65792,
+        "cpuProbabilitySumError": 6.918126018717885e-07,
+        "dim": 64,
+        "head4": 16,
+        "heads": 4,
+        "keyLanes": 16,
+        "kvHeads": 2,
+        "label": "r257-h4-kv2-d64",
+        "ok": true,
+        "output": {
+          "maxAbs": 7.748603820800781e-07,
+          "maxScaledError": 0.025639698647549284,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 3.352509724274811e-07,
+          "maxSumError": 1.5543122344752194e-15,
+          "maximum": 0.5423818444091041,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 256,
+        "cpuProbabilitySumError": 0,
+        "dim": 256,
+        "head4": 64,
+        "heads": 1,
+        "keyLanes": 4,
+        "kvHeads": 1,
+        "label": "r1-h1-kv1-d256",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 1024,
+        "cpuProbabilitySumError": 0,
+        "dim": 256,
+        "head4": 64,
+        "heads": 4,
+        "keyLanes": 4,
+        "kvHeads": 2,
+        "label": "r1-h4-kv2-d256",
+        "ok": true,
+        "output": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 0,
+          "maxSumError": 0,
+          "maximum": 1,
+          "minimum": 1,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 1
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 4352,
+        "cpuProbabilitySumError": 1.2732925824820998e-07,
+        "dim": 256,
+        "head4": 64,
+        "heads": 1,
+        "keyLanes": 4,
+        "kvHeads": 1,
+        "label": "r17-h1-kv1-d256",
+        "ok": true,
+        "output": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008740282946732555,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 1.1566841007226715e-07,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.9636853557173256,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 17408,
+        "cpuProbabilitySumError": 2.231390681117773e-07,
+        "dim": 256,
+        "head4": 64,
+        "heads": 4,
+        "keyLanes": 4,
+        "kvHeads": 2,
+        "label": "r17-h4-kv2-d256",
+        "ok": true,
+        "output": {
+          "maxAbs": 3.576278686523438e-07,
+          "maxScaledError": 0.009995439081147271,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 2.078525814797061e-07,
+          "maxSumError": 2.220446049250313e-16,
+          "maximum": 0.9790818761711184,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 17
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 65792,
+        "cpuProbabilitySumError": 8.702481864020228e-07,
+        "dim": 256,
+        "head4": 64,
+        "heads": 1,
+        "keyLanes": 4,
+        "kvHeads": 1,
+        "label": "r257-h1-kv1-d256",
+        "ok": true,
+        "output": {
+          "maxAbs": 7.748603820800781e-07,
+          "maxScaledError": 0.025608845373988623,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 4.197134215178089e-07,
+          "maxSumError": 1.3322676295501878e-15,
+          "maximum": 0.5324570277694302,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      },
+      {
+        "activeLanes": 256,
+        "checkedOutputs": 263168,
+        "cpuProbabilitySumError": 7.419439498335123e-07,
+        "dim": 256,
+        "head4": 64,
+        "heads": 4,
+        "keyLanes": 4,
+        "kvHeads": 2,
+        "label": "r257-h4-kv2-d256",
+        "ok": true,
+        "output": {
+          "maxAbs": 8.344650268554688e-07,
+          "maxScaledError": 0.02768782968788775,
+          "ok": true
+        },
+        "probability": {
+          "maxAbs": 3.4954213390392397e-07,
+          "maxSumError": 1.5543122344752194e-15,
+          "maximum": 0.5427034125562143,
+          "minimum": 0,
+          "ok": true,
+          "storageSemantics": "unnormalized weights; normalized here for validation"
+        },
+        "rows": 257
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "outputAbsolute": 2e-05,
+      "outputRelative": 2e-05,
+      "probabilityAbsolute": 2e-06,
+      "probabilitySum": 2e-06
+    }
+  },
+  "done": true,
+  "fixture": {
+    "headConfigs": [
+      {
+        "heads": 1,
+        "kvHeads": 1
+      },
+      {
+        "heads": 4,
+        "kvHeads": 2
+      }
+    ],
+    "headDims": [
+      32,
+      48,
+      64,
+      256
+    ],
+    "maskedLogit": -1e+30,
+    "rows": [
+      1,
+      17,
+      257
+    ],
+    "scoreOffset": 1000
+  },
+  "kernel": "gemma4_vision_attention",
+  "metric": "wall clock for direct numerical WGSL guard; not a performance benchmark",
+  "metricMs": 8949,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

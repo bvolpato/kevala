@@ -68,6 +68,7 @@ export default {
   maxShards: (header) => 1,
   createGpu: (gpu, layout, header) => new MyGpuTrunk(gpu, layout, header),
   initGpu: async (engine) => engine.gpu.init(),
+  loadVision: async (engine, options, gpu, signal, progress) => { /* load a compatible encoder */ },
   run: async (engine, requests) => ({ responses, timing }),
   convert: async (module, spec, opts) => packBytesOrStream,
 };
@@ -100,10 +101,20 @@ Pin a commit, never a branch: the pack cache is keyed by revision.
 ## 5. Modalities
 
 Requests carry typed `parts` (`{ type: "text" | "image" | "audio", ... }`). A family lists what it reads
-in `config.modalities`; anything else is rejected with an error naming the part. To add images to a
-family, add an encoder that turns image parts into embeddings (Qwen3.5 checkpoints ship a vision tower
-the Kev backbone could use), splice them at the template's placeholder tokens, and add `"image"` to the
-pack's modalities.
+in `config.modalities`; anything else is rejected with an error naming the part. A separate vision
+companion uses the optional architecture-plugin `loadVision(engine, options, gpu, signal, progress)`
+hook. The runtime calls it when `Kevala.load({ vision: ... })` is requested; a family without that
+hook rejects the load. The hook must validate decoder compatibility and load its encoder before
+the plugin's `run` method processes image parts.
+`createGpu(gpu, layout, header, engine)` receives the engine as its optional fourth argument,
+so a trunk can account for a validated companion when choosing where to keep weights.
+
+Gemma 4 E2B is the first image integration: its plugin decodes image parts, preprocesses patches,
+runs the vision tower and projector, and splices the resulting rows into decoder image placeholders.
+Its loaded `info.modalities` adds `"image"` only after the companion loads successfully; the
+decoder pack alone remains text-only. Follow that capability check in application controls.
+Future families need their own preprocessing, encoder, placeholder, and attention contracts.
+Qwen3.5 checkpoints containing a vision tower do not gain runtime image support automatically.
 
 ## 6. Prove it
 

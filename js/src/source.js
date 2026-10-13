@@ -133,6 +133,14 @@ export const MODELS = {
     repo: `google/gemma-4-${upstream}-it`, revision, license: "apache-2.0",
     hosted: `${GEMMA_PACKS}/gemma-4-${size}-q8.kevala`,
     browserConvert: false, pack, packSha256, block: 32,
+    ...(size === "e2b" ? {
+      modalities: ["text", "image"],
+      vision: {
+        arch: "gemma4-vision", precision: "bf16", pack: 337302144,
+        packSha256: "6556225c040a5b1d0bc8874a2833ce17cb7579d390f3225995c09ae589214d04",
+        hosted: null,
+      },
+    } : {}),
   }])),
 };
 

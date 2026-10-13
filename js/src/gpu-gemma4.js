@@ -3,10 +3,10 @@
 // E2B and E4B are dense models. Their distinctive GPU requirements are the packed
 // per-layer embeddings (PLE), 256-wide local heads, 512-wide proportional-RoPE
 // global heads, and shared KV states in the final layers. This implementation keeps
-// all large tensors and the embedding lookup on the device. The CPU receives only
-// the normalized rows requested by the scorer.
+// projection tensors and word embeddings on the device. Image sessions can keep
+// original Q8 PLE tables on the host and upload only the rows a request uses.
 
-import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk, withGpuErrors } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
 
 let U;
@@ -141,18 +141,30 @@ export class GpuGemma4 {
   constructor(gpu, layout, cfg) {
     U = GPUBufferUsage;
     this.device = gpu.device;
+    this.runtime = gpu;
     this.subgroup32 = !!gpu.subgroup32;
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.gpuKernel = gpu.kernel || "auto";
     this.cfg = cfg;
-    this.weights = new GpuWeights(gpu.device, layout);
+    const hostTables = cfg.hostPle === true ? Array.from({ length: cfg.layers }, (_, i) => `ple.${i}.embed`) : [];
+    this.weights = new GpuWeights(gpu.device, layout, { hostTables });
     this.tensors = this.weights.tensors;
+    this.memory = {
+      hostWeights: 0,
+      gpuWeights: 0,
+      embeddingStorage: cfg.hostPle === true ? "host-q8-rows" : "gpu-q8",
+    };
     for (const t of this.weights.header.tensors) {
       if (t.dtype === "q8" && Number(t.block) !== 32) throw new Error(`Gemma 4 WebGPU requires block-32 q8 tensors; ${t.name} declares block ${t.block}`);
       if (t.dtype === "q8" && (!Array.isArray(t.shape) || t.shape.length !== 2 || Number(t.shape[1]) % 32)) throw new Error(`Gemma 4 WebGPU requires q8 matrix columns divisible by 32; ${t.name} has shape ${JSON.stringify(t.shape)}`);
-      this.checkBuffer(t.size, t.name);
-      if (t.scales_size) this.checkBuffer(t.scales_size, `${t.name}.scales`);
+      const bytes = t.size + (t.scales_size || 0);
+      if (this.tensors.get(t.name).hostTable) this.memory.hostWeights += bytes;
+      else {
+        this.memory.gpuWeights += bytes;
+        this.checkBuffer(t.size, t.name);
+        if (t.scales_size) this.checkBuffer(t.scales_size, `${t.name}.scales`);
+      }
     }
     this.capacity = 0;
     this.uniforms = [];
@@ -286,7 +298,7 @@ export class GpuGemma4 {
     const maxI = cfg.intermediate * (cfg.useDoubleWideMlp ? 2 : 1);
     const P = cfg.pleDim;
     this.x = make(cap * D, U.COPY_DST | U.COPY_SRC, "Gemma 4 hidden states");
-    this.input = make(cap * D, U.COPY_DST, "Gemma 4 input embedding");
+    this.input = make(cap * D, U.COPY_DST | U.COPY_SRC, "Gemma 4 input embedding");
     this.h = make(cap * D, 0, "Gemma 4 normalized states");
     this.branch = make(cap * D, 0, "Gemma 4 residual branch");
     this.q = make(cap * Q, 0, "Gemma 4 queries");
@@ -296,12 +308,13 @@ export class GpuGemma4 {
     this.gate = make(cap * maxI, 0, "Gemma 4 MLP gate");
     this.up = make(cap * maxI, 0, "Gemma 4 MLP up");
     this.act = make(cap * maxI, 0, "Gemma 4 MLP activation");
-    this.pleToken = make(cap * P, 0, "Gemma 4 PLE token embedding");
+    this.pleToken = make(cap * P, U.COPY_SRC | (cfg.hostPle === true ? U.COPY_DST : 0), "Gemma 4 PLE token embedding");
     this.pleProj = make(cap * P, 0, "Gemma 4 PLE projection");
     this.ple = make(cap * P, 0, "Gemma 4 PLE input");
     this.pleGate = make(cap * P, 0, "Gemma 4 PLE gate");
     this.pleAct = make(cap * P, 0, "Gemma 4 PLE activation");
     this.ids = make(cap, U.COPY_DST, "Gemma 4 token ids");
+    this.pleIds = make(cap, U.COPY_DST, "Gemma 4 PLE token ids");
     this.pos = make(cap, U.COPY_DST, "Gemma 4 token positions");
     this.rows = make(cap, U.COPY_DST, "Gemma 4 output rows");
     this.gathered = make(cap * D, U.COPY_SRC, "Gemma 4 gathered rows");
@@ -357,7 +370,7 @@ export class GpuGemma4 {
       gate: make(cap * maxI, 0, "Gemma 4 compact MLP gate"),
       up: make(cap * maxI, 0, "Gemma 4 compact MLP up"),
       act: make(cap * maxI, 0, "Gemma 4 compact MLP activation"),
-      pleToken: make(cap * P, 0, "Gemma 4 compact PLE token embedding"),
+      pleToken: make(cap * P, this.cfg.hostPle === true ? U.COPY_DST : 0, "Gemma 4 compact PLE token embedding"),
       pleProj: make(cap * P, 0, "Gemma 4 compact PLE projection"),
       ple: make(cap * P, 0, "Gemma 4 compact PLE input"),
       pleGate: make(cap * P, 0, "Gemma 4 compact PLE gate"),
@@ -417,7 +430,8 @@ export class GpuGemma4 {
       // combined immediately before this layer consumes it.
       ops.push(mm(target, `ple.${i}.proj`, target.input, target.pleProj, 0, "mm.ple.proj"));
       const pleEmbed = this.weight(`ple.${i}.embed`);
-      ops.push(custom(target, "EMBED", [cfg.pleDim, Math.ceil(cfg.pleDim / 32), f32(cfg.pleEmbeddingScale), 0], [target.ids, pleEmbed.buf, pleEmbed.sbuf || this.zeros, target.pleToken], "ple.embed", (pass) => pass.dispatchWorkgroups(this.T)));
+      if (pleEmbed.hostTable) ops.push({ kind: "copy-ple", label: "ple.embed.host", layer: i, dst: target.pleToken });
+      else ops.push(custom(target, "EMBED", [cfg.pleDim, Math.ceil(cfg.pleDim / 32), f32(cfg.pleEmbeddingScale), 0], [target.pleIds || target.ids, pleEmbed.buf, pleEmbed.sbuf || this.zeros, target.pleToken], "ple.embed", (pass) => pass.dispatchWorkgroups(this.T)));
       ops.push(custom(target, "PLE", [cfg.pleDim, cfg.hidden, f32(cfg.eps), f32(cfg.pleInputScale), f32(cfg.pleProjectionScale)], [target.pleToken, target.pleProj, this.weight("ple.norm").buf, target.ple], "ple.combine", (pass) => pass.dispatchWorkgroups(this.T)));
       ops.push(rms(target, n("attn_norm"), target.x, target.h, cfg.hidden, 1, "rms.attn"));
       ops.push(mm(target, n("q"), target.h, target.q, 0, "mm.q"));
@@ -477,12 +491,14 @@ export class GpuGemma4 {
       pleGate: this.pleGate,
       pleAct: this.pleAct,
       ids: this.ids,
+      pleIds: this.pleIds,
       pos: this.pos,
     };
     const ops = [];
     const embed = this.weight("embed");
     const embedWidth = Number(embed.info.shape[1]);
     ops.push(custom(full, "EMBED", [embedWidth, Math.ceil(embedWidth / 32), f32(cfg.embeddingScale), 0], [full.ids, embed.buf, embed.sbuf || this.zeros, full.x], "embed", (pass) => pass.dispatchWorkgroups(this.T)));
+    ops.push({ kind: "copy-images", label: "embed.images" });
     ops.push({ kind: "copy-input", label: "embed.copy", src: this.x, dst: this.input });
     let prefixOps = null;
     for (let i = 0; i < cfg.layers; i++) {
@@ -531,9 +547,13 @@ export class GpuGemma4 {
   encode(enc, ops, T, prof = this.profiler) {
     let pass = prof ? null : enc.beginComputePass();
     for (const op of ops) {
-      if (op.kind === "copy-input" || op.kind === "copy-kv") {
+      if (op.kind === "copy-images" && !this.imageSpans?.length) continue;
+      if (op.kind === "copy-input" || op.kind === "copy-kv" || op.kind === "copy-images" || op.kind === "copy-ple") {
         pass?.end();
-        if (op.kind === "copy-input") enc.copyBufferToBuffer(op.src, 0, op.dst, 0, T * this.cfg.hidden * 4);
+        if (op.kind === "copy-images") {
+          for (const span of this.imageSpans) enc.copyBufferToBuffer(this.imageUpload, span.offset, this.x, span.start * this.cfg.hidden * 4, span.len * this.cfg.hidden * 4);
+        } else if (op.kind === "copy-ple") enc.copyBufferToBuffer(this.hostPleUpload, this.hostPleOffsets[op.layer], op.dst, 0, T * this.cfg.pleDim * 4);
+        else if (op.kind === "copy-input") enc.copyBufferToBuffer(op.src, 0, op.dst, 0, T * this.cfg.hidden * 4);
         else {
           const bytes = T * op.width * 4;
           enc.copyBufferToBuffer(op.srcK, 0, op.dstK, 0, bytes);
@@ -557,12 +577,32 @@ export class GpuGemma4 {
     pass?.end();
   }
 
-  async forward(inputIds, rows = null) {
+  async forward(inputIds, rows = null, imageSpans = []) {
+    try {
+      return await withGpuErrors(this.runtime, () => this.forwardRows(inputIds, rows, imageSpans), "running Gemma 4 inference");
+    } finally {
+      this.imageSpans = [];
+    }
+  }
+
+  async forwardRows(inputIds, rows, imageSpans) {
     if (!this.initialized) throw new Error("Gemma 4 GPU trunk is not initialized");
     const ids = inputIds instanceof Uint32Array ? inputIds : Uint32Array.from(inputIds);
     const T = ids.length;
     if (!T) throw new Error("Gemma 4 GPU forward needs at least one token");
     if (ids.some((id) => id >= this.cfg.vocab || id >= this.cfg.pleVocab)) throw new Error("Gemma 4 token id is outside an embedding vocabulary");
+    const pleIds = ids.slice();
+    let imageBytes = 0;
+    let end = 0;
+    this.imageSpans = imageSpans.map((span) => {
+      if (!Number.isSafeInteger(span.start) || !Number.isSafeInteger(span.len) || span.len < 1 || span.start < end || span.start + span.len > T || !(span.rows instanceof Float32Array) || span.rows.length !== span.len * this.cfg.hidden || span.rows.some((x) => !Number.isFinite(x))) throw new Error("Gemma 4 image spans must contain ordered, nonoverlapping projected rows within the sequence");
+      end = span.start + span.len;
+      if (ids.subarray(span.start, end).some((id) => id !== 258880)) throw new Error("Gemma 4 image span does not match image placeholder tokens");
+      pleIds.fill(0, span.start, end);
+      const offset = imageBytes;
+      imageBytes += span.rows.byteLength;
+      return { ...span, offset };
+    });
     const selected = rows == null ? [T - 1] : Array.from(rows, Number);
     const profiler = this.profiler;
     if (selected.some((r) => !Number.isSafeInteger(r) || r < 0 || r >= T)) throw new Error("Gemma 4 output row is outside the input sequence");
@@ -582,32 +622,64 @@ export class GpuGemma4 {
     for (let i = 0; i < T; i++) positions[i] = i;
     q.writeBuffer(this.globals, 0, new Uint32Array([T, selected.length, T, 0]));
     q.writeBuffer(this.ids, 0, ids);
+    q.writeBuffer(this.pleIds, 0, pleIds);
     q.writeBuffer(this.pos, 0, positions);
     q.writeBuffer(this.rows, 0, new Uint32Array(selected));
     const useTail = !allRows && !!this.tailOps && !!this.prefixOps;
     if (useTail) {
       q.writeBuffer(this.tail.globals, 0, new Uint32Array([selected.length, selected.length, T, 0]));
       q.writeBuffer(this.tail.pos, 0, new Uint32Array(selected));
-      q.writeBuffer(this.tail.ids, 0, Uint32Array.from(selected, (row) => ids[row]));
+      q.writeBuffer(this.tail.ids, 0, Uint32Array.from(selected, (row) => pleIds[row]));
     }
-    const longChunks = !profiler && T > YIELD_TOKENS;
-    const runOps = useTail ? this.prefixOps : this.ops;
-    const plans = (longChunks ? chunks(runOps, YIELD_CHUNKS) : [runOps]).map((ops, i) => ({ ops, rows: T, flushBefore: i > 0 }));
-    if (useTail) plans.push({ ops: this.tailOps, rows: selected.length, flushBefore: false });
-    let enc = this.device.createCommandEncoder({ label: "Gemma 4 forward" });
-    for (let i = 0; i < plans.length; i++) {
-      if (plans[i].flushBefore) enc = await endChunk(this.device, enc);
-      this.T = plans[i].rows;
-      this.encode(enc, plans[i].ops, plans[i].rows, profiler);
+    try {
+      if (this.cfg.hostPle === true) {
+        const prefixLayers = useTail ? this.cfg.sharedStart : this.cfg.layers;
+        const tailIds = useTail ? Uint32Array.from(selected, (row) => pleIds[row]) : null;
+        const floats = (prefixLayers * T + (this.cfg.layers - prefixLayers) * (tailIds?.length || 0)) * this.cfg.pleDim;
+        this.checkBuffer(floats * 4, "Gemma 4 host PLE row upload");
+        const hostRows = new Float32Array(floats);
+        this.hostPleOffsets = [];
+        let offset = 0;
+        for (let layer = 0; layer < this.cfg.layers; layer++) {
+          const lookupIds = layer < prefixLayers ? pleIds : tailIds;
+          this.hostPleOffsets[layer] = offset * 4;
+          this.weights.gatherHostRows(`ple.${layer}.embed`, lookupIds, this.cfg.pleEmbeddingScale, hostRows, offset);
+          offset += lookupIds.length * this.cfg.pleDim;
+        }
+        this.hostPleUpload = this.device.createBuffer({ label: "Gemma 4 host PLE rows", size: hostRows.byteLength, usage: U.COPY_SRC | U.COPY_DST });
+        q.writeBuffer(this.hostPleUpload, 0, hostRows);
+      }
+      if (imageBytes) {
+        this.checkBuffer(imageBytes, "Gemma 4 image embedding upload");
+        this.imageUpload = this.device.createBuffer({ label: "Gemma 4 projected images", size: imageBytes, usage: U.COPY_SRC | U.COPY_DST });
+        for (const span of this.imageSpans) q.writeBuffer(this.imageUpload, span.offset, span.rows);
+      }
+      const longChunks = !profiler && T > YIELD_TOKENS;
+      const runOps = useTail ? this.prefixOps : this.ops;
+      const plans = (longChunks ? chunks(runOps, YIELD_CHUNKS) : [runOps]).map((ops, i) => ({ ops, rows: T, flushBefore: i > 0 }));
+      if (useTail) plans.push({ ops: this.tailOps, rows: selected.length, flushBefore: false });
+      let enc = this.device.createCommandEncoder({ label: "Gemma 4 forward" });
+      for (let i = 0; i < plans.length; i++) {
+        if (plans[i].flushBefore) enc = await endChunk(this.device, enc);
+        this.T = plans[i].rows;
+        this.encode(enc, plans[i].ops, plans[i].rows, profiler);
+      }
+      profiler?.finish(enc);
+      const bytes = selected.length * this.cfg.hidden * 4;
+      enc.copyBufferToBuffer(useTail ? this.tail.h : this.gathered, 0, this.readback, 0, bytes);
+      q.submit([enc.finish()]);
+      if (profiler) this.lastProfile = await profiler.collect();
+      await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
+      const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
+      this.readback.unmap();
+      return out;
+    } finally {
+      this.imageUpload?.destroy();
+      this.imageUpload = null;
+      this.imageSpans = [];
+      this.hostPleUpload?.destroy();
+      this.hostPleUpload = null;
+      this.hostPleOffsets = null;
     }
-    profiler?.finish(enc);
-    const bytes = selected.length * this.cfg.hidden * 4;
-    enc.copyBufferToBuffer(useTail ? this.tail.h : this.gathered, 0, this.readback, 0, bytes);
-    q.submit([enc.finish()]);
-    if (profiler) this.lastProfile = await profiler.collect();
-    await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
-    const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
-    this.readback.unmap();
-    return out;
   }
 }

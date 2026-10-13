@@ -26,6 +26,8 @@ const checks = [
   ["gemma-rms", "gpu", "/dev/gemma-rms-check.html?samples=1&warmups=1"],
   ["gemma-rms-subgroups", "gpu", "/dev/gemma-rms-check.html?subgroups=1&samples=1&warmups=1", undefined, ["subgroup32", "timestampQuery"]],
   ["gemma-tail", "gpu", "/dev/gemma-tail-check.html"],
+  ["gemma-vision", "gpu", "/dev/gemma4-vision-check.html"],
+  ["gemma-vision-attention", "gpu", "/dev/gemma4-vision-attention-check.html"],
   ["recur4-shared", "gpu", "/dev/recur-check.html?candidate=current&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],
   ["recur8-shared", "gpu", "/dev/recur-check.html?candidate=recur8&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],
   ["recur16-shared", "gpu", "/dev/recur-check.html?candidate=recur16&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],

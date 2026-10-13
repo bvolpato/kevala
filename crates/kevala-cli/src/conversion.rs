@@ -206,6 +206,65 @@ fn convert_gemma_sharded(
     Ok(out)
 }
 
+/// Vision companion conversion reads only encoder/projector ranges from the checkpoint.
+pub fn run_vision(args: &[String]) -> Result<(), String> {
+    let options = Options::parse("convert-vision", args)?;
+    for key in options.values.keys() {
+        if !["-o", "--name", "--source", "--revision", "--author", "--license", "--precision"].contains(&key.as_str()) {
+            return Err(format!("{key} is not supported by convert-vision"));
+        }
+    }
+    if options.get("--precision").is_some_and(|p| p != "bf16") {
+        return Err("Gemma4 vision companions currently preserve BF16 weights; use --precision bf16".into());
+    }
+    let source =
+        options.get("--source").ok_or("convert-vision needs --source <model repository> for decoder compatibility")?;
+    let revision = options
+        .get("--revision")
+        .ok_or("convert-vision needs --revision <pinned model commit> for decoder compatibility")?;
+    let config = text(&Path::new(&options.checkpoint).join("config.json"))?;
+    if architecture(&Value::parse(&config).map_err(|e| format!("Gemma config: {e}"))?)? != Architecture::Gemma4 {
+        return Err("convert-vision currently supports Gemma4 checkpoints only".into());
+    }
+    let shards = indexed_shards(&options.checkpoint)?;
+    let heads: Vec<_> =
+        shards.iter().map(|path| safetensors_header(path).map(|(head, _)| head)).collect::<Result<_, _>>()?;
+    let refs: Vec<_> = heads.iter().map(Vec::as_slice).collect();
+    let mut metadata = vec![
+        ("name".into(), Value::Str(options.get("--name").unwrap_or("gemma4-vision").into())),
+        ("source".into(), Value::Str(source_value(source))),
+        ("revision".into(), Value::Str(revision.into())),
+        ("precision".into(), Value::Str("bf16".into())),
+        ("converter".into(), Value::Str(format!("kevala {}", env!("CARGO_PKG_VERSION")))),
+        ("quantization".into(), Value::Str("unquantized BF16 vision weights; norms and clipping bounds in f32".into())),
+    ];
+    for key in ["author", "license"] {
+        if let Some(value) = options.get(&format!("--{key}")) {
+            metadata.push((key.into(), Value::Str(value.into())));
+        }
+    }
+    let mut converter =
+        kevala::gemma4::convert::GemmaConvert::new_vision_sharded(&refs, &config, Value::Object(metadata))?;
+    let started = Instant::now();
+    let mut out = vec![0u8; converter.total];
+    converter.begin(&mut out)?;
+    let mut files = shards
+        .iter()
+        .map(|p| File::open(p).map_err(|e| format!("{}: {e}", p.display())))
+        .collect::<Result<Vec<_>, _>>()?;
+    for (shard, name, offset, len) in converter.source_ranges() {
+        let file = files.get_mut(shard).ok_or("Gemma vision converter returned an invalid shard index")?;
+        file.seek(SeekFrom::Start(offset as u64)).map_err(|e| e.to_string())?;
+        let mut bytes = vec![0; len];
+        file.read_exact(&mut bytes).map_err(|e| e.to_string())?;
+        converter.add_source(&name, bytes, &mut out)?;
+    }
+    if !converter.finished() {
+        return Err("Gemma vision conversion ended with tensors still missing".into());
+    }
+    output_pack(options.get("-o").unwrap(), &out, started)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Architecture {
     Encoder,
@@ -1017,5 +1076,18 @@ mod tests {
         assert!(result.unwrap_err().contains("--block for q8 must be a positive multiple of 16"));
         assert!(!output.exists());
         std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn vision_conversion_rejects_lossy_precision_and_requires_pinned_provenance() {
+        for precision in ["q8", "f32"] {
+            let err = run_vision(&args(&["missing-checkpoint", "-o", "out", "--precision", precision])).unwrap_err();
+            assert!(err.contains("vision companions currently preserve BF16"));
+        }
+        let err = run_vision(&args(&["missing-checkpoint", "-o", "out", "--precision", "bf16"])).unwrap_err();
+        assert!(err.contains("needs --source"));
+        let err =
+            run_vision(&args(&["missing-checkpoint", "-o", "out", "--source", "google/gemma-4-E2B-it"])).unwrap_err();
+        assert!(err.contains("needs --revision"));
     }
 }

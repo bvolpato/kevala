@@ -703,6 +703,54 @@ pub unsafe extern "C" fn kevala_gemma4_prepare(ptr: *const u8, len: usize) -> u3
     })())
 }
 
+/// Image-aware Gemma preparation for a host that has validated a matching vision companion.
+/// Returns JSON `{sequences:[{ids,image_spans:[{start,len,image_index}]}]}`. Span offsets are
+/// local to each sequence; `kevala_gemma4_finish` retains its existing row-order contract.
+///
+/// # Safety
+/// `ptr` must be valid for reads of `len` bytes.
+#[no_mangle]
+pub unsafe extern "C" fn kevala_gemma4_prepare_images(ptr: *const u8, len: usize) -> u32 {
+    done((|| {
+        st().gemma4_prepared = None;
+        let requests = Request::parse_many(&json_input(ptr, len)?)?;
+        let engine: &Gemma4Engine = family("a gemma4 model")?;
+        let prepared = engine.prepare_images_all(&requests)?;
+        let sequences = prepared
+            .sequences
+            .iter()
+            .enumerate()
+            .map(|(i, sequence)| {
+                Value::Object(vec![
+                    (
+                        "ids".into(),
+                        Value::Array(prepared.sequence_ids(i).iter().map(|id| Value::Int(id.to_string())).collect()),
+                    ),
+                    (
+                        "image_spans".into(),
+                        Value::Array(
+                            sequence
+                                .image_spans
+                                .iter()
+                                .map(|span| {
+                                    Value::Object(vec![
+                                        ("start".into(), Value::Int(span.start.to_string())),
+                                        ("len".into(), Value::Int(span.len.to_string())),
+                                        ("image_index".into(), Value::Int(span.image_index.to_string())),
+                                    ])
+                                })
+                                .collect(),
+                        ),
+                    ),
+                ])
+            })
+            .collect();
+        st().out = Value::Object(vec![("sequences".into(), Value::Array(sequences))]).to_json().into_bytes();
+        st().gemma4_prepared = Some(prepared);
+        Ok(())
+    })())
+}
+
 /// Scores one normalized final hidden row per prepared Gemma prompt.
 ///
 /// # Safety

@@ -46,6 +46,7 @@ Each report covers one retained change.
 | [Subgroup direct-load recurrence performance](recurrence-direct-performance.md) | Kev recurrence with subgroups |
 | [Packed vector loads for recurrent state](recurrence-packed-performance.md) | Kev recurrent state loads |
 | [Gemma 4 attention performance](gemma-attention-performance.md) | Gemma attention |
+| [Gemma 4 vision performance](gemma4-vision-performance.md) | Vision attention, padding, synchronization, and memory |
 | [Gemma normalization and residual fusion](gemma-rms-residual-performance.md) | Gemma normalization |
 | [Shared GPU kernels and Gemma execution](gpu-latency-performance.md) | End-to-end latency after the shared kernel work |
 

@@ -53,6 +53,16 @@ export function discoverLocalPacks(root, models) {
       (manifest.models[modelId] ||= {})[precision] = { url, bytes };
       files.set(url, { path, bytes });
     }
+    const vision = spec.vision;
+    if (vision?.arch === "gemma4-vision" && vision.precision === "bf16" && Number.isSafeInteger(vision.pack) && vision.pack > 0 && vision.pack <= 1024 ** 3) {
+      const path = join(directory, `${modelId}-vision-bf16.kevala`);
+      let file;
+      try { file = lstatSync(path); } catch { continue; }
+      if (!file.isFile() || file.size !== vision.pack) continue;
+      const url = `/.kevala/packs/${modelId}-vision-bf16.kevala`;
+      (manifest.models[modelId] ||= {}).vision = { url, bytes: vision.pack, precision: "bf16" };
+      files.set(url, { path, bytes: vision.pack });
+    }
   }
 
   return { manifest, files };

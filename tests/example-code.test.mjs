@@ -58,6 +58,16 @@ test("copied named custom pack URLs leave precision in the pack header", async (
     { model: url });
 });
 
+test("copied image-model setup keeps its explicit vision companion URL", async () => {
+  const model = { name: "gemma-4-e2b", url: "http://localhost/.kevala/packs/gemma-4-e2b-q8.kevala" };
+  const vision = "http://localhost/.kevala/packs/gemma-4-e2b-vision-bf16.kevala";
+  const selection = {
+    model: "gemma-4-e2b", source: () => model, precisionFor: () => "q8",
+    vision, backend: "webgpu",
+  };
+  assert.deepEqual((await execute(loadCode(selection))).options, { model, precision: "q8", vision, backend: "webgpu" });
+});
+
 test("copied batches retain state types, order, and shared questions", async () => {
   const states = ["A plain string", { value: 4 }, ["array", false, null]];
   const questions = { urgent: { type: "noul", instructions: "Is it urgent?" } };

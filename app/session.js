@@ -10,6 +10,7 @@ import { discoverLocalPacks } from "./model-packs.js";
 import { PREVIEW_MODEL_IDS } from "./model-policy.js";
 
 export const MODELS = Object.fromEntries(Object.entries(CATALOG_MODELS).filter(([id]) => PREVIEW_MODEL_IDS.has(id)));
+const IMAGE_MODEL = "gemma-4-e2b";
 
 export const params = new URLSearchParams(location.search);
 
@@ -69,7 +70,7 @@ export const MODEL_NOTES = {
   },
   "gemma-4-e2b": {
     name: "Gemma 4 E2B",
-    short: "Direct option scores from Gemma 4 E2B instruction weights; text only",
+    short: "Direct option scores; optional BF16 image companion for the Reaction Recorder",
     large: true,
   },
   "gemma-4-e4b": {
@@ -168,6 +169,12 @@ class Session extends EventTarget {
     if (this.backend === "wasm" && requiresWebGPU(this.model, this.precisionFor(this.model))) this.backend = "auto";
     this.customUrl = this.#saved.customUrl || "";
     this.customUrlModel = this.#saved.customUrlModel || this.model;
+    this.visionUrl = typeof this.#saved.visionUrl === "string" ? this.#saved.visionUrl : "";
+    this.visionUrlModel = this.#saved.visionUrlModel || this.#saved.model || "";
+    this.visionEnabled = this.model === IMAGE_MODEL && this.#saved.model === this.model
+      && typeof this.#saved.visionEnabled === "boolean"
+      ? this.#saved.visionEnabled
+      : !!this.localVisionPackFor(this.model);
     /** idle | loading | ready | error */
     this.status = "idle";
     /** { frac, indet, label } while loading */
@@ -175,6 +182,7 @@ class Session extends EventTarget {
     this.kevala = null;
     this.loadedOptions = null;
     this.error = null;
+    this.errorKind = null;
     this.cached = {};
   }
 
@@ -213,6 +221,35 @@ class Session extends EventTarget {
     return localPacks[model]?.[precision] || null;
   }
 
+  localVisionPackFor(model = this.model) {
+    if (!MODELS[model]?.modalities?.includes("image")) return null;
+    return localPacks[model]?.vision || null;
+  }
+
+  visionEnabledFor(model = this.model) {
+    return model === this.model && !!MODELS[model]?.modalities?.includes("image") && this.visionEnabled;
+  }
+
+  visionUrlFor(model = this.model) {
+    if (!MODELS[model]?.modalities?.includes("image")) return "";
+    const local = this.localVisionPackFor(model);
+    if (local) return local.url;
+    return this.visionUrlModel === model ? this.visionUrl.trim() : "";
+  }
+
+  visionUrlError(url = this.visionUrlFor()) {
+    if (!url) return "";
+    try {
+      const resolved = new URL(url, globalThis.location?.href || "http://localhost/");
+      if (!["http:", "https:"].includes(resolved.protocol) || resolved.username || resolved.password) {
+        return "Use an HTTP or HTTPS vision-pack URL without embedded credentials.";
+      }
+    } catch {
+      return "Enter a valid HTTP or HTTPS vision-pack URL.";
+    }
+    return "";
+  }
+
   loadUnavailable() {
     const spec = MODELS[this.model];
     if (explicitLocal && MODEL_NOTES[this.model] && !this.localPackFor()) {
@@ -221,6 +258,11 @@ class Session extends EventTarget {
     const hostedPackAvailable = FROM === "pack" && this.precisionFor() === "q8" && spec?.hosted;
     if (spec?.nativeConversion && !this.customPackUrl() && !this.localPackFor() && !hostedPackAvailable) {
       return "A converted .kevala URL is required; no matching pack is available for this precision.";
+    }
+    if (this.visionEnabledFor()) {
+      if (!this.visionUrlFor()) return "An image vision-pack URL is required; paste a BF16 vision pack URL or turn off Enable images to load text only.";
+      const visionUrlError = this.visionUrlError();
+      if (visionUrlError) return visionUrlError;
     }
     const needsGpu = this.backend === "webgpu" || requiresWebGPU(this.model, this.precisionFor());
     if (needsGpu && this.gpuAvailable === undefined) return "Checking WebGPU availability…";
@@ -246,7 +288,11 @@ class Session extends EventTarget {
   }
 
   #persist() {
-    const choice = { model: this.model, backend: this.backend, precision: this.precision, customUrl: this.customUrl, customUrlModel: this.customUrlModel };
+    const choice = {
+      model: this.model, backend: this.backend, precision: this.precision,
+      customUrl: this.customUrl, customUrlModel: this.customUrlModel,
+      visionEnabled: this.visionEnabledFor(), visionUrl: this.visionUrl, visionUrlModel: this.visionUrlModel,
+    };
     const active = this.status === "ready" || this.status === "loading";
     try {
       sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...choice, active }));
@@ -271,9 +317,16 @@ class Session extends EventTarget {
       precision: this.precisionFor(model),
       source: this.source(model),
     }));
-    const values = await Promise.all(requests.map(({ source, precision }) =>
-      isCached(source, precision).catch(() => false),
-    ));
+    const values = await Promise.all(requests.map(async ({ model, source, precision }) => {
+      if (model !== this.model || !this.visionEnabledFor(model)) return isCached(source, precision).catch(() => false);
+      const vision = this.visionUrlFor(model);
+      if (!vision || this.localVisionPackFor(model) || this.localPackFor(model, precision)) return false;
+      const [decoderCached, visionCached] = await Promise.all([
+        isCached(source, precision).catch(() => false),
+        isCached(vision, "bf16").catch(() => false),
+      ]);
+      return decoderCached && visionCached;
+    }));
     const storage = await cacheInfo().catch(() => ({ available: false, bytes: 0, entries: [] }));
     if (generation !== this.#cacheGeneration) return;
     this.cached = Object.fromEntries(requests.map(({ model }, index) => [model, values[index]]));
@@ -311,9 +364,11 @@ class Session extends EventTarget {
     this.unload();
     this.model = model;
     this.precision = defaultPrecision(model);
+    this.visionEnabled = !!this.localVisionPackFor(model);
     this.#invalidateCache(previousModel, model);
     if (this.backend === "wasm" && requiresWebGPU(model, this.precision)) this.backend = "auto";
     this.error = null;
+    this.errorKind = null;
     this.#persist();
     this.#emit();
     this.refreshCache();
@@ -338,6 +393,7 @@ class Session extends EventTarget {
     this.#invalidateCache(this.model);
     if (this.backend === "wasm" && requiresWebGPU(this.model, precision)) this.backend = "auto";
     this.error = null;
+    this.errorKind = null;
     this.#persist();
     this.#emit();
     this.refreshCache();
@@ -357,6 +413,46 @@ class Session extends EventTarget {
     this.#emit();
   }
 
+  setVisionEnabled(enabled) {
+    if (!MODELS[this.model]?.modalities?.includes("image")) return;
+    const next = !!enabled;
+    if (next === this.visionEnabled) return;
+    if (this.status === "loading" || this.status === "ready") {
+      this.cancel();
+      this.unload();
+    }
+    this.visionEnabled = next;
+    if (this.status === "error") {
+      this.status = "idle";
+      this.error = null;
+      this.errorKind = null;
+    }
+    this.cached[this.model] = false;
+    this.#persist();
+    this.#emit();
+    this.refreshCache();
+  }
+
+  setVisionUrl(url, model = this.model) {
+    if (!MODELS[model]?.modalities?.includes("image")) return;
+    const next = url.trim();
+    if (next === this.visionUrlFor(model) && this.visionUrlModel === model) return;
+    if (model === this.model && this.visionEnabledFor(model) && (this.status === "loading" || this.status === "ready")) {
+      this.cancel();
+      this.unload();
+    }
+    this.visionUrl = next;
+    this.visionUrlModel = model;
+    if (model === this.model && this.status === "error") {
+      this.status = "idle";
+      this.error = null;
+      this.errorKind = null;
+    }
+    this.cached[model] = false;
+    this.#persist();
+    this.#emit();
+  }
+
   async load(model) {
     if (model && !MODELS[model]) return null;
     if (model && model !== this.model) this.select(model);
@@ -365,6 +461,7 @@ class Session extends EventTarget {
     if (unavailable) {
       this.status = "error";
       this.error = unavailable;
+      this.errorKind = "load";
       this.#emit();
       return null;
     }
@@ -372,6 +469,7 @@ class Session extends EventTarget {
     if (!src) {
       this.status = "error";
       this.error = "Paste the URL of a .kevala pack first.";
+      this.errorKind = "load";
       this.#emit();
       return null;
     }
@@ -379,6 +477,7 @@ class Session extends EventTarget {
     this.#abort = abort;
     this.status = "loading";
     this.error = null;
+    this.errorKind = null;
     this.progress = { frac: 0, indet: true, label: "Starting…" };
     this.#persist();
     this.#emit();
@@ -401,8 +500,16 @@ class Session extends EventTarget {
       this.#emit();
     };
     const backend = this.backend;
+    const vision = this.visionEnabledFor() ? this.visionUrlFor() : "";
     try {
-      const kevala = await Kevala.load({ model: src, from: FROM, ...(selectedPrecision ? { precision: selectedPrecision } : {}), ...(this.localPackFor() ? { cache: false } : {}), backend, signal: abort.signal, onProgress });
+      const localWeights = !!this.localPackFor() || (!!vision && !!this.localVisionPackFor());
+      const kevala = await Kevala.load({
+        model: src, from: FROM,
+        ...(selectedPrecision ? { precision: selectedPrecision } : {}),
+        ...(vision ? { vision } : {}),
+        ...(localWeights ? { cache: false } : {}),
+        backend, signal: abort.signal, onProgress,
+      });
       if (this.#abort !== abort) {
         kevala.dispose();
         return null;
@@ -414,7 +521,7 @@ class Session extends EventTarget {
         return this.load();
       }
       this.kevala = kevala;
-      this.loadedOptions = { model: src, from: FROM, precision: selectedPrecision, backend };
+      this.loadedOptions = { model: src, from: FROM, precision: selectedPrecision, ...(vision ? { vision } : {}), backend };
       this.status = "ready";
       this.progress = null;
       this.#persist();
@@ -428,6 +535,7 @@ class Session extends EventTarget {
       const aborted = e?.name === "AbortError" || /abort|cancel/i.test(e?.message || "");
       this.status = aborted ? "idle" : "error";
       this.error = aborted ? null : e?.message || String(e);
+      this.errorKind = aborted ? null : "load";
       this.progress = null;
       this.#persist();
       this.#emit();
@@ -455,6 +563,26 @@ class Session extends EventTarget {
     this.status = "idle";
     this.#persist();
     this.#emit();
+  }
+
+  /** Unload a model after a runtime failure, preserving that failure for the UI. */
+  failRuntime(error, expectedModel = this.kevala) {
+    if (!expectedModel || this.kevala !== expectedModel) return false;
+    const message = error?.message || String(error);
+    const loaded = this.kevala;
+    this.kevala = null;
+    this.loadedOptions = null;
+    this.status = "error";
+    this.error = message;
+    this.errorKind = "runtime";
+    this.progress = null;
+    try {
+      loaded.dispose?.();
+    } catch {}
+    this.#persist();
+    this.#emit();
+    this.#settle(null);
+    return true;
   }
 
   async clearCache() {

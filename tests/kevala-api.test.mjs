@@ -32,6 +32,27 @@ test("valid backend and submit values reach the engine unchanged", async (t) => 
   assert.equal(state.loads[0].precision, "q8");
 });
 
+test("image loading rejects invalid companion and token budget options before starting workers", async (t) => {
+  const state = workers(t, []);
+  await assert.rejects(Kevala.load({ vision: 42 }), /vision must be/);
+  await assert.rejects(Kevala.load({ vision: "vision.kevala", backend: "wasm" }), /requires WebGPU/);
+  await assert.rejects(Kevala.load({ imageTokens: 71 }), /imageTokens must be/);
+  assert.equal(state.instances.length, 0);
+});
+
+test("image requests require loaded image capability and retain typed pixels in worker messages", async (t) => {
+  const { model, state } = await loaded(t, (worker, message) => worker.reply({ type: "result", id: message.id, responses: [{ answers: {} }] }));
+  const data = { width: 1, height: 1, data: new Uint8ClampedArray([10, 20, 30, 255]) };
+  await assert.rejects(model.decide("camera", QUESTIONS, { parts: [{ type: "image", data }] }), /does not support images/);
+  assert.equal(state.posted.length, 0);
+  model.info.modalities = ["text", "image"];
+  await model.decide("camera", QUESTIONS, { parts: [{ type: "image", data }] });
+  assert.ok(state.posted[0].requests[0].parts[0].data.data instanceof Uint8ClampedArray);
+  assert.deepEqual(Array.from(state.posted[0].requests[0].parts[0].data.data), [10, 20, 30, 255]);
+  await model.decide("image URL", QUESTIONS, { parts: [{ type: "image", data: new URL("https://example.com/image.png") }] });
+  assert.equal(state.posted[1].requests[0].parts[0].data, "https://example.com/image.png");
+});
+
 test("decide sends one normalized request and returns its response with the pass timing", async (t) => {
   const { model, state } = await loaded(t, (worker, m) => {
     worker.reply({ type: "result", id: m.id, responses: m.requests.map((r) => ({ answers: { echoed: r.state } })), timing: { forward: 4, batched: 1 } });

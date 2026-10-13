@@ -27,6 +27,7 @@ async function run() {
       const seen = new Set();
       for (const spec of specifications) {
         if (kernel === "matmul_wide" && spec.groups === 2) continue;
+        if (kernel === "gemma4_vision_position" && (!spec.weights || spec.weights === "q8")) continue;
         const code = source(kernel, spec);
         if (seen.has(code)) continue;
         seen.add(code);

@@ -111,7 +111,9 @@ try:
     selected("semif-qwen3.5-2b")
     open_page("?model=kev-9b")
     selected("semif-qwen3.5-2b")
-    assert not driver.find_elements(By.CSS_SELECTOR, '[data-family="clef"], [data-family="gemma4"]')
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-family="clef"]')
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-family="gemma4"]'), "Gemma E2B is the explicit image-pilot exception"
+    assert not driver.find_elements(By.CSS_SELECTOR, '[data-family-slider="gemma4"]'), "E2B is the only Gemma size in this preview"
     click('[data-model="laya"]')
     click('[data-family="kev"]')
     selected("kev-0.8b")
@@ -234,6 +236,32 @@ try:
         click('[data-model="laya"]')
         assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled()
 
+    open_page("?model=gemma-4-e2b")
+    selected("gemma-4-e2b")
+    assert driver.find_elements(By.CSS_SELECTOR, '[data-family-card="gemma4"] [data-vision-controls]')
+    driver.execute_script("kevala_site.session.gpuAvailable = true; kevala_site.session.dispatchEvent(new Event('change')); ")
+    vision_checkbox = driver.find_element(By.CSS_SELECTOR, '[data-vision-enabled]')
+    local_vision = driver.execute_script("return kevala_site.session.localVisionPackFor()")
+    vision_status = driver.find_element(By.CSS_SELECTOR, "[data-vision-status]").text
+    if local_vision:
+        assert vision_checkbox.is_selected(), "a matching local vision pack enables the Reaction demo by default"
+        assert "ready on this server" in vision_status
+        assert not driver.find_elements(By.CSS_SELECTOR, "[data-vision-url]")
+    else:
+        assert not vision_checkbox.is_selected(), "image mode stays off without a matching local vision pack"
+        assert "No local vision pack" in vision_status and "Text mode still works" in vision_status
+        vision_url = driver.find_element(By.CSS_SELECTOR, "[data-vision-url]")
+        assert vision_url.is_displayed(), "the required companion URL is visible without Advanced"
+        assert driver.execute_script("return kevala_site.session.loadUnavailable()") == ""
+        vision_checkbox.click()
+        assert not driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled()
+        assert "vision-pack URL is required" in driver.find_element(By.CSS_SELECTOR, ".mp-note").text
+        vision_url.send_keys("https://example.test/gemma-4-e2b-vision-bf16.kevala")
+        assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled(), "a valid vision URL enables explicit image-mode loading"
+        vision_checkbox.click()
+        assert driver.find_element(By.CSS_SELECTOR, '[data-act="load"]').is_enabled(), "text-only mode remains loadable without a vision pack"
+    assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
+
     click('[data-model="laya"]')
     driver.execute_script("""
       const s = kevala_site.session;
@@ -269,7 +297,8 @@ try:
     open_page("?model=kev-4b&autoload=1")
     selected("kev-4b")
     assert driver.execute_script("return performance.getEntriesByType('resource').filter(r => r.name.endsWith('.kevala')).length") == 0
-    assert "4B and smaller" in driver.find_element(By.CSS_SELECTOR, "[data-local-availability]").text
+    availability = driver.find_element(By.CSS_SELECTOR, "[data-local-availability]").text
+    assert "Up to 4B" in availability and "Gemma E2B image pilot" in availability
     driver.execute_script("kevala_site.session.select('clef-flash'); kevala_site.session.select('kev-9b');")
     selected("kev-4b")
     print("Model picker passed: retired Bruv fallback, visible families, precision defaults, custom native pack URLs, local BF16/Q8 paths, sizes, focus, loaded/cached switch, explicit loading, saved/URL choice, mobile selection, checkpoint choices.")

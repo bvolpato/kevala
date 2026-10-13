@@ -1,17 +1,18 @@
-//! Converts a Gemma 4 text checkpoint into a text-only kevala pack.
+//! Converts a Gemma 4 checkpoint into a text decoder or a vision companion pack.
 //!
 //! Gemma 4's published checkpoint is a multimodal conditional-generation model, but the
 //! decision runtime only needs its text backbone. This converter therefore keeps the text
 //! weights and tokenizer, records the supported modality as text, and deliberately does not
-//! copy the vision or audio towers. The source checkpoint is streamed in bounded row chunks;
+//! copy the vision or audio towers. The separate vision companion retains its encoder and
+//! projection in BF16. The source checkpoint is read in bounded row chunks;
 //! in particular, embed_tokens_per_layer is split into one pack tensor per decoder layer so
 //! converting it never requires a multi-gigabyte temporary f32 buffer.
 
 use super::bf16_round;
-use crate::convert::{f16_to_f32, num, quantize};
+use crate::convert::{f16_to_f32, f32_to_bf16, num, quantize};
 use crate::direct_options::LABELS;
 use crate::json::Value;
-use crate::pack::{TensorInfo, Writer};
+use crate::pack::{DType, TensorInfo, Writer};
 use crate::tokenizer::Tokenizer;
 use std::collections::{BTreeMap, HashMap, HashSet};
 
@@ -194,7 +195,7 @@ fn add_f32_output(writer: &mut Writer, outputs: &mut Vec<String>, name: String, 
     index
 }
 
-/// A streaming converter for Gemma 4's text backbone.
+/// A bounded-range converter for Gemma 4's text backbone or vision companion.
 pub struct GemmaConvert {
     jobs: Vec<Job>,
     by_name: HashMap<String, usize>,
@@ -206,6 +207,151 @@ pub struct GemmaConvert {
 }
 
 impl GemmaConvert {
+    /// A companion pack containing the vision encoder and projection, without decoder weights.
+    /// Matrix weights retain BF16 storage; norms and clipped-linear bounds use exact f32 values.
+    pub fn new_vision_sharded(base_heads: &[&[u8]], base_config: &str, model: Value) -> Result<GemmaConvert, String> {
+        if base_heads.is_empty() {
+            return Err("no Gemma safetensors shards".into());
+        }
+        let mut catalog = HashMap::new();
+        for (shard, head) in base_heads.iter().enumerate() {
+            for (name, meta) in parse_header(head, shard)?.tensors {
+                if catalog.insert(name.clone(), meta).is_some() {
+                    return Err(format!("duplicate tensor {name} across safetensors shards"));
+                }
+            }
+        }
+        let top = Value::parse(base_config).map_err(|e| format!("Gemma config: {e}"))?;
+        let vision = top.get("vision_config").ok_or("Gemma config: missing vision_config")?;
+        let text = top.get("text_config").ok_or("Gemma config: missing text_config")?;
+        if vision.get("model_type").and_then(Value::as_str) != Some("gemma4_vision") {
+            return Err("Gemma vision config.model_type must be gemma4_vision".into());
+        }
+        let hidden = usize_field(vision, "hidden_size")?;
+        let intermediate = usize_field(vision, "intermediate_size")?;
+        let layers = usize_field(vision, "num_hidden_layers")?;
+        let heads = usize_field(vision, "num_attention_heads")?;
+        let kv_heads = usize_field(vision, "num_key_value_heads")?;
+        let head_dim = usize_field(vision, "head_dim")?;
+        let patch = usize_field(vision, "patch_size")?;
+        let positions = usize_field(vision, "position_embedding_size")?;
+        let text_hidden = usize_field(text, "hidden_size")?;
+        if [hidden, intermediate, layers, heads, kv_heads, head_dim, patch, positions, text_hidden].contains(&0)
+            || heads % kv_heads != 0
+        {
+            return Err("Gemma vision dimensions must be positive, with query heads divisible by KV heads".into());
+        }
+        let q_width = heads.checked_mul(head_dim).ok_or("vision query shape overflows usize")?;
+        let kv_width = kv_heads.checked_mul(head_dim).ok_or("vision key shape overflows usize")?;
+        let patch_width =
+            patch.checked_mul(patch).and_then(|n| n.checked_mul(3)).ok_or("vision patch shape overflows usize")?;
+        require_shape(&catalog, "model.vision_tower.patch_embedder.input_proj.weight", &[hidden, patch_width])?;
+        require_shape(&catalog, "model.vision_tower.patch_embedder.position_embedding_table", &[2, positions, hidden])?;
+        require_shape(&catalog, "model.embed_vision.embedding_projection.weight", &[text_hidden, hidden])?;
+        for i in 0..layers {
+            let prefix = format!("model.vision_tower.encoder.layers.{i}");
+            for norm in [
+                "input_layernorm",
+                "post_attention_layernorm",
+                "pre_feedforward_layernorm",
+                "post_feedforward_layernorm",
+            ] {
+                require_shape(&catalog, &format!("{prefix}.{norm}.weight"), &[hidden])?;
+            }
+            for norm in ["q_norm", "k_norm"] {
+                require_shape(&catalog, &format!("{prefix}.self_attn.{norm}.weight"), &[head_dim])?;
+            }
+            for (name, shape) in [
+                ("self_attn.q_proj", [q_width, hidden]),
+                ("self_attn.k_proj", [kv_width, hidden]),
+                ("self_attn.v_proj", [kv_width, hidden]),
+                ("self_attn.o_proj", [hidden, q_width]),
+                ("mlp.gate_proj", [intermediate, hidden]),
+                ("mlp.up_proj", [intermediate, hidden]),
+                ("mlp.down_proj", [hidden, intermediate]),
+            ] {
+                require_shape(&catalog, &format!("{prefix}.{name}.linear.weight"), &shape)?;
+                if bool_field(vision, "use_clipped_linears") {
+                    for bound in ["input_min", "input_max", "output_min", "output_max"] {
+                        let name = format!("{prefix}.{name}.{bound}");
+                        let meta = catalog.get(&name).ok_or_else(|| format!("checkpoint has no tensor {name}"))?;
+                        if meta.shape.iter().product::<usize>() != 1 {
+                            return Err(format!("{name}: expected a scalar clipping bound"));
+                        }
+                    }
+                }
+            }
+        }
+        if bool_field(vision, "standardize") {
+            for name in ["std_bias", "std_scale"] {
+                require_shape(&catalog, &format!("model.vision_tower.{name}"), &[hidden])?;
+            }
+        }
+        let mut config = vec![
+            ("arch".into(), Value::Str("gemma4-vision".into())),
+            ("vision_config".into(), vision.clone()),
+            ("text_hidden_size".into(), Value::Int(text_hidden.to_string())),
+            ("modalities".into(), Value::Array(vec![Value::Str("image".into())])),
+        ];
+        for key in ["image_token_id", "boi_token_id", "eoi_token_id"] {
+            config.push((key.into(), top.get(key).ok_or_else(|| format!("Gemma config: missing {key}"))?.clone()));
+        }
+        config.push((
+            "pad_token_id".into(),
+            text.get("pad_token_id").ok_or("Gemma text config: missing pad_token_id")?.clone(),
+        ));
+        let mut writer = Writer::new(model, Value::Object(config), Vec::new());
+        let mut selected: Vec<_> = catalog
+            .iter()
+            .filter(|(name, _)| name.starts_with("model.vision_tower.") || name.starts_with("model.embed_vision."))
+            .collect();
+        selected.sort_by(|a, b| a.0.cmp(b.0));
+        let mut jobs = Vec::new();
+        for (output, (name, meta)) in selected.into_iter().enumerate() {
+            let name_out = name
+                .strip_prefix("model.")
+                .unwrap()
+                .strip_suffix(".weight")
+                .unwrap_or(name.strip_prefix("model.").unwrap());
+            let matrix =
+                name.ends_with(".weight") && meta.shape.len() == 2 || name.ends_with("position_embedding_table");
+            let shape = if meta.shape.is_empty() { vec![1] } else { meta.shape.clone() };
+            let elements =
+                shape.iter().try_fold(1usize, |n, &d| n.checked_mul(d)).ok_or("vision output shape overflows usize")?;
+            if elements == 0 || elements.checked_mul(if matrix { 2 } else { 4 }).is_none() {
+                return Err(format!("{name}: invalid vision output shape"));
+            }
+            if matrix {
+                writer.add_bf16(name_out, &shape);
+            } else {
+                writer.add_f32(name_out, &shape);
+            }
+            let cols = *shape.last().unwrap();
+            let rows = elements / cols;
+            let row_bytes = cols.checked_mul(meta.dtype.bytes()).ok_or("vision source row size overflows usize")?;
+            let chunk_rows = (CHUNK_BYTES / row_bytes.max(1)).max(1).min(rows);
+            for row in (0..rows).step_by(chunk_rows) {
+                let count = (rows - row).min(chunk_rows);
+                jobs.push(Job {
+                    name: format!("gemma.vision.{}", jobs.len()),
+                    shard: meta.shard,
+                    offset: meta.offset.checked_add(row * row_bytes).ok_or("vision source offset overflows usize")?,
+                    len: count * row_bytes,
+                    dtype: meta.dtype,
+                    source_cols: cols,
+                    source_rows: count,
+                    outputs: vec![OutputChunk { output, output_row: row, rows: count, source_col: 0, cols, q8: false }],
+                });
+            }
+        }
+        writer.tensor_bytes_checked().ok_or("vision pack exceeds this platform's address space")?;
+        let (prefix, infos, total) = writer.layout();
+        jobs.sort_by_key(|j| (j.shard, j.offset));
+        let by_name = jobs.iter().enumerate().map(|(i, j)| (j.name.clone(), i)).collect();
+        let done = vec![false; jobs.len()];
+        Ok(GemmaConvert { jobs, by_name, infos, prefix, total, block: 32, done })
+    }
+
     /// Build a plan from safetensors headers. The bodies are read later through source_ranges
     /// and add_source, so this method does not materialize any model weights.
     pub fn new_sharded(
@@ -680,6 +826,17 @@ impl GemmaConvert {
                         .ok_or_else(|| format!("{}: scale destination is too short", info.name))?
                         .copy_from_slice(&scale.to_le_bytes());
                 }
+            } else if info.dtype == DType::Bf16 {
+                let at = info
+                    .offset
+                    .checked_add(chunk.output_row * chunk.cols * 2)
+                    .ok_or("bf16 destination offset overflows usize")?;
+                let end = at.checked_add(values.len() * 2).ok_or("bf16 destination size overflows usize")?;
+                for (dst, value) in
+                    out.get_mut(at..end).ok_or("bf16 destination is too short")?.chunks_exact_mut(2).zip(values)
+                {
+                    dst.copy_from_slice(&f32_to_bf16(value).to_le_bytes());
+                }
             } else {
                 let at = info
                     .offset
@@ -703,4 +860,129 @@ fn require_shape(catalog: &HashMap<String, TensorMeta>, name: &str, expected: &[
         return Err(format!("{name}: expected shape {expected:?}, got {:?}", meta.shape));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const VISION_CONFIG: &str = r#"{
+        "vision_config":{"model_type":"gemma4_vision","hidden_size":4,"intermediate_size":8,
+            "num_hidden_layers":1,"num_attention_heads":1,"num_key_value_heads":1,"head_dim":4,
+            "patch_size":2,"position_embedding_size":2,"use_clipped_linears":true,"standardize":false},
+        "text_config":{"hidden_size":4,"pad_token_id":0},
+        "image_token_id":258880,"boi_token_id":255999,"eoi_token_id":258882
+    }"#;
+
+    fn vision_source(skip: &str) -> Vec<u8> {
+        let mut entries = Vec::new();
+        let mut body = Vec::new();
+        let mut add = |name: String, shape: &[usize], bound: Option<u16>| {
+            if name == skip {
+                return;
+            }
+            let start = body.len();
+            for i in 0..shape.iter().product::<usize>() {
+                body.extend_from_slice(&bound.unwrap_or(0x3f80 + i as u16).to_le_bytes());
+            }
+            entries.push((
+                name,
+                Value::Object(vec![
+                    ("dtype".into(), Value::Str("BF16".into())),
+                    ("shape".into(), Value::Array(shape.iter().map(|d| Value::Int(d.to_string())).collect())),
+                    (
+                        "data_offsets".into(),
+                        Value::Array(vec![Value::Int(start.to_string()), Value::Int(body.len().to_string())]),
+                    ),
+                ]),
+            ));
+        };
+        add("model.vision_tower.patch_embedder.input_proj.weight".into(), &[4, 12], None);
+        add("model.vision_tower.patch_embedder.position_embedding_table".into(), &[2, 2, 4], None);
+        add("model.embed_vision.embedding_projection.weight".into(), &[4, 4], None);
+        let prefix = "model.vision_tower.encoder.layers.0";
+        for norm in [
+            "input_layernorm",
+            "post_attention_layernorm",
+            "pre_feedforward_layernorm",
+            "post_feedforward_layernorm",
+            "self_attn.q_norm",
+            "self_attn.k_norm",
+        ] {
+            add(format!("{prefix}.{norm}.weight"), &[4], None);
+        }
+        for (name, shape) in [
+            ("self_attn.q_proj", [4, 4]),
+            ("self_attn.k_proj", [4, 4]),
+            ("self_attn.v_proj", [4, 4]),
+            ("self_attn.o_proj", [4, 4]),
+            ("mlp.gate_proj", [8, 4]),
+            ("mlp.up_proj", [8, 4]),
+            ("mlp.down_proj", [4, 8]),
+        ] {
+            add(format!("{prefix}.{name}.linear.weight"), &shape, None);
+            for bound in ["input_min", "input_max", "output_min", "output_max"] {
+                add(
+                    format!("{prefix}.{name}.{bound}"),
+                    &[],
+                    Some(if bound.ends_with("min") { 0xff80 } else { 0x7f80 }),
+                );
+            }
+        }
+        add("model.language_model.embed_tokens.weight".into(), &[2, 4], None);
+        let json = Value::Object(entries).to_json();
+        let mut out = (json.len() as u64).to_le_bytes().to_vec();
+        out.extend_from_slice(json.as_bytes());
+        out.extend_from_slice(&body);
+        out
+    }
+
+    #[test]
+    fn vision_companion_preserves_bf16_and_widens_scalar_bounds_without_decoder_weights() {
+        let source = vision_source("");
+        let source_header = parse_header(&source, 0).unwrap();
+        let mut plan = GemmaConvert::new_vision_sharded(&[&source], VISION_CONFIG, Value::Null).unwrap();
+        let mut out = vec![0; plan.total];
+        plan.begin(&mut out).unwrap();
+        let decoder = &source_header.tensors["model.language_model.embed_tokens.weight"];
+        for (_, name, offset, len) in plan.source_ranges() {
+            assert!(offset + len <= decoder.offset);
+            plan.add_source(&name, source[offset..offset + len].to_vec(), &mut out).unwrap();
+        }
+        assert!(plan.finished());
+        let header = crate::pack::parse_header(&out).unwrap();
+        assert_eq!(header.config().get("arch").and_then(Value::as_str), Some("gemma4-vision"));
+        assert_eq!(header.tensors.len(), 44);
+        for name in [
+            "vision_tower.patch_embedder.input_proj",
+            "vision_tower.patch_embedder.position_embedding_table",
+            "embed_vision.embedding_projection",
+        ] {
+            let info = header.tensor(name).unwrap();
+            let source_name =
+                format!("model.{name}{}", if name.ends_with("position_embedding_table") { "" } else { ".weight" });
+            let meta = &source_header.tensors[&source_name];
+            assert_eq!(info.dtype, DType::Bf16);
+            assert_eq!(info.shape, meta.shape);
+            assert_eq!(&out[info.offset..info.offset + info.size], &source[meta.offset..meta.offset + info.size]);
+        }
+        let norm = header.tensor("vision_tower.encoder.layers.0.input_layernorm").unwrap();
+        assert_eq!(norm.dtype, DType::F32);
+        assert_eq!(&out[norm.offset..norm.offset + 4], &1.0f32.to_le_bytes());
+        for (bound, value) in [("input_min", f32::NEG_INFINITY), ("output_max", f32::INFINITY)] {
+            let info = header.tensor(&format!("vision_tower.encoder.layers.0.self_attn.q_proj.{bound}")).unwrap();
+            assert_eq!(info.dtype, DType::F32);
+            assert_eq!(info.shape, [1]);
+            assert_eq!(&out[info.offset..info.offset + info.size], &value.to_le_bytes());
+        }
+        assert!(header.tensor("language_model.embed_tokens").is_none());
+    }
+
+    #[test]
+    fn clipped_vision_conversion_requires_every_linear_bound() {
+        let missing = "model.vision_tower.encoder.layers.0.mlp.down_proj.output_max";
+        let source = vision_source(missing);
+        let err = GemmaConvert::new_vision_sharded(&[&source], VISION_CONFIG, Value::Null).err().unwrap();
+        assert_eq!(err, format!("checkpoint has no tensor {missing}"));
+    }
 }

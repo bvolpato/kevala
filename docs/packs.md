@@ -198,6 +198,10 @@ not part of the inference pack. Gemma conversion uses Google's frozen E2B or E4B
 weights with the direct-options-v1 readout, omits the vision and audio towers, and does not add a
 SemIf adapter or decision fine-tuning. Gemma packs are intended for WebGPU in the browser or the
 native 64-bit CLI and accept up to 4096 input tokens.
+Gemma 4 E2B can separately load a BF16 vision companion using `Kevala.load({ vision: ... })`.
+Use the vision-only range extractor and `kevala convert-vision`; see the
+[vision conversion workflow](gemma4.md#vision-companion). The companion is locally served and
+not published in the public pack catalog.
 See [Gemma 4 notes](gemma4.md) for the pinned source revisions, reference generator, and backend
 details.
 

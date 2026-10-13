@@ -20,6 +20,7 @@ usage:
     [--tokenizer <tokenizer.json>] [--name <name>] [--source <url>] [--revision <sha>]
     [--base-source <url>] [--base-revision <sha>] [--author <author>] [--license <license>] [--method-revision <sha>] [--keep-f32 <prefixes>]
   kevala decide <pack.kevala> --state <json|text> --questions <json>
+  kevala convert-vision <gemma4-checkpoint-dir> -o <vision.kevala> --source <model-repo> --revision <sha> [--precision bf16]
   kevala parity <pack.kevala> <golden.json> [--shards N]
   kevala parity-kev <pack.kevala> <golden-kev.json>
   kevala parity-semif <pack.kevala> <golden-semif.json> [--max-dp 0.05]
@@ -35,6 +36,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let r = match args.first().map(String::as_str) {
         Some("convert" | "convert-kev" | "convert-semif" | "convert-gemma") => conversion::run(&args[0], &args[1..]),
+        Some("convert-vision") => conversion::run_vision(&args[1..]),
         Some("decide") => decide(&args[1..]),
         Some("parity") => parity::laya::run(&args[1..]),
         Some("parity-kev") => parity::kev::run(&args[1..]),

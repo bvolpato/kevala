@@ -31,6 +31,9 @@ use std::sync::Arc;
 
 const DEFAULT_MAX_INPUT_TOKENS: usize = 4096;
 const MAX_LABELS: usize = direct_options::LABELS.len();
+pub const IMAGE_TOKEN_ID: u32 = 258_880;
+const BOI_TOKEN_ID: u32 = 255_999;
+const EOI_TOKEN_ID: u32 = 258_882;
 
 /// Parsed dense Gemma 4 text configuration.
 #[derive(Clone, Debug, PartialEq)]
@@ -56,6 +59,7 @@ pub struct Gemma4Config {
     pub global_rope_theta: f32,
     pub global_partial_rotary: f32,
     pub temperature: f32,
+    pub pad_token_id: u32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -285,6 +289,13 @@ impl Gemma4Config {
         if !temperature.is_finite() || temperature <= 0.0 {
             return Err("Gemma4 config: temperature must be finite and positive".into());
         }
+        let pad_token_id = match c.get("pad_token_id") {
+            None => 0,
+            Some(value) => value.as_usize().ok_or("Gemma4 config: pad_token_id must be a nonnegative integer")?,
+        };
+        if pad_token_id >= vocab || u32::try_from(pad_token_id).is_err() {
+            return Err("Gemma4 config: pad_token_id must fit the text vocabulary".into());
+        }
         Ok(Self {
             hidden,
             layers,
@@ -307,6 +318,7 @@ impl Gemma4Config {
             global_rope_theta,
             global_partial_rotary,
             temperature,
+            pad_token_id: pad_token_id as u32,
         })
     }
 
@@ -358,6 +370,21 @@ pub struct PreparedSequence {
     pub request: usize,
     pub question: usize,
     pub labels: usize,
+    pub image_spans: Vec<ImageSpan>,
+}
+
+/// A projected image replaces this contiguous range of placeholder tokens in one prompt.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ImageSpan {
+    pub start: usize,
+    pub len: usize,
+    pub image_index: usize,
+}
+
+/// Decoder-ready vision rows, already at the scale produced by the multimodal projector.
+pub struct ImageEmbedding<'a> {
+    pub start: usize,
+    pub values: &'a [f32],
 }
 
 /// Tokenized requests in the order expected by `finish`: one final hidden row per sequence.
@@ -777,6 +804,12 @@ impl Gemma4Model {
     /// final prompt token.  KV caching is intentionally deferred; direct scoring prompts are
     /// short and this path is primarily a native correctness/reference implementation.
     pub fn forward(&self, ids: &[u32]) -> Result<Vec<f32>, String> {
+        self.forward_with_images(ids, &[])
+    }
+
+    /// Inject projected vision rows before contextual PLE. Token-identity PLE uses PAD at the
+    /// image positions, matching Gemma4ForConditionalGeneration rather than an image token row.
+    pub fn forward_with_images(&self, ids: &[u32], images: &[ImageEmbedding<'_>]) -> Result<Vec<f32>, String> {
         if ids.is_empty() {
             return Err("Gemma4 forward: prompt is empty".into());
         }
@@ -787,7 +820,8 @@ impl Gemma4Model {
                 self.cfg.max_input_tokens
             ));
         }
-        if let Some((position, &id)) = ids.iter().enumerate().find(|(_, &id)| id as usize >= self.cfg.vocab) {
+        let identity_ids = image_identity_ids(ids, images, self.cfg.hidden, self.cfg.pad_token_id)?;
+        if let Some((position, &id)) = identity_ids.iter().enumerate().find(|(_, &id)| id as usize >= self.cfg.vocab) {
             return Err(format!(
                 "Gemma4 forward: token id {id} at position {position} exceeds vocab size {}",
                 self.cfg.vocab
@@ -795,8 +829,12 @@ impl Gemma4Model {
         }
         let t = ids.len();
         let d = self.cfg.hidden;
-        let mut x = self.embedding(ids);
-        let ple = self.per_layer_inputs(ids, &x);
+        let mut x = self.embedding(&identity_ids);
+        for image in images {
+            let at = image.start * d;
+            x[at..at + image.values.len()].copy_from_slice(image.values);
+        }
+        let ple = self.per_layer_inputs(&identity_ids, &x);
         let mut shared: [Option<KvCache>; 2] = [None, None];
         for i in 0..self.cfg.layers {
             let lw = &self.layers[i];
@@ -847,6 +885,33 @@ impl Gemma4Model {
     }
 }
 
+fn image_identity_ids(ids: &[u32], images: &[ImageEmbedding<'_>], hidden: usize, pad: u32) -> Result<Vec<u32>, String> {
+    let mut identity = ids.to_vec();
+    if images.is_empty() {
+        return Ok(identity);
+    }
+    let mut covered = vec![false; ids.len()];
+    for image in images {
+        if hidden == 0 || image.values.is_empty() || image.values.len() % hidden != 0 {
+            return Err("Gemma4 image embeddings must contain complete nonempty hidden rows".into());
+        }
+        if image.values.iter().any(|v| !v.is_finite()) {
+            return Err("Gemma4 image embeddings contain a non-finite value".into());
+        }
+        let end = image.start.checked_add(image.values.len() / hidden).ok_or("Gemma4 image span overflows usize")?;
+        let slots = ids.get(image.start..end).ok_or("Gemma4 image span lies outside the prompt")?;
+        if slots.iter().any(|&id| id != IMAGE_TOKEN_ID) || covered[image.start..end].iter().any(|&v| v) {
+            return Err("Gemma4 image spans must cover distinct image placeholder positions".into());
+        }
+        covered[image.start..end].fill(true);
+        identity[image.start..end].fill(pad);
+    }
+    if ids.iter().zip(&covered).any(|(&id, &covered)| id == IMAGE_TOKEN_ID && !covered) {
+        return Err("Gemma4 image placeholder has no projected embedding".into());
+    }
+    Ok(identity)
+}
+
 /// Rotates one head vector in place (rotate_half convention). Only the first `rotated / 2`
 /// frequencies of each half turn; proportional RoPE leaves the remaining dimensions unchanged.
 fn rope_row(row: &mut [f32], pos: usize, theta: f32, rotated: usize) {
@@ -884,6 +949,10 @@ fn gelu_tanh(x: f32) -> f32 {
 }
 
 fn prompt_for(state: &Value, q: &KevQuestion) -> Result<String, String> {
+    prompt_with_images(state, q, "")
+}
+
+fn prompt_with_images(state: &Value, q: &KevQuestion, images: &str) -> Result<String, String> {
     if !(2..=MAX_LABELS).contains(&q.options.len()) {
         return Err(format!("question {:?}: Gemma4 direct scoring requires 2..={MAX_LABELS} options", q.id));
     }
@@ -891,7 +960,7 @@ fn prompt_for(state: &Value, q: &KevQuestion) -> Result<String, String> {
     // with `add_generation_prompt=True`: BOS, system turn, user turn, then model turn.  The
     // trailing newline is part of `<|turn>model\n` and is therefore tokenized.
     Ok(format!(
-        "<bos><|turn>system\n{}<turn|>\n<|turn>user\n{}<turn|>\n<|turn>model\n",
+        "<bos><|turn>system\n{}<turn|>\n<|turn>user\n{images}{}<turn|>\n<|turn>model\n",
         direct_options::SYSTEM,
         direct_options::payload(state, q).py_dumps(false)
     ))
@@ -1037,7 +1106,109 @@ impl Gemma4Engine {
                 prepared.questions.push(q.into());
                 let start = prepared.ids.len();
                 prepared.ids.extend_from_slice(&ids);
-                prepared.sequences.push(PreparedSequence { start, len: ids.len(), request: ri, question, labels });
+                prepared.sequences.push(PreparedSequence {
+                    start,
+                    len: ids.len(),
+                    request: ri,
+                    question,
+                    labels,
+                    image_spans: Vec::new(),
+                });
+            }
+            if prepared.sequences.len() == first {
+                return Err(format!("request {ri}: questions must not be empty"));
+            }
+            prepared.request_sequence_ranges.push((first, prepared.sequences.len()));
+        }
+        Ok(prepared)
+    }
+
+    /// Prepares image prompts after the host has validated a matching vision companion. Image
+    /// parts contain private `image_tokens` and `image_index` metadata, never encoded pixels.
+    pub fn prepare_images_all(&self, requests: &[Request]) -> Result<Prepared, String> {
+        if requests.is_empty() {
+            return Err("Gemma4 prepare: at least one request is required".into());
+        }
+        for (text, id) in [("<|image>", BOI_TOKEN_ID), ("<|image|>", IMAGE_TOKEN_ID), ("<image|>", EOI_TOKEN_ID)] {
+            if self.tok.token_id(text) != Some(id) {
+                return Err(format!("Gemma4 image tokenizer: {text:?} must have token ID {id}"));
+            }
+        }
+        let mut prepared = Prepared::default();
+        for (ri, request) in requests.iter().enumerate() {
+            request.check("gemma4", &[Modality::Text, Modality::Image])?;
+            let mut image_prompt = String::new();
+            let mut images = Vec::new();
+            let mut image_tokens = 0usize;
+            for part in request.parts.iter().filter(|p| p.modality == Modality::Image) {
+                let count = part
+                    .value
+                    .get("image_tokens")
+                    .and_then(Value::as_usize)
+                    .ok_or("Gemma4 image part: missing image_tokens")?;
+                let index = part
+                    .value
+                    .get("image_index")
+                    .and_then(Value::as_usize)
+                    .ok_or("Gemma4 image part: missing image_index")?;
+                if count == 0 || count > 1120 {
+                    return Err("Gemma4 image_tokens must be in 1..=1120".into());
+                }
+                image_tokens = image_tokens.checked_add(count + 2).ok_or("Gemma4 image token count overflows usize")?;
+                if image_tokens > self.cfg.max_input_tokens {
+                    return Err("Gemma4 images exceed the prompt token limit".into());
+                }
+                image_prompt.push_str("<|image>");
+                for _ in 0..count {
+                    image_prompt.push_str("<|image|>");
+                }
+                image_prompt.push_str("<image|>");
+                images.push((count, index));
+            }
+            let state = request_state(request);
+            let first = prepared.sequences.len();
+            for q in kev::parse_questions(&request.questions)? {
+                let ids = self.tok.encode(&prompt_with_images(&state, &q, &image_prompt)?);
+                if ids.is_empty() || ids.len() > self.cfg.max_input_tokens {
+                    return Err(format!(
+                        "question {:?}: Gemma4 image prompt has {} tokens, runtime limit is {}",
+                        q.id,
+                        ids.len(),
+                        self.cfg.max_input_tokens
+                    ));
+                }
+                let slots: Vec<_> =
+                    ids.iter().enumerate().filter_map(|(i, &id)| (id == IMAGE_TOKEN_ID).then_some(i)).collect();
+                if slots.len() != images.iter().map(|(count, _)| count).sum::<usize>() {
+                    return Err("Gemma4 image placeholders do not match the prepared images".into());
+                }
+                let mut offset = 0;
+                let mut image_spans = Vec::new();
+                for &(len, image_index) in &images {
+                    let start = slots[offset];
+                    if start == 0
+                        || ids[start - 1] != BOI_TOKEN_ID
+                        || ids.get(start + len) != Some(&EOI_TOKEN_ID)
+                        || slots[offset..offset + len].iter().enumerate().any(|(i, &at)| at != start + i)
+                    {
+                        return Err("Gemma4 image placeholder span is malformed".into());
+                    }
+                    image_spans.push(ImageSpan { start, len, image_index });
+                    offset += len;
+                }
+                let labels = q.options.len();
+                let question = prepared.questions.len();
+                prepared.questions.push(q.into());
+                let start = prepared.ids.len();
+                prepared.ids.extend_from_slice(&ids);
+                prepared.sequences.push(PreparedSequence {
+                    start,
+                    len: ids.len(),
+                    request: ri,
+                    question,
+                    labels,
+                    image_spans,
+                });
             }
             if prepared.sequences.len() == first {
                 return Err(format!("request {ri}: questions must not be empty"));
@@ -1128,6 +1299,25 @@ impl Gemma4Engine {
         let mut rows = Vec::with_capacity(prepared.sequences.len() * self.cfg.hidden);
         for i in 0..prepared.sequence_count() {
             rows.extend_from_slice(&model.forward(prepared.sequence_ids(i))?);
+        }
+        self.finish(&prepared, &rows)
+    }
+
+    /// Native decoder path for image features produced by a validated local vision encoder.
+    pub fn decide_native_images(&mut self, requests: &[Request], projected: &[Vec<f32>]) -> Result<Vec<Value>, String> {
+        let prepared = self.prepare_images_all(requests)?;
+        let model = self.model.as_ref().ok_or("Gemma4 pack is coordinator-only; use WebGPU for the decoder")?;
+        let mut rows = Vec::with_capacity(prepared.sequences.len() * self.cfg.hidden);
+        for (i, sequence) in prepared.sequences.iter().enumerate() {
+            let mut images = Vec::new();
+            for span in &sequence.image_spans {
+                let values = projected.get(span.image_index).ok_or("Gemma4 image index has no projected rows")?;
+                if span.len.checked_mul(self.cfg.hidden) != Some(values.len()) {
+                    return Err("Gemma4 projected image row count does not match the prompt".into());
+                }
+                images.push(ImageEmbedding { start: span.start, values });
+            }
+            rows.extend_from_slice(&model.forward_with_images(prepared.sequence_ids(i), &images)?);
         }
         self.finish(&prepared, &rows)
     }
@@ -1246,6 +1436,16 @@ mod tests {
     }
 
     #[test]
+    fn image_pad_identity_requires_a_valid_vocab_id() {
+        assert_eq!(Gemma4Config::from_json(&cfg_json()).unwrap().pad_token_id, 0);
+        for value in [Value::Int("-1".into()), Value::Int("128".into()), Value::Str("0".into()), Value::Null] {
+            let mut c = cfg_json();
+            add_config_field(&mut c, "pad_token_id", value);
+            assert!(Gemma4Config::from_json(&c).unwrap_err().contains("pad_token_id"));
+        }
+    }
+
+    #[test]
     fn rejects_moe_and_noncausal_variants() {
         let mut c = cfg_json();
         add_config_field(&mut c, "enable_moe_block", Value::Bool(true));
@@ -1315,5 +1515,22 @@ mod tests {
         assert!(require_finite_row(2, &[0.0, f32::NAN]).unwrap_err().contains("row 2"));
         assert!(require_finite_row(3, &[0.0, f32::INFINITY]).unwrap_err().contains("row 3"));
         assert!(require_finite_row(4, &[0.0, -1.0]).is_ok());
+    }
+
+    #[test]
+    fn image_ple_identity_uses_pad_and_rejects_incomplete_or_overlapping_spans() {
+        let ids = [17, IMAGE_TOKEN_ID, IMAGE_TOKEN_ID, 23];
+        let values = [2.0, 3.0, 4.0, 5.0];
+        let image = ImageEmbedding { start: 1, values: &values };
+        assert_eq!(image_identity_ids(&ids, &[image], 2, 0).unwrap(), [17, 0, 0, 23]);
+        let one = ImageEmbedding { start: 1, values: &values[..2] };
+        assert!(image_identity_ids(&ids, &[one], 2, 0).unwrap_err().contains("no projected embedding"));
+        let overlapping =
+            [ImageEmbedding { start: 1, values: &values }, ImageEmbedding { start: 2, values: &values[..2] }];
+        assert!(image_identity_ids(&ids, &overlapping, 2, 0).unwrap_err().contains("distinct"));
+        assert!(image_identity_ids(&ids, &[ImageEmbedding { start: 3, values: &values }], 2, 0).is_err());
+        assert!(
+            image_identity_ids(&ids, &[ImageEmbedding { start: 1, values: &[f32::NAN, 0.0, 0.0, 0.0] }], 2, 0).is_err()
+        );
     }
 }
