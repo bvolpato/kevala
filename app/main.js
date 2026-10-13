@@ -11,11 +11,11 @@ const defineRoute = (id, label, title) => ({ id, label, title, load: () => impor
 const ROUTES = [
   defineRoute("home", "Home", "kevala · decision models that run in the page"),
   defineRoute("playground", "Playground", "Playground · kevala"),
-  defineRoute("reaction", "Reaction Recorder", "Reaction Recorder · kevala"),
   defineRoute("tetris", "Tetris", "Model-guided Tetris · kevala"),
   defineRoute("guardrail", "Injection gate", "Prompt injection gate · kevala"),
   defineRoute("inbox", "Inbox", "Inbox triage · kevala"),
   defineRoute("how", "How it works", "How kevala works"),
+  defineRoute("reaction", "Reaction Recorder", "Reaction Recorder · kevala"),
 ];
 
 const LOGO = logo("wg");

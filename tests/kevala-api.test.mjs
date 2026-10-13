@@ -141,12 +141,13 @@ test("dispose rejects requests in flight and every later call", async (t) => {
 test("disposal removes owned weight files after terminating the worker", async (t) => {
   const { model, state } = await loaded(t, () => {});
   const removed = [];
-  state.instances.at(-1).reply({ type: "owned-file", resource: { name: "owned-weights", directory: {
+  navigator.storage = { async getDirectory() { return {
     async removeEntry(name) {
       assert.ok(state.instances.every((w) => w.terminated));
       removed.push(name);
     },
-  } } });
+  }; } };
+  state.instances.at(-1).reply(structuredClone({ type: "owned-file", resource: { name: "owned-weights" } }));
   await new Promise((resolve) => setImmediate(resolve));
   model.dispose();
   await new Promise((resolve) => setImmediate(resolve));
@@ -205,6 +206,28 @@ test("image adapter retries allocate distinct files and clean each attempt", asy
   assert.deepEqual(removed, [names[0]]);
   model.dispose();
   assert.deepEqual(removed, names);
+  assert.equal(files.size, 0);
+});
+
+test("image loading sends cloneable file names while keeping cleanup handles on the page", async (t) => {
+  const state = workers(t, [ready]);
+  const OriginalWorker = globalThis.Worker;
+  Object.defineProperty(globalThis, "Worker", { configurable: true, value: class extends OriginalWorker {
+    postMessage(message) { super.postMessage(structuredClone(message)); }
+  } });
+  const files = new Set();
+  navigator.storage = { async getDirectory() { return {
+    async getFileHandle(name, { create = false } = {}) {
+      if (!create) throw new DOMException("Missing", "NotFoundError");
+      files.add(name);
+      return {};
+    },
+    async removeEntry(name) { files.delete(name); },
+  }; } };
+  const model = await Kevala.load({ backend: "webgpu", vision: "vision.kevala", cache: false });
+  t.after(() => model.dispose());
+  assert.deepEqual(state.loads[0].hostStoreResource, { name: [...files][0] });
+  model.dispose();
   assert.equal(files.size, 0);
 });
 

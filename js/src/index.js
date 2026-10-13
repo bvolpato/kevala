@@ -66,7 +66,11 @@ async function pageEngine() {
 
 async function removeOwnedFile({ directory, name }) {
   for (let attempt = 0; attempt < 3; attempt++) {
-    try { await directory.removeEntry(name); return; }
+    try {
+      directory ??= await navigator.storage.getDirectory();
+      await directory.removeEntry(name);
+      return;
+    }
     catch (error) {
       if (error?.name === "NotFoundError") return;
       if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 100 * (attempt + 1)));
@@ -186,7 +190,8 @@ export class Kevala {
           if (hostStoreResource) this.#files.push(hostStoreResource);
           if (signal?.aborted) throw cancelled();
           if (startupError) throw startupError;
-          this.info = await this.#connect(engine, { ...options, hostStoreResource, ...(onPage ? { backend: "webgpu" } : {}), gpuPowerPreference }, onProgress);
+          const hostStore = hostStoreResource ? { name: hostStoreResource.name } : null;
+          this.info = await this.#connect(engine, { ...options, hostStoreResource: hostStore, ...(onPage ? { backend: "webgpu" } : {}), gpuPowerPreference }, onProgress);
           if (signal?.aborted) throw cancelled();
           if (onPage) this.info.onPage = true;
           return;

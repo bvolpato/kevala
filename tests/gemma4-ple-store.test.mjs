@@ -198,9 +198,23 @@ test("late store setup cannot recreate a file removed by its owner", async (t) =
   const f = fixture(t);
   const resource = await createGemma4PleResource();
   await resource.directory.removeEntry(resource.name);
-  await assert.rejects(createGemma4PleStore([tensor().info], resource), { name: "NotFoundError" });
+  await assert.rejects(createGemma4PleStore([tensor().info], { name: resource.name }), { name: "NotFoundError" });
   assert.equal(f.files.has(resource.name), false);
   assert.equal(f.stats().opens, 0);
+});
+
+test("PLE storage reopens a filename in its own context and returns a cloneable resource", async (t) => {
+  const f = fixture(t);
+  const resource = await createGemma4PleResource();
+  const a = tensor();
+  const store = await createGemma4PleStore([a.info], structuredClone({ name: resource.name }));
+  assert.deepEqual(structuredClone(store.resource), { name: resource.name });
+  stream(store, a, "data", 7);
+  stream(store, a, "scales", 3);
+  await store.finish();
+  assert.deepEqual(await store.gather(a.info.name, [2, 0, 2]), memoryWeights([a]).gatherHostRows(a.info.name, [2, 0, 2]));
+  await store.dispose();
+  assert.deepEqual(f.files, new Map([["existing-model.kevala", f.existing]]));
 });
 
 test("PLE files compact unordered tensors, copy split fragments, and gather exact unique rows", async (t) => {
@@ -210,7 +224,7 @@ test("PLE files compact unordered tensors, copy split fragments, and gather exac
   Object.assign(a.info, { offset: 4096, scales_offset: 8192 });
   Object.assign(b.info, { offset: 16384, scales_offset: 32768 });
   const store = await createGemma4PleStore([b.info, a.info]);
-  assert.equal(store.resource.directory, f.directory);
+  assert.deepEqual(structuredClone(store.resource), { name: store.resource.name });
   assert.match(store.resource.name, /^kevala-ple-.+\.tmp$/);
   assert.equal(store.byteLength, a.info.size + a.info.scales_size + b.info.size + b.info.scales_size);
   await assert.rejects(store.gather(a.info.name, [0]), /is incomplete/);

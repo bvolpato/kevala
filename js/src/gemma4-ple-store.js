@@ -31,17 +31,21 @@ function tableLayout(tensors) {
   return { tables, byteLength };
 }
 
-/** Allocate on the owner page so worker termination cannot orphan an unknown file. */
-export async function createGemma4PleResource() {
+async function storageDirectory() {
   const storage = globalThis.navigator?.storage;
   if (typeof storage?.getDirectory !== "function") return null;
-  let directory;
   try {
-    directory = await storage.getDirectory();
+    return await storage.getDirectory();
   } catch (error) {
     if (error.name === "SecurityError" || error.name === "NotSupportedError") return null;
     throw error;
   }
+}
+
+/** Allocate on the owner page so worker termination cannot orphan an unknown file. */
+export async function createGemma4PleResource() {
+  const directory = await storageDirectory();
+  if (!directory) return null;
   let name;
   for (let attempt = 0; attempt < 4; attempt++) {
     const candidate = `kevala-ple-${globalThis.crypto.randomUUID()}.tmp`;
@@ -65,7 +69,10 @@ export async function createGemma4PleStore(tensors, resource = undefined) {
   const { tables, byteLength } = tableLayout(tensors);
   resource = resource === undefined ? await createGemma4PleResource() : resource;
   if (!resource) return null;
-  const { directory, name } = resource;
+  const { name } = resource;
+  // File-system handles cannot cross worker boundaries in some Safari versions.
+  const directory = resource.directory ?? await storageDirectory();
+  if (!directory) return null;
   const handle = await directory.getFileHandle(name);
   let writer;
   let syncHandle = null;
@@ -114,7 +121,7 @@ export async function createGemma4PleStore(tensors, resource = undefined) {
     throw error;
   };
   const store = {
-    resource: { directory, name },
+    resource: { name },
     byteLength,
 
     write(name, part, offset, bytes) {

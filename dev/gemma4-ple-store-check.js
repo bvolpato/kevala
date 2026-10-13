@@ -1,4 +1,4 @@
-import { createGemma4PleStore } from "../js/src/gemma4-ple-store.js";
+import { createGemma4PleResource, createGemma4PleStore } from "../js/src/gemma4-ple-store.js";
 
 const ROWS = 4096;
 const SELECTED = 256;
@@ -61,7 +61,8 @@ function compare(actual, expected) {
 
 async function absent(resource) {
   try {
-    await resource.directory.getFileHandle(resource.name);
+    const directory = await navigator.storage.getDirectory();
+    await directory.getFileHandle(resource.name);
   } catch (error) {
     if (error.name === "NotFoundError") return true;
     throw error;
@@ -70,14 +71,14 @@ async function absent(resource) {
 }
 
 /** Timings include store gathers and dequantization only. Validation runs outside each sample. */
-export async function runPleStoreBenchmark(scope, onResource = () => {}, onProgress = () => {}) {
+export async function runPleStoreBenchmark(scope, onResource = () => {}, onProgress = () => {}, resource = undefined) {
   if (TABLE_BYTES > LIMIT_BYTES || BUFFER_BOUND_BYTES * 2 > LIMIT_BYTES) throw new Error("PLE benchmark exceeds its buffer or storage limit");
   const trace = traceStorage();
   let store, result;
   try {
     const metadata = TABLES.map((t) => ({ name: t.name, dtype: "q8", shape: [ROWS, t.width], size: ROWS * t.width, block: 32, scales_size: ROWS * t.width / 8 }));
     const started = performance.now();
-    store = await createGemma4PleStore([metadata[3], metadata[6], metadata[1], metadata[5], metadata[0], metadata[4], metadata[2]]);
+    store = await createGemma4PleStore([metadata[3], metadata[6], metadata[1], metadata[5], metadata[0], metadata[4], metadata[2]], resource);
     if (!store) throw new Error("OPFS PLE storage is unavailable in this context");
     onResource(store.resource);
     let queued = 0;
@@ -159,6 +160,8 @@ if (typeof document !== "undefined") {
     const worker = new Worker(new URL("./gemma4-ple-store-check-worker.js", import.meta.url), { type: "module" });
     let resource, timer;
     try {
+      resource = await createGemma4PleResource();
+      if (!resource) throw new Error("OPFS PLE storage is unavailable on the owner page");
       return await new Promise((resolve, reject) => {
         timer = setTimeout(() => reject(new Error("PLE worker benchmark exceeded 60 seconds")), 60000);
         worker.onmessage = ({ data }) => {
@@ -168,13 +171,13 @@ if (typeof document !== "undefined") {
           else if (data.type === "error") reject(new Error(data.error));
         };
         worker.onerror = (event) => reject(new Error(event.message || "PLE benchmark worker failed"));
-        worker.postMessage({ type: "run" });
+        worker.postMessage({ type: "run", resource: { name: resource.name } });
       });
     } finally {
       clearTimeout(timer);
       worker.terminate();
       if (resource) {
-        try { await resource.directory.removeEntry(resource.name); }
+        try { await (await navigator.storage.getDirectory()).removeEntry(resource.name); }
         catch (error) { if (error.name !== "NotFoundError") throw error; }
         await absent(resource);
       }
