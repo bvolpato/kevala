@@ -27,6 +27,25 @@ test("Gemma preprocessing matches pinned Pillow RGB bicubic pixels and row-major
   assert.ok(image.patches.subarray(567 * 768).every((x) => x === 0));
 });
 
+test("reused resize geometry never reuses camera pixels or mutable patch output", () => {
+  const pixels = (width, height, color) => {
+    const data = new Uint8Array(width * height * 4);
+    for (let i = 0; i < data.length; i += 4) data.set([...color, 255], i);
+    return { width, height, data };
+  };
+  const first = prepareGemma4Image(pixels(4, 3, [255, 0, 0]));
+  const second = prepareGemma4Image(pixels(4, 3, [0, 0, 255]));
+  const secondSample = second.patches[0];
+
+  assert.notDeepEqual(first.patches, second.patches);
+  assert.notStrictEqual(first.patches, second.patches);
+  first.patches.fill(0);
+  assert.equal(second.patches[0], secondSample);
+  const rotated = prepareGemma4Image(pixels(3, 4, [0, 255, 0]));
+  assert.equal(rotated.width, first.height);
+  assert.equal(rotated.height, first.width);
+});
+
 test("image parts validate RGBA dimensions and request image counts", async () => {
   const pixels = { width: 2, height: 1, data: new Uint8ClampedArray(8) };
   assert.deepEqual(await imagePixels(pixels), pixels);

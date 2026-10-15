@@ -1,0 +1,623 @@
+{
+  "status": "done",
+  "done": true,
+  "backend": "webgpu",
+  "metricMs": 0.404665958365982,
+  "metric": "geometric mean of selected-tail forward milliseconds (GPU kernel timestamps when available)",
+  "method": "timestamp-query",
+  "adapter": {
+    "name": "nvidia blackwell",
+    "vendor": "nvidia",
+    "architecture": "blackwell",
+    "device": null,
+    "description": null,
+    "isFallbackAdapter": false,
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "limits": {
+      "maxBufferSize": 1073741824,
+      "maxStorageBufferBindingSize": 1073741824,
+      "maxComputeWorkgroupStorageSize": 32768
+    }
+  },
+  "correctness": {
+    "ok": true,
+    "cases": [
+      {
+        "tokens": 1,
+        "selected": [
+          0,
+          0
+        ],
+        "causal": true,
+        "sharedKv": true,
+        "maxAbs": 0
+      },
+      {
+        "tokens": 31,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "causal": true,
+        "sharedKv": true,
+        "maxAbs": 0
+      },
+      {
+        "tokens": 65,
+        "selected": [
+          64,
+          1,
+          64
+        ],
+        "causal": true,
+        "sharedKv": true,
+        "maxAbs": 0
+      },
+      {
+        "tokens": 5,
+        "selected": [
+          1,
+          4,
+          1
+        ],
+        "imageRows": 2,
+        "causal": true,
+        "sharedKv": true,
+        "maxAbs": 0
+      },
+      {
+        "tokens": 31,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "causal": true,
+        "sharedKv": false,
+        "maxAbs": 0
+      }
+    ],
+    "finalRows": [
+      {
+        "label": "shared all T=1",
+        "rows": 1,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "shared selected T=1",
+        "rows": 2,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "shared all T=31",
+        "rows": 31,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "shared selected T=31",
+        "rows": 3,
+        "minRms": 1.0140981066478743,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "shared all T=65",
+        "rows": 65,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "shared selected T=65",
+        "rows": 3,
+        "minRms": 1.022986997041839,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "image all",
+        "rows": 5,
+        "minRms": 1.0188682294750546,
+        "maxRms": 1.0271819439655339,
+        "maxAbs": 2.6127915382385254,
+        "nonfinite": 0
+      },
+      {
+        "label": "image selected",
+        "rows": 3,
+        "minRms": 1.0188682294750546,
+        "maxRms": 1.022205081382592,
+        "maxAbs": 1.7741276025772095,
+        "nonfinite": 0
+      },
+      {
+        "label": "changed image selected",
+        "rows": 1,
+        "minRms": 1.0178139853079415,
+        "maxRms": 1.0178139853079415,
+        "maxAbs": 1.821618914604187,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=1 R=1",
+        "rows": 1,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=1 R=1",
+        "rows": 1,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=1 R=2",
+        "rows": 2,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=1 R=2",
+        "rows": 2,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=31 R=31",
+        "rows": 31,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=31 R=31",
+        "rows": 31,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=31 R=3",
+        "rows": 3,
+        "minRms": 1.0140981066478743,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=31 R=3",
+        "rows": 3,
+        "minRms": 1.0140981066478743,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=65 R=65",
+        "rows": 65,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=65 R=65",
+        "rows": 65,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=65 R=3",
+        "rows": 3,
+        "minRms": 1.022986997041839,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=65 R=3",
+        "rows": 3,
+        "minRms": 1.022986997041839,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=257 R=257",
+        "rows": 257,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=257 R=257",
+        "rows": 257,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=257 R=3",
+        "rows": 3,
+        "minRms": 1.018881017804502,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=257 R=3",
+        "rows": 3,
+        "minRms": 1.018881017804502,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=5 R=5",
+        "rows": 5,
+        "minRms": 1.0188682294750546,
+        "maxRms": 1.0271819439655339,
+        "maxAbs": 2.6127915382385254,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=5 R=5",
+        "rows": 5,
+        "minRms": 1.0188682294750546,
+        "maxRms": 1.0271819439655339,
+        "maxAbs": 2.6127915382385254,
+        "nonfinite": 0
+      },
+      {
+        "label": "dense PLE T=5 R=3",
+        "rows": 3,
+        "minRms": 1.0188682294750546,
+        "maxRms": 1.022205081382592,
+        "maxAbs": 1.7741276025772095,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE T=5 R=3",
+        "rows": 3,
+        "minRms": 1.0188682294750546,
+        "maxRms": 1.022205081382592,
+        "maxAbs": 1.7741276025772095,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE shared image prefix frame=0",
+        "rows": 2,
+        "minRms": 1.0233179008624056,
+        "maxRms": 1.0260963716014264,
+        "maxAbs": 2.060995101928711,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE shared image prefix frame=1",
+        "rows": 2,
+        "minRms": 1.0209172966756184,
+        "maxRms": 1.0232073821106662,
+        "maxAbs": 2.0568490028381348,
+        "nonfinite": 0
+      },
+      {
+        "label": "host PLE shared image prefix frame=2",
+        "rows": 2,
+        "minRms": 1.0209172966756184,
+        "maxRms": 1.0232073821106662,
+        "maxAbs": 2.0568490028381348,
+        "nonfinite": 0
+      },
+      {
+        "label": "stored PLE T=1",
+        "rows": 2,
+        "minRms": 1.0263792388408997,
+        "maxRms": 1.0263792388408997,
+        "maxAbs": 2.404547929763794,
+        "nonfinite": 0
+      },
+      {
+        "label": "stored PLE T=31",
+        "rows": 3,
+        "minRms": 1.0140981066478743,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "stored PLE T=31",
+        "rows": 31,
+        "minRms": 1.0092656577640868,
+        "maxRms": 1.0279242377829998,
+        "maxAbs": 2.455314874649048,
+        "nonfinite": 0
+      },
+      {
+        "label": "stored PLE T=257",
+        "rows": 3,
+        "minRms": 1.018881017804502,
+        "maxRms": 1.0256653998011855,
+        "maxAbs": 2.3250572681427,
+        "nonfinite": 0
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=0",
+        "rows": 2,
+        "minRms": 1.0233179008624056,
+        "maxRms": 1.0260963716014264,
+        "maxAbs": 2.060995101928711,
+        "nonfinite": 0
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=1",
+        "rows": 2,
+        "minRms": 1.0209172966756184,
+        "maxRms": 1.0232073821106662,
+        "maxAbs": 2.0568490028381348,
+        "nonfinite": 0
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=2",
+        "rows": 2,
+        "minRms": 1.0209172966756184,
+        "maxRms": 1.0232073821106662,
+        "maxAbs": 2.0568490028381348,
+        "nonfinite": 0
+      },
+      {
+        "label": "no-shared all",
+        "rows": 31,
+        "minRms": 1.0103432595257074,
+        "maxRms": 1.0294252978614975,
+        "maxAbs": 2.7341489791870117,
+        "nonfinite": 0
+      },
+      {
+        "label": "no-shared selected",
+        "rows": 3,
+        "minRms": 1.0174459003418272,
+        "maxRms": 1.0185529215605118,
+        "maxAbs": 1.9887770414352417,
+        "nonfinite": 0
+      }
+    ],
+    "inputStates": {
+      "embedding": {
+        "rows": 1,
+        "minRms": 0.17804493469111696,
+        "maxRms": 0.17804493469111696,
+        "maxAbs": 0.2800000011920929,
+        "nonfinite": 0
+      },
+      "pleToken": {
+        "rows": 1,
+        "minRms": 0.0949609259433551,
+        "maxRms": 0.0949609259433551,
+        "maxAbs": 0.1574999988079071,
+        "nonfinite": 0
+      },
+      "residual": {
+        "rows": 1,
+        "minRms": 2.6280923764771766,
+        "maxRms": 2.6280923764771766,
+        "maxAbs": 6.076322078704834,
+        "nonfinite": 0
+      }
+    },
+    "imageHiddenDelta": 2.085050880908966,
+    "maxAbs": 0,
+    "tolerance": 2e-05,
+    "emptyRows": true,
+    "duplicateOrder": true,
+    "lengths": [
+      1,
+      31,
+      65
+    ],
+    "bidirectionalRejected": true,
+    "noSharedFallback": true,
+    "imageInjection": true,
+    "imagePlePad": true,
+    "prefixCases": [
+      {
+        "label": "host PLE",
+        "frame": 0,
+        "maxAbs": 0,
+        "enabled": true,
+        "reusedTokens": 5,
+        "totalTokens": 15,
+        "sharedPrefixTokens": 5,
+        "cacheHits": 0
+      },
+      {
+        "label": "host PLE",
+        "frame": 1,
+        "maxAbs": 0,
+        "enabled": true,
+        "reusedTokens": 5,
+        "totalTokens": 15,
+        "sharedPrefixTokens": 5,
+        "cacheHits": 3
+      },
+      {
+        "label": "host PLE",
+        "frame": 2,
+        "maxAbs": 0,
+        "enabled": true,
+        "reusedTokens": 5,
+        "totalTokens": 15,
+        "sharedPrefixTokens": 5,
+        "cacheHits": 3
+      },
+      {
+        "label": "OPFS word and PLE",
+        "frame": 0,
+        "maxAbs": 0,
+        "enabled": true,
+        "reusedTokens": 5,
+        "totalTokens": 15,
+        "sharedPrefixTokens": 5,
+        "cacheHits": 0
+      },
+      {
+        "label": "OPFS word and PLE",
+        "frame": 1,
+        "maxAbs": 0,
+        "enabled": true,
+        "reusedTokens": 5,
+        "totalTokens": 15,
+        "sharedPrefixTokens": 5,
+        "cacheHits": 3
+      },
+      {
+        "label": "OPFS word and PLE",
+        "frame": 2,
+        "maxAbs": 0,
+        "enabled": true,
+        "reusedTokens": 5,
+        "totalTokens": 15,
+        "sharedPrefixTokens": 5,
+        "cacheHits": 3
+      }
+    ],
+    "gpuProjection": {
+      "images": 2,
+      "shapeReset": true,
+      "ordinaryMaxAbs": 0,
+      "sharedMaxAbs": 0,
+      "mixed": [
+        {
+          "gpuImage": 0,
+          "ordinaryMaxAbs": 0,
+          "sharedMaxAbs": 0
+        },
+        {
+          "gpuImage": 1,
+          "ordinaryMaxAbs": 0,
+          "sharedMaxAbs": 0
+        }
+      ],
+      "nonfiniteRejected": [
+        "ordinary",
+        "shared"
+      ]
+    },
+    "storedPle": {
+      "supported": true,
+      "bitExact": true,
+      "imageHiddenDelta": 2.085050880908966,
+      "warmedCacheHit": true,
+      "opfsWeights": 47185920,
+      "cacheBytes": 137216
+    },
+    "hostPle": {
+      "cases": [
+        {
+          "tokens": 1,
+          "selected": 1,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 1,
+          "selected": 2,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 31,
+          "selected": 31,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 31,
+          "selected": 3,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 65,
+          "selected": 65,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 65,
+          "selected": 3,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 257,
+          "selected": 257,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 257,
+          "selected": 3,
+          "images": 0,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 5,
+          "selected": 5,
+          "images": 1,
+          "maxAbs": 0
+        },
+        {
+          "tokens": 5,
+          "selected": 3,
+          "images": 1,
+          "maxAbs": 0
+        }
+      ],
+      "maxAbs": 0,
+      "bitExact": true,
+      "savedGpuBytes": 37748736
+    }
+  },
+  "runner": {
+    "browser": "Chromium",
+    "browserVersion": "153.0.8010.12",
+    "headless": true,
+    "context": "task-owned persistent profile",
+    "flags": [
+      "enable-unsafe-webgpu",
+      "use-angle=vulkan",
+      "enable-features=Vulkan"
+    ],
+    "pageErrors": []
+  }
+}

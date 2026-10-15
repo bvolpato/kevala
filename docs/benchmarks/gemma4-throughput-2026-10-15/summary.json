@@ -1,0 +1,36 @@
+{
+  "method": "Linux RTX 5070 Ti, Chrome 153. Synthetic camera through actual application, real E2B Q8 decoder and BF16 vision. One in-flight request. First five samples discarded; other workstation workloads active. Not a MacBook measurement.",
+  "baselineRuntime": "556bdaeff1cf1f8cfa333d001b46ff1d7f5a0c98",
+  "before": {
+    "samples": 28,
+    "meanMs": 118.60714285714286,
+    "medianMs": 117.69999992847443,
+    "ui": {
+      "fps": "8.3",
+      "latency": "97 ms"
+    },
+    "resources": {
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 41751196\nuser_usec 20263959\nsystem_usec 21487237\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 356\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+      "memory.max": "3355443200",
+      "memory.peak": "1745039360",
+      "memory.swap.max": "0"
+    }
+  },
+  "after": {
+    "samples": 28,
+    "meanMs": 92.34642856461662,
+    "medianMs": 76.80000007152557,
+    "ui": {
+      "fps": "10.5",
+      "latency": "70 ms"
+    },
+    "resources": {
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 47399308\nuser_usec 23788876\nsystem_usec 23610431\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 431\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+      "memory.max": "3355443200",
+      "memory.peak": "1638854656",
+      "memory.swap.max": "0"
+    }
+  }
+}

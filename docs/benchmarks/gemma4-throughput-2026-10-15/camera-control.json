@@ -1,0 +1,1540 @@
+{
+  "info": {
+    "arch": "gemma4",
+    "backend": "webgpu",
+    "gpu": "nvidia blackwell",
+    "gpuPowerPreference": "high-performance",
+    "gpuUnavailable": null,
+    "threads": 1,
+    "flavor": "relaxed",
+    "cpuTiles": null,
+    "cpuTuning": null,
+    "gpuTuning": {
+      "revision": 1,
+      "method": "generic",
+      "points": [],
+      "elapsedMs": 0,
+      "truncated": false,
+      "reason": "no-shader-f16"
+    },
+    "stateCache": {
+      "requested": true,
+      "supported": false,
+      "enabled": false,
+      "backend": null
+    },
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "vision": {
+      "bytes": 337302144,
+      "cached": false,
+      "model": {
+        "name": "gemma-4-e2b-vision",
+        "source": "https://huggingface.co/google/gemma-4-E2B-it",
+        "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+        "precision": "bf16",
+        "converter": "kevala 0.1.3",
+        "quantization": "unquantized BF16 vision weights; norms and clipping bounds in f32",
+        "author": "Google (Gemma team)",
+        "license": "apache-2.0"
+      },
+      "precision": "bf16"
+    },
+    "imageTokens": 70,
+    "model": {
+      "name": "gemma-4-e2b",
+      "source": "https://huggingface.co/google/gemma-4-E2B-it",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "base": "https://huggingface.co/google/gemma-4-E2B-it",
+      "base_revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "author": "Google (Gemma team)",
+      "license": "apache-2.0",
+      "converter": "kevala 0.1.3",
+      "quantization": "BF16 source converted to symmetric int8 absmax, one f32 scale per 32 weights; norms and direct-option label readout in f32",
+      "inspiration": "SemIf direct-options-v1 readout",
+      "method_source": "https://github.com/TheoLeeCJ/SemIf",
+      "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "method_license": "mit"
+    },
+    "config": {
+      "arch": "gemma4",
+      "backbone": "gemma4_text",
+      "modalities": [
+        "text"
+      ],
+      "attention_bias": false,
+      "attention_dropout": 0,
+      "attention_k_eq_v": false,
+      "bos_token_id": 2,
+      "dtype": "bfloat16",
+      "enable_moe_block": false,
+      "eos_token_id": 1,
+      "expert_intermediate_size": null,
+      "final_logit_softcapping": 30,
+      "global_head_dim": 512,
+      "head_dim": 256,
+      "hidden_activation": "gelu_pytorch_tanh",
+      "hidden_size": 1536,
+      "hidden_size_per_layer_input": 256,
+      "initializer_range": 0.02,
+      "intermediate_size": 6144,
+      "layer_types": [
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention"
+      ],
+      "max_position_embeddings": 131072,
+      "model_type": "gemma4_text",
+      "num_attention_heads": 8,
+      "num_experts": null,
+      "num_global_key_value_heads": null,
+      "num_hidden_layers": 35,
+      "num_key_value_heads": 1,
+      "num_kv_shared_layers": 20,
+      "pad_token_id": 0,
+      "rms_norm_eps": 1e-06,
+      "rope_parameters": {
+        "full_attention": {
+          "partial_rotary_factor": 0.25,
+          "rope_theta": 1000000,
+          "rope_type": "proportional"
+        },
+        "sliding_attention": {
+          "rope_theta": 10000,
+          "rope_type": "default"
+        }
+      },
+      "sliding_window": 512,
+      "tie_word_embeddings": true,
+      "top_k_experts": null,
+      "use_bidirectional_attention": null,
+      "use_cache": true,
+      "use_double_wide_mlp": true,
+      "vocab_size": 262144,
+      "vocab_size_per_layer_input": 262144,
+      "kv_shared_start": 15,
+      "embedding_scale": 39.25,
+      "ple_embedding_scale": 16,
+      "ple_input_scale": 0.7071067811865475,
+      "ple_projection_scale": 0.025515518153991442,
+      "block": 32,
+      "max_input_tokens": 4096,
+      "readout": "labels",
+      "prompt_version": "direct-options-v1",
+      "label_token_ids": [
+        236776,
+        236799,
+        236780,
+        236796,
+        236788,
+        236811,
+        236823,
+        236814,
+        236777,
+        236863,
+        236855,
+        236798,
+        236792,
+        236797,
+        236806,
+        236791
+      ],
+      "label_tokens": "ABCDEFGHIJKLMNOP",
+      "template": {
+        "type": "gemma4",
+        "prompt_version": "direct-options-v1"
+      },
+      "excluded_modalities": [
+        "image",
+        "video",
+        "audio"
+      ]
+    },
+    "pack": {
+      "bytes": 5217421952,
+      "cached": false
+    },
+    "memory": {
+      "hostWeights": 0,
+      "opfsWeights": 3095396352,
+      "gpuWeights": 2449759116,
+      "embeddingStorage": "opfs-q8-rows"
+    },
+    "loadMs": 29793.199999809265,
+    "warmupMs": 138.59999990463257
+  },
+  "samples": [
+    {
+      "elapsedMs": 191,
+      "hash": 4199583964,
+      "timing": {
+        "prepare": 64.29999995231628,
+        "forward": 125.60000014305115,
+        "total": 190.29999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0.2999999523162842,
+          "preprocess": 15,
+          "forward": 47.799999952316284,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 52.799999952316284,
+          "cacheHits": 0,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.454987743178935,
+          "maxFinalRms": 5.524280184314147
+        },
+        "tokenize": 1.0999999046325684,
+        "readout": 0.39999985694885254,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 109.70000004768372,
+      "hash": 1308101347,
+      "timing": {
+        "prepare": 49.09999990463257,
+        "forward": 60.200000047683716,
+        "total": 109.39999985694885,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 15.900000095367432,
+          "forward": 32.59999990463257,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.6193231602903655,
+          "maxFinalRms": 5.349235003379357
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 159.5,
+      "hash": 937732845,
+      "timing": {
+        "prepare": 71.70000004768372,
+        "forward": 87.09999990463257,
+        "total": 159,
+        "tokens": 331,
+        "image": {
+          "decode": 0.20000004768371582,
+          "preprocess": 15.299999952316284,
+          "forward": 55.799999952316284,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.503754894948375,
+          "maxFinalRms": 5.223973509387842
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 101.90000009536743,
+      "hash": 1747623335,
+      "timing": {
+        "prepare": 43.299999952316284,
+        "forward": 58,
+        "total": 101.40000009536743,
+        "tokens": 331,
+        "image": {
+          "decode": 0.2999999523162842,
+          "preprocess": 11.299999952316284,
+          "forward": 31.40000009536743,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.296193933585014,
+          "maxFinalRms": 4.8745381013865625
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.10000014305114746,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 131.20000004768372,
+      "hash": 1254285283,
+      "timing": {
+        "prepare": 44.700000047683716,
+        "forward": 86.09999990463257,
+        "total": 131,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 6.400000095367432,
+          "forward": 37.90000009536743,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.56503762663041,
+          "maxFinalRms": 5.132758804152473
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 133.90000009536743,
+      "hash": 733792836,
+      "timing": {
+        "prepare": 76.09999990463257,
+        "forward": 57.09999990463257,
+        "total": 133.29999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 9,
+          "forward": 66.70000004768372,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.09999990463256836,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.519615841155135,
+          "maxFinalRms": 5.25569409880356
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.10000014305114746,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 97.40000009536743,
+      "hash": 3738586496,
+      "timing": {
+        "prepare": 39.200000047683716,
+        "forward": 57.799999952316284,
+        "total": 97.20000004768372,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 6.400000095367432,
+          "forward": 32.59999990463257,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.09999990463256836,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.70033101636675,
+          "maxFinalRms": 5.3190765254175165
+        },
+        "tokenize": 0.20000004768371582,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 126.29999995231628,
+      "hash": 3312116365,
+      "timing": {
+        "prepare": 37.5,
+        "forward": 88.40000009536743,
+        "total": 126,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5.5,
+          "forward": 31.5,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.605815884670534,
+          "maxFinalRms": 5.228111789885658
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 119.40000009536743,
+      "hash": 4158701713,
+      "timing": {
+        "prepare": 62.30000019073486,
+        "forward": 56.799999952316284,
+        "total": 119.30000019073486,
+        "tokens": 331,
+        "image": {
+          "decode": 0.10000014305114746,
+          "preprocess": 5.5,
+          "forward": 56.39999985694885,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.283642313870522,
+          "maxFinalRms": 4.892611683601195
+        },
+        "tokenize": 0.3000001907348633,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 113.29999995231628,
+      "hash": 620395813,
+      "timing": {
+        "prepare": 37.799999952316284,
+        "forward": 75,
+        "total": 113.10000014305115,
+        "tokens": 331,
+        "image": {
+          "decode": 0.10000014305114746,
+          "preprocess": 6.099999904632568,
+          "forward": 31.299999952316284,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.09999990463256836,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.576834065014998,
+          "maxFinalRms": 5.15774251805005
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.3000001907348633,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 134,
+      "hash": 4124010758,
+      "timing": {
+        "prepare": 65.20000004768372,
+        "forward": 68.19999980926514,
+        "total": 133.5,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 5.200000047683716,
+          "forward": 59.69999980926514,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.662581973180313,
+          "maxFinalRms": 5.2558711667490385
+        },
+        "tokenize": 0.3000001907348633,
+        "readout": 0.10000014305114746,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 98.70000004768372,
+      "hash": 128173022,
+      "timing": {
+        "prepare": 41.200000047683716,
+        "forward": 56.90000009536743,
+        "total": 98.30000019073486,
+        "tokens": 331,
+        "image": {
+          "decode": 0.10000014305114746,
+          "preprocess": 9.200000047683716,
+          "forward": 31.59999990463257,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.730979728965374,
+          "maxFinalRms": 5.257108090415287
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 155.5,
+      "hash": 1234806529,
+      "timing": {
+        "prepare": 80.60000014305115,
+        "forward": 74.5,
+        "total": 155.30000019073486,
+        "tokens": 331,
+        "image": {
+          "decode": 0.10000014305114746,
+          "preprocess": 5.3999998569488525,
+          "forward": 74.80000019073486,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.60381983128691,
+          "maxFinalRms": 5.281708342323397
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 95.79999995231628,
+      "hash": 998305421,
+      "timing": {
+        "prepare": 37.60000014305115,
+        "forward": 57.59999990463257,
+        "total": 95.40000009536743,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 6.200000047683716,
+          "forward": 31,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.340508285310943,
+          "maxFinalRms": 4.938840478204978
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 124.5,
+      "hash": 239397147,
+      "timing": {
+        "prepare": 38.10000014305115,
+        "forward": 86.09999990463257,
+        "total": 124.30000019073486,
+        "tokens": 331,
+        "image": {
+          "decode": 0.10000014305114746,
+          "preprocess": 5.3999998569488525,
+          "forward": 32.30000019073486,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.603305116937197,
+          "maxFinalRms": 5.167481151741837
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.10000014305114746,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 124.79999995231628,
+      "hash": 3814214603,
+      "timing": {
+        "prepare": 66.20000004768372,
+        "forward": 58.200000047683716,
+        "total": 124.70000004768372,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5,
+          "forward": 60.700000047683716,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.5919232943731965,
+          "maxFinalRms": 5.244604378816023
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.2999999523162842,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 95.5,
+      "hash": 2747980961,
+      "timing": {
+        "prepare": 38.200000047683716,
+        "forward": 56.799999952316284,
+        "total": 95.10000014305115,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 6.200000047683716,
+          "forward": 31.59999990463257,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.20000004768371582,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.718991818317099,
+          "maxFinalRms": 5.319736328804673
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.10000014305114746,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 152.69999980926514,
+      "hash": 4008943631,
+      "timing": {
+        "prepare": 38.299999952316284,
+        "forward": 114,
+        "total": 152.5,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5.700000047683716,
+          "forward": 32.200000047683716,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.570399863633585,
+          "maxFinalRms": 5.313647390823573
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 98.70000004768372,
+      "hash": 1814977385,
+      "timing": {
+        "prepare": 41.39999985694885,
+        "forward": 56.90000009536743,
+        "total": 98.59999990463257,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 9.099999904632568,
+          "forward": 32,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.4510678867905735,
+          "maxFinalRms": 5.047772839822666
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.2999999523162842,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 160.09999990463257,
+      "hash": 3324842289,
+      "timing": {
+        "prepare": 38.5,
+        "forward": 121.20000004768372,
+        "total": 159.90000009536743,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5.900000095367432,
+          "forward": 32.200000047683716,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.552769936212414,
+          "maxFinalRms": 5.106636572213685
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 94.90000009536743,
+      "hash": 2182537079,
+      "timing": {
+        "prepare": 37.5,
+        "forward": 57.10000014305115,
+        "total": 94.70000004768372,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 5.5,
+          "forward": 31.700000047683716,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.499429465902761,
+          "maxFinalRms": 5.247118213981064
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 106.5,
+      "hash": 1444589885,
+      "timing": {
+        "prepare": 37.5,
+        "forward": 68.60000014305115,
+        "total": 106.20000004768372,
+        "tokens": 331,
+        "image": {
+          "decode": 0.20000004768371582,
+          "preprocess": 5.400000095367432,
+          "forward": 31.59999990463257,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.725518098926736,
+          "maxFinalRms": 5.329106263203711
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 138.79999995231628,
+      "hash": 1258894025,
+      "timing": {
+        "prepare": 74.39999985694885,
+        "forward": 63.700000047683716,
+        "total": 138.29999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0.20000004768371582,
+          "preprocess": 5.3999998569488525,
+          "forward": 68.5,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.290492661249174,
+          "maxFinalRms": 5.0382984336694
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 103.20000004768372,
+      "hash": 4104555190,
+      "timing": {
+        "prepare": 39.5,
+        "forward": 63.200000047683716,
+        "total": 102.79999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 8.700000047683716,
+          "forward": 30.40000009536743,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.10000014305114746,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.2842694798104715,
+          "maxFinalRms": 4.966085545540977
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 158.10000014305115,
+      "hash": 3899860145,
+      "timing": {
+        "prepare": 37.39999985694885,
+        "forward": 120.30000019073486,
+        "total": 157.79999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5.5,
+          "forward": 31.5,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.510941174050389,
+          "maxFinalRms": 5.123470202944497
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 96.90000009536743,
+      "hash": 2371241438,
+      "timing": {
+        "prepare": 38.40000009536743,
+        "forward": 58,
+        "total": 96.60000014305115,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 5.799999952316284,
+          "forward": 32.200000047683716,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.5797280912296054,
+          "maxFinalRms": 5.2778212795508255
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 117.09999990463257,
+      "hash": 2775810510,
+      "timing": {
+        "prepare": 38,
+        "forward": 78.59999990463257,
+        "total": 116.79999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5.5,
+          "forward": 32,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.740038075635455,
+          "maxFinalRms": 5.287334669510048
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 138.40000009536743,
+      "hash": 1056405745,
+      "timing": {
+        "prepare": 76.09999990463257,
+        "forward": 61.90000009536743,
+        "total": 138.09999990463257,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 7.6000001430511475,
+          "forward": 68.09999990463257,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.09999990463256836,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.207445495682315,
+          "maxFinalRms": 4.92551142237343
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 93.29999995231628,
+      "hash": 3795177485,
+      "timing": {
+        "prepare": 37.10000014305115,
+        "forward": 55.799999952316284,
+        "total": 93,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 6,
+          "forward": 30.799999952316284,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.19999980926513672,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.380192262212478,
+          "maxFinalRms": 4.968277680391782
+        },
+        "tokenize": 0.3000001907348633,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 118.29999995231628,
+      "hash": 712723675,
+      "timing": {
+        "prepare": 36.700000047683716,
+        "forward": 81.29999995231628,
+        "total": 118.10000014305115,
+        "tokens": 331,
+        "image": {
+          "decode": 0.10000014305114746,
+          "preprocess": 5.299999952316284,
+          "forward": 31,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.504626534142917,
+          "maxFinalRms": 5.521582346918198
+        },
+        "tokenize": 0.2999999523162842,
+        "readout": 0.10000014305114746,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 131,
+      "hash": 2532457605,
+      "timing": {
+        "prepare": 72.69999980926514,
+        "forward": 58,
+        "total": 130.89999985694885,
+        "tokens": 331,
+        "image": {
+          "decode": 0.09999990463256836,
+          "preprocess": 5.099999904632568,
+          "forward": 67.30000019073486,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.637248476847419,
+          "maxFinalRms": 5.383168306556194
+        },
+        "tokenize": 0.19999980926513672,
+        "readout": 0.20000004768371582,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 96.39999985694885,
+      "hash": 4235317777,
+      "timing": {
+        "prepare": 38.40000009536743,
+        "forward": 57.5,
+        "total": 96,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 6.799999952316284,
+          "forward": 31.200000047683716,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.6469388077110185,
+          "maxFinalRms": 5.284604847840658
+        },
+        "tokenize": 0.40000009536743164,
+        "readout": 0.09999990463256836,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    },
+    {
+      "elapsedMs": 97.5,
+      "hash": 493533916,
+      "timing": {
+        "prepare": 38.60000014305115,
+        "forward": 58.5,
+        "total": 97.29999995231628,
+        "tokens": 331,
+        "image": {
+          "decode": 0,
+          "preprocess": 6,
+          "forward": 32.299999952316284,
+          "images": 1,
+          "patches": 630,
+          "softTokens": 63
+        },
+        "ple": {
+          "ms": 0.09999990463256836,
+          "cacheHits": 2,
+          "sequences": 2
+        },
+        "decoder": {
+          "minFinalRms": 4.278160395548873,
+          "maxFinalRms": 4.959866154353868
+        },
+        "tokenize": 0.3000001907348633,
+        "readout": 0.19999980926513672,
+        "batched": 1
+      },
+      "answers": {
+        "person_present": {
+          "type": "noul",
+          "noul": 0
+        },
+        "smiling": {
+          "type": "noul",
+          "noul": 0
+        }
+      }
+    }
+  ],
+  "maxInFlight": 1,
+  "tracksStopped": true,
+  "lastTab": "Reaction Recorder",
+  "status": "done",
+  "capture": "Chromium synthetic camera, real application scheduler/model/GPU",
+  "uiMetrics": {
+    "fps": "8.3",
+    "latency": "97 ms"
+  },
+  "browserVersion": "153.0.8010.12",
+  "pageErrors": [],
+  "resources": {
+    "cpu.max": "400000 100000",
+    "cpu.stat": "usage_usec 41751196\nuser_usec 20263959\nsystem_usec 21487237\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 356\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0",
+    "memory.max": "3355443200",
+    "memory.peak": "1745039360",
+    "memory.swap.max": "0"
+  }
+}

@@ -7,6 +7,7 @@ import { GpuGemma4, gemma4Config } from "../js/src/gpu-gemma4.js";
 import { kernelSource } from "./wgsl.js";
 import { createGemma4PleStore } from "../js/src/gemma4-ple-store.js";
 import { parsePackHeader } from "../js/src/pack-layout.js";
+import { checkGpuProjectionDecoder } from "./gemma4-projection-check.js";
 
 const logNode = document.getElementById("log");
 const log = (line) => { logNode.textContent += `${line}\n`; };
@@ -242,6 +243,31 @@ async function main() {
   let hostPleMaxAbs = 0;
   let hostPleExact = true;
   const hostCases = [];
+  const prefixCases = [];
+  const checkSharedPrefix = async (target, label) => {
+    const profiler = target.profiler;
+    target.profiler = null;
+    let first = null;
+    try {
+      for (const [frame, projected] of [imageRows, changedImageRows, changedImageRows].entries()) {
+        const spans = [{ start: 1, len: 2, rows: projected }];
+        const inputs = [[3, 258880, 258880, 4, 5, 7, 9], [3, 258880, 258880, 4, 5, 11, 13, 15]].map((ids) => ({ ids: Uint32Array.from(ids), imageSpans: spans }));
+        const expected = new Float32Array(2 * cfg.hidden);
+        for (let i = 0; i < inputs.length; i++) expected.set(await target.forward(inputs[i].ids, null, spans), i * cfg.hidden);
+        const actual = await target.forwardSharedPrefix(inputs);
+        if (!actual || !target.lastPrefixReuse.enabled || target.lastPrefixReuse.reusedTokens !== 5) throw new Error(`${label} shared prefix was not exercised`);
+        assertFinalRows(actual, 2, `${label} shared image prefix frame=${frame}`);
+        let maxAbs = 0;
+        for (let i = 0; i < actual.length; i++) maxAbs = Math.max(maxAbs, Math.abs(actual[i] - expected[i]));
+        if (!Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`${label} shared-prefix rows differ by ${maxAbs}`);
+        if (frame === 0) first = actual;
+        else if (!actual.some((value, i) => Math.abs(value - first[i]) > 1e-6)) throw new Error(`${label} shared prefix reused stale image rows`);
+        prefixCases.push({ label, frame, maxAbs, ...target.lastPrefixReuse, cacheHits: target.lastPle?.cacheHits || 0 });
+        const split = [{ start: 1, len: 1, rows: projected.subarray(0, cfg.hidden) }, { start: 2, len: 1, rows: projected.subarray(cfg.hidden) }];
+        if (await target.forwardSharedPrefix([inputs[0], { ...inputs[1], imageSpans: split }]) !== null || target.lastPrefixReuse.enabled) throw new Error(`${label} shared prefix accepted mismatched image spans`);
+      }
+    } finally { target.profiler = profiler; }
+  };
   const compareHost = async (ids, selected, spans = []) => {
     const dense = await model.forward(ids, selected, spans);
     const host = await hostModel.forward(ids, selected, spans);
@@ -267,6 +293,12 @@ async function main() {
   const densePleTokens = await read(model.pleToken, imageIds.length * cfg.pleDim);
   for (let i = 0; i < densePleTokens.length; i++) if (densePleTokens[i] !== hostPleTokens[i]) throw new Error(`host PLE row differs from the GPU lookup at ${i}`);
   await compareHost(imageIds, imageSelected, imageSpans);
+  if (await model.forwardSharedPrefix([
+    { ids: Uint32Array.from([3, 258880, 258880, 4, 5, 7]), imageSpans },
+    { ids: Uint32Array.from([3, 258880, 258880, 4, 5, 9]), imageSpans },
+  ]) !== null) throw new Error("GPU-resident PLE unexpectedly enabled image-prefix sharing");
+  await checkSharedPrefix(hostModel, "host PLE");
+  const gpuProjection = await checkGpuProjectionDecoder(runtime, hostModel);
   let storedPle = { supported: false };
   const store = await createGemma4PleStore(parsePackHeader(packed.prefix).tensors.filter((t) => /^ple\.\d+\.embed$/.test(t.name) || t.name === "embed"));
   if (store) {
@@ -300,6 +332,7 @@ async function main() {
       const word = parsePackHeader(packed.prefix).tensors.find((t) => t.name === "embed");
       if (storedMaxAbs !== 0 || changed <= 1e-6 || storedModel.memory.hostWeights !== 0 || storedModel.memory.opfsWeights !== hostModel.memory.hostWeights + word.size + word.scales_size) throw new Error(`stored PLE mismatch: maxAbs=${storedMaxAbs}, imageDelta=${changed}`);
       storedPle = { supported: true, bitExact: true, imageHiddenDelta: changed, warmedCacheHit: true, opfsWeights: storedModel.memory.opfsWeights, cacheBytes: storedModel.pleCacheBytes };
+      await checkSharedPrefix(storedModel, "OPFS word and PLE");
     } finally {
       storedModel?.dispose();
       await store.dispose();
@@ -338,7 +371,7 @@ async function main() {
 
   const metricMs = Math.exp(metricSamples.reduce((sum, value) => sum + Math.log(value), 0) / metricSamples.length);
   const info = runtime.adapter.info || {};
-  const correctness = { ...window.gpuBench.correctness, ok: true, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, storedPle, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
+  const correctness = { ...window.gpuBench.correctness, ok: true, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, prefixCases, gpuProjection, storedPle, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
   const adapter = {
     name: runtime.name,
     vendor: info.vendor || null,

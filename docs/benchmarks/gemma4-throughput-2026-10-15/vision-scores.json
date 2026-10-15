@@ -1,0 +1,83 @@
+{
+  "status": "done",
+  "done": true,
+  "backend": "webgpu",
+  "metricMs": 159.89999985694885,
+  "adapter": {
+    "name": "nvidia blackwell",
+    "isFallbackAdapter": false
+  },
+  "correctness": {
+    "ok": true,
+    "cases": [
+      {
+        "rows": 1,
+        "heads": 1,
+        "kvHeads": 1,
+        "dim": 64,
+        "mask": false,
+        "maxAbs": 0,
+        "tiledVsLinearMaxAbs": 0,
+        "bitExact": true
+      },
+      {
+        "rows": 17,
+        "heads": 4,
+        "kvHeads": 2,
+        "dim": 64,
+        "mask": true,
+        "maxAbs": 7.152557373046875e-07,
+        "tiledVsLinearMaxAbs": 0,
+        "bitExact": true
+      },
+      {
+        "rows": 33,
+        "heads": 4,
+        "kvHeads": 1,
+        "dim": 64,
+        "mask": false,
+        "maxAbs": 7.152557373046875e-07,
+        "tiledVsLinearMaxAbs": 0,
+        "bitExact": true
+      },
+      {
+        "rows": 48,
+        "heads": 12,
+        "kvHeads": 12,
+        "dim": 64,
+        "mask": true,
+        "maxAbs": 7.152557373046875e-07,
+        "tiledVsLinearMaxAbs": 0,
+        "bitExact": true
+      },
+      {
+        "rows": 17,
+        "heads": 4,
+        "kvHeads": 2,
+        "dim": 32,
+        "mask": true,
+        "maxAbs": 2.384185791015625e-07
+      },
+      {
+        "rows": 17,
+        "heads": 4,
+        "kvHeads": 1,
+        "dim": 256,
+        "mask": true,
+        "maxAbs": 9.5367431640625e-07
+      }
+    ]
+  },
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm",
+  "runner": {
+    "browser": "Chromium",
+    "browserVersion": "153.0.8010.12",
+    "headless": true,
+    "flags": [
+      "enable-unsafe-webgpu",
+      "use-angle=vulkan",
+      "enable-features=Vulkan"
+    ],
+    "pageErrors": []
+  }
+}

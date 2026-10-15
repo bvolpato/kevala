@@ -1,0 +1,278 @@
+{
+  "adapter": {
+    "architecture": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "timestampQuery": true,
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 576,
+        "baseline": {
+          "medianWallMs": 100,
+          "samples": [
+            {
+              "wallMs": 100
+            },
+            {
+              "wallMs": 100
+            },
+            {
+              "wallMs": 99
+            },
+            {
+              "wallMs": 100
+            },
+            {
+              "wallMs": 100
+            }
+          ],
+          "warmupRuns": 5
+        },
+        "correctness": [
+          {
+            "maxAbs": 1.990795135498047e-05,
+            "relativeL2": 1.95674400993712e-06
+          },
+          {
+            "maxAbs": 1.990795135498047e-05,
+            "relativeL2": 1.95674400993712e-06
+          },
+          {
+            "maxAbs": 1.990795135498047e-05,
+            "relativeL2": 1.95674400993712e-06
+          },
+          {
+            "maxAbs": 1.990795135498047e-05,
+            "relativeL2": 1.95674400993712e-06
+          },
+          {
+            "maxAbs": 1.990795135498047e-05,
+            "relativeL2": 1.95674400993712e-06
+          }
+        ],
+        "id": "rectangular",
+        "patches": 630,
+        "profile": {
+          "kernelMedianMs": {
+            "vision.attention": 3.139,
+            "vision.clip": 0.638,
+            "vision.gelu": 0.136,
+            "vision.mm.down": 3.744,
+            "vision.mm.gate": 3.364,
+            "vision.mm.k": 0.96,
+            "vision.mm.o": 0.984,
+            "vision.mm.patch_embed": 0.062,
+            "vision.mm.project": 0.025,
+            "vision.mm.q": 0.996,
+            "vision.mm.up": 3.393,
+            "vision.mm.v": 0.955,
+            "vision.norm.input": 0.166,
+            "vision.norm.k": 0.476,
+            "vision.norm.pool": 0.005,
+            "vision.norm.post_attention": 0.106,
+            "vision.norm.post_feedforward": 0.122,
+            "vision.norm.pre_feedforward": 0.133,
+            "vision.norm.q": 0.479,
+            "vision.norm.v": 0.477,
+            "vision.pool": 0.005,
+            "vision.position": 0.006,
+            "vision.rope.k": 0.102,
+            "vision.rope.q": 0.104,
+            "vision.scores": 12.625
+          },
+          "medianKernelMs": 33.202,
+          "medianTotalKernelMs": 33.617,
+          "medianWallMs": 200,
+          "samples": [
+            {
+              "gpu": {
+                "vision.attention": 3.27,
+                "vision.clip": 0.638,
+                "vision.gelu": 0.136,
+                "vision.mm.down": 3.709,
+                "vision.mm.gate": 3.366,
+                "vision.mm.k": 0.955,
+                "vision.mm.o": 0.991,
+                "vision.mm.patch_embed": 0.062,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 1.118,
+                "vision.mm.up": 3.393,
+                "vision.mm.v": 0.954,
+                "vision.norm.input": 0.134,
+                "vision.norm.k": 0.472,
+                "vision.norm.pool": 0.005,
+                "vision.norm.post_attention": 0.106,
+                "vision.norm.post_feedforward": 0.117,
+                "vision.norm.pre_feedforward": 0.133,
+                "vision.norm.q": 0.479,
+                "vision.norm.v": 0.476,
+                "vision.pool": 0.005,
+                "vision.position": 0.009,
+                "vision.rope.k": 0.107,
+                "vision.rope.q": 0.105,
+                "vision.scores": 12.569
+              },
+              "wallMs": 199
+            },
+            {
+              "gpu": {
+                "vision.attention": 3.137,
+                "vision.clip": 0.656,
+                "vision.gelu": 0.142,
+                "vision.mm.down": 3.961,
+                "vision.mm.gate": 3.352,
+                "vision.mm.k": 0.96,
+                "vision.mm.o": 0.983,
+                "vision.mm.patch_embed": 0.063,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 0.979,
+                "vision.mm.up": 3.397,
+                "vision.mm.v": 0.956,
+                "vision.norm.input": 0.166,
+                "vision.norm.k": 0.476,
+                "vision.norm.pool": 0.005,
+                "vision.norm.post_attention": 0.106,
+                "vision.norm.post_feedforward": 0.131,
+                "vision.norm.pre_feedforward": 0.136,
+                "vision.norm.q": 0.48,
+                "vision.norm.v": 0.476,
+                "vision.pool": 0.005,
+                "vision.position": 0.008,
+                "vision.rope.k": 0.102,
+                "vision.rope.q": 0.103,
+                "vision.scores": 12.859
+              },
+              "wallMs": 200
+            },
+            {
+              "gpu": {
+                "vision.attention": 3.139,
+                "vision.clip": 0.632,
+                "vision.gelu": 0.136,
+                "vision.mm.down": 3.744,
+                "vision.mm.gate": 3.364,
+                "vision.mm.k": 0.955,
+                "vision.mm.o": 0.985,
+                "vision.mm.patch_embed": 0.062,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 1.166,
+                "vision.mm.up": 3.397,
+                "vision.mm.v": 0.955,
+                "vision.norm.input": 0.212,
+                "vision.norm.k": 0.471,
+                "vision.norm.pool": 0.005,
+                "vision.norm.post_attention": 0.103,
+                "vision.norm.post_feedforward": 0.122,
+                "vision.norm.pre_feedforward": 0.132,
+                "vision.norm.q": 0.473,
+                "vision.norm.v": 0.478,
+                "vision.pool": 0.006,
+                "vision.position": 0.006,
+                "vision.rope.k": 0.101,
+                "vision.rope.q": 0.104,
+                "vision.scores": 12.383
+              },
+              "wallMs": 199
+            },
+            {
+              "gpu": {
+                "vision.attention": 3.144,
+                "vision.clip": 0.599,
+                "vision.gelu": 0.134,
+                "vision.mm.down": 4.349,
+                "vision.mm.gate": 3.363,
+                "vision.mm.k": 0.977,
+                "vision.mm.o": 0.979,
+                "vision.mm.patch_embed": 0.06,
+                "vision.mm.project": 0.057,
+                "vision.mm.q": 0.996,
+                "vision.mm.up": 3.385,
+                "vision.mm.v": 0.967,
+                "vision.norm.input": 0.168,
+                "vision.norm.k": 0.491,
+                "vision.norm.pool": 0.005,
+                "vision.norm.post_attention": 0.108,
+                "vision.norm.post_feedforward": 0.126,
+                "vision.norm.pre_feedforward": 0.133,
+                "vision.norm.q": 0.477,
+                "vision.norm.v": 0.479,
+                "vision.pool": 0.004,
+                "vision.position": 0.006,
+                "vision.rope.k": 0.101,
+                "vision.rope.q": 0.101,
+                "vision.scores": 12.625
+              },
+              "wallMs": 200
+            },
+            {
+              "gpu": {
+                "vision.attention": 3.134,
+                "vision.clip": 0.741,
+                "vision.gelu": 0.137,
+                "vision.mm.down": 3.734,
+                "vision.mm.gate": 3.374,
+                "vision.mm.k": 0.96,
+                "vision.mm.o": 0.984,
+                "vision.mm.patch_embed": 0.062,
+                "vision.mm.project": 0.085,
+                "vision.mm.q": 0.96,
+                "vision.mm.up": 3.392,
+                "vision.mm.v": 0.955,
+                "vision.norm.input": 0.103,
+                "vision.norm.k": 0.477,
+                "vision.norm.pool": 0.005,
+                "vision.norm.post_attention": 0.112,
+                "vision.norm.post_feedforward": 0.121,
+                "vision.norm.pre_feedforward": 0.119,
+                "vision.norm.q": 0.484,
+                "vision.norm.v": 0.477,
+                "vision.pool": 0.004,
+                "vision.position": 0.006,
+                "vision.rope.k": 0.103,
+                "vision.rope.q": 0.104,
+                "vision.scores": 12.984
+              },
+              "wallMs": 200
+            }
+          ],
+          "warmupRuns": 1,
+          "warmupWallMs": 200
+        },
+        "softTokens": 64
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 0.0001
+  },
+  "done": true,
+  "metricMs": 100,
+  "options": {
+    "compactPatches": true,
+    "submitMode": "split"
+  },
+  "profile": true,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18087/js/src/kevala-base.wasm"
+}

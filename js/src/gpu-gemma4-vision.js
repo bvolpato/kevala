@@ -6,6 +6,29 @@ const f32 = (value) => ({ f: value });
 const positive = (value) => Number.isSafeInteger(value) && value > 0;
 const fail = (detail) => new Error(`Gemma 4 vision ${detail}`);
 const PREFIX = "vision_tower.encoder.layers.";
+const geometryCache = new WeakMap();
+const gpuProjections = new WeakMap();
+
+/** Internal same-device F32 rows. The caller owns their lifetime until decoder readback. */
+export function gpuVisionProjection(rows, device, byteLength) {
+  const projection = gpuProjections.get(rows);
+  return projection && projection.device === device && projection.byteLength === byteLength ? projection : null;
+}
+
+function ownProjection(device, byteLength) {
+  const buffer = device.createBuffer({ label: "Gemma vision projected rows", size: byteLength, usage: GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+  let status;
+  try {
+    status = device.createBuffer({ label: "Gemma vision projection status", size: 16, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST });
+    const rows = Object.freeze({ byteLength, destroy() {
+      if (!gpuProjections.delete(rows)) return;
+      buffer.destroy();
+      status.destroy();
+    } });
+    gpuProjections.set(rows, Object.freeze({ device, buffer, status, byteLength }));
+    return rows;
+  } catch (error) { buffer.destroy(); status?.destroy(); throw error; }
+}
 
 export function gemma4VisionConfig(header) {
   const config = header.config || {};
@@ -36,6 +59,27 @@ export function visionImagePlan(image, cfg, compact = true) {
   if (!(patches instanceof Float32Array) || !(positions instanceof Int32Array) || positions.length % 2) throw fail("expects Float32 patches and signed Int32 position pairs");
   const rows = positions.length / 2;
   if (!rows || patches.length !== rows * patchWidth || rows % (cfg.pool * cfg.pool)) throw fail("patches and padded positions have inconsistent dimensions");
+  const key = [compact, cfg.patch, cfg.pool, cfg.positionSize, cfg.headDim, cfg.theta].join(":");
+  let geometry = geometryCache.get(cfg);
+  if (!geometry || geometry.key !== key || geometry.source.length !== positions.length || !positions.every((value, i) => value === geometry.source[i])) {
+    geometry = { ...imageGeometry(positions, cfg, compact), key, source: positions.slice() };
+    geometryCache.set(cfg, geometry);
+  }
+  const { sourceRows, softRows, activePositions, rope, pools } = geometry;
+  if (softTokens != null && softTokens !== softRows) throw fail(`processor reports ${softTokens} soft tokens but positions produce ${softRows}`);
+  const pixels = new Float32Array(sourceRows.length * patchWidth);
+  for (let i = 0; i < patches.length; i++) {
+    if (!Number.isFinite(patches[i]) || patches[i] < 0 || patches[i] > 1) {
+      pixels.fill(0);
+      throw fail("patch pixels must be finite values between zero and one");
+    }
+  }
+  for (let row = 0; row < sourceRows.length; row++) for (let col = 0; col < patchWidth; col++) pixels[row * patchWidth + col] = 2 * (patches[sourceRows[row] * patchWidth + col] - 0.5);
+  return { rows: sourceRows.length, softRows, pixels, positions: activePositions.slice(), rope: rope.slice(), pools: pools.slice() };
+}
+
+function imageGeometry(positions, cfg, compact) {
+  const rows = positions.length / 2;
   let width = 0;
   let height = 0;
   const seen = new Set();
@@ -53,7 +97,6 @@ export function visionImagePlan(image, cfg, compact = true) {
   }
   if (!width || width % cfg.pool || height % cfg.pool || seen.size !== width * height) throw fail("real patch positions must form a complete rectangular pooling grid");
   const softRows = width * height / (cfg.pool * cfg.pool);
-  if (softTokens != null && softTokens !== softRows) throw fail(`processor reports ${softTokens} soft tokens but positions produce ${softRows}`);
   const sourceRows = compact ? validRows : Array.from({ length: rows }, (_, row) => row);
   const activeRows = sourceRows.length;
   const activePositions = activeRows === rows ? positions : Int32Array.from(sourceRows.flatMap((row) => [positions[row * 2], positions[row * 2 + 1]]));
@@ -63,14 +106,6 @@ export function visionImagePlan(image, cfg, compact = true) {
     if (x < 0) continue;
     pools[Math.floor(y / cfg.pool) * (width / cfg.pool) + Math.floor(x / cfg.pool)].push(row);
   }
-  const pixels = new Float32Array(activeRows * patchWidth);
-  for (let i = 0; i < patches.length; i++) {
-    if (!Number.isFinite(patches[i]) || patches[i] < 0 || patches[i] > 1) {
-      pixels.fill(0);
-      throw fail("patch pixels must be finite values between zero and one");
-    }
-  }
-  for (let row = 0; row < activeRows; row++) for (let col = 0; col < patchWidth; col++) pixels[row * patchWidth + col] = 2 * (patches[sourceRows[row] * patchWidth + col] - 0.5);
   const rope = new Float32Array(activeRows * cfg.headDim);
   const quarter = cfg.headDim / 4;
   for (let row = 0; row < activeRows; row++) for (let axis = 0; axis < 2; axis++) for (let pair = 0; pair < quarter; pair++) {
@@ -80,7 +115,7 @@ export function visionImagePlan(image, cfg, compact = true) {
     rope[at] = Math.cos(angle);
     rope[at + 1] = Math.sin(angle);
   }
-  return { rows: activeRows, softRows, pixels, positions: activePositions, rope, pools: Uint32Array.from(pools.flat()) };
+  return { sourceRows, softRows, activePositions: activePositions.slice(), rope, pools: Uint32Array.from(pools.flat()) };
 }
 
 export class GpuGemma4Vision {
@@ -159,12 +194,14 @@ export class GpuGemma4Vision {
       attention: ["uniform", "storage", "read-only-storage", "storage"],
       gelu: ["uniform", "read-only-storage", "read-only-storage", "storage"],
       pool: ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "storage"],
+      finite: ["uniform", "read-only-storage", "storage"],
     };
     this.p = {};
     for (const [name, types] of Object.entries(kinds)) {
       const layout = this.device.createBindGroupLayout({ entries: types.map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
       const weights = this.weights.get("vision_tower.patch_embedder.position_embedding_table").info.dtype;
-      this.p[name] = await pipeline(this.device, this.wgsl("gemma4_vision_" + name, { weights }), "gemma4_vision_" + name, this.device.createPipelineLayout({ bindGroupLayouts: [layout] }));
+      const kernel = name === "scores" && c.headDim === 64 ? "gemma4_vision_scores_tiled" : "gemma4_vision_" + name;
+      this.p[name] = await pipeline(this.device, this.wgsl(kernel, { weights }), kernel, this.device.createPipelineLayout({ bindGroupLayouts: [layout] }));
     }
   }
 
@@ -208,6 +245,7 @@ export class GpuGemma4Vision {
     const gate = floats(rows * c.intermediate), up = floats(rows * c.intermediate), activated = floats(rows * c.intermediate);
     const pooled = floats(softRows * c.hidden), poolNorm = floats(softRows * c.hidden);
     const output = floats(softRows * c.textHidden, U.COPY_SRC, "projected image rows");
+    this.finiteParams = uniform([softRows * c.textHidden, 0, 0, 0]);
     const part = floats(SPLIT_SCRATCH, 0, "split matmul");
     this.readback = make(softRows * c.textHidden * 4, U.MAP_READ | U.COPY_DST, "readback");
     const globals = (tokens) => uniform([tokens, 0, 0, 0]);
@@ -247,7 +285,7 @@ export class GpuGemma4Vision {
         norm(result, normalized, c.headDim, rows * heads, weight, null, bounds, `vision.norm.${name}`);
         if (name !== "v") dispatch("rope", [rows, heads, c.headDim, 0], [this.rope, normalized, result], [Math.ceil(rows * heads * c.headDim / 256)], `vision.rope.${name}`);
       }
-      const groups = Math.ceil(rows * rows * c.heads / 256);
+      const groups = c.headDim === 64 ? Math.ceil(rows / 16) ** 2 * c.heads : Math.ceil(rows * rows * c.heads / 256);
       dispatch("scores", [rows, c.heads, c.kvHeads, c.headDim], [q, k, this.positions, scores], [Math.min(65535, groups), Math.ceil(groups / 65535)], "vision.scores");
       dispatch("attention", [rows, c.heads, c.kvHeads, c.headDim], [scores, nv, attention], [rows, c.heads], "vision.attention");
       mm(attn + "o_proj.linear", attention, projected, rows, this.clips.get(attn + "o_proj"), "vision.mm.o");
@@ -268,17 +306,21 @@ export class GpuGemma4Vision {
     this.shape = [rows, softRows];
   }
 
-  async forward(image) {
+  async forward(image, { gpuOutput = false } = {}) {
     if (this.running) throw fail("encoder is already running an image");
     this.running = true;
     this.lastProfile = null;
     let plan;
+    let projection;
     const profiler = this.profiler;
+    gpuOutput &&= !profiler;
     try {
       plan = visionImagePlan(image, this.cfg, this.compactPatches !== false);
       return await withGpuErrors(this.runtime, async () => {
         this.ensure(plan.rows, plan.softRows);
         const d = this.device;
+        const bytes = plan.softRows * this.cfg.textHidden * 4;
+        if (gpuOutput) projection = ownProjection(d, bytes);
         for (const [buffer, values] of [[this.pixels, plan.pixels], [this.positions, plan.positions], [this.rope, plan.rope], [this.pools, plan.pools]]) d.queue.writeBuffer(buffer, 0, values);
         let enc = d.createCommandEncoder({ label: "Gemma vision forward" }), pass = profiler ? null : enc.beginComputePass(), layers = 0;
         for (const item of this.ops) {
@@ -303,12 +345,20 @@ export class GpuGemma4Vision {
             if (profiler) measured.end();
           }
         }
+        if (projection) {
+          const rows = gpuVisionProjection(projection, d, bytes);
+          const finite = this.p.finite;
+          const group = d.createBindGroup({ layout: finite.getBindGroupLayout(0), entries: [this.finiteParams, this.output, rows.status].map((buffer, binding) => ({ binding, resource: { buffer } })) });
+          pass.setPipeline(finite);
+          pass.setBindGroup(0, group);
+          pass.dispatchWorkgroups(Math.ceil((bytes / 4) / 1024));
+        }
         pass?.end();
-        const bytes = plan.softRows * this.cfg.textHidden * 4;
-        enc.copyBufferToBuffer(this.output, 0, this.readback, 0, bytes);
+        enc.copyBufferToBuffer(this.output, 0, projection ? gpuVisionProjection(projection, d, bytes).buffer : this.readback, 0, bytes);
         enc.clearBuffer(this.pixels);
         profiler?.finish(enc);
         d.queue.submit([enc.finish()]);
+        if (projection) return projection;
         if (profiler) this.lastProfile = await profiler.collect();
         await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
         const result = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
@@ -316,6 +366,7 @@ export class GpuGemma4Vision {
         return result;
       }, "running Gemma 4 image encoding");
     } catch (error) {
+      projection?.destroy();
       this.lastProfile = null;
       this.reset();
       throw error;

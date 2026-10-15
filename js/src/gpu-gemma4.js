@@ -8,6 +8,7 @@
 
 import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk, withGpuErrors } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
+import { gpuVisionProjection } from "./gpu-gemma4-vision.js";
 
 let U;
 
@@ -41,6 +42,43 @@ function textConfig(header) {
 
 const invalid = (what) => new Error(`Gemma 4 GPU config ${what}`);
 const positiveInteger = (n) => Number.isSafeInteger(n) && n > 0;
+
+function validImageRows(rows, length, hidden, device) {
+  if (rows instanceof Float32Array) return rows.length === length * hidden && !rows.some((value) => !Number.isFinite(value));
+  return !!gpuVisionProjection(rows, device, length * hidden * 4);
+}
+
+function mappedImageRows(readback, bytes, flags) {
+  try {
+    const mapped = readback.getMappedRange(0, bytes + flags * 4);
+    if (new Uint32Array(mapped, bytes, flags).some((value) => value !== 0)) throw new Error("Gemma 4 image projection contains non-finite values");
+    return new Float32Array(mapped.slice(0, bytes));
+  } finally { readback.unmap(); }
+}
+
+function sharedImagePrefix(sequences) {
+  if (sequences.length < 2) return 0;
+  const first = sequences[0];
+  if (!first?.imageSpans?.length) return 0;
+  const ids = sequences.map((sequence) => sequence.ids);
+  if (ids.some((sequence) => !(sequence instanceof Uint32Array) || sequence.length < 2)) return 0;
+  let common = Math.min(...ids.map((sequence) => sequence.length));
+  for (let i = 1; i < ids.length && common; i++) {
+    let j = 0;
+    while (j < common && ids[0][j] === ids[i][j]) j++;
+    common = j;
+  }
+  if (!common || ids.some((sequence) => sequence.length === common)) return 0;
+  for (let i = 1; i < sequences.length; i++) {
+    const spans = sequences[i].imageSpans || [];
+    if (spans.length !== first.imageSpans.length || spans.some((span, j) => {
+      const original = first.imageSpans[j];
+      return span.start !== original.start || span.len !== original.len || span.rows !== original.rows;
+    })) return 0;
+  }
+  if (first.imageSpans.some((span) => span.start < 0 || span.len < 1 || span.start + span.len > common)) return 0;
+  return common;
+}
 
 /**
  * Reads the pack's text config (Hugging Face field names, as the converter copies them) into the
@@ -174,6 +212,10 @@ export class GpuGemma4 {
     this.uniforms = [];
     this.ropeMax = 0;
     this.shared = new Map();
+    this.prefixKV = null;
+    this.prefixCaptureOps = null;
+    this.prefixSuffixOps = null;
+    this.lastPrefixReuse = null;
     this.tailCapacity = 0;
     this.tail = null;
   }
@@ -286,11 +328,14 @@ export class GpuGemma4 {
     this.dynamic = [];
     this.uniforms = [];
     this.shared = new Map();
+    this.prefixKV = null;
     this.tailBuffers = [];
     this.tailCapacity = 0;
     this.tail = null;
     this.ops = null;
     this.prefixOps = null;
+    this.prefixCaptureOps = null;
+    this.prefixSuffixOps = null;
     this.tailOps = null;
   }
 
@@ -316,8 +361,10 @@ export class GpuGemma4 {
     this.h = make(cap * D, 0, "Gemma 4 normalized states");
     this.branch = make(cap * D, 0, "Gemma 4 residual branch");
     this.q = make(cap * Q, 0, "Gemma 4 queries");
-    this.k = make(cap * KV, U.COPY_SRC, "Gemma 4 keys");
-    this.v = make(cap * KV, U.COPY_SRC, "Gemma 4 values");
+    this.k = make(cap * KV, U.COPY_SRC | U.COPY_DST, "Gemma 4 keys");
+    this.v = make(cap * KV, U.COPY_SRC | U.COPY_DST, "Gemma 4 values");
+    this.suffixK = cfg.hostPle ? make(cap * KV, U.COPY_SRC | U.COPY_DST, "Gemma 4 suffix keys") : null;
+    this.suffixV = cfg.hostPle ? make(cap * KV, U.COPY_SRC | U.COPY_DST, "Gemma 4 suffix values") : null;
     this.ctx = make(cap * Q, 0, "Gemma 4 attention context");
     this.gate = make(cap * maxI, 0, "Gemma 4 MLP gate");
     this.up = make(cap * maxI, 0, "Gemma 4 MLP up");
@@ -332,8 +379,8 @@ export class GpuGemma4 {
     this.pos = make(cap, U.COPY_DST, "Gemma 4 token positions");
     this.rows = make(cap, U.COPY_DST, "Gemma 4 output rows");
     this.gathered = make(cap * D, U.COPY_SRC, "Gemma 4 gathered rows");
-    this.checkBuffer(cap * D * 4, "Gemma 4 readback");
-    this.readback = d.createBuffer({ label: "Gemma 4 readback", size: Math.max(16, cap * D * 4), usage: U.MAP_READ | U.COPY_DST });
+    this.checkBuffer(cap * (D + 1) * 4, "Gemma 4 readback");
+    this.readback = d.createBuffer({ label: "Gemma 4 readback", size: Math.max(16, cap * (D + 1) * 4), usage: U.MAP_READ | U.COPY_DST });
     this.dynamic.push(this.readback);
     this.part = make(SPLIT_SCRATCH, 0, "Gemma 4 matmul split scratch");
     // Keep one KV pair per layer type. Shared layers point their attention bind group
@@ -431,12 +478,14 @@ export class GpuGemma4 {
     };
     const rms = (target, name, input, output, width = cfg.hidden, mode = 1, label = `rms.${name.split(".").at(-1)}`) => custom(target, "RMS", [width, f32(cfg.eps), mode, 0], [input, this.weight(name).buf, output], label, (pass) => pass.dispatchWorkgroups(this.T));
     const scale = (target, name, label = "layer.scalar") => custom(target, "RESIDUAL", [cfg.hidden, 1, 0, 0], [target.x, this.zeros, this.weight(name).buf], label, (pass) => pass.dispatchWorkgroups(this.T));
-    const appendLayer = (ops, target, i, compact) => {
+    const appendLayer = (ops, target, i, compact, { capturePrefix = false, joinPrefix = false } = {}) => {
       const type = cfg.full[i] ? "full_attention" : "sliding_attention";
       const headDim = cfg.full[i] ? cfg.globalHeadDim : cfg.localHeadDim;
       const kvHeads = cfg.kvHeads;
       const shared = compact || i >= cfg.sharedStart;
       const kvWidth = kvHeads * headDim;
+      const rawK = target.qkvK || target.k || this.k;
+      const rawV = target.qkvV || target.v || this.v;
       const rotary = cfg.full[i] ? Math.floor((cfg.globalHeadDim * cfg.ropeGlobalFraction) / 2) * 2 : cfg.localHeadDim;
       const n = (s) => `l.${i}.${s}`;
       const store = cfg.kvSharedLayers > 0 && !compact && !shared && cfg.layerTypes.slice(0, cfg.sharedStart).findIndex((t) => t === cfg.layerTypes[i]) >= 0 && cfg.layerTypes.slice(0, cfg.sharedStart).map(String).lastIndexOf(cfg.layerTypes[i]) === i;
@@ -450,17 +499,19 @@ export class GpuGemma4 {
       ops.push(rms(target, n("attn_norm"), target.x, target.h, cfg.hidden, 1, "rms.attn"));
       ops.push(mm(target, n("q"), target.h, target.q, 0, "mm.q"));
       if (!shared) {
-        ops.push(mm(target, n("k"), target.h, target.k, 0, "mm.k"));
-        ops.push(mm(target, n("v"), target.h, target.v, 0, "mm.v"));
+        ops.push(mm(target, n("k"), target.h, rawK, 0, "mm.k"));
+        ops.push(mm(target, n("v"), target.h, rawV, 0, "mm.v"));
       }
       const qn = this.weight(n("qn")).buf;
       const kn = shared ? this.zeros : this.weight(n("kn")).buf;
       // A compact tail computes Q for selected rows only. K/V are already in the
       // full-length shared pair, so the unused K/V groups must remain disabled.
-      ops.push(custom(target, "QKV", [cfg.heads, kvHeads, headDim, rotary, cfg.full[i] ? 1 : 0, this.ropeMax * 128, shared ? 0 : 1, 0, f32(cfg.eps)], [target.q, target.k || this.k, target.v || this.v, qn, kn, this.rope, target.pos], "qkv", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads + (shared ? 0 : 2 * kvHeads))));
+      ops.push(custom(target, "QKV", [cfg.heads, kvHeads, headDim, rotary, cfg.full[i] ? 1 : 0, this.ropeMax * 128, shared ? 0 : 1, 0, f32(cfg.eps)], [target.q, rawK, rawV, qn, kn, this.rope, target.pos], "qkv", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads + (shared ? 0 : 2 * kvHeads))));
+      if (joinPrefix && !shared) ops.push({ kind: "copy-kv-join", label: `kv.join.${i}`, layer: i, width: kvWidth });
+      if (capturePrefix && !shared) ops.push({ kind: "copy-kv-prefix", label: `kv.prefix.${i}`, layer: i, width: kvWidth });
       if (store) {
         const pair = this.shared.get(type);
-        ops.push({ kind: "copy-kv", label: `kv.share.${type}`, srcK: target.k, srcV: target.v, dstK: pair.k, dstV: pair.v, width: kvWidth });
+        ops.push({ kind: "copy-kv", label: `kv.share.${type}`, srcK: target.k, srcV: target.v, dstK: pair.k, dstV: pair.v, width: kvWidth, total: joinPrefix });
       }
       const pair = shared ? this.shared.get(type) : { k: target.k, v: target.v };
       ops.push(custom(target, "ATTN", [cfg.heads, kvHeads, headDim, cfg.full[i] ? 0 : cfg.window, cfg.causal, 0, 0, 0], [target.q, pair.k, pair.v, target.ctx, target.pos], "attn", (pass) => pass.dispatchWorkgroups(this.T, cfg.heads)));
@@ -516,15 +567,23 @@ export class GpuGemma4 {
     ops.push({ kind: "copy-images", label: "embed.images" });
     ops.push({ kind: "copy-input", label: "embed.copy", src: this.x, dst: this.input });
     let prefixOps = null;
+    const canSharePrefix = cfg.hostPle === true && cfg.kvSharedLayers > 0 && cfg.sharedStart > 0;
+    const prefixCaptureOps = canSharePrefix ? ops.slice() : null;
+    const suffixTarget = canSharePrefix ? { ...full, qkvK: this.suffixK, qkvV: this.suffixV } : null;
+    const prefixSuffixOps = canSharePrefix && this.tail ? ops.slice() : null;
     for (let i = 0; i < cfg.layers; i++) {
       if (i === cfg.sharedStart) prefixOps = ops.slice();
       appendLayer(ops, full, i, false);
+      if (prefixCaptureOps && i < cfg.sharedStart) appendLayer(prefixCaptureOps, full, i, false, { capturePrefix: true });
+      if (prefixSuffixOps && i < cfg.sharedStart) appendLayer(prefixSuffixOps, suffixTarget, i, false, { joinPrefix: true });
     }
     if (!prefixOps) prefixOps = ops.slice();
     ops.push(rms(full, "norm", full.x, full.h, cfg.hidden, 1, "rms.final"));
     ops.push(custom(full, "GATHER", [cfg.hidden, 0, 0, 0], [full.h, this.rows, this.gathered], "gather", (pass) => pass.dispatchWorkgroups(this.R)));
     this.ops = ops;
     this.prefixOps = prefixOps;
+    this.prefixCaptureOps = prefixCaptureOps;
+    this.prefixSuffixOps = prefixSuffixOps;
     this.tailOps = null;
     if (this.tail && cfg.kvSharedLayers && cfg.sharedStart > 0) {
       const tail = this.tail;
@@ -563,15 +622,30 @@ export class GpuGemma4 {
     let pass = prof ? null : enc.beginComputePass();
     for (const op of ops) {
       if (op.kind === "copy-images" && !this.imageSpans?.length) continue;
-      if (op.kind === "copy-input" || op.kind === "copy-kv" || op.kind === "copy-images" || op.kind === "copy-ple" || op.kind === "copy-embed") {
+      if (["copy-input", "copy-kv", "copy-kv-prefix", "copy-kv-join", "copy-images", "copy-ple", "copy-embed"].includes(op.kind)) {
         pass?.end();
         if (op.kind === "copy-embed") enc.copyBufferToBuffer(this.hostPleUpload, 0, this.x, 0, T * this.cfg.hidden * 4);
         else if (op.kind === "copy-images") {
-          for (const span of this.imageSpans) enc.copyBufferToBuffer(this.imageUpload, span.offset, this.x, span.start * this.cfg.hidden * 4, span.len * this.cfg.hidden * 4);
+          for (const span of this.imageSpans) enc.copyBufferToBuffer(span.projection?.buffer || this.imageUpload, span.projection ? 0 : span.offset, this.x, span.start * this.cfg.hidden * 4, span.len * this.cfg.hidden * 4);
         } else if (op.kind === "copy-ple") enc.copyBufferToBuffer(this.hostPleUpload, this.hostPleOffsets[op.layer], op.dst, 0, T * this.cfg.pleDim * 4);
         else if (op.kind === "copy-input") enc.copyBufferToBuffer(op.src, 0, op.dst, 0, T * this.cfg.hidden * 4);
-        else {
+        else if (op.kind === "copy-kv-prefix") {
+          const pair = this.prefixKV?.get(op.layer);
+          if (!pair) throw new Error(`Gemma 4 missing captured prefix K/V for layer ${op.layer}`);
           const bytes = T * op.width * 4;
+          enc.copyBufferToBuffer(this.k, 0, pair.k, 0, bytes);
+          enc.copyBufferToBuffer(this.v, 0, pair.v, 0, bytes);
+        } else if (op.kind === "copy-kv-join") {
+          const pair = this.prefixKV?.get(op.layer);
+          if (!pair) throw new Error(`Gemma 4 missing captured prefix K/V for layer ${op.layer}`);
+          const prefixBytes = this.prefixLength * op.width * 4;
+          const suffixBytes = T * op.width * 4;
+          enc.copyBufferToBuffer(pair.k, 0, this.k, 0, prefixBytes);
+          enc.copyBufferToBuffer(pair.v, 0, this.v, 0, prefixBytes);
+          enc.copyBufferToBuffer(this.suffixK, 0, this.k, prefixBytes, suffixBytes);
+          enc.copyBufferToBuffer(this.suffixV, 0, this.v, prefixBytes, suffixBytes);
+        } else {
+          const bytes = (op.total ? this.prefixLength + T : T) * op.width * 4;
           enc.copyBufferToBuffer(op.srcK, 0, op.dstK, 0, bytes);
           enc.copyBufferToBuffer(op.srcV, 0, op.dstV, 0, bytes);
         }
@@ -593,6 +667,236 @@ export class GpuGemma4 {
     pass?.end();
   }
 
+  async hostPleRows(ids, pleIds, owned, pins, prefixLayers, tailIds = null) {
+    if (this.cfg.hostPle !== true) return null;
+    const cfg = this.cfg;
+    const embedFloats = cfg.hostWord ? ids.length * cfg.hidden : 0;
+    const floats = embedFloats + (prefixLayers * ids.length + (cfg.layers - prefixLayers) * (tailIds?.length || 0)) * cfg.pleDim;
+    this.checkBuffer(floats * 4, "Gemma 4 shared-prefix host PLE rows");
+    const key = JSON.stringify([prefixLayers, Array.from(pleIds), cfg.hostWord ? Array.from(ids) : null, tailIds && Array.from(tailIds)]);
+    let cached = this.pleCache.get(key);
+    const hit = !!cached;
+    if (cached) {
+      this.pleCache.delete(key);
+      this.pleCache.set(key, cached);
+    } else {
+      const hostRows = new Float32Array(floats);
+      const offsets = [];
+      if (cfg.hostWord) await this.weights.gatherStoredRows("embed", ids, cfg.embeddingScale, hostRows, 0);
+      let offset = embedFloats;
+      for (let layer = 0; layer < cfg.layers; layer++) {
+        const lookupIds = layer < prefixLayers ? pleIds : tailIds || [];
+        offsets[layer] = offset * 4;
+        if (lookupIds?.length) await this.weights.gatherStoredRows(`ple.${layer}.embed`, lookupIds, cfg.pleEmbeddingScale, hostRows, offset);
+        offset += lookupIds.length * cfg.pleDim;
+      }
+      const buffer = this.device.createBuffer({ label: "Gemma 4 shared-prefix PLE rows", size: Math.max(16, hostRows.byteLength), usage: U.COPY_SRC | U.COPY_DST });
+      this.device.queue.writeBuffer(buffer, 0, hostRows);
+      cached = { buffer, offsets, bytes: hostRows.byteLength, active: 0 };
+      if (cached.bytes <= 16 * 1024 * 1024) {
+        let canCache = true;
+        while (this.pleCache.size >= 8 || this.pleCacheBytes + cached.bytes > 16 * 1024 * 1024) {
+          const oldest = [...this.pleCache].find(([, entry]) => !entry.active)?.[0];
+          if (oldest === undefined) { canCache = false; break; }
+          const entry = this.pleCache.get(oldest);
+          this.pleCacheBytes -= entry.bytes;
+          entry.buffer.destroy();
+          this.pleCache.delete(oldest);
+        }
+        if (canCache) {
+          this.pleCache.set(key, cached);
+          this.pleCacheBytes += cached.bytes;
+        } else cached.temporary = true;
+      } else cached.temporary = true;
+      if (cached.temporary) owned.push(buffer);
+    }
+    cached.active = (cached.active || 0) + 1;
+    pins.push(cached);
+    this.hostPleUpload = cached.buffer;
+    this.hostPleOffsets = cached.offsets;
+    return { bytes: cached.bytes, cacheHit: hit };
+  }
+
+  /** Run a request's common image prefix once, then each independent causal suffix. */
+  async forwardSharedPrefix(sequences) {
+    const sharedPrefixTokens = sharedImagePrefix(sequences);
+    this.lastPrefixReuse = { enabled: false, reusedTokens: 0, totalTokens: sequences.reduce((sum, sequence) => sum + (sequence.ids?.length || 0), 0), sharedPrefixTokens };
+    if (!sharedPrefixTokens || !this.prefixCaptureOps || this.profiler) return null;
+    this.lastProfile = null;
+    try {
+      return await withGpuErrors(this.runtime, () => this.forwardSharedRows(sequences, sharedPrefixTokens), "running Gemma 4 shared-prefix inference");
+    } finally {
+      this.imageSpans = [];
+      this.hostPleUpload = null;
+      this.hostPleOffsets = null;
+    }
+  }
+
+  async forwardSharedRows(sequences, sharedPrefixTokens) {
+    const cfg = this.cfg;
+    const q = this.device.queue;
+    const owned = [];
+    const plePins = [];
+    const prefixKV = new Map();
+    let output = null;
+    let outputRead = null;
+    let submitted = false;
+    let completed = false;
+    let imageBytes = 0;
+    let pleMs = 0;
+    let pleCacheHits = 0;
+    try {
+      let maxTokens = 0;
+      for (const sequence of sequences) {
+        const { ids, imageSpans = [] } = sequence;
+        if (!ids.length || ids.some((id) => id >= cfg.vocab || id >= cfg.pleVocab)) throw new Error("Gemma 4 token id is outside an embedding vocabulary");
+        let end = 0;
+        for (const span of imageSpans) {
+          if (!Number.isSafeInteger(span.start) || !Number.isSafeInteger(span.len) || span.len < 1 || span.start < end || span.start + span.len > sharedPrefixTokens || !validImageRows(span.rows, span.len, cfg.hidden, this.device)) throw new Error("Gemma 4 shared image spans must be complete, ordered projected rows within the common prefix");
+          end = span.start + span.len;
+          if (ids.subarray(span.start, end).some((id) => id !== 258880)) throw new Error("Gemma 4 image span does not match image placeholder tokens");
+          if (sequence === sequences[0] && span.rows instanceof Float32Array) imageBytes += span.rows.byteLength;
+        }
+        maxTokens = Math.max(maxTokens, ids.length);
+      }
+      const uniqueTokens = sharedPrefixTokens + sequences.reduce((sum, sequence) => sum + sequence.ids.length - sharedPrefixTokens, 0);
+      if (sequences.length > 8 || maxTokens > 256 || uniqueTokens > 512) return null;
+      const prefixKvBytes = Array.from({ length: cfg.sharedStart }, (_, layer) => {
+        const headDim = cfg.full[layer] ? cfg.globalHeadDim : cfg.localHeadDim;
+        return sharedPrefixTokens * cfg.kvHeads * headDim * 8;
+      }).reduce((sum, bytes) => sum + bytes, 0);
+      if (prefixKvBytes > 64 * 1024 * 1024) return null;
+      if (cfg.hostPle === true) {
+        const prefixBytes = ((cfg.hostWord ? sharedPrefixTokens * cfg.hidden : 0) + cfg.sharedStart * sharedPrefixTokens * cfg.pleDim) * 4;
+        let pleBytes = prefixBytes;
+        const uploadLimit = 16 * 1024 * 1024;
+        if (prefixBytes > uploadLimit) return null;
+        for (const sequence of sequences) {
+          const suffixTokens = sequence.ids.length - sharedPrefixTokens;
+          const suffixFloats = (cfg.hostWord ? suffixTokens * cfg.hidden : 0) + cfg.sharedStart * suffixTokens * cfg.pleDim + (cfg.layers - cfg.sharedStart) * cfg.pleDim;
+          const suffixBytes = suffixFloats * 4;
+          if (suffixBytes > uploadLimit) return null;
+          pleBytes += suffixBytes;
+        }
+        if (pleBytes > 64 * 1024 * 1024) return null;
+      }
+      await this.ensureRope(maxTokens);
+      this.ensure(maxTokens);
+      this.ensureTail(1);
+      if (!this.prefixCaptureOps || !this.prefixSuffixOps || !this.tailOps) return null;
+      for (let layer = 0; layer < cfg.sharedStart; layer++) {
+        const headDim = cfg.full[layer] ? cfg.globalHeadDim : cfg.localHeadDim;
+        const layerWidth = cfg.kvHeads * headDim;
+        const bytes = sharedPrefixTokens * layerWidth * 4;
+        this.checkBuffer(bytes, `shared prefix K/V layer ${layer}`);
+        const k = this.device.createBuffer({ label: `Gemma 4 prefix K ${layer}`, size: Math.max(16, bytes), usage: U.COPY_SRC | U.COPY_DST });
+        const v = this.device.createBuffer({ label: `Gemma 4 prefix V ${layer}`, size: Math.max(16, bytes), usage: U.COPY_SRC | U.COPY_DST });
+        owned.push(k, v);
+        prefixKV.set(layer, { k, v, width: layerWidth });
+      }
+      this.prefixKV = prefixKV;
+      this.prefixLength = sharedPrefixTokens;
+      const imageUpload = this.device.createBuffer({ label: "Gemma 4 shared-prefix image rows", size: Math.max(16, imageBytes), usage: U.COPY_SRC | U.COPY_DST });
+      this.imageUpload = imageUpload;
+      owned.push(imageUpload);
+      let imageOffset = 0;
+      const imageSpans = sequences[0].imageSpans.map((span) => {
+        const projection = gpuVisionProjection(span.rows, this.device, span.len * cfg.hidden * 4);
+        const item = { ...span, offset: imageOffset, projection };
+        if (!projection) {
+          q.writeBuffer(imageUpload, imageOffset, span.rows);
+          imageOffset += span.rows.byteLength;
+        }
+        return item;
+      });
+      const prefixIds = sequences[0].ids.subarray(0, sharedPrefixTokens);
+      const prefixPleIds = prefixIds.slice();
+      for (const span of imageSpans) prefixPleIds.fill(0, span.start, span.start + span.len);
+      const parameterWords = 4 + 3 * sharedPrefixTokens + sequences.reduce((sum, sequence) => sum + 11 + 3 * (sequence.ids.length - sharedPrefixTokens), 0);
+      const parameters = new Uint32Array(parameterWords);
+      const parameterUpload = this.device.createBuffer({ label: "Gemma 4 branch parameters", size: Math.max(16, parameters.byteLength), usage: U.COPY_SRC | U.COPY_DST });
+      owned.push(parameterUpload);
+      const encoder = this.device.createCommandEncoder({ label: "Gemma 4 shared prefix and suffixes" });
+      let parameterOffset = 0;
+      const stage = (destination, values) => {
+        parameters.set(values, parameterOffset);
+        encoder.copyBufferToBuffer(parameterUpload, parameterOffset * 4, destination, 0, values.byteLength);
+        parameterOffset += values.length;
+      };
+      this.imageSpans = imageSpans;
+      this.T = sharedPrefixTokens;
+      this.R = sharedPrefixTokens;
+      const prefixPositions = Uint32Array.from({ length: sharedPrefixTokens }, (_, i) => i);
+      stage(this.globals, new Uint32Array([sharedPrefixTokens, sharedPrefixTokens, sharedPrefixTokens, 0]));
+      stage(this.ids, prefixIds);
+      stage(this.pleIds, prefixPleIds);
+      stage(this.pos, prefixPositions);
+      const prefixPleStarted = performance.now();
+      const prefixPle = await this.hostPleRows(prefixIds, prefixPleIds, owned, plePins, cfg.sharedStart);
+      pleCacheHits += Number(prefixPle?.cacheHit || false);
+      pleMs += performance.now() - prefixPleStarted;
+      this.encode(encoder, this.prefixCaptureOps, sharedPrefixTokens, null);
+
+      const hiddenBytes = cfg.hidden * 4;
+      const outputBytes = sequences.length * hiddenBytes;
+      const flags = imageSpans.filter((span) => span.projection).map((span) => span.projection.status);
+      const readBytes = outputBytes + flags.length * 4;
+      this.checkBuffer(readBytes, "shared-prefix output rows and projection status");
+      output = this.device.createBuffer({ label: "Gemma 4 shared-prefix output rows", size: Math.max(16, outputBytes), usage: U.COPY_SRC | U.COPY_DST });
+      outputRead = this.device.createBuffer({ label: "Gemma 4 shared-prefix readback", size: Math.max(16, readBytes), usage: U.MAP_READ | U.COPY_DST });
+      owned.push(output, outputRead);
+      this.imageSpans = [];
+      for (let index = 0; index < sequences.length; index++) {
+        const ids = sequences[index].ids;
+        const suffix = ids.subarray(sharedPrefixTokens);
+        const pleIds = suffix.slice();
+        const length = suffix.length;
+        const positions = Uint32Array.from({ length }, (_, i) => sharedPrefixTokens + i);
+        this.T = length;
+        this.R = 1;
+        stage(this.globals, new Uint32Array([length, 1, ids.length, 0]));
+        stage(this.ids, suffix);
+        stage(this.pleIds, pleIds);
+        stage(this.pos, positions);
+        stage(this.rows, new Uint32Array([length - 1]));
+        const selectedPosition = ids.length - 1;
+        stage(this.tail.globals, new Uint32Array([1, 1, ids.length, 0]));
+        stage(this.tail.pos, new Uint32Array([selectedPosition]));
+        stage(this.tail.ids, new Uint32Array([pleIds[length - 1]]));
+        const pleStarted = performance.now();
+        const tailIds = new Uint32Array([pleIds[length - 1]]);
+        const suffixPle = await this.hostPleRows(suffix, pleIds, owned, plePins, cfg.sharedStart, tailIds);
+        pleCacheHits += Number(suffixPle?.cacheHit || false);
+        pleMs += performance.now() - pleStarted;
+        this.encode(encoder, this.prefixSuffixOps, length, null);
+        this.T = 1;
+        this.encode(encoder, this.tailOps, 1, null);
+        encoder.copyBufferToBuffer(this.tail.h, 0, output, index * hiddenBytes, hiddenBytes);
+      }
+      encoder.copyBufferToBuffer(output, 0, outputRead, 0, outputBytes);
+      flags.forEach((status, i) => encoder.copyBufferToBuffer(status, 0, outputRead, outputBytes + i * 4, 4));
+      q.writeBuffer(parameterUpload, 0, parameters);
+      q.submit([encoder.finish()]);
+      submitted = true;
+      await outputRead.mapAsync(GPUMapMode.READ, 0, readBytes);
+      const result = mappedImageRows(outputRead, outputBytes, flags.length);
+      completed = true;
+      const totalTokens = sequences.reduce((sum, sequence) => sum + sequence.ids.length, 0);
+      this.lastPrefixReuse = { enabled: true, reusedTokens: (sequences.length - 1) * sharedPrefixTokens, totalTokens, sharedPrefixTokens };
+      this.lastPle = { ms: pleMs, cacheHit: pleCacheHits > 0, cacheHits: pleCacheHits };
+      return result;
+    } finally {
+      if (submitted && !completed) await q.onSubmittedWorkDone().catch(() => {});
+      this.imageUpload = null;
+      this.prefixKV = null;
+      this.imageSpans = [];
+      this.hostPleUpload = null;
+      this.hostPleOffsets = null;
+      for (const cached of plePins) cached.active--;
+      for (const buffer of owned) buffer.destroy();
+    }
+  }
+
   async forward(inputIds, rows = null, imageSpans = []) {
     try {
       return await withGpuErrors(this.runtime, () => this.forwardRows(inputIds, rows, imageSpans), "running Gemma 4 inference");
@@ -611,13 +915,14 @@ export class GpuGemma4 {
     let imageBytes = 0;
     let end = 0;
     this.imageSpans = imageSpans.map((span) => {
-      if (!Number.isSafeInteger(span.start) || !Number.isSafeInteger(span.len) || span.len < 1 || span.start < end || span.start + span.len > T || !(span.rows instanceof Float32Array) || span.rows.length !== span.len * this.cfg.hidden || span.rows.some((x) => !Number.isFinite(x))) throw new Error("Gemma 4 image spans must contain ordered, nonoverlapping projected rows within the sequence");
+      if (!Number.isSafeInteger(span.start) || !Number.isSafeInteger(span.len) || span.len < 1 || span.start < end || span.start + span.len > T || !validImageRows(span.rows, span.len, this.cfg.hidden, this.device)) throw new Error("Gemma 4 image spans must contain ordered, nonoverlapping projected rows within the sequence");
       end = span.start + span.len;
       if (ids.subarray(span.start, end).some((id) => id !== 258880)) throw new Error("Gemma 4 image span does not match image placeholder tokens");
       pleIds.fill(0, span.start, end);
       const offset = imageBytes;
-      imageBytes += span.rows.byteLength;
-      return { ...span, offset };
+      const projection = gpuVisionProjection(span.rows, this.device, span.len * this.cfg.hidden * 4);
+      if (!projection) imageBytes += span.rows.byteLength;
+      return { ...span, offset, projection };
     });
     const selected = rows == null ? [T - 1] : Array.from(rows, Number);
     const profiler = this.profiler;
@@ -647,55 +952,20 @@ export class GpuGemma4 {
       q.writeBuffer(this.tail.pos, 0, new Uint32Array(selected));
       q.writeBuffer(this.tail.ids, 0, Uint32Array.from(selected, (row) => pleIds[row]));
     }
+    const pleOwned = [];
+    const plePins = [];
     try {
       if (this.cfg.hostPle === true) {
         const pleStarted = performance.now();
         const prefixLayers = useTail ? this.cfg.sharedStart : this.cfg.layers;
         const tailIds = useTail ? Uint32Array.from(selected, (row) => pleIds[row]) : null;
-        const embedFloats = this.cfg.hostWord ? T * this.cfg.hidden : 0;
-        const floats = embedFloats + (prefixLayers * T + (this.cfg.layers - prefixLayers) * (tailIds?.length || 0)) * this.cfg.pleDim;
-        this.checkBuffer(floats * 4, "Gemma 4 host PLE row upload");
-        const key = JSON.stringify([prefixLayers, Array.from(pleIds), this.cfg.hostWord ? Array.from(ids) : null, tailIds && Array.from(tailIds)]);
-        let cached = this.pleCache.get(key);
-        const hit = !!cached;
-        if (cached) {
-          this.pleCache.delete(key);
-          this.pleCache.set(key, cached);
-        } else {
-          const hostRows = new Float32Array(floats);
-          const offsets = [];
-          if (this.cfg.hostWord) await this.weights.gatherStoredRows("embed", ids, this.cfg.embeddingScale, hostRows, 0);
-          let offset = embedFloats;
-          for (let layer = 0; layer < this.cfg.layers; layer++) {
-            const lookupIds = layer < prefixLayers ? pleIds : tailIds;
-            offsets[layer] = offset * 4;
-            await this.weights.gatherStoredRows(`ple.${layer}.embed`, lookupIds, this.cfg.pleEmbeddingScale, hostRows, offset);
-            offset += lookupIds.length * this.cfg.pleDim;
-          }
-          const buffer = this.device.createBuffer({ label: "Gemma 4 cached PLE rows", size: hostRows.byteLength, usage: U.COPY_SRC | U.COPY_DST });
-          q.writeBuffer(buffer, 0, hostRows);
-          cached = { buffer, offsets, bytes: hostRows.byteLength };
-          if (cached.bytes <= 16 * 1024 * 1024) {
-            while (this.pleCache.size >= 8 || this.pleCacheBytes + cached.bytes > 16 * 1024 * 1024) {
-              const oldest = this.pleCache.keys().next().value;
-              const entry = this.pleCache.get(oldest);
-              this.pleCacheBytes -= entry.bytes;
-              entry.buffer.destroy();
-              this.pleCache.delete(oldest);
-            }
-            this.pleCache.set(key, cached);
-            this.pleCacheBytes += cached.bytes;
-          } else cached.temporary = true;
-        }
-        this.hostPleUpload = cached.buffer;
-        this.hostPleOffsets = cached.offsets;
-        this.hostPleTemporary = !!cached.temporary;
-        this.lastPle = { ms: performance.now() - pleStarted, cacheHit: hit, bytes: cached.bytes };
+        const cached = await this.hostPleRows(ids, pleIds, pleOwned, plePins, prefixLayers, tailIds);
+        this.lastPle = { ms: performance.now() - pleStarted, cacheHit: cached.cacheHit, bytes: cached.bytes };
       }
       if (imageBytes) {
         this.checkBuffer(imageBytes, "Gemma 4 image embedding upload");
         this.imageUpload = this.device.createBuffer({ label: "Gemma 4 projected images", size: imageBytes, usage: U.COPY_SRC | U.COPY_DST });
-        for (const span of this.imageSpans) q.writeBuffer(this.imageUpload, span.offset, span.rows);
+        for (const span of this.imageSpans) if (!span.projection) q.writeBuffer(this.imageUpload, span.offset, span.rows);
       }
       const longChunks = !profiler && T > YIELD_TOKENS;
       const runOps = useTail ? this.prefixOps : this.ops;
@@ -709,21 +979,23 @@ export class GpuGemma4 {
       }
       profiler?.finish(enc);
       const bytes = selected.length * this.cfg.hidden * 4;
+      const flags = this.imageSpans.filter((span) => span.projection).map((span) => span.projection.status);
+      const readBytes = bytes + flags.length * 4;
       enc.copyBufferToBuffer(useTail ? this.tail.h : this.gathered, 0, this.readback, 0, bytes);
+      flags.forEach((status, i) => enc.copyBufferToBuffer(status, 0, this.readback, bytes + i * 4, 4));
       q.submit([enc.finish()]);
       if (profiler) this.lastProfile = await profiler.collect();
-      await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
-      const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
-      this.readback.unmap();
+      await this.readback.mapAsync(GPUMapMode.READ, 0, readBytes);
+      const out = mappedImageRows(this.readback, bytes, flags.length);
       return out;
     } finally {
       this.imageUpload?.destroy();
       this.imageUpload = null;
       this.imageSpans = [];
-      if (this.hostPleTemporary) this.hostPleUpload?.destroy();
       this.hostPleUpload = null;
       this.hostPleOffsets = null;
-      this.hostPleTemporary = false;
+      for (const cached of plePins) cached.active--;
+      for (const buffer of pleOwned) buffer.destroy();
     }
   }
 }

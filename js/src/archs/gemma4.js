@@ -7,6 +7,7 @@ import { prepareGemma4Image } from "../gemma4-image.js";
 import { createGemma4PleStore } from "../gemma4-ple-store.js";
 
 const enc = new TextEncoder();
+const GPU_IMAGE_ROWS_LIMIT = 64 * 1024 * 1024;
 
 export default {
   arch: "gemma4",
@@ -36,6 +37,7 @@ export default {
     const coord = engine.coord;
     const start = performance.now();
     const images = [];
+    let gpuImageBytes = 0;
     if (engine.vision) engine.vision.lastProfile = null;
     const imageTiming = { decode: 0, preprocess: 0, forward: 0, images: 0, patches: 0, softTokens: 0 };
     const visionProfile = {};
@@ -56,7 +58,14 @@ export default {
           const visionStart = performance.now();
           imageTiming.preprocess += visionStart - preprocessStart;
           const index = images.length;
-          try { images.push(await engine.vision.forward(prepared)); }
+          try {
+            const bytes = prepared.softTokens * engine.vision.cfg.textHidden * 4;
+            const projected = await engine.vision.forward(prepared, { gpuOutput: !engine.vision.profiler && gpuImageBytes + bytes <= GPU_IMAGE_ROWS_LIMIT });
+            images.push(projected);
+            const mode = projected instanceof Float32Array ? "encoder-wall" : "submission";
+            imageTiming.forwardMode = imageTiming.forwardMode && imageTiming.forwardMode !== mode ? "mixed" : mode;
+            if (!(projected instanceof Float32Array)) gpuImageBytes += projected.byteLength;
+          }
           finally { prepared.patches.fill(0); }
           imageTiming.forward += performance.now() - visionStart;
           imageTiming.images += 1;
@@ -80,7 +89,8 @@ export default {
       const pleTiming = { ms: 0, cacheHits: 0, sequences: count };
       let offset = 1;
       let tokens = 0;
-      for (let i = 0; i < count; i++) {
+      const prefixReuse = { enabled: false, reusedTokens: 0, totalTokens: 0, sharedPrefixTokens: 0 };
+      const forwardOne = async (i) => {
         const length = hasImages ? sequences[i].ids.length : batch[offset++];
         const ids = hasImages ? Uint32Array.from(sequences[i].ids) : batch.subarray(offset, offset + length);
         if (!hasImages) offset += length;
@@ -89,12 +99,53 @@ export default {
         rows.set(await engine.gpu.forward(ids, null, spans), i * width);
         if (engine.gpu.lastPle) {
           pleTiming.ms += engine.gpu.lastPle.ms;
-          pleTiming.cacheHits += Number(engine.gpu.lastPle.cacheHit);
+          pleTiming.cacheHits += engine.gpu.lastPle.cacheHits ?? Number(engine.gpu.lastPle.cacheHit);
         }
         for (const [kernel, ms] of Object.entries(engine.gpu.lastProfile || {})) {
           profile[kernel] = (profile[kernel] || 0) + ms;
         }
+      };
+      let ranges = [];
+      if (hasImages) {
+        let cursor = 0;
+        for (const request of requests) {
+          const questions = request.questions;
+          const n = Array.isArray(questions) ? questions.length : questions && typeof questions === "object" ? Object.keys(questions).length : 0;
+          ranges.push([cursor, cursor + n]);
+          cursor += n;
+        }
+        if (cursor !== count) ranges = [];
       }
+      if (ranges.length) {
+        for (let requestIndex = 0; requestIndex < ranges.length; requestIndex++) {
+          const [startIndex, endIndex] = ranges[requestIndex];
+          let sharedRows = null;
+          if (endIndex - startIndex > 1 && requests[requestIndex].shareImagePrefix !== false) {
+            const inputs = sequences.slice(startIndex, endIndex).map((sequence) => ({
+              ids: Uint32Array.from(sequence.ids),
+              imageSpans: sequence.image_spans.map((span) => ({ start: span.start, len: span.len, rows: images[span.image_index] })),
+            }));
+            sharedRows = await engine.gpu.forwardSharedPrefix(inputs);
+          }
+          if (sharedRows) {
+            rows.set(sharedRows, startIndex * width);
+            const reuse = engine.gpu.lastPrefixReuse;
+            prefixReuse.enabled = true;
+            prefixReuse.reusedTokens += reuse.reusedTokens;
+            prefixReuse.sharedPrefixTokens += reuse.sharedPrefixTokens;
+            tokens += reuse.totalTokens;
+            if (engine.gpu.lastPle) {
+              pleTiming.ms += engine.gpu.lastPle.ms;
+              pleTiming.cacheHits += engine.gpu.lastPle.cacheHits ?? Number(engine.gpu.lastPle.cacheHit);
+            }
+          } else {
+            for (let i = startIndex; i < endIndex; i++) await forwardOne(i);
+          }
+        }
+      } else {
+        for (let i = 0; i < count; i++) await forwardOne(i);
+      }
+      if (hasImages) prefixReuse.totalTokens = tokens;
       engine.gpu.lastProfile = Object.keys(profile).length ? profile : null;
       const finished = performance.now();
       let minFinalRms = Infinity;
@@ -116,11 +167,14 @@ export default {
         responses: JSON.parse(coord.outText()),
         timing: {
           prepare: ready - start, forward: finished - ready, total: performance.now() - start, tokens,
-          ...(hasImages ? { image: imageTiming, ple: pleTiming, decoder: { minFinalRms, maxFinalRms }, tokenize: ready - tokenizeStart, readout: performance.now() - finished } : {}),
+          ...(hasImages ? { image: imageTiming, ple: pleTiming, decoder: { minFinalRms, maxFinalRms }, prefixReuse, tokenize: ready - tokenizeStart, readout: performance.now() - finished } : {}),
         },
       };
     } finally {
-      for (const rows of images) rows.fill(0);
+      for (const rows of images) {
+        if (rows instanceof Float32Array) rows.fill(0);
+        else rows.destroy();
+      }
     }
   },
 };

@@ -80,6 +80,16 @@ test("decideMany keeps item order and gives every response the shared timing", a
   assert.ok(responses.every((r) => r.timing.batched === 3));
 });
 
+test("image-prefix controls retain false through request normalization and reject malformed values", async (t) => {
+  const { model, state } = await loaded(t, (worker, m) => worker.reply({ type: "result", id: m.id, responses: m.requests.map(() => ({ answers: {} })) }));
+  await model.decide("frame", QUESTIONS, { shareImagePrefix: false });
+  assert.equal(state.posted[0].requests[0].shareImagePrefix, false);
+  await model.decideMany([{ state: "frame", questions: QUESTIONS, shareImagePrefix: true }]);
+  assert.equal(state.posted[1].requests[0].shareImagePrefix, true);
+  await assert.rejects(model.decide("frame", QUESTIONS, { shareImagePrefix: "false" }), /shareImagePrefix must be a boolean/);
+  assert.equal(state.posted.length, 2);
+});
+
 test("legacy images and videos reject instead of disappearing before typed-part validation", async (t) => {
   const { model, state } = await loaded(t, () => {});
   await assert.rejects(model.decide("text", QUESTIONS, { images: ["image.png"] }), /use typed content in "parts"/);

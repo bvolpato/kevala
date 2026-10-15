@@ -67,6 +67,26 @@ test("vision rejects malformed positions, pixel values and soft-token counts bef
   assert.throws(() => visionImagePlan({ ...image(), positions: new Uint32Array(72) }, cfg), /signed Int32/);
 });
 
+test("repeated image geometry uses fresh pixels and still rejects changed or invalid input", () => {
+  const input = image();
+  const first = visionImagePlan(input, cfg);
+  first.rope.fill(0);
+  first.positions.fill(-1);
+  first.pools.fill(99);
+  input.patches.fill(0.75);
+  const next = visionImagePlan(input, cfg);
+  assert.ok(next.pixels.every((value) => value === 0.5));
+  assert.equal(next.rope[0], 1);
+  assert.equal(next.positions[0], 0);
+  assert.equal(next.pools[0], 0);
+  input.patches[0] = Infinity;
+  assert.throws(() => visionImagePlan(input, cfg), /finite values/);
+  input.patches[0] = 0.5;
+  assert.throws(() => visionImagePlan({ ...input, softTokens: 3 }, cfg), /reports 3 soft tokens/);
+  input.positions.set([0, 0], 2);
+  assert.throws(() => visionImagePlan(input, cfg), /duplicate/);
+});
+
 test("vision config rejects unsupported attention and projection layouts", () => {
   const config = (change) => ({ config: { text_hidden_size: 96, vision_config: { ...vision, ...change } } });
   assert.throws(() => gemma4VisionConfig(config({ head_dim: 20 })), /matrix or head dimensions/);

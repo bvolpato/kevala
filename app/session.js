@@ -350,7 +350,9 @@ class Session extends EventTarget {
 
   /** Check capabilities and storage without loading model weights. */
   async boot() {
-    this.gpuAvailable = !!(await navigator.gpu?.requestAdapter().catch(() => null));
+    const adapter = (await navigator.gpu?.requestAdapter({ powerPreference: "high-performance" }).catch(() => null))
+      || (await navigator.gpu?.requestAdapter().catch(() => null));
+    this.gpuAvailable = !!adapter && !(adapter.info?.isFallbackAdapter || adapter.isFallbackAdapter);
     await this.refreshCache();
   }
 

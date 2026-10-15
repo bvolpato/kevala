@@ -65,9 +65,8 @@ decoder output are recomputed for every frame. The real OPFS-backed GPU guard is
 with host and GPU lookup, including changed images with a warmed prompt cache. The recorder
 schedules the next frame immediately when inference exceeds its 33 ms minimum start interval,
 rather than adding the former 200 ms delay after each inference.
-Score-dot attention is the largest remaining measured vision kernel. CPU-to-GPU image
-upload and projected-row readback remain separate from the text decoder. Further fusion
-or shared decoder prefixes need fresh measurements and numerical validation.
+These October 13 measurements precede the tiled scores, shared decoder prefix, and GPU
+projection handoff described below.
 
 ## Numerical validation
 
@@ -110,3 +109,80 @@ Image responses also report `timing.image.decode`, `preprocess`, and `forward`, 
 tokenization and readout wall times. `timing.ple` reports embedding lookup/upload wall
 time and cache hits; `timing.decoder` reports final-row RMS values for image requests.
 Turn profiling off when measuring normal latency.
+
+## Camera path improvements, October 15
+
+The recorder previously encoded the image once, then ran the decoder over both complete
+question prompts. It now computes their identical image and text prefix once, retains each
+non-shared layer's K/V, and evaluates independent causal suffixes. The 20 shared-K/V layers
+still run on each question's selected final row. Questions and readouts are unchanged.
+Every frame recomputes vision and decoder states from fresh pixels.
+Short requests submit the prefix, suffixes, and readback as one command buffer, using
+packed branch parameters to preserve each sequence's positions and attention boundaries.
+Sharing falls back for more than eight questions, 256 tokens per sequence, or 512 unique
+decoded tokens, keeping longer requests on the existing chunked path.
+
+The 64-dimensional vision score kernel stages 16 queries and 16 keys in 8,704 bytes of
+workgroup storage. It preserves F32 dot-product order, masks, and grouped KV heads. Other
+head dimensions retain the original kernel. Resizing coefficients and spatial geometry are
+cached with bounded retention, exact geometry validation, and independent output arrays.
+
+Unprofiled inference keeps projected F32 rows on the GPU until the decoder consumes them.
+Each image owns its output buffer, so later images and shape changes cannot overwrite it.
+A finite-value kernel writes a status flag checked with the decoder's final readback,
+preserving NaN and infinity rejection without another synchronization. GPU projection
+residency is capped at 64 MiB per batch, with the existing CPU path for overflow. Prefix K/V
+is capped at 64 MiB. PLE uploads retain the 16 MiB, eight-entry cache, with in-flight entries
+pinned until readback. Vision weights remain BF16 and arithmetic F32.
+
+`timing.prefixReuse` reports sharing, common prefix length, original token count, and
+repeated tokens avoided. The default questions avoid 117 of 331 decoder tokens.
+`decide(..., { shareImagePrefix: false })` provides a control. Per-kernel profiling uses the
+original separate decoder passes and CPU projection readback. Use unprofiled full-frame
+timing for throughput. `timing.image.forwardMode` distinguishes completed `encoder-wall`
+timing from GPU `submission` timing; `mixed` denotes both within a batch. In submission
+mode, `timing.forward` includes queued vision work. `timing.total` and the recorder's
+capture-to-result latency still measure completed requests.
+
+GPU guards cover score tails, masked rows, grouped heads, independent image buffers across
+shape changes, mixed CPU/GPU images, and nonfinite projector output through both decoder
+paths. The actual BF16 tower remains within its pinned `1e-4` reference guard. These checks
+establish numerical behavior, not person or facial-expression accuracy.
+
+The following measurements used the RTX 5070 Ti on Linux with other workstation workloads
+active. The camera check used Chrome 153, its synthetic camera, the actual application
+scheduler and model, a four-core quota, a 3,200 MiB memory ceiling, and no swap. Neither
+paired camera run was CPU-throttled. Both processed 33 frames with one inference in flight;
+the camera stopped cleanly. Wall statistics discard the first five requests.
+
+| Measurement | Main at `556bdae` | Optimized |
+|---|---:|---:|
+| Vision score GPU time, Firefox, 576 patches | 12.625 ms | 5.560 ms |
+| Warm vision encoder wall, Chrome, 576 patches | 33.3 ms | 26.7 ms |
+| Camera `decide` mean wall, Chrome, 567 patches | 118.6 ms | 92.3 ms |
+| Camera `decide` median wall | 117.7 ms | 76.8 ms |
+| Last displayed processed FPS | 8.3 | 10.5 |
+
+See the [paired camera summary](benchmarks/gemma4-throughput-2026-10-15/summary.json),
+[control](benchmarks/gemma4-throughput-2026-10-15/camera-control.json),
+[optimized camera](benchmarks/gemma4-throughput-2026-10-15/camera-final.json), and
+[full-model probability check](benchmarks/gemma4-throughput-2026-10-15/full-model.json).
+The last check correctly distinguishes generated red/blue frames and compares shared
+versus independent question probabilities within `2.8e-15` on those inputs. This is one
+paired camera run on a shared GPU. Earlier short runs hovered around 10 FPS, and individual
+frames remain variable; these results do not establish a guaranteed FPS or MacBook speedup.
+
+Reproduce with the local decoder and companion advertised by `scripts/serve.mjs`:
+
+```sh
+uv run scripts/bench-gpu.py --browser chromium --result gpu \
+  --chromium-arg=--enable-unsafe-webgpu \
+  --chromium-arg=--use-angle=vulkan --chromium-arg=--enable-features=Vulkan \
+  --url 'http://127.0.0.1:18086/dev/gemma4-image-check.html?autorun=1&profile=1&parity=1' \
+  --output tmp/image-throughput.json
+```
+
+The Chromium flags apply to the isolated Linux test process. They are not settings required
+for a user's browser. Component guards are at `dev/gemma4-vision-scores-check.html`,
+`dev/gemma4-vision-check.html?gpu=1`, and `dev/gemma-tail-check.html`. MacBook performance
+requires measurement on that device.

@@ -73,6 +73,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output", type=Path, help="write the structured page result to this JSON file")
     parser.add_argument("--max-dp", type=float, default=0.024, help="maximum parity probability difference")
     parser.add_argument("--headed", action="store_true", help="show a benchmark window instead of a headless browser or hidden CDP target")
+    parser.add_argument("--chromium-arg", action="append", default=[], help="extra argument for the isolated Chromium process; repeat as --chromium-arg=--flag")
     parser.add_argument(
         "--cdp",
         default=os.environ.get("KEVALA_BENCH_CDP"),
@@ -502,6 +503,8 @@ def create_browser(args: argparse.Namespace):
         options.add_argument("--no-first-run")
         options.add_argument("--no-default-browser-check")
         options.add_argument("--disable-dev-shm-usage")
+        for argument in args.chromium_arg:
+            options.add_argument(argument)
         if hasattr(os, "geteuid") and os.geteuid() == 0:
             options.add_argument("--no-sandbox")
         return webdriver.Chrome(options=options, service=ChromeService(log_output=os.devnull))
@@ -644,6 +647,7 @@ def main() -> int:
         "headless": not args.headed and not args.cdp,
         "targetVisibility": "hidden" if args.cdp and not args.headed else "headed" if args.headed else "headless",
         "browserContext": capabilities.get("browserContext", "isolated"),
+        "chromiumArgs": args.chromium_arg if not args.cdp and args.browser == "chromium" else [],
         "expectedBackend": args.backend,
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
         "timerPrivacy": {

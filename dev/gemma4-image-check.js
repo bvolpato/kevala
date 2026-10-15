@@ -26,6 +26,9 @@ async function main() {
   let model;
   let lastPhase;
   const started = performance.now();
+  const params = new URLSearchParams(location.search);
+  const profile = params.get("profile") === "1";
+  const gpuKernel = params.get("kernel") || "auto";
   try {
     const adapter = await navigator.gpu?.requestAdapter({ powerPreference: "high-performance" });
     const adapterInfo = adapter?.info || {};
@@ -48,8 +51,8 @@ async function main() {
     model = await Kevala.load({
       model: new URL(inventory.q8.url, location.href).href,
       vision: new URL(inventory.vision.url, location.href).href,
-      backend: "webgpu", cache: false, gpuKernel: "generic", imageTokens: 70,
-      profile: new URLSearchParams(location.search).get("profile") === "1",
+      backend: "webgpu", cache: false, gpuKernel, imageTokens: 70,
+      profile: false,
       signal: AbortSignal.timeout(180000),
       onProgress: (progress) => {
         window.gpuBench.phase = progress.phase;
@@ -94,18 +97,38 @@ async function main() {
     const colorProbabilityDelta = Math.abs(cases[0].probabilities.dominant_color[0] - cases[1].probabilities.dominant_color[0]);
     const colorCorrect = cases.every((row) => row.dominantColor === row.expectedColor);
     Object.assign(window.gpuBench.correctness, { frames: cases.length, maxScoreDelta, maxProbabilityDelta, colorProbabilityDelta, colorCorrect, changed: maxProbabilityDelta > 0 });
-    if (!maxProbabilityDelta) throw new Error("different image frames produced identical option probabilities; full image inference is unverified");
-    if (!colorCorrect) throw new Error("the red/blue diagnostic did not identify both generated colors; inspect retained raw probabilities");
     let demoSample;
     let profiledSample;
-    if (new URLSearchParams(location.search).get("profile") === "1") {
-      const pixels = frame("red");
+    const demoSamples = [];
+    for (const color of ["red", "blue", "red", "blue"]) {
+      const pixels = frame(color);
       try {
-        await model.profile(false);
         const demoStarted = performance.now();
         const demoResult = await model.decide("Classify this camera frame.", Object.fromEntries(noulKeys.map((key) => [key, questions[key]])), { parts: [{ type: "image", data: pixels }] });
-        demoSample = { elapsedMs: performance.now() - demoStarted, timing: demoResult.timing, answers: demoResult.answers };
-        window.gpuBench.demoSample = demoSample;
+        demoSamples.push({ color, elapsedMs: performance.now() - demoStarted, timing: demoResult.timing, answers: demoResult.answers, probabilities: demoResult.raw_probabilities });
+        window.gpuBench.demoSamples = demoSamples;
+        log(JSON.stringify(demoSamples.at(-1)));
+      } finally { pixels.data.fill(0); }
+    }
+    demoSample = demoSamples.at(-1);
+    window.gpuBench.demoSample = demoSample;
+    const prefixParity = [];
+    if (params.get("parity") === "1") for (const color of ["red", "blue"]) {
+      const pixels = frame(color);
+      try {
+        const demoQuestions = Object.fromEntries(noulKeys.map((key) => [key, questions[key]]));
+        const control = await model.decide("Classify this camera frame.", demoQuestions, { parts: [{ type: "image", data: pixels }], shareImagePrefix: false });
+        const candidate = await model.decide("Classify this camera frame.", demoQuestions, { parts: [{ type: "image", data: pixels }] });
+        if (!candidate.timing.prefixReuse?.enabled) throw new Error("the shared-prefix image decoder was not exercised");
+        const maxDp = Math.max(...noulKeys.flatMap((key) => control.raw_probabilities[key].map((value, i) => Math.abs(value - candidate.raw_probabilities[key][i]))));
+        if (!Number.isFinite(maxDp) || maxDp > 5e-4) throw new Error(`shared-prefix probability maxDp ${maxDp} exceeds 0.0005`);
+        prefixParity.push({ color, maxDp, control: { timing: control.timing, probabilities: control.raw_probabilities }, candidate: { timing: candidate.timing, probabilities: candidate.raw_probabilities } });
+        window.gpuBench.prefixParity = prefixParity;
+      } finally { pixels.data.fill(0); }
+    }
+    if (profile) {
+      const pixels = frame("red");
+      try {
         if (!(await model.profile(true))) throw new Error("GPU profiling is unavailable");
         const profileStarted = performance.now();
         const profileResult = await model.decide("Classify this camera frame.", questions, { parts: [{ type: "image", data: pixels }] });
@@ -115,12 +138,14 @@ async function main() {
         await model.profile(false);
       } finally { pixels.data.fill(0); }
     }
+    if (!maxProbabilityDelta) throw new Error("different image frames produced identical option probabilities; full image inference is unverified");
+    if (!colorCorrect) throw new Error("the red/blue diagnostic did not identify both generated colors; inspect retained raw probabilities");
     window.gpuBench = {
       status: "done", done: true, backend: "webgpu", phase: "disposed",
       adapter: { ...adapterDetails, name: model.info.gpu }, info: model.info,
       metricMs: cases.reduce((sum, row) => sum + row.elapsedMs, 0) / cases.length,
       loadMs, pack: model.info.pack, vision: model.info.vision, memory: model.info.memory,
-      ...(demoSample ? { demoSample, profiledSample } : {}),
+      gpuKernel, demoSamples, demoSample, ...(profiledSample ? { profiledSample } : {}), ...(prefixParity.length ? { prefixParity } : {}),
       correctness: { ok: true, modalities: model.info.modalities, imageTokens: model.info.imageTokens, frames: 2, maxInFlight: 1, maxScoreDelta, maxProbabilityDelta, colorProbabilityDelta, colorCorrect, changed: true, cases },
     };
   } catch (error) {

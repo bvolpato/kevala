@@ -1,0 +1,1014 @@
+{
+  "adapter": {
+    "architecture": null,
+    "description": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "limits": null,
+    "name": "nvidia blackwell",
+    "supportedFeatures": [],
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "answers": {
+          "dominant_color": {
+            "choice": "red",
+            "confidence": 1,
+            "probabilities": {
+              "blue": 0,
+              "red": 1
+            },
+            "type": "choice"
+          },
+          "person_present": {
+            "noul": 0,
+            "type": "noul"
+          },
+          "smiling": {
+            "noul": 0,
+            "type": "noul"
+          }
+        },
+        "dominantColor": "red",
+        "elapsedMs": 232.79999995231628,
+        "expectedColor": "red",
+        "id": "red",
+        "probabilities": {
+          "dominant_color": [
+            1,
+            1.0102051833937864e-10
+          ],
+          "person_present": [
+            1,
+            8.809153961841787e-10
+          ],
+          "smiling": [
+            1,
+            3.610239329709941e-10
+          ]
+        },
+        "scores": {
+          "person_present": 0,
+          "smiling": 0
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.249351904568886,
+            "minFinalRms": 4.037751591375671
+          },
+          "forward": 197.40000009536743,
+          "image": {
+            "decode": 0.19999980926513672,
+            "forward": 20.699999809265137,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 10.800000190734863,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 0,
+            "ms": 109.29999995231628,
+            "sequences": 3
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 232,
+            "sharedPrefixTokens": 116,
+            "totalTokens": 492
+          },
+          "prepare": 32.39999985694885,
+          "readout": 1,
+          "tokenize": 0.5999999046325684,
+          "tokens": 492,
+          "total": 230.69999980926514
+        }
+      },
+      {
+        "answers": {
+          "dominant_color": {
+            "choice": "blue",
+            "confidence": 1,
+            "probabilities": {
+              "blue": 1,
+              "red": 0
+            },
+            "type": "choice"
+          },
+          "person_present": {
+            "noul": 0,
+            "type": "noul"
+          },
+          "smiling": {
+            "noul": 0,
+            "type": "noul"
+          }
+        },
+        "dominantColor": "blue",
+        "elapsedMs": 154.09999990463257,
+        "expectedColor": "blue",
+        "id": "blue",
+        "probabilities": {
+          "dominant_color": [
+            3.814114388905887e-12,
+            1
+          ],
+          "person_present": [
+            1,
+            7.753833686230394e-11
+          ],
+          "smiling": [
+            1,
+            8.890475161615896e-11
+          ]
+        },
+        "scores": {
+          "person_present": 0,
+          "smiling": 0
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.868120195327693,
+            "minFinalRms": 4.185337759903242
+          },
+          "forward": 135.19999980926514,
+          "image": {
+            "decode": 0.20000004768371582,
+            "forward": 5.800000190734863,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 11.199999809265137,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 4,
+            "ms": 0.20000004768371582,
+            "sequences": 3
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 232,
+            "sharedPrefixTokens": 116,
+            "totalTokens": 492
+          },
+          "prepare": 17.700000047683716,
+          "readout": 0.40000009536743164,
+          "tokenize": 0.40000009536743164,
+          "tokens": 492,
+          "total": 153.29999995231628
+        }
+      }
+    ],
+    "changed": true,
+    "colorCorrect": true,
+    "colorProbabilityDelta": 0.9999999999961859,
+    "frames": 2,
+    "imageTokens": 70,
+    "maxInFlight": 1,
+    "maxProbabilityDelta": 0.9999999999961859,
+    "maxScoreDelta": 0,
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "ok": true
+  },
+  "demoSample": {
+    "answers": {
+      "person_present": {
+        "noul": 0,
+        "type": "noul"
+      },
+      "smiling": {
+        "noul": 0,
+        "type": "noul"
+      }
+    },
+    "color": "blue",
+    "elapsedMs": 156.10000014305115,
+    "probabilities": {
+      "person_present": [
+        1,
+        7.753818420663805e-11
+      ],
+      "smiling": [
+        1,
+        8.890271852024512e-11
+      ]
+    },
+    "timing": {
+      "batched": 1,
+      "decoder": {
+        "maxFinalRms": 4.382421294963553,
+        "minFinalRms": 4.185336812047647
+      },
+      "forward": 143.5,
+      "image": {
+        "decode": 0.09999990463256836,
+        "forward": 4.699999809265137,
+        "forwardMode": "submission",
+        "images": 1,
+        "patches": 630,
+        "preprocess": 5.900000095367432,
+        "softTokens": 63
+      },
+      "ple": {
+        "cacheHits": 3,
+        "ms": 0,
+        "sequences": 2
+      },
+      "prefixReuse": {
+        "enabled": true,
+        "reusedTokens": 117,
+        "sharedPrefixTokens": 117,
+        "totalTokens": 331
+      },
+      "prepare": 11.799999952316284,
+      "readout": 0.20000004768371582,
+      "tokenize": 1.1000001430511475,
+      "tokens": 331,
+      "total": 155.5
+    }
+  },
+  "demoSamples": [
+    {
+      "answers": {
+        "person_present": {
+          "noul": 0,
+          "type": "noul"
+        },
+        "smiling": {
+          "noul": 0,
+          "type": "noul"
+        }
+      },
+      "color": "red",
+      "elapsedMs": 152.40000009536743,
+      "probabilities": {
+        "person_present": [
+          1,
+          8.809238338791658e-10
+        ],
+        "smiling": [
+          1,
+          3.61029428574966e-10
+        ]
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.249350025920719,
+          "minFinalRms": 4.037752085485733
+        },
+        "forward": 139.79999995231628,
+        "image": {
+          "decode": 0,
+          "forward": 4.099999904632568,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 7.299999952316284,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 0,
+          "ms": 44.200000047683716,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 11.799999952316284,
+        "readout": 0.20000004768371582,
+        "tokenize": 0.40000009536743164,
+        "tokens": 331,
+        "total": 151.79999995231628
+      }
+    },
+    {
+      "answers": {
+        "person_present": {
+          "noul": 0,
+          "type": "noul"
+        },
+        "smiling": {
+          "noul": 0,
+          "type": "noul"
+        }
+      },
+      "color": "blue",
+      "elapsedMs": 95.29999995231628,
+      "probabilities": {
+        "person_present": [
+          1,
+          7.753818420663805e-11
+        ],
+        "smiling": [
+          1,
+          8.890271852024512e-11
+        ]
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.382421294963553,
+          "minFinalRms": 4.185336812047647
+        },
+        "forward": 83.90000009536743,
+        "image": {
+          "decode": 0.20000004768371582,
+          "forward": 5.1000001430511475,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 5.199999809265137,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.09999990463256836,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 10.799999952316284,
+        "readout": 0.19999980926513672,
+        "tokenize": 0.2999999523162842,
+        "tokens": 331,
+        "total": 94.89999985694885
+      }
+    },
+    {
+      "answers": {
+        "person_present": {
+          "noul": 0,
+          "type": "noul"
+        },
+        "smiling": {
+          "noul": 0,
+          "type": "noul"
+        }
+      },
+      "color": "red",
+      "elapsedMs": 74,
+      "probabilities": {
+        "person_present": [
+          1,
+          8.809238338791658e-10
+        ],
+        "smiling": [
+          1,
+          3.61029428574966e-10
+        ]
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.249350025920719,
+          "minFinalRms": 4.037752085485733
+        },
+        "forward": 61.700000047683716,
+        "image": {
+          "decode": 0.2999999523162842,
+          "forward": 4.5,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 6.6000001430511475,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.09999990463256836,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 11.700000047683716,
+        "readout": 0.19999980926513672,
+        "tokenize": 0.2999999523162842,
+        "tokens": 331,
+        "total": 73.59999990463257
+      }
+    },
+    {
+      "answers": {
+        "person_present": {
+          "noul": 0,
+          "type": "noul"
+        },
+        "smiling": {
+          "noul": 0,
+          "type": "noul"
+        }
+      },
+      "color": "blue",
+      "elapsedMs": 156.10000014305115,
+      "probabilities": {
+        "person_present": [
+          1,
+          7.753818420663805e-11
+        ],
+        "smiling": [
+          1,
+          8.890271852024512e-11
+        ]
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.382421294963553,
+          "minFinalRms": 4.185336812047647
+        },
+        "forward": 143.5,
+        "image": {
+          "decode": 0.09999990463256836,
+          "forward": 4.699999809265137,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 5.900000095367432,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 11.799999952316284,
+        "readout": 0.20000004768371582,
+        "tokenize": 1.1000001430511475,
+        "tokens": 331,
+        "total": 155.5
+      }
+    }
+  ],
+  "done": true,
+  "gpuKernel": "auto",
+  "info": {
+    "arch": "gemma4",
+    "backend": "webgpu",
+    "config": {
+      "arch": "gemma4",
+      "attention_bias": false,
+      "attention_dropout": 0,
+      "attention_k_eq_v": false,
+      "backbone": "gemma4_text",
+      "block": 32,
+      "bos_token_id": 2,
+      "dtype": "bfloat16",
+      "embedding_scale": 39.25,
+      "enable_moe_block": false,
+      "eos_token_id": 1,
+      "excluded_modalities": [
+        "image",
+        "video",
+        "audio"
+      ],
+      "expert_intermediate_size": null,
+      "final_logit_softcapping": 30,
+      "global_head_dim": 512,
+      "head_dim": 256,
+      "hidden_activation": "gelu_pytorch_tanh",
+      "hidden_size": 1536,
+      "hidden_size_per_layer_input": 256,
+      "initializer_range": 0.02,
+      "intermediate_size": 6144,
+      "kv_shared_start": 15,
+      "label_token_ids": [
+        236776,
+        236799,
+        236780,
+        236796,
+        236788,
+        236811,
+        236823,
+        236814,
+        236777,
+        236863,
+        236855,
+        236798,
+        236792,
+        236797,
+        236806,
+        236791
+      ],
+      "label_tokens": "ABCDEFGHIJKLMNOP",
+      "layer_types": [
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention"
+      ],
+      "max_input_tokens": 4096,
+      "max_position_embeddings": 131072,
+      "modalities": [
+        "text"
+      ],
+      "model_type": "gemma4_text",
+      "num_attention_heads": 8,
+      "num_experts": null,
+      "num_global_key_value_heads": null,
+      "num_hidden_layers": 35,
+      "num_key_value_heads": 1,
+      "num_kv_shared_layers": 20,
+      "pad_token_id": 0,
+      "ple_embedding_scale": 16,
+      "ple_input_scale": 0.7071067811865475,
+      "ple_projection_scale": 0.025515518153991442,
+      "prompt_version": "direct-options-v1",
+      "readout": "labels",
+      "rms_norm_eps": 1e-06,
+      "rope_parameters": {
+        "full_attention": {
+          "partial_rotary_factor": 0.25,
+          "rope_theta": 1000000,
+          "rope_type": "proportional"
+        },
+        "sliding_attention": {
+          "rope_theta": 10000,
+          "rope_type": "default"
+        }
+      },
+      "sliding_window": 512,
+      "template": {
+        "prompt_version": "direct-options-v1",
+        "type": "gemma4"
+      },
+      "tie_word_embeddings": true,
+      "top_k_experts": null,
+      "use_bidirectional_attention": null,
+      "use_cache": true,
+      "use_double_wide_mlp": true,
+      "vocab_size": 262144,
+      "vocab_size_per_layer_input": 262144
+    },
+    "cpuTiles": null,
+    "cpuTuning": null,
+    "flavor": "relaxed",
+    "gpu": "nvidia blackwell",
+    "gpuPowerPreference": "high-performance",
+    "gpuTuning": {
+      "elapsedMs": 0.09999990463256836,
+      "method": "generic",
+      "points": [],
+      "reason": "no-shader-f16",
+      "revision": 1,
+      "truncated": false
+    },
+    "gpuUnavailable": null,
+    "imageTokens": 70,
+    "loadMs": 19154.300000190735,
+    "memory": {
+      "embeddingStorage": "opfs-q8-rows",
+      "gpuWeights": 2449759116,
+      "hostWeights": 0,
+      "opfsWeights": 3095396352
+    },
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "model": {
+      "author": "Google (Gemma team)",
+      "base": "https://huggingface.co/google/gemma-4-E2B-it",
+      "base_revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "converter": "kevala 0.1.3",
+      "inspiration": "SemIf direct-options-v1 readout",
+      "license": "apache-2.0",
+      "method_license": "mit",
+      "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "method_source": "https://github.com/TheoLeeCJ/SemIf",
+      "name": "gemma-4-e2b",
+      "quantization": "BF16 source converted to symmetric int8 absmax, one f32 scale per 32 weights; norms and direct-option label readout in f32",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "source": "https://huggingface.co/google/gemma-4-E2B-it"
+    },
+    "pack": {
+      "bytes": 5217421952,
+      "cached": false
+    },
+    "stateCache": {
+      "backend": null,
+      "enabled": false,
+      "requested": true,
+      "supported": false
+    },
+    "threads": 1,
+    "vision": {
+      "bytes": 337302144,
+      "cached": false,
+      "model": {
+        "author": "Google (Gemma team)",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "gemma-4-e2b-vision",
+        "precision": "bf16",
+        "quantization": "unquantized BF16 vision weights; norms and clipping bounds in f32",
+        "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+        "source": "https://huggingface.co/google/gemma-4-E2B-it"
+      },
+      "precision": "bf16"
+    },
+    "warmupMs": 215.60000014305115
+  },
+  "loadMs": 19754,
+  "memory": {
+    "embeddingStorage": "opfs-q8-rows",
+    "gpuWeights": 2449759116,
+    "hostWeights": 0,
+    "opfsWeights": 3095396352
+  },
+  "metricMs": 193.44999992847443,
+  "pack": {
+    "bytes": 5217421952,
+    "cached": false
+  },
+  "phase": "disposed",
+  "prefixParity": [
+    {
+      "candidate": {
+        "probabilities": {
+          "person_present": [
+            1,
+            8.809238338791658e-10
+          ],
+          "smiling": [
+            1,
+            3.61029428574966e-10
+          ]
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.249350025920719,
+            "minFinalRms": 4.037752085485733
+          },
+          "forward": 61.80000019073486,
+          "image": {
+            "decode": 0.09999990463256836,
+            "forward": 4.800000190734863,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 6.099999904632568,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 3,
+            "ms": 0,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 117,
+            "sharedPrefixTokens": 117,
+            "totalTokens": 331
+          },
+          "prepare": 11.299999952316284,
+          "readout": 0.09999990463256836,
+          "tokenize": 0.19999980926513672,
+          "tokens": 331,
+          "total": 73.20000004768372
+        }
+      },
+      "color": "red",
+      "control": {
+        "probabilities": {
+          "person_present": [
+            1,
+            8.809254992137028e-10
+          ],
+          "smiling": [
+            1,
+            3.6103220413252757e-10
+          ]
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.249344873532593,
+            "minFinalRms": 4.037751329470252
+          },
+          "forward": 99.79999995231628,
+          "image": {
+            "decode": 0.10000014305114746,
+            "forward": 9.900000095367432,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 6.299999952316284,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 0,
+            "ms": 34.19999980926514,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": false,
+            "reusedTokens": 0,
+            "sharedPrefixTokens": 0,
+            "totalTokens": 331
+          },
+          "prepare": 16.800000190734863,
+          "readout": 0.20000004768371582,
+          "tokenize": 0.5,
+          "tokens": 331,
+          "total": 116.80000019073486
+        }
+      },
+      "maxDp": 2.7755575615628914e-15
+    },
+    {
+      "candidate": {
+        "probabilities": {
+          "person_present": [
+            1,
+            7.753818420663805e-11
+          ],
+          "smiling": [
+            1,
+            8.890271852024512e-11
+          ]
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.382421294963553,
+            "minFinalRms": 4.185336812047647
+          },
+          "forward": 63,
+          "image": {
+            "decode": 0,
+            "forward": 3.5,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 5.200000047683716,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 3,
+            "ms": 0.09999990463256836,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 117,
+            "sharedPrefixTokens": 117,
+            "totalTokens": 331
+          },
+          "prepare": 9.300000190734863,
+          "readout": 0.19999980926513672,
+          "tokenize": 0.6000001430511475,
+          "tokens": 331,
+          "total": 72.5
+        }
+      },
+      "color": "blue",
+      "control": {
+        "probabilities": {
+          "person_present": [
+            1,
+            7.754011321914334e-11
+          ],
+          "smiling": [
+            1,
+            8.89033985318477e-11
+          ]
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.38242481200077,
+            "minFinalRms": 4.185332278968592
+          },
+          "forward": 143.09999990463257,
+          "image": {
+            "decode": 0.10000014305114746,
+            "forward": 3.8999998569488525,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 4,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 2,
+            "ms": 0,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": false,
+            "reusedTokens": 0,
+            "sharedPrefixTokens": 0,
+            "totalTokens": 331
+          },
+          "prepare": 8.100000143051147,
+          "readout": 0.09999990463256836,
+          "tokenize": 0.10000014305114746,
+          "tokens": 331,
+          "total": 151.29999995231628
+        }
+      },
+      "maxDp": 1.9290125052862095e-15
+    }
+  ],
+  "profiledSample": {
+    "answers": {
+      "dominant_color": {
+        "choice": "red",
+        "confidence": 1,
+        "probabilities": {
+          "blue": 0,
+          "red": 1
+        },
+        "type": "choice"
+      },
+      "person_present": {
+        "noul": 0,
+        "type": "noul"
+      },
+      "smiling": {
+        "noul": 0,
+        "type": "noul"
+      }
+    },
+    "elapsedMs": 195.59999990463257,
+    "timing": {
+      "batched": 1,
+      "decoder": {
+        "maxFinalRms": 4.249344873532593,
+        "minFinalRms": 4.037751329470252
+      },
+      "forward": 162.09999990463257,
+      "gpu": {
+        "attn": 9.336,
+        "gelu": 4.8469999999999995,
+        "gelu.ple": 0.42300000000000004,
+        "mm.down": 22.485000000000003,
+        "mm.gate": 26.156,
+        "mm.k": 0.889,
+        "mm.o": 7.5489999999999995,
+        "mm.ple.gate": 1.471,
+        "mm.ple.out": 1.6039999999999999,
+        "mm.ple.proj": 3.539,
+        "mm.q": 7.315,
+        "mm.up": 22.490000000000002,
+        "mm.v": 0.875,
+        "ple.combine": 0.492,
+        "qkv": 0.921,
+        "rms.attn": 0.771,
+        "rms.attn.post": 0.8440000000000001,
+        "rms.ffn": 2.5740000000000003,
+        "rms.ffn.post": 0.9450000000000001,
+        "rms.final": 0.021,
+        "rms.ple": 0.841,
+        "scale": 0.498,
+        "tail.gather.hidden": 0.014,
+        "tail.gather.input": 0.018000000000000002,
+        "vision.attention": 2.872,
+        "vision.clip": 0.554,
+        "vision.gelu": 0.138,
+        "vision.mm.down": 2.609,
+        "vision.mm.gate": 2.522,
+        "vision.mm.k": 0.864,
+        "vision.mm.o": 0.757,
+        "vision.mm.patch_embed": 0.049,
+        "vision.mm.project": 0.02,
+        "vision.mm.q": 0.754,
+        "vision.mm.up": 2.659,
+        "vision.mm.v": 0.749,
+        "vision.norm.input": 0.121,
+        "vision.norm.k": 0.478,
+        "vision.norm.pool": 0.004,
+        "vision.norm.post_attention": 0.121,
+        "vision.norm.post_feedforward": 0.117,
+        "vision.norm.pre_feedforward": 0.123,
+        "vision.norm.q": 0.479,
+        "vision.norm.v": 0.473,
+        "vision.pool": 0.006,
+        "vision.position": 0.008,
+        "vision.rope.k": 0.096,
+        "vision.rope.q": 0.114,
+        "vision.scores": 7.019
+      },
+      "image": {
+        "decode": 0,
+        "forward": 28.5,
+        "forwardMode": "encoder-wall",
+        "images": 1,
+        "patches": 630,
+        "preprocess": 3.6000001430511475,
+        "softTokens": 63
+      },
+      "ple": {
+        "cacheHits": 2,
+        "ms": 20.5,
+        "sequences": 3
+      },
+      "prefixReuse": {
+        "enabled": false,
+        "reusedTokens": 0,
+        "sharedPrefixTokens": 0,
+        "totalTokens": 492
+      },
+      "prepare": 32.60000014305115,
+      "readout": 0.2999999523162842,
+      "tokenize": 0.5,
+      "tokens": 492,
+      "total": 195
+    }
+  },
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "vision": {
+    "bytes": 337302144,
+    "cached": false,
+    "model": {
+      "author": "Google (Gemma team)",
+      "converter": "kevala 0.1.3",
+      "license": "apache-2.0",
+      "name": "gemma-4-e2b-vision",
+      "precision": "bf16",
+      "quantization": "unquantized BF16 vision weights; norms and clipping bounds in f32",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "source": "https://huggingface.co/google/gemma-4-E2B-it"
+    },
+    "precision": "bf16"
+  }
+}

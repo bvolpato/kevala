@@ -1,0 +1,114 @@
+{
+  "status": "done",
+  "done": true,
+  "backend": "webgpu",
+  "adapter": {
+    "name": "nvidia blackwell",
+    "vendor": "nvidia",
+    "architecture": "blackwell",
+    "device": null,
+    "isFallbackAdapter": false,
+    "timestampQuery": false
+  },
+  "metricMs": 4.800000031789144,
+  "profile": false,
+  "options": {
+    "compactPatches": true,
+    "submitMode": "split"
+  },
+  "gpuOutput": {
+    "cases": [
+      {
+        "id": "rectangular",
+        "maxAbs": 6.854534149169922e-06,
+        "relativeL2": 1.9518456296555467e-06,
+        "cpuDelta": 0,
+        "status": 0
+      },
+      {
+        "id": "reordered",
+        "maxAbs": 6.854534149169922e-06,
+        "relativeL2": 2.061327087147612e-06,
+        "cpuDelta": 0,
+        "status": 0
+      },
+      {
+        "id": "resized-square",
+        "maxAbs": 2.2649765014648438e-06,
+        "relativeL2": 1.001494804229619e-06,
+        "cpuDelta": 0,
+        "status": 0
+      }
+    ],
+    "finite": [
+      {
+        "id": "max-finite",
+        "status": 0
+      },
+      {
+        "id": "negative-zero",
+        "status": 0
+      },
+      {
+        "id": "nan",
+        "status": 1
+      },
+      {
+        "id": "positive-infinity",
+        "status": 1
+      },
+      {
+        "id": "negative-infinity",
+        "status": 1
+      }
+    ]
+  },
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm",
+  "correctness": {
+    "ok": true,
+    "tolerance": 3e-05,
+    "cases": [
+      {
+        "id": "rectangular",
+        "patches": 36,
+        "activePatches": 18,
+        "softTokens": 2,
+        "elapsedMs": 6.1000001430511475,
+        "maxAbs": 6.854534149169922e-06,
+        "relativeL2": 1.9518456296555467e-06
+      },
+      {
+        "id": "reordered",
+        "patches": 36,
+        "activePatches": 18,
+        "softTokens": 2,
+        "elapsedMs": 3.4000000953674316,
+        "maxAbs": 6.854534149169922e-06,
+        "relativeL2": 2.061327087147612e-06
+      },
+      {
+        "id": "resized-square",
+        "patches": 18,
+        "activePatches": 9,
+        "softTokens": 1,
+        "elapsedMs": 4.8999998569488525,
+        "maxAbs": 2.2649765014648438e-06,
+        "relativeL2": 1.001494804229619e-06
+      }
+    ],
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "compute": "f32"
+  },
+  "runner": {
+    "browser": "Chromium",
+    "browserVersion": "153.0.8010.12",
+    "headless": true,
+    "context": "task-owned persistent profile",
+    "flags": [
+      "enable-unsafe-webgpu",
+      "use-angle=vulkan",
+      "enable-features=Vulkan"
+    ],
+    "pageErrors": []
+  }
+}
