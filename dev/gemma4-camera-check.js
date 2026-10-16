@@ -269,7 +269,7 @@ async function main() {
     model = await Kevala.load({
       model: modelSource, vision: visionSource,
       backend: "webgpu", cache: hosted, gpuKernel, visionAttention, imageTokens: 70, profile: false,
-      signal: AbortSignal.timeout(180000),
+      signal: AbortSignal.timeout(hosted ? 30 * 60 * 1000 : 180000),
       onProgress: (progress) => {
         window.gpuBench.phase = progress.phase;
         if (progress.phase !== lastPhase) { log(`${progress.phase}: ${progress.message || ""}`); lastPhase = progress.phase; }
