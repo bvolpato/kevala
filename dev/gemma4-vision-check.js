@@ -173,7 +173,7 @@ async function main() {
     const source = runtime.wgsl;
     runtime.wgsl = Object.assign((kernel, spec) => kernel === "gemma4_vision_attention" ? attention : source(kernel, spec), { wasmUrl: source.wasmUrl });
   }
-  const options = { compactPatches: params.get("padded") !== "1", submitMode: params.get("submit") || "split" };
+  const options = { compactPatches: params.get("padded") !== "1", submitMode: params.get("submit") || "split", fusedAttention: params.get("fused") !== "0" && !params.has("attention") };
   let model;
   let profiler;
   const heldProjections = [];
@@ -193,7 +193,7 @@ async function main() {
       const expected = floats(test.projected);
       if (!profile) {
         const result = await sample(model, image, expected, tolerance, test.id, false);
-        cases.push({ id: test.id, patches: image.positions.length / 2, activePatches: model.shape[0], softTokens: image.softTokens, elapsedMs: result.wallMs, maxAbs: result.maxAbs, relativeL2: result.relativeL2 });
+        cases.push({ id: test.id, patches: image.positions.length / 2, activePatches: model.shape[0], softTokens: image.softTokens, attentionMode: model.attentionMode, elapsedMs: result.wallMs, maxAbs: result.maxAbs, relativeL2: result.relativeL2 });
         log(`${test.id}: maxAbs=${result.maxAbs}, relativeL2=${result.relativeL2}, ${result.wallMs.toFixed(2)} ms`);
         if (checkGpuOutput) heldProjections.push({ descriptor: await model.forward(image, { gpuOutput: true }), cpu: await model.forward(image), expected, tolerance, id: test.id });
         continue;
@@ -217,6 +217,7 @@ async function main() {
         patches: image.positions.length / 2,
         activePatches: model.shape[0],
         softTokens: image.softTokens,
+        attentionMode: model.attentionMode,
         correctness: profiled.map(({ maxAbs, relativeL2 }) => ({ maxAbs, relativeL2 })),
         baseline: { warmupRuns: warmups.length, samples: baseline.map(({ wallMs }) => ({ wallMs })), medianWallMs: baselineMedianMs },
         profile: {

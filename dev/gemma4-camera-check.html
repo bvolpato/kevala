@@ -1,0 +1,13 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma 4 camera resolution benchmark</title>
+<main>
+  <h1>Gemma 4 camera resolution benchmark</h1>
+  <p>This opt-in check loads about 5.55 GB of Gemma 4 E2B decoder and BF16 vision packs. It runs one model at a time, then releases it. No model loads until you press the button or use <code>?autorun=1</code>. The default uses local packs; <a href="?hosted=1">use the published packs</a> to run this on your own Mac or other device, reusing cached weights when available. Stop other model tabs first.</p>
+  <p>It compares 70, 40, and 16 requested image tokens on the same 320 × 240 frames. Add <code>?budgets=70,40,35,16</code> to include the 35-token setting too. Generated frames are only a runtime diagnostic, not an image quality test. To evaluate labeled images, pass <code>?images=URL</code> for a JSON array of <code>{"id":"...","url":"...","expectedPerson":true,"expectedSmile":false}</code> rows. Image URLs must allow browser CORS access.</p>
+  <button id="run" type="button">Run resolution benchmark</button>
+  <button id="download" type="button" disabled>Download results</button>
+  <pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+</main>
+<script type="module" src="./gemma4-camera-check.js"></script>

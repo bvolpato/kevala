@@ -1,0 +1,242 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "workgroupStorageBytes": 16384
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "cpu": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "ok": true,
+        "parity": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "allMasked": true,
+        "cpu": {
+          "fused": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.001380553166393255,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.0013872158391527673,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "ok": true,
+        "parity": {
+          "maxAbs": 2.9802322387695312e-08,
+          "maxScaledError": 0.0013872158776401238,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "cpu": {
+          "fused": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.01659318414575301,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.017031507510310875,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008927149142416987,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "cpu": {
+          "fused": {
+            "maxAbs": 1.341104507446289e-07,
+            "maxScaledError": 0.005634446713359618,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 1.4901161193847656e-07,
+            "maxScaledError": 0.005943965994808302,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "large": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 1.4901161193847656e-07,
+          "maxScaledError": 0.005533560268328977,
+          "ok": true
+        },
+        "rows": 33,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 4.470348358154297e-07,
+          "maxScaledError": 0.017474146999514217,
+          "ok": true
+        },
+        "rows": 315,
+        "timings": {
+          "fused": [
+            0.0891875,
+            0.0893125,
+            0.089,
+            0.0898125,
+            0.089375
+          ],
+          "split": [
+            0.190875,
+            0.1723125,
+            0.19,
+            0.1725,
+            0.1736875
+          ]
+        }
+      },
+      {
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 4.619359970092774e-07,
+          "maxScaledError": 0.018825245188191415,
+          "ok": true
+        },
+        "rows": 567,
+        "timings": {
+          "fused": [
+            0.276875,
+            0.2479375,
+            0.275,
+            0.2475,
+            0.2625
+          ],
+          "split": [
+            0.504,
+            0.527375,
+            0.5036875,
+            0.5266875,
+            0.5313125
+          ]
+        }
+      },
+      {
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 5.960464477539062e-07,
+          "maxScaledError": 0.024043493333003773,
+          "ok": true
+        },
+        "rows": 630,
+        "timings": {
+          "fused": [
+            0.3259375,
+            0.2864375,
+            0.3378125,
+            0.2856875,
+            0.32675
+          ],
+          "split": [
+            0.6145,
+            0.638875,
+            0.6215625,
+            0.6876875,
+            0.630375
+          ]
+        }
+      }
+    ],
+    "ok": true
+  },
+  "done": true,
+  "kernel": "gemma4_vision_attention_fused",
+  "metricMs": 3257.18,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

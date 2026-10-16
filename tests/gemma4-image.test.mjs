@@ -9,7 +9,29 @@ test("Gemma image budget caps tokens while retaining aspect ratio and whole pool
   assert.deepEqual(gemma4ImageSize(8192, 1), { width: 3360, height: 48 });
   assert.throws(() => gemma4ImageSize(1, 16777216), /8192px/);
   assert.throws(() => gemma4ImageSize(0, 10), /dimensions/);
-  assert.throws(() => gemma4ImageSize(10, 10, 71), /token budget/);
+  assert.throws(() => gemma4ImageSize(10, 10, 0), /token budget/);
+  assert.deepEqual(gemma4ImageSize(320, 240, 16), { width: 192, height: 144 });
+  assert.deepEqual(gemma4ImageSize(320, 240, 35), { width: 288, height: 240 });
+  assert.deepEqual(gemma4ImageSize(320, 240, 40), { width: 336, height: 240 });
+  assert.throws(() => gemma4ImageSize(10, 10, 1.5), /integer from 1 to 1120/);
+  assert.throws(() => gemma4ImageSize(10, 10, 1121), /integer from 1 to 1120/);
+});
+
+test("smaller image budgets produce whole pooling cells with finite zero padding", () => {
+  const width = 320, height = 240;
+  const data = new Uint8Array(width * height * 4);
+  for (let i = 0; i < data.length; i += 4) data.set([90, 130, 180, 255], i);
+  for (const [budget, expectedWidth, expectedHeight, expectedTokens] of [[16, 192, 144, 12], [35, 288, 240, 30], [40, 336, 240, 35], [70, 432, 336, 63]]) {
+    const image = prepareGemma4Image({ width, height, data }, budget);
+    const realPatches = expectedWidth / 16 * (expectedHeight / 16);
+    assert.equal(image.width, expectedWidth);
+    assert.equal(image.height, expectedHeight);
+    assert.equal(image.softTokens, expectedTokens);
+    assert.equal(image.patches.length, budget * 9 * 768);
+    assert.ok(image.patches.every(Number.isFinite));
+    assert.ok(image.positions.subarray(realPatches * 2).every((position) => position === -1));
+    assert.ok(image.patches.subarray(realPatches * 768).every((pixel) => pixel === 0));
+  }
 });
 
 test("Gemma preprocessing matches pinned Pillow RGB bicubic pixels and row-major patches", () => {

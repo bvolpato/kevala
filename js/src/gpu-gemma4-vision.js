@@ -119,13 +119,14 @@ function imageGeometry(positions, cfg, compact) {
 }
 
 export class GpuGemma4Vision {
-  constructor(gpu, layout, header, { compactPatches = true, submitMode = "split" } = {}) {
+  constructor(gpu, layout, header, { compactPatches = true, submitMode = "split", fusedAttention = true } = {}) {
     this.runtime = gpu;
     this.gpu = gpu;
     this.device = gpu.device;
     this.wgsl = gpu.wgsl;
     this.cfg = gemma4VisionConfig(header);
     this.compactPatches = compactPatches;
+    this.fusedAttention = fusedAttention === true && this.cfg.headDim === 64;
     if (!["await", "split", "none"].includes(submitMode)) throw fail("submission mode must be await, split, or none");
     this.submitMode = submitMode;
     this.weights = new GpuWeights(this.device, layout);
@@ -196,6 +197,7 @@ export class GpuGemma4Vision {
       pool: ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "storage"],
       finite: ["uniform", "read-only-storage", "storage"],
     };
+    if (this.fusedAttention) kinds.attention_fused = ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "storage"];
     this.p = {};
     for (const [name, types] of Object.entries(kinds)) {
       const layout = this.device.createBindGroupLayout({ entries: types.map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
@@ -209,6 +211,7 @@ export class GpuGemma4Vision {
     for (const buffer of this.owned) buffer.destroy();
     this.owned = [];
     this.shape = null;
+    this.attentionMode = null;
   }
 
   ensure(rows, softRows) {
@@ -241,7 +244,8 @@ export class GpuGemma4Vision {
     const k = floats(rows * c.kvHeads * c.headDim), nk = floats(rows * c.kvHeads * c.headDim);
     const v = floats(rows * c.kvHeads * c.headDim), nv = floats(rows * c.kvHeads * c.headDim);
     const attention = floats(rows * c.heads * c.headDim), projected = floats(rows * c.hidden);
-    const scores = floats(rows * rows * c.heads, 0, "attention scores");
+    const fusedAttention = this.fusedAttention && rows <= 630;
+    const scores = fusedAttention ? null : floats(rows * rows * c.heads, 0, "attention scores");
     const gate = floats(rows * c.intermediate), up = floats(rows * c.intermediate), activated = floats(rows * c.intermediate);
     const pooled = floats(softRows * c.hidden), poolNorm = floats(softRows * c.hidden);
     const output = floats(softRows * c.textHidden, U.COPY_SRC, "projected image rows");
@@ -285,9 +289,12 @@ export class GpuGemma4Vision {
         norm(result, normalized, c.headDim, rows * heads, weight, null, bounds, `vision.norm.${name}`);
         if (name !== "v") dispatch("rope", [rows, heads, c.headDim, 0], [this.rope, normalized, result], [Math.ceil(rows * heads * c.headDim / 256)], `vision.rope.${name}`);
       }
-      const groups = c.headDim === 64 ? Math.ceil(rows / 16) ** 2 * c.heads : Math.ceil(rows * rows * c.heads / 256);
-      dispatch("scores", [rows, c.heads, c.kvHeads, c.headDim], [q, k, this.positions, scores], [Math.min(65535, groups), Math.ceil(groups / 65535)], "vision.scores");
-      dispatch("attention", [rows, c.heads, c.kvHeads, c.headDim], [scores, nv, attention], [rows, c.heads], "vision.attention");
+      if (fusedAttention) dispatch("attention_fused", [rows, c.heads, c.kvHeads, c.headDim], [q, k, nv, this.positions, attention], [Math.ceil(rows / 16), c.heads], "vision.attention_fused");
+      else {
+        const groups = c.headDim === 64 ? Math.ceil(rows / 16) ** 2 * c.heads : Math.ceil(rows * rows * c.heads / 256);
+        dispatch("scores", [rows, c.heads, c.kvHeads, c.headDim], [q, k, this.positions, scores], [Math.min(65535, groups), Math.ceil(groups / 65535)], "vision.scores");
+        dispatch("attention", [rows, c.heads, c.kvHeads, c.headDim], [scores, nv, attention], [rows, c.heads], "vision.attention");
+      }
       mm(attn + "o_proj.linear", attention, projected, rows, this.clips.get(attn + "o_proj"), "vision.mm.o");
       norm(projected, residual, c.hidden, rows, prefix + "post_attention_layernorm", x, this.clips.get(attn + "o_proj"), "vision.norm.post_attention");
       norm(residual, normed, c.hidden, rows, prefix + "pre_feedforward_layernorm", null, undefined, "vision.norm.pre_feedforward");
@@ -304,6 +311,7 @@ export class GpuGemma4Vision {
     mm("embed_vision.embedding_projection", poolNorm, output, softRows, null, "vision.mm.project");
     this.output = output;
     this.shape = [rows, softRows];
+    this.attentionMode = fusedAttention ? "fused-f32" : "split-f32";
   }
 
   async forward(image, { gpuOutput = false } = {}) {

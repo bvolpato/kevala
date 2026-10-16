@@ -9,6 +9,17 @@ import { createGemma4PleStore } from "../gemma4-ple-store.js";
 const enc = new TextEncoder();
 const GPU_IMAGE_ROWS_LIMIT = 64 * 1024 * 1024;
 
+function imageTokenBudget(request, engine) {
+  if (request.imageTokens === undefined) return engine.imageTokens;
+  if (!engine.vision || !Number.isSafeInteger(engine.imageTokens) || engine.imageTokens < 1) {
+    throw new Error("imageTokens requires a loaded Gemma 4 vision companion with an imageTokens capacity");
+  }
+  if (!Number.isSafeInteger(request.imageTokens) || request.imageTokens < 1 || request.imageTokens > engine.imageTokens) {
+    throw new RangeError(`imageTokens must be an integer from 1 to ${engine.imageTokens}`);
+  }
+  return request.imageTokens;
+}
+
 export default {
   arch: "gemma4",
   about: "Gemma 4 dense text decoder with direct option scoring",
@@ -44,6 +55,7 @@ export default {
     try {
       const normalized = [];
       for (const request of requests) {
+        const imageTokens = imageTokenBudget(request, engine);
         if (assertImageCount(request) && !engine.vision) throw new Error("load a Gemma 4 vision companion to classify images");
         const parts = [];
         for (const part of request.parts || []) {
@@ -53,7 +65,7 @@ export default {
           const preprocessStart = performance.now();
           imageTiming.decode += preprocessStart - decodeStart;
           let prepared;
-          try { prepared = prepareGemma4Image(pixels, engine.imageTokens, engine.visionHeader.config.vision_config); }
+          try { prepared = prepareGemma4Image(pixels, imageTokens, engine.visionHeader.config.vision_config); }
           finally { pixels.data.fill(0); }
           const visionStart = performance.now();
           imageTiming.preprocess += visionStart - preprocessStart;
@@ -64,6 +76,8 @@ export default {
             images.push(projected);
             const mode = projected instanceof Float32Array ? "encoder-wall" : "submission";
             imageTiming.forwardMode = imageTiming.forwardMode && imageTiming.forwardMode !== mode ? "mixed" : mode;
+            const attention = engine.vision.attentionMode;
+            imageTiming.attention = imageTiming.attention && imageTiming.attention !== attention ? "mixed" : attention;
             if (!(projected instanceof Float32Array)) gpuImageBytes += projected.byteLength;
           }
           finally { prepared.patches.fill(0); }

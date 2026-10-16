@@ -28,6 +28,7 @@ const checks = [
   ["gemma-tail", "gpu", "/dev/gemma-tail-check.html"],
   ["gemma-vision", "gpu", "/dev/gemma4-vision-check.html"],
   ["gemma-vision-attention", "gpu", "/dev/gemma4-vision-attention-check.html"],
+  ["gemma-vision-attention-fused", "gpu", "/dev/gemma4-vision-attention-check.html?fused=1"],
   ["gemma-vision-scores", "gpu", "/dev/gemma4-vision-scores-check.html"],
   ["recur4-shared", "gpu", "/dev/recur-check.html?candidate=current&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],
   ["recur8-shared", "gpu", "/dev/recur-check.html?candidate=recur8&subgroups=0&actual=1&samples=1&warmups=1", undefined, ["timestampQuery"]],

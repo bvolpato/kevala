@@ -98,6 +98,22 @@ The runtime defaults to a 70-token image budget; 140, 280, 560, and 1120 are als
 The larger budgets require larger GPU buffers; loading checks the requested attention buffer
 against the device's limits before uploading the weights.
 
+For a loaded vision session, `decide(state, questions, { parts, imageTokens: 40 })` lowers the
+per-image budget for that request without reloading. Each `decideMany` item can set its own
+budget. Per-request budgets accept integers from 1 through the loaded capacity; omission keeps
+the loaded budget. This leaves pixel normalization and the RGB bicubic resize unchanged.
+Budgets below 70 are experimental custom settings, below Google's documented presets.
+The recorder defaults to Balanced (40 maximum tokens, 35 actual at 336 × 240), with Fast
+(16 maximum, 12 actual at 192 × 144) and the previous Detail (70 maximum, 63 actual at
+432 × 336) available live. Small or distant faces can lose useful detail at lower resolutions.
+
+Vision attention uses a fused F32 online-softmax kernel for 64-dimensional heads with at most
+630 processed patches. Other shapes use separate scores and weighted-value kernels.
+`Kevala.load({ ..., visionAttention: "split" })` retains that separate path as a control;
+the default is `"auto"`. Responses identify the chosen path in `timing.image.attention`.
+The optimization keeps BF16 weights and F32 arithmetic. It needs no optional F16 or subgroup
+features and fits the minimum 16 KiB WebGPU workgroup memory limit.
+
 The vision encoder skips padded patches and submits separate command buffers after every two
 layers without waiting for every chunk. An explicit `submit: "await"` override retains awaited
 chunks. Optional GPU profiles include `vision.*` kernel labels alongside the text decoder;

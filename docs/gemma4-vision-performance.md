@@ -1,5 +1,9 @@
 # Gemma 4 vision performance
 
+See [camera resolution and fused attention](gemma4-camera-performance.md) for the
+October 16 defaults, current camera measurements, quality limits and M4 reproduction.
+The dated measurements below retain their original settings.
+
 The retained vision changes reduced warmed encoder latency from 901 ms to 99 ms in the
 2026-10-13 Firefox run. This is a vision-only measurement, excluding the text decoder,
 camera capture, image decoding, and Pillow-compatible resizing.

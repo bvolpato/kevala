@@ -87,7 +87,7 @@ function resizeRgb(image, width, height) {
 }
 
 export function gemma4ImageSize(width, height, budget = 70, patch = 16, pooling = 3) {
-  if (![70, 140, 280, 560, 1120].includes(budget)) throw new Error("Gemma 4 image token budget must be 70, 140, 280, 560, or 1120");
+  if (!Number.isSafeInteger(budget) || budget < 1 || budget > 1120) throw new Error("Gemma 4 image token budget must be an integer from 1 to 1120");
   if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width <= 0 || height <= 0 || width > 8192 || height > 8192 || width * height > 16 * 1024 * 1024) throw new Error("invalid image dimensions: maximum 8192px per side and 16 megapixels");
   const unit = patch * pooling;
   const scale = Math.sqrt(budget * unit * unit / (width * height));

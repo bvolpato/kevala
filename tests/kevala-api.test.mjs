@@ -37,7 +37,16 @@ test("image loading rejects invalid companion and token budget options before st
   await assert.rejects(Kevala.load({ vision: 42 }), /vision must be/);
   await assert.rejects(Kevala.load({ vision: "vision.kevala", backend: "wasm" }), /requires WebGPU/);
   await assert.rejects(Kevala.load({ imageTokens: 71 }), /imageTokens must be/);
+  await assert.rejects(Kevala.load({ visionAttention: "approximate" }), /visionAttention must be/);
   assert.equal(state.instances.length, 0);
+});
+
+test("vision attention controls reach the engine without changing image capacity", async (t) => {
+  const state = workers(t, [ready]);
+  const model = await Kevala.load({ backend: "webgpu", vision: "vision.kevala", visionAttention: "split", imageTokens: 70, cache: false });
+  t.after(() => model.dispose());
+  assert.equal(state.loads[0].visionAttention, "split");
+  assert.equal(state.loads[0].imageTokens, 70);
 });
 
 test("image requests require loaded image capability and retain typed pixels in worker messages", async (t) => {
@@ -51,6 +60,30 @@ test("image requests require loaded image capability and retain typed pixels in 
   assert.deepEqual(Array.from(state.posted[0].requests[0].parts[0].data.data), [10, 20, 30, 255]);
   await model.decide("image URL", QUESTIONS, { parts: [{ type: "image", data: new URL("https://example.com/image.png") }] });
   assert.equal(state.posted[1].requests[0].parts[0].data, "https://example.com/image.png");
+});
+
+test("per-decision image token budgets require capacity, stay within it, and reach every request", async (t) => {
+  const { model, state } = await loaded(t, (worker, message) => worker.reply({ type: "result", id: message.id, responses: message.requests.map(() => ({ answers: {} })) }));
+  await assert.rejects(model.decide("frame", QUESTIONS, { imageTokens: 16 }), /requires a loaded Gemma 4 vision companion/);
+  await assert.rejects(model.decideMany([{ state: "frame", questions: QUESTIONS, imageTokens: 16 }]), /requires a loaded Gemma 4 vision companion/);
+  model.info = { ...model.info, modalities: ["text", "image"], imageTokens: 70 };
+
+  for (const imageTokens of [0, -1, 1.5, 71, "16", null, Number.NaN, Infinity]) {
+    await assert.rejects(model.decide("frame", QUESTIONS, { imageTokens }), /imageTokens must be an integer from 1 to 70/);
+  }
+  await assert.rejects(model.decideMany([
+    { state: "valid", questions: QUESTIONS, imageTokens: 16 },
+    { state: "over capacity", questions: QUESTIONS, imageTokens: 71 },
+  ]), /imageTokens must be an integer from 1 to 70/);
+  assert.equal(state.posted.length, 0, "invalid budgets are rejected before messaging the worker");
+
+  await model.decide("fast frame", QUESTIONS, { imageTokens: 16 });
+  await model.decide("default frame", QUESTIONS);
+  await model.decideMany([
+    { state: "balanced frame", questions: QUESTIONS, imageTokens: 35 },
+    { state: "detail frame", questions: QUESTIONS, imageTokens: 70 },
+  ]);
+  assert.deepEqual(state.posted.map((message) => message.requests.map((request) => request.imageTokens)), [[16], [undefined], [35, 70]]);
 });
 
 test("decide sends one normalized request and returns its response with the pass timing", async (t) => {

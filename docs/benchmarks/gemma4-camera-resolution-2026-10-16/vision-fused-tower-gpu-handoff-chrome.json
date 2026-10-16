@@ -1,0 +1,91 @@
+{
+  "adapter": {
+    "architecture": "blackwell",
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "timestampQuery": false,
+    "vendor": "nvidia"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 630,
+        "elapsedMs": 41.96500000357628,
+        "id": "rectangular",
+        "maxAbs": 2.065300941467285e-05,
+        "patches": 630,
+        "relativeL2": 2.1095542313551476e-06,
+        "softTokens": 64
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 0.0001
+  },
+  "done": true,
+  "gpuOutput": {
+    "cases": [
+      {
+        "cpuDelta": 0,
+        "id": "rectangular",
+        "maxAbs": 2.065300941467285e-05,
+        "relativeL2": 2.1095542313551476e-06,
+        "status": 0
+      }
+    ],
+    "finite": [
+      {
+        "id": "max-finite",
+        "status": 0
+      },
+      {
+        "id": "negative-zero",
+        "status": 0
+      },
+      {
+        "id": "nan",
+        "status": 1
+      },
+      {
+        "id": "positive-infinity",
+        "status": 1
+      },
+      {
+        "id": "negative-infinity",
+        "status": 1
+      }
+    ]
+  },
+  "metricMs": 41.96500000357628,
+  "options": {
+    "compactPatches": false,
+    "fusedAttention": true,
+    "submitMode": "split"
+  },
+  "profile": false,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

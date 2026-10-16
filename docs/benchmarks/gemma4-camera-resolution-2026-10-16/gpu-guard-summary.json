@@ -1,0 +1,185 @@
+{
+  "command": "node scripts/gpu-guard.mjs tmp/camera-gpu-guard",
+  "browser": "Firefox",
+  "checks": [
+    {
+      "file": "activations.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "attention.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "cache.json",
+      "status": "passed"
+    },
+    {
+      "file": "compile-baseline.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "compile.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-attention.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-gelu.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-rms-subgroups.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ]
+    },
+    {
+      "file": "gemma-rms.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-tail.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-vision-attention-fused.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-vision-attention.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-vision-scores.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "gemma-vision.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "kernels.json",
+      "status": "passed"
+    },
+    {
+      "file": "kev-attention.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ]
+    },
+    {
+      "file": "kev.json",
+      "status": "passed"
+    },
+    {
+      "file": "laya.json",
+      "status": "passed"
+    },
+    {
+      "file": "ordered-rms-2048.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ]
+    },
+    {
+      "file": "ordered-rms-2560.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ]
+    },
+    {
+      "file": "ordered-rms-4096.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ]
+    },
+    {
+      "file": "ordered-sums.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ]
+    },
+    {
+      "file": "recur16-shared.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "recur16-subgroups.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup16"
+      ]
+    },
+    {
+      "file": "recur4-shared.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "recur4-subgroups.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup4"
+      ]
+    },
+    {
+      "file": "recur8-shared.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "recur8-subgroups.json",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup8"
+      ]
+    },
+    {
+      "file": "row-tiles.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "tiles.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "weights-bf16.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "weights-f32.json",
+      "status": "done",
+      "correctnessOk": true
+    },
+    {
+      "file": "weights-q8.json",
+      "status": "done",
+      "correctnessOk": true
+    }
+  ]
+}

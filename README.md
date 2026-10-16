@@ -244,7 +244,8 @@ generator; see the [Gemma 4 notes](docs/gemma4.md#verification). Open
   batch of answers returns.
 - Reaction Recorder (`#/reaction`): scores visible people and facial expressions with an
   image-capable loaded model. Camera access starts only after **Start camera**. It processes one
-  frame at a time without queuing older frames; Pause stops camera tracks. Its visible-cue scores
+  frame at a time without queuing older frames; Pause stops camera tracks. **Analysis detail**
+  switches between Fast, Balanced (default), and Detail without reloading the model. Its visible-cue scores
   are uncalibrated and do not establish a person's inner mood. Frames are not recorded or uploaded.
 - [`examples/`](examples/): complete single-file pages you can copy into a site: a minimal page, a
   comment form that blocks toxic posts, an LLM cascade that escalates only the unsure cases, a game
@@ -333,7 +334,16 @@ decompression. Alpha-bearing encoded files require conversion to raw RGBA or Ima
 browser decoders can discard or round their RGB values. The raw path preserves RGB and
 the model's preprocessing ignores alpha.
 `imageTokens` sets the maximum soft tokens per image; actual counts depend on resized dimensions.
-The runtime default is 70. Check the loaded
+The load-time default capacity is 70. A Gemma 4 decision can request any integer budget from
+1 to that capacity using `decide(state, questions, { parts, imageTokens: 40 })`, or `imageTokens`
+on each `decideMany` item. Omitting it preserves the loaded budget. Smaller budgets trade image
+detail for speed; budgets below Google's documented presets are experimental. The recorder's
+Balanced setting analyzes a 320 × 240 capture at 336 × 240 (35 actual image tokens), Fast at
+192 × 144 (12), and Detail at the previous 432 × 336 (63). Use Detail for small or distant faces.
+Compatible vision grids use fused F32 attention, with `visionAttention: "split"` at load time
+available for comparisons. The [camera resolution benchmark](https://bvolpato.github.io/kevala/dev/gemma4-camera-check.html?hosted=1)
+runs the actual model on your device and can export its timings; it loads weights only when started.
+Check the loaded
 `kevala.info.modalities`, which includes `"image"` only after a compatible companion loads.
 The returned scores are conditional option scores, not calibrated decision confidence.
 Image sessions keep original Q8 per-layer embedding tables in a temporary OPFS file, or system

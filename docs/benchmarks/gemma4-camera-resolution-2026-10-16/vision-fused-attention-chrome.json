@@ -1,0 +1,246 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "workgroupStorageBytes": 16384
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "cpu": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "ok": true,
+        "parity": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "allMasked": true,
+        "cpu": {
+          "fused": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.001380553166393255,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.0013872158391527673,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "ok": true,
+        "parity": {
+          "maxAbs": 2.9802322387695312e-08,
+          "maxScaledError": 0.0013872158776401238,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "cpu": {
+          "fused": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.01659318414575301,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.017031507510310875,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008927149142416987,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "cpu": {
+          "fused": {
+            "maxAbs": 1.341104507446289e-07,
+            "maxScaledError": 0.005634446713359618,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 1.4901161193847656e-07,
+            "maxScaledError": 0.005943965994808302,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "large": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 1.4901161193847656e-07,
+          "maxScaledError": 0.005533560268328977,
+          "ok": true
+        },
+        "rows": 33,
+        "timings": {
+          "fused": [],
+          "split": []
+        }
+      },
+      {
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 4.470348358154297e-07,
+          "maxScaledError": 0.017474146999514217,
+          "ok": true
+        },
+        "rows": 315,
+        "timings": {
+          "fused": [
+            0.058875,
+            0.058375,
+            0.058375,
+            0.0583125,
+            0.0585625
+          ],
+          "split": [
+            0.235625,
+            0.201,
+            0.1965625,
+            0.254375,
+            0.19675
+          ]
+        }
+      },
+      {
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 4.6193599700927734e-07,
+          "maxScaledError": 0.018825245188191418,
+          "ok": true
+        },
+        "rows": 567,
+        "timings": {
+          "fused": [
+            0.2125625,
+            0.1709375,
+            0.17125,
+            0.1940625,
+            0.1910625
+          ],
+          "split": [
+            0.651125,
+            0.6206875,
+            0.6251875,
+            0.6663125,
+            0.6450625
+          ]
+        }
+      },
+      {
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "parity": {
+          "maxAbs": 5.960464477539062e-07,
+          "maxScaledError": 0.024043493333003773,
+          "ok": true
+        },
+        "rows": 630,
+        "timings": {
+          "fused": [
+            0.1900625,
+            0.195125,
+            0.19425,
+            0.19,
+            0.1905625
+          ],
+          "split": [
+            0.770875,
+            0.8605625,
+            0.7695625,
+            0.8,
+            0.793375
+          ]
+        }
+      }
+    ],
+    "ok": true
+  },
+  "done": true,
+  "kernel": "gemma4_vision_attention_fused",
+  "metricMs": 897.6200000047684,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

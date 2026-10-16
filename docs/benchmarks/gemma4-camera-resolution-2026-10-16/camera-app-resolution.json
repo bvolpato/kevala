@@ -1,0 +1,4877 @@
+{
+  "status": "done",
+  "source": "Chromium synthetic camera",
+  "browser": "153.0.8010.12",
+  "info": {
+    "arch": "gemma4",
+    "backend": "webgpu",
+    "gpu": "nvidia blackwell",
+    "gpuPowerPreference": "high-performance",
+    "gpuUnavailable": null,
+    "threads": 1,
+    "flavor": "relaxed",
+    "cpuTiles": null,
+    "cpuTuning": null,
+    "gpuTuning": {
+      "revision": 1,
+      "method": "generic",
+      "points": [],
+      "elapsedMs": 0.015000000596046448,
+      "truncated": false,
+      "reason": "no-shader-f16"
+    },
+    "stateCache": {
+      "requested": true,
+      "supported": false,
+      "enabled": false,
+      "backend": null
+    },
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "vision": {
+      "bytes": 337302144,
+      "cached": false,
+      "model": {
+        "name": "gemma-4-e2b-vision",
+        "source": "https://huggingface.co/google/gemma-4-E2B-it",
+        "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+        "precision": "bf16",
+        "converter": "kevala 0.1.3",
+        "quantization": "unquantized BF16 vision weights; norms and clipping bounds in f32",
+        "author": "Google (Gemma team)",
+        "license": "apache-2.0"
+      },
+      "precision": "bf16"
+    },
+    "imageTokens": 70,
+    "model": {
+      "name": "gemma-4-e2b",
+      "source": "https://huggingface.co/google/gemma-4-E2B-it",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "base": "https://huggingface.co/google/gemma-4-E2B-it",
+      "base_revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "author": "Google (Gemma team)",
+      "license": "apache-2.0",
+      "converter": "kevala 0.1.3",
+      "quantization": "BF16 source converted to symmetric int8 absmax, one f32 scale per 32 weights; norms and direct-option label readout in f32",
+      "inspiration": "SemIf direct-options-v1 readout",
+      "method_source": "https://github.com/TheoLeeCJ/SemIf",
+      "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "method_license": "mit"
+    },
+    "config": {
+      "arch": "gemma4",
+      "backbone": "gemma4_text",
+      "modalities": [
+        "text"
+      ],
+      "attention_bias": false,
+      "attention_dropout": 0,
+      "attention_k_eq_v": false,
+      "bos_token_id": 2,
+      "dtype": "bfloat16",
+      "enable_moe_block": false,
+      "eos_token_id": 1,
+      "expert_intermediate_size": null,
+      "final_logit_softcapping": 30,
+      "global_head_dim": 512,
+      "head_dim": 256,
+      "hidden_activation": "gelu_pytorch_tanh",
+      "hidden_size": 1536,
+      "hidden_size_per_layer_input": 256,
+      "initializer_range": 0.02,
+      "intermediate_size": 6144,
+      "layer_types": [
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention"
+      ],
+      "max_position_embeddings": 131072,
+      "model_type": "gemma4_text",
+      "num_attention_heads": 8,
+      "num_experts": null,
+      "num_global_key_value_heads": null,
+      "num_hidden_layers": 35,
+      "num_key_value_heads": 1,
+      "num_kv_shared_layers": 20,
+      "pad_token_id": 0,
+      "rms_norm_eps": 1e-06,
+      "rope_parameters": {
+        "full_attention": {
+          "partial_rotary_factor": 0.25,
+          "rope_theta": 1000000,
+          "rope_type": "proportional"
+        },
+        "sliding_attention": {
+          "rope_theta": 10000,
+          "rope_type": "default"
+        }
+      },
+      "sliding_window": 512,
+      "tie_word_embeddings": true,
+      "top_k_experts": null,
+      "use_bidirectional_attention": null,
+      "use_cache": true,
+      "use_double_wide_mlp": true,
+      "vocab_size": 262144,
+      "vocab_size_per_layer_input": 262144,
+      "kv_shared_start": 15,
+      "embedding_scale": 39.25,
+      "ple_embedding_scale": 16,
+      "ple_input_scale": 0.7071067811865475,
+      "ple_projection_scale": 0.025515518153991442,
+      "block": 32,
+      "max_input_tokens": 4096,
+      "readout": "labels",
+      "prompt_version": "direct-options-v1",
+      "label_token_ids": [
+        236776,
+        236799,
+        236780,
+        236796,
+        236788,
+        236811,
+        236823,
+        236814,
+        236777,
+        236863,
+        236855,
+        236798,
+        236792,
+        236797,
+        236806,
+        236791
+      ],
+      "label_tokens": "ABCDEFGHIJKLMNOP",
+      "template": {
+        "type": "gemma4",
+        "prompt_version": "direct-options-v1"
+      },
+      "excluded_modalities": [
+        "image",
+        "video",
+        "audio"
+      ]
+    },
+    "pack": {
+      "bytes": 5217421952,
+      "cached": false
+    },
+    "memory": {
+      "hostWeights": 0,
+      "opfsWeights": 3095396352,
+      "gpuWeights": 2449759116,
+      "embeddingStorage": "opfs-q8-rows"
+    },
+    "loadMs": 22915.32500000298,
+    "warmupMs": 141.125
+  },
+  "phases": [
+    {
+      "budget": 70,
+      "samples": [
+        {
+          "budget": 70,
+          "elapsedMs": 138.35500000417233,
+          "hash": 4199583964,
+          "timing": {
+            "prepare": 26.15499998629093,
+            "forward": 111.09000000357628,
+            "total": 137.54499998688698,
+            "tokens": 331,
+            "image": {
+              "decode": 0.17499999701976776,
+              "preprocess": 10.78999999165535,
+              "forward": 14.435000002384186,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 49.96999999880791,
+              "cacheHits": 0,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.454987966764128,
+              "maxFinalRms": 5.524277350694885
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.7199999988079071,
+            "readout": 0.3050000071525574,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 80.81999999284744,
+          "hash": 1051672688,
+          "timing": {
+            "prepare": 15.260000005364418,
+            "forward": 65.00999999046326,
+            "total": 80.45499999821186,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 9.33500000834465,
+              "forward": 5.554999992251396,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.469765993300512,
+              "maxFinalRms": 5.2280689463049255
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.27000001072883606,
+            "readout": 0.1899999976158142,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 89.54500000178814,
+          "hash": 1308101347,
+          "timing": {
+            "prepare": 24.355000004172325,
+            "forward": 64.6550000011921,
+            "total": 89.18000000715256,
+            "tokens": 331,
+            "image": {
+              "decode": 0.07000000774860382,
+              "preprocess": 14.54500000178814,
+              "forward": 9.444999992847443,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.619327672949645,
+              "maxFinalRms": 5.349234982167589
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2750000059604645,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 80.35999999940395,
+          "hash": 937732845,
+          "timing": {
+            "prepare": 16.20999999344349,
+            "forward": 63.49000000953674,
+            "total": 79.89499999582767,
+            "tokens": 331,
+            "image": {
+              "decode": 0.09000000357627869,
+              "preprocess": 9.114999994635582,
+              "forward": 6.705000013113022,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.503751968768233,
+              "maxFinalRms": 5.223978970239548
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2849999964237213,
+            "readout": 0.19499999284744263,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 70.3049999922514,
+          "hash": 1354158615,
+          "timing": {
+            "prepare": 7.2850000113248825,
+            "forward": 62.42499999701977,
+            "total": 69.92000000178814,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 3.9300000071525574,
+              "forward": 3.0150000005960464,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.271019314900761,
+              "maxFinalRms": 4.806613842018788
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.26500000059604645,
+            "readout": 0.2150000035762787,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.1550000011921,
+          "hash": 1747623335,
+          "timing": {
+            "prepare": 8.284999996423721,
+            "forward": 62.34499999880791,
+            "total": 70.79500000178814,
+            "tokens": 331,
+            "image": {
+              "decode": 0.03500001132488251,
+              "preprocess": 4.5,
+              "forward": 3.364999994635582,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.296193602779906,
+              "maxFinalRms": 4.874535953743083
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.3700000047683716,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 70.46499998867512,
+          "hash": 3683474704,
+          "timing": {
+            "prepare": 6.685000002384186,
+            "forward": 63.30500000715256,
+            "total": 70.18999999761581,
+            "tokens": 331,
+            "image": {
+              "decode": 0.025000005960464478,
+              "preprocess": 3.5,
+              "forward": 2.8799999952316284,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.2059190163306255,
+              "maxFinalRms": 4.832158917014698
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2749999910593033,
+            "readout": 0.19999998807907104,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 72.28499999642372,
+          "hash": 2721146252,
+          "timing": {
+            "prepare": 6.864999994635582,
+            "forward": 64.96000000834465,
+            "total": 71.98999999463558,
+            "tokens": 331,
+            "image": {
+              "decode": 0.125,
+              "preprocess": 3.730000004172325,
+              "forward": 2.730000004172325,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.467228435888174,
+              "maxFinalRms": 5.54317274667858
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.26999999582767487,
+            "readout": 0.16999998688697815,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.36999998986721,
+          "hash": 1573391838,
+          "timing": {
+            "prepare": 6.769999995827675,
+            "forward": 64.10999999940395,
+            "total": 71.11999998986721,
+            "tokens": 331,
+            "image": {
+              "decode": 0.125,
+              "preprocess": 3.5900000035762787,
+              "forward": 2.780000001192093,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.462646069428315,
+              "maxFinalRms": 5.427535346583486
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.26000000536441803,
+            "readout": 0.23999999463558197,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 73.62999999523163,
+          "hash": 495793626,
+          "timing": {
+            "prepare": 8.530000001192093,
+            "forward": 64.55500000715256,
+            "total": 73.29000000655651,
+            "tokens": 331,
+            "image": {
+              "decode": 0.08500000834465027,
+              "preprocess": 4.674999997019768,
+              "forward": 3.439999997615814,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.480689761263447,
+              "maxFinalRms": 5.161078593141549
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.3199999928474426,
+            "readout": 0.20499999821186066,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 72.56000000238419,
+          "hash": 3738586496,
+          "timing": {
+            "prepare": 7.125,
+            "forward": 65.07500000298023,
+            "total": 72.35500000417233,
+            "tokens": 331,
+            "image": {
+              "decode": 0.02000001072883606,
+              "preprocess": 3.479999989271164,
+              "forward": 3.330000013113022,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.700334924572796,
+              "maxFinalRms": 5.31908301971969
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.28999999165534973,
+            "readout": 0.1550000011920929,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.52000001072884,
+          "hash": 3312116365,
+          "timing": {
+            "prepare": 7.375,
+            "forward": 63.64000000059605,
+            "total": 71.26500000059605,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06000000238418579,
+              "preprocess": 3.7550000101327896,
+              "forward": 3.269999995827675,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.6058218741964465,
+              "maxFinalRms": 5.228116561119322
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2849999964237213,
+            "readout": 0.25,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 70.66500000655651,
+          "hash": 1921836302,
+          "timing": {
+            "prepare": 7.8599999994039536,
+            "forward": 62.275000005960464,
+            "total": 70.32999999821186,
+            "tokens": 331,
+            "image": {
+              "decode": 0.09000000357627869,
+              "preprocess": 4.75,
+              "forward": 2.7250000089406967,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.345199111574778,
+              "maxFinalRms": 4.959544368355191
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2849999964237213,
+            "readout": 0.19499999284744263,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.65000000596046,
+          "hash": 3934181761,
+          "timing": {
+            "prepare": 7.545000001788139,
+            "forward": 63.5,
+            "total": 71.26500000059605,
+            "tokens": 331,
+            "image": {
+              "decode": 0.07000000774860382,
+              "preprocess": 3.6949999928474426,
+              "forward": 3.519999995827675,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.378297834940797,
+              "maxFinalRms": 4.970482815669235
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.25,
+            "readout": 0.2199999988079071,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 73.30999998748302,
+          "hash": 2037940948,
+          "timing": {
+            "prepare": 9.779999986290932,
+            "forward": 62.92000000178814,
+            "total": 72.96499998867512,
+            "tokens": 331,
+            "image": {
+              "decode": 0.09000000357627869,
+              "preprocess": 5.879999995231628,
+              "forward": 3.5250000059604645,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.015000000596046448,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.342380036256244,
+              "maxFinalRms": 4.923896657447567
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2799999862909317,
+            "readout": 0.26500000059604645,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 73.7749999910593,
+          "hash": 620395813,
+          "timing": {
+            "prepare": 10.184999987483025,
+            "forward": 63.020000010728836,
+            "total": 73.36499999463558,
+            "tokens": 331,
+            "image": {
+              "decode": 0.09000000357627869,
+              "preprocess": 5.629999995231628,
+              "forward": 4.054999992251396,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.034999996423721313,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.576847690306863,
+              "maxFinalRms": 5.157741992887603
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.3999999910593033,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 69.34500001370907,
+          "hash": 790572069,
+          "timing": {
+            "prepare": 6.5250000059604645,
+            "forward": 62.42000000178814,
+            "total": 69.13000001013279,
+            "tokens": 331,
+            "image": {
+              "decode": 0.015000000596046448,
+              "preprocess": 3.439999997615814,
+              "forward": 2.810000002384186,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.605244252938563,
+              "maxFinalRms": 5.409343548309747
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.24500000476837158,
+            "readout": 0.1850000023841858,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 70.42499999701977,
+          "hash": 4124010758,
+          "timing": {
+            "prepare": 6.75,
+            "forward": 63.29999999701977,
+            "total": 70.17000000178814,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06000000238418579,
+              "preprocess": 3.5599999874830246,
+              "forward": 2.8700000047683716,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03000001609325409,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.662580451703388,
+              "maxFinalRms": 5.255869365161695
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2550000101327896,
+            "readout": 0.125,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.63500000536442,
+          "hash": 128173022,
+          "timing": {
+            "prepare": 6.924999997019768,
+            "forward": 64.25500001013279,
+            "total": 71.39499999582767,
+            "tokens": 331,
+            "image": {
+              "decode": 0.05500000715255737,
+              "preprocess": 3.6099999994039536,
+              "forward": 2.9950000047683716,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03500001132488251,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.730980988785169,
+              "maxFinalRms": 5.257101714866214
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.2199999988079071,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.13000001013279,
+          "hash": 1768789428,
+          "timing": {
+            "prepare": 6.915000006556511,
+            "forward": 63.644999995827675,
+            "total": 70.79500000178814,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 3.530000001192093,
+              "forward": 3.0550000071525574,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.014999985694885254,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.6653801035532005,
+              "maxFinalRms": 5.29303164770196
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.23499999940395355,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 71.09999999403954,
+          "hash": 2487621251,
+          "timing": {
+            "prepare": 7.245000004768372,
+            "forward": 63.34000000357628,
+            "total": 70.73499999940395,
+            "tokens": 331,
+            "image": {
+              "decode": 0.07999999821186066,
+              "preprocess": 3.7349999994039536,
+              "forward": 3.189999997615814,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02500002086162567,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.314672522729682,
+              "maxFinalRms": 4.990668134869139
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.23000000417232513,
+            "readout": 0.1550000011920929,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 69.54500000178814,
+          "hash": 1309673616,
+          "timing": {
+            "prepare": 6.9100000113248825,
+            "forward": 62.179999992251396,
+            "total": 69.23499999940395,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 3.830000013113022,
+              "forward": 2.8099999874830246,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.009999990463256836,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.4354041133838065,
+              "maxFinalRms": 5.035880195443283
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.20000000298023224,
+            "readout": 0.14499999582767487,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 70.81499999761581,
+          "hash": 998305421,
+          "timing": {
+            "prepare": 7.25,
+            "forward": 62.99500000476837,
+            "total": 70.47499999403954,
+            "tokens": 331,
+            "image": {
+              "decode": 0.07500000298023224,
+              "preprocess": 3.564999997615814,
+              "forward": 3.344999998807907,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02500002086162567,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.340512764780263,
+              "maxFinalRms": 4.938839516354787
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.26500000059604645,
+            "readout": 0.23499999940395355,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 70,
+          "elapsedMs": 72.85499998927116,
+          "hash": 239397147,
+          "timing": {
+            "prepare": 7.2750000059604645,
+            "forward": 65.08499999344349,
+            "total": 72.53500001132488,
+            "tokens": 331,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 3.580000013113022,
+              "forward": 3.2349999994039536,
+              "images": 1,
+              "patches": 630,
+              "softTokens": 63,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.014999985694885254,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.603311910832649,
+              "maxFinalRms": 5.167482233465214
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "totalTokens": 331,
+              "sharedPrefixTokens": 117
+            },
+            "tokenize": 0.3700000047683716,
+            "readout": 0.1850000023841858,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        }
+      ],
+      "displayedFps": "13.6",
+      "displayedLatency": "73 ms",
+      "resolution": "432 \u00d7 336 analysis \u00b7 on this device",
+      "summary": {
+        "discardedWarmups": 4,
+        "meanMs": 71.47699999883771,
+        "p50Ms": 71.26249999552965,
+        "p95Ms": 73.62999999523163
+      }
+    },
+    {
+      "budget": 40,
+      "samples": [
+        {
+          "budget": 40,
+          "elapsedMs": 63.20000000298023,
+          "hash": 3814214603,
+          "timing": {
+            "prepare": 13.090000003576279,
+            "forward": 49.70999999344349,
+            "total": 62.95499999821186,
+            "tokens": 275,
+            "image": {
+              "decode": 0.025000005960464478,
+              "preprocess": 2.7249999940395355,
+              "forward": 10.064999997615814,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 2.759999990463257,
+              "cacheHits": 2,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.8236526398085635,
+              "maxFinalRms": 5.302334420208881
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26500000059604645,
+            "readout": 0.1550000011920929,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 58.23499999940395,
+          "hash": 2090714602,
+          "timing": {
+            "prepare": 10.219999998807907,
+            "forward": 47.62999999523163,
+            "total": 58.00499999523163,
+            "tokens": 275,
+            "image": {
+              "decode": 0.019999995827674866,
+              "preprocess": 2.239999994635582,
+              "forward": 7.695000007748604,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.940978505122631,
+              "maxFinalRms": 5.32369821922093
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26000000536441803,
+            "readout": 0.1550000011920929,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 57.28000000119209,
+          "hash": 2747980961,
+          "timing": {
+            "prepare": 7.7650000005960464,
+            "forward": 49.01500000059605,
+            "total": 56.99500000476837,
+            "tokens": 275,
+            "image": {
+              "decode": 0.05500000715255737,
+              "preprocess": 2.2650000005960464,
+              "forward": 5.129999995231628,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03000001609325409,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.810044110529882,
+              "maxFinalRms": 5.335896774546192
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.29999999701976776,
+            "readout": 0.2199999988079071,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 56.86999998986721,
+          "hash": 2258865272,
+          "timing": {
+            "prepare": 7.299999997019768,
+            "forward": 49.070000007748604,
+            "total": 56.53499999642372,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07999999821186066,
+              "preprocess": 3.935000002384186,
+              "forward": 2.9950000047683716,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.716176238858092,
+              "maxFinalRms": 5.24726347792883
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2800000011920929,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 53.36499999463558,
+          "hash": 4008943631,
+          "timing": {
+            "prepare": 5.0999999940395355,
+            "forward": 47.820000007748604,
+            "total": 53.099999994039536,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.314999997615814,
+              "forward": 2.4650000035762787,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.783840655594225,
+              "maxFinalRms": 5.126335056418975
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.25,
+            "readout": 0.17999999225139618,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.53000000119209,
+          "hash": 2934803712,
+          "timing": {
+            "prepare": 5.409999996423721,
+            "forward": 49.689999997615814,
+            "total": 55.28000000119209,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.395000010728836,
+              "forward": 2.689999997615814,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.422889006801033,
+              "maxFinalRms": 4.989827066617671
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.25,
+            "readout": 0.18000000715255737,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.33000001311302,
+          "hash": 1814977385,
+          "timing": {
+            "prepare": 5.069999992847443,
+            "forward": 48.89000000059605,
+            "total": 54.09499999880791,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.3250000029802322,
+              "forward": 2.4099999964237213,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.540158369063376,
+              "maxFinalRms": 4.861596812110929
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26500000059604645,
+            "readout": 0.13500000536441803,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.08500000834465,
+          "hash": 3191188522,
+          "timing": {
+            "prepare": 4.820000007748604,
+            "forward": 48.63499999046326,
+            "total": 53.59000000357628,
+            "tokens": 275,
+            "image": {
+              "decode": 0.0599999874830246,
+              "preprocess": 2.290000006556511,
+              "forward": 2.2150000035762787,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.030000001192092896,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.372615964874099,
+              "maxFinalRms": 4.787861032410929
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.24500000476837158,
+            "readout": 0.14000000059604645,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 53.854999989271164,
+          "hash": 3324842289,
+          "timing": {
+            "prepare": 4.854999989271164,
+            "forward": 48.564999997615814,
+            "total": 53.53499999642372,
+            "tokens": 275,
+            "image": {
+              "decode": 0.0599999874830246,
+              "preprocess": 2.310000002384186,
+              "forward": 2.2850000113248825,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.603548183382306,
+              "maxFinalRms": 5.085094001109074
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.19499999284744263,
+            "readout": 0.11500000953674316,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.54999999701977,
+          "hash": 492803363,
+          "timing": {
+            "prepare": 6.054999992251396,
+            "forward": 48.98499999940395,
+            "total": 55.24499998986721,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.685000002384186,
+              "forward": 2.9549999982118607,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.686393176239543,
+              "maxFinalRms": 5.294163865118375
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.3449999988079071,
+            "readout": 0.2150000035762787,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.269999995827675,
+          "hash": 2355558806,
+          "timing": {
+            "prepare": 4.980000004172325,
+            "forward": 48.95499999821186,
+            "total": 54.08500000834465,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.269999995827675,
+              "forward": 2.3700000047683716,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.739751339859883,
+              "maxFinalRms": 5.2731804348347895
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26000000536441803,
+            "readout": 0.15000000596046448,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.480000004172325,
+          "hash": 3341027231,
+          "timing": {
+            "prepare": 5.180000007152557,
+            "forward": 49.86999998986721,
+            "total": 55.25,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07999999821186066,
+              "preprocess": 2.570000007748604,
+              "forward": 2.239999994635582,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.014999985694885254,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.667730453054832,
+              "maxFinalRms": 5.273448048651237
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2750000059604645,
+            "readout": 0.20000000298023224,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.45000000298023,
+          "hash": 2182537079,
+          "timing": {
+            "prepare": 5.125,
+            "forward": 48.76000000536442,
+            "total": 54.10999999940395,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07999999821186066,
+              "preprocess": 2.2849999964237213,
+              "forward": 2.5,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.801492578755142,
+              "maxFinalRms": 5.305206017442543
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.22499999403953552,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 57.57500000298023,
+          "hash": 1444589885,
+          "timing": {
+            "prepare": 8.230000004172325,
+            "forward": 48.855000004172325,
+            "total": 57.23499999940395,
+            "tokens": 275,
+            "image": {
+              "decode": 0.08499999344348907,
+              "preprocess": 4.215000003576279,
+              "forward": 3.5900000035762787,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03000001609325409,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.855932711557861,
+              "maxFinalRms": 5.432337512322512
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.32500000298023224,
+            "readout": 0.1550000011920929,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55,
+          "hash": 1654393057,
+          "timing": {
+            "prepare": 5.00500001013279,
+            "forward": 49.53999999165535,
+            "total": 54.70500001311302,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.2650000005960464,
+              "forward": 2.4200000017881393,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999980926513672,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.952366675956927,
+              "maxFinalRms": 5.211819674985026
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.24500000476837158,
+            "readout": 0.16500000655651093,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.23499999940395,
+          "hash": 1258894025,
+          "timing": {
+            "prepare": 4.91499999165535,
+            "forward": 49.820000007748604,
+            "total": 54.91499999165535,
+            "tokens": 275,
+            "image": {
+              "decode": 0.0650000125169754,
+              "preprocess": 2.314999997615814,
+              "forward": 2.2899999916553497,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.617596968929881,
+              "maxFinalRms": 5.098259470756532
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.22999998927116394,
+            "readout": 0.1850000023841858,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.07999999821186,
+          "hash": 3037949703,
+          "timing": {
+            "prepare": 5.319999992847443,
+            "forward": 49.315000012516975,
+            "total": 54.78000000119209,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.3900000005960464,
+              "forward": 2.5900000035762787,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.516565744158519,
+              "maxFinalRms": 4.887655345863831
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26500000059604645,
+            "readout": 0.14499999582767487,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.11500000953674,
+          "hash": 4104555190,
+          "timing": {
+            "prepare": 5.305000007152557,
+            "forward": 49.37000000476837,
+            "total": 54.82999999821186,
+            "tokens": 275,
+            "image": {
+              "decode": 0.0650000125169754,
+              "preprocess": 2.3199999928474426,
+              "forward": 2.665000006556511,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.522331527069565,
+              "maxFinalRms": 4.862324451283401
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.25,
+            "readout": 0.1549999862909317,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.76000000536442,
+          "hash": 3336992871,
+          "timing": {
+            "prepare": 4.949999988079071,
+            "forward": 49.400000005960464,
+            "total": 54.474999994039536,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.3250000029802322,
+              "forward": 2.310000002384186,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.415661747552728,
+              "maxFinalRms": 4.921615198329271
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.23999999463558197,
+            "readout": 0.125,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.15500000119209,
+          "hash": 3899860145,
+          "timing": {
+            "prepare": 6.155000001192093,
+            "forward": 48.54000000655651,
+            "total": 54.875,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.425000011920929,
+              "forward": 3.3999999910593033,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.60070828181893,
+              "maxFinalRms": 4.9287406502057625
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.1850000023841858,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.57500000298023,
+          "hash": 708439100,
+          "timing": {
+            "prepare": 5.969999998807907,
+            "forward": 49.24499998986721,
+            "total": 55.32999999821186,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.3599999994039536,
+              "forward": 3.2750000059604645,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03000001609325409,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.745512984361599,
+              "maxFinalRms": 5.3229501419076275
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26000000536441803,
+            "readout": 0.11500000953674316,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.9750000089407,
+          "hash": 4237822611,
+          "timing": {
+            "prepare": 5.069999992847443,
+            "forward": 49.63500000536442,
+            "total": 54.79500000178814,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.3799999952316284,
+              "forward": 2.435000002384186,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.809549174452687,
+              "maxFinalRms": 5.355150640086863
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.1899999976158142,
+            "readout": 0.0949999988079071,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.98999999463558,
+          "hash": 2967739789,
+          "timing": {
+            "prepare": 5.0150000005960464,
+            "forward": 49.605000004172325,
+            "total": 54.76500000059605,
+            "tokens": 275,
+            "image": {
+              "decode": 0.05499999225139618,
+              "preprocess": 2.3350000083446503,
+              "forward": 2.384999990463257,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03000001609325409,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.916672601846852,
+              "maxFinalRms": 5.368429884170044
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.23000000417232513,
+            "readout": 0.14499999582767487,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.695000007748604,
+          "hash": 1222749779,
+          "timing": {
+            "prepare": 5.379999995231628,
+            "forward": 49.849999994039536,
+            "total": 55.3999999910593,
+            "tokens": 275,
+            "image": {
+              "decode": 0.08499999344348907,
+              "preprocess": 2.4500000029802322,
+              "forward": 2.6000000089406967,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.921604072877094,
+              "maxFinalRms": 5.415253417724512
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.23999999463558197,
+            "readout": 0.17000000178813934,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        }
+      ],
+      "displayedFps": "17.9",
+      "displayedLatency": "56 ms",
+      "resolution": "336 \u00d7 240 analysis \u00b7 on this device",
+      "summary": {
+        "discardedWarmups": 4,
+        "meanMs": 55.00350000187755,
+        "p50Ms": 55.03999999910593,
+        "p95Ms": 55.695000007748604
+      }
+    },
+    {
+      "budget": 16,
+      "samples": [
+        {
+          "budget": 16,
+          "elapsedMs": 62.82500000298023,
+          "hash": 1488117081,
+          "timing": {
+            "prepare": 14.474999994039536,
+            "forward": 47.92499999701977,
+            "total": 62.53499999642372,
+            "tokens": 229,
+            "image": {
+              "decode": 0.09999999403953552,
+              "preprocess": 6.219999998807907,
+              "forward": 7.905000001192093,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 2.6050000190734863,
+              "cacheHits": 2,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.17673699432072,
+              "maxFinalRms": 5.300812569327256
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.25,
+            "readout": 0.13500000536441803,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 50.684999987483025,
+          "hash": 1056405745,
+          "timing": {
+            "prepare": 5.120000004768372,
+            "forward": 45.179999992251396,
+            "total": 50.45000000298023,
+            "tokens": 229,
+            "image": {
+              "decode": 0.025000005960464478,
+              "preprocess": 2.4200000017881393,
+              "forward": 2.415000006556511,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.110861951774283,
+              "maxFinalRms": 5.320942691169548
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.25,
+            "readout": 0.15000000596046448,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.900000005960464,
+          "hash": 130659081,
+          "timing": {
+            "prepare": 4.329999998211861,
+            "forward": 45.125,
+            "total": 49.57500000298023,
+            "tokens": 229,
+            "image": {
+              "decode": 0.0950000137090683,
+              "preprocess": 1.6400000005960464,
+              "forward": 2.334999993443489,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.8908012839230537,
+              "maxFinalRms": 5.2524576706648824
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.12000000476837158,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 48.939999997615814,
+          "hash": 3272213306,
+          "timing": {
+            "prepare": 3.739999994635582,
+            "forward": 44.68000000715256,
+            "total": 48.59000000357628,
+            "tokens": 229,
+            "image": {
+              "decode": 0.07000000774860382,
+              "preprocess": 1.2300000041723251,
+              "forward": 2.1949999928474426,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.7762220349207456,
+              "maxFinalRms": 5.222281194149354
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.23499999940395355,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 50.96500000357628,
+          "hash": 3795177485,
+          "timing": {
+            "prepare": 4.939999997615814,
+            "forward": 45.50999999046326,
+            "total": 50.56999999284744,
+            "tokens": 229,
+            "image": {
+              "decode": 0.09999999403953552,
+              "preprocess": 2.0799999982118607,
+              "forward": 2.5,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.756765830637561,
+              "maxFinalRms": 5.230940019053034
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.25,
+            "readout": 0.12000000476837158,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 50.07500000298023,
+          "hash": 4106442175,
+          "timing": {
+            "prepare": 3.905000001192093,
+            "forward": 45.68000000715256,
+            "total": 49.70499999821186,
+            "tokens": 229,
+            "image": {
+              "decode": 0.025000005960464478,
+              "preprocess": 1.2950000017881393,
+              "forward": 2.3299999982118607,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.075359883454726,
+              "maxFinalRms": 5.329541709591129
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.11999998986721039,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.75,
+          "hash": 712723675,
+          "timing": {
+            "prepare": 4.049999997019768,
+            "forward": 45.28000000119209,
+            "total": 49.41500000655651,
+            "tokens": 229,
+            "image": {
+              "decode": 0.02000001072883606,
+              "preprocess": 1.2599999904632568,
+              "forward": 2.530000001192093,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.9623439477135265,
+              "maxFinalRms": 5.3702035714009835
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.23499999940395355,
+            "readout": 0.08500000834465027,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 53.394999995827675,
+          "hash": 1463215832,
+          "timing": {
+            "prepare": 6.950000002980232,
+            "forward": 46.08499999344349,
+            "total": 53.11999998986721,
+            "tokens": 229,
+            "image": {
+              "decode": 0.024999991059303284,
+              "preprocess": 1.2349999994039536,
+              "forward": 5.475000008940697,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.015000015497207642,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.8168604238802755,
+              "maxFinalRms": 5.429748713021837
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2150000035762787,
+            "readout": 0.09000000357627869,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 47.724999994039536,
+          "hash": 2532457605,
+          "timing": {
+            "prepare": 3.5350000113248825,
+            "forward": 43.875,
+            "total": 47.49500000476837,
+            "tokens": 229,
+            "image": {
+              "decode": 0.05499999225139618,
+              "preprocess": 1.2300000041723251,
+              "forward": 2.084999993443489,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.015000000596046448,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.8994912254343523,
+              "maxFinalRms": 5.307291485669466
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.1600000113248825,
+            "readout": 0.08499999344348907,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 46.89000000059605,
+          "hash": 2977403336,
+          "timing": {
+            "prepare": 3.5699999928474426,
+            "forward": 42.99500000476837,
+            "total": 46.6499999910593,
+            "tokens": 229,
+            "image": {
+              "decode": 0.05500000715255737,
+              "preprocess": 1.2349999994039536,
+              "forward": 2.1199999898672104,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.9837769573309436,
+              "maxFinalRms": 5.245028710886266
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.1550000011920929,
+            "readout": 0.09000000357627869,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.185000002384186,
+          "hash": 962039896,
+          "timing": {
+            "prepare": 3.9249999970197678,
+            "forward": 44.87000000476837,
+            "total": 48.90999999642372,
+            "tokens": 229,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 1.2349999994039536,
+              "forward": 2.3799999952316284,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03500001132488251,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.135084529392866,
+              "maxFinalRms": 5.311504422427514
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.23999999463558197,
+            "readout": 0.11499999463558197,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 149.30999998748302,
+          "hash": 4235317777,
+          "timing": {
+            "prepare": 4.1099999994039536,
+            "forward": 144.77000001072884,
+            "total": 149,
+            "tokens": 229,
+            "image": {
+              "decode": 0.0650000125169754,
+              "preprocess": 1.2449999898672104,
+              "forward": 2.445000007748604,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03999999165534973,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.263645159832079,
+              "maxFinalRms": 5.397101271500324
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.35499998927116394,
+            "readout": 0.11999998986721039,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 48.89000000059605,
+          "hash": 482394777,
+          "timing": {
+            "prepare": 3.959999993443489,
+            "forward": 44.43000000715256,
+            "total": 48.54000000655651,
+            "tokens": 229,
+            "image": {
+              "decode": 0.07999999821186066,
+              "preprocess": 1.3300000131130219,
+              "forward": 2.2999999970197678,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.030000001192092896,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.013394539994023,
+              "maxFinalRms": 5.256995615862532
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2449999898672104,
+            "readout": 0.15000000596046448,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 48.28499999642372,
+          "hash": 573889753,
+          "timing": {
+            "prepare": 4.020000010728836,
+            "forward": 43.804999992251396,
+            "total": 47.95499999821186,
+            "tokens": 229,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 1.2150000035762787,
+              "forward": 2.469999998807907,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.968477772425323,
+              "maxFinalRms": 5.242071221749356
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2550000101327896,
+            "readout": 0.12999999523162842,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.81999999284744,
+          "hash": 573889753,
+          "timing": {
+            "prepare": 3.895000010728836,
+            "forward": 45.52999998629093,
+            "total": 49.54000000655651,
+            "tokens": 229,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 1.2249999940395355,
+              "forward": 2.344999998807907,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.019999995827674866,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.968477772425323,
+              "maxFinalRms": 5.242071221749356
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2550000101327896,
+            "readout": 0.11500000953674316,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.445000007748604,
+          "hash": 1335687980,
+          "timing": {
+            "prepare": 4.090000003576279,
+            "forward": 44.88499999046326,
+            "total": 49.11499999463558,
+            "tokens": 229,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 1.2750000059604645,
+              "forward": 2.519999995827675,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.034999996423721313,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 3.9605102781779635,
+              "maxFinalRms": 5.287174662321545
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.22500000894069672,
+            "readout": 0.14000000059604645,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 53.689999997615814,
+          "hash": 1274042553,
+          "timing": {
+            "prepare": 8.00500001013279,
+            "forward": 45.17499999701977,
+            "total": 53.33500000834465,
+            "tokens": 229,
+            "image": {
+              "decode": 0.07000000774860382,
+              "preprocess": 1.3250000029802322,
+              "forward": 6.299999997019768,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.211484749171069,
+              "maxFinalRms": 5.380662123764316
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.3050000071525574,
+            "readout": 0.1599999964237213,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 52,
+          "hash": 951858639,
+          "timing": {
+            "prepare": 5.2750000059604645,
+            "forward": 46.25,
+            "total": 51.67000000178814,
+            "tokens": 229,
+            "image": {
+              "decode": 0.08499999344348907,
+              "preprocess": 1.635000005364418,
+              "forward": 3.2899999916553497,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.015000015497207642,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.055061464876821,
+              "maxFinalRms": 5.4613441977609245
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.14499999582767487,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 52.375,
+          "hash": 158948180,
+          "timing": {
+            "prepare": 5.060000002384186,
+            "forward": 46.75,
+            "total": 51.95999999344349,
+            "tokens": 229,
+            "image": {
+              "decode": 0.09000000357627869,
+              "preprocess": 1.3999999910593033,
+              "forward": 3.010000005364418,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.04500000178813934,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.189631826147998,
+              "maxFinalRms": 5.343336689299103
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.550000011920929,
+            "readout": 0.14999999105930328,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.810000002384186,
+          "hash": 2804412819,
+          "timing": {
+            "prepare": 4.25,
+            "forward": 45.07500000298023,
+            "total": 49.440000012516975,
+            "tokens": 229,
+            "image": {
+              "decode": 0.0950000137090683,
+              "preprocess": 1.364999994635582,
+              "forward": 2.510000005364418,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.1543719350931205,
+              "maxFinalRms": 5.28351759387477
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.2799999862909317,
+            "readout": 0.11500000953674316,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.24500000476837,
+          "hash": 2011508688,
+          "timing": {
+            "prepare": 3.9950000047683716,
+            "forward": 44.80500000715256,
+            "total": 48.99000000953674,
+            "tokens": 229,
+            "image": {
+              "decode": 0.0650000125169754,
+              "preprocess": 1.2799999862909317,
+              "forward": 2.3250000029802322,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.030000001192092896,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.292196333787762,
+              "maxFinalRms": 5.395600242066509
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.3199999928474426,
+            "readout": 0.1899999976158142,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 49.75,
+          "hash": 1958965252,
+          "timing": {
+            "prepare": 4.549999997019768,
+            "forward": 44.775000005960464,
+            "total": 49.45000000298023,
+            "tokens": 229,
+            "image": {
+              "decode": 0.07500000298023224,
+              "preprocess": 1.2650000005960464,
+              "forward": 2.844999998807907,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.333403172570227,
+              "maxFinalRms": 5.364907668459178
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.35499998927116394,
+            "readout": 0.125,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 56.08000001311302,
+          "hash": 727338061,
+          "timing": {
+            "prepare": 4.030000001192093,
+            "forward": 51.62000000476837,
+            "total": 55.810000002384186,
+            "tokens": 229,
+            "image": {
+              "decode": 0.030000001192092896,
+              "preprocess": 1.2849999964237213,
+              "forward": 2.4500000029802322,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.05499999225139618,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.190225920787354,
+              "maxFinalRms": 5.321204564083804
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.26500000059604645,
+            "readout": 0.1599999964237213,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 16,
+          "elapsedMs": 48.570000007748604,
+          "hash": 192091111,
+          "timing": {
+            "prepare": 4.21000000834465,
+            "forward": 43.935000002384186,
+            "total": 48.28500001132488,
+            "tokens": 229,
+            "image": {
+              "decode": 0.08499999344348907,
+              "preprocess": 1.5199999958276749,
+              "forward": 2.3500000089406967,
+              "images": 1,
+              "patches": 144,
+              "softTokens": 12,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.138154212779071,
+              "maxFinalRms": 5.339208865457678
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "totalTokens": 229,
+              "sharedPrefixTokens": 66
+            },
+            "tokenize": 0.25,
+            "readout": 0.14000000059604645,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        }
+      ],
+      "displayedFps": "18.2",
+      "displayedLatency": "49 ms",
+      "resolution": "192 \u00d7 144 analysis \u00b7 on this device",
+      "summary": {
+        "discardedWarmups": 4,
+        "meanMs": 55.26275000050664,
+        "p50Ms": 49.78000000119209,
+        "p95Ms": 56.08000001311302
+      }
+    },
+    {
+      "budget": 40,
+      "samples": [
+        {
+          "budget": 40,
+          "elapsedMs": 61.08500000834465,
+          "hash": 3872714042,
+          "timing": {
+            "prepare": 13.875,
+            "forward": 46.74499998986721,
+            "total": 60.79999999701977,
+            "tokens": 275,
+            "image": {
+              "decode": 0.024999991059303284,
+              "preprocess": 2.405000001192093,
+              "forward": 11.165000006556511,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.01000000536441803,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.381737127602184,
+              "maxFinalRms": 4.773633104579174
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2800000011920929,
+            "readout": 0.18000000715255737,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.685000002384186,
+          "hash": 3244635081,
+          "timing": {
+            "prepare": 6.125,
+            "forward": 48.060000002384186,
+            "total": 54.355000004172325,
+            "tokens": 275,
+            "image": {
+              "decode": 0.024999991059303284,
+              "preprocess": 2.344999998807907,
+              "forward": 3.490000009536743,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.3994523750145555,
+              "maxFinalRms": 4.798627063777663
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.25999999046325684,
+            "readout": 0.17000000178813934,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 62.439999997615814,
+          "hash": 2047132128,
+          "timing": {
+            "prepare": 11.049999997019768,
+            "forward": 50.87999999523163,
+            "total": 62.04999999701977,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06000000238418579,
+              "preprocess": 2.489999994635582,
+              "forward": 8.08500000834465,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.06000000238418579,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.471205845582334,
+              "maxFinalRms": 4.83977790151877
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.4099999964237213,
+            "readout": 0.12000000476837158,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.49499998986721,
+          "hash": 934340581,
+          "timing": {
+            "prepare": 6.209999993443489,
+            "forward": 47.86499999463558,
+            "total": 54.224999994039536,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.320000007748604,
+              "forward": 3.509999990463257,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.03500001132488251,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.532788999296426,
+              "maxFinalRms": 4.9200076797957735
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.3100000023841858,
+            "readout": 0.15000000596046448,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.554999992251396,
+          "hash": 3555969985,
+          "timing": {
+            "prepare": 5.204999998211861,
+            "forward": 48.98499999940395,
+            "total": 54.310000002384186,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07500000298023224,
+              "preprocess": 2.3900000005960464,
+              "forward": 2.4949999898672104,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.693028774872767,
+              "maxFinalRms": 5.227838414325896
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.24500000476837158,
+            "readout": 0.12000000476837158,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.60999999940395,
+          "hash": 1057841587,
+          "timing": {
+            "prepare": 5.195000007748604,
+            "forward": 49.87999999523163,
+            "total": 55.24000000953674,
+            "tokens": 275,
+            "image": {
+              "decode": 0.08500000834465027,
+              "preprocess": 2.4549999982118607,
+              "forward": 2.394999995827675,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02000001072883606,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.813073845130278,
+              "maxFinalRms": 5.211454834042057
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2550000101327896,
+            "readout": 0.16500000655651093,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 59.85999999940395,
+          "hash": 1635899454,
+          "timing": {
+            "prepare": 5.454999998211861,
+            "forward": 53.895000010728836,
+            "total": 59.48999999463558,
+            "tokens": 275,
+            "image": {
+              "decode": 0.08500000834465027,
+              "preprocess": 2.4449999928474426,
+              "forward": 2.6700000017881393,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.750246674438775,
+              "maxFinalRms": 5.375538863402142
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.25,
+            "readout": 0.13999998569488525,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 57.42000000178814,
+          "hash": 4125384720,
+          "timing": {
+            "prepare": 5.41499999165535,
+            "forward": 51.33500000834465,
+            "total": 56.96499998867512,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07999999821186066,
+              "preprocess": 2.510000005364418,
+              "forward": 2.560000002384186,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.014999985694885254,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.873466949550216,
+              "maxFinalRms": 5.285832034988972
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.2149999886751175,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 88.70999999344349,
+          "hash": 4121905326,
+          "timing": {
+            "prepare": 6.2750000059604645,
+            "forward": 81.67499999701977,
+            "total": 88.13000001013279,
+            "tokens": 275,
+            "image": {
+              "decode": 0.13499999046325684,
+              "preprocess": 3.115000009536743,
+              "forward": 2.685000002384186,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.04999999701976776,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.980070644771825,
+              "maxFinalRms": 5.199343863984813
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.32500000298023224,
+            "readout": 0.18000000715255737,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 58.00999999046326,
+          "hash": 780586403,
+          "timing": {
+            "prepare": 10.140000000596046,
+            "forward": 47.105000004172325,
+            "total": 57.43000000715256,
+            "tokens": 275,
+            "image": {
+              "decode": 0.16500000655651093,
+              "preprocess": 3.949999988079071,
+              "forward": 5.570000007748604,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.06000000238418579,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.457326478833087,
+              "maxFinalRms": 4.8981465425498145
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.4349999874830246,
+            "readout": 0.1850000023841858,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 56.15500000119209,
+          "hash": 3880506717,
+          "timing": {
+            "prepare": 5.205000013113022,
+            "forward": 50.36499999463558,
+            "total": 55.74000000953674,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07000000774860382,
+              "preprocess": 2.334999993443489,
+              "forward": 2.5550000071525574,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.0299999862909317,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.397577777846986,
+              "maxFinalRms": 4.8942117600563915
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.24000000953674316,
+            "readout": 0.17000000178813934,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 56.314999997615814,
+          "hash": 2482824493,
+          "timing": {
+            "prepare": 6,
+            "forward": 49.78499999642372,
+            "total": 55.935000002384186,
+            "tokens": 275,
+            "image": {
+              "decode": 0.09999999403953552,
+              "preprocess": 3.219999998807907,
+              "forward": 2.4249999970197678,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.030000001192092896,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.505040765736411,
+              "maxFinalRms": 4.944126239227708
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2550000101327896,
+            "readout": 0.15000000596046448,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.519999995827675,
+          "hash": 95959205,
+          "timing": {
+            "prepare": 5.884999990463257,
+            "forward": 49.17500001192093,
+            "total": 55.185000002384186,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.4200000017881393,
+              "forward": 3.0799999982118607,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.554551331559257,
+              "maxFinalRms": 5.014208604943103
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.3099999874830246,
+            "readout": 0.125,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.74500000476837,
+          "hash": 3213683253,
+          "timing": {
+            "prepare": 5.3599999994039536,
+            "forward": 48.939999997615814,
+            "total": 54.46000000834465,
+            "tokens": 275,
+            "image": {
+              "decode": 0.0650000125169754,
+              "preprocess": 2.2849999964237213,
+              "forward": 2.739999994635582,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.582317429646935,
+              "maxFinalRms": 5.1262088552328615
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26000000536441803,
+            "readout": 0.1600000113248825,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 86.79999999701977,
+          "hash": 214478510,
+          "timing": {
+            "prepare": 34.979999989271164,
+            "forward": 51.30500000715256,
+            "total": 86.46499998867512,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.3599999994039536,
+              "forward": 32.08500000834465,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.06499999761581421,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.693622503548803,
+              "maxFinalRms": 5.249045769829427
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.45499999821186066,
+            "readout": 0.17999999225139618,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.269999995827675,
+          "hash": 1826581851,
+          "timing": {
+            "prepare": 5.219999998807907,
+            "forward": 49.66499999165535,
+            "total": 55.04999999701977,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07000000774860382,
+              "preprocess": 2.3599999994039536,
+              "forward": 2.554999992251396,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.591518112176167,
+              "maxFinalRms": 5.095652882762088
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.23000000417232513,
+            "readout": 0.16500000655651093,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.73999999463558,
+          "hash": 82626042,
+          "timing": {
+            "prepare": 5.1400000005960464,
+            "forward": 49.224999994039536,
+            "total": 54.48499999940395,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07500000298023224,
+              "preprocess": 2.4099999964237213,
+              "forward": 2.394999995827675,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.040000006556510925,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.758986521691464,
+              "maxFinalRms": 5.324044897661073
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.26000000536441803,
+            "readout": 0.12000000476837158,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 53.48499999940395,
+          "hash": 4257083738,
+          "timing": {
+            "prepare": 5.004999995231628,
+            "forward": 47.93000000715256,
+            "total": 53.23999999463558,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06999999284744263,
+              "preprocess": 2.310000002384186,
+              "forward": 2.3800000101327896,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.9012526021067,
+              "maxFinalRms": 5.118303877107815
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2449999898672104,
+            "readout": 0.3049999922513962,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 56.275000005960464,
+          "hash": 721385724,
+          "timing": {
+            "prepare": 5.0150000005960464,
+            "forward": 50.73499999940395,
+            "total": 55.92499999701977,
+            "tokens": 275,
+            "image": {
+              "decode": 0.07500000298023224,
+              "preprocess": 2.3399999886751175,
+              "forward": 2.355000004172325,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02500002086162567,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.422383763974928,
+              "maxFinalRms": 5.003888204379306
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.23999999463558197,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 55.01500000059605,
+          "hash": 1170395760,
+          "timing": {
+            "prepare": 5.399999991059303,
+            "forward": 49.13500000536442,
+            "total": 54.70999999344349,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.395000010728836,
+              "forward": 2.679999992251396,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.347830029642384,
+              "maxFinalRms": 4.872692480924945
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.2549999952316284,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.25499999523163,
+          "hash": 703493611,
+          "timing": {
+            "prepare": 5.33500000834465,
+            "forward": 48.375,
+            "total": 53.88500000536442,
+            "tokens": 275,
+            "image": {
+              "decode": 0.06499999761581421,
+              "preprocess": 2.3050000071525574,
+              "forward": 2.719999998807907,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.025000005960464478,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.333445667563425,
+              "maxFinalRms": 4.832888490377857
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.24500000476837158,
+            "readout": 0.17499999701976776,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 54.71999999880791,
+          "hash": 118122605,
+          "timing": {
+            "prepare": 4.909999996423721,
+            "forward": 49.15500000119209,
+            "total": 54.34000000357628,
+            "tokens": 275,
+            "image": {
+              "decode": 0.0599999874830246,
+              "preprocess": 2.3050000071525574,
+              "forward": 2.2899999916553497,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.02500002086162567,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.529044469582223,
+              "maxFinalRms": 4.9250217138006285
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.23999999463558197,
+            "readout": 0.2750000059604645,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 57.645000010728836,
+          "hash": 201298532,
+          "timing": {
+            "prepare": 6.600000008940697,
+            "forward": 50.03499999642372,
+            "total": 56.895000010728836,
+            "tokens": 275,
+            "image": {
+              "decode": 0.10500000417232513,
+              "preprocess": 3.439999997615814,
+              "forward": 2.740000009536743,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.040000006556510925,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.505587259202496,
+              "maxFinalRms": 4.953921889551707
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.3149999976158142,
+            "readout": 0.26000000536441803,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        },
+        {
+          "budget": 40,
+          "elapsedMs": 56.525000005960464,
+          "hash": 2903320105,
+          "timing": {
+            "prepare": 6.450000002980232,
+            "forward": 49.5,
+            "total": 56.08500000834465,
+            "tokens": 275,
+            "image": {
+              "decode": 0.09999999403953552,
+              "preprocess": 3.5799999982118607,
+              "forward": 2.5150000005960464,
+              "images": 1,
+              "patches": 360,
+              "softTokens": 35,
+              "forwardMode": "submission"
+            },
+            "ple": {
+              "ms": 0.024999991059303284,
+              "cacheHits": 3,
+              "sequences": 2
+            },
+            "decoder": {
+              "minFinalRms": 4.521310377136002,
+              "maxFinalRms": 5.043009718573351
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 89,
+              "totalTokens": 275,
+              "sharedPrefixTokens": 89
+            },
+            "tokenize": 0.24500000476837158,
+            "readout": 0.14000000059604645,
+            "batched": 1
+          },
+          "answers": {
+            "person_present": {
+              "type": "noul",
+              "noul": 0
+            },
+            "smiling": {
+              "type": "noul",
+              "noul": 0
+            }
+          }
+        }
+      ],
+      "displayedFps": "16.8",
+      "displayedLatency": "57 ms",
+      "resolution": "336 \u00d7 240 analysis \u00b7 on this device",
+      "summary": {
+        "discardedWarmups": 4,
+        "meanMs": 59.08149999901652,
+        "p50Ms": 55.88250000029802,
+        "p95Ms": 86.79999999701977
+      }
+    }
+  ],
+  "checks": {
+    "maxInFlight": 1,
+    "sameModel": true,
+    "videoCleared": true,
+    "lastTab": "reaction",
+    "overflow": false
+  },
+  "pageErrors": []
+}

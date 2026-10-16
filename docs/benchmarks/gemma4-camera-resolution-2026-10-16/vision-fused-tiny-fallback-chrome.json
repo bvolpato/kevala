@@ -1,0 +1,126 @@
+{
+  "adapter": {
+    "architecture": "blackwell",
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "timestampQuery": false,
+    "vendor": "nvidia"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 18,
+        "attentionMode": "split-f32",
+        "elapsedMs": 4.430000007152557,
+        "id": "rectangular",
+        "maxAbs": 6.854534149169922e-06,
+        "patches": 36,
+        "relativeL2": 1.9518456296555467e-06,
+        "softTokens": 2
+      },
+      {
+        "activePatches": 18,
+        "attentionMode": "split-f32",
+        "elapsedMs": 2.5,
+        "id": "reordered",
+        "maxAbs": 6.854534149169922e-06,
+        "patches": 36,
+        "relativeL2": 2.061327087147612e-06,
+        "softTokens": 2
+      },
+      {
+        "activePatches": 9,
+        "attentionMode": "split-f32",
+        "elapsedMs": 3.8500000089406967,
+        "id": "resized-square",
+        "maxAbs": 2.2649765014648438e-06,
+        "patches": 18,
+        "relativeL2": 1.001494804229619e-06,
+        "softTokens": 1
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 3e-05
+  },
+  "done": true,
+  "gpuOutput": {
+    "cases": [
+      {
+        "cpuDelta": 0,
+        "id": "rectangular",
+        "maxAbs": 6.854534149169922e-06,
+        "relativeL2": 1.9518456296555467e-06,
+        "status": 0
+      },
+      {
+        "cpuDelta": 0,
+        "id": "reordered",
+        "maxAbs": 6.854534149169922e-06,
+        "relativeL2": 2.061327087147612e-06,
+        "status": 0
+      },
+      {
+        "cpuDelta": 0,
+        "id": "resized-square",
+        "maxAbs": 2.2649765014648438e-06,
+        "relativeL2": 1.001494804229619e-06,
+        "status": 0
+      }
+    ],
+    "finite": [
+      {
+        "id": "max-finite",
+        "status": 0
+      },
+      {
+        "id": "negative-zero",
+        "status": 0
+      },
+      {
+        "id": "nan",
+        "status": 1
+      },
+      {
+        "id": "positive-infinity",
+        "status": 1
+      },
+      {
+        "id": "negative-infinity",
+        "status": 1
+      }
+    ]
+  },
+  "metricMs": 3.5933333386977515,
+  "options": {
+    "compactPatches": true,
+    "fusedAttention": true,
+    "submitMode": "split"
+  },
+  "profile": false,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

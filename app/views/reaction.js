@@ -1,5 +1,6 @@
 import { css, esc } from "../ui.js";
 import { createLatestFrameScheduler, supportsImage } from "./reaction-scheduler.js";
+import { gemma4ImageSize } from "../../js/src/gemma4-image.js";
 
 const FRAME_WIDTH = 320;
 const FRAME_HEIGHT = 240;
@@ -62,6 +63,14 @@ const TEMPLATE = `<div class="wrap">
         <span class="rr-status-dot" data-f="status-dot" aria-hidden="true"></span>
         <div><b data-f="camera-status">Camera is off</b><span class="tiny muted" data-f="camera-detail">Start only when you are ready.</span></div>
       </div>
+      <label class="rr-resolution">Analysis detail
+        <select data-f="resolution" aria-describedby="rr-resolution-hint">
+          <option value="16">Fast</option>
+          <option value="40" selected>Balanced</option>
+          <option value="70">Detail</option>
+        </select>
+        <span class="tiny faint" id="rr-resolution-hint">Use Detail for small or distant faces. Changes apply live.</span>
+      </label>
       <label class="rr-extra-toggle"><input type="checkbox" data-f="extra-questions"> Include neutral, surprised, and sad expression scores <span class="tiny faint">adds three questions per frame</span></label>
       <div class="rr-actions">
         <button class="btn primary" type="button" data-act="start">Start camera</button>
@@ -76,7 +85,7 @@ const TEMPLATE = `<div class="wrap">
         <div class="rr-video-frame" data-f="video-frame">
           <video data-f="video" muted playsinline aria-label="Live camera preview"></video>
           <div class="rr-placeholder" data-f="placeholder"><span class="rr-camera-icon" aria-hidden="true">◉</span><b>Camera is off</b><span>Press Start camera when ready.</span></div>
-          <span class="rr-frame-label">320 × 240 · frames processed on this device</span>
+          <span class="rr-frame-label" data-f="frame-label"></span>
         </div>
       </div>
 
@@ -172,6 +181,11 @@ export function mount(el, { session }) {
     frame?.close?.();
   }
 
+  function imageBudget(s = session) {
+    if (s.info?.arch !== "gemma4" || !Number.isSafeInteger(s.info.imageTokens)) return undefined;
+    return Math.min(Number($("resolution").value), s.info.imageTokens);
+  }
+
   function updateControls(s = session) {
     const canRun = imageReady(s);
     const cameraAvailable = !!navigator.mediaDevices?.getUserMedia;
@@ -194,6 +208,13 @@ export function mount(el, { session }) {
     $("status-dot").classList.toggle("is-live", cameraActive);
     $("status-dot").classList.toggle("is-pending", starting);
     $("model-label").textContent = canRun ? s.nameOf() : "";
+    const budget = imageBudget(s);
+    $("resolution").parentElement.hidden = budget === undefined;
+    const size = budget === undefined ? null : gemma4ImageSize(FRAME_WIDTH, FRAME_HEIGHT, budget);
+    $("frame-label").textContent = size ? `${size.width} × ${size.height} analysis · on this device` : "Frames processed on this device";
+    $("resolution").nextElementSibling.textContent = budget <= 16
+      ? "Fast can miss subtle expressions. Try Balanced or Detail for more detail."
+      : "Use Detail for small or distant faces. Changes apply live.";
     $("placeholder").hidden = cameraActive;
   }
 
@@ -241,6 +262,7 @@ export function mount(el, { session }) {
       requestModel = model;
       return model.decide(STATE, frameQuestions($("extra-questions").checked), {
         parts: [{ type: "image", data: image }],
+        imageTokens: imageBudget(),
       });
     },
     onResult: (response, metrics) => {
@@ -361,6 +383,17 @@ export function mount(el, { session }) {
     if (document.hidden && (cameraActive || starting)) stopCamera("Camera stopped because this page is hidden.");
   }
   document.addEventListener("visibilitychange", onVisibilityChange);
+
+  el.addEventListener("change", (event) => {
+    if (event.target !== $("resolution") && event.target !== $("extra-questions")) return;
+    // Discard the previous setting's in-flight result and start fresh FPS accounting.
+    scheduler.pause();
+    if (cameraActive) scheduler.resume();
+    $("scores").innerHTML = `<p class="muted small">${cameraActive ? "Waiting for the new setting's first frame…" : "Start the camera to see model scores."}</p>`;
+    $("fps").textContent = "—";
+    $("latency").textContent = "—";
+    updateControls();
+  });
 
   el.addEventListener("click", (event) => {
     const action = event.target.closest("[data-act]")?.dataset.act;

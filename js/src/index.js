@@ -111,7 +111,10 @@ export class Kevala {
    *               Cache API where that is missing) and reuse it on later loads (default true)
    *   vision      optional Gemma 4 vision companion .kevala URL, Blob, or ArrayBuffer;
    *               image inference currently requires WebGPU
-   *   imageTokens maximum soft tokens per image: 70 (default), 140, 280, 560, or 1120
+   *   imageTokens maximum soft tokens per image (capacity): 70 (default), 140, 280, 560, or 1120;
+   *               decide() and decideMany() may request a lower per-image budget
+   *   visionAttention "auto" (default) uses fused F32 attention for supported image grids;
+   *               "split" keeps separate scores and attention as a control
    *   onProgress  receives { phase, file, loaded, total, message }
    *   signal      AbortSignal that cancels loading
    *   wasmBase    where the .wasm files live (default: next to this module)
@@ -130,6 +133,7 @@ export class Kevala {
     if (options.precision != null && !["bf16", "f32", "q8"].includes(options.precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
     if (options.vision != null && !(typeof options.vision === "string" || options.vision instanceof Blob || options.vision instanceof ArrayBuffer)) throw new TypeError("vision must be a companion pack URL, Blob, or ArrayBuffer");
     if (options.imageTokens != null && ![70, 140, 280, 560, 1120].includes(options.imageTokens)) throw new Error("imageTokens must be 70, 140, 280, 560, or 1120");
+    if (options.visionAttention !== undefined && !["auto", "split"].includes(options.visionAttention)) throw new Error('visionAttention must be "auto" or "split"');
     if (options.vision != null && options.backend === "wasm") throw new Error("image inference currently requires WebGPU");
     const w = new Kevala();
     await w.#start(options);
@@ -303,6 +307,14 @@ export class Kevala {
     if (!this.#worker) return Promise.reject(new Error("kevala was disposed"));
     if (requests.some((r) => r.parts != null && !Array.isArray(r.parts))) throw new TypeError("parts must be an array of typed content");
     if (requests.some((r) => r.shareImagePrefix != null && typeof r.shareImagePrefix !== "boolean")) throw new TypeError("shareImagePrefix must be a boolean");
+    for (const request of requests) {
+      if (request.imageTokens === undefined) continue;
+      const capacity = this.info?.imageTokens;
+      if (!Number.isSafeInteger(capacity) || capacity < 1) throw new Error("imageTokens requires a loaded Gemma 4 vision companion with an imageTokens capacity");
+      if (!Number.isSafeInteger(request.imageTokens) || request.imageTokens < 1 || request.imageTokens > capacity) {
+        throw new RangeError(`imageTokens must be an integer from 1 to ${capacity}`);
+      }
+    }
     if (requests.some((r) => [r.images, r.videos].some((value) => value != null && (!Array.isArray(value) || value.length)))) {
       throw new Error('images/videos are not supported; use typed content in "parts" for modalities supported by the loaded model.');
     }
@@ -312,6 +324,7 @@ export class Kevala {
       ...(r.parts ? { parts: r.parts.map((part) => part?.type === "image" && part.data instanceof URL ? { ...part, data: part.data.href } : part) } : {}),
       questions: r.questions,
       ...(r.shareImagePrefix == null ? {} : { shareImagePrefix: r.shareImagePrefix }),
+      ...(r.imageTokens === undefined ? {} : { imageTokens: r.imageTokens }),
     }));
     if (norm.some((r) => r.parts?.some((p) => p?.type === "image")) && !this.info?.modalities?.includes("image")) {
       throw new Error("The loaded model does not support images. Load an image-capable model with its vision companion pack.");
@@ -327,16 +340,18 @@ export class Kevala {
    * Answers typed questions about a state in one forward pass (System One shape, like
    * `agent.predict(state, questions)`). `state` is text or any JSON value. `options.parts` adds
    * typed content (`{ type: "text", text }`, and `image` / `audio` parts for packs whose
-   * `info.modalities` list them); a part the model cannot read is an error, never dropped. For
-   * Gemma 4 image batches, `options.shareImagePrefix: false` disables shared-prefix decoding.
+   * `info.modalities` list them); a part the model cannot read is an error, never dropped.
+   * `options.imageTokens` optionally sets a per-image Gemma 4 vision budget up to the capacity
+   * selected at load time. For Gemma 4 image batches, `options.shareImagePrefix: false` disables
+   * shared-prefix decoding.
    * Legacy `options.images` and `options.videos` are rejected; put supported content in `parts`.
    */
   async decide(state, questions, options = {}) {
-    const m = await this.#send([{ state, questions, parts: options.parts, images: options.images, videos: options.videos, shareImagePrefix: options.shareImagePrefix }]);
+    const m = await this.#send([{ state, questions, parts: options.parts, images: options.images, videos: options.videos, shareImagePrefix: options.shareImagePrefix, imageTokens: options.imageTokens }]);
     return { ...m.responses[0], timing: m.timing };
   }
 
-  /** Many `{ state, questions, parts?, shareImagePrefix? }` at once; one response each. */
+  /** Many `{ state, questions, parts?, shareImagePrefix?, imageTokens? }` at once; one response each. */
   async decideMany(items) {
     const m = await this.#send(items);
     return m.responses.map((r) => ({ ...r, timing: m.timing }));

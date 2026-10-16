@@ -54,11 +54,11 @@ def source_models():
     return configuration, modeling, {"configuration": cfg_hash, "modeling": model_hash}
 
 
-def input_case(torch, patch: int, cols: int, rows: int, padded: int, reverse=False, name="rectangular"):
+def input_case(torch, patch: int, cols: int, rows: int, padded: int, reverse=False, name="rectangular", salt=0):
     positions = [(x, y) for y in range(rows) for x in range(cols)]
     positions += [(-1, -1)] * (padded - len(positions))
     pixels = torch.arange(padded * 3 * patch * patch, dtype=torch.float32)
-    pixels = ((pixels * 17 + 31) % 251 / 250).reshape(padded, -1)
+    pixels = ((pixels * 17 + 31 + salt) % 251 / 250).reshape(padded, -1)
     positions = torch.tensor(positions, dtype=torch.int64)
     if reverse:
         positions = positions.flip(0)
@@ -94,8 +94,11 @@ def evaluate(torch, vision, projector, cases):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--local", type=Path, help="directory containing vision-only model.safetensors and config.json")
+    parser.add_argument("--camera", action="store_true", help="generate 320x240 camera-grid cases; requires --local")
     parser.add_argument("--output", type=Path, default=ROOT / "tests/fixtures/gemma4-vision-tiny.json")
     args = parser.parse_args()
+    if args.camera and not args.local:
+        parser.error("--camera requires --local")
     import torch
 
     torch.set_num_threads(4)
@@ -129,7 +132,15 @@ def main():
                 module.load_state_dict(weights, strict=True, assign=True)
                 del weights
         vision.encoder.rotary_emb = modeling.Gemma4VisionRotaryEmbedding(c)
-        cases = [input_case(torch, c.patch_size, 24, 24, 630)]
+        if args.camera:
+            cases = [
+                input_case(torch, c.patch_size, 12, 9, 144, name="camera-fast"),
+                input_case(torch, c.patch_size, 21, 15, 360, name="camera-balanced"),
+                input_case(torch, c.patch_size, 27, 21, 630, name="camera-detail"),
+                input_case(torch, c.patch_size, 12, 9, 144, name="camera-fast-repeat", salt=1),
+            ]
+        else:
+            cases = [input_case(torch, c.patch_size, 24, 24, 630)]
         tensors = None
     else:
         c = configuration.Gemma4VisionConfig(hidden_size=64, intermediate_size=128, num_hidden_layers=2,

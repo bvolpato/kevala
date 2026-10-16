@@ -1,0 +1,87 @@
+{
+  "purpose": "Local-only smoke comparison of Gemma 4 person-present and visible-smile scores at current and lower image budgets. Labels describe visible content only.",
+  "budget_candidates": [
+    {
+      "max_soft_tokens": 70,
+      "status": "Detail control",
+      "note": "For a 320x240 webcam frame, Kevala currently produces 432x336, 567 active 16px patches, and 63 pooled visual tokens."
+    },
+    {
+      "max_soft_tokens": 40,
+      "status": "experimental per-request budget",
+      "note": "For a 320x240 webcam frame, the reference sizing formula gives 336x240, 315 active patches, and 35 pooled visual tokens."
+    },
+    {
+      "max_soft_tokens": 16,
+      "status": "experimental per-request budget",
+      "note": "For a 320x240 webcam frame, the reference sizing formula gives 192x144, 108 active patches, and 12 pooled visual tokens."
+    }
+  ],
+  "assets": [
+    {
+      "file": "smiling_front.jpg",
+      "dimensions_px": [
+        829,
+        1024
+      ],
+      "sha256": "40a6c64447587412abb79b126a961fa32ec7956dede1794dc021180ca753cc8c",
+      "label": {
+        "person_present": true,
+        "visibly_smiling": true,
+        "basis": "visible frontal smile; manually checked"
+      },
+      "record_url": "https://www.loc.gov/item/99471639/",
+      "file_url": "https://tile.loc.gov/storage-services/service/pnp/cph/3c20000/3c24000/3c24600/3c24612v.jpg",
+      "rights_note": "Library of Congress advisory: no known restrictions on publication."
+    },
+    {
+      "file": "smiling_outdoors.jpg",
+      "dimensions_px": [
+        714,
+        1024
+      ],
+      "sha256": "e8bbce3f01064ba3a21dcaa2a905c2a20b4f97acadc5e381b8bb39f9c261d7d",
+      "label": {
+        "person_present": true,
+        "visibly_smiling": true,
+        "basis": "visible smile with smaller face in a wider scene; manually checked"
+      },
+      "record_url": "https://www.loc.gov/item/2007660326/",
+      "file_url": "https://tile.loc.gov/storage-services/service/pnp/ds/16700/16794v.jpg",
+      "rights_note": "Library of Congress advisory: no known restrictions on publication."
+    },
+    {
+      "file": "neutral_woman.jpg",
+      "dimensions_px": [
+        892,
+        1024
+      ],
+      "sha256": "c48b39d81c78e9cbfe913e19eb75f87e0748fe2dea0a3ca3f84f088a2bba18ba",
+      "label": {
+        "person_present": true,
+        "visibly_smiling": false,
+        "basis": "front-facing portrait with no visible smile; manually checked"
+      },
+      "record_url": "https://www.loc.gov/item/2017648663/",
+      "file_url": "https://tile.loc.gov/storage-services/service/pnp/ppmsca/51800/51866v.jpg",
+      "rights_note": "Library of Congress states the Daguerreotypes Collection is public domain and free to use and reuse."
+    },
+    {
+      "file": "no_person_hubble.jpg",
+      "dimensions_px": [
+        1000,
+        872
+      ],
+      "sha256": "3a19c5dd8a927a9334bb1229a6d63711b1c0c767fb27e2286e7c84a3e2c2f5f4",
+      "label": {
+        "person_present": false,
+        "visibly_smiling": false,
+        "basis": "astronomical image with no people; manually checked"
+      },
+      "record_url": "https://scikit-image.org/docs/stable/api/skimage.data.html",
+      "file_url": "https://raw.githubusercontent.com/scikit-image/scikit-image/v0.24.0/skimage/data/hubble_deep_field.jpg",
+      "rights_note": "scikit-image documents that this NASA-captured Hubble image may be freely used in the public domain."
+    }
+  ],
+  "evaluation_note": "Keep prompt text, questions, model weights, backend, and score extraction identical. Compare same-image visible-smile and person-present probabilities at each budget; log per-image score delta and any label-threshold flips alongside end-to-end latency. Four images are a smoke set, not a quality benchmark. The two Library of Congress smile images are labeled no-known-restrictions rather than CC0."
+}

@@ -66,6 +66,7 @@ const SOURCES: &[(&str, &str)] = &[
     ("gemma4_vision_scores_tiled", include_str!("wgsl/gemma4_vision_scores_tiled.wgsl")),
     ("gemma4_vision_finite", include_str!("wgsl/gemma4_vision_finite.wgsl")),
     ("gemma4_vision_attention", include_str!("wgsl/gemma4_vision_attention.wgsl")),
+    ("gemma4_vision_attention_fused", include_str!("wgsl/gemma4_vision_attention_fused.wgsl")),
     ("gemma4_vision_gelu", include_str!("wgsl/gemma4_vision_gelu.wgsl")),
     ("gemma4_vision_pool", include_str!("wgsl/gemma4_vision_pool.wgsl")),
 ];
@@ -116,6 +117,7 @@ pub const KERNELS: &[&str] = &[
     "gemma4_vision_scores_tiled",
     "gemma4_vision_finite",
     "gemma4_vision_attention",
+    "gemma4_vision_attention_fused",
     "gemma4_vision_gelu",
     "gemma4_vision_pool",
 ];
