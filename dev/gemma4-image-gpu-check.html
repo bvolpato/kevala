@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma 4 image preprocessing GPU exactness check</title>
+<h1>Gemma 4 image preprocessing GPU exactness check</h1>
+<p>This DEV probe compares the Q22 GPU resize and normalization path bit-for-bit with the CPU image processor and vision image plan. It loads no model or weights. The seeded image patterns prove preprocessing exactness and cost only; they say nothing about image quality or model accuracy.</p>
+<p>Run all four fixtures at budgets 16, 40, and 70 with <code>?autorun=1</code>. Add <code>&amp;edges=1</code> for bounded tiny and edge fixtures, <code>&amp;case=camera-a</code> or <code>&amp;budget=40</code> to narrow the run. GPU timestamps are reported only when the adapter exposes <code>timestamp-query</code>; otherwise the probe runs exactness checks without GPU timing.</p>
+<button id="run">Run preprocessing check</button>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-image-gpu-check.js"></script>

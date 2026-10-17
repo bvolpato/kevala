@@ -32,6 +32,36 @@ function fakeClock() {
   };
 }
 
+function fakeMessageChannels() {
+  const channels = [];
+  class Port {
+    queue = [];
+    onmessage = null;
+    peer = null;
+    closed = false;
+    start() {}
+    postMessage(data) {
+      if (this.closed || this.peer.closed) throw new Error("port is closed");
+      this.peer.queue.push(data);
+    }
+    deliverNext() {
+      const data = this.queue.shift();
+      if (data !== undefined) this.onmessage?.({ data });
+    }
+    close() { this.closed = true; }
+  }
+  class Channel {
+    constructor() {
+      this.port1 = new Port();
+      this.port2 = new Port();
+      this.port1.peer = this.port2;
+      this.port2.peer = this.port1;
+      channels.push(this);
+    }
+  }
+  return { channels, create: () => new Channel() };
+}
+
 async function flush() {
   for (let i = 0; i < 5; i += 1) await Promise.resolve();
 }
@@ -145,5 +175,77 @@ test("pausing suppresses an in-flight result, releases its frame, and prevents a
   assert.equal(captures, 1);
   assert.deepEqual(results, []);
   assert.deepEqual(released, [1]);
+  scheduler.stop();
+});
+
+test("native zero-delay work uses cancellable channel tasks across pause and resume", async () => {
+  const messages = fakeMessageChannels();
+  const channel = messages.channels;
+  let captures = 0;
+  let finish;
+  const released = [];
+  const scheduler = createLatestFrameScheduler({
+    capture: () => ({ id: ++captures }),
+    infer: (frame) => new Promise((resolve) => { finish = () => resolve(frame.id); }),
+    release: (frame) => released.push(frame.id),
+    intervalMs: 0,
+    createMessageChannel: messages.create,
+  });
+
+  scheduler.start();
+  assert.equal(captures, 0, "the first frame waits for the channel macrotask");
+  scheduler.pause();
+  scheduler.resume();
+  assert.equal(channel.length, 1, "one channel is reused after resume");
+  channel[0].port1.deliverNext();
+  assert.equal(captures, 0, "the stale pre-pause delivery cannot start work");
+  assert.deepEqual(channel[0].port1.queue.length, 1, "the stale delivery leaves the resumed task pending");
+  channel[0].port1.deliverNext();
+  assert.equal(captures, 1);
+  assert.equal(scheduler.running, true);
+
+  scheduler.pause();
+  finish();
+  await flush();
+  assert.deepEqual(released, [1]);
+  scheduler.resume();
+  scheduler.stop();
+  assert.equal(channel[0].port1.closed, true);
+  assert.equal(channel[0].port2.closed, true);
+});
+
+test("an empty capture at zero interval retries on a bounded timer", async () => {
+  const clock = fakeClock();
+  let captures = 0;
+  const scheduler = createLatestFrameScheduler({
+    capture: () => { captures += 1; return null; },
+    infer: () => assert.fail("an empty capture must not reach inference"),
+    intervalMs: 0,
+    now: clock.now,
+    setTimer: clock.setTimer,
+    clearTimer: clock.clearTimer,
+  });
+
+  scheduler.start();
+  await clock.advance(0);
+  assert.equal(captures, 1);
+  await clock.advance(15);
+  assert.equal(captures, 1, "the empty-frame retry does not immediately spin");
+  await clock.advance(1);
+  assert.equal(captures, 2, "the retry becomes eligible after the 16ms backoff");
+  scheduler.stop();
+});
+
+test("missing MessageChannel falls back to the native timer", async () => {
+  let captures = 0;
+  const scheduler = createLatestFrameScheduler({
+    capture: () => ++captures,
+    infer: () => "ok",
+    intervalMs: 1000,
+    createMessageChannel: () => null,
+  });
+  scheduler.start();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(captures, 1);
   scheduler.stop();
 });

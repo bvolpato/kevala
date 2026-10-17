@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Fast prefix BN32 GELU fusion guard</title>
+<h1>Fast prefix BN32 gate/up/GELU fusion</h1>
+<p>Dev-only F32 Q8 R2 probe against two registered BN32 projections, their reducers, and registered GELU. Checks full activation and both partial-plane bits, signed zeros, padding, and tails before and after paired timings. All controlled host/GPU allocations fit 64 MiB. Use <code>?bounds=all</code> for every row count from 1 through 32 or <code>?wide=1</code> for the optional 12288-wide MLP.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-prefix-gelu-bn32-check.js"></script>

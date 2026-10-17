@@ -1,0 +1,1089 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 595968
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 1787904
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 58407104,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "3debc5b1674cca7089dfc8d446e5899d757497bc9a5a67ef10fc2d935fdf0519"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 1,
+        "splits": 3,
+        "timing": {
+          "baseline": [
+            0.125912,
+            0.12588,
+            0.125896
+          ],
+          "baselineMs": 0.125896,
+          "benefit": 0.007688886064688397,
+          "candidate": [
+            0.124928,
+            0.124888,
+            0.124936
+          ],
+          "candidateMs": 0.124928,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 97,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 148992
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 1191936
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 36952256,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "3debc5b1674cca7089dfc8d446e5899d757497bc9a5a67ef10fc2d935fdf0519"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 1,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.125416,
+            0.125064,
+            0.125216
+          ],
+          "baselineMs": 0.125216,
+          "benefit": 0.007347303858931688,
+          "candidate": [
+            0.124296,
+            0.124264,
+            0.124296
+          ],
+          "candidateMs": 0.124296,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 97,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 198656
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 1589248
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 44103872,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "3debc5b1674cca7089dfc8d446e5899d757497bc9a5a67ef10fc2d935fdf0519"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 1,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.048088,
+            0.047808,
+            0.047928
+          ],
+          "baselineMs": 0.047928,
+          "benefit": 0.007010515773660408,
+          "candidate": [
+            0.047624,
+            0.047592,
+            0.047568
+          ],
+          "candidateMs": 0.047592,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 97,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 148992
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 1191936
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 33773760,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "3debc5b1674cca7089dfc8d446e5899d757497bc9a5a67ef10fc2d935fdf0519"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 1,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.047592,
+            0.047688,
+            0.047568
+          ],
+          "baselineMs": 0.047592,
+          "benefit": 0.00638762817280227,
+          "candidate": [
+            0.047192,
+            0.047288,
+            0.047504
+          ],
+          "candidateMs": 0.047288,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 256,
+        "T": 97,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 24832
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 198656
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 6557888,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "3debc5b1674cca7089dfc8d446e5899d757497bc9a5a67ef10fc2d935fdf0519"
+        },
+        "sharedWeightBytes": 442368,
+        "splitT": 1,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.01156,
+            0.011568,
+            0.011552
+          ],
+          "baselineMs": 0.01156,
+          "benefit": 0.002768166089965465,
+          "candidate": [
+            0.011528,
+            0.011512,
+            0.011528
+          ],
+          "candidateMs": 0.011528,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 51,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 313344
+        },
+        "partials": null,
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 8149184,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "ea8e24fb9d5caa03f5a7e3743e4a2700a0215187a7370c8694dfd2ff88965716"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 128,
+        "splits": 1,
+        "timing": {
+          "baseline": [
+            0.086072,
+            0.086432,
+            0.086136
+          ],
+          "baselineMs": 0.086136,
+          "benefit": 0.007244357759821672,
+          "candidate": [
+            0.085464,
+            0.085616,
+            0.085512
+          ],
+          "candidateMs": 0.085512,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 51,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 78336
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 470016
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 15669440,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "ea8e24fb9d5caa03f5a7e3743e4a2700a0215187a7370c8694dfd2ff88965716"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 128,
+        "splits": 6,
+        "timing": {
+          "baseline": [
+            0.085248,
+            0.085232,
+            0.085496
+          ],
+          "baselineMs": 0.085248,
+          "benefit": 0.0035660660660660507,
+          "candidate": [
+            0.084944,
+            0.085072,
+            0.084912
+          ],
+          "candidateMs": 0.084944,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 51,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 104448
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 417792
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 13162688,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "ea8e24fb9d5caa03f5a7e3743e4a2700a0215187a7370c8694dfd2ff88965716"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 128,
+        "splits": 4,
+        "timing": {
+          "baseline": [
+            0.026264,
+            0.026112,
+            0.026024
+          ],
+          "baselineMs": 0.026112,
+          "benefit": 0.002757352941176438,
+          "candidate": [
+            0.02604,
+            0.026056,
+            0.025968
+          ],
+          "candidateMs": 0.02604,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 51,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 78336
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 470016
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 13998272,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "ea8e24fb9d5caa03f5a7e3743e4a2700a0215187a7370c8694dfd2ff88965716"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 128,
+        "splits": 6,
+        "timing": {
+          "baseline": [
+            0.030992,
+            0.030768,
+            0.030736
+          ],
+          "baselineMs": 0.030768,
+          "benefit": 0.0028601144045762245,
+          "candidate": [
+            0.03068,
+            0.030552,
+            0.03068
+          ],
+          "candidateMs": 0.03068,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 256,
+        "T": 51,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 13056
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 104448
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scratchBytes": 3449024,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "ea8e24fb9d5caa03f5a7e3743e4a2700a0215187a7370c8694dfd2ff88965716"
+        },
+        "sharedWeightBytes": 442368,
+        "splitT": 128,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.011408,
+            0.011288,
+            0.011264
+          ],
+          "baselineMs": 0.011288,
+          "benefit": 0.004252303330970893,
+          "candidate": [
+            0.011248,
+            0.01124,
+            0.011232
+          ],
+          "candidateMs": 0.01124,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 28,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 172032
+        },
+        "partials": null,
+        "policy": "_gemma_source",
+        "rows": 2,
+        "scratchBytes": 4475072,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "552f4ff7bdccde8117aaa03eab54acfc2313368539a608202cdfe9c847a1141c"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 64,
+        "splits": 1,
+        "timing": {
+          "baseline": [
+            0.056928,
+            0.057096,
+            0.057088
+          ],
+          "baselineMs": 0.057088,
+          "benefit": -0.002662556053811648,
+          "candidate": [
+            0.05724,
+            0.057296,
+            0.057
+          ],
+          "candidateMs": 0.05724,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 28,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 43008
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 258048
+        },
+        "policy": "_gemma_source",
+        "rows": 2,
+        "scratchBytes": 8603840,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "552f4ff7bdccde8117aaa03eab54acfc2313368539a608202cdfe9c847a1141c"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 64,
+        "splits": 6,
+        "timing": {
+          "baseline": [
+            0.057456,
+            0.084064,
+            0.057864
+          ],
+          "baselineMs": 0.057864,
+          "benefit": -0.00013825521913454067,
+          "candidate": [
+            0.057976,
+            0.057872,
+            0.057872
+          ],
+          "candidateMs": 0.057872,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 28,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 57344
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 229376
+        },
+        "policy": "_gemma_source",
+        "rows": 2,
+        "scratchBytes": 7227584,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "552f4ff7bdccde8117aaa03eab54acfc2313368539a608202cdfe9c847a1141c"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 64,
+        "splits": 4,
+        "timing": {
+          "baseline": [
+            0.018616,
+            0.0184,
+            0.01852
+          ],
+          "baselineMs": 0.01852,
+          "benefit": 0.007343412526997692,
+          "candidate": [
+            0.018368,
+            0.018408,
+            0.018384
+          ],
+          "candidateMs": 0.018384,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 28,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 43008
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 258048
+        },
+        "policy": "_gemma_source",
+        "rows": 2,
+        "scratchBytes": 7686336,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "552f4ff7bdccde8117aaa03eab54acfc2313368539a608202cdfe9c847a1141c"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 64,
+        "splits": 6,
+        "timing": {
+          "baseline": [
+            0.021784,
+            0.021464,
+            0.021432
+          ],
+          "baselineMs": 0.021464,
+          "benefit": -0.009317927692881046,
+          "candidate": [
+            0.021504,
+            0.021664,
+            0.021696
+          ],
+          "candidateMs": 0.021664,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 256,
+        "T": 28,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 7168
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 57344
+        },
+        "policy": "_gemma_source",
+        "rows": 2,
+        "scratchBytes": 1894592,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "552f4ff7bdccde8117aaa03eab54acfc2313368539a608202cdfe9c847a1141c"
+        },
+        "sharedWeightBytes": 442368,
+        "splitT": 64,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.008696,
+            0.008704,
+            0.008688
+          ],
+          "baselineMs": 0.008696,
+          "benefit": 0.006439742410303644,
+          "candidate": [
+            0.008608,
+            0.008648,
+            0.00864
+          ],
+          "candidateMs": 0.00864,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 89,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 546816
+        },
+        "partials": null,
+        "policy": "",
+        "rows": 3,
+        "scratchBytes": 14219456,
+        "shaderHashes": {
+          "baseline": "8ae5437e022025e12a4a5028c54f7b76a899231e71c956b97beaca1688dc0a13",
+          "candidate": "2d7218467dcfa02bea351d8cee47de023631709c86843995e4ade52d530e73df"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 89,
+        "splits": 1,
+        "timing": {
+          "baseline": [
+            0.108616,
+            0.108616,
+            0.108744
+          ],
+          "baselineMs": 0.108616,
+          "benefit": 0.0035353907343302028,
+          "candidate": [
+            0.1082,
+            0.108232,
+            0.108288
+          ],
+          "candidateMs": 0.108232,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 89,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 136704
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 820224
+        },
+        "policy": "",
+        "rows": 3,
+        "scratchBytes": 27343040,
+        "shaderHashes": {
+          "baseline": "8ae5437e022025e12a4a5028c54f7b76a899231e71c956b97beaca1688dc0a13",
+          "candidate": "2d7218467dcfa02bea351d8cee47de023631709c86843995e4ade52d530e73df"
+        },
+        "sharedWeightBytes": 10616832,
+        "splitT": 89,
+        "splits": 6,
+        "timing": {
+          "baseline": [
+            0.121416,
+            0.121656,
+            0.121568
+          ],
+          "baselineMs": 0.121568,
+          "benefit": 0.0037509871018688973,
+          "candidate": [
+            0.12104,
+            0.121256,
+            0.121112
+          ],
+          "candidateMs": 0.121112,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 89,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 182272
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 729088
+        },
+        "policy": "",
+        "rows": 3,
+        "scratchBytes": 22968512,
+        "shaderHashes": {
+          "baseline": "8ae5437e022025e12a4a5028c54f7b76a899231e71c956b97beaca1688dc0a13",
+          "candidate": "2d7218467dcfa02bea351d8cee47de023631709c86843995e4ade52d530e73df"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 89,
+        "splits": 4,
+        "timing": {
+          "baseline": [
+            0.042064,
+            0.04172,
+            0.041856
+          ],
+          "baselineMs": 0.041856,
+          "benefit": 0.002293577981651349,
+          "candidate": [
+            0.04176,
+            0.041696,
+            0.04184
+          ],
+          "candidateMs": 0.04176,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 89,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 136704
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 820224
+        },
+        "policy": "",
+        "rows": 3,
+        "scratchBytes": 24426688,
+        "shaderHashes": {
+          "baseline": "8ae5437e022025e12a4a5028c54f7b76a899231e71c956b97beaca1688dc0a13",
+          "candidate": "2d7218467dcfa02bea351d8cee47de023631709c86843995e4ade52d530e73df"
+        },
+        "sharedWeightBytes": 3538944,
+        "splitT": 89,
+        "splits": 6,
+        "timing": {
+          "baseline": [
+            0.043888,
+            0.043872,
+            0.043784
+          ],
+          "baselineMs": 0.043872,
+          "benefit": 0.005652808169219507,
+          "candidate": [
+            0.043584,
+            0.043664,
+            0.043624
+          ],
+          "candidateMs": 0.043624,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 256,
+        "T": 89,
+        "f16": false,
+        "guards": true,
+        "kind": "generic",
+        "ok": true,
+        "output": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 22784
+        },
+        "partials": {
+          "differences": 0,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "signedZeroChecked": true,
+          "values": 182272
+        },
+        "policy": "",
+        "rows": 3,
+        "scratchBytes": 6017216,
+        "shaderHashes": {
+          "baseline": "8ae5437e022025e12a4a5028c54f7b76a899231e71c956b97beaca1688dc0a13",
+          "candidate": "2d7218467dcfa02bea351d8cee47de023631709c86843995e4ade52d530e73df"
+        },
+        "sharedWeightBytes": 442368,
+        "splitT": 89,
+        "splits": 8,
+        "timing": {
+          "baseline": [
+            0.010648,
+            0.01056,
+            0.010568
+          ],
+          "baselineMs": 0.010568,
+          "benefit": -0.0022710068130205765,
+          "candidate": [
+            0.010592,
+            0.0106,
+            0.010576
+          ],
+          "candidateMs": 0.010592,
+          "reason": "noisy",
+          "selected": false,
+          "stable": false
+        }
+      }
+    ],
+    "ok": true
+  },
+  "done": true,
+  "method": "GPU timestamps, identical matmul arithmetic with narrower packed Q8 loads",
+  "metricMs": 0.03926198724417072,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

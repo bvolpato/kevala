@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma RMS register-retention guard</title>
+<style>
+  :root { color-scheme: light dark; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  body { margin: 1.5rem; max-width: 76rem; }
+  p { font: 15px system-ui, sans-serif; line-height: 1.5; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<h1>Gemma RMS register-retention guard</h1>
+<p>This model-free DEV guard compares the registered D=1536 RMS residual/norm and scale/next shaders with variants that retain six updated values in registers. It checks complete Y and H buffers bit-for-bit, including signed zero, finiteness, and tail sentinels, before and after timestamped comparisons.</p>
+<p>It covers T=2, 12, and 97; modes 0, 1, and 2; normal, signed-zero, cancellation, and large-finite inputs. The default uses workgroup reductions. Add <code>?subgroups=1</code> to request the optional exact-32-lane subgroup path; an unsupported feature is reported as skipped with <code>success:false</code>.</p>
+<pre id="log"></pre>
+<script type="module" src="./gemma4-rms-register-check.js"></script>

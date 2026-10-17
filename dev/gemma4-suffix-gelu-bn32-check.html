@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala suffix paired BN32 GELU guard</title>
+<h1>Suffix paired BN32 gate/up/GELU</h1>
+<p>Dev-only F32 Q8 comparison against the current R4 batch projections, reducers, and registered GELU. The registered paired R2/BN32 kernel retains the original independent-suffix split count. Checks activation and both partial-plane bits, signed zeros, padding, and tails before and after paired timings. Temporary host/GPU allocations are capped at 64 MiB with staged readback; immutable weights are reported separately.</p>
+<p>Add <code>?f16=1</code> to compare a dev-only paired F16 R2/BN32 transform against the current paired F16 R4/BN64 kernel, including both 6144-wide and 12288-wide gates. This mode requires <code>shader-f16</code> and preserves the original operand rounding and split count. It requests F16 and timestamps only.</p>
+<p>Add <code>?boundaries=1</code> for T65/96/112/128/241 or <code>?wide=1</code> for the optional 12288-wide gate. Use <code>?shape=gate6144&amp;T=97</code> for the primary timing.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-suffix-gelu-bn32-check.js"></script>

@@ -4,7 +4,7 @@ import { gemma4ImageSize } from "../../js/src/gemma4-image.js";
 
 const FRAME_WIDTH = 320;
 const FRAME_HEIGHT = 240;
-const MIN_FRAME_INTERVAL_MS = 33;
+const MIN_FRAME_INTERVAL_MS = 1000 / 60;
 const STATE = "Classify this camera frame.";
 
 const BASE_QUESTIONS = {
@@ -325,6 +325,7 @@ export function mount(el, { session }) {
         video: {
           width: { ideal: FRAME_WIDTH },
           height: { ideal: FRAME_HEIGHT },
+          frameRate: { ideal: 60, max: 60 },
           facingMode: "user",
         },
       });

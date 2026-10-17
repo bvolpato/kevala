@@ -1,0 +1,140 @@
+{
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "sourceState": "uncommitted worktree",
+  "sourceHashes": {
+    "js/src/gpu-gemma4.js": "f0554c38c7e0229bb8cf58fe919f809c25ab711454a48ec70ec85353669b34ce",
+    "js/src/gpu-gemma4-vision.js": "16269b98e606ab347ea542df67a8d8a0ffff8fbcbbd601af2c207b6b9795156f",
+    "js/src/archs/gemma4.js": "f2010ba8a094e93d642973164e44d941f3959b78a0c83f1b7d997c2fda546e8f",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "eadb526dd83b7ed0ef64faae961312e27fcd8855e19a528602eca0830964dffe",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "e1be981b05a1c3dc9961c85759e3bb90a459a338c12f67d98062872f1979f856",
+    "js/src/kevala-simd.wasm": "4bfbe7ed7cd02ad607d77cc45acfe5cad9d7933445a5b1b6ff56e6678e6c8207",
+    "js/src/kevala-relaxed.wasm": "197f617e6ff58d2a2d5f099df3c3875322405b79cf308b41bdddc95ccd8da278"
+  },
+  "hardware": {
+    "browser": "153.0.8010.12",
+    "gpu": "nvidia blackwell",
+    "m4Measured": false
+  },
+  "preserved": {
+    "weights": true,
+    "precision": true,
+    "imageBudgets": true,
+    "questions": true,
+    "probabilityThresholds": true
+  },
+  "correctness": {
+    "chrome": true,
+    "firefox": true,
+    "maxProbabilityDelta": 0,
+    "rawEvidence": [
+      "next-fusions-all-chrome.json.gz",
+      "next-fusions-all-firefox.json.gz",
+      "vision-reduce-residual-registered-chrome.json.gz",
+      "vision-reduce-residual-registered-firefox.json.gz",
+      "bn32-registered-fast-chrome.json.gz",
+      "bn32-registered-fast-firefox.json.gz",
+      "rms-scale-next-registered-subgroup-chrome.json.gz",
+      "rms-scale-next-fair-shared-firefox.json.gz",
+      "prefix-gelu-bn32-registered-chrome.json.gz",
+      "prefix-gelu-bn32-registered-firefox.json.gz",
+      "fusion-chunks-tail-chrome.json.gz"
+    ]
+  },
+  "fastAddedFusions": {
+    "vision": 31,
+    "rmsScaleNext": 48,
+    "prefixGateUpGelu": 28,
+    "totalRemovedDispatches": 107
+  },
+  "profileGpuMedianMs": {
+    "vision": 3.346592,
+    "prefix": 4.050048,
+    "suffix": 9.024176,
+    "tail": 4.034592
+  },
+  "camera": {
+    "source": "Chromium synthetic camera",
+    "requestedCameraFps": 60,
+    "phases": [
+      {
+        "budget": 70,
+        "discardedWarmups": 4,
+        "meanMs": 44.75394067831211,
+        "p50Ms": 44.57750000059605,
+        "p95Ms": 46.144999995827675,
+        "completedFps": 22.08163062036598
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.92538135542961,
+        "p50Ms": 33.03000000119209,
+        "p95Ms": 34.04500000178814,
+        "completedFps": 29.933846199914132
+      },
+      {
+        "budget": 16,
+        "discardedWarmups": 4,
+        "meanMs": 24.89449152539847,
+        "p50Ms": 24.67000000178814,
+        "p95Ms": 27.064999997615814,
+        "completedFps": 39.438264850655784
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.98574152538332,
+        "p50Ms": 33.05749999731779,
+        "p95Ms": 34.144999995827675,
+        "completedFps": 29.90847370698118
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "resources": {
+      "memory.max": "6291456000",
+      "memory.peak": "4525920256",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 38746516\nuser_usec 25271123\nsystem_usec 13475392\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 481\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    },
+    "pageErrors": [],
+    "previousSeparateFastFps": 39.081,
+    "firstCurrentFastFps": 39.388159416416435,
+    "targetFps": 60,
+    "targetReached": false
+  },
+  "validation": {
+    "javascriptCheck": "pnpm check passed",
+    "javascriptTests": "pnpm test passed",
+    "rust": "Rust 1.95.0 fmt and clippy workspace/all-targets -D warnings passed",
+    "nativeWgsl": "release WGSL rendering passed",
+    "wasm": "all three builds and 48-export checks passed",
+    "package": "check:package passed; 51 files and three WASM modules",
+    "site": "stage:site passed",
+    "fullGpuSuite": "not rerun; existing unrelated Laya F32 parity overage unchanged"
+  },
+  "delivery": {
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "stagedSite": "dist/site",
+    "npmTarball": "/tmp/kevala-next-fusions-package-20261017/kevala-0.1.3.tgz",
+    "packageSha256": "235ffe6d8562d1ceaa1389f8024d57b596b7ebb7fb79bda84c579cac1dbc32d4"
+  }
+}

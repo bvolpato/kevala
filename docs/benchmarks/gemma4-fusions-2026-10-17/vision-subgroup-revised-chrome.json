@@ -1,0 +1,652 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query",
+      "subgroups"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "workgroupStorageBytes": 32768
+  },
+  "backend": "webgpu",
+  "compile": {
+    "ok": true,
+    "requiredSubgroupSize": 32,
+    "sharedBytes": 13056,
+    "source": "current kevala-base.wasm rendered production WGSL",
+    "subgroupId": true,
+    "workgroupSize": 256
+  },
+  "correctness": {
+    "cases": [
+      {
+        "checkedOutputs": 256,
+        "cpu": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 0,
+          "maxScaledError": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "allMasked": true,
+        "checkedOutputs": 4352,
+        "cpu": {
+          "fused": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.001380553166393255,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.0013872158391527673,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.001380553166393255,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 2.9802322387695312e-08,
+          "maxScaledError": 0.0013872158776401238,
+          "ok": true
+        },
+        "rows": 17,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 2.9802322387695312e-08,
+            "maxScaledError": 0.0013872158776401238,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 4352,
+        "cpu": {
+          "fused": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.01659318414575301,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.017031507510310875,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.01659318414575301,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 2.980232238769531e-07,
+          "maxScaledError": 0.008927149142416987,
+          "ok": true
+        },
+        "rows": 17,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 2.980232238769531e-07,
+            "maxScaledError": 0.008927149142416987,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 8448,
+        "cpu": {
+          "fused": {
+            "maxAbs": 1.341104507446289e-07,
+            "maxScaledError": 0.005634446713359618,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 1.4901161193847656e-07,
+            "maxScaledError": 0.005943965994808302,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 1.341104507446289e-07,
+            "maxScaledError": 0.005634446713359618,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "large": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 1.4901161193847656e-07,
+          "maxScaledError": 0.005533560268328977,
+          "ok": true
+        },
+        "rows": 33,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 1.4901161193847656e-07,
+            "maxScaledError": 0.005533560268328977,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 3840,
+        "cpu": {
+          "fused": {
+            "maxAbs": 3.8743019104003906e-07,
+            "maxScaledError": 0.01566814124766662,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.76837158203125e-07,
+            "maxScaledError": 0.01761878295696128,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 3.8743019104003906e-07,
+            "maxScaledError": 0.01566814124766662,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 3.5762786865234375e-07,
+          "maxScaledError": 0.009326580764505422,
+          "ok": true
+        },
+        "rows": 15,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 3.5762786865234375e-07,
+            "maxScaledError": 0.009326580764505422,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 4096,
+        "cpu": {
+          "fused": {
+            "maxAbs": 3.8743019104003906e-07,
+            "maxScaledError": 0.01566814124766662,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.76837158203125e-07,
+            "maxScaledError": 0.01761878295696128,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 3.8743019104003906e-07,
+            "maxScaledError": 0.01566814124766662,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 3.5762786865234375e-07,
+          "maxScaledError": 0.009326580764505422,
+          "ok": true
+        },
+        "rows": 16,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 3.5762786865234375e-07,
+            "maxScaledError": 0.009326580764505422,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 7936,
+        "cpu": {
+          "fused": {
+            "maxAbs": 4.172325134277344e-07,
+            "maxScaledError": 0.015929918553512418,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.172325134277344e-07,
+            "maxScaledError": 0.015929918553512418,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 4.172325134277344e-07,
+            "maxScaledError": 0.015929918553512418,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 3.5762786865234375e-07,
+          "maxScaledError": 0.009881230898345519,
+          "ok": true
+        },
+        "rows": 31,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 3.5762786865234375e-07,
+            "maxScaledError": 0.009881230898345519,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 8192,
+        "cpu": {
+          "fused": {
+            "maxAbs": 4.172325134277344e-07,
+            "maxScaledError": 0.015932097582185837,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 3.8743019104003906e-07,
+            "maxScaledError": 0.014794090612029706,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 4.172325134277344e-07,
+            "maxScaledError": 0.015932097582185837,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 3.5762786865234375e-07,
+          "maxScaledError": 0.01121466022252353,
+          "ok": true
+        },
+        "rows": 32,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 3.5762786865234375e-07,
+            "maxScaledError": 0.01121466022252353,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 4352,
+        "clip": true,
+        "clipping": {
+          "high": 1838,
+          "low": 1968
+        },
+        "cpu": {
+          "fused": {
+            "maxAbs": 3.427267074584961e-07,
+            "maxScaledError": 0.015110869265923227,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 3.5762786865234375e-07,
+            "maxScaledError": 0.015335532661660111,
+            "ok": true
+          },
+          "subgroup": {
+            "maxAbs": 3.427267074584961e-07,
+            "maxScaledError": 0.015110869265923227,
+            "ok": true
+          }
+        },
+        "dim": 64,
+        "heads": 4,
+        "kvHeads": 2,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 7.450580596923828e-08,
+          "maxScaledError": 0.003173421734877166,
+          "ok": true
+        },
+        "rows": 17,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 7.450580596923828e-08,
+            "maxScaledError": 0.003173421734877166,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [],
+          "split": [],
+          "subgroup": []
+        }
+      },
+      {
+        "checkedOutputs": 241920,
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 4.470348358154297e-07,
+          "maxScaledError": 0.017474146999514217,
+          "ok": true
+        },
+        "rows": 315,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.470348358154297e-07,
+            "maxScaledError": 0.017474146999514217,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [
+            0.2755625,
+            0.0591875,
+            0.059375,
+            0.06325,
+            0.332375
+          ],
+          "split": [
+            0.8321875,
+            0.3349375,
+            0.878625,
+            0.2166875,
+            0.84575
+          ],
+          "subgroup": [
+            0.25375,
+            0.088125,
+            0.534875,
+            0.0804375,
+            0.272375
+          ]
+        }
+      },
+      {
+        "checkedOutputs": 435456,
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 4.6193599700927734e-07,
+          "maxScaledError": 0.018825245188191418,
+          "ok": true
+        },
+        "rows": 567,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 4.6193599700927734e-07,
+            "maxScaledError": 0.018825245188191418,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [
+            0.18,
+            0.1885,
+            0.5095625,
+            0.213375,
+            0.1791875
+          ],
+          "split": [
+            0.899125,
+            1.57775,
+            0.6363125,
+            0.6825,
+            0.6556875
+          ],
+          "subgroup": [
+            0.7478125,
+            0.223625,
+            0.4485,
+            0.292125,
+            0.22
+          ]
+        }
+      },
+      {
+        "checkedOutputs": 483840,
+        "cpu": null,
+        "dim": 64,
+        "heads": 12,
+        "kvHeads": 12,
+        "mask": true,
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "maxAbs": 5.960464477539062e-07,
+          "maxScaledError": 0.024043493333003773,
+          "ok": true
+        },
+        "rows": 630,
+        "subgroupParity": {
+          "fused": {
+            "maxAbs": 0,
+            "maxScaledError": 0,
+            "ok": true
+          },
+          "split": {
+            "maxAbs": 5.960464477539062e-07,
+            "maxScaledError": 0.024043493333003773,
+            "ok": true
+          }
+        },
+        "timings": {
+          "fused": [
+            0.2045625,
+            0.2044375,
+            0.533375,
+            0.204375,
+            0.2035
+          ],
+          "split": [
+            0.774125,
+            1.30175,
+            0.7730625,
+            1.112,
+            1.2980625
+          ],
+          "subgroup": [
+            0.6714375,
+            0.247,
+            0.3996875,
+            0.7183125,
+            0.2491875
+          ]
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "outputAbsolute": 2e-05,
+      "outputRelative": 2e-05
+    }
+  },
+  "done": true,
+  "kernel": "gemma4_vision_attention_subgroup",
+  "metricMs": 1515.3349999934435,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

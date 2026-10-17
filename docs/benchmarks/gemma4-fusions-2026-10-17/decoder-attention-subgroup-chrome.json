@@ -1,0 +1,2431 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query",
+      "subgroups"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "subgroupMaxSize": 32,
+    "subgroupMinSize": 32,
+    "workgroupStorageBytes": 32768
+  },
+  "backend": "webgpu",
+  "compile": {
+    "ok": true,
+    "requiredSubgroupSize": 32,
+    "sharedBytes": 2576,
+    "source": "current kevala-base.wasm rendered production WGSL",
+    "subgroupId": true,
+    "workgroupSize": 256
+  },
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "S": 1,
+        "T": 1,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 512,
+          "maxAbs": 0,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          0
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 1,
+        "T": 1,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 512,
+          "maxAbs": 0,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          0
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 1,
+        "T": 1,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 512,
+          "maxAbs": 0,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          0
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 17,
+        "T": 17,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.7673116664562727e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          16
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 17,
+        "T": 17,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.5565093977598643e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          16
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 17,
+        "T": 17,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.7011296177260604e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          16
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 127,
+        "T": 127,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.6434316928159998e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 130048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          126
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 127,
+        "T": 127,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.7648257251423605e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 130048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          126
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 127,
+        "T": 127,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.567929307222382e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 130048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          126
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 128,
+        "T": 128,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.6893843685084065e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 131072,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          127
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 128,
+        "T": 128,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 2.0470765221825005e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 131072,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          127
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 128,
+        "T": 128,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.6476728991604572e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 131072,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          127
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.8904451341145156e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 132096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.648369992585108e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 132096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.941276775441203e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 132096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 257,
+        "T": 257,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.3446054020205267e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 263168,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          256
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 257,
+        "T": 257,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.881454246566161e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 263168,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          256
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 257,
+        "T": 257,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.9325762039279493e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 263168,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          256
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 2.0470669062633284e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 132096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "peaked",
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.3145906935935203e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 132096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 144,
+        "T": 17,
+        "batch": true,
+        "boundary": 127,
+        "branchOffsets": [
+          0,
+          3,
+          8
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.854640598042412e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "batch",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          127,
+          135
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 218,
+        "T": 129,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          0,
+          64
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.385072180559721e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "batch",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 132096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          89,
+          153
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 386,
+        "T": 257,
+        "batch": true,
+        "boundary": 129,
+        "branchOffsets": [
+          0,
+          127
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.526039314359018e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "batch",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 263168,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          129,
+          258
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 129
+      },
+      {
+        "S": 186,
+        "T": 1,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          42
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 512,
+          "maxAbs": 1.3936400655029102e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "single-batch-tail",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          143,
+          143
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 89,
+        "T": 89,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.5026115601779466e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 8,
+        "kvHeads": 2,
+        "label": "prefix",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 182272,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          88
+        ],
+        "timing": true,
+        "timings": {
+          "old": [
+            0.0333125,
+            0.0334375,
+            0.033375,
+            0.0334375,
+            0.0336875,
+            0.0335625
+          ],
+          "subgroup": [
+            0.025875,
+            0.025875,
+            0.025625,
+            0.02625,
+            0.026125,
+            0.0265
+          ]
+        },
+        "window": 512
+      },
+      {
+        "S": 186,
+        "T": 97,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          0,
+          42
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1536,
+          "maxAbs": 1.5738367473844272e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 8,
+        "kvHeads": 2,
+        "label": "suffix",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 198656,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          89,
+          143
+        ],
+        "timing": true,
+        "timings": {
+          "old": [
+            0.0665,
+            0.06625,
+            0.0670625,
+            0.0664375,
+            0.066125,
+            0.0663125
+          ],
+          "subgroup": [
+            0.058125,
+            0.0581875,
+            0.057875,
+            0.0583125,
+            0.05825,
+            0.0575625
+          ]
+        },
+        "window": 512
+      },
+      {
+        "S": 186,
+        "T": 2,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          0,
+          42
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1024,
+          "maxAbs": 1.4954097900948815e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 256,
+        "heads": 8,
+        "kvHeads": 2,
+        "label": "tail",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          130,
+          143
+        ],
+        "timing": true,
+        "timings": {
+          "old": [
+            0.0190625,
+            0.019125,
+            0.0191875,
+            0.0191875,
+            0.0193125,
+            0.019125
+          ],
+          "subgroup": [
+            0.0178125,
+            0.0179375,
+            0.0178125,
+            0.019,
+            0.0179375,
+            0.0179375
+          ]
+        },
+        "window": 512
+      },
+      {
+        "S": 1,
+        "T": 1,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1024,
+          "maxAbs": 0,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          0
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 1,
+        "T": 1,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1024,
+          "maxAbs": 0,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          0
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 1,
+        "T": 1,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 1024,
+          "maxAbs": 0,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          0
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 17,
+        "T": 17,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.6529398372554525e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 34816,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          16
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 17,
+        "T": 17,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.4437636747531855e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 34816,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          16
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 17,
+        "T": 17,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.523610065363613e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 34816,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          16
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 127,
+        "T": 127,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 1.7865976656428195e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 260096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          126
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 127,
+        "T": 127,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.226307232316982e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 260096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          126
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 127,
+        "T": 127,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.048115220476543e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 260096,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          126
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 128,
+        "T": 128,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.1261974812725182e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 262144,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          127
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 128,
+        "T": 128,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.0840848720393712e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 262144,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          127
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 128,
+        "T": 128,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.3715792427103644e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 262144,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          127
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.1384628776099923e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 264192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.3993233365382505e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 264192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.455813790519512e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 264192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 257,
+        "T": 257,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.5926544723609002e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 526336,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          256
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 257,
+        "T": 257,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 1.7829371409816552e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 526336,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          256
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 257,
+        "T": 257,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 0,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 1.9338182891820432e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 526336,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          256
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.2847596925501534e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 264192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "peaked",
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 129,
+        "T": 129,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.1484895390555536e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "plain",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 264192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "positionRange": [
+          0,
+          128
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 144,
+        "T": 17,
+        "batch": true,
+        "boundary": 127,
+        "branchOffsets": [
+          0,
+          3,
+          8
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.0868801312023955e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "batch",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 34816,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          127,
+          135
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 65
+      },
+      {
+        "S": 218,
+        "T": 129,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          0,
+          64
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 1.7358785790733133e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "batch",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 264192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          89,
+          153
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 386,
+        "T": 257,
+        "batch": true,
+        "boundary": 129,
+        "branchOffsets": [
+          0,
+          127
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 1.7719645507840998e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "batch",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 526336,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          129,
+          258
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 129
+      },
+      {
+        "S": 186,
+        "T": 1,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          42
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 1024,
+          "maxAbs": 1.496540575143812e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 4,
+        "kvHeads": 2,
+        "label": "single-batch-tail",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2048,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          143,
+          143
+        ],
+        "timings": {
+          "old": [],
+          "subgroup": []
+        },
+        "window": 0
+      },
+      {
+        "S": 89,
+        "T": 89,
+        "batch": false,
+        "boundary": 0,
+        "branchOffsets": [
+          0
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.095516309780221e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 8,
+        "kvHeads": 2,
+        "label": "prefix",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 364544,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          0,
+          88
+        ],
+        "timing": true,
+        "timings": {
+          "old": [
+            0.045,
+            0.0448125,
+            0.0453125,
+            0.045,
+            0.0448125,
+            0.04475
+          ],
+          "subgroup": [
+            0.04775,
+            0.0374375,
+            0.036875,
+            0.037125,
+            0.0371875,
+            0.0371875
+          ]
+        },
+        "window": 0
+      },
+      {
+        "S": 186,
+        "T": 97,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          0,
+          42
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 3072,
+          "maxAbs": 2.0988320428849683e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 8,
+        "kvHeads": 2,
+        "label": "suffix",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 397312,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          89,
+          143
+        ],
+        "timing": true,
+        "timings": {
+          "old": [
+            0.0995625,
+            0.09875,
+            0.0998125,
+            0.100625,
+            0.10025,
+            0.0995625
+          ],
+          "subgroup": [
+            0.085875,
+            0.0864375,
+            0.093375,
+            0.0871875,
+            0.08625,
+            0.085875
+          ]
+        },
+        "window": 0
+      },
+      {
+        "S": 186,
+        "T": 2,
+        "batch": true,
+        "boundary": 89,
+        "branchOffsets": [
+          0,
+          42
+        ],
+        "causal": 1,
+        "cpu": {
+          "checkedOutputs": 2048,
+          "maxAbs": 1.778465016921693e-08,
+          "ok": true,
+          "tolerance": {
+            "absolute": 1e-05,
+            "relative": 1e-05
+          }
+        },
+        "dim": 512,
+        "heads": 8,
+        "kvHeads": 2,
+        "label": "tail",
+        "ok": true,
+        "outputTailGuard": true,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8192,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "positionRange": [
+          130,
+          143
+        ],
+        "timing": true,
+        "timings": {
+          "old": [
+            0.026375,
+            0.0263125,
+            0.0264375,
+            0.0263125,
+            0.02625,
+            0.0261875
+          ],
+          "subgroup": [
+            0.0256875,
+            0.0273125,
+            0.0258125,
+            0.0256875,
+            0.0256875,
+            0.0256875
+          ]
+        },
+        "window": 0
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    }
+  },
+  "done": true,
+  "kernel": "gemma4_attention_subgroup",
+  "metricMs": 1526.5900000035763,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

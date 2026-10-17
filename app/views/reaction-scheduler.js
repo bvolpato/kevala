@@ -18,18 +18,74 @@ export function createLatestFrameScheduler({
   now = () => performance.now(),
   setTimer = setTimeout,
   clearTimer = clearTimeout,
+  createMessageChannel = () => typeof globalThis.MessageChannel === "function" ? new globalThis.MessageChannel() : null,
 }) {
-  let timer = null;
+  let task = null;
+  let channel = null;
+  let nextTaskId = 0;
   let active = false;
   let stopped = false;
   let running = false;
   let epoch = 0;
   let completedAt = [];
+  const useMessageChannel = setTimer === globalThis.setTimeout && clearTimer === globalThis.clearTimeout;
+
+  function closeChannel() {
+    if (!channel) return;
+    channel.port1.onmessage = null;
+    channel.port1.close?.();
+    channel.port2.close?.();
+    channel = null;
+  }
+
+  function messageChannel() {
+    if (channel) return channel;
+    let candidate;
+    try {
+      candidate = createMessageChannel();
+      if (!candidate) return null;
+      candidate.port1.onmessage = ({ data }) => {
+        if (task?.kind !== "channel" || task.id !== data) return;
+        task = null;
+        void processFrame();
+      };
+      candidate.port1.start?.();
+      channel = candidate;
+      return channel;
+    } catch {
+      candidate?.port1.close?.();
+      candidate?.port2.close?.();
+      return null;
+    }
+  }
+
+  function cancelTask() {
+    const pending = task;
+    task = null;
+    if (pending?.kind === "timer") clearTimer(pending.handle);
+  }
 
   function schedule(delay) {
-    if (!active || stopped || running || timer !== null) return;
-    timer = setTimer(() => {
-      timer = null;
+    if (!active || stopped || running || task !== null) return;
+    const id = ++nextTaskId;
+    if (delay === 0 && useMessageChannel) {
+      const messages = messageChannel();
+      if (messages) {
+        task = { kind: "channel", id };
+        try {
+          messages.port2.postMessage(id);
+          return;
+        } catch {
+          task = null;
+          closeChannel();
+        }
+      }
+    }
+    const pending = { kind: "timer", id, handle: null };
+    task = pending;
+    pending.handle = setTimer(() => {
+      if (task !== pending) return;
+      task = null;
       void processFrame();
     }, delay);
   }
@@ -40,9 +96,13 @@ export function createLatestFrameScheduler({
     const requestEpoch = epoch;
     const startedAt = now();
     let frame = null;
+    let emptyCapture = false;
     try {
       frame = capture();
-      if (frame == null) return;
+      if (frame == null) {
+        emptyCapture = true;
+        return;
+      }
       const result = await infer(frame);
       const endedAt = now();
       if (active && !stopped && requestEpoch === epoch) {
@@ -61,7 +121,10 @@ export function createLatestFrameScheduler({
         } catch {}
       }
       running = false;
-      if (active && !stopped) schedule(Math.max(0, intervalMs - (now() - startedAt)));
+      if (active && !stopped) {
+        const delay = emptyCapture && intervalMs === 0 ? 16 : Math.max(0, intervalMs - (now() - startedAt));
+        schedule(delay);
+      }
     }
   }
 
@@ -77,8 +140,7 @@ export function createLatestFrameScheduler({
     if (!active || stopped) return;
     active = false;
     epoch += 1;
-    if (timer !== null) clearTimer(timer);
-    timer = null;
+    cancelTask();
   }
 
   function stop() {
@@ -86,8 +148,8 @@ export function createLatestFrameScheduler({
     stopped = true;
     active = false;
     epoch += 1;
-    if (timer !== null) clearTimer(timer);
-    timer = null;
+    cancelTask();
+    closeChannel();
   }
 
   return {

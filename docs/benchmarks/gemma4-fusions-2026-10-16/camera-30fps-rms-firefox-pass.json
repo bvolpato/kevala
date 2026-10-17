@@ -1,0 +1,2290 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "bitExact": true,
+  "cases": 225,
+  "check": "gemma4-rms-fusions",
+  "correctness": {
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "finite": true,
+  "metricMs": 60371.86,
+  "results": [
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T1-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T2-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T5-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T42-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T89-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T1-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T2-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T5-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T42-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T89-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T1-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T2-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T5-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T42-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T89-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T1-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T2-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T5-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T42-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T89-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T1-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T1-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T2-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T2-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T5-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T5-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T42-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T42-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-signed-T89-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-signed-T89-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T1-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T2-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T5-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T42-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T89-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T1-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T2-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T5-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T42-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T89-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T1-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T2-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T5-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T42-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T89-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T1-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T2-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T5-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T42-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T89-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T1-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T1-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T2-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T2-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T5-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T5-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T42-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T42-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-large-T89-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-large-T89-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T1-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 32
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T2-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T5-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 160
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T42-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1344
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D32.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D32.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T89-D32",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2848
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T1-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 257
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T2-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 514
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T5-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1285
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T42-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10794
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D257.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D257.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T89-D257",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 22873
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T1-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 1536
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T2-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 3072
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T5-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 7680
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T42-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 64512
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D1536.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D1536.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T89-D1536",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 136704
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T1-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2048
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T2-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 4096
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T5-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 10240
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T42-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 86016
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D2048.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D2048.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T89-D2048",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 182272
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T1-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T1-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 2560
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T2-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T2-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 5120
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T5-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T5-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 12800
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T42-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T42-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 107520
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D2560.residual",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "residual-norm-nonpower-T89-D2560.next-rms",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    },
+    {
+      "bitDifferences": 0,
+      "bitExact": true,
+      "finite": true,
+      "firstDifference": null,
+      "label": "rms-scale-nonpower-T89-D2560",
+      "maxAbs": 0,
+      "ok": true,
+      "valuesCompared": 227840
+    }
+  ],
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "subgroups": false
+}

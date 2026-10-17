@@ -4,6 +4,30 @@
 
 use kevala::gpu::{wgsl, KevSpec, Spec, WeightType, KERNELS};
 
+fn vision_qkv_spec() -> Spec {
+    Spec {
+        weights: WeightType::Bf16,
+        f16: false,
+        rows: 4,
+        row56: true,
+        groups: 1,
+        split_target: 256,
+        ..Default::default()
+    }
+}
+
+fn grid_mlp_spec() -> Spec {
+    Spec {
+        weights: WeightType::Q8,
+        f16: false,
+        rows: 4,
+        row56: true,
+        groups: 1,
+        split_target: 256,
+        ..Default::default()
+    }
+}
+
 fn specs() -> Vec<Spec> {
     let mut out = Vec::new();
     for f16 in [false, true] {
@@ -17,6 +41,10 @@ fn specs() -> Vec<Spec> {
     }
     out.push(Spec { row56: true, ..Default::default() });
     out.push(Spec { shape: Some((3072, 1024)), ..Default::default() });
+    out.push(Spec { rows: 2, split_target: 256, ..Default::default() });
+    out.push(Spec { f16: true, rows: 4, split_target: 256, ..Default::default() });
+    out.push(vision_qkv_spec());
+    out.push(grid_mlp_spec());
     for weights in [WeightType::Bf16, WeightType::F32] {
         for rows in 1..=4 {
             out.push(Spec { weights, rows, ..Default::default() });
@@ -37,8 +65,78 @@ fn specs() -> Vec<Spec> {
 fn every_kernel_renders_completely() {
     for kernel in KERNELS {
         for spec in specs() {
-            if *kernel == "matmul_wide" && spec.groups != 1 {
+            if *kernel == "gemma4_vision_qkv" && spec != vision_qkv_spec() {
+                assert_eq!(
+                    wgsl(kernel, &spec).unwrap_err(),
+                    "gemma4_vision_qkv requires bf16 f32 rows=4 row56=true groups=1 subgroups=false splitTarget=256 dynamic shape"
+                );
+                continue;
+            }
+            if *kernel == "gemma4_mlp_grid" && spec != grid_mlp_spec() {
+                assert_eq!(
+                    wgsl(kernel, &spec).unwrap_err(),
+                    "gemma4_mlp_grid requires q8 f32 rows=4 row56=true groups=1 subgroups=false splitTarget=256 dynamic shape"
+                );
+                continue;
+            }
+            if *kernel == "matmul_gelu_tall"
+                && (spec.weights != WeightType::Q8
+                    || !spec.f16
+                    || spec.rows != 4
+                    || spec.groups != 1
+                    || spec.row56
+                    || spec.split_target != 256)
+            {
+                assert_eq!(
+                    wgsl(kernel, &spec).unwrap_err(),
+                    "matmul_gelu_tall requires q8 f16 rows=4 groups=1 row56=false splitTarget=256"
+                );
+                continue;
+            }
+            if *kernel == "matmul_tall"
+                && (spec.weights != WeightType::Q8
+                    || !spec.f16
+                    || spec.rows != 4
+                    || spec.groups != 1
+                    || spec.row56
+                    || spec.split_target != 256)
+            {
+                assert_eq!(
+                    wgsl(kernel, &spec).unwrap_err(),
+                    "matmul_tall requires q8 f16 rows=4 groups=1 row56=false splitTarget=256"
+                );
+                continue;
+            }
+            if matches!(*kernel, "matmul_bn32_gemma_source" | "matmul_gelu_bn32")
+                && (spec.weights != WeightType::Q8
+                    || spec.f16
+                    || spec.rows != 2
+                    || spec.groups != 1
+                    || spec.row56
+                    || spec.split_target != 256)
+            {
+                assert_eq!(
+                    wgsl(kernel, &spec).unwrap_err(),
+                    format!("{kernel} requires q8 f32 rows=2 groups=1 row56=false splitTarget=256")
+                );
+                continue;
+            }
+            if matches!(
+                *kernel,
+                "matmul_wide"
+                    | "matmul_k64"
+                    | "matmul_wide_gemma_batch"
+                    | "matmul_wide_gemma_source"
+                    | "matmul_k64_gemma_source"
+                    | "matmul_gelu"
+                    | "reduce_gelu"
+            ) && spec.groups != 1
+            {
                 assert!(wgsl(kernel, &spec).is_err());
+                continue;
+            }
+            if matches!(*kernel, "matmul_gelu" | "matvec_two" | "matvec_gelu_two") && spec.weights != WeightType::Q8 {
+                assert_eq!(wgsl(kernel, &spec).unwrap_err(), format!("{kernel} requires q8 weights"));
                 continue;
             }
             if *kernel == "gemma4_vision_position" && spec.weights == WeightType::Q8 {
@@ -50,6 +148,70 @@ fn every_kernel_renders_completely() {
             assert_eq!(src.matches("@compute").count(), 1, "{kernel} {spec:?}: one entry point");
             assert!(src.contains("fn main("), "{kernel} {spec:?}: entry point is main");
         }
+    }
+}
+
+#[test]
+fn vision_qkv_requires_the_registered_abi_and_exports_by_name() {
+    let valid = vision_qkv_spec();
+    let source = wgsl("gemma4_vision_qkv", &valid).unwrap();
+
+    let request = kevala::json::Value::parse(
+        r#"{"kernel":"gemma4_vision_qkv","weights":"bf16","rows":4,"row56":true,"groups":1,"splitTarget":256}"#,
+    )
+    .unwrap();
+    assert_eq!(kevala::gpu::wgsl_json(&request).unwrap(), source);
+
+    let rejected = [
+        ("q8", Spec { weights: WeightType::Q8, ..valid.clone() }),
+        ("f32 weights", Spec { weights: WeightType::F32, ..valid.clone() }),
+        ("f16", Spec { f16: true, ..valid.clone() }),
+        ("subgroups", Spec { subgroups: true, ..valid.clone() }),
+        ("rows", Spec { rows: 3, ..valid.clone() }),
+        ("row56", Spec { row56: false, ..valid.clone() }),
+        ("groups", Spec { groups: 2, ..valid.clone() }),
+        ("split target", Spec { split_target: 128, ..valid.clone() }),
+        ("shape", Spec { shape: Some((768, 768)), ..valid.clone() }),
+        ("Qwen dimensions", Spec { kev: KevSpec { hidden: 2048, ..KevSpec::default() }, ..valid.clone() }),
+    ];
+    for (field, spec) in rejected {
+        assert_eq!(
+            wgsl("gemma4_vision_qkv", &spec).unwrap_err(),
+            "gemma4_vision_qkv requires bf16 f32 rows=4 row56=true groups=1 subgroups=false splitTarget=256 dynamic shape",
+            "accepted unsupported {field} specialization"
+        );
+    }
+}
+
+#[test]
+fn grid_mlp_requires_the_registered_abi_and_exports_by_name() {
+    let valid = grid_mlp_spec();
+    let source = wgsl("gemma4_mlp_grid", &valid).unwrap();
+
+    let request = kevala::json::Value::parse(
+        r#"{"kernel":"gemma4_mlp_grid","weights":"q8","f16":false,"rows":4,"row56":true,"groups":1,"splitTarget":256}"#,
+    )
+    .unwrap();
+    assert_eq!(kevala::gpu::wgsl_json(&request).unwrap(), source);
+
+    let rejected = [
+        ("bf16 weights", Spec { weights: WeightType::Bf16, ..valid.clone() }),
+        ("f32 weights", Spec { weights: WeightType::F32, ..valid.clone() }),
+        ("f16", Spec { f16: true, ..valid.clone() }),
+        ("subgroups", Spec { subgroups: true, ..valid.clone() }),
+        ("rows", Spec { rows: 3, ..valid.clone() }),
+        ("row56", Spec { row56: false, ..valid.clone() }),
+        ("groups", Spec { groups: 2, ..valid.clone() }),
+        ("split target", Spec { split_target: 128, ..valid.clone() }),
+        ("shape", Spec { shape: Some((6144, 1536)), ..valid.clone() }),
+        ("Kev dimensions", Spec { kev: KevSpec { hidden: 2048, ..KevSpec::default() }, ..valid.clone() }),
+    ];
+    for (field, spec) in rejected {
+        assert_eq!(
+            wgsl("gemma4_mlp_grid", &spec).unwrap_err(),
+            "gemma4_mlp_grid requires q8 f32 rows=4 row56=true groups=1 subgroups=false splitTarget=256 dynamic shape",
+            "accepted unsupported {field} specialization"
+        );
     }
 }
 
@@ -75,6 +237,16 @@ fn specializations_change_what_they_should() {
     let attn = wgsl("kev_attention", &base).unwrap();
     let attn_sg = wgsl("kev_attention", &Spec { subgroups: true, ..Default::default() }).unwrap();
     assert!(!attn.contains("subgroupMax") && attn_sg.contains("subgroupMax") && attn_sg.contains("enable subgroups;"));
+
+    let tall_spec = Spec { f16: true, rows: 4, split_target: 256, ..Default::default() };
+    let tall = wgsl("matmul_tall", &tall_spec).unwrap();
+    assert!(tall.contains("@compute @workgroup_size(32, 8)"));
+    assert!(tall.contains("var<workgroup> xs: array<vec4<f16>, 832>;"));
+    assert!(tall.contains("let m0 = wg.y * 104u;"));
+    assert!(tall.contains("let tiles = ((N + 63u) / 64u);"));
+    assert!(tall.contains("if (splits > 1u) { PART[z * T * N + o] = value; return; }"));
+    assert!(tall.contains("if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }"));
+    assert_eq!(tall.matches("workgroupBarrier();").count(), 2);
 }
 
 #[test]

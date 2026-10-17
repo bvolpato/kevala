@@ -1,0 +1,630 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "shader-f16",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "zeros"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "saturation"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "cancellation"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 8,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 8,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "zeros"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 8,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "saturation"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 4,
+        "candidateWorkgroups": 2,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 8,
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "cancellation"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 1,
+        "baselineWorkgroups": 2,
+        "candidateWorkgroups": null,
+        "f16": true,
+        "fallback": true,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 1616
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 17,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": false,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 5,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": null,
+        "f16": true,
+        "fallback": true,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 5352
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 85,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": false,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 2,
+        "baselineWorkgroups": 768,
+        "candidateWorkgroups": 384,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 21233664,
+          "temporaryBytes": 369264
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 12288,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 3,
+        "supported": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.07284,
+            0.073584,
+            0.073296
+          ],
+          "baselineMedianMs": 0.073296,
+          "benefit": 0.34173761187513646,
+          "candidate": [
+            0.048248,
+            0.048496,
+            0.048216
+          ],
+          "candidateMedianMs": 0.048248,
+          "candidateWins": true,
+          "order": [
+            {
+              "kind": "baseline",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 2,
+        "baselineWorkgroups": 1536,
+        "candidateWorkgroups": 768,
+        "f16": true,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 4224,
+            "candidate": 4352
+          },
+          "sharedWeightBytes": 42467328,
+          "temporaryBytes": 713328
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 24576,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+          "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+          "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+        },
+        "splits": 1,
+        "supported": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.131088,
+            0.13092,
+            0.131672
+          ],
+          "baselineMedianMs": 0.131088,
+          "benefit": 0.40150128158183823,
+          "candidate": [
+            0.078456,
+            0.078896,
+            0.078168
+          ],
+          "candidateMedianMs": 0.078456,
+          "candidateWins": true,
+          "order": [
+            {
+              "kind": "baseline",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "elapsedMs": 1716.48,
+  "method": "geometric mean T2 shared-weight candidate GPU timestamp milliseconds",
+  "metricMs": 0.06152515817127169,
+  "precision": "f16",
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "24 MiB",
+          "pid": 3506545,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "shaderHashes": {
+    "baseline": "e07bcfa9aa91811a94e3837e8dfdf7d96829f191d962386ae54fc2b2f3322b06",
+    "candidate": "043d78bcbea9a18da0c7f13421f95400170fd75870128f0d1eeeede0dc4305f2",
+    "fragment": "c9e4e1d333c6b306d6c4ab3e174884cd10f900791b2262f48d384d3b6f856619"
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

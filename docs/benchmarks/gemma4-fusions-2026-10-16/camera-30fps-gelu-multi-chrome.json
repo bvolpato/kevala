@@ -1,0 +1,548 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "subgroups",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "K": 32,
+        "N": 1,
+        "T": 1,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 96,
+        "N": 17,
+        "T": 1,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": true,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 1,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 672,
+        "N": 6144,
+        "T": 1,
+        "calibration": {
+          "elapsedMs": 5.5,
+          "method": "paired-timestamp-query",
+          "points": [
+            {
+              "baseline": [
+                0.019368,
+                0.019192,
+                0.019176
+              ],
+              "benefit": 0.4664443518132555,
+              "candidate": [
+                0.010248,
+                0.010216,
+                0.01024
+              ],
+              "genericMs": 0.019192,
+              "kernel": "matvec-gelu",
+              "key": "6144:672",
+              "numericalCheck": {
+                "expectedLength": 6144,
+                "length": 6144,
+                "lengthMismatch": false,
+                "maxAbs": 0,
+                "nonFinite": 0,
+                "ok": true,
+                "tolerance": {
+                  "absolute": 0,
+                  "exact": true,
+                  "relative": 0
+                },
+                "violations": 0,
+                "worstIndex": null
+              },
+              "reason": "stable-matvec-win",
+              "selected": true,
+              "stable": true,
+              "wideMs": 0.01024
+            }
+          ],
+          "reason": "calibrated",
+          "repetitions": 4,
+          "revision": 1,
+          "samples": 3,
+          "tokens": 1,
+          "truncated": false
+        },
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.02,
+            0.0195,
+            0.0195,
+            0.01975,
+            0.02
+          ],
+          "baselineMedianMs": 0.01975,
+          "candidate": [
+            0.01025,
+            0.01025,
+            0.01025,
+            0.01125,
+            0.01025
+          ],
+          "candidateMedianMs": 0.01025
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 1,
+        "calibration": {
+          "elapsedMs": 10.820000007748604,
+          "method": "paired-timestamp-query",
+          "points": [
+            {
+              "baseline": [
+                0.023952,
+                0.023552,
+                0.023472
+              ],
+              "benefit": 0.40658967391304346,
+              "candidate": [
+                0.013952,
+                0.013976,
+                0.013976
+              ],
+              "genericMs": 0.023552,
+              "kernel": "matvec-gelu",
+              "key": "6144:1536",
+              "numericalCheck": {
+                "expectedLength": 6144,
+                "length": 6144,
+                "lengthMismatch": false,
+                "maxAbs": 0,
+                "nonFinite": 0,
+                "ok": true,
+                "tolerance": {
+                  "absolute": 0,
+                  "exact": true,
+                  "relative": 0
+                },
+                "violations": 0,
+                "worstIndex": null
+              },
+              "reason": "stable-matvec-win",
+              "selected": true,
+              "stable": true,
+              "wideMs": 0.013976
+            }
+          ],
+          "reason": "calibrated",
+          "repetitions": 4,
+          "revision": 1,
+          "samples": 3,
+          "tokens": 1,
+          "truncated": false
+        },
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.02375,
+            0.02425,
+            0.02425,
+            0.02425,
+            0.0245
+          ],
+          "baselineMedianMs": 0.02425,
+          "candidate": [
+            0.014,
+            0.01425,
+            0.01425,
+            0.018,
+            0.01425
+          ],
+          "candidateMedianMs": 0.01425
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 1,
+        "calibration": {
+          "elapsedMs": 8.339999988675117,
+          "method": "paired-timestamp-query",
+          "points": [
+            {
+              "baseline": [
+                0.0426,
+                0.042392,
+                0.042432
+              ],
+              "benefit": 0.3710407239819004,
+              "candidate": [
+                0.026688,
+                0.026696,
+                0.026504
+              ],
+              "genericMs": 0.042432,
+              "kernel": "matvec-gelu",
+              "key": "12288:1536",
+              "numericalCheck": {
+                "expectedLength": 12288,
+                "length": 12288,
+                "lengthMismatch": false,
+                "maxAbs": 0,
+                "nonFinite": 0,
+                "ok": true,
+                "tolerance": {
+                  "absolute": 0,
+                  "exact": true,
+                  "relative": 0
+                },
+                "violations": 0,
+                "worstIndex": null
+              },
+              "reason": "stable-matvec-win",
+              "selected": true,
+              "stable": true,
+              "wideMs": 0.026688
+            }
+          ],
+          "reason": "calibrated",
+          "repetitions": 4,
+          "revision": 1,
+          "samples": 3,
+          "tokens": 1,
+          "truncated": false
+        },
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.0435,
+            0.04275,
+            0.044,
+            0.04325,
+            0.04375
+          ],
+          "baselineMedianMs": 0.0435,
+          "candidate": [
+            0.02675,
+            0.04025,
+            0.02675,
+            0.02825,
+            0.02675
+          ],
+          "candidateMedianMs": 0.02675
+        }
+      },
+      {
+        "K": 32,
+        "N": 1,
+        "T": 2,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 96,
+        "N": 17,
+        "T": 2,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": true,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 672,
+        "N": 6144,
+        "T": 2,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.034,
+            0.0335,
+            0.03325,
+            0.0335,
+            0.03375
+          ],
+          "baselineMedianMs": 0.0335,
+          "candidate": [
+            0.01825,
+            0.01825,
+            0.01825,
+            0.01875,
+            0.01825
+          ],
+          "candidateMedianMs": 0.01825
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 2,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.042,
+            0.04175,
+            0.04225,
+            0.04175,
+            0.04175
+          ],
+          "baselineMedianMs": 0.04175,
+          "candidate": [
+            0.0255,
+            0.026,
+            0.0255,
+            0.02675,
+            0.02525
+          ],
+          "candidateMedianMs": 0.0255
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 2,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.07875,
+            0.078,
+            0.08375,
+            0.078,
+            0.07875
+          ],
+          "baselineMedianMs": 0.07875,
+          "candidate": [
+            0.04975,
+            0.05175,
+            0.04975,
+            0.05175,
+            0.04975
+          ],
+          "candidateMedianMs": 0.04975
+        }
+      },
+      {
+        "K": 32,
+        "N": 1,
+        "T": 5,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 96,
+        "N": 17,
+        "T": 5,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": true,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 5,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 672,
+        "N": 6144,
+        "T": 5,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.077,
+            0.076,
+            0.0755,
+            0.075,
+            0.07575
+          ],
+          "baselineMedianMs": 0.07575,
+          "candidate": [
+            0.042,
+            0.0425,
+            0.042,
+            0.043,
+            0.042
+          ],
+          "candidateMedianMs": 0.042
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 5,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.09625,
+            0.095,
+            0.095,
+            0.09525,
+            0.096
+          ],
+          "baselineMedianMs": 0.09525,
+          "candidate": [
+            0.05975,
+            0.0615,
+            0.0595,
+            0.06175,
+            0.0595
+          ],
+          "candidateMedianMs": 0.05975
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 5,
+        "calibration": null,
+        "f16": false,
+        "maxAbs": 0,
+        "ok": true,
+        "saturated": false,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.18625,
+            0.18475,
+            0.1865,
+            0.2375,
+            0.1865
+          ],
+          "baselineMedianMs": 0.1865,
+          "candidate": [
+            0.11875,
+            0.122,
+            0.11875,
+            0.122,
+            0.11875
+          ],
+          "candidateMedianMs": 0.11875
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "metricMs": 5492.185000002384,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

@@ -1,0 +1,2194 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "workgroupStorageBytes": 16384
+  },
+  "backend": "webgpu",
+  "compile": {
+    "ok": true,
+    "sharedBytes": 2048,
+    "source": "current kevala-base.wasm rendered production WGSL",
+    "workgroupSize": 64
+  },
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 128,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "signed",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "zero",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": false,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 0,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 1,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "unweighted",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 32,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 2176,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 128,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 8704,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 256,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 4,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 17,
+        "skipRope": true,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 315,
+        "timings": {
+          "fused": [
+            0.0073125,
+            0.0073125,
+            0.0073125,
+            0.007375,
+            0.0073125,
+            0.007375
+          ],
+          "split": [
+            0.0183125,
+            0.0180625,
+            0.0183125,
+            0.0181875,
+            0.0183125,
+            0.0180625
+          ]
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 315,
+        "skipRope": true,
+        "timings": {
+          "fused": [
+            0.006375,
+            0.0064375,
+            0.006375,
+            0.0064375,
+            0.006375,
+            0.0064375
+          ],
+          "split": [
+            0.0154375,
+            0.015375,
+            0.0154375,
+            0.0153125,
+            0.0154375,
+            0.015375
+          ]
+        },
+        "weighted": false
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": false,
+        "eps": 3.71e-05,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 567,
+        "timings": {
+          "fused": [
+            0.0114375,
+            0.0119375,
+            0.0114375,
+            0.0115625,
+            0.0114375,
+            0.011625
+          ],
+          "split": [
+            0.0305,
+            0.0304375,
+            0.0305,
+            0.0304375,
+            0.0305,
+            0.030375
+          ]
+        },
+        "weighted": true
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "dim": 64,
+        "disabledRopePoisoned": true,
+        "eps": 3.71e-05,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "paddedRows": 3,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "ok": true
+        },
+        "pattern": "clamped",
+        "rows": 567,
+        "skipRope": true,
+        "timings": {
+          "fused": [
+            0.010125,
+            0.0101875,
+            0.010125,
+            0.010125,
+            0.0100625,
+            0.0101875
+          ],
+          "split": [
+            0.0265625,
+            0.0264375,
+            0.0265625,
+            0.0263125,
+            0.0265,
+            0.026375
+          ]
+        },
+        "weighted": false
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    }
+  },
+  "done": true,
+  "kernel": "gemma4_vision_norm_rope",
+  "metricMs": 1164.2150000035763,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

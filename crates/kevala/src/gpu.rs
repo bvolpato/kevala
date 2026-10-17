@@ -22,6 +22,27 @@ const SOURCES: &[(&str, &str)] = &[
     ("ordered_sum", include_str!("wgsl/ordered_sum.wgsl")),
     ("splits", include_str!("wgsl/splits.wgsl")),
     ("matmul", include_str!("wgsl/matmul.wgsl")),
+    ("matvec", include_str!("wgsl/matvec.wgsl")),
+    ("matvec_gelu", include_str!("wgsl/matvec_gelu.wgsl")),
+    ("matvec_two", include_str!("wgsl/matvec_two.wgsl")),
+    ("matvec_gelu_two", include_str!("wgsl/matvec_gelu_two.wgsl")),
+    ("matmul_k64", include_str!("wgsl/matmul_k64.wgsl")),
+    ("matmul_gelu", include_str!("wgsl/matmul_gelu.wgsl")),
+    ("matmul_gelu_tall", include_str!("wgsl/matmul_gelu.wgsl")),
+    ("matmul_tall", include_str!("wgsl/matmul_tall.wgsl")),
+    ("reduce_gelu", include_str!("wgsl/reduce_gelu.wgsl")),
+    ("reduce_ple", include_str!("wgsl/reduce_ple.wgsl")),
+    ("reduce_ple_gemma_batch", include_str!("wgsl/reduce_ple.wgsl")),
+    ("reduce_ple_gemma_source", include_str!("wgsl/reduce_ple.wgsl")),
+    ("matmul_gemma_batch", include_str!("wgsl/matmul.wgsl")),
+    ("matmul_wide_gemma_batch", include_str!("wgsl/matmul_wide.wgsl")),
+    ("reduce_gemma_batch", include_str!("wgsl/reduce.wgsl")),
+    ("matmul_gemma_source", include_str!("wgsl/matmul.wgsl")),
+    ("matmul_wide_gemma_source", include_str!("wgsl/matmul_wide.wgsl")),
+    ("matmul_k64_gemma_source", include_str!("wgsl/matmul_k64.wgsl")),
+    ("matmul_bn32_gemma_source", include_str!("wgsl/matmul_bn32.wgsl")),
+    ("matmul_gelu_bn32", include_str!("wgsl/matmul_gelu_bn32.wgsl")),
+    ("reduce_gemma_source", include_str!("wgsl/reduce.wgsl")),
     ("matmul_wide", include_str!("wgsl/matmul_wide.wgsl")),
     ("reduce", include_str!("wgsl/reduce.wgsl")),
     ("norm", include_str!("wgsl/norm.wgsl")),
@@ -52,14 +73,26 @@ const SOURCES: &[(&str, &str)] = &[
     ("kev_silumul", include_str!("wgsl/kev_silumul.wgsl")),
     ("gemma4_embed", include_str!("wgsl/gemma4_embed.wgsl")),
     ("gemma4_rms", include_str!("wgsl/gemma4_rms.wgsl")),
+    ("gemma4_rms_residual_norm", include_str!("wgsl/gemma4_rms_residual_norm.wgsl")),
+    ("gemma4_rms_scale", include_str!("wgsl/gemma4_rms_scale.wgsl")),
+    ("gemma4_rms_scale_next", include_str!("wgsl/gemma4_rms_scale_next.wgsl")),
     ("gemma4_qkv", include_str!("wgsl/gemma4_qkv.wgsl")),
     ("gemma4_attention", include_str!("wgsl/gemma4_attention.wgsl")),
+    ("gemma4_attention_subgroup", include_str!("wgsl/gemma4_attention_subgroup.wgsl")),
     ("gemma4_gelu", include_str!("wgsl/gemma4_gelu.wgsl")),
     ("gemma4_ple", include_str!("wgsl/gemma4_ple.wgsl")),
     ("gemma4_residual", include_str!("wgsl/gemma4_residual.wgsl")),
     ("gemma4_gather", include_str!("wgsl/gemma4_gather.wgsl")),
+    ("gemma4_image_resize_horizontal", include_str!("wgsl/gemma4_image_resize_horizontal.wgsl")),
+    ("gemma4_image_resize_vertical", include_str!("wgsl/gemma4_image_resize_vertical.wgsl")),
     ("gemma4_vision_position", include_str!("wgsl/gemma4_vision_position.wgsl")),
     ("gemma4_vision_norm", include_str!("wgsl/gemma4_vision_norm.wgsl")),
+    ("gemma4_vision_norm_rope", include_str!("wgsl/gemma4_vision_norm_rope.wgsl")),
+    ("gemma4_vision_residual_norm", include_str!("wgsl/gemma4_vision_residual_norm.wgsl")),
+    ("gemma4_vision_reduce_residual", include_str!("wgsl/gemma4_vision_reduce_residual.wgsl")),
+    ("gemma4_vision_reduce_norm_rope", include_str!("wgsl/gemma4_vision_reduce_norm_rope.wgsl")),
+    ("gemma4_vision_qkv", include_str!("wgsl/gemma4_vision_qkv.wgsl")),
+    ("gemma4_mlp_grid", include_str!("wgsl/gemma4_mlp_grid.wgsl")),
     ("gemma4_vision_clip", include_str!("wgsl/gemma4_vision_clip.wgsl")),
     ("gemma4_vision_rope", include_str!("wgsl/gemma4_vision_rope.wgsl")),
     ("gemma4_vision_scores", include_str!("wgsl/gemma4_vision_scores.wgsl")),
@@ -68,12 +101,35 @@ const SOURCES: &[(&str, &str)] = &[
     ("gemma4_vision_attention", include_str!("wgsl/gemma4_vision_attention.wgsl")),
     ("gemma4_vision_attention_fused", include_str!("wgsl/gemma4_vision_attention_fused.wgsl")),
     ("gemma4_vision_gelu", include_str!("wgsl/gemma4_vision_gelu.wgsl")),
+    ("gemma4_vision_reduce_gelu", include_str!("wgsl/gemma4_vision_reduce_gelu.wgsl")),
     ("gemma4_vision_pool", include_str!("wgsl/gemma4_vision_pool.wgsl")),
+    ("gemma4_vision_pool_norm", include_str!("wgsl/gemma4_vision_pool_norm.wgsl")),
 ];
 
 /// The kernels a runtime can ask for (everything but the snippets).
 pub const KERNELS: &[&str] = &[
     "matmul",
+    "matvec",
+    "matvec_gelu",
+    "matvec_two",
+    "matvec_gelu_two",
+    "matmul_k64",
+    "matmul_gelu",
+    "matmul_gelu_tall",
+    "matmul_tall",
+    "reduce_gelu",
+    "reduce_ple",
+    "reduce_ple_gemma_batch",
+    "reduce_ple_gemma_source",
+    "matmul_gemma_batch",
+    "matmul_wide_gemma_batch",
+    "reduce_gemma_batch",
+    "matmul_gemma_source",
+    "matmul_wide_gemma_source",
+    "matmul_k64_gemma_source",
+    "matmul_bn32_gemma_source",
+    "matmul_gelu_bn32",
+    "reduce_gemma_source",
     "matmul_wide",
     "reduce",
     "norm",
@@ -103,14 +159,26 @@ pub const KERNELS: &[&str] = &[
     "kev_silumul",
     "gemma4_embed",
     "gemma4_rms",
+    "gemma4_rms_residual_norm",
+    "gemma4_rms_scale",
+    "gemma4_rms_scale_next",
     "gemma4_qkv",
     "gemma4_attention",
+    "gemma4_attention_subgroup",
     "gemma4_gelu",
     "gemma4_ple",
     "gemma4_residual",
     "gemma4_gather",
+    "gemma4_image_resize_horizontal",
+    "gemma4_image_resize_vertical",
     "gemma4_vision_position",
     "gemma4_vision_norm",
+    "gemma4_vision_norm_rope",
+    "gemma4_vision_residual_norm",
+    "gemma4_vision_reduce_residual",
+    "gemma4_vision_reduce_norm_rope",
+    "gemma4_vision_qkv",
+    "gemma4_mlp_grid",
     "gemma4_vision_clip",
     "gemma4_vision_rope",
     "gemma4_vision_scores",
@@ -119,7 +187,9 @@ pub const KERNELS: &[&str] = &[
     "gemma4_vision_attention",
     "gemma4_vision_attention_fused",
     "gemma4_vision_gelu",
+    "gemma4_vision_reduce_gelu",
     "gemma4_vision_pool",
+    "gemma4_vision_pool_norm",
 ];
 
 /// What a kernel is specialized for. Kernels ignore the fields they do not use.
@@ -274,6 +344,7 @@ impl Spec {
             ("WEIGHT_Q8", flag(self.weights == WeightType::Q8)),
             ("WEIGHT_BF16", flag(self.weights == WeightType::Bf16)),
             ("WEIGHT_F32", flag(self.weights == WeightType::F32)),
+            ("MATVEC_ORDERED", flag(self.f16 && self.weights == WeightType::Q8)),
             ("WIDE_UNROLL", flag(self.f16 && self.rows == 4)),
             ("GENERIC_UNROLL", flag(!self.f16 && self.groups == 1)),
             ("ROWS_GE_2", flag(self.rows >= 2)),
@@ -317,16 +388,102 @@ pub fn wgsl(kernel: &str, spec: &Spec) -> Result<String, String> {
     if !KERNELS.contains(&kernel) {
         return Err(format!("no GPU kernel named {kernel:?}"));
     }
-    if kernel == "matmul_wide" && spec.groups != 1 {
-        return Err("matmul_wide requires groups=1".into());
+    if kernel == "matmul_gelu_tall"
+        && (spec.weights != WeightType::Q8
+            || !spec.f16
+            || spec.rows != 4
+            || spec.groups != 1
+            || spec.row56
+            || spec.split_target != 256)
+    {
+        return Err("matmul_gelu_tall requires q8 f16 rows=4 groups=1 row56=false splitTarget=256".into());
+    }
+    if kernel == "matmul_tall"
+        && (spec.weights != WeightType::Q8
+            || !spec.f16
+            || spec.rows != 4
+            || spec.groups != 1
+            || spec.row56
+            || spec.split_target != 256)
+    {
+        return Err("matmul_tall requires q8 f16 rows=4 groups=1 row56=false splitTarget=256".into());
+    }
+    if matches!(kernel, "matmul_bn32_gemma_source" | "matmul_gelu_bn32")
+        && (spec.weights != WeightType::Q8
+            || spec.f16
+            || spec.rows != 2
+            || spec.groups != 1
+            || spec.row56
+            || spec.split_target != 256)
+    {
+        return Err(format!("{kernel} requires q8 f32 rows=2 groups=1 row56=false splitTarget=256"));
+    }
+    if matches!(
+        kernel,
+        "matmul_wide"
+            | "matmul_k64"
+            | "matmul_wide_gemma_batch"
+            | "matmul_wide_gemma_source"
+            | "matmul_k64_gemma_source"
+            | "matmul_gelu"
+            | "reduce_gelu"
+    ) && spec.groups != 1
+    {
+        return Err(format!("{kernel} requires groups=1"));
+    }
+    if matches!(kernel, "matmul_gelu" | "matvec_two" | "matvec_gelu_two") && spec.weights != WeightType::Q8 {
+        return Err(format!("{kernel} requires q8 weights"));
     }
     if kernel == "gemma4_vision_position" && spec.weights == WeightType::Q8 {
         return Err("gemma4_vision_position requires bf16 or f32 weights".into());
     }
+    if kernel == "gemma4_vision_qkv"
+        && (spec.weights != WeightType::Bf16
+            || spec.f16
+            || spec.subgroups
+            || spec.rows != 4
+            || !spec.row56
+            || spec.groups != 1
+            || spec.split_target != 256
+            || spec.shape.is_some()
+            || spec.kev != KevSpec::default())
+    {
+        return Err(
+            "gemma4_vision_qkv requires bf16 f32 rows=4 row56=true groups=1 subgroups=false splitTarget=256 dynamic shape"
+                .into(),
+        );
+    }
+    if kernel == "gemma4_mlp_grid"
+        && (spec.weights != WeightType::Q8
+            || spec.f16
+            || spec.subgroups
+            || spec.rows != 4
+            || !spec.row56
+            || spec.groups != 1
+            || spec.split_target != 256
+            || spec.shape.is_some()
+            || spec.kev != KevSpec::default())
+    {
+        return Err(
+            "gemma4_mlp_grid requires q8 f32 rows=4 row56=true groups=1 subgroups=false splitTarget=256 dynamic shape"
+                .into(),
+        );
+    }
     if spec.row56 && (spec.f16 || spec.rows != 4 || spec.groups != 1) {
         return Err("row56 requires f32 rows=4 groups=1".into());
     }
-    let vars = spec.vars();
+    let mut vars = spec.vars();
+    let tall = kernel == "matmul_gelu_tall";
+    let physical_bm = if spec.row56 { 56 } else { 16 * spec.rows };
+    vars.push(("TALL104", if tall { "1".into() } else { String::new() }));
+    vars.push(("MLP_XS_LEN", if tall { 832 } else { 512 }.to_string()));
+    vars.push(("MLP_PHYSICAL_BM", if tall { 104 } else { physical_bm }.to_string()));
+    vars.push(("MLP_LOAD_ROWS", if tall { 64 } else { physical_bm }.to_string()));
+    vars.push((
+        "GEMMA_BATCH_SPLIT",
+        if kernel.ends_with("_gemma_batch") || kernel == "matmul_tall" { "1".into() } else { String::new() },
+    ));
+    vars.push(("GEMMA_SOURCE_SPLIT", if kernel.ends_with("_gemma_source") { "1".into() } else { String::new() }));
     let mut out = String::new();
     render(kernel, &vars, &mut out, 0)?;
     Ok(out)

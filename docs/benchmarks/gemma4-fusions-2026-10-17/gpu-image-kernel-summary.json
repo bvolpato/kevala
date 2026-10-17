@@ -1,0 +1,429 @@
+{
+  "generatedUtc": "2026-10-17T09:53:11.149Z",
+  "scope": "Registered exact Q22 horizontal resize and vertical resize plus F32 normalization and patch packing; synthetic pixels, no model.",
+  "sourceHashes": {
+    "dev/gemma4-image-gpu-check.html": "98875d2b96d2c8f4c297f120f4e57ecec5abe38e2015843da6020b1bc2e0c74e",
+    "dev/gemma4-image-gpu-check.js": "0f2a916905b0c8a1e7c3ab5c4c99fb1fbafe8ff0f627a1a67581d5d482ee7085",
+    "dev/gemma4-image-gpu-check.wgsl": "8f4eb2e3dbc30eb63f58fe9f4d39cb15aadc737e3bc35cce8c094c3f26769d85",
+    "crates/kevala/src/wgsl/gemma4_image_resize_horizontal.wgsl": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca",
+    "crates/kevala/src/wgsl/gemma4_image_resize_vertical.wgsl": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b"
+  },
+  "runs": [
+    {
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/image-gpu-final-chrome.json.gz",
+        "sha256": "970e414f639a4829d497118a874e2ba02fab0fef174e868141af0f1f8a968163",
+        "rawSha256": "1e5708de13a6559fe0da6d803e85f71c03c7f528ed1db7220a114d3a52761fc5"
+      },
+      "browser": "153.0.8010.12",
+      "adapter": {
+        "architecture": "blackwell",
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "timestamp-query"
+        ],
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxStorageBufferBindingSize": 1073741824,
+          "maxStorageBuffersPerShaderStage": 8
+        },
+        "name": "nvidia blackwell",
+        "timestampQuery": true,
+        "vendor": "nvidia"
+      },
+      "compile": {
+        "hashes": {
+          "horizontal": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca",
+          "vertical": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b"
+        },
+        "ms": 126.50500001013279,
+        "ok": true,
+        "passes": [
+          "resize_horizontal",
+          "resize_vertical_pack"
+        ],
+        "registered": true,
+        "sourceBytes": 2858,
+        "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+      },
+      "correctness": {
+        "bitExact": true,
+        "cases": 21,
+        "checkedPixels": 5253120,
+        "ok": true,
+        "tolerance": 0
+      },
+      "method": "geometric mean of per-case median GPU preprocessing milliseconds",
+      "metricMs": 0.010554162995196462,
+      "resourceBounds": {
+        "limitBytes": 16777216,
+        "maxCaseBytes": 12391476,
+        "sequentialCases": true
+      },
+      "camera": [
+        {
+          "budget": 16,
+          "geometry": {
+            "height": 144,
+            "patchColumns": 12,
+            "patchRows": 9,
+            "patches": 108,
+            "poolIndices": 108,
+            "softRows": 12,
+            "width": 192
+          },
+          "gpuTime": {
+            "horizontalMs": {
+              "p50": 0.005344,
+              "p95": 0.005344,
+              "values": [
+                0.005312,
+                0.005344,
+                0.005344,
+                0.005344,
+                0.005344
+              ]
+            },
+            "method": "WebGPU timestamp-query around the horizontal and vertical compute passes only; upload, encoding, output copy, and mapping are outside intervals",
+            "samples": 5,
+            "twoPassMs": {
+              "p50": 0.009984,
+              "p95": 0.009984,
+              "values": [
+                0.00992,
+                0.009984,
+                0.009984,
+                0.00992,
+                0.009984
+              ]
+            },
+            "verticalMs": {
+              "p50": 0.00464,
+              "p95": 0.00464,
+              "values": [
+                0.004608,
+                0.00464,
+                0.00464,
+                0.004576,
+                0.00464
+              ]
+            }
+          },
+          "controlledBytes": 3032112
+        },
+        {
+          "budget": 40,
+          "geometry": {
+            "height": 240,
+            "patchColumns": 21,
+            "patchRows": 15,
+            "patches": 315,
+            "poolIndices": 315,
+            "softRows": 35,
+            "width": 336
+          },
+          "gpuTime": {
+            "horizontalMs": {
+              "p50": 0.005472,
+              "p95": 0.005504,
+              "values": [
+                0.00544,
+                0.00544,
+                0.005504,
+                0.005472,
+                0.005504
+              ]
+            },
+            "method": "WebGPU timestamp-query around the horizontal and vertical compute passes only; upload, encoding, output copy, and mapping are outside intervals",
+            "samples": 5,
+            "twoPassMs": {
+              "p50": 0.011424,
+              "p95": 0.011456000000000001,
+              "values": [
+                0.01136,
+                0.01136,
+                0.011456000000000001,
+                0.011424,
+                0.011424
+              ]
+            },
+            "verticalMs": {
+              "p50": 0.00592,
+              "p95": 0.005952,
+              "values": [
+                0.00592,
+                0.00592,
+                0.005952,
+                0.005952,
+                0.00592
+              ]
+            }
+          },
+          "controlledBytes": 7267924
+        },
+        {
+          "budget": 70,
+          "geometry": {
+            "height": 336,
+            "patchColumns": 27,
+            "patchRows": 21,
+            "patches": 567,
+            "poolIndices": 567,
+            "softRows": 63,
+            "width": 432
+          },
+          "gpuTime": {
+            "horizontalMs": {
+              "p50": 0.005856,
+              "p95": 0.006144,
+              "values": [
+                0.005856,
+                0.005856,
+                0.006016,
+                0.006144,
+                0.005856
+              ]
+            },
+            "method": "WebGPU timestamp-query around the horizontal and vertical compute passes only; upload, encoding, output copy, and mapping are outside intervals",
+            "samples": 5,
+            "twoPassMs": {
+              "p50": 0.013472000000000001,
+              "p95": 0.013696,
+              "values": [
+                0.013375999999999999,
+                0.013472000000000001,
+                0.013568,
+                0.013696,
+                0.013375999999999999
+              ]
+            },
+            "verticalMs": {
+              "p50": 0.007552,
+              "p95": 0.007616,
+              "values": [
+                0.00752,
+                0.007616,
+                0.007552,
+                0.007552,
+                0.00752
+              ]
+            }
+          },
+          "controlledBytes": 12391476
+        }
+      ]
+    },
+    {
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/image-gpu-final-firefox.json.gz",
+        "sha256": "f516165ed76f5eb1d7c42fbc500b557b0c0de29add62c9c94546dc74072eb938",
+        "rawSha256": "382d391706a7a06e4da7ee40135486cbad680d1029e49c14049139b668d2652b"
+      },
+      "browser": "152.0.3",
+      "adapter": {
+        "architecture": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "timestamp-query"
+        ],
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxStorageBufferBindingSize": 1073741824,
+          "maxStorageBuffersPerShaderStage": 8
+        },
+        "name": "WebGPU",
+        "timestampQuery": true,
+        "vendor": null
+      },
+      "compile": {
+        "hashes": {
+          "horizontal": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca",
+          "vertical": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b"
+        },
+        "ms": 142.92,
+        "ok": true,
+        "passes": [
+          "resize_horizontal",
+          "resize_vertical_pack"
+        ],
+        "registered": true,
+        "sourceBytes": 2858,
+        "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+      },
+      "correctness": {
+        "bitExact": true,
+        "cases": 21,
+        "checkedPixels": 5253120,
+        "ok": true,
+        "tolerance": 0
+      },
+      "method": "geometric mean of per-case median GPU preprocessing milliseconds",
+      "metricMs": 0.010884368821742957,
+      "resourceBounds": {
+        "limitBytes": 16777216,
+        "maxCaseBytes": 12391476,
+        "sequentialCases": true
+      },
+      "camera": [
+        {
+          "budget": 16,
+          "geometry": {
+            "height": 144,
+            "patchColumns": 12,
+            "patchRows": 9,
+            "patches": 108,
+            "poolIndices": 108,
+            "softRows": 12,
+            "width": 192
+          },
+          "gpuTime": {
+            "horizontalMs": {
+              "p50": 0.00448,
+              "p95": 0.005152,
+              "values": [
+                0.005152,
+                0.004352,
+                0.004352,
+                0.00448,
+                0.00448
+              ]
+            },
+            "method": "WebGPU timestamp-query around the horizontal and vertical compute passes only; upload, encoding, output copy, and mapping are outside intervals",
+            "samples": 5,
+            "twoPassMs": {
+              "p50": 0.009728,
+              "p95": 0.013696,
+              "values": [
+                0.013696,
+                0.009824,
+                0.0096,
+                0.008639999999999998,
+                0.009728
+              ]
+            },
+            "verticalMs": {
+              "p50": 0.005248,
+              "p95": 0.008544,
+              "values": [
+                0.008544,
+                0.005472,
+                0.005248,
+                0.00416,
+                0.005248
+              ]
+            }
+          },
+          "controlledBytes": 3032112
+        },
+        {
+          "budget": 40,
+          "geometry": {
+            "height": 240,
+            "patchColumns": 21,
+            "patchRows": 15,
+            "patches": 315,
+            "poolIndices": 315,
+            "softRows": 35,
+            "width": 336
+          },
+          "gpuTime": {
+            "horizontalMs": {
+              "p50": 0.004512,
+              "p95": 0.00464,
+              "values": [
+                0.00464,
+                0.00448,
+                0.004512,
+                0.004384,
+                0.004512
+              ]
+            },
+            "method": "WebGPU timestamp-query around the horizontal and vertical compute passes only; upload, encoding, output copy, and mapping are outside intervals",
+            "samples": 5,
+            "twoPassMs": {
+              "p50": 0.010816,
+              "p95": 0.017216000000000002,
+              "values": [
+                0.017216000000000002,
+                0.010816,
+                0.009856,
+                0.010656,
+                0.016928
+              ]
+            },
+            "verticalMs": {
+              "p50": 0.006336,
+              "p95": 0.012576,
+              "values": [
+                0.012576,
+                0.006336,
+                0.005344,
+                0.006272,
+                0.012416
+              ]
+            }
+          },
+          "controlledBytes": 7267924
+        },
+        {
+          "budget": 70,
+          "geometry": {
+            "height": 336,
+            "patchColumns": 27,
+            "patchRows": 21,
+            "patches": 567,
+            "poolIndices": 567,
+            "softRows": 63,
+            "width": 432
+          },
+          "gpuTime": {
+            "horizontalMs": {
+              "p50": 0.00656,
+              "p95": 0.006752,
+              "values": [
+                0.006752,
+                0.00656,
+                0.00656,
+                0.006368,
+                0.00656
+              ]
+            },
+            "method": "WebGPU timestamp-query around the horizontal and vertical compute passes only; upload, encoding, output copy, and mapping are outside intervals",
+            "samples": 5,
+            "twoPassMs": {
+              "p50": 0.013088,
+              "p95": 0.014944,
+              "values": [
+                0.014944,
+                0.01312,
+                0.013088,
+                0.012736,
+                0.012992
+              ]
+            },
+            "verticalMs": {
+              "p50": 0.006528,
+              "p95": 0.008192,
+              "values": [
+                0.008192,
+                0.00656,
+                0.006528,
+                0.006368,
+                0.006432
+              ]
+            }
+          },
+          "controlledBytes": 12391476
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "GPU timestamps exclude upload, CPU encoding, output copy, maps and clears.",
+    "Single cold CPU timings in full receipts are not a warmed CPU throughput comparison.",
+    "No camera FPS is inferred from these pixel-kernel timings.",
+    "M4 Max was not measured."
+  ]
+}

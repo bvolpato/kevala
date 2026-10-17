@@ -1,0 +1,833 @@
+{
+  "adapter": {
+    "features": [
+      "shader-f16",
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "check": "gemma4-weight-half",
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "expansion": {
+          "decodeWallMs": 99.3599999999999,
+          "decodedTailGuard": true,
+          "halfWeightBytes": 18874368,
+          "sourceWeightBytes": 10616832
+        },
+        "groups": 1,
+        "guards": [
+          {
+            "bias": 0,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 595968,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1787904,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 595968,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1787904,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 595968,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1787904,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 595968,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1787904,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 595968,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 298395
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1787904,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 595968,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 297824
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1787904,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          }
+        ],
+        "kernel": "matmul_gemma_batch",
+        "memory": {
+          "actualGpuBytes": 51280272,
+          "allowanceBytes": 25165824,
+          "controlledBytes": 55474704,
+          "estimatedTotalBytes": 80640528,
+          "gpuBytes": 51280272,
+          "halfBytes": 18874400,
+          "hostFixtureBytes": 0,
+          "hostStageBytes": 1048576,
+          "inputBytes": 595968,
+          "limitBytes": 167772160,
+          "mappedReadBytes": 2097152,
+          "outputBytes": 2383888,
+          "outputLength": 595968,
+          "partBytes": 7151632,
+          "partLength": 1787904,
+          "queuedUploadAllowanceBytes": 1048576,
+          "readbackChunkBytesPerSide": 1048576,
+          "scaleBytes": 1179648,
+          "splits": 3,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "onlyWeightLoaderChanged": true,
+        "rows": 4,
+        "shape": "gate6144",
+        "splitT": 1,
+        "splitTarget": 256,
+        "splits": 3,
+        "timing": {
+          "breakEvenInvocations": 4,
+          "decodeGpuMs": 0.025152,
+          "half": [
+            0.242976,
+            0.257384,
+            0.261472
+          ],
+          "halfMs": 0.257384,
+          "q8": [
+            0.248536,
+            0.27016,
+            0.264824
+          ],
+          "q8Ms": 0.264824,
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.0289062257172163
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 97,
+        "expansion": {
+          "decodeWallMs": 99.43999999999868,
+          "decodedTailGuard": true,
+          "halfWeightBytes": 18874368,
+          "sourceWeightBytes": 10616832
+        },
+        "groups": 1,
+        "guards": [
+          {
+            "bias": 0,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 148992,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1191936,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 148992,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1191936,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 148992,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1191936,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 148992,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1191936,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 148992,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 74476
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1191936,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 148992,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 74763
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 1191936,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          }
+        ],
+        "kernel": "matmul_gemma_batch",
+        "memory": {
+          "actualGpuBytes": 44706192,
+          "allowanceBytes": 25165824,
+          "controlledBytes": 48900624,
+          "estimatedTotalBytes": 74066448,
+          "gpuBytes": 44706192,
+          "halfBytes": 18874400,
+          "hostFixtureBytes": 0,
+          "hostStageBytes": 1048576,
+          "inputBytes": 2383872,
+          "limitBytes": 167772160,
+          "mappedReadBytes": 2097152,
+          "outputBytes": 595984,
+          "outputLength": 148992,
+          "partBytes": 4767760,
+          "partLength": 1191936,
+          "queuedUploadAllowanceBytes": 1048576,
+          "readbackChunkBytesPerSide": 1048576,
+          "scaleBytes": 1179648,
+          "splits": 8,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "onlyWeightLoaderChanged": true,
+        "rows": 4,
+        "shape": "down6144",
+        "splitT": 1,
+        "splitTarget": 256,
+        "splits": 8,
+        "timing": {
+          "breakEvenInvocations": 6,
+          "decodeGpuMs": 0.020928,
+          "half": [
+            0.247656,
+            0.249192,
+            0.263984
+          ],
+          "halfMs": 0.249192,
+          "q8": [
+            0.253176,
+            0.254304,
+            0.252776
+          ],
+          "q8Ms": 0.253176,
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.0159876721564096
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 89,
+        "expansion": {
+          "decodeWallMs": 99.42000000000552,
+          "decodedTailGuard": true,
+          "halfWeightBytes": 18874368,
+          "sourceWeightBytes": 10616832
+        },
+        "groups": 1,
+        "guards": [
+          {
+            "bias": 0,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 546816,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 0,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 546816,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 0,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 546816,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 0,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 546816,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 0,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 546816,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 274024
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 0,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 546816,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 273248
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 0,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          }
+        ],
+        "kernel": "matmul",
+        "memory": {
+          "actualGpuBytes": 36534672,
+          "allowanceBytes": 25165824,
+          "controlledBytes": 40729104,
+          "estimatedTotalBytes": 65894928,
+          "gpuBytes": 36534672,
+          "halfBytes": 18874400,
+          "hostFixtureBytes": 0,
+          "hostStageBytes": 1048576,
+          "inputBytes": 546816,
+          "limitBytes": 167772160,
+          "mappedReadBytes": 2097152,
+          "outputBytes": 2187280,
+          "outputLength": 546816,
+          "partBytes": 16,
+          "partLength": 0,
+          "queuedUploadAllowanceBytes": 1048576,
+          "readbackChunkBytesPerSide": 1048576,
+          "scaleBytes": 1179648,
+          "splits": 1,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "onlyWeightLoaderChanged": true,
+        "rows": 4,
+        "shape": "gate6144",
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 1,
+        "timing": {
+          "breakEvenInvocations": 3,
+          "decodeGpuMs": 0.016736,
+          "half": [
+            0.269152,
+            0.269416,
+            0.25464
+          ],
+          "halfMs": 0.269152,
+          "q8": [
+            0.27576,
+            0.275304,
+            0.276632
+          ],
+          "q8Ms": 0.27576,
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.024551182974676
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 89,
+        "expansion": {
+          "decodeWallMs": 99.59999999999854,
+          "decodedTailGuard": true,
+          "halfWeightBytes": 18874368,
+          "sourceWeightBytes": 10616832
+        },
+        "groups": 1,
+        "guards": [
+          {
+            "bias": 0,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 136704,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 820224,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 0,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 136704,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 820224,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 136704,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 820224,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 1,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 136704,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 820224,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 0,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 136704,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 68327
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 820224,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          },
+          {
+            "bias": 1,
+            "mode": 2,
+            "output": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 136704,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 68631
+            },
+            "partial": {
+              "bitMismatches": 0,
+              "negativeZeros": 0,
+              "nonfinite": 0,
+              "samples": 820224,
+              "signedZeroBitsChecked": true,
+              "tailGuard": true,
+              "zeros": 0
+            }
+          }
+        ],
+        "kernel": "matmul",
+        "memory": {
+          "actualGpuBytes": 41437584,
+          "allowanceBytes": 25165824,
+          "controlledBytes": 45632016,
+          "estimatedTotalBytes": 70797840,
+          "gpuBytes": 41437584,
+          "halfBytes": 18874400,
+          "hostFixtureBytes": 0,
+          "hostStageBytes": 1048576,
+          "inputBytes": 2187264,
+          "limitBytes": 167772160,
+          "mappedReadBytes": 2097152,
+          "outputBytes": 546832,
+          "outputLength": 136704,
+          "partBytes": 3280912,
+          "partLength": 820224,
+          "queuedUploadAllowanceBytes": 1048576,
+          "readbackChunkBytesPerSide": 1048576,
+          "scaleBytes": 1179648,
+          "splits": 6,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "onlyWeightLoaderChanged": true,
+        "rows": 4,
+        "shape": "down6144",
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 6,
+        "timing": {
+          "breakEvenInvocations": 3,
+          "decodeGpuMs": 0.018944,
+          "half": [
+            0.288576,
+            0.288544,
+            0.288328
+          ],
+          "halfMs": 0.288544,
+          "q8": [
+            0.296992,
+            0.296504,
+            0.29604
+          ],
+          "q8Ms": 0.296504,
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.0275867805256735
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "limitBytes": 167772160,
+  "metricMs": 50219.88,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "32 MiB",
+          "pid": 3647595,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

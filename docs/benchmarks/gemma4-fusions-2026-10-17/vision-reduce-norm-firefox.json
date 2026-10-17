@@ -1,0 +1,3075 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "workgroupStorageBytes": 16384
+  },
+  "backend": "webgpu",
+  "compile": {
+    "ok": true,
+    "sharedBytes": 1536,
+    "source": "current kevala-base.wasm rendered production WGSL",
+    "workgroupSize": 64
+  },
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 128,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 6352,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 2544,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 1,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 128,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 71888,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 35312,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 1,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 128,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1292496,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 645616,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 5,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 128,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 2324688,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 1161712,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": true,
+        "splitTarget": 9,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 128,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 45776,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 22256,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": true,
+        "splitTarget": 12,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 128,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 742096,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 370416,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 12,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 128,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 13711056,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 6854896,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 60,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 128,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 24678096,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 12338416,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 108,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 256,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7120,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 2800,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 2,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 256,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 84944,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 39664,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 2,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 256,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1534416,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 726256,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": true,
+        "splitTarget": 10,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 256,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 2760144,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 1306864,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 18,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 256,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 54992,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 25328,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 24,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 256,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 898768,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 422640,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 24,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 256,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 16614096,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 7822576,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 120,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 256,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 29903568,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 14080240,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": true,
+        "splitTarget": 216,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7888,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3056,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 98000,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 44016,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1776336,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 806896,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 3195600,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 1452016,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 27,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 64208,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 28400,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 36,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1055440,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 474864,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 36,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 19517136,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 8790256,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": true,
+        "splitTarget": 180,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 35129040,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 15822064,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 324,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 640,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 9424,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3568,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 5,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 640,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 124112,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 52720,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 5,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 640,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 2260176,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 968176,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 25,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 640,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 4066512,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 1742320,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": true,
+        "splitTarget": 45,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 640,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 82640,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 34544,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": true,
+        "splitTarget": 60,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 640,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1368784,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 579312,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 60,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 640,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 25323216,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 10725616,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 300,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 640,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 45579984,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 19305712,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 540,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 11728,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 4336,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": true,
+        "splitTarget": 8,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 1024,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 163280,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 65776,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 8,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 2985936,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 1210096,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 20160,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 40,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 1024,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 5372880,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 2177776,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 36288,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 72,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 110288,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 43760,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 96,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1838800,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 735984,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 96,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 1024,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 34032336,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 13628656,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 480,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 61256400,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 24531184,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 864,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 128,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 742096,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 370416,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 12,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 128,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 742096,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 370416,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 12,
+        "splits": 1,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 256,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 898768,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 422640,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 24,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 256,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 898768,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 422640,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 24,
+        "splits": 2,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1055440,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 474864,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 36,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1055440,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 474864,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 36,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 640,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1368784,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 579312,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 60,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 640,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1368784,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 579312,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 60,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 1024,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1838800,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 735984,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 96,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 1838800,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 735984,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109,
+          -2.302,
+          2.495,
+          -2.6879999999999997
+        ],
+        "pattern": "zero",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 96,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 98000,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 44016,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 98000,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 44016,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": true,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 640,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 124112,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 52720,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1048576,
+          0.015625,
+          -1048576,
+          0.00737,
+          -0.25
+        ],
+        "pattern": "cancellation",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 5,
+        "splits": 5,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 1024,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": false,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 163280,
+        "heads": 1,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 65776,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1048576,
+          0.015625,
+          -1048576,
+          0.00737,
+          -0.25,
+          0.1731,
+          -0.0317,
+          0.413
+        ],
+        "pattern": "cancellation",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "skipRope": false,
+        "splitTarget": 8,
+        "splits": 8,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 768,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 25323216,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 10725616,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": false,
+        "splitTarget": 256,
+        "splits": 5,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.007875,
+            0.0083125,
+            0.007875,
+            0.00825,
+            0.008,
+            0.00825
+          ],
+          "split": [
+            0.01125,
+            0.0111875,
+            0.0113125,
+            0.011375,
+            0.0113125,
+            0.011
+          ]
+        },
+        "weighted": true
+      },
+      {
+        "K": 768,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 25323216,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 10725616,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723,
+          -1.916,
+          2.109
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "skipRope": true,
+        "splitTarget": 256,
+        "splits": 5,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.0075,
+            0.00775,
+            0.0075,
+            0.0076875,
+            0.0075,
+            0.00775
+          ],
+          "split": [
+            0.0104375,
+            0.010125,
+            0.010375,
+            0.01025,
+            0.010375,
+            0.010125
+          ]
+        },
+        "weighted": false
+      },
+      {
+        "K": 768,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 35129040,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 15822064,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": false,
+        "splitTarget": 256,
+        "splits": 3,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.0109375,
+            0.01125,
+            0.0115,
+            0.0113125,
+            0.0113125,
+            0.0113125
+          ],
+          "split": [
+            0.0160625,
+            0.015625,
+            0.016,
+            0.0156875,
+            0.0159375,
+            0.015625
+          ]
+        },
+        "weighted": true
+      },
+      {
+        "K": 768,
+        "N": 768,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 35129040,
+        "heads": 12,
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 15822064,
+        "parity": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "reduce + norm/RoPE vs fused",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "skipRope": true,
+        "splitTarget": 256,
+        "splits": 3,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.0104375,
+            0.0106875,
+            0.0105,
+            0.0106875,
+            0.01075,
+            0.0106875
+          ],
+          "split": [
+            0.0145,
+            0.01425,
+            0.0145,
+            0.0144375,
+            0.0144375,
+            0.0145
+          ]
+        },
+        "weighted": false
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7888,
+        "heads": 1,
+        "invalid": {
+          "dim": 32
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3056,
+        "parity": {
+          "checkedOutputs": 64,
+          "ok": true,
+          "rejected": true,
+          "unchangedPoison": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7888,
+        "heads": 1,
+        "invalid": {
+          "splits": 0
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3056,
+        "parity": {
+          "checkedOutputs": 64,
+          "ok": true,
+          "rejected": true,
+          "unchangedPoison": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7888,
+        "heads": 1,
+        "invalid": {
+          "splits": 9
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3056,
+        "parity": {
+          "checkedOutputs": 64,
+          "ok": true,
+          "rejected": true,
+          "unchangedPoison": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7888,
+        "heads": 1,
+        "invalid": {
+          "mode": 1
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3056,
+        "parity": {
+          "checkedOutputs": 64,
+          "ok": true,
+          "rejected": true,
+          "unchangedPoison": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      },
+      {
+        "K": 384,
+        "N": 64,
+        "budgetBytes": 67108864,
+        "clipped": true,
+        "dim": 64,
+        "disabledInputsPoisoned": true,
+        "estimatedCaseBufferBytes": 7888,
+        "heads": 1,
+        "invalid": {
+          "bias": 1
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "ownedGpuBufferBytes": 3056,
+        "parity": {
+          "checkedOutputs": 64,
+          "ok": true,
+          "rejected": true,
+          "unchangedPoison": true
+        },
+        "partialScales": [
+          1.337,
+          -1.53,
+          1.723
+        ],
+        "pattern": "signed",
+        "raw": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "original reducer vs CPU serial sum",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "skipRope": false,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "fused": [],
+          "split": []
+        },
+        "weighted": true
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    }
+  },
+  "done": true,
+  "kernel": "gemma4_vision_reduce_norm_rope",
+  "metricMs": 9855.2,
+  "resourceBounds": {
+    "budgetBytes": 67108864,
+    "maxCaseBufferEstimateBytes": 61256400,
+    "sequentialCases": true
+  },
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "28 MiB",
+          "pid": 3259401,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done"
+}

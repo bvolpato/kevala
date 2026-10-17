@@ -3,13 +3,15 @@ import { checkImageDimensions, encodedImageInfo } from "./image-header.js";
 const MAX_BYTES = 32 * 1024 * 1024;
 
 /** Decode browser image parts into RGBA pixels without serializing pixels as JSON. */
-export async function imagePixels(data, { signal } = {}) {
+export async function imagePixels(data, { signal, borrowRGBA = false } = {}) {
   signal?.throwIfAborted();
   if (data && Number.isInteger(data.width) && Number.isInteger(data.height) && data.data != null) {
     const { width, height } = data;
     checkImageDimensions(width, height);
     if (!(data.data instanceof Uint8Array || data.data instanceof Uint8ClampedArray) || data.data.length !== width * height * 4) throw new Error("image data must contain width × height RGBA bytes");
-    return { width, height, data: data.data.slice() };
+    // Public callers own a copy. Internal worker callers can borrow request-owned bytes until
+    // the request queue wipes its structured-cloned payload after inference.
+    return { width, height, data: borrowRGBA ? data.data : data.data.slice() };
   }
   let blob;
   if (data instanceof Blob) blob = data;

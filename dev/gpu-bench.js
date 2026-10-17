@@ -66,21 +66,21 @@ function parseKernel(raw, T, config) {
     return { label: raw, name: "matmul", f16: config.f16, target: config.splitTarget, rows: rowsPerThread(T, config), groups: config.groups, baseline };
   }
   const match = normalized.match(/^([a-z_][a-z_0-9]*)(?:@(\d+))?(?::(\w+))?(?:\/(\d+))?$/);
-  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_row56"].includes(match[1])) {
+  if (!match || !["matmul", "matmul_h", "matmul_wide", "matmul_wide_h", "matmul_k64", "matmul_k64_h", "matmul_k64_row56", "matmul_row56"].includes(match[1])) {
     throw new Error(`invalid kernel variant ${raw}`);
   }
   const groups = match[4] ? Number(match[4]) : 1;
   const target = match[2] ? Number(match[2]) : 128;
   const f16 = match[1].endsWith("_h");
   const rows = match[3] === "auto" ? rowsPerThread(T, { f16, groups, kernel: match[1].startsWith("matmul_wide") ? "matmul_wide" : "matmul" }) : match[3] ? Number(match[3]) : 4;
-  const row56 = match[1] === "matmul_row56";
+  const row56 = match[1] === "matmul_row56" || match[1] === "matmul_k64_row56";
   if (![1, 2, 3, 4].includes(rows) || ![1, 2].includes(groups)) throw new Error(`invalid rows/groups in ${raw}`);
-  if (match[1].startsWith("matmul_wide") && groups !== 1) throw new Error(`${raw} requires groups=1`);
+  if ((match[1].startsWith("matmul_wide") || match[1].startsWith("matmul_k64")) && groups !== 1) throw new Error(`${raw} requires groups=1`);
   if (!Number.isInteger(target) || target < 1 || target > (0xffffffff - 3) / 3) throw new Error(`invalid split target in ${raw}`);
   if (f16 && !f16Available) throw new Error(`${raw} requires the shader-f16 feature`);
   if (row56 && (rows !== 4 || groups !== 1)) throw new Error(`${raw} requires FP32 rows=4/groups=1`);
   if (row56 && Math.ceil(T / 56) !== Math.ceil(T / 64)) throw new Error(`${raw} requires ceil(T/56)==ceil(T/64), got T=${T}`);
-  return { label: raw, name: row56 ? "matmul" : f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline, row56 };
+  return { label: raw, name: row56 ? match[1].replace(/_row56$/, "") : f16 ? match[1].slice(0, -2) : match[1], f16, target, rows, groups, baseline, row56 };
 }
 
 function makeRng(seed) {

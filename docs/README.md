@@ -48,6 +48,8 @@ Each report covers one retained change.
 | [Gemma 4 attention performance](gemma-attention-performance.md) | Gemma attention |
 | [Gemma 4 vision performance](gemma4-vision-performance.md) | Vision attention, padding, synchronization, and memory |
 | [Gemma 4 camera performance](gemma4-camera-performance.md) | Live resolution, fused F32 attention, camera throughput and image checks |
+| [Gemma 4 decoder matrix-vector kernels](gemma4-matvec-performance.md) | Guarded single-row and shared-question decoder projections |
+| [Gemma 4 fusion performance](gemma4-fusion-performance.md) | Image preparation, decoder caches, exact fusions and sustained camera measurements |
 | [Gemma normalization and residual fusion](gemma-rms-residual-performance.md) | Gemma normalization |
 | [Shared GPU kernels and Gemma execution](gpu-latency-performance.md) | End-to-end latency after the shared kernel work |
 

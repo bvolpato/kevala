@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma 4 square SIMT matmul probe</title>
+<h1>Gemma 4 square SIMT matmul probe</h1>
+<p>DEV-only Q8/F32 comparison. Use <code>?variant=4x4</code> or <code>?variant=8x8</code>, and optionally <code>&amp;shape=gate</code>, <code>down</code>, or <code>q</code>. Outputs and split partials are checked bit-for-bit before and after timing.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-square-check.js"></script>

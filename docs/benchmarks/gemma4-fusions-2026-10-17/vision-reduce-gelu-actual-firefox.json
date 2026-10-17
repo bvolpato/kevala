@@ -1,0 +1,236 @@
+{
+  "adapter": {
+    "architecture": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "timestampQuery": false,
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "clipFusion": {
+    "attentionLayers": 16,
+    "downLayers": 16,
+    "enabled": true,
+    "gateUpLayers": 16,
+    "originalInputClipPasses": 112,
+    "qkvLayers": 16,
+    "remainingInputClipPasses": 0,
+    "removedInputClipPasses": 112
+  },
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 108,
+        "attentionMode": "fused-f32",
+        "clipFusion": {
+          "baselineCorrectness": {
+            "maxAbs": 7.62939453125e-06,
+            "relativeL2": 1.3887780688510555e-06
+          },
+          "baselineFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 0,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "baselineWallMs": 93.43999999999994,
+          "fusedCorrectness": {
+            "maxAbs": 7.62939453125e-06,
+            "relativeL2": 1.3887780688510555e-06
+          },
+          "fusedFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 32,
+            "reduceNormPasses": 48,
+            "removedPasses": 144,
+            "residualNormPasses": 31
+          },
+          "fusedWallMs": 95.32000000000004,
+          "parity": {
+            "maxAbs": 0,
+            "relativeL2": 0
+          }
+        },
+        "elapsedMs": 95.32000000000004,
+        "id": "camera-fast",
+        "patches": 144,
+        "softTokens": 12
+      },
+      {
+        "activePatches": 315,
+        "attentionMode": "fused-f32",
+        "clipFusion": {
+          "baselineCorrectness": {
+            "maxAbs": 1.3709068298339844e-05,
+            "relativeL2": 1.8781785320175369e-06
+          },
+          "baselineFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 0,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "baselineWallMs": 85.63999999999999,
+          "fusedCorrectness": {
+            "maxAbs": 1.3709068298339844e-05,
+            "relativeL2": 1.8781785320175369e-06
+          },
+          "fusedFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 0,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "fusedWallMs": 100.19999999999982,
+          "parity": {
+            "maxAbs": 0,
+            "relativeL2": 0
+          }
+        },
+        "elapsedMs": 100.19999999999982,
+        "id": "camera-balanced",
+        "patches": 360,
+        "softTokens": 35
+      },
+      {
+        "activePatches": 567,
+        "attentionMode": "fused-f32",
+        "clipFusion": {
+          "baselineCorrectness": {
+            "maxAbs": 2.0623207092285156e-05,
+            "relativeL2": 2.281605702006934e-06
+          },
+          "baselineFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 0,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "baselineWallMs": 77.79999999999995,
+          "fusedCorrectness": {
+            "maxAbs": 2.0623207092285156e-05,
+            "relativeL2": 2.281605702006934e-06
+          },
+          "fusedFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 0,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "fusedWallMs": 99.96000000000004,
+          "parity": {
+            "maxAbs": 0,
+            "relativeL2": 0
+          }
+        },
+        "elapsedMs": 99.96000000000004,
+        "id": "camera-detail",
+        "patches": 630,
+        "softTokens": 63
+      },
+      {
+        "activePatches": 108,
+        "attentionMode": "fused-f32",
+        "clipFusion": {
+          "baselineCorrectness": {
+            "maxAbs": 6.318092346191406e-06,
+            "relativeL2": 1.3693326920024646e-06
+          },
+          "baselineFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 0,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "baselineWallMs": 94.70000000000005,
+          "fusedCorrectness": {
+            "maxAbs": 6.318092346191406e-06,
+            "relativeL2": 1.3693326920024646e-06
+          },
+          "fusedFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceGeluPasses": 32,
+            "reduceNormPasses": 48,
+            "removedPasses": 144,
+            "residualNormPasses": 31
+          },
+          "fusedWallMs": 100.03999999999996,
+          "parity": {
+            "maxAbs": 0,
+            "relativeL2": 0
+          }
+        },
+        "elapsedMs": 100.03999999999996,
+        "id": "camera-fast-repeat",
+        "patches": 144,
+        "softTokens": 12
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 0.0001
+  },
+  "done": true,
+  "metricMs": 98.87999999999997,
+  "options": {
+    "compactPatches": true,
+    "fusedAttention": true,
+    "submitMode": "split"
+  },
+  "profile": false,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "72 MiB",
+          "pid": 3639900,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

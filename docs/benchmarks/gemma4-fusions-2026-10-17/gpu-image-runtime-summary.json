@@ -1,0 +1,428 @@
+{
+  "generatedUtc": "2026-10-17T09:53:11.302Z",
+  "baselineSummary": "compact-and-single-summary.json",
+  "sourceHashes": {
+    "js/src/gpu-gemma4.js": "a48ad5ac6575d5ee6f35cb677a5eed691c4d296d287f85a37dd6f7012c9a8d87",
+    "js/src/gpu-gemma4-vision.js": "9e5093d00ac74c9805ba15f0cc921d05c419e203f16d90ce14b0dddcffa852bf",
+    "js/src/archs/gemma4.js": "d913aa933488247871eda55a885bb2ecc14596c32a38e854a2143092ad64ff4a",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "bc885eb06ca9e0feca152174e32a2f6ae6a1de12173345a57bd47835c56d8404",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "fd97b950153fdd5bbf3a8da8bd2651f819210c25e27fd6853e02a97ccb14d0af",
+    "js/src/kevala-simd.wasm": "72131e40c2c194ed9eec021f624ec044f6e0aff9543386e1c1c6af993e33ac45",
+    "js/src/kevala-relaxed.wasm": "afc3da8e6aa2e1e645006ebf6b50b87f5660885e50d36178f42cdf9f8a747152",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4",
+    "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+    "crates/kevala/src/wgsl/matmul_gelu.wgsl": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13",
+    "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+    "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+    "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+    "crates/kevala/src/wgsl/reduce_ple.wgsl": "b78cd3e995fc1a60268e9c9e50808a4d51abe0a85efc4344452e129bbede4a78",
+    "tests/gemma4-ple.test.mjs": "0dabf9c2fb13a1f98be07da3109dab1bf15142533c6c84895b5565bc620889f5",
+    "tests/gemma4-batch.test.mjs": "725a9031eff377fa51d18a47eeeaef07d162a96ad47b1dfe6fbbcda9de512385",
+    "scripts/gpu-guard.mjs": "c8821f802ba2158586a73d65ba9e1de74d615166563a3a9dfa88cf4b872a97cf",
+    "js/src/gemma4-image.js": "3faf0329858ffb90d46e92d6d22106b1e74b4d7191ecf79e376f1f5850b3883a",
+    "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+    "crates/kevala/src/wgsl/matmul_tall.wgsl": "e328c97a07664c82ad77b0a149ea9357e0b8973bc87e00e8c86a414ac642115d",
+    "crates/kevala/tests/wgsl.rs": "59ac2db3540beb8a649fed402492ab01237c986a473e747a9a64db9e7685e7d0",
+    "scripts/bench-gemma4-image-prep.mjs": "96534707a954cc8b5ef278921f95e688ac3e4d510fc01e40213e22b5c7cd9dc3",
+    "tests/gemma4-image.test.mjs": "9fab56e9992ad7e49128bc5aba277b31c1f5c07f2d74dadc64b3adce309318d2",
+    "tests/gemma4-vision.test.mjs": "b2f1a5874ac7e8797efe3c5f63eca0f5b2c7df6b187a70b95cede0269aff4a4f",
+    "tests/gemma4-batch-single.test.mjs": "6e431405ff3b96655ae96e3b7158a1ba98b67366749bebad4a1085c3705fba86",
+    "dev/gemma4-matmul-tail-mask-check.js": "dc2161458a9eeda6c68434c0bf6efe4b58e1abbb3b2de7bb135ce61f43a4084b",
+    "dev/gemma4-matmul-tail-mask-check.html": "b390faeecfb12a68f0bbd3470db160a6a439d60785eea4e5b8f63f584e364ed8",
+    "dev/gemma4-matmul-f16-tall-check.js": "0ce2e6276f858e39cb22e6b7f8c2f09d648c02cd3be88be254aeddcdd8c476db",
+    "dev/gemma4-matmul-f16-tall-check.html": "b92c8565f136a0978b39b8eb1cb44c2d827e848646ae864e6ee93e1384128390",
+    "dev/kernel-compile-check.js": "d4dde514ac9fd65f70149b6810602bf4e2862429c9892e1b6a092c3f0f48d45f",
+    "js/src/gpu-gemma4-image.js": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1",
+    "crates/kevala/src/wgsl/gemma4_image_resize_horizontal.wgsl": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca",
+    "crates/kevala/src/wgsl/gemma4_image_resize_vertical.wgsl": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b",
+    "tests/gemma4-image-gpu.test.mjs": "3304e583120b7128deca7af874b90f8bb086998830b71c159d0d3bef52cf1ce5",
+    "dev/gemma4-image-gpu-check.html": "98875d2b96d2c8f4c297f120f4e57ecec5abe38e2015843da6020b1bc2e0c74e",
+    "dev/gemma4-image-gpu-check.js": "0f2a916905b0c8a1e7c3ab5c4c99fb1fbafe8ff0f627a1a67581d5d482ee7085",
+    "dev/gemma4-image-gpu-check.wgsl": "8f4eb2e3dbc30eb63f58fe9f4d39cb15aadc737e3bc35cce8c094c3f26769d85",
+    "app/views/reaction.js": "313e336074cae0f08236f1f1a9bb92e28efa3e99dba64a6cd4515d60edb9736d",
+    "app/views/reaction-scheduler.js": "afc117120221ccac767280897d739f1c2d4a83fe03cd1a622097d623a34a9b8a",
+    "scripts/bench-reaction.py": "4aa699f82197777a50947c2ab99970e22c006e9f01c2e14644900c1b0bfe21c5",
+    "scripts/stage-site.mjs": "91eff04735e4061dd4955126b382e3e23150603ea8997c2e089522eadc80d028"
+  },
+  "changedBaselineSources": [
+    "js/src/gpu-gemma4-vision.js",
+    "js/src/archs/gemma4.js",
+    "crates/kevala/src/gpu.rs",
+    "js/src/kevala-base.wasm",
+    "js/src/kevala-simd.wasm",
+    "js/src/kevala-relaxed.wasm",
+    "scripts/gpu-guard.mjs",
+    "js/src/gemma4-image.js",
+    "tests/gemma4-image.test.mjs",
+    "tests/gemma4-vision.test.mjs"
+  ],
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "m4Measured": false,
+    "nativeMetalMlxCudaMeasured": false
+  },
+  "runtime": {
+    "defaultEnabled": true,
+    "sourceSnapshotMaxBytes": 4194304,
+    "extraGpuScratchMaxBytes": 8388608,
+    "normalization": "Existing two-round F32 LUT; exact Q22 bicubic and horizontal U8 boundary.",
+    "fallbacks": [
+      "profiler",
+      "unsupported geometry/taps/int32 bounds",
+      "optional compile/setup failure"
+    ],
+    "deviceLoss": "Existing failure/reset; no CPU retry after submission.",
+    "mapsAdded": 0,
+    "cachedGeometrySetupWaitsAdded": 0,
+    "oneGeometryCached": true
+  },
+  "pixelGuardSummary": "gpu-image-kernel-summary.json",
+  "models": [
+    {
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/gpu-pixels-model-final-chrome.json.gz",
+        "sha256": "1f8bf102acff61159c66d1b519ac9deae826cec04757a415cee989e95ac1f8f1",
+        "rawSha256": "bcb21c4a70f0b7fcdf2134d12fe4c05ee426e4cc41d26d728f8967dee9c69b27"
+      },
+      "browser": "153.0.8010.12",
+      "measuredDecisions": 36,
+      "warmups": 18,
+      "hiddenWords": 3072,
+      "maxProbabilityDelta": 0,
+      "hiddenBitsExact": true,
+      "otherKernelStatesConstant": true,
+      "actualGpuPreprocessCounts": [
+        "off:0",
+        "on:1",
+        "off-repeat:0"
+      ],
+      "f16Required": false
+    },
+    {
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/gpu-pixels-model-final-firefox.json.gz",
+        "sha256": "b587842537c244558807933efcd29c000262c69027cd7779b32763085ede8e9a",
+        "rawSha256": "363c1c07d5a6e7546c46f1dcfc50974960333d964357186d287611d601587cf3"
+      },
+      "browser": "152.0.3",
+      "measuredDecisions": 36,
+      "warmups": 18,
+      "hiddenWords": 3072,
+      "maxProbabilityDelta": 0,
+      "hiddenBitsExact": true,
+      "otherKernelStatesConstant": true,
+      "actualGpuPreprocessCounts": [
+        "off:0",
+        "on:1",
+        "off-repeat:0"
+      ],
+      "f16Required": true
+    }
+  ],
+  "cameraPaired": {
+    "receipt": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-gpu-pixels-ab.json.gz",
+      "sha256": "781e4327ad602eebb045dc428883d6cdce09911957d3b0b18176dee1e0aaea73",
+      "rawSha256": "327d3f0f18d4befa211f9451121ac11436c66d11d739af1af866660d49881436"
+    },
+    "scope": "Before cached setup-wait removal; same model CPU/GPU/CPU, current compact CPU preprocessing remains enabled in controls.",
+    "measuredDecisionsPerMode": 240,
+    "previewTargetHz": 60,
+    "phases": [
+      {
+        "mode": "off",
+        "budget": 16,
+        "discardedWarmups": 4,
+        "measuredDecisions": 240,
+        "decisionWall": {
+          "p50Ms": 24.685000002384186,
+          "p95Ms": 26.225000008940697,
+          "meanMs": 24.831437499821185,
+          "samples": 240
+        },
+        "completedFps": 39.555951481301975,
+        "compactPreprocessCounts": [
+          0
+        ],
+        "submitModes": [
+          "split"
+        ],
+        "imageStages": {
+          "decode": {
+            "p50Ms": 0.06000000238418579,
+            "p95Ms": 0.08000001311302185,
+            "meanMs": 0.057375000603497026,
+            "samples": 240
+          },
+          "preprocess": {
+            "p50Ms": 0.989999994635582,
+            "p95Ms": 1.290000006556511,
+            "meanMs": 1.0281458331272006,
+            "samples": 240
+          },
+          "forward": {
+            "p50Ms": 1.1849999949336052,
+            "p95Ms": 1.7149999886751175,
+            "meanMs": 1.2516875001291434,
+            "samples": 240
+          }
+        },
+        "uniqueSyntheticFrameHashes": 244,
+        "previewCadence": {
+          "observedFrames": 387,
+          "reportedPresentedFrames": 388,
+          "droppedTimestampSamples": 0,
+          "p50IntervalMs": 16.665000000000873,
+          "p95IntervalMs": 16.67000000000189,
+          "observedFps": 59.83104704332326
+        }
+      },
+      {
+        "mode": "on",
+        "budget": 16,
+        "discardedWarmups": 4,
+        "measuredDecisions": 240,
+        "decisionWall": {
+          "p50Ms": 23.649999991059303,
+          "p95Ms": 25.140000000596046,
+          "meanMs": 23.806333333315948,
+          "samples": 240
+        },
+        "completedFps": 41.22524874716003,
+        "compactPreprocessCounts": [
+          1
+        ],
+        "submitModes": [
+          "split"
+        ],
+        "imageStages": {
+          "decode": {
+            "p50Ms": 0.06000000238418579,
+            "p95Ms": 0.07999999821186066,
+            "meanMs": 0.05339583332339923,
+            "samples": 240
+          },
+          "preprocess": {
+            "p50Ms": 0.07000000774860382,
+            "p95Ms": 0.0949999988079071,
+            "meanMs": 0.06435416626433531,
+            "samples": 240
+          },
+          "forward": {
+            "p50Ms": 1.2049999982118607,
+            "p95Ms": 1.780000001192093,
+            "meanMs": 1.286395833392938,
+            "samples": 240
+          }
+        },
+        "uniqueSyntheticFrameHashes": 244,
+        "previewCadence": {
+          "observedFrames": 356,
+          "reportedPresentedFrames": 356,
+          "droppedTimestampSamples": 0,
+          "p50IntervalMs": 16.665000000000873,
+          "p95IntervalMs": 16.67000000000553,
+          "observedFps": 60.02400960384154
+        }
+      },
+      {
+        "mode": "off-repeat",
+        "budget": 16,
+        "discardedWarmups": 4,
+        "measuredDecisions": 240,
+        "decisionWall": {
+          "p50Ms": 24.637500002980232,
+          "p95Ms": 26.625,
+          "meanMs": 24.772166667257746,
+          "samples": 240
+        },
+        "completedFps": 39.650349996967044,
+        "compactPreprocessCounts": [
+          0
+        ],
+        "submitModes": [
+          "split"
+        ],
+        "imageStages": {
+          "decode": {
+            "p50Ms": 0.06000000238418579,
+            "p95Ms": 0.08500000834465027,
+            "meanMs": 0.060041666589677335,
+            "samples": 240
+          },
+          "preprocess": {
+            "p50Ms": 0.9900000095367432,
+            "p95Ms": 1.280000001192093,
+            "meanMs": 1.0299791666368643,
+            "samples": 240
+          },
+          "forward": {
+            "p50Ms": 1.1400000005960464,
+            "p95Ms": 1.7000000029802322,
+            "meanMs": 1.1856041666120292,
+            "samples": 240
+          }
+        },
+        "uniqueSyntheticFrameHashes": 244,
+        "previewCadence": {
+          "observedFrames": 369,
+          "reportedPresentedFrames": 370,
+          "droppedTimestampSamples": 0,
+          "p50IntervalMs": 16.665000000000873,
+          "p95IntervalMs": 16.67000000000553,
+          "observedFps": 59.85832445489075
+        }
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "streamCount": 3,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "unrelatedDispatchesConstant": true,
+    "kernelSelectionsConstant": true,
+    "resources": {
+      "memory.high": "5767168000",
+      "memory.max": "6291456000",
+      "memory.peak": "4564680704",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 36715778\nuser_usec 23134645\nsystem_usec 13581133\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 443\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    }
+  },
+  "cameraFinal": {
+    "receipt": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-gpu-pixels-final.json.gz",
+      "sha256": "7a3fdf82d152ad3b804d8527140da625435d4e458e72b0d0457599809da7c36c",
+      "rawSha256": "b7b36719d9cdfeded0b71eec9f76283bf3a6231f908b440b685a4b93efdca74b"
+    },
+    "scope": "Final default runtime without interception.",
+    "phases": [
+      {
+        "budget": 70,
+        "observedDecisions": 240,
+        "measuredDecisions": 236,
+        "discardedWarmups": 4,
+        "meanMs": 41.02055084793749,
+        "p50Ms": 40.95500001311302,
+        "p95Ms": 42.125,
+        "completedFps": 24.07418126017008
+      },
+      {
+        "budget": 40,
+        "observedDecisions": 240,
+        "measuredDecisions": 236,
+        "discardedWarmups": 4,
+        "meanMs": 30.677394068152722,
+        "p50Ms": 30.739999994635582,
+        "p95Ms": 31.70499999821186,
+        "completedFps": 32.082239749908105
+      },
+      {
+        "budget": 16,
+        "observedDecisions": 240,
+        "measuredDecisions": 236,
+        "discardedWarmups": 4,
+        "meanMs": 23.88360169529915,
+        "p50Ms": 23.634999997913837,
+        "p95Ms": 25.944999992847443,
+        "completedFps": 41.02342088195156
+      },
+      {
+        "budget": 40,
+        "observedDecisions": 240,
+        "measuredDecisions": 236,
+        "discardedWarmups": 4,
+        "meanMs": 30.67605932221069,
+        "p50Ms": 30.677500002086163,
+        "p95Ms": 31.655000001192093,
+        "completedFps": 32.10277258671467
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "resources": {
+      "memory.max": "6291456000",
+      "memory.peak": "4546326528",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 36551782\nuser_usec 23329335\nsystem_usec 13222446\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 473\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    },
+    "pageErrors": []
+  },
+  "localInstrumentation": {
+    "description": "The existing compactpixels test control toggles prepareGpuPixels while keeping prepareCompactPixels=true; actual lastGpuPixelDispatches/2 is reported, with hidden bits captured at final decoder map. Labels in raw receipts retain the original harness name.",
+    "proxySha256": "ecc2b28fe1b96349d41f6efa44251796036465ac85d7f4951496d51470d43488",
+    "pairedHarnessSha256": "a2bb359a5d5ce52a52000b69da1dbcb167b9dd0aa95859bc346ad86146648bb6"
+  },
+  "validation": {
+    "jsCheck": "pnpm check passed",
+    "jsTests": "pnpm test passed",
+    "cachedUploadRegression": "Fails without cached branch with Missing expected rejection; passes with the final helper.",
+    "rust": "Rust 1.95 fmt, clippy workspace/all-targets, native WGSL rendering passed.",
+    "wasm": "All three built and ABI validated, 48 exports each.",
+    "fullGpuSuiteRerun": false,
+    "existingUnrelatedFailure": "Laya F32 parity 0.024006444195624588 exceeds unchanged 0.024 limit in preceding full suite.",
+    "site": "Staged source/package/receipt hashes match; registered pixel guard passed from the staged site."
+  },
+  "package": {
+    "path": "/tmp/kevala-gpu-pixels-package-20261017/kevala-0.1.3.tgz",
+    "sha256": "3145221d79b71c16e3824e284b6c63c222aba5e1ddfbc8669162758e0e71f591",
+    "files": 54,
+    "compressedBytes": 1406752,
+    "unpackedBytes": 4586917,
+    "allFilesMatchWorkspace": true,
+    "packageCheckPassed": true,
+    "published": false
+  },
+  "site": {
+    "staged": true,
+    "path": "dist/site",
+    "shaderAssetsIncluded": true,
+    "deployed": false,
+    "verifiedStagedSources": 28,
+    "verifiedPackageFiles": 54,
+    "sourceHashesVerified": 51,
+    "shaderAssetHTTP200": true,
+    "numericalGuard": {
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/image-gpu-staged-chrome.json.gz",
+        "sha256": "cb102e303f5797f87259af8207dd451819c73a55b0ca19959b17198b061aa5ad",
+        "rawSha256": "725c5f50133d186e67b836f41c224b5de15fb3799892677f9c01682b8c1fb776"
+      },
+      "correctness": {
+        "bitExact": true,
+        "cases": 21,
+        "checkedPixels": 5253120,
+        "ok": true,
+        "tolerance": 0
+      }
+    }
+  },
+  "goal": {
+    "targetFps": 60,
+    "met": false
+  }
+}

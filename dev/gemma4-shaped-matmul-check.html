@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma shape-constant matmul guard</title>
+<h1>Gemma F32 shape-constant matmul guard</h1>
+<p>Dev-only Q8/F32 comparison. Each candidate is the registered Fast-prefix or suffix matmul shader with only N and K compiled as constants. The reducer stays identical. Checks full output and split partial bits for all three modes, bias off/on, and tails, then reports three alternating timestamp pairs with four repetitions per path. Temporary host and GPU buffers stay under 64 MiB, excluding immutable weight and scale buffers.</p>
+<p>Opening this page starts the benchmark, but it loads no model or published weight pack. Optional filters: <code>?scope=fast</code> or <code>?scope=suffix</code>, and <code>&amp;shape=gate</code>, <code>down</code>, <code>q</code>, <code>o</code>, or <code>ragged</code>.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-shaped-matmul-check.js"></script>

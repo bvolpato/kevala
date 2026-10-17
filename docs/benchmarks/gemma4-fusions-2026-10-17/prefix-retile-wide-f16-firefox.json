@@ -1,0 +1,790 @@
+{
+  "adapter": {
+    "features": [
+      "shader-f16",
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "maxComputeWorkgroupStorageSize": 32768,
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "balanced": 64,
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "C": 38,
+        "D": 51,
+        "P": 89,
+        "candidateLogicalTiles": 2,
+        "f16": true,
+        "kernel": "matmul_wide",
+        "kind": "wide",
+        "ok": true,
+        "originalBM": 64,
+        "originalLogicalTiles": 2,
+        "originalRows": 4,
+        "physicalBM": 64,
+        "reason": "physical-tile-unchanged",
+        "row56": false,
+        "rows": 4,
+        "scope": "balanced",
+        "skipped": true,
+        "splitT": 89,
+        "unchanged": true
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 1536,
+        "N": 6144,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul_wide",
+        "kind": "wide",
+        "memory": {
+          "fullOutputBytes": 1622032,
+          "fullPartBytes": 16,
+          "fullPartLength": 0,
+          "gpuBytes": 16085520,
+          "hostBytes": 18903152,
+          "inputBytes": 405504,
+          "limitBytes": 67108864,
+          "outputBytes": 688144,
+          "partBytes": 16,
+          "partLength": 0,
+          "poisonBytes": 1622032,
+          "readBytes": 2064480,
+          "scaleBytes": 1179648,
+          "totalBytes": 34988672,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "originalBM": 64,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 4,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 172032,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 172032,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": null,
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "a3a16107a7dc9c02c13ba6af37849f8bd2fbf32777b5cdd95c9fb8ec45d7cb4a",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "2554d25472ffc466f0d0735a9c276d94c24d55623d902232c38818219a6bb640",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "full": {
+            "mm": "8184fa048c3ae6f923dd1d7a39f2fe54fbd6b2b49c62de7cb55c06a191230cc4",
+            "reduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+          }
+        },
+        "shape": "gate",
+        "splitBlocks": 48,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.21086283483645177,
+          "candidate": [
+            0.0932,
+            0.0938,
+            0.09384
+          ],
+          "candidateMedianMs": 0.0938,
+          "candidateWins": true,
+          "compact": [
+            0.118864,
+            0.118312,
+            0.134784
+          ],
+          "compactMedianMs": 0.118864,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 6144,
+        "N": 1536,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul_wide",
+        "kind": "wide",
+        "memory": {
+          "fullOutputBytes": 405520,
+          "fullPartBytes": 2433040,
+          "fullPartLength": 608256,
+          "gpuBytes": 21099024,
+          "hostBytes": 22478960,
+          "inputBytes": 1622016,
+          "limitBytes": 67108864,
+          "outputBytes": 172048,
+          "partBytes": 1032208,
+          "partLength": 258048,
+          "poisonBytes": 2433040,
+          "readBytes": 3612768,
+          "scaleBytes": 1179648,
+          "totalBytes": 43577984,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "originalBM": 64,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 4,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "a3a16107a7dc9c02c13ba6af37849f8bd2fbf32777b5cdd95c9fb8ec45d7cb4a",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "2554d25472ffc466f0d0735a9c276d94c24d55623d902232c38818219a6bb640",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "full": {
+            "mm": "8184fa048c3ae6f923dd1d7a39f2fe54fbd6b2b49c62de7cb55c06a191230cc4",
+            "reduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+          }
+        },
+        "shape": "down",
+        "splitBlocks": 32,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2294811968158111,
+          "candidate": [
+            0.089824,
+            0.089184,
+            0.09076
+          ],
+          "candidateMedianMs": 0.089824,
+          "candidateWins": true,
+          "compact": [
+            0.116976,
+            0.116336,
+            0.116576
+          ],
+          "compactMedianMs": 0.116576,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 1536,
+        "N": 2048,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul_wide",
+        "kind": "wide",
+        "memory": {
+          "fullOutputBytes": 540688,
+          "fullPartBytes": 2162704,
+          "fullPartLength": 540672,
+          "gpuBytes": 12382736,
+          "hostBytes": 13742192,
+          "inputBytes": 405504,
+          "limitBytes": 67108864,
+          "outputBytes": 229392,
+          "partBytes": 917520,
+          "partLength": 229376,
+          "poisonBytes": 2162704,
+          "readBytes": 3440736,
+          "scaleBytes": 393216,
+          "totalBytes": 26124928,
+          "weightBytes": 3145728
+        },
+        "ok": true,
+        "originalBM": 64,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 4,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 229376,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 229376,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "a3a16107a7dc9c02c13ba6af37849f8bd2fbf32777b5cdd95c9fb8ec45d7cb4a",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "2554d25472ffc466f0d0735a9c276d94c24d55623d902232c38818219a6bb640",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "full": {
+            "mm": "8184fa048c3ae6f923dd1d7a39f2fe54fbd6b2b49c62de7cb55c06a191230cc4",
+            "reduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+          }
+        },
+        "shape": "q",
+        "splitBlocks": 12,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 4,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.17090230823035674,
+          "candidate": [
+            0.027256,
+            0.028448,
+            0.028464
+          ],
+          "candidateMedianMs": 0.028448,
+          "candidateWins": true,
+          "compact": [
+            0.034312,
+            0.03392,
+            0.035104
+          ],
+          "compactMedianMs": 0.034312,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 2048,
+        "N": 1536,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul_wide",
+        "kind": "wide",
+        "memory": {
+          "fullOutputBytes": 405520,
+          "fullPartBytes": 2433040,
+          "fullPartLength": 608256,
+          "gpuBytes": 12939792,
+          "hostBytes": 14319728,
+          "inputBytes": 540672,
+          "limitBytes": 67108864,
+          "outputBytes": 172048,
+          "partBytes": 1032208,
+          "partLength": 258048,
+          "poisonBytes": 2433040,
+          "readBytes": 3612768,
+          "scaleBytes": 393216,
+          "totalBytes": 27259520,
+          "weightBytes": 3145728
+        },
+        "ok": true,
+        "originalBM": 64,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 4,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "a3a16107a7dc9c02c13ba6af37849f8bd2fbf32777b5cdd95c9fb8ec45d7cb4a",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "2554d25472ffc466f0d0735a9c276d94c24d55623d902232c38818219a6bb640",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "full": {
+            "mm": "8184fa048c3ae6f923dd1d7a39f2fe54fbd6b2b49c62de7cb55c06a191230cc4",
+            "reduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+          }
+        },
+        "shape": "o",
+        "splitBlocks": 11,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.22504570383912256,
+          "candidate": [
+            0.034392,
+            0.033896,
+            0.033912
+          ],
+          "candidateMedianMs": 0.033912,
+          "candidateWins": true,
+          "compact": [
+            0.04376,
+            0.044128,
+            0.043624
+          ],
+          "compactMedianMs": 0.04376,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 1536,
+        "N": 256,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul_wide",
+        "kind": "wide",
+        "memory": {
+          "fullOutputBytes": 67600,
+          "fullPartBytes": 540688,
+          "fullPartLength": 135168,
+          "gpuBytes": 2746896,
+          "hostBytes": 6357104,
+          "inputBytes": 405504,
+          "limitBytes": 67108864,
+          "outputBytes": 28688,
+          "partBytes": 229392,
+          "partLength": 57344,
+          "poisonBytes": 540688,
+          "readBytes": 774240,
+          "scaleBytes": 49152,
+          "totalBytes": 9104000,
+          "weightBytes": 393216
+        },
+        "ok": true,
+        "originalBM": 64,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 4,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 7168,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 7168,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "a3a16107a7dc9c02c13ba6af37849f8bd2fbf32777b5cdd95c9fb8ec45d7cb4a",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "2554d25472ffc466f0d0735a9c276d94c24d55623d902232c38818219a6bb640",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "full": {
+            "mm": "8184fa048c3ae6f923dd1d7a39f2fe54fbd6b2b49c62de7cb55c06a191230cc4",
+            "reduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+          }
+        },
+        "shape": "k-ple",
+        "splitBlocks": 6,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.10942071386775898,
+          "candidate": [
+            0.012176,
+            0.011888,
+            0.012872
+          ],
+          "candidateMedianMs": 0.012176,
+          "candidateWins": true,
+          "compact": [
+            0.014056,
+            0.013672,
+            0.013656
+          ],
+          "compactMedianMs": 0.013672,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "elapsedMs": 6785.3,
+  "kernel": "wide",
+  "method": "geometric mean candidate GPU timestamp milliseconds; full P oracle excluded; compact prefix baseline",
+  "metricMs": 0.03972839336368408,
+  "precision": "f16",
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "30 MiB",
+          "pid": 3334213,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

@@ -1,0 +1,154 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "maxComputeWorkgroupStorageSize": 32768,
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 2,
+        "f16": false,
+        "kind": "generic",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 595968
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 1787904
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 1787904
+          }
+        ],
+        "readbackChunkBytes": 1048576,
+        "row56": true,
+        "rows": 4,
+        "saturated": false,
+        "scratchBytes": 47724544,
+        "scratchLimitBytes": 67108864,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "baselineReduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "candidate": "bf0a027fde1ab8b086b05ba2a7e8b7ee21139373b027765796c9cc7bec250270",
+          "candidateReduce": "7fb790cbcb74d901fa98e6ea9b9e271df51e1099645af5e7d0de0d4342b7c5ac"
+        },
+        "sharedBytes": 24576,
+        "sharedWeightBytes": 21233664,
+        "splitT": 1,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.2605,
+            0.257,
+            0.25825
+          ],
+          "baselineMedianMs": 0.25825,
+          "candidate": [
+            0.28475,
+            0.286,
+            0.28425
+          ],
+          "candidateMedianMs": 0.28475
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 97,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 2,
+        "f16": false,
+        "kind": "generic",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 1191936
+        },
+        "partialChecks": [],
+        "readbackChunkBytes": 1048576,
+        "row56": true,
+        "rows": 4,
+        "saturated": false,
+        "scratchBytes": 28653696,
+        "scratchLimitBytes": 67108864,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "baselineReduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "candidate": "bf0a027fde1ab8b086b05ba2a7e8b7ee21139373b027765796c9cc7bec250270",
+          "candidateReduce": "7fb790cbcb74d901fa98e6ea9b9e271df51e1099645af5e7d0de0d4342b7c5ac"
+        },
+        "sharedBytes": 24576,
+        "sharedWeightBytes": 42467328,
+        "splitT": 1,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.51425,
+            0.49075,
+            0.494
+          ],
+          "baselineMedianMs": 0.494,
+          "candidate": [
+            0.5865,
+            0.54925,
+            0.5485
+          ],
+          "candidateMedianMs": 0.54925
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "metricMs": 1894.469999998808,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

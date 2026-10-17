@@ -54,6 +54,17 @@ test("transparent encoded PNG and WebP are refused before losing hidden or parti
   assert.deepEqual(await imagePixels(rgba), rgba);
 });
 
+test("RGBA image decoding keeps its copy contract and exposes an explicit borrow path", async () => {
+  const rgba = { width: 2, height: 1, data: new Uint8ClampedArray([1, 2, 3, 4, 5, 6, 7, 8]) };
+  const copied = await imagePixels(rgba);
+  assert.notStrictEqual(copied.data, rgba.data);
+  copied.data[0] = 99;
+  assert.equal(rgba.data[0], 1);
+
+  const borrowed = await imagePixels(rgba, { borrowRGBA: true });
+  assert.strictEqual(borrowed.data, rgba.data);
+});
+
 test("truncated and uninspectable encoded headers never reach a browser decoder", async (t) => {
   const decoder = browserDecoder(t);
   for (const data of [bytes(png).slice(0, 20), bytes(webp).slice(0, 19), new Uint8Array([255, 216, 255, 192]), new TextEncoder().encode('<svg width="100000" height="100000"/>')]) {

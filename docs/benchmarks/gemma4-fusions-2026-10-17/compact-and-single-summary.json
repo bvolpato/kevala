@@ -1,0 +1,381 @@
+{
+  "schemaVersion": 1,
+  "generatedUtc": "2026-10-17T09:14:45.199Z",
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "sourceState": "uncommitted worktree",
+  "previousSummary": "paired-fusions-summary.json",
+  "sourceHashes": {
+    "js/src/gpu-gemma4.js": "a48ad5ac6575d5ee6f35cb677a5eed691c4d296d287f85a37dd6f7012c9a8d87",
+    "js/src/gpu-gemma4-vision.js": "1f77c1aea3069dbd3dbfc1215720bdf54de16058222a46fa6b6a39e7bb3226b5",
+    "js/src/archs/gemma4.js": "8f097e362ccbc1c3cc898cea25d4d604f3c1c2a4d45db54ce16982c9849791e5",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "4fdee0b130ab276da2a324fb6a70c09f55c5ed5cffde8061f94b411a759d04f3",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "cbe6e96ac550c18bbb56cd41c54d8f3050de3a701d1cb888957b40beeed7730c",
+    "js/src/kevala-simd.wasm": "a0928adc6abc8c75e5c8adf01dc71a7140a13f43b002bdd5de11d8e73ad7b37d",
+    "js/src/kevala-relaxed.wasm": "70c7af6dfc114bdbed9bc6109d124af343cd5f2ae2d5b16b39c8d3cc7c03652d",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4",
+    "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+    "crates/kevala/src/wgsl/matmul_gelu.wgsl": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13",
+    "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+    "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+    "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+    "crates/kevala/src/wgsl/reduce_ple.wgsl": "b78cd3e995fc1a60268e9c9e50808a4d51abe0a85efc4344452e129bbede4a78",
+    "tests/gemma4-ple.test.mjs": "0dabf9c2fb13a1f98be07da3109dab1bf15142533c6c84895b5565bc620889f5",
+    "tests/gemma4-batch.test.mjs": "725a9031eff377fa51d18a47eeeaef07d162a96ad47b1dfe6fbbcda9de512385",
+    "scripts/gpu-guard.mjs": "7bb0f2086d8e1ab952ff89d6f108510fb009cab91a85614ee4b998e430f89da1",
+    "js/src/gemma4-image.js": "3d4356ed9a386aeb3a8979ef3a808a9a404a7f38482eebdd73d996645bf493d5",
+    "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+    "crates/kevala/src/wgsl/matmul_tall.wgsl": "e328c97a07664c82ad77b0a149ea9357e0b8973bc87e00e8c86a414ac642115d",
+    "crates/kevala/tests/wgsl.rs": "59ac2db3540beb8a649fed402492ab01237c986a473e747a9a64db9e7685e7d0",
+    "scripts/bench-gemma4-image-prep.mjs": "96534707a954cc8b5ef278921f95e688ac3e4d510fc01e40213e22b5c7cd9dc3",
+    "tests/gemma4-image.test.mjs": "9b46021f24b68ebeeab8163da5a0cb36edd4252aa6f69cbc007faae0d7aca6c5",
+    "tests/gemma4-vision.test.mjs": "9c598af21e8796cba073c32f6f7f7dbe370f0d3c1ea618beebee392755a42bfe",
+    "tests/gemma4-batch-single.test.mjs": "6e431405ff3b96655ae96e3b7158a1ba98b67366749bebad4a1085c3705fba86",
+    "dev/gemma4-matmul-tail-mask-check.js": "dc2161458a9eeda6c68434c0bf6efe4b58e1abbb3b2de7bb135ce61f43a4084b",
+    "dev/gemma4-matmul-tail-mask-check.html": "b390faeecfb12a68f0bbd3470db160a6a439d60785eea4e5b8f63f584e364ed8",
+    "dev/gemma4-matmul-f16-tall-check.js": "0ce2e6276f858e39cb22e6b7f8c2f09d648c02cd3be88be254aeddcdd8c476db",
+    "dev/gemma4-matmul-f16-tall-check.html": "b92c8565f136a0978b39b8eb1cb44c2d827e848646ae864e6ee93e1384128390",
+    "dev/kernel-compile-check.js": "d4dde514ac9fd65f70149b6810602bf4e2862429c9892e1b6a092c3f0f48d45f"
+  },
+  "receipts": {
+    "tail-mask-gate-fixed-chrome": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/tail-mask-gate-fixed-chrome.json.gz",
+      "sha256": "cd51cc1d035d747598dd8a1b4dc724110b9040a7307040b74678add2151ad060",
+      "rawSha256": "b349c70fef75aea020fef51261ed2f2ae1e7a60065b696620e92a3b2b59aeee8"
+    },
+    "vision-submit-chrome": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/vision-submit-chrome.json.gz",
+      "sha256": "e8aa9ae22d46910d556cbb2c7ec32c727f33dd61238c927245a00e0baa2f43ad",
+      "rawSha256": "6609da707be99fcf03c5bb06c6a5e87dfb9b8149d1daa8956771e7eb95981883"
+    },
+    "vision-submit-firefox": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/vision-submit-firefox.json.gz",
+      "sha256": "6bc3dd4b8ce29f8bd8e3df4fe35007405b7ba2a582e8a9a5196c727202e89e25",
+      "rawSha256": "f496e267a5662b740b85017736f0baa75b8b8a5570a8e553d63a41c7b23e5982"
+    },
+    "kv-arena-fast-chrome": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/kv-arena-fast-chrome.json.gz",
+      "sha256": "72d4c0cbbfb3956a61846c21cbd273c3dbed3f4ec761c1951e5a59b4b803c578",
+      "rawSha256": "202fe3aae2fc3b935fc22feb4b83ffa78c83cb47dbbe6aa136e42fd998330bce"
+    },
+    "kv-arena-all-chrome": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/kv-arena-all-chrome.json.gz",
+      "sha256": "4dd0bb965f3e10d95d8b1a3b6b3497d5b91cf76b1c8bf5fe3ad0e8e3136ee189",
+      "rawSha256": "93363572ecd10f3d2a4055f92ba06dcc7a6c97dead3b9d73adeffd3556379c7a"
+    },
+    "camera-vision-submit-v2": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-vision-submit-v2.json.gz",
+      "sha256": "3eb8ebd68b91f72899899aa9379fda8624fd0a0a0b5b4f8836b7bd7babded4a9",
+      "rawSha256": "6257e0a21d911c3f45750951ab72030b20742c6cc540f30fa11f27a9c0f2e721"
+    },
+    "camera-vision-submit-v2-summary": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-vision-submit-v2-summary.json.gz",
+      "sha256": "798d1545420bbc210b336a598cc0fdca5668a725f7a6a1276b177fe179ad7f15",
+      "rawSha256": "f298d2ee5eeb7b8879a0268c92a5a8a991fcd97f669c1b4fdff2a8cac1557513"
+    },
+    "camera-vision-submit-resources": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-vision-submit-resources.json.gz",
+      "sha256": "816e862d3fc62ab5fc5ecdffd8b64dce3a96209021b9688148ed2e8616152dd3",
+      "rawSha256": "fd821663d52aeebd40a1b9a00b94f603cc501a4f827b9100710520d5f7a5b85a"
+    },
+    "gemma4-compact-prep-cpu": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/gemma4-compact-prep-cpu.json.gz",
+      "sha256": "780e5174f1754645ee3cac332c670b3ed694926b99e9c28f2f50f51ee3c258fa",
+      "rawSha256": "cef793469295d8adea0d5f06efb912faa2825413592738cdf20037677cdea786"
+    },
+    "gemma4-compact-prep-current-public-cpu": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/gemma4-compact-prep-current-public-cpu.json.gz",
+      "sha256": "c72717a2664139b06ff462ae59eb3b1a03fffa9e351b643dfd30fcce78cbb5bf",
+      "rawSha256": "430242ca9c726d95c1cf2e28833199c79c79a8c1723a1009fe7c7730856929db"
+    },
+    "compact-pixels-model-chrome": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/compact-pixels-model-chrome.json.gz",
+      "sha256": "bdcd70d8d00c3f69eba36bdaa6832c147ce30e22d65ddce881da9d86acc50eeb",
+      "rawSha256": "8abc6405c8a0a1500dc80e3c6775f255fe6ebaa1b77759622ff80d3e5bde5a58"
+    },
+    "compact-pixels-model-firefox": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/compact-pixels-model-firefox.json.gz",
+      "sha256": "93e3aaf88724a1135c91585bddf84afd8959e7d975a362e009c5aac0c475772f",
+      "rawSha256": "21e25a6532fb593aa4f1d7d7040ddd62131e411337da9bae39a8b68dc9483345"
+    },
+    "camera-compact-pixels": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-compact-pixels.json.gz",
+      "sha256": "f2e3d09901effde1b1c0fe03e7b933546a45b84b0e5f33ea2b75f8273029a8e4",
+      "rawSha256": "e895079d45a581b9d1f7d6d3a1ae36df566bd3874e779963f9d6cf52ec915e40"
+    },
+    "camera-compact-production": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-compact-production.json.gz",
+      "sha256": "d3c7a9cfc3499df8a77b76bd81c47ed9ec79805058aaf54f6c1c6a2fd5ee4cb1",
+      "rawSha256": "017ab4ad72a17b2db79af7f514472abf8e5496550818ac35fbcbcfc2ed6e6bb7"
+    },
+    "f16-single-tall-firefox": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/f16-single-tall-firefox.json.gz",
+      "sha256": "cedc1720941787f0d0fcc4c3a22c056c3871327a26aa2f99a40d8c5b027b99dc",
+      "rawSha256": "772d583bd6c9ac87e7f2518a4dd9a5d3f7ea4e08b7fa9698d3d645a7bd7a75f6"
+    },
+    "f16-single-tall-registered-firefox": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/f16-single-tall-registered-firefox.json.gz",
+      "sha256": "31d8dfc8206d1465662cc6dd23555421700ab6296ab2c5bd6cba08d3afd6edb5",
+      "rawSha256": "096ca1a2bdf96b6026899a96541d3db9973bb962fb2db84624c5f730441be7a5"
+    },
+    "camera-fusions-final": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-fusions-final.json.gz",
+      "sha256": "9cbbc001daab517fb3cf6efe141cc0ca9d66031a6a84282ab4fe4055fc3c5ba8",
+      "rawSha256": "0c467298f42dfb26b7a84f2b3269bd49c7027616b118e7b727523607fe5b6ec4"
+    },
+    "batch-single-model-firefox": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/batch-single-model-firefox.json.gz",
+      "sha256": "0c260a74858a368b5ca100630e8008615e519fbf22ead8d077b51c884ec5633c",
+      "rawSha256": "07a3b6bf2e98917d2f18dda1081830262ebc8e4839a2b5ac3bd073c75432abdd"
+    },
+    "batch-single-fallback-chrome": {
+      "file": "docs/benchmarks/gemma4-fusions-2026-10-17/batch-single-fallback-chrome.json.gz",
+      "sha256": "fe96cb893ae780b0dce72da0b45822c042f5524a1705a88073e157a88c4ae4fe",
+      "rawSha256": "06ec3356712615e42f4454e242ec4e66a203db91993775f12f650ab369bc6128"
+    }
+  },
+  "hardware": {
+    "browser": "153.0.8010.12",
+    "gpu": "nvidia blackwell",
+    "backend": "webgpu",
+    "m4Measured": false,
+    "nativeMetalMlxCudaMeasured": false
+  },
+  "preserved": {
+    "weights": true,
+    "precision": true,
+    "imageBudgets": true,
+    "questions": true,
+    "probabilityThresholds": true
+  },
+  "newlyRetained": {
+    "compactPixels": {
+      "defaultEnabled": true,
+      "privateConsumeOnce": true,
+      "publicContractUnchanged": true,
+      "normalization": "f32(2 * (f32(byte / 255) - 0.5))",
+      "cpuScope": "prepare, planning and cleanup; current public processor versus compact processor",
+      "cpu": [
+        {
+          "budget": 16,
+          "baseline": {
+            "p50Ms": 0.9631040000000155,
+            "p95Ms": 1.2917600000000107
+          },
+          "candidate": {
+            "p50Ms": 0.801902000000041,
+            "p95Ms": 0.8788929999999766
+          },
+          "savedArrayBytes": 442368
+        },
+        {
+          "budget": 40,
+          "baseline": {
+            "p50Ms": 1.9396090000000186,
+            "p95Ms": 2.3276460000000156
+          },
+          "candidate": {
+            "p50Ms": 1.4194820000000163,
+            "p95Ms": 1.580473999999981
+          },
+          "savedArrayBytes": 1105920
+        },
+        {
+          "budget": 70,
+          "baseline": {
+            "p50Ms": 2.9872460000000274,
+            "p95Ms": 3.726665999999909
+          },
+          "candidate": {
+            "p50Ms": 2.2318140000000994,
+            "p95Ms": 2.7066519999999628
+          },
+          "savedArrayBytes": 1935360
+        }
+      ],
+      "modelRawExactChrome": true,
+      "modelRawExactFirefox": true
+    },
+    "singleF16Tile": {
+      "tokens": [
+        97,
+        104
+      ],
+      "physicalBM": 104,
+      "virtualBM": 64,
+      "splitTokens": 1,
+      "shapes": [
+        "1536:6144",
+        "2048:1536"
+      ],
+      "requires": "auto, shader-f16, timestamp-query, Q8 mode0 no bias, batched non-source R4 groups1 target256",
+      "selectionThreshold": 0.05,
+      "deadlineMs": 750,
+      "scratchLimitBytes": 67108864,
+      "controlledScratchAt97": 19023536,
+      "noNewSteadyScratch": true,
+      "loadedBaseline": "selected K64 wide",
+      "loadedPoints": [
+        {
+          "key": "1536:6144",
+          "name": "l.0.down",
+          "selected": true,
+          "baselineMs": 0.173128,
+          "candidateMs": 0.161072,
+          "lessGpuTime": 0.06963633843168071
+        },
+        {
+          "key": "2048:1536",
+          "name": "l.0.q",
+          "selected": true,
+          "baselineMs": 0.064328,
+          "candidateMs": 0.060776,
+          "lessGpuTime": 0.055217012809352095
+        }
+      ],
+      "dispatchesPerDecision": 26,
+      "selectedKeys": [
+        "1536:6144",
+        "2048:1536"
+      ],
+      "fullModel": {
+        "measuredDecisions": 36,
+        "warmupDecisions": 18,
+        "hiddenWords": 3072,
+        "maxProbabilityDelta": 0,
+        "otherKernelStateConstant": true
+      },
+      "fallback": {
+        "maxProbabilityDelta": 0,
+        "candidateDispatches": 0,
+        "otherKernelStateConstant": true
+      }
+    }
+  },
+  "notRetained": {
+    "kvArena": {
+      "removedCopies": 88,
+      "removedPassBoundaries": 22,
+      "extraCacheBytes": 2185216,
+      "allRawChecksExact": true,
+      "measuredDecisions": 288,
+      "reason": "no consistent whole-decoder GPU gain"
+    },
+    "f32DeadTail": {
+      "baselineMs": 0.126904,
+      "candidateMs": 0.1298,
+      "allRawChecksExact": true,
+      "reason": "slower"
+    },
+    "singleVisionSubmit": {
+      "allRawChecksExact": true,
+      "submits": [
+        9,
+        1,
+        9
+      ],
+      "cameraFps": [
+        38.929440389294406,
+        39.47290513999918,
+        39.277811963875926
+      ],
+      "reason": "no material sustained FPS gain; split remains default"
+    }
+  },
+  "camera": {
+    "scope": "unmodified production camera path, final sources, changing synthetic 60 Hz camera",
+    "decisionsPerPhase": 240,
+    "discardedWarmups": 4,
+    "phases": [
+      {
+        "budget": 70,
+        "discardedWarmups": 4,
+        "meanMs": 43.65241525423224,
+        "p50Ms": 43.67500000447035,
+        "p95Ms": 44.935000002384186,
+        "completedFps": 22.701837448096
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.588029660726505,
+        "p50Ms": 32.63249999284744,
+        "p95Ms": 33.43000000715256,
+        "completedFps": 30.242817652548904
+      },
+      {
+        "budget": 16,
+        "discardedWarmups": 4,
+        "meanMs": 24.855042372845997,
+        "p50Ms": 24.702500008046627,
+        "p95Ms": 26.635000005364418,
+        "completedFps": 39.48206254289585
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.8444703384855,
+        "p50Ms": 32.96999999880791,
+        "p95Ms": 33.63000001013279,
+        "completedFps": 30.013135536122626
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "resources": {
+      "memory.max": "6291456000",
+      "memory.peak": "4517167104",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 37590201\nuser_usec 24446839\nsystem_usec 13143361\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 494\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    }
+  },
+  "validation": {
+    "javascriptCheck": "pnpm check passed: 198 JS files and 11 inline modules",
+    "javascriptTests": "pnpm test passed: 363 tests",
+    "rust": "Rust 1.95 workspace formatting/clippy -D warnings passed; native WGSL checks passed",
+    "wasm": "all three rebuilt with Rust1.95 and ABI checked, 48 exports each",
+    "fullGpuSuiteRerun": false,
+    "existingUnrelatedLayaParity": {
+      "observed": 0.024006444195624588,
+      "limit": 0.024,
+      "toleranceChanged": false
+    },
+    "package": {
+      "path": "/tmp/kevala-fusion-final-package-20261017/kevala-0.1.3.tgz",
+      "sha256": "322f724e8a655a1ed41e16f1a3e528a9aefa6e2dada0c0b04c308af358a91b99",
+      "files": 53,
+      "wasmModules": 3,
+      "validation": "pnpm check:package passed"
+    },
+    "site": "pnpm stage:site passed"
+  },
+  "limits": {
+    "targetDecisionsPerSecond": 60,
+    "targetAchieved": false,
+    "fullF16CameraFpsMeasured": false,
+    "syntheticKernelWinIsNotCameraFps": true,
+    "m4Unmeasured": true,
+    "sourceCommitted": false,
+    "pushed": false,
+    "deployed": false,
+    "published": false,
+    "localSiteStaged": true
+  }
+}

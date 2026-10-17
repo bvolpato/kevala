@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Q8 to F16 weight cache probe</title>
+<h1>GPU-decoded F16 weight cache probe</h1>
+<p>Dev-only, shader-f16 required. Keeps the production F16 arithmetic and split policy, checks output and partial bits with staged readback, then measures cached weight loads. Controlled allocations plus a 24 MiB allowance must fit 160 MiB. Add <code>?all=1</code> for the 12288-wide shapes.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-weight-half-check.js"></script>

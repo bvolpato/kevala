@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma 4 vision BF16 shared-tile probe</title>
+<h1>Gemma 4 vision BF16 shared-tile probe</h1>
+<p>Compares the registered T=144 BF16/F32-tile matmul against a DEV-only source-derived variant that stores raw BF16 words in the shared weight tile, then decodes to the same F32 values at the original dot reads. It changes only the shared tile type, its writer/reader swizzle, and the decode point. The reducer and virtual split policy stay registered.</p>
+<p>The primary pass checks every Y value and PART plane bit-for-bit and finite for mode 0 with bias disabled, before and after alternating GPU timestamps. Add <code>full=1</code> to add tiny-subnormal and large-finite BF16 fixtures, all modes, and bias on/off. The 64 MiB cap includes temporary GPU buffers, bounded host staging/readback, queued upload allowance, and shader source scratch. The shared BF16 fixture weight buffer is reported separately and reused by both paths. No model pack is loaded.</p>
+<p>Default selects the three core vision matrices: gate/up 3072x768, down 768x3072, and attention 768x768. Use <code>?shape=projection</code> for 1536x768, <code>?all=1</code> for all four actual matrices, or <code>?shape=all</code> for the three core shapes. Add <code>ragged=1</code> to include N=770. Requires WebGPU <code>timestamp-query</code>.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-bf16-shared-check.js"></script>

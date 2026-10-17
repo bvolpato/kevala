@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma Q8 next-block prefetch probe</title>
+<h1>Gemma Q8/F32 next-block prefetch probe</h1>
+<p>DEV-only T=97 suffix matmul comparison. The candidate reads the next K32 block into private registers while the current shared tile is consumed, then stages it with the production Q8 decode and swizzle. It keeps the registered Q8/F32 R4 row56 arithmetic and reducer. The page checks full Y and PART planes, tails, all three modes, and bias off/on before and after three alternating timestamp pairs of four repetitions. It runs only these GPU kernels and synthetic weights. Temporary GPU buffers, mapped host copies, upload staging, and queued uploads stay within 64 MiB beyond immutable Q8 weights.</p>
+<p>Opening the page starts the probe. The default run checks gate 6144×1536, gate 12288×1536, and down 1536×6144. Use <code>?shape=gate&amp;T=97</code> for the primary case, or <code>?all=1</code> for the Q, K/V, and O projections too. This measures matmul milliseconds only; it does not run the camera or model.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-prefetch-check.js"></script>

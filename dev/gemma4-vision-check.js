@@ -1,6 +1,7 @@
 // Tiny fixture by default. To check the extracted actual E2B companion, add
 // ?fixture=../tmp/golden-gemma4-vision-e2b.json&pack=../tmp/gemma-4-e2b-vision-bf16.kevala
 // Add &profile=1 for warmed wall-clock and per-kernel GPU timing samples.
+// Add &clipFusionCheck=1 with the actual pack for exact enabled/disabled output parity.
 import { Profiler, requestDevice } from "../js/src/gpu.js";
 import { GpuGemma4Vision, gpuVisionProjection } from "../js/src/gpu-gemma4-vision.js";
 import { gpuLayouts, readPackHead } from "../js/src/pack-layout.js";
@@ -40,6 +41,27 @@ async function sample(model, image, expected, tolerance, id, profile) {
   const gpu = model.lastProfile || null;
   if (profile && (!gpu || !Object.keys(gpu).length)) throw new Error(`vision ${id} did not return GPU timestamp samples`);
   return { wallMs, ...correctness, ...(profile ? { gpu } : {}) };
+}
+
+async function compareClipFusion(model, image, expected, tolerance, id, operations = false) {
+  const flag = operations === "reduceResidual" ? "fuseReduceResidual" : operations === "reduceGelu" ? "fuseReduceGelu" : operations === "reduce" ? "fuseReduceNorm" : operations === "residual" ? "fuseResidualNorm" : operations ? "fuseVisionOps" : "fuseInputClips";
+  const stats = operations ? "fusionStats" : "clipFusionStats";
+  model[flag] = false;
+  const baselineStarted = performance.now();
+  const baseline = await model.forward(image);
+  const baselineWallMs = performance.now() - baselineStarted;
+  const baselineCorrectness = compare(baseline, expected, tolerance, `${id} baseline`);
+  const baselineFusion = model[stats];
+  model[flag] = true;
+  const fusedStarted = performance.now();
+  const fused = await model.forward(image);
+  const fusedWallMs = performance.now() - fusedStarted;
+  const fusedCorrectness = compare(fused, expected, tolerance, `${id} fused`);
+  const parity = compare(fused, baseline, 0, `${id} fusion parity`);
+  const fusedFusion = model[stats];
+  const removed = operations === "reduceResidual" ? "reduceResidualPasses" : operations === "reduceGelu" ? "reduceGeluPasses" : operations === "reduce" ? "reduceNormPasses" : operations === "residual" ? "residualNormPasses" : operations ? "removedPasses" : "removedInputClipPasses";
+  if (operations !== "reduceGelu" && fusedFusion[removed] <= baselineFusion[removed]) throw new Error(`${id} fusion removed no passes`);
+  return { baselineCorrectness, fusedCorrectness, parity, baselineFusion, fusedFusion, baselineWallMs, fusedWallMs };
 }
 
 async function projectionCheck(runtime, item) {
@@ -162,7 +184,19 @@ async function main() {
   const fixture = await response.json();
   const profile = params.get("profile") === "1";
   const checkGpuOutput = params.get("gpu") === "1";
+  const clipFusionCheck = params.get("clipFusionCheck") === "1";
+  const opFusionCheck = params.get("opFusionCheck") === "1";
+  const residualFusionCheck = params.get("residualFusionCheck") === "1";
+  const reduceFusionCheck = params.get("reduceFusionCheck") === "1";
+  const reduceGeluFusionCheck = params.get("reduceGeluFusionCheck") === "1";
+  const reduceResidualFusionCheck = params.get("reduceResidualFusionCheck") === "1";
   if (checkGpuOutput && profile) throw new Error("GPU projection handoff checks require profile=0");
+  if (clipFusionCheck && (profile || checkGpuOutput || !params.has("pack"))) throw new Error("clipFusionCheck requires an actual pack with profile=0 and gpu=0");
+  if (opFusionCheck && (profile || checkGpuOutput || clipFusionCheck)) throw new Error("opFusionCheck requires profile=0, gpu=0, and clipFusionCheck=0");
+  if (residualFusionCheck && (profile || checkGpuOutput || clipFusionCheck || opFusionCheck)) throw new Error("residualFusionCheck requires an isolated unprofiled fusion comparison");
+  if (reduceFusionCheck && (profile || checkGpuOutput || clipFusionCheck || opFusionCheck || residualFusionCheck)) throw new Error("reduceFusionCheck requires an isolated unprofiled fusion comparison");
+  if (reduceGeluFusionCheck && (profile || checkGpuOutput || clipFusionCheck || opFusionCheck || residualFusionCheck || reduceFusionCheck)) throw new Error("reduceGeluFusionCheck requires an isolated unprofiled fusion comparison");
+  if (reduceResidualFusionCheck && (profile || checkGpuOutput || clipFusionCheck || opFusionCheck || residualFusionCheck || reduceFusionCheck || reduceGeluFusionCheck)) throw new Error("reduceResidualFusionCheck requires an isolated unprofiled fusion comparison");
   const runtime = await requestDevice({ features: profile ? ["timestamp-query"] : [] });
   if (profile && !runtime.device.features.has("timestamp-query")) throw new Error("WebGPU timestamp-query is unavailable on this adapter");
   runtime.wgsl = await kernelSource(params.get("wasm") || undefined);
@@ -191,6 +225,12 @@ async function main() {
     for (const test of fixture.cases) {
       const image = { patches: floats(test.patches), positions: new Int32Array(bytes(test.positions).buffer), softTokens: test.softTokens };
       const expected = floats(test.projected);
+      if (clipFusionCheck || opFusionCheck || residualFusionCheck || reduceFusionCheck || reduceGeluFusionCheck || reduceResidualFusionCheck) {
+        const clipFusion = await compareClipFusion(model, image, expected, tolerance, test.id, reduceResidualFusionCheck ? "reduceResidual" : reduceGeluFusionCheck ? "reduceGelu" : reduceFusionCheck ? "reduce" : residualFusionCheck ? "residual" : opFusionCheck);
+        cases.push({ id: test.id, patches: image.positions.length / 2, activePatches: model.shape[0], softTokens: image.softTokens, attentionMode: model.attentionMode, elapsedMs: clipFusion.fusedWallMs, clipFusion });
+        log(`${test.id}: ${opFusionCheck ? "operation" : "clip"} fusion exact parity; ${JSON.stringify(clipFusion.fusedFusion)}`);
+        continue;
+      }
       if (!profile) {
         const result = await sample(model, image, expected, tolerance, test.id, false);
         cases.push({ id: test.id, patches: image.positions.length / 2, activePatches: model.shape[0], softTokens: image.softTokens, attentionMode: model.attentionMode, elapsedMs: result.wallMs, maxAbs: result.maxAbs, relativeL2: result.relativeL2 });
@@ -233,6 +273,7 @@ async function main() {
       log(`${test.id}: baseline p50=${baselineMedianMs.toFixed(2)} ms; profiled p50=${profiledMedianMs.toFixed(2)} ms; parity maxAbs=${Math.max(...profiled.map((run) => run.maxAbs))}`);
       for (const [name, ms] of Object.entries(kernelMedianMs).sort((a, b) => b[1] - a[1])) log(`  ${name}: ${ms.toFixed(3)} ms`);
     }
+    if (reduceGeluFusionCheck && !cases.some((test) => test.clipFusion.fusedFusion.reduceGeluPasses > 0)) throw new Error("reducer/GELU fusion was not exercised");
     const gpuOutput = checkGpuOutput ? { cases: [], finite: await finiteCheck(model) } : null;
     if (gpuOutput) for (const item of heldProjections) gpuOutput.cases.push(await projectionCheck(runtime, item));
     window.gpuBench = {
@@ -248,6 +289,7 @@ async function main() {
       metricMs: cases.reduce((sum, item) => sum + (profile ? item.baseline.medianWallMs : item.elapsedMs), 0) / cases.length,
       profile,
       options,
+      clipFusion: model.clipFusionStats,
       ...(gpuOutput ? { gpuOutput } : {}),
       wasm: runtime.wgsl.wasmUrl,
       correctness: { ok: true, tolerance, cases, sourceCommit: fixture.sourceCommit, compute: fixture.compute },

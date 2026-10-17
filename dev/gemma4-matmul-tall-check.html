@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma 4 Q8/F32 BM104 matmul probe</title>
+<h1>Gemma 4 Q8/F32 BM104 matmul probe</h1>
+<p>Compares the registered Q8/F32 R4 row56 kernel with a DEV-derived physical BM104 kernel for T=97. The candidate keeps the BM64 split rule, Q8 decode and scale operations, shared weight swizzle, K32 dot order, and the same split reducer.</p>
+<p>Checks every Y value and PART plane bit-for-bit, including non-finite values, signed zeros, NaN input padding, and four-float tails, before and after paired GPU timestamps. Temporary GPU buffers and host staging stay within 64 MiB; immutable Q8 weights and scales are reported separately. No runtime kernel is changed.</p>
+<p>Run <code>?shape=gate&amp;T=97</code> for the primary 6144x1536 case. Add <code>&amp;all=1</code> to check down and wide shapes too. Timing requires WebGPU <code>timestamp-query</code>.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-tall-check.js"></script>

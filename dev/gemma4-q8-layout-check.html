@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma 4 Q8/F32 T97 packed-weight layout probe</title>
+<h1>Gemma 4 Q8/F32 T97 packed-weight layout probe</h1>
+<p>Compares the registered R4/BM56 row-major Q8 matmul with a DEV-only variant whose Q8 bytes use <code>[Ntile64,Kblock32,Nwithin64,packed32B]</code> order. The candidate changes only the W vector address. It keeps the original scale addresses, Q8 decode, shared-memory layout, barriers, K32 dot order, split rule, and reducer.</p>
+<p>The page constructs the permuted weight bytes through bounded 1 MiB CPU staging, uploads an equal-size packed W buffer, and reports CPU packing and upload time separately from steady-state GPU timestamps. It verifies the full address permutation and tile-boundary samples, then checks every Y value and PART plane bit-for-bit across all mode/bias combinations before and after paired timing. Checks include finite active values, NaN-padded input rows, signed zeros, and four-float tails. Temporary GPU buffers and host staging stay under 64 MiB; the immutable original Q8 W and scales are excluded, while packed candidate W is counted.</p>
+<p>Run <code>?shape=gate&amp;T=97</code> for the primary 6144x1536 case. Use <code>?shape=down&amp;T=97</code> for 1536x6144, or <code>?all=1&amp;T=97</code> for both shapes. Requires WebGPU <code>timestamp-query</code>.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-q8-layout-check.js"></script>

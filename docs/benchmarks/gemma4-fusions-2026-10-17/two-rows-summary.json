@@ -1,0 +1,458 @@
+{
+  "date": "2026-10-17",
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "scope": "Uncommitted WebGPU source; local RTX5070Ti Chromium and constrained Firefox. No new M4, native Metal/MLX, CUDA or deployment result.",
+  "targetFps": 60,
+  "targetMet": false,
+  "weightsChanged": false,
+  "precisionChanged": false,
+  "imageBudgetsChanged": false,
+  "sourceSha256": {
+    "js/src/gpu-gemma4.js": "9ce238921f30bf6cbed3fefd17dda12bfba62cd812f04980e37dfc3c04ded7a7",
+    "js/src/archs/gemma4.js": "5a9d1a7313f5fd2daa07a60dba98e92d2c7c2ae56e55f058f31e6230ca81f176",
+    "js/src/gpu-matvec-two.js": "2f39afeababedac382576ae2499caa714a4be598c3bc0d2cec0eb42a12e67f3f",
+    "crates/kevala/src/gpu.rs": "ae6e3560ce2facb5a41bb1d188e39c08d397ce5078e1de3011d0f85b78779f2b",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "cdcedca5b0eb035344376092000b4ede4fbc778131268f5b5ad249621c1577e1",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "0d1881e3d1035d4acb286360a93d3fe9fe54821af771d6f662592619d891fee9"
+  },
+  "sourceSnapshotNote": "Only the sharedMatvecMatrices timing counter was added after the sustained run; the profile and later full-model checks include it.",
+  "camera": {
+    "receipt": "camera-two-rows-sustained.json",
+    "framesPerStage": 240,
+    "phases": [
+      {
+        "budget": 70,
+        "discardedWarmups": 4,
+        "meanMs": 45.1291101696759,
+        "p50Ms": 45.01250000298023,
+        "p95Ms": 46.30000001192093,
+        "completedFps": 21.902528157555473
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.83870762776015,
+        "p50Ms": 32.622500002384186,
+        "p95Ms": 34.185000002384186,
+        "completedFps": 29.952159391319785
+      },
+      {
+        "budget": 16,
+        "discardedWarmups": 4,
+        "meanMs": 25.97235169495314,
+        "p50Ms": 25.884999997913837,
+        "p95Ms": 27.45999999344349,
+        "completedFps": 37.80110186190534
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 33.101779660115305,
+        "p50Ms": 32.91499999910593,
+        "p95Ms": 34.39000000059605,
+        "completedFps": 29.748191056805407
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "resources": {
+      "memory.max": "6291456000",
+      "memory.peak": "4405153792",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 42345513\nuser_usec 28291715\nsystem_usec 14053797\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 581\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    }
+  },
+  "profile": {
+    "receipt": "two-rows-camera-profile.json.gz",
+    "coarseSamples": 4,
+    "sharedMatvecMatrices": [
+      100,
+      100,
+      100,
+      100
+    ],
+    "gpuStages": {
+      "vision": {
+        "meanMs": 7.996560000000001
+      },
+      "prefix": {
+        "meanMs": 6.553800000000002
+      },
+      "suffix": {
+        "meanMs": 9.669720000000002
+      },
+      "tail": {
+        "meanMs": 4.340896
+      }
+    }
+  },
+  "loadedComparisons": [
+    {
+      "receipt": "matvec-two-loaded-chrome.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true,
+      "calibration": {
+        "elapsedMs": 88.25,
+        "reason": "calibrated",
+        "points": [
+          {
+            "kind": "gelu",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.3803315628520843,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:12288",
+            "selected": true,
+            "benefit": 0.26709329740653415,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "2048:1536",
+            "selected": true,
+            "benefit": 0.21226415094339618,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "4096:1536",
+            "selected": true,
+            "benefit": 0.33110367892976594,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "gelu",
+            "key": "6144:1536",
+            "selected": true,
+            "benefit": 0.3557510999371464,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:2048",
+            "selected": true,
+            "benefit": 0.27194860813704497,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:4096",
+            "selected": true,
+            "benefit": 0.23972602739726023,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "256:1536",
+            "selected": false,
+            "benefit": -0.08212560386473433,
+            "reason": "stable-generic-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:256",
+            "selected": true,
+            "benefit": 0.31764705882352945,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.39798276948938854,
+            "reason": "stable-two-row-win"
+          }
+        ]
+      },
+      "actualDispatches": [
+        {
+          "budget": 70,
+          "dispatches": [
+            100,
+            100,
+            100,
+            100
+          ]
+        },
+        {
+          "budget": 40,
+          "dispatches": [
+            100,
+            100,
+            100,
+            100
+          ]
+        },
+        {
+          "budget": 16,
+          "dispatches": [
+            100,
+            100,
+            100,
+            100
+          ]
+        }
+      ]
+    },
+    {
+      "receipt": "matvec-two-loaded-firefox.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true,
+      "calibration": {
+        "elapsedMs": 1000.1000000000022,
+        "reason": "deadline",
+        "points": [
+          {
+            "kind": "gelu",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.4059216219557424,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.36657848324514986,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "6144:1536",
+            "selected": true,
+            "benefit": 0.19787419918462432,
+            "reason": "stable-two-row-win"
+          }
+        ]
+      },
+      "actualDispatches": [
+        {
+          "budget": 70,
+          "dispatches": [
+            20,
+            20,
+            20,
+            20
+          ]
+        },
+        {
+          "budget": 40,
+          "dispatches": [
+            20,
+            20,
+            20,
+            20
+          ]
+        },
+        {
+          "budget": 16,
+          "dispatches": [
+            20,
+            20,
+            20,
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "receipt": "matvec-two-five-chrome.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true,
+      "calibration": {
+        "elapsedMs": 86.25499999523163,
+        "reason": "calibrated",
+        "points": [
+          {
+            "kind": "gelu",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.3826429980276134,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:12288",
+            "selected": true,
+            "benefit": 0.26315789473684204,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "2048:1536",
+            "selected": true,
+            "benefit": 0.20786516853932582,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "4096:1536",
+            "selected": true,
+            "benefit": 0.3269770050476726,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "gelu",
+            "key": "6144:1536",
+            "selected": true,
+            "benefit": 0.3581293157564344,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:2048",
+            "selected": true,
+            "benefit": 0.2767094017094017,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:4096",
+            "selected": true,
+            "benefit": 0.2501901140684411,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "256:1536",
+            "selected": false,
+            "benefit": -0.0795180722891566,
+            "reason": "stable-generic-win"
+          },
+          {
+            "kind": "plain",
+            "key": "1536:256",
+            "selected": true,
+            "benefit": 0.31756756756756754,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.3966750841750842,
+            "reason": "stable-two-row-win"
+          }
+        ]
+      },
+      "actualDispatches": [
+        {
+          "budget": 70,
+          "dispatches": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "budget": 40,
+          "dispatches": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "budget": 16,
+          "dispatches": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "receipt": "matvec-two-five-firefox.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true,
+      "calibration": {
+        "elapsedMs": 1000.2200000000012,
+        "reason": "deadline",
+        "points": [
+          {
+            "kind": "gelu",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.4065432098765432,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "4096:1536",
+            "selected": true,
+            "benefit": 0.07035358114233914,
+            "reason": "stable-two-row-win"
+          },
+          {
+            "kind": "plain",
+            "key": "12288:1536",
+            "selected": true,
+            "benefit": 0.36327327593858166,
+            "reason": "stable-two-row-win"
+          }
+        ]
+      },
+      "actualDispatches": [
+        {
+          "budget": 70,
+          "dispatches": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "budget": 40,
+          "dispatches": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "budget": 16,
+          "dispatches": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "javascript": "passed",
+    "rustPinnedFmt": "passed",
+    "rustPinnedClippy": "passed",
+    "nativeWgsl": "passed",
+    "wasmBuilds": "passed on pinned1.95.0",
+    "wasmAbi": "passed",
+    "kernelCompileChrome": "passed; unsupportedF16skipped",
+    "kernelCompileFirefox": "passed",
+    "package": "48 files/3 WASM passed",
+    "siteStaging": "passed",
+    "fullGpuSuite": "not rerun; pre-existing Laya F32 parity failure documented separately",
+    "decoderGuard": "passed: two-rows-decoder-guard-chrome.json"
+  }
+}

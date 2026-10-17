@@ -1,0 +1,207 @@
+{
+  "date": "2026-10-17",
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "scope": "Uncommitted source; local Linux NVIDIA Chromium and constrained Firefox. No new M4 run, deployment or CUDA/native result.",
+  "targetFps": 60,
+  "targetMet": false,
+  "precisionChanged": false,
+  "imageBudgetChanged": false,
+  "sourceSha256": {
+    "js/src/gpu-gemma4.js": "777b774e7846ad5b8043d4f4d86440363b4b71d22f7f1f6f109081cd08416559",
+    "js/src/gpu-gemma4-attention.js": "ac3c3ccc8a0676dfffc4d26a3877f31b77a090a9b927f7e62207140748c9d26f",
+    "js/src/gpu-gemma4-batch-mlp.js": "93b2d07358b16f53730f7dd12a9c2733502c9ce1f5ca6a5dd9d4a2575b83af35",
+    "js/src/gpu-gemma4-prefix-cache.js": "ee443e1a677203d20968bd723f9f31d2ed27f0914dd0a43f9ab2986bcfecd2ea",
+    "js/src/gpu-gemma4-vision.js": "f17997adfa6e923b69d876e17fb03f69f01c376932b6024f1aa6dc9b6da184d8",
+    "js/src/archs/gemma4.js": "dafce566322a3dec32a24643a34a87e56d8df157cfdb2a0af999377357909fba",
+    "crates/kevala/src/wgsl/gemma4_attention_subgroup.wgsl": "228b0f44fc63ab1b799d6961dff8e30497dfd29907e40111f16f3b5aa84ac66e",
+    "crates/kevala/src/wgsl/gemma4_vision_residual_norm.wgsl": "f87a19f0cfdbf8ff8ca705c4b2349daa330c18624526441c741120d055caa9c3",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_norm_rope.wgsl": "8f94d0b577ca6472fa5836269f934364fb72065603b4c8de60558b7cb6e42cee"
+  },
+  "camera": {
+    "framesPerStage": 240,
+    "phases": [
+      {
+        "budget": 70,
+        "discardedWarmups": 4,
+        "meanMs": 46.26798728828208,
+        "p50Ms": 46.125,
+        "p95Ms": 47.53499999642372,
+        "completedFps": 21.378017939323623
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 35.47449152474686,
+        "p50Ms": 35.46500000357628,
+        "p95Ms": 36.96500000357628,
+        "completedFps": 27.77493790525379
+      },
+      {
+        "budget": 16,
+        "discardedWarmups": 4,
+        "meanMs": 28.29447033799301,
+        "p50Ms": 28.09000000357628,
+        "p95Ms": 30.280000001192093,
+        "completedFps": 34.7272250361585
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 35.7406779655208,
+        "p50Ms": 35.72749999910593,
+        "p95Ms": 37.230000004172325,
+        "completedFps": 27.579942222947363
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "pageErrors": []
+  },
+  "profile": {
+    "coarseSamples": 4,
+    "fineSamples": 4,
+    "coarseMean": {
+      "vision": {
+        "ms": 8.09232,
+        "passes": 9,
+        "dispatches": 264
+      },
+      "prefix": {
+        "ms": 7.791392000000002,
+        "passes": 35,
+        "dispatches": 384
+      },
+      "suffix": {
+        "ms": 9.435848000000002,
+        "passes": 34,
+        "dispatches": 370
+      },
+      "tail": {
+        "ms": 5.12528,
+        "passes": 22,
+        "dispatches": 285
+      }
+    },
+    "encodeCpuMeanMs": {
+      "prefix": 0.25,
+      "suffix": 0.19375000149011612,
+      "tail": 0.16749999672174454
+    },
+    "topKernelGroups": [
+      {
+        "label": "vision",
+        "ms": 8.18376,
+        "dispatches": 264
+      },
+      {
+        "label": "suffix/mm.gate",
+        "ms": 1.9564480000000002,
+        "dispatches": 28
+      },
+      {
+        "label": "suffix/mm.down",
+        "ms": 1.9489759999999998,
+        "dispatches": 28
+      },
+      {
+        "label": "suffix/mm.up",
+        "ms": 1.8604880000000001,
+        "dispatches": 28
+      },
+      {
+        "label": "prefix/mm.down",
+        "ms": 1.8429920000000004,
+        "dispatches": 28
+      },
+      {
+        "label": "tail/mm.gate.up.gelu",
+        "ms": 1.6859760000000001,
+        "dispatches": 20
+      },
+      {
+        "label": "prefix/mm.gate",
+        "ms": 1.5846479999999994,
+        "dispatches": 14
+      },
+      {
+        "label": "prefix/mm.up",
+        "ms": 1.5698400000000003,
+        "dispatches": 14
+      },
+      {
+        "label": "tail/mm.down",
+        "ms": 0.9970479999999999,
+        "dispatches": 22
+      },
+      {
+        "label": "suffix/attn.subgroup",
+        "ms": 0.9346960000000002,
+        "dispatches": 14
+      },
+      {
+        "label": "suffix/mm.q",
+        "ms": 0.8265520000000001,
+        "dispatches": 28
+      },
+      {
+        "label": "suffix/mm.o",
+        "ms": 0.812656,
+        "dispatches": 28
+      },
+      {
+        "label": "prefix/mm.q",
+        "ms": 0.7447280000000001,
+        "dispatches": 28
+      },
+      {
+        "label": "prefix/mm.o",
+        "ms": 0.702144,
+        "dispatches": 28
+      },
+      {
+        "label": "tail/attn.subgroup",
+        "ms": 0.6197359999999998,
+        "dispatches": 16
+      },
+      {
+        "label": "tail/mm.q",
+        "ms": 0.34169600000000006,
+        "dispatches": 22
+      },
+      {
+        "label": "prefix/attn.subgroup",
+        "ms": 0.3351760000000001,
+        "dispatches": 14
+      },
+      {
+        "label": "tail/mm.o",
+        "ms": 0.32171999999999984,
+        "dispatches": 22
+      }
+    ],
+    "note": "Separate coarse and fine instrumentation adds pass boundaries; timings are stages, not camera FPS."
+  },
+  "validation": {
+    "js": {
+      "command": "pnpm test",
+      "passed": true,
+      "scope": "complete JavaScript suite including delayed GPU-error invalidation regression"
+    },
+    "kernelBits": "strict baseline/candidate equality; no tolerance relaxed",
+    "loadedModel": "2q and5q off/on/off at budgets70/40/16; raw probability delta0, no threshold flips",
+    "unrelatedFailure": "Existing Laya F32 0.024006444195624588 exceeds unchanged0.024; full GPU suite not rerun.",
+    "package": {
+      "command": "pnpm check:package /tmp/kevala-0.1.3.tgz",
+      "passed": true,
+      "files": 46,
+      "wasmModules": 3
+    }
+  },
+  "sourceSnapshotNote": "Final source snapshot includes a later error-path cache invalidation fix; it leaves the measured successful inference path unchanged. The regression failed before that fix and passed afterward."
+}

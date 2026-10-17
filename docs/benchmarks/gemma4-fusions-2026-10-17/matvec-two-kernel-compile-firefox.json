@@ -1,0 +1,232 @@
+{
+  "adapter": {
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "vendor": ""
+  },
+  "backend": "webgpu",
+  "capabilities": {
+    "shaderF16": true,
+    "subgroup16": false,
+    "subgroup32": false,
+    "subgroup4": false,
+    "subgroup8": false,
+    "timestampQuery": true
+  },
+  "correctness": {
+    "compiled": [
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matvec_gelu_two",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 4,
+          "subgroups": false
+        }
+      }
+    ],
+    "failures": [],
+    "ok": true,
+    "registeredKernels": 2,
+    "skipped": []
+  },
+  "deviceFeatures": [
+    "timestamp-query",
+    "shader-f16",
+    "core-features-and-limits"
+  ],
+  "done": true,
+  "languageFeatures": [
+    "readonly_and_readwrite_storage_textures",
+    "packed_4x8_integer_dot_product",
+    "pointer_composite_access"
+  ],
+  "limits": {
+    "maxComputeWorkgroupStorageSize": 32768
+  },
+  "method": "GPU pipeline compilation wall clock",
+  "metricMs": 30.331111111111113,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "24 MiB",
+          "pid": 3592137,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done"
+}

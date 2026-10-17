@@ -1,0 +1,7 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact F32 two-row compact-lane matvec guard</title>
+<p>Compares the registered fixed-32 subgroup kernels with a derived WG128 variant that holds the original logical lanes 0–31 and 32–63 in separate registers. It keeps each dot stream and the original reduction tree, then checks outputs and padding before and after paired GPU timestamps.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matvec-lanes-check.js"></script>

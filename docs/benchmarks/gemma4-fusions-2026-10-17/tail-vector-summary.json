@@ -1,0 +1,195 @@
+{
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "sourceState": "uncommitted worktree",
+  "previousSummary": "next-fusions-summary.json",
+  "sourceHashes": {
+    "js/src/gpu-gemma4.js": "5d901097058c16b24e600a5a57f50455f8a3a99f5d48f00c1d2517244637dc2d",
+    "js/src/gpu-gemma4-vision.js": "16269b98e606ab347ea542df67a8d8a0ffff8fbcbbd601af2c207b6b9795156f",
+    "js/src/archs/gemma4.js": "f2010ba8a094e93d642973164e44d941f3959b78a0c83f1b7d997c2fda546e8f",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "eadb526dd83b7ed0ef64faae961312e27fcd8855e19a528602eca0830964dffe",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "52c66ded374bdd14907d50d831a02f7504fb612310a2a28730fe73c5d262c43e",
+    "js/src/kevala-simd.wasm": "32a190449c5ac81284632762c34436822c582405cfe6c4d92d220d56c9720f81",
+    "js/src/kevala-relaxed.wasm": "6941a232ff9f07505fb270769b0b0423e455f62b2089b9f79fd35a9b7feaeb05",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4"
+  },
+  "hardware": {
+    "browser": "153.0.8010.12",
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "m4Measured": false
+  },
+  "preserved": {
+    "weights": true,
+    "precision": true,
+    "imageBudgets": true,
+    "questions": true,
+    "probabilityThresholds": true
+  },
+  "correctness": {
+    "registeredKernelExact": true,
+    "chrome": {
+      "ok": true,
+      "hiddenWordsComparedBitForBit": true,
+      "maxProbabilityDelta": 0,
+      "subgroupDispatchesPerCandidateDecision": 76
+    },
+    "firefox": {
+      "ok": true,
+      "hiddenWordsComparedBitForBit": true,
+      "maxProbabilityDelta": 0,
+      "subgroupDispatches": 0,
+      "reason": "f16-baseline"
+    }
+  },
+  "calibration": {
+    "threshold": 0.05,
+    "samples": 3,
+    "repetitions": 4,
+    "totalDeadlineMs": 1000,
+    "scratchLimitBytes": 33554432,
+    "selected": [
+      {
+        "kind": "gelu",
+        "key": "12288:1536",
+        "baselineMs": 0.031,
+        "candidateMs": 0.028448,
+        "benefit": 0.08232258064516125
+      },
+      {
+        "kind": "gelu",
+        "key": "6144:1536",
+        "baselineMs": 0.016368,
+        "candidateMs": 0.015048,
+        "benefit": 0.08064516129032258
+      },
+      {
+        "kind": "plain",
+        "key": "2048:1536",
+        "baselineMs": 0.006656,
+        "candidateMs": 0.006168,
+        "benefit": 0.07331730769230765
+      },
+      {
+        "kind": "plain",
+        "key": "4096:1536",
+        "baselineMs": 0.009568,
+        "candidateMs": 0.008768,
+        "benefit": 0.0836120401337793
+      },
+      {
+        "kind": "plain",
+        "key": "1536:2048",
+        "baselineMs": 0.005432,
+        "candidateMs": 0.004992,
+        "benefit": 0.08100147275405012
+      },
+      {
+        "kind": "plain",
+        "key": "1536:256",
+        "baselineMs": 0.003248,
+        "candidateMs": 0.00296,
+        "benefit": 0.08866995073891627
+      },
+      {
+        "kind": "plain",
+        "key": "12288:1536",
+        "baselineMs": 0.023008,
+        "candidateMs": 0.02052,
+        "benefit": 0.1081363004172462
+      }
+    ],
+    "fallback": "retain previously selected two-row kernels"
+  },
+  "camera": {
+    "source": "Chromium synthetic camera",
+    "requestedCameraFps": 60,
+    "phases": [
+      {
+        "budget": 70,
+        "discardedWarmups": 4,
+        "meanMs": 44.72398305109749,
+        "p50Ms": 44.59000000357628,
+        "p95Ms": 45.85999999940395,
+        "completedFps": 22.089891759542756
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.88741525414132,
+        "p50Ms": 33.087499998509884,
+        "p95Ms": 33.86499999463558,
+        "completedFps": 29.962050194739668
+      },
+      {
+        "budget": 16,
+        "discardedWarmups": 4,
+        "meanMs": 24.822775423716184,
+        "p50Ms": 24.730000004172325,
+        "p95Ms": 26.510000005364418,
+        "completedFps": 39.530013372959054
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 32.87730932141007,
+        "p50Ms": 32.66499999910593,
+        "p95Ms": 34.29499998688698,
+        "completedFps": 29.973992778199204
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "resources": {
+      "memory.max": "6291456000",
+      "memory.peak": "4575547392",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 37356459\nuser_usec 24600721\nsystem_usec 12755737\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 475\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    },
+    "pageErrors": [],
+    "targetFps": 60,
+    "targetReached": false,
+    "previousSeparateFastFps": 39.438264850655784
+  },
+  "validation": {
+    "javascriptCheck": "pnpm check passed",
+    "javascriptTests": "pnpm test passed",
+    "rust": "Rust 1.95.0 fmt and clippy workspace all-targets -D warnings passed",
+    "nativeWgsl": "release WGSL rendering passed",
+    "wasm": "all three builds and 48-export checks passed",
+    "package": "check:package passed; 51 files and three WASM modules",
+    "site": "stage:site passed",
+    "review": "no concrete correctness bounds fallback or lifecycle defect found",
+    "fullGpuSuite": "not rerun; previous unrelated Laya F32 parity overage unchanged"
+  },
+  "evidence": [
+    "matvec-two-subgroup-vector-registered-chrome.json.gz",
+    "two-row-vector-model-chrome.json.gz",
+    "two-row-vector-model-firefox.json.gz",
+    "camera-tail-vector-sustained.json.gz"
+  ],
+  "delivery": {
+    "committed": false,
+    "pushed": false,
+    "deployed": false,
+    "npmTarball": "/tmp/kevala-tail-vector-package-20261017/kevala-0.1.3.tgz",
+    "packageSha256": "39d1244df968ba18455ae4db3f8e861c6411b568bf15877524c337227dc00060",
+    "stagedSite": "dist/site"
+  }
+}

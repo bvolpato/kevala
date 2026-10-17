@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact F32 MLP decoder probe</title>
+<h1>F32 GEMM float-bit Q8 decode</h1>
+<p>Dev-only four-way comparison: current separate F32 gate/up, registered paired F32 K32, paired K32 with only its Q8 decoder replaced, and separate F32 gate/up with the same decoder replacement. The replacement comes from the registered ordinary F16 shader's <code>sx</code> function; all executed pipelines remain F32. Current F32 ordinary and paired kernels both use integer sign extension.</p>
+<p>Defaults to T97, N6144, K1536, S3. Use <code>?guards=1</code> for additional exactness cases. The CPU proof checks all 256 bytes in every packed lane with signed F32 scales. Full outputs, all paired and ordinary partials, inactive padding and tails are checked by raw bits before and after timing. Temporary allocations remain below 64 MiB.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-mlp-decode-check.js"></script>

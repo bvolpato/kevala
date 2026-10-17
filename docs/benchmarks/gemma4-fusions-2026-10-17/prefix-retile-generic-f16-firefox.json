@@ -1,0 +1,1480 @@
+{
+  "adapter": {
+    "features": [
+      "shader-f16",
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "maxComputeWorkgroupStorageSize": 32768,
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "balanced": 64,
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "C": 38,
+        "D": 51,
+        "K": 1536,
+        "N": 6144,
+        "P": 89,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 2187280,
+          "fullPartBytes": 16,
+          "fullPartLength": 0,
+          "gpuBytes": 19618320,
+          "hostBytes": 21305456,
+          "inputBytes": 546816,
+          "limitBytes": 67108864,
+          "outputBytes": 1253392,
+          "partBytes": 16,
+          "partLength": 0,
+          "poisonBytes": 2187280,
+          "readBytes": 3760224,
+          "scaleBytes": 1179648,
+          "totalBytes": 40923776,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 2,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 313344,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 313344,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": null,
+        "physicalBM": 64,
+        "row56": false,
+        "rows": 4,
+        "scope": "balanced",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "8b12a6887cae8161b9367fbb7b0a02357957935b53975b6bf9fe1b335c0177b0",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "gate",
+        "splitBlocks": 48,
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.09373831076531762,
+          "candidate": [
+            0.1936,
+            0.193824,
+            0.20944
+          ],
+          "candidateMedianMs": 0.193824,
+          "candidateWins": true,
+          "compact": [
+            0.21368,
+            0.213872,
+            0.214288
+          ],
+          "compactMedianMs": 0.213872,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 51,
+        "K": 6144,
+        "N": 1536,
+        "P": 89,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 546832,
+          "fullPartBytes": 3280912,
+          "fullPartLength": 820224,
+          "gpuBytes": 27599376,
+          "hostBytes": 26859632,
+          "inputBytes": 2187264,
+          "limitBytes": 67108864,
+          "outputBytes": 313360,
+          "partBytes": 1880080,
+          "partLength": 470016,
+          "poisonBytes": 3280912,
+          "readBytes": 6580320,
+          "scaleBytes": 1179648,
+          "totalBytes": 54459008,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 2,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 78336,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 78336,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 470016,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 470016,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 64,
+        "row56": false,
+        "rows": 4,
+        "scope": "balanced",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "8b12a6887cae8161b9367fbb7b0a02357957935b53975b6bf9fe1b335c0177b0",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "down",
+        "splitBlocks": 32,
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2231451106302785,
+          "candidate": [
+            0.177992,
+            0.17808,
+            0.17904
+          ],
+          "candidateMedianMs": 0.17808,
+          "candidateWins": true,
+          "compact": [
+            0.228928,
+            0.229232,
+            0.23076
+          ],
+          "compactMedianMs": 0.229232,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 51,
+        "K": 1536,
+        "N": 2048,
+        "P": 89,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 729104,
+          "fullPartBytes": 2916368,
+          "fullPartLength": 729088,
+          "gpuBytes": 18176528,
+          "hostBytes": 17463408,
+          "inputBytes": 546816,
+          "limitBytes": 67108864,
+          "outputBytes": 417808,
+          "partBytes": 1671184,
+          "partLength": 417792,
+          "poisonBytes": 2916368,
+          "readBytes": 6266976,
+          "scaleBytes": 393216,
+          "totalBytes": 35639936,
+          "weightBytes": 3145728
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 2,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 104448,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 104448,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 417792,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 417792,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 64,
+        "row56": false,
+        "rows": 4,
+        "scope": "balanced",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "8b12a6887cae8161b9367fbb7b0a02357957935b53975b6bf9fe1b335c0177b0",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "q",
+        "splitBlocks": 12,
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 4,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2880008261049153,
+          "candidate": [
+            0.054928,
+            0.05516,
+            0.056184
+          ],
+          "candidateMedianMs": 0.05516,
+          "candidateWins": true,
+          "compact": [
+            0.077472,
+            0.077392,
+            0.077656
+          ],
+          "compactMedianMs": 0.077472,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 51,
+        "K": 2048,
+        "N": 1536,
+        "P": 89,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 546832,
+          "fullPartBytes": 3280912,
+          "fullPartLength": 820224,
+          "gpuBytes": 19063312,
+          "hostBytes": 18323568,
+          "inputBytes": 729088,
+          "limitBytes": 67108864,
+          "outputBytes": 313360,
+          "partBytes": 1880080,
+          "partLength": 470016,
+          "poisonBytes": 3280912,
+          "readBytes": 6580320,
+          "scaleBytes": 393216,
+          "totalBytes": 37386880,
+          "weightBytes": 3145728
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 2,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 78336,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 78336,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 470016,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 470016,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 64,
+        "row56": false,
+        "rows": 4,
+        "scope": "balanced",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "8b12a6887cae8161b9367fbb7b0a02357957935b53975b6bf9fe1b335c0177b0",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "o",
+        "splitBlocks": 11,
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2521363225092992,
+          "candidate": [
+            0.05976,
+            0.059512,
+            0.059464
+          ],
+          "candidateMedianMs": 0.059512,
+          "candidateWins": true,
+          "compact": [
+            0.079576,
+            0.080448,
+            0.078968
+          ],
+          "compactMedianMs": 0.079576,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 51,
+        "K": 1536,
+        "N": 256,
+        "P": 89,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 91152,
+          "fullPartBytes": 729104,
+          "fullPartLength": 182272,
+          "gpuBytes": 4160016,
+          "hostBytes": 7322736,
+          "inputBytes": 546816,
+          "limitBytes": 67108864,
+          "outputBytes": 52240,
+          "partBytes": 417808,
+          "partLength": 104448,
+          "poisonBytes": 729104,
+          "readBytes": 1410144,
+          "scaleBytes": 49152,
+          "totalBytes": 11482752,
+          "weightBytes": 393216
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 2,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 13056,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 13056,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 104448,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 104448,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 64,
+        "row56": false,
+        "rows": 4,
+        "scope": "balanced",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "8b12a6887cae8161b9367fbb7b0a02357957935b53975b6bf9fe1b335c0177b0",
+            "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "k-ple",
+        "splitBlocks": 6,
+        "splitT": 89,
+        "splitTarget": 256,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "benefit": -0.15483633688856194,
+          "candidate": [
+            0.025312,
+            0.023624,
+            0.02512
+          ],
+          "candidateMedianMs": 0.02512,
+          "candidateWins": false,
+          "compact": [
+            0.020632,
+            0.021752,
+            0.021992
+          ],
+          "compactMedianMs": 0.021752,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-compact-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": false
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 1536,
+        "N": 6144,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 1622032,
+          "fullPartBytes": 16,
+          "fullPartLength": 0,
+          "gpuBytes": 16085520,
+          "hostBytes": 18903152,
+          "inputBytes": 405504,
+          "limitBytes": 67108864,
+          "outputBytes": 688144,
+          "partBytes": 16,
+          "partLength": 0,
+          "poisonBytes": 1622032,
+          "readBytes": 2064480,
+          "scaleBytes": 1179648,
+          "totalBytes": 34988672,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 172032,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 172032,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": null,
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "727ce11e17d2fffb6b11edf03906e6e719338dc0c50ff98639d568220a6caffd",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "gate",
+        "splitBlocks": 48,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2709540076241399,
+          "candidate": [
+            0.11736,
+            0.117808,
+            0.117856
+          ],
+          "candidateMedianMs": 0.117808,
+          "candidateWins": true,
+          "compact": [
+            0.16284,
+            0.16112,
+            0.161592
+          ],
+          "compactMedianMs": 0.161592,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 6144,
+        "N": 1536,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 405520,
+          "fullPartBytes": 2433040,
+          "fullPartLength": 608256,
+          "gpuBytes": 21099024,
+          "hostBytes": 22478960,
+          "inputBytes": 1622016,
+          "limitBytes": 67108864,
+          "outputBytes": 172048,
+          "partBytes": 1032208,
+          "partLength": 258048,
+          "poisonBytes": 2433040,
+          "readBytes": 3612768,
+          "scaleBytes": 1179648,
+          "totalBytes": 43577984,
+          "weightBytes": 9437184
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "727ce11e17d2fffb6b11edf03906e6e719338dc0c50ff98639d568220a6caffd",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "down",
+        "splitBlocks": 32,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.24881426157117165,
+          "candidate": [
+            0.109912,
+            0.111032,
+            0.110232
+          ],
+          "candidateMedianMs": 0.110232,
+          "candidateWins": true,
+          "compact": [
+            0.147192,
+            0.146432,
+            0.146744
+          ],
+          "compactMedianMs": 0.146744,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 1536,
+        "N": 2048,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 540688,
+          "fullPartBytes": 2162704,
+          "fullPartLength": 540672,
+          "gpuBytes": 12382736,
+          "hostBytes": 13742192,
+          "inputBytes": 405504,
+          "limitBytes": 67108864,
+          "outputBytes": 229392,
+          "partBytes": 917520,
+          "partLength": 229376,
+          "poisonBytes": 2162704,
+          "readBytes": 3440736,
+          "scaleBytes": 393216,
+          "totalBytes": 26124928,
+          "weightBytes": 3145728
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 229376,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 229376,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "727ce11e17d2fffb6b11edf03906e6e719338dc0c50ff98639d568220a6caffd",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "q",
+        "splitBlocks": 12,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 4,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2734199134199134,
+          "candidate": [
+            0.033432,
+            0.033912,
+            0.033568
+          ],
+          "candidateMedianMs": 0.033568,
+          "candidateWins": true,
+          "compact": [
+            0.0462,
+            0.045704,
+            0.047184
+          ],
+          "compactMedianMs": 0.0462,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 2048,
+        "N": 1536,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 405520,
+          "fullPartBytes": 2433040,
+          "fullPartLength": 608256,
+          "gpuBytes": 12939792,
+          "hostBytes": 14319728,
+          "inputBytes": 540672,
+          "limitBytes": 67108864,
+          "outputBytes": 172048,
+          "partBytes": 1032208,
+          "partLength": 258048,
+          "poisonBytes": 2433040,
+          "readBytes": 3612768,
+          "scaleBytes": 393216,
+          "totalBytes": 27259520,
+          "weightBytes": 3145728
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 43008,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 258048,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "727ce11e17d2fffb6b11edf03906e6e719338dc0c50ff98639d568220a6caffd",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "o",
+        "splitBlocks": 11,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.2468222043443282,
+          "candidate": [
+            0.037304,
+            0.037448,
+            0.037744
+          ],
+          "candidateMedianMs": 0.037448,
+          "candidateWins": true,
+          "compact": [
+            0.04972,
+            0.050792,
+            0.049536
+          ],
+          "compactMedianMs": 0.04972,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      },
+      {
+        "C": 38,
+        "D": 28,
+        "K": 1536,
+        "N": 256,
+        "P": 66,
+        "candidateLogicalTiles": 2,
+        "candidatePhysicalTiles": 1,
+        "f16": true,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "fullOutputBytes": 67600,
+          "fullPartBytes": 540688,
+          "fullPartLength": 135168,
+          "gpuBytes": 2746896,
+          "hostBytes": 6357104,
+          "inputBytes": 405504,
+          "limitBytes": 67108864,
+          "outputBytes": 28688,
+          "partBytes": 229392,
+          "partLength": 57344,
+          "poisonBytes": 540688,
+          "readBytes": 774240,
+          "scaleBytes": 49152,
+          "totalBytes": 9104000,
+          "weightBytes": 393216
+        },
+        "ok": true,
+        "originalBM": 48,
+        "originalLogicalTiles": 2,
+        "originalPhysicalTiles": 1,
+        "originalRows": 3,
+        "outputCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 7168,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 7168,
+            "signedZeroChecked": true
+          }
+        },
+        "partialCheck": {
+          "candidate": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          },
+          "compact": {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "samples": 57344,
+            "signedZeroChecked": true
+          }
+        },
+        "physicalBM": 32,
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "shaderHashes": {
+          "candidate": {
+            "mm": "727ce11e17d2fffb6b11edf03906e6e719338dc0c50ff98639d568220a6caffd",
+            "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+          },
+          "compact": {
+            "mm": "68f9c7ca308104afc53aef490ec265273d10240fdeb0d9264e7e75dd7676aabe",
+            "reduce": "19afe151bbd7a8a6e48466923e60efd29de23a1f19c423568435b2c88cc1679c"
+          },
+          "full": {
+            "mm": "122bf6224b27e0aabe06af07b14eb376b4f6259f7ab7dfc246b83920e0a2e32f",
+            "reduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c"
+          }
+        },
+        "shape": "k-ple",
+        "splitBlocks": 6,
+        "splitT": 64,
+        "splitTarget": 256,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "benefit": 0.21622718052738343,
+          "candidate": [
+            0.015632,
+            0.015456,
+            0.01544
+          ],
+          "candidateMedianMs": 0.015456,
+          "candidateWins": true,
+          "compact": [
+            0.020072,
+            0.01972,
+            0.019552
+          ],
+          "compactMedianMs": 0.01972,
+          "fullOracleTimed": false,
+          "order": [
+            {
+              "kind": "compact",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 1
+            },
+            {
+              "kind": "compact",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unchanged": false
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "elapsedMs": 13125.5,
+  "kernel": "generic",
+  "method": "geometric mean candidate GPU timestamp milliseconds; full P oracle excluded; compact prefix baseline",
+  "metricMs": 0.06104083714478827,
+  "precision": "f16",
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "34 MiB",
+          "pid": 3304609,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

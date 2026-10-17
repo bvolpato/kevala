@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact BM112 BN32 matmul probe</title>
+<h1>F32 Q8 tall, narrow matmul</h1>
+<p>Dev-only comparison of the current BM56/BN64 suffix matmul against BM112/BN32. The candidate uses fourteen scalar accumulators per thread, the original ascending K32 dot order, split partitions, epilogue and reducer. Shared storage is 18,432 bytes, checked against the device limit.</p>
+<p>The primary case is T97, N6144, K1536. Use <code>?all=1</code> for gate, down and Q; <code>?guards=1</code> adds ragged, signed-zero, cancellation and unsplit fixtures. Full output and partial-buffer bits, finite values, padding and tails are checked for all six mode/bias combinations before and after three alternating timestamp pairs with four repetitions. Controlled host/GPU temporary memory stays below 64 MiB; immutable weights are reported separately.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-tall-narrow-check.js"></script>

@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact gate/up grid probe</title>
+<h1>F32 Q8 gate/up grid stacking</h1>
+<p>This dev-only candidate places independent gate and up projections in a single dispatch grid. Each workgroup keeps the registered BM56/BN64 kernel's seven vec2 accumulators, 16 KiB shared storage, Q8 decoding and ordered split partial sums. A registered reducer combines both projection planes and applies GELU.</p>
+<p>Defaults to T97, N6144, K1536, S3. Use <code>?guards=1</code> for ragged, signed-zero, cancellation and saturation cases. Complete output and both partial planes are checked by raw bits, finiteness and allocation tails before and after three alternating timestamp pairs with four repetitions. The primary case also times two ordinary GEMMs with the fused reducer, isolating the grid change. Controlled temporary memory stays below 64 MiB; immutable weights are separate.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-mlp-grid-check.js"></script>

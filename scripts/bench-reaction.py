@@ -26,24 +26,35 @@ def main():
     parser.add_argument("--binary", required=True, type=Path)
     parser.add_argument("--browser-arg", action="append", default=[])
     parser.add_argument("--frames", type=int, default=24)
+    parser.add_argument("--kernel", choices=["auto", "generic", "wide"], default="auto")
+    parser.add_argument("--camera-fps", type=int, default=60)
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
-    if args.frames < 8 or args.frames > 120:
-        parser.error("--frames must be between 8 and 120")
-    output = {"status": "running", "source": "Chromium synthetic camera"}
+    if args.frames < 8 or args.frames > 360:
+        parser.error("--frames must be between 8 and 360")
+    if args.camera_fps < 1 or args.camera_fps > 120:
+        parser.error("--camera-fps must be between 1 and 120")
+    output = {"status": "running", "source": "Chromium synthetic camera", "kernel": args.kernel, "requestedCameraFps": args.camera_fps}
     try:
         with sync_playwright() as playwright, tempfile.TemporaryDirectory(prefix="kevala-camera-") as profile:
             context = playwright.chromium.launch_persistent_context(
                 profile, executable_path=str(args.binary), headless=True,
                 permissions=["camera"],
-                args=["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", *args.browser_arg],
+                args=[f"--use-fake-device-for-media-stream=fps={args.camera_fps}", "--use-fake-ui-for-media-stream", *args.browser_arg],
             )
             try:
                 page = context.pages[0]
                 errors = []
                 page.on("pageerror", lambda error: errors.append(str(error)))
                 page.goto(args.base_url.rstrip("/") + "/?model=gemma-4-e2b&backend=webgpu#/reaction")
-                page.evaluate("async () => { const {session}=await import('./app/session.js'); window.benchSession=session; await session.boot(); session.select('gemma-4-e2b', {enableVision:true}); }")
+                page.evaluate("""async kernel => {
+                  const {Kevala}=await import('./js/src/index.js');
+                  const load=Kevala.load.bind(Kevala);
+                  Kevala.load=options=>load({...options,gpuKernel:kernel});
+                  const {session}=await import('./app/session.js');
+                  window.benchSession=session; await session.boot();
+                  session.select('gemma-4-e2b', {enableVision:true});
+                }""", args.kernel)
                 page.locator(".mchip").click()
                 page.locator('[data-act="load"]').click()
                 page.wait_for_function("() => ['ready','error'].includes(window.benchSession.status)", timeout=180000)
@@ -67,7 +78,8 @@ def main():
                     b.inFlight++;b.maxInFlight=Math.max(b.maxInFlight,b.inFlight);
                     try {
                       const result=await decide(state,questions,options);
-                      b.samples.push({budget:options.imageTokens,elapsedMs:performance.now()-start,
+                      const completedAt=performance.now();
+                      b.samples.push({budget:options.imageTokens,elapsedMs:completedAt-start,startedAt:start,completedAt,
                         hash:hash>>>0,timing:result.timing,answers:result.answers});
                       return result;
                     } finally {b.inFlight--;}
@@ -87,7 +99,9 @@ def main():
                       samples:window.cameraBench.samples.slice(before).filter(x=>x.budget===budget).slice(0,count),
                       displayedFps:document.querySelector('[data-f="fps"]').textContent,
                       displayedLatency:document.querySelector('[data-f="latency"]').textContent,
-                      resolution:document.querySelector('[data-f="frame-label"]').textContent})""", [before, budget, args.frames])
+                      resolution:document.querySelector('[data-f="frame-label"]').textContent,
+                      videoSize:[document.querySelector('video').videoWidth,document.querySelector('video').videoHeight],
+                      trackSettings:document.querySelector('video').srcObject.getVideoTracks()[0].getSettings()})""", [before, budget, args.frames])
                     phases.append(phase)
                 page.locator('[data-act="stop"]').click()
                 page.wait_for_function("window.cameraBench.inFlight===0", timeout=30000)
@@ -106,7 +120,7 @@ def main():
                     if group:
                         directory = Path("/sys/fs/cgroup") / group.lstrip("/")
                         output["resources"] = {name: (directory / name).read_text().strip() for name in
-                            ["memory.max", "memory.peak", "memory.swap.max", "cpu.max", "cpu.stat"] if (directory / name).exists()}
+                            ["memory.max", "memory.peak", "memory.events", "memory.swap.max", "cpu.max", "cpu.stat"] if (directory / name).exists()}
                 if errors or checks["maxInFlight"] != 1 or not checks["sameModel"] or not checks["videoCleared"] or not checks["tracksStopped"] or checks["lastTab"] != "reaction" or checks["overflow"]:
                     raise RuntimeError(f"camera checks failed: {checks}, page errors: {errors}")
                 for phase in phases:
@@ -116,7 +130,8 @@ def main():
                         raise RuntimeError("synthetic camera frames did not change")
                     phase["summary"] = {"discardedWarmups": 4, "meanMs": sum(times) / len(times),
                         "p50Ms": (times[(len(times)-1)//2] + times[len(times)//2]) / 2,
-                        "p95Ms": times[min(len(times)-1, (95 * len(times) + 99)//100 - 1)]}
+                        "p95Ms": times[min(len(times)-1, (95 * len(times) + 99)//100 - 1)],
+                        "completedFps": (len(warm) - 1) * 1000 / (warm[-1]["completedAt"] - warm[0]["completedAt"])}
                 output.update(status="done", browser=context.browser.version, info=info, phases=phases, checks=checks, pageErrors=errors)
                 page.evaluate("async () => (await import('./app/session.js')).session.kevala.dispose()")
             finally:

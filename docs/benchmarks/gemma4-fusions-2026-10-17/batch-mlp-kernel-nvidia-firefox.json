@@ -1,0 +1,277 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "shader-f16",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "maxComputeWorkgroupStorageSize": 32768,
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "wide",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 595968
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 1787904
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 1787904
+          }
+        ],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "9535e05329cdd020efb8af69b95e1db8c7926380ea8759d9f95ea6d07d9be5be",
+          "baselineReduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 1,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.3935,
+            0.3505,
+            0.35075,
+            0.3505,
+            0.3505
+          ],
+          "baselineMedianMs": 0.3505,
+          "candidate": [
+            0.355,
+            0.304,
+            0.3025,
+            0.304,
+            0.3025
+          ],
+          "candidateMedianMs": 0.304
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 97,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "wide",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 1191936
+        },
+        "partialChecks": [],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "9535e05329cdd020efb8af69b95e1db8c7926380ea8759d9f95ea6d07d9be5be",
+          "baselineReduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 1,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.71325,
+            0.663,
+            0.66325,
+            0.6635,
+            0.7575
+          ],
+          "baselineMedianMs": 0.6635,
+          "candidate": [
+            0.65075,
+            0.6045,
+            0.60275,
+            0.60475,
+            0.6045
+          ],
+          "candidateMedianMs": 0.6045
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 241,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "wide",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 1480704
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 4442112
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 4442112
+          }
+        ],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "9535e05329cdd020efb8af69b95e1db8c7926380ea8759d9f95ea6d07d9be5be",
+          "baselineReduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 1,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.7005,
+            0.669,
+            0.7045,
+            0.70125,
+            0.6695
+          ],
+          "baselineMedianMs": 0.7005,
+          "candidate": [
+            0.582,
+            0.58325,
+            0.583,
+            0.58375,
+            0.58225
+          ],
+          "candidateMedianMs": 0.583
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 241,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "wide",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 2961408
+        },
+        "partialChecks": [],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "9535e05329cdd020efb8af69b95e1db8c7926380ea8759d9f95ea6d07d9be5be",
+          "baselineReduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 1,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            1.35125,
+            1.27975,
+            1.26825,
+            1.23175,
+            1.2955
+          ],
+          "baselineMedianMs": 1.27975,
+          "candidate": [
+            1.0895,
+            1.17425,
+            1.08925,
+            1.09125,
+            1.08925
+          ],
+          "candidateMedianMs": 1.0895
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "metricMs": 4035.5,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "64 MiB",
+          "pid": 3146012,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done"
+}

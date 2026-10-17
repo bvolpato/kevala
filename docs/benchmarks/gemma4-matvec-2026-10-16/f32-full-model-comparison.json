@@ -1,0 +1,13 @@
+{
+  "status": "done",
+  "correctness": {
+    "ok": true,
+    "maxProbabilityDelta": 7.152557373046875e-7,
+    "tolerance": 0.0005,
+    "thresholdFlips": [],
+    "comparedProbabilities": 144
+  },
+  "control": "sdk-generic-chrome.json",
+  "candidate": "sdk-auto-chrome.json",
+  "method": "matched image, budget, sample index, prompts, and probabilities across separate serial loads in the same Chrome version"
+}

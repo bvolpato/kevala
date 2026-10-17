@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma 4 Q8/F32 T97 dead-row accumulation probe</title>
+<h1>Gemma 4 Q8/F32 T97 dead-row accumulation probe</h1>
+<p>Compares the registered R4/BM56 row56 matmul against a DEV-only variant that skips only dead acc6 and acc5 dot steps in the T=97 tail tile. Both retain the same logical BM64 split rule, BN64 grid, Q8 decode and scale, shared-memory loads, barriers, and K32 dot order for every live row.</p>
+<p>Checks all Y values and PART planes bit-for-bit, including finite outputs, NaN-padded input rows, signed zeros, modes, bias, and four-float tails before and after paired GPU timestamps. Temporary GPU buffers and host staging are capped at 64 MiB; immutable Q8 weights and scales are reported separately. No runtime kernel is changed.</p>
+<p>Run <code>?shape=gate&amp;T=97</code> for 6144x1536. Use <code>?shape=down&amp;T=97</code> for 1536x6144, or <code>?all=1&amp;T=97</code> for all three shapes. Requires WebGPU <code>timestamp-query</code>.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-tail-mask-check.js"></script>

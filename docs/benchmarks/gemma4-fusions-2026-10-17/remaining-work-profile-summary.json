@@ -1,0 +1,389 @@
+{
+  "generatedUtc": "2026-10-17T09:23:11.676Z",
+  "baselineSummary": "compact-and-single-summary.json",
+  "sourceHashes": {
+    "js/src/gpu-gemma4.js": "a48ad5ac6575d5ee6f35cb677a5eed691c4d296d287f85a37dd6f7012c9a8d87",
+    "js/src/gpu-gemma4-vision.js": "1f77c1aea3069dbd3dbfc1215720bdf54de16058222a46fa6b6a39e7bb3226b5",
+    "js/src/archs/gemma4.js": "8f097e362ccbc1c3cc898cea25d4d604f3c1c2a4d45db54ce16982c9849791e5",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "4fdee0b130ab276da2a324fb6a70c09f55c5ed5cffde8061f94b411a759d04f3",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "cbe6e96ac550c18bbb56cd41c54d8f3050de3a701d1cb888957b40beeed7730c",
+    "js/src/kevala-simd.wasm": "a0928adc6abc8c75e5c8adf01dc71a7140a13f43b002bdd5de11d8e73ad7b37d",
+    "js/src/kevala-relaxed.wasm": "70c7af6dfc114bdbed9bc6109d124af343cd5f2ae2d5b16b39c8d3cc7c03652d",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4",
+    "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+    "crates/kevala/src/wgsl/matmul_gelu.wgsl": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13",
+    "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+    "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+    "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+    "crates/kevala/src/wgsl/reduce_ple.wgsl": "b78cd3e995fc1a60268e9c9e50808a4d51abe0a85efc4344452e129bbede4a78",
+    "tests/gemma4-ple.test.mjs": "0dabf9c2fb13a1f98be07da3109dab1bf15142533c6c84895b5565bc620889f5",
+    "tests/gemma4-batch.test.mjs": "725a9031eff377fa51d18a47eeeaef07d162a96ad47b1dfe6fbbcda9de512385",
+    "scripts/gpu-guard.mjs": "7bb0f2086d8e1ab952ff89d6f108510fb009cab91a85614ee4b998e430f89da1",
+    "js/src/gemma4-image.js": "3d4356ed9a386aeb3a8979ef3a808a9a404a7f38482eebdd73d996645bf493d5",
+    "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+    "crates/kevala/src/wgsl/matmul_tall.wgsl": "e328c97a07664c82ad77b0a149ea9357e0b8973bc87e00e8c86a414ac642115d",
+    "crates/kevala/tests/wgsl.rs": "59ac2db3540beb8a649fed402492ab01237c986a473e747a9a64db9e7685e7d0",
+    "scripts/bench-gemma4-image-prep.mjs": "96534707a954cc8b5ef278921f95e688ac3e4d510fc01e40213e22b5c7cd9dc3",
+    "tests/gemma4-image.test.mjs": "9b46021f24b68ebeeab8163da5a0cb36edd4252aa6f69cbc007faae0d7aca6c5",
+    "tests/gemma4-vision.test.mjs": "9c598af21e8796cba073c32f6f7f7dbe370f0d3c1ea618beebee392755a42bfe",
+    "tests/gemma4-batch-single.test.mjs": "6e431405ff3b96655ae96e3b7158a1ba98b67366749bebad4a1085c3705fba86",
+    "dev/gemma4-matmul-tail-mask-check.js": "dc2161458a9eeda6c68434c0bf6efe4b58e1abbb3b2de7bb135ce61f43a4084b",
+    "dev/gemma4-matmul-tail-mask-check.html": "b390faeecfb12a68f0bbd3470db160a6a439d60785eea4e5b8f63f584e364ed8",
+    "dev/gemma4-matmul-f16-tall-check.js": "0ce2e6276f858e39cb22e6b7f8c2f09d648c02cd3be88be254aeddcdd8c476db",
+    "dev/gemma4-matmul-f16-tall-check.html": "b92c8565f136a0978b39b8eb1cb44c2d827e848646ae864e6ee93e1384128390",
+    "dev/kernel-compile-check.js": "d4dde514ac9fd65f70149b6810602bf4e2862429c9892e1b6a092c3f0f48d45f"
+  },
+  "scope": "Same final sources, unchanged model/precision/budgets/questions, 320x240 fixture frames at Fast16, actual12 soft tokens.",
+  "method": {
+    "coarse": "Timestamp existing compute passes; unchanged copies/submits/GPU image handoff. Profiling and extra maps add wall overhead.",
+    "fine": "Split decoder operation passes for ranking only; absolute wall/kernel times are instrumentation-inflated.",
+    "control": "Unprofiled bracketing controls; startup outliers remain, median reported."
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "browser": "153.0.8010.12",
+    "m4Measured": false
+  },
+  "probabilities": {
+    "maxDelta": 0,
+    "valuesCompared": 32
+  },
+  "groups": [
+    {
+      "mode": false,
+      "samples": 12,
+      "wallMedianMs": 24.719999998807907,
+      "gpu": []
+    },
+    {
+      "mode": true,
+      "samples": 4,
+      "wallMedianMs": 26.44249999523163,
+      "gpu": [
+        {
+          "label": "suffix",
+          "meanMs": 9.083687999999999,
+          "dispatches": 342
+        },
+        {
+          "label": "tail",
+          "meanMs": 4.177856,
+          "dispatches": 265
+        },
+        {
+          "label": "prefix",
+          "meanMs": 3.990592,
+          "dispatches": 328
+        },
+        {
+          "label": "vision",
+          "meanMs": 3.55816,
+          "dispatches": 233
+        }
+      ]
+    },
+    {
+      "mode": "kernel",
+      "samples": 4,
+      "wallMedianMs": 28.72249999642372,
+      "gpu": [
+        {
+          "label": "vision",
+          "meanMs": 3.3957759999999997,
+          "dispatches": 233
+        },
+        {
+          "label": "suffix/mm.up",
+          "meanMs": 1.9235919999999997,
+          "dispatches": 28
+        },
+        {
+          "label": "suffix/mm.down",
+          "meanMs": 1.862912,
+          "dispatches": 28
+        },
+        {
+          "label": "suffix/mm.gate",
+          "meanMs": 1.854272,
+          "dispatches": 28
+        },
+        {
+          "label": "prefix/mm.prefix.bn32.gate.up.gelu",
+          "meanMs": 1.330832,
+          "dispatches": 14
+        },
+        {
+          "label": "tail/mm.two.gate.up.gelu",
+          "meanMs": 1.166472,
+          "dispatches": 20
+        },
+        {
+          "label": "suffix/mm.o",
+          "meanMs": 0.8134159999999999,
+          "dispatches": 28
+        },
+        {
+          "label": "suffix/mm.q",
+          "meanMs": 0.810176,
+          "dispatches": 28
+        },
+        {
+          "label": "prefix/mm.down",
+          "meanMs": 0.8051520000000001,
+          "dispatches": 28
+        },
+        {
+          "label": "tail/mm.down",
+          "meanMs": 0.784888,
+          "dispatches": 22
+        },
+        {
+          "label": "suffix/attn.subgroup",
+          "meanMs": 0.7224800000000001,
+          "dispatches": 14
+        },
+        {
+          "label": "tail/attn.subgroup",
+          "meanMs": 0.5053439999999999,
+          "dispatches": 16
+        },
+        {
+          "label": "prefix/mm.o",
+          "meanMs": 0.371376,
+          "dispatches": 28
+        },
+        {
+          "label": "prefix/mm.q",
+          "meanMs": 0.35259999999999997,
+          "dispatches": 28
+        },
+        {
+          "label": "tail/mm.q",
+          "meanMs": 0.279232,
+          "dispatches": 22
+        },
+        {
+          "label": "tail/mm.o",
+          "meanMs": 0.253568,
+          "dispatches": 22
+        },
+        {
+          "label": "suffix/mm.k",
+          "meanMs": 0.24656,
+          "dispatches": 30
+        },
+        {
+          "label": "suffix/mm.v",
+          "meanMs": 0.22892,
+          "dispatches": 30
+        },
+        {
+          "label": "tail/rms.attn.ffn.fused",
+          "meanMs": 0.2276,
+          "dispatches": 21
+        },
+        {
+          "label": "suffix/mm.ple.gate",
+          "meanMs": 0.22663200000000003,
+          "dispatches": 28
+        },
+        {
+          "label": "suffix/mm.ple.out",
+          "meanMs": 0.224848,
+          "dispatches": 28
+        },
+        {
+          "label": "tail/rms.ple.scale.next.fused",
+          "meanMs": 0.218768,
+          "dispatches": 20
+        },
+        {
+          "label": "prefix/attn.subgroup",
+          "meanMs": 0.209592,
+          "dispatches": 14
+        },
+        {
+          "label": "tail/rms.ffn.post",
+          "meanMs": 0.19679199999999997,
+          "dispatches": 21
+        },
+        {
+          "label": "prefix/mm.v",
+          "meanMs": 0.188424,
+          "dispatches": 30
+        },
+        {
+          "label": "tail/attn",
+          "meanMs": 0.176544,
+          "dispatches": 5
+        },
+        {
+          "label": "prefix/mm.k",
+          "meanMs": 0.17300000000000001,
+          "dispatches": 30
+        },
+        {
+          "label": "prefix/rms.ple.scale.next.fused",
+          "meanMs": 0.164648,
+          "dispatches": 14
+        },
+        {
+          "label": "prefix/mm.ple.gate",
+          "meanMs": 0.160552,
+          "dispatches": 28
+        },
+        {
+          "label": "prefix/mm.ple.proj",
+          "meanMs": 0.158856,
+          "dispatches": 28
+        },
+        {
+          "label": "suffix/rms.ple.scale.next.fused",
+          "meanMs": 0.153904,
+          "dispatches": 14
+        },
+        {
+          "label": "suffix/rms.attn.ffn.fused",
+          "meanMs": 0.15388000000000002,
+          "dispatches": 14
+        },
+        {
+          "label": "prefix/rms.attn.ffn.fused",
+          "meanMs": 0.14876,
+          "dispatches": 14
+        },
+        {
+          "label": "suffix/qkv",
+          "meanMs": 0.142848,
+          "dispatches": 15
+        },
+        {
+          "label": "prefix/mm.ple.out",
+          "meanMs": 0.142232,
+          "dispatches": 28
+        },
+        {
+          "label": "tail/mm.ple.gate",
+          "meanMs": 0.136264,
+          "dispatches": 22
+        },
+        {
+          "label": "tail/qkv",
+          "meanMs": 0.11824799999999999,
+          "dispatches": 21
+        },
+        {
+          "label": "tail/mm.ple.out",
+          "meanMs": 0.11540800000000001,
+          "dispatches": 22
+        },
+        {
+          "label": "suffix/rms.ffn.post",
+          "meanMs": 0.115192,
+          "dispatches": 14
+        },
+        {
+          "label": "prefix/rms.ffn.post",
+          "meanMs": 0.10843199999999999,
+          "dispatches": 14
+        },
+        {
+          "label": "suffix/gelu",
+          "meanMs": 0.10231199999999999,
+          "dispatches": 14
+        },
+        {
+          "label": "prefix/qkv",
+          "meanMs": 0.08467999999999999,
+          "dispatches": 15
+        },
+        {
+          "label": "tail/gelu.ple",
+          "meanMs": 0.08361600000000001,
+          "dispatches": 21
+        },
+        {
+          "label": "tail/mm.up",
+          "meanMs": 0.072736,
+          "dispatches": 2
+        },
+        {
+          "label": "tail/mm.gate",
+          "meanMs": 0.072,
+          "dispatches": 2
+        },
+        {
+          "label": "prefix/ple.combine",
+          "meanMs": 0.06380000000000001,
+          "dispatches": 14
+        },
+        {
+          "label": "tail/rms.attn",
+          "meanMs": 0.01328,
+          "dispatches": 2
+        },
+        {
+          "label": "tail/rms.ple.scale.fused",
+          "meanMs": 0.007848,
+          "dispatches": 1
+        },
+        {
+          "label": "suffix/rms.attn",
+          "meanMs": 0.0076159999999999995,
+          "dispatches": 1
+        },
+        {
+          "label": "prefix/rms.attn",
+          "meanMs": 0.007144000000000001,
+          "dispatches": 1
+        },
+        {
+          "label": "tail/tail.gather.input",
+          "meanMs": 0.005568,
+          "dispatches": 1
+        },
+        {
+          "label": "tail/tail.gather.hidden",
+          "meanMs": 0.00448,
+          "dispatches": 1
+        },
+        {
+          "label": "tail/gelu",
+          "meanMs": 0.003928,
+          "dispatches": 1
+        }
+      ]
+    }
+  ],
+  "resourceLimits": {
+    "memoryHighMiB": 5500,
+    "memoryMaxMiB": 6000,
+    "swapMaxBytes": 0,
+    "cpuQuotaPercent": 400,
+    "finalResourceCountersCaptured": false
+  },
+  "receipt": {
+    "file": "docs/benchmarks/gemma4-fusions-2026-10-17/camera-final-fast-profile.json.gz",
+    "sha256": "d25633250acc589f1ac18bcafb7b3a8976f6988cf079dba1e38ef43ca2cdbe47",
+    "rawSha256": "91d9432ab4ab01c4412d93f0af4ce007d48e803aad76797a9998f182c90748a6"
+  },
+  "controlCpuStageMediansMs": {
+    "samples": 12,
+    "imageDecode": 0.0650000050663948,
+    "imagePreprocess": 0.9224999994039536,
+    "visionEncodeAndSubmit": 1.1424999982118607,
+    "tokenize": 0.2150000035762787,
+    "ple": 0.012500002980232239,
+    "readout": 0.11500000953674316
+  }
+}

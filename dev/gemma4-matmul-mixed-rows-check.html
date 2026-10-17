@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact mixed-row F32 matmul probe</title>
+<h1>F32 BM56 plus BM48 suffix tiles</h1>
+<p>Dev-only T97 comparison of two registered BM56 row tiles against one unchanged BM56 tile followed by one registered R3/BM48 tile whose row origin is shifted to56. Both retain the original batch split partition and use the same R4 reducer once. The candidate computes104 padded rows instead of112.</p>
+<p>Defaults to the 6144×1536 gate. Use <code>?shape=down</code>, <code>?shape=q2048</code>, <code>?all=1</code> or <code>?guards=1</code>. Every output and split partial is checked by raw bits before and after timing across all six mode/bias combinations. Input padding contains NaNs, and output/partial tails use sentinels. Controlled host/GPU temporary allocations stay below64MiB; immutable weights are reported separately.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-mixed-rows-check.js"></script>

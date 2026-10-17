@@ -6,6 +6,13 @@ In the October 16 Linux camera check, completed decisions increased from 13.6 FP
 to 19.8 FPS, with a repeat Balanced stage at 18.7 FPS. These are shared RTX 5070 Ti
 measurements, not M4 Max measurements or guaranteed frame rates.
 
+The subsequent [decoder matrix-vector update](gemma4-matvec-performance.md) reduces
+Balanced camera decision latency by a further 11% in its paired Chrome runs, with
+unchanged image settings and weights.
+
+The subsequent [fusion and batching update](gemma4-fusion-performance.md) records
+the latest sustained camera measurements and exactness checks.
+
 ## Resolution policy
 
 | Setting | Maximum image tokens | Analysis size | Active patches | Actual image tokens |

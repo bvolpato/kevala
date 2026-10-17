@@ -1,0 +1,2157 @@
+{
+  "adapter": {
+    "architecture": null,
+    "description": null,
+    "device": null,
+    "features": [
+      "core-features-and-limits",
+      "shader-f16",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxBufferSize": 1073741824,
+      "maxComputeWorkgroupStorageSize": 32768,
+      "maxStorageBufferBindingSize": 1073741824
+    },
+    "name": "WebGPU",
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "batchSuffixCases": [
+      {
+        "batchedSuffixes": true,
+        "bitExact": true,
+        "compactSourceRows": true,
+        "enabled": true,
+        "lengths": [
+          2,
+          1,
+          2,
+          3,
+          4
+        ],
+        "maxAbs": 0,
+        "reusedTokens": 20,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 37
+      },
+      {
+        "batchedSuffixes": true,
+        "bitExact": true,
+        "compactSourceRows": true,
+        "enabled": true,
+        "lengths": [
+          64,
+          1,
+          64,
+          3,
+          4
+        ],
+        "maxAbs": 0,
+        "reusedTokens": 20,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 161
+      },
+      {
+        "batchedSuffixes": false,
+        "bitExact": true,
+        "compactSourceRows": true,
+        "enabled": true,
+        "lengths": [
+          65,
+          1
+        ],
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 76
+      }
+    ],
+    "bidirectionalRejected": true,
+    "cases": [
+      {
+        "causal": true,
+        "maxAbs": 0,
+        "selected": [
+          0,
+          0
+        ],
+        "sharedKv": true,
+        "tokens": 1
+      },
+      {
+        "causal": true,
+        "maxAbs": 0,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "sharedKv": true,
+        "tokens": 31
+      },
+      {
+        "causal": true,
+        "maxAbs": 0,
+        "selected": [
+          64,
+          1,
+          64
+        ],
+        "sharedKv": true,
+        "tokens": 65
+      },
+      {
+        "causal": true,
+        "imageRows": 2,
+        "maxAbs": 0,
+        "selected": [
+          1,
+          4,
+          1
+        ],
+        "sharedKv": true,
+        "tokens": 5
+      },
+      {
+        "causal": true,
+        "maxAbs": 0,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "sharedKv": false,
+        "tokens": 31
+      }
+    ],
+    "duplicateOrder": true,
+    "emptyRows": true,
+    "finalRows": [
+      {
+        "label": "shared all T=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      {
+        "label": "shared selected T=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "shared all T=31",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 31
+      },
+      {
+        "label": "shared selected T=31",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0140927798839168,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "shared all T=65",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 65
+      },
+      {
+        "label": "shared selected T=65",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.022991523411615,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "image all",
+        "maxAbs": 2.613678216934204,
+        "maxRms": 1.0271722113855255,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 5
+      },
+      {
+        "label": "image selected",
+        "maxAbs": 1.774116277694702,
+        "maxRms": 1.022205005435697,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "changed image selected",
+        "maxAbs": 1.8224204778671265,
+        "maxRms": 1.0178281309863015,
+        "minRms": 1.0178281309863015,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      {
+        "label": "dense PLE T=1 R=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      {
+        "label": "host PLE T=1 R=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      {
+        "label": "dense PLE T=1 R=2",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE T=1 R=2",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "dense PLE T=31 R=31",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 31
+      },
+      {
+        "label": "host PLE T=31 R=31",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 31
+      },
+      {
+        "label": "dense PLE T=31 R=3",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0140927798839168,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE T=31 R=3",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0140927798839168,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "dense PLE T=65 R=65",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 65
+      },
+      {
+        "label": "host PLE T=65 R=65",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 65
+      },
+      {
+        "label": "dense PLE T=65 R=3",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.022991523411615,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE T=65 R=3",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.022991523411615,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "dense PLE T=257 R=257",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 257
+      },
+      {
+        "label": "host PLE T=257 R=257",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 257
+      },
+      {
+        "label": "dense PLE T=257 R=3",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0188586269457351,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE T=257 R=3",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0188586269457351,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "dense PLE T=5 R=5",
+        "maxAbs": 2.613678216934204,
+        "maxRms": 1.0271722113855255,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 5
+      },
+      {
+        "label": "host PLE T=5 R=5",
+        "maxAbs": 2.613678216934204,
+        "maxRms": 1.0271722113855255,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 5
+      },
+      {
+        "label": "dense PLE T=5 R=3",
+        "maxAbs": 1.774116277694702,
+        "maxRms": 1.022205005435697,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE T=5 R=3",
+        "maxAbs": 1.774116277694702,
+        "maxRms": 1.022205005435697,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE shared image prefix frame=0 batch=false source=false",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=0 batch=false source=true",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=0 batch=true source=false",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=0 batch=true source=true",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=1 batch=false source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=1 batch=false source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=1 batch=true source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=1 batch=true source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=2 batch=false source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=2 batch=false source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=2 batch=true source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE shared image prefix frame=2 batch=true source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "batched suffix lengths=2,1,2,3,4",
+        "maxAbs": 2.497124195098877,
+        "maxRms": 1.0288505238890302,
+        "minRms": 1.0100434499359776,
+        "nonfinite": 0,
+        "rows": 5
+      },
+      {
+        "label": "batched suffix lengths=64,1,64,3,4",
+        "maxAbs": 2.497124195098877,
+        "maxRms": 1.0199884137009612,
+        "minRms": 1.0100434499359776,
+        "nonfinite": 0,
+        "rows": 5
+      },
+      {
+        "label": "batched suffix lengths=65,1",
+        "maxAbs": 2.128600835800171,
+        "maxRms": 1.0155277165299923,
+        "minRms": 1.0131259874571146,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "GPU PLE compact source T=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "GPU PLE compact source T=31",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0140927798839168,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "GPU PLE compact source T=65",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.022991523411615,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "GPU PLE compact source T=117",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.020721365575256,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE compact source T=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "host PLE compact source T=31",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0140927798839168,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE compact source T=65",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.022991523411615,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "host PLE compact source T=117",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.020721365575256,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "sliding last source compact source T=1",
+        "maxAbs": 1.8348389863967896,
+        "maxRms": 1.0231190284201284,
+        "minRms": 1.0231190284201284,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source compact source T=31",
+        "maxAbs": 2.1106460094451904,
+        "maxRms": 1.027527161147042,
+        "minRms": 1.0200959655326625,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "sliding last source compact source T=65",
+        "maxAbs": 2.060746431350708,
+        "maxRms": 1.0200959655326625,
+        "minRms": 1.0196126474042877,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "sliding last source compact source T=117",
+        "maxAbs": 2.060746431350708,
+        "maxRms": 1.0233949671611289,
+        "minRms": 1.0200959655326625,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "sliding last source shared image prefix frame=0 batch=false source=false",
+        "maxAbs": 2.325047731399536,
+        "maxRms": 1.0253134828867216,
+        "minRms": 1.014252462231462,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=0 batch=false source=true",
+        "maxAbs": 2.325047731399536,
+        "maxRms": 1.0253134828867216,
+        "minRms": 1.014252462231462,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=0 batch=true source=false",
+        "maxAbs": 2.325047731399536,
+        "maxRms": 1.0253134828867216,
+        "minRms": 1.014252462231462,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=0 batch=true source=true",
+        "maxAbs": 2.325047731399536,
+        "maxRms": 1.0253134828867216,
+        "minRms": 1.014252462231462,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=1 batch=false source=false",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=1 batch=false source=true",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=1 batch=true source=false",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=1 batch=true source=true",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=2 batch=false source=false",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=2 batch=false source=true",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=2 batch=true source=false",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "sliding last source shared image prefix frame=2 batch=true source=true",
+        "maxAbs": 1.9677830934524536,
+        "maxRms": 1.0234506534581624,
+        "minRms": 1.0129038303542126,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "stored PLE T=1",
+        "maxAbs": 2.404973030090332,
+        "maxRms": 1.0263895726623316,
+        "minRms": 1.0263895726623316,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "stored PLE T=31",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0140927798839168,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "stored PLE T=31",
+        "maxAbs": 2.456013441085815,
+        "maxRms": 1.0279374952789335,
+        "minRms": 1.0092581490096877,
+        "nonfinite": 0,
+        "rows": 31
+      },
+      {
+        "label": "stored PLE T=257",
+        "maxAbs": 2.3215935230255127,
+        "maxRms": 1.0256573373948323,
+        "minRms": 1.0188586269457351,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=0 batch=false source=false",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=0 batch=false source=true",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=0 batch=true source=false",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=0 batch=true source=true",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=1 batch=false source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=1 batch=false source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=1 batch=true source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=1 batch=true source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=2 batch=false source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=2 batch=false source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=2 batch=true source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "OPFS word and PLE shared image prefix frame=2 batch=true source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec selected=1",
+        "maxAbs": 1.6212544441223145,
+        "maxRms": 1.022205005435697,
+        "minRms": 1.022205005435697,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      {
+        "label": "direct matvec selected=3",
+        "maxAbs": 1.774116277694702,
+        "maxRms": 1.022205005435697,
+        "minRms": 1.0188649284717464,
+        "nonfinite": 0,
+        "rows": 3
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=0 batch=false source=false",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=0 batch=false source=true",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=0 batch=true source=false",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=0 batch=true source=true",
+        "maxAbs": 2.0615592002868652,
+        "maxRms": 1.0261044922108895,
+        "minRms": 1.0233222300359228,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=1 batch=false source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=1 batch=false source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=1 batch=true source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=1 batch=true source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=2 batch=false source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=2 batch=false source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=2 batch=true source=false",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "direct matvec host PLE shared image prefix frame=2 batch=true source=true",
+        "maxAbs": 2.0568368434906006,
+        "maxRms": 1.0232036222897634,
+        "minRms": 1.0209226705451615,
+        "nonfinite": 0,
+        "rows": 2
+      },
+      {
+        "label": "no-shared all",
+        "maxAbs": 2.737729787826538,
+        "maxRms": 1.029456277879088,
+        "minRms": 1.010336171979889,
+        "nonfinite": 0,
+        "rows": 31
+      },
+      {
+        "label": "no-shared selected",
+        "maxAbs": 1.9894280433654783,
+        "maxRms": 1.018555597870313,
+        "minRms": 1.0174285425169074,
+        "nonfinite": 0,
+        "rows": 3
+      }
+    ],
+    "gpuProjection": {
+      "images": 2,
+      "mixed": [
+        {
+          "gpuImage": 0,
+          "ordinaryMaxAbs": 0,
+          "sharedMaxAbs": 0
+        },
+        {
+          "gpuImage": 1,
+          "ordinaryMaxAbs": 0,
+          "sharedMaxAbs": 0
+        }
+      ],
+      "nonfiniteRejected": [
+        "ordinary",
+        "shared"
+      ],
+      "ordinaryMaxAbs": 0,
+      "shapeReset": true,
+      "sharedMaxAbs": 0
+    },
+    "hostPle": {
+      "bitExact": true,
+      "cases": [
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 1,
+          "tokens": 1
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 2,
+          "tokens": 1
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 31,
+          "tokens": 31
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 3,
+          "tokens": 31
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 65,
+          "tokens": 65
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 3,
+          "tokens": 65
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 257,
+          "tokens": 257
+        },
+        {
+          "images": 0,
+          "maxAbs": 0,
+          "selected": 3,
+          "tokens": 257
+        },
+        {
+          "images": 1,
+          "maxAbs": 0,
+          "selected": 5,
+          "tokens": 5
+        },
+        {
+          "images": 1,
+          "maxAbs": 0,
+          "selected": 3,
+          "tokens": 5
+        }
+      ],
+      "maxAbs": 0,
+      "savedGpuBytes": 37748736
+    },
+    "imageHiddenDelta": 2.0836760997772217,
+    "imageInjection": true,
+    "imagePlePad": true,
+    "inputStates": {
+      "embedding": {
+        "maxAbs": 0.2800000011920929,
+        "maxRms": 0.17804493469111696,
+        "minRms": 0.17804493469111696,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      "pleToken": {
+        "maxAbs": 0.1574999988079071,
+        "maxRms": 0.0949609259433551,
+        "minRms": 0.0949609259433551,
+        "nonfinite": 0,
+        "rows": 1
+      },
+      "residual": {
+        "maxAbs": 6.0794267654418945,
+        "maxRms": 2.628970359664712,
+        "minRms": 2.628970359664712,
+        "nonfinite": 0,
+        "rows": 1
+      }
+    },
+    "lengths": [
+      1,
+      31,
+      65
+    ],
+    "matvecCases": [
+      {
+        "maxAbs": 0,
+        "selected": [
+          4
+        ]
+      },
+      {
+        "maxAbs": 0,
+        "selected": [
+          1,
+          4,
+          1
+        ]
+      }
+    ],
+    "maxAbs": 0,
+    "noSharedFallback": true,
+    "ok": true,
+    "pleVectorCases": [
+      {
+        "batch": false,
+        "bitExact": true,
+        "bytes": 1792,
+        "capacityBytes": 1792,
+        "captures": 8,
+        "compact": false,
+        "enabled": true,
+        "frame": 0,
+        "hits": 0,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": false,
+        "bitExact": true,
+        "bytes": 1792,
+        "capacityBytes": 1792,
+        "captures": 0,
+        "compact": false,
+        "enabled": true,
+        "frame": 1,
+        "hits": 8,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": false,
+        "bitExact": true,
+        "bytes": 1792,
+        "capacityBytes": 1792,
+        "captures": 0,
+        "compact": false,
+        "enabled": true,
+        "frame": 2,
+        "hits": 8,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": false,
+        "bitExact": true,
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 8,
+        "compact": true,
+        "enabled": true,
+        "frame": 0,
+        "hits": 0,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": false,
+        "bitExact": true,
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 0,
+        "compact": true,
+        "enabled": true,
+        "frame": 1,
+        "hits": 8,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": false,
+        "bitExact": true,
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 0,
+        "compact": true,
+        "enabled": true,
+        "frame": 2,
+        "hits": 8,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": true,
+        "bitExact": true,
+        "bytes": 1792,
+        "capacityBytes": 1792,
+        "captures": 4,
+        "compact": false,
+        "enabled": true,
+        "frame": 0,
+        "hits": 0,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": true,
+        "bitExact": true,
+        "bytes": 1792,
+        "capacityBytes": 1792,
+        "captures": 0,
+        "compact": false,
+        "enabled": true,
+        "frame": 1,
+        "hits": 4,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": true,
+        "bitExact": true,
+        "bytes": 1792,
+        "capacityBytes": 1792,
+        "captures": 0,
+        "compact": false,
+        "enabled": true,
+        "frame": 2,
+        "hits": 4,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": true,
+        "bitExact": true,
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 4,
+        "compact": true,
+        "enabled": true,
+        "frame": 0,
+        "hits": 0,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": true,
+        "bitExact": true,
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 0,
+        "compact": true,
+        "enabled": true,
+        "frame": 1,
+        "hits": 4,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "batch": true,
+        "bitExact": true,
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 0,
+        "compact": true,
+        "enabled": true,
+        "frame": 2,
+        "hits": 4,
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 4,
+        "enabled": true,
+        "hits": 0,
+        "invalidation": "token-identities",
+        "label": "host PLE",
+        "maxAbs": 0
+      },
+      {
+        "bytes": 1408,
+        "capacityBytes": 1408,
+        "captures": 4,
+        "enabled": true,
+        "hits": 0,
+        "invalidation": "graph-rebuild",
+        "label": "host PLE"
+      },
+      {
+        "bytes": 768,
+        "capacityBytes": 768,
+        "captures": 0,
+        "enabled": true,
+        "hits": 3,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "selected": [
+          4,
+          4
+        ]
+      },
+      {
+        "bytes": 0,
+        "captures": 0,
+        "enabled": false,
+        "hits": 0,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reason": "no-text-scopes",
+        "selected": [
+          1,
+          4
+        ]
+      }
+    ],
+    "prefixCases": [
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "OPFS word and PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 0,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 0,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 0,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 1,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 1,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": false,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": false,
+        "enabled": true,
+        "frame": 2,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      },
+      {
+        "batchedSuffixes": true,
+        "cacheHits": 1,
+        "compactSourceRows": true,
+        "enabled": true,
+        "frame": 2,
+        "label": "direct matvec host PLE",
+        "maxAbs": 0,
+        "reusedTokens": 5,
+        "sharedPrefixTokens": 5,
+        "splitScratchBytes": 12582912,
+        "totalTokens": 15
+      }
+    ],
+    "sourceCompactionCases": [
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "GPU PLE",
+        "maxAbs": 0,
+        "originalRows": 1,
+        "selected": [
+          0,
+          0
+        ],
+        "selectedRows": 2,
+        "sourceLayer": 1,
+        "tokens": 1
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "GPU PLE",
+        "maxAbs": 0,
+        "originalRows": 31,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 31
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "GPU PLE",
+        "maxAbs": 0,
+        "originalRows": 65,
+        "selected": [
+          64,
+          1,
+          64
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 65
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "GPU PLE",
+        "maxAbs": 0,
+        "originalRows": 117,
+        "selected": [
+          116,
+          1,
+          116
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 117
+      },
+      {
+        "bitExact": true,
+        "fallback": true,
+        "label": "GPU PLE",
+        "selectedRows": 65,
+        "tokens": 31
+      },
+      {
+        "bitExact": true,
+        "fallback": true,
+        "label": "GPU PLE",
+        "selectedRows": 17,
+        "tokens": 1
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "originalRows": 1,
+        "selected": [
+          0,
+          0
+        ],
+        "selectedRows": 2,
+        "sourceLayer": 1,
+        "tokens": 1
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "originalRows": 31,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 31
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "originalRows": 65,
+        "selected": [
+          64,
+          1,
+          64
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 65
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "host PLE",
+        "maxAbs": 0,
+        "originalRows": 117,
+        "selected": [
+          116,
+          1,
+          116
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 117
+      },
+      {
+        "bitExact": true,
+        "fallback": true,
+        "label": "host PLE",
+        "selectedRows": 65,
+        "tokens": 31
+      },
+      {
+        "bitExact": true,
+        "fallback": true,
+        "label": "host PLE",
+        "selectedRows": 17,
+        "tokens": 1
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "originalRows": 1,
+        "selected": [
+          0,
+          0
+        ],
+        "selectedRows": 2,
+        "sourceLayer": 1,
+        "tokens": 1
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "originalRows": 31,
+        "selected": [
+          30,
+          1,
+          30
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 31
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "originalRows": 65,
+        "selected": [
+          64,
+          1,
+          64
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 65
+      },
+      {
+        "bitExact": true,
+        "enabled": true,
+        "label": "sliding last source",
+        "maxAbs": 0,
+        "originalRows": 117,
+        "selected": [
+          116,
+          1,
+          116
+        ],
+        "selectedRows": 3,
+        "sourceLayer": 1,
+        "tokens": 117
+      },
+      {
+        "bitExact": true,
+        "fallback": true,
+        "label": "sliding last source",
+        "selectedRows": 65,
+        "tokens": 31
+      },
+      {
+        "bitExact": true,
+        "fallback": true,
+        "label": "sliding last source",
+        "selectedRows": 17,
+        "tokens": 1
+      }
+    ],
+    "storedPle": {
+      "bitExact": true,
+      "cacheBytes": 137216,
+      "imageHiddenDelta": 2.0836760997772217,
+      "opfsWeights": 47185920,
+      "supported": true,
+      "warmedCacheHit": true
+    },
+    "tolerance": 2e-05
+  },
+  "done": true,
+  "method": "timestamp-query",
+  "metric": "geometric mean of selected-tail forward milliseconds (GPU kernel timestamps when available)",
+  "metricMs": 0.47942547000528696,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

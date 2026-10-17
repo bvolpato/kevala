@@ -1,0 +1,15 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma RMS scale → next RMS guard</title>
+<style>
+  :root { color-scheme: light dark; font: 14px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  body { margin: 1.5rem; max-width: 72rem; }
+  p { font: 15px system-ui, sans-serif; line-height: 1.5; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<h1>Gemma RMS scale → next RMS fusion guard</h1>
+<p>This dev-only, model-free WebGPU check derives a candidate from the registered rendered shaders. It verifies both output buffers bit-for-bit, including signed zero and output-tail guards, then times the baseline pair against the fused pass for D=1536 and T=2, 28, 97.</p>
+<p>The default uses shared-memory reductions. Add <code>?subgroups=1</code> to check the optional fixed-32 subgroup path.</p>
+<pre id="log"></pre>
+<script type="module" src="./gemma4-rms-scale-next-check.js"></script>

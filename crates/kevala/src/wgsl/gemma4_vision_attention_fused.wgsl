@@ -1,6 +1,6 @@
 // F32 16-query x 16-key online attention for Gemma 4's 64-dimensional vision heads.
 // Q/K/V tiles and scores use 14,080 bytes; no quadratic storage buffer is materialized.
-struct P { rows: u32, heads: u32, kv_heads: u32, dim: u32 }
+struct P { rows: u32, heads: u32, kv_heads: u32, dim: u32, lo: f32, hi: f32, clamp_output: u32, pad: u32 }
 @group(0) @binding(0) var<uniform> p: P;
 @group(0) @binding(1) var<storage, read> Q: array<vec4<f32>>;
 @group(0) @binding(2) var<storage, read> K: array<vec4<f32>>;
@@ -67,5 +67,9 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     maximum = next_maximum;
     workgroupBarrier();
   }
-  if (row < p.rows) { Y[(row * p.heads + head) * 16u + col] = result / denominator; }
+  if (row < p.rows) {
+    var output = result / denominator;
+    if (p.clamp_output != 0u) { output = clamp(output, vec4<f32>(p.lo), vec4<f32>(p.hi)); }
+    Y[(row * p.heads + head) * 16u + col] = output;
+  }
 }

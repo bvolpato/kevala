@@ -2,8 +2,9 @@
 // intentionally tiny: the comparison exercises the production GpuGemma4 graph, not a
 // CPU model, while keeping this page suitable for a quick browser guard.
 
-import { Profiler, requestDevice } from "../js/src/gpu.js";
+import { Profiler, matvecPipelines, requestDevice } from "../js/src/gpu.js";
 import { GpuGemma4, gemma4Config } from "../js/src/gpu-gemma4.js";
+import { validateGemma4Rms } from "../js/src/gpu-gemma4-rms.js";
 import { kernelSource } from "./wgsl.js";
 import { createGemma4PleStore } from "../js/src/gemma4-ple-store.js";
 import { parsePackHeader } from "../js/src/pack-layout.js";
@@ -126,7 +127,8 @@ function packSynthetic(tensors) {
 
 async function main() {
   const source = await kernelSource();
-  const runtime = await requestDevice({ features: ["timestamp-query"] });
+  const features = new URLSearchParams(location.search).get("f16") === "1" ? ["timestamp-query", "shader-f16"] : ["timestamp-query"];
+  const runtime = await requestDevice({ features });
   runtime.wgsl = source;
   runtime.kernel = "generic";
   const packed = packSynthetic(syntheticTensors());
@@ -240,12 +242,37 @@ async function main() {
   // The host mode retains the pack's exact Q8 bytes, then copies independent
   // per-layer row slices before PLE combine. Compare full, compact and chunked graphs.
   const { model: hostModel } = await makeModel(HEADER_CONFIG, { hostPle: true });
+  const chunkFusionCases = [];
+  {
+    const saved = { profiler: hostModel.profiler, fuseRms: hostModel.fuseRms, fuseRmsNext: hostModel.fuseRmsNext, rmsValidation: hostModel.rmsValidation };
+    try {
+      hostModel.profiler = null;
+      hostModel.rmsValidation = await validateGemma4Rms(runtime.device, hostModel.p, hostModel.weights, hostModel.cfg, { enabled: true });
+      const ids = Uint32Array.from({ length: 257 }, (_, row) => 3 + row * 7);
+      const selected = Uint32Array.from({ length: ids.length }, (_, row) => row);
+      hostModel.fuseRms = false;
+      const expected = await hostModel.forward(ids, selected);
+      const bits = new Uint32Array(expected.buffer, expected.byteOffset, expected.length);
+      if (!hostModel.rmsValidation.enabled || !hostModel.rmsValidation.nextEnabled) throw new Error("loaded RMS exactness gates did not pass for the chunk guard");
+      for (const next of [false, true]) {
+        hostModel.fuseRms = true;
+        hostModel.fuseRmsNext = next;
+        const actual = await hostModel.forward(ids, selected);
+        const words = new Uint32Array(actual.buffer, actual.byteOffset, actual.length);
+        assertFinalRows(actual, selected.length, `chunked RMS next=${next}`);
+        if (words.length !== bits.length || words.some((word, i) => word !== bits[i])) throw new Error(`chunked RMS fusion changed output bits (next=${next})`);
+        chunkFusionCases.push({ tokens: ids.length, selected: selected.length, rmsNext: next, bitExact: true, signedZeroChecked: true });
+      }
+    } finally { Object.assign(hostModel, saved); }
+  }
   let hostPleMaxAbs = 0;
   let hostPleExact = true;
   const hostCases = [];
   const prefixCases = [];
   const checkSharedPrefix = async (target, label) => {
     const profiler = target.profiler;
+    const batchSuffixes = target.batchSuffixes;
+    const compactSourceRows = target.compactSourceRows;
     target.profiler = null;
     let first = null;
     try {
@@ -253,20 +280,151 @@ async function main() {
         const spans = [{ start: 1, len: 2, rows: projected }];
         const inputs = [[3, 258880, 258880, 4, 5, 7, 9], [3, 258880, 258880, 4, 5, 11, 13, 15]].map((ids) => ({ ids: Uint32Array.from(ids), imageSpans: spans }));
         const expected = new Float32Array(2 * cfg.hidden);
+        target.compactSourceRows = false;
         for (let i = 0; i < inputs.length; i++) expected.set(await target.forward(inputs[i].ids, null, spans), i * cfg.hidden);
-        const actual = await target.forwardSharedPrefix(inputs);
-        if (!actual || !target.lastPrefixReuse.enabled || target.lastPrefixReuse.reusedTokens !== 5) throw new Error(`${label} shared prefix was not exercised`);
-        assertFinalRows(actual, 2, `${label} shared image prefix frame=${frame}`);
-        let maxAbs = 0;
-        for (let i = 0; i < actual.length; i++) maxAbs = Math.max(maxAbs, Math.abs(actual[i] - expected[i]));
-        if (!Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`${label} shared-prefix rows differ by ${maxAbs}`);
-        if (frame === 0) first = actual;
-        else if (!actual.some((value, i) => Math.abs(value - first[i]) > 1e-6)) throw new Error(`${label} shared prefix reused stale image rows`);
-        prefixCases.push({ label, frame, maxAbs, ...target.lastPrefixReuse, cacheHits: target.lastPle?.cacheHits || 0 });
+        for (const batch of [false, true]) for (const compact of [false, true]) {
+          target.batchSuffixes = batch;
+          target.compactSourceRows = compact;
+          const actual = await target.forwardSharedPrefix(inputs);
+          if (!actual || !target.lastPrefixReuse.enabled || target.lastPrefixReuse.reusedTokens !== 5 || target.lastPrefixReuse.batchedSuffixes !== batch || target.lastSourceCompaction.enabled !== compact) throw new Error(`${label} shared prefix was not exercised (batch=${batch}, source=${compact})`);
+          assertFinalRows(actual, 2, `${label} shared image prefix frame=${frame} batch=${batch} source=${compact}`);
+          let maxAbs = 0;
+          for (let i = 0; i < actual.length; i++) maxAbs = Math.max(maxAbs, Math.abs(actual[i] - expected[i]));
+          if (!Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`${label} shared-prefix rows differ by ${maxAbs} (batch=${batch})`);
+          if (frame === 0) first = actual;
+          else if (!actual.some((value, i) => Math.abs(value - first[i]) > 1e-6)) throw new Error(`${label} shared prefix reused stale image rows`);
+          prefixCases.push({ label, frame, maxAbs, ...target.lastPrefixReuse, cacheHits: target.lastPle?.cacheHits || 0 });
+        }
         const split = [{ start: 1, len: 1, rows: projected.subarray(0, cfg.hidden) }, { start: 2, len: 1, rows: projected.subarray(cfg.hidden) }];
         if (await target.forwardSharedPrefix([inputs[0], { ...inputs[1], imageSpans: split }]) !== null || target.lastPrefixReuse.enabled) throw new Error(`${label} shared prefix accepted mismatched image spans`);
       }
-    } finally { target.profiler = profiler; }
+    } finally { target.profiler = profiler; target.batchSuffixes = batchSuffixes; target.compactSourceRows = compactSourceRows; }
+  };
+  const batchSuffixCases = [];
+  const checkBatchSuffixes = async (target) => {
+    const profiler = target.profiler;
+    const batchSuffixes = target.batchSuffixes;
+    const compactSourceRows = target.compactSourceRows;
+    target.profiler = null;
+    try {
+      for (const lengths of [[2, 1, 2, 3, 4], [64, 1, 64, 3, 4], [65, 1]]) {
+        const inputs = lengths.map((length, branch) => ({
+          ids: Uint32Array.from([3, 258880, 258880, 4, 5, ...Array.from({ length }, (_, row) => 7 + (branch === 2 ? 0 : branch) * 97 + row * 3)]),
+          imageSpans,
+        }));
+        target.batchSuffixes = false;
+        target.compactSourceRows = false;
+        const expected = await target.forwardSharedPrefix(inputs);
+        target.batchSuffixes = true;
+        target.compactSourceRows = true;
+        const actual = await target.forwardSharedPrefix(inputs);
+        const batched = lengths.every((length) => length <= 64);
+        if (!expected || !actual || target.lastPrefixReuse.batchedSuffixes !== batched || !target.lastSourceCompaction.enabled) throw new Error(`unexpected suffix batch selection: ${lengths}`);
+        assertFinalRows(actual, lengths.length, `batched suffix lengths=${lengths}`);
+        let maxAbs = 0;
+        for (let i = 0; i < actual.length; i++) maxAbs = Math.max(maxAbs, Math.abs(actual[i] - expected[i]));
+        if (!Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`batched suffixes differ by ${maxAbs}: ${lengths}`);
+        for (let d = 0; d < cfg.hidden && lengths.length === 5; d++) if (actual[d] !== actual[2 * cfg.hidden + d]) throw new Error("duplicate suffixes produced different output rows");
+        batchSuffixCases.push({ lengths, maxAbs, bitExact: maxAbs === 0, ...target.lastPrefixReuse });
+      }
+    } finally { target.profiler = profiler; target.batchSuffixes = batchSuffixes; target.compactSourceRows = compactSourceRows; }
+  };
+  const sourceCompactionCases = [];
+  const checkSourceCompaction = async (target, label) => {
+    const compactSourceRows = target.compactSourceRows;
+    try {
+      for (const length of [1, 31, 65, 117]) {
+        const ids = Uint32Array.from({ length }, (_, row) => 3 + row * 7);
+        const selected = length === 1 ? [0, 0] : [length - 1, 1, length - 1];
+        target.compactSourceRows = false;
+        const expected = await target.forward(ids, selected);
+        target.compactSourceRows = true;
+        const actual = await target.forward(ids, selected);
+        if (!target.lastSourceCompaction.enabled || target.lastSourceCompaction.sourceLayer !== target.cfg.sharedStart - 1) throw new Error(`${label} last-source compaction was not exercised`);
+        assertFinalRows(actual, selected.length, `${label} compact source T=${length}`);
+        let maxAbs = 0;
+        for (let i = 0; i < actual.length; i++) maxAbs = Math.max(maxAbs, Math.abs(actual[i] - expected[i]));
+        if (!Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`${label} compact source T=${length} differs by ${maxAbs}`);
+        sourceCompactionCases.push({ label, tokens: length, selected, maxAbs, bitExact: maxAbs === 0, ...target.lastSourceCompaction });
+      }
+      for (const [length, count] of [[31, 65], [1, 17]]) {
+        const ids = Uint32Array.from({ length }, (_, row) => 3 + row * 7);
+        const selected = Array.from({ length: count }, (_, row) => row % length);
+        target.compactSourceRows = false;
+        const expected = await target.forward(ids, selected);
+        target.compactSourceRows = true;
+        const actual = await target.forward(ids, selected);
+        if (target.lastSourceCompaction.enabled || actual.some((value, i) => value !== expected[i])) throw new Error(`${label} compact-source fallback changed selected rows`);
+        sourceCompactionCases.push({ label, tokens: length, selectedRows: count, fallback: true, bitExact: true });
+      }
+    } finally { target.compactSourceRows = compactSourceRows; }
+  };
+  const pleVectorCases = [];
+  const checkPleVectorCache = async (target, label) => {
+    const profiler = target.profiler;
+    const batchSuffixes = target.batchSuffixes;
+    const compactSourceRows = target.compactSourceRows;
+    const cachePleVectors = target.cachePleVectors;
+    target.profiler = null;
+    const inputsFor = (projected, changedPrompt = false) => {
+      const spans = [{ start: 1, len: 2, rows: projected }];
+      return [[3, 258880, 258880, 4, 5, 7, 9], [3, 258880, 258880, 4, 5, 11, 13, changedPrompt ? 17 : 15]].map((ids) => ({ ids: Uint32Array.from(ids), imageSpans: spans }));
+    };
+    const compare = (actual, expected, context) => {
+      let maxAbs = 0;
+      for (let i = 0; i < actual.length; i++) maxAbs = Math.max(maxAbs, Math.abs(actual[i] - expected[i]));
+      if (actual.length !== expected.length || !Number.isFinite(maxAbs) || maxAbs > 2e-5) throw new Error(`${label} PLE vector cache ${context} differs by ${maxAbs}`);
+      return maxAbs;
+    };
+    try {
+      for (const batch of [false, true]) for (const compact of [false, true]) {
+        target.batchSuffixes = batch;
+        target.compactSourceRows = compact;
+        target.cachePleVectors = false;
+        const firstExpected = await target.forwardSharedPrefix(inputsFor(imageRows));
+        const changedExpected = await target.forwardSharedPrefix(inputsFor(changedImageRows));
+        target.cachePleVectors = true;
+        for (const [frame, projected] of [imageRows, changedImageRows, changedImageRows].entries()) {
+          const actual = await target.forwardSharedPrefix(inputsFor(projected));
+          const state = target.lastPleVectorCache;
+          if (!actual || !state.enabled || (frame === 0 ? state.hits !== 0 || state.captures === 0 : state.hits === 0 || state.captures !== 0)) throw new Error(`${label} PLE vectors did not ${frame === 0 ? "capture" : "reuse"} the text-only tensors`);
+          const maxAbs = compare(actual, frame === 0 ? firstExpected : changedExpected, `batch=${batch} source=${compact} frame=${frame}`);
+          pleVectorCases.push({ label, batch, compact, frame, maxAbs, bitExact: maxAbs === 0, ...state });
+        }
+        target.cachePleVectors = false;
+        const repeated = await target.forwardSharedPrefix(inputsFor(changedImageRows));
+        if (target.lastPleVectorCache.enabled || compare(repeated, changedExpected, "off-repeat") !== 0) throw new Error(`${label} disabling PLE cache changed output`);
+      }
+      target.cachePleVectors = false;
+      const changedPromptExpected = await target.forwardSharedPrefix(inputsFor(changedImageRows, true));
+      target.cachePleVectors = true;
+      await target.forwardSharedPrefix(inputsFor(changedImageRows));
+      await target.forwardSharedPrefix(inputsFor(changedImageRows));
+      if (target.lastPleVectorCache.hits === 0) throw new Error(`${label} PLE cache did not warm before invalidation`);
+      const changedPrompt = await target.forwardSharedPrefix(inputsFor(changedImageRows, true));
+      if (target.lastPleVectorCache.hits !== 0 || target.lastPleVectorCache.captures === 0) throw new Error(`${label} changed token IDs reused old PLE vectors`);
+      pleVectorCases.push({ label, invalidation: "token-identities", maxAbs: compare(changedPrompt, changedPromptExpected, "changed prompt"), ...target.lastPleVectorCache });
+      target.build();
+      await target.forwardSharedPrefix(inputsFor(changedImageRows, true));
+      if (target.lastPleVectorCache.hits !== 0 || target.lastPleVectorCache.captures === 0) throw new Error(`${label} rebuilt graph reused PLE vectors`);
+      pleVectorCases.push({ label, invalidation: "graph-rebuild", ...target.lastPleVectorCache });
+      for (const selected of [[4, 4], [1, 4]]) {
+        target.cachePleVectors = false;
+        const expected = await target.forward(imageIds, selected, [{ start: 1, len: 2, rows: changedImageRows }]);
+        target.cachePleVectors = true;
+        await target.forward(imageIds, selected, imageSpans);
+        const actual = await target.forward(imageIds, selected, [{ start: 1, len: 2, rows: changedImageRows }]);
+        const textOnly = selected.every((row) => row < 1 || row >= 3);
+        if (target.lastPleVectorCache.enabled !== textOnly || textOnly && target.lastPleVectorCache.hits === 0) throw new Error(`${label} image-dependent selected PLE vectors were cached`);
+        pleVectorCases.push({ label, selected, maxAbs: compare(actual, expected, "selected rows"), ...target.lastPleVectorCache });
+      }
+    } finally {
+      target.cachePleVectors = cachePleVectors;
+      target.batchSuffixes = batchSuffixes;
+      target.compactSourceRows = compactSourceRows;
+      target.profiler = profiler;
+      target.clearPleVectorCache();
+    }
   };
   const compareHost = async (ids, selected, spans = []) => {
     const dense = await model.forward(ids, selected, spans);
@@ -298,6 +456,13 @@ async function main() {
     { ids: Uint32Array.from([3, 258880, 258880, 4, 5, 9]), imageSpans },
   ]) !== null) throw new Error("GPU-resident PLE unexpectedly enabled image-prefix sharing");
   await checkSharedPrefix(hostModel, "host PLE");
+  await checkBatchSuffixes(hostModel);
+  await checkSourceCompaction(model, "GPU PLE");
+  await checkSourceCompaction(hostModel, "host PLE");
+  await checkPleVectorCache(hostModel, "host PLE");
+  const { model: slidingSourceModel } = await makeModel({ ...HEADER_CONFIG, layer_types: ["full_attention", "sliding_attention", "sliding_attention", "full_attention"] }, { hostPle: true });
+  await checkSourceCompaction(slidingSourceModel, "sliding last source");
+  await checkSharedPrefix(slidingSourceModel, "sliding last source");
   const gpuProjection = await checkGpuProjectionDecoder(runtime, hostModel);
   let storedPle = { supported: false };
   const store = await createGemma4PleStore(parsePackHeader(packed.prefix).tensors.filter((t) => /^ple\.\d+\.embed$/.test(t.name) || t.name === "embed"));
@@ -342,6 +507,27 @@ async function main() {
   if (hostModel.memory.hostWeights !== expectedHostBytes || hostModel.memory.gpuWeights !== model.memory.gpuWeights - expectedHostBytes) throw new Error("host PLE weight accounting differs from original pack bytes");
   if (hostModel.weights.missing().length || [...hostModel.tensors.values()].some((entry) => entry.hostTable && (entry.buf || entry.sbuf || !entry.host))) throw new Error("host PLE tables are incomplete or still allocated on the GPU");
 
+  const matvecPipes = await matvecPipelines(runtime.device, source, "q8", hostModel.mm.layout);
+  const ordinaryMatvec = hostModel.matvec;
+  const selectedShapes = new Set([...hostModel.tensors.values()].filter((e) => e.info.dtype === "q8" && !e.hostTable).map((e) => e.info.shape.join(":")));
+  const directMatvec = { pipelines: matvecPipes, selection: selectedShapes };
+  const matvecCases = [];
+  try {
+    for (const selected of [[4], [1, 4, 1]]) {
+      hostModel.matvec = ordinaryMatvec;
+      const expected = await hostModel.forward(imageIds, selected, imageSpans);
+      hostModel.matvec = directMatvec;
+      const actual = await hostModel.forward(imageIds, selected, imageSpans);
+      assertFinalRows(actual, selected.length, `direct matvec selected=${selected.length}`);
+      let error = 0;
+      for (let i = 0; i < actual.length; i++) error = Math.max(error, Math.abs(actual[i] - expected[i]));
+      if (!Number.isFinite(error) || error > 2e-5) throw new Error(`direct matvec selected rows differ by ${error}`);
+      matvecCases.push({ selected, maxAbs: error });
+    }
+    await checkSharedPrefix(hostModel, "direct matvec host PLE");
+    await checkGpuProjectionDecoder(runtime, hostModel);
+  } finally { hostModel.matvec = ordinaryMatvec; }
+
   // Native Gemma scoring rejects bidirectional text attention. Keep that
   // contract explicit while still exercising the parser's failure path.
   let bidirectionalRejected = false;
@@ -371,7 +557,7 @@ async function main() {
 
   const metricMs = Math.exp(metricSamples.reduce((sum, value) => sum + Math.log(value), 0) / metricSamples.length);
   const info = runtime.adapter.info || {};
-  const correctness = { ...window.gpuBench.correctness, ok: true, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, prefixCases, gpuProjection, storedPle, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
+  const correctness = { ...window.gpuBench.correctness, ok: true, chunkFusionCases, cases, finalRows, imageHiddenDelta, maxAbs: Math.max(maxAbs, fallbackMaxAbs, imageMaxAbs, hostPleMaxAbs), tolerance: 2e-5, emptyRows: true, duplicateOrder: true, lengths, bidirectionalRejected, noSharedFallback: true, imageInjection: true, imagePlePad: true, prefixCases, batchSuffixCases, sourceCompactionCases, pleVectorCases, gpuProjection, storedPle, matvecCases, hostPle: { cases: hostCases, maxAbs: hostPleMaxAbs, bitExact: hostPleExact, savedGpuBytes: hostModel.memory.hostWeights } };
   const adapter = {
     name: runtime.name,
     vendor: info.vendor || null,

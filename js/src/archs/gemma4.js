@@ -3,7 +3,7 @@ import { GpuGemma4, gemma4Config } from "../gpu-gemma4.js";
 import { gpuLayouts, parsePackHeader } from "../pack-layout.js";
 import { loadGemma4Vision } from "../gemma4-vision-pack.js";
 import { assertImageCount, imagePixels } from "../images.js";
-import { prepareGemma4Image } from "../gemma4-image.js";
+import { disposeGemma4VisionImage, prepareGemma4GpuVisionImage, prepareGemma4Image, prepareGemma4VisionImage } from "../gemma4-image.js";
 import { createGemma4PleStore } from "../gemma4-ple-store.js";
 
 const enc = new TextEncoder();
@@ -61,12 +61,22 @@ export default {
         for (const part of request.parts || []) {
           if (part.type !== "image") { parts.push(part); continue; }
           const decodeStart = performance.now();
-          const pixels = await imagePixels(part.data, { signal: engine.signal });
+          // This plugin runs after engine-worker's message/MessagePort clone. Borrow raw RGBA
+          // bytes from that request and let requestQueue wipe them after inference completes.
+          const pixels = await imagePixels(part.data, { signal: engine.signal, borrowRGBA: true });
+          const requestOwnsPixels = pixels.data === part.data?.data;
           const preprocessStart = performance.now();
           imageTiming.decode += preprocessStart - decodeStart;
           let prepared;
-          try { prepared = prepareGemma4Image(pixels, imageTokens, engine.visionHeader.config.vision_config); }
-          finally { pixels.data.fill(0); }
+          try {
+            if (engine.vision.prepareGpuPixels === true && engine.vision.imageGpu?.enabled === true && !engine.vision.profiler && engine.vision.prepareCompactPixels === true && engine.vision.compactPatches !== false) {
+              prepared = prepareGemma4GpuVisionImage(pixels, imageTokens, engine.visionHeader.config.vision_config, { borrowInput: requestOwnsPixels });
+            } else {
+              const prepare = engine.vision.prepareCompactPixels === true && engine.vision.compactPatches !== false ? prepareGemma4VisionImage : prepareGemma4Image;
+              prepared = prepare(pixels, imageTokens, engine.visionHeader.config.vision_config);
+            }
+          }
+          finally { if (!requestOwnsPixels) pixels.data.fill(0); }
           const visionStart = performance.now();
           imageTiming.preprocess += visionStart - preprocessStart;
           const index = images.length;
@@ -78,12 +88,16 @@ export default {
             imageTiming.forwardMode = imageTiming.forwardMode && imageTiming.forwardMode !== mode ? "mixed" : mode;
             const attention = engine.vision.attentionMode;
             imageTiming.attention = imageTiming.attention && imageTiming.attention !== attention ? "mixed" : attention;
+            imageTiming.fusedPasses = (imageTiming.fusedPasses || 0) + (engine.vision.fusionStats?.removedPasses || 0);
             if (!(projected instanceof Float32Array)) gpuImageBytes += projected.byteLength;
           }
-          finally { prepared.patches.fill(0); }
+          finally {
+            disposeGemma4VisionImage(prepared);
+            prepared.patches?.fill(0);
+          }
           imageTiming.forward += performance.now() - visionStart;
           imageTiming.images += 1;
-          imageTiming.patches += prepared.positions.length / 2;
+          imageTiming.patches += prepared.paddedRows ?? prepared.positions.length / 2;
           imageTiming.softTokens += prepared.softTokens;
           for (const [kernel, ms] of Object.entries(engine.vision.lastProfile || {})) visionProfile[kernel] = (visionProfile[kernel] || 0) + ms;
           parts.push({ type: "image", image_tokens: prepared.softTokens, image_index: index });
@@ -100,10 +114,16 @@ export default {
       const rows = new Float32Array(count * width);
       const ready = performance.now();
       const profile = { ...visionProfile };
-      const pleTiming = { ms: 0, cacheHits: 0, sequences: count };
+      const pleTiming = { ms: 0, cacheHits: 0, sequences: count, vectorCacheHits: 0, vectorCacheCaptures: 0, vectorCacheBytes: 0 };
       let offset = 1;
       let tokens = 0;
-      const prefixReuse = { enabled: false, reusedTokens: 0, totalTokens: 0, sharedPrefixTokens: 0 };
+      const prefixReuse = { enabled: false, batchedSuffixes: false, compactSourceRows: false, cachedTextPrefix: false, staticPrefixRows: 0, retiledPrefixMatrices: 0, narrowPrefixMatrices: 0, rmsNextFusions: 0, prefixGeluFusions: 0, sharedMatvecMatrices: 0, splitScratchBytes: 0, reusedTokens: 0, totalTokens: 0, sharedPrefixTokens: 0 };
+      const collectPleVectors = () => {
+        const cache = engine.gpu.lastPleVectorCache;
+        pleTiming.vectorCacheHits += cache?.hits || 0;
+        pleTiming.vectorCacheCaptures += cache?.captures || 0;
+        pleTiming.vectorCacheBytes = Math.max(pleTiming.vectorCacheBytes, cache?.bytes || 0);
+      };
       const forwardOne = async (i) => {
         const length = hasImages ? sequences[i].ids.length : batch[offset++];
         const ids = hasImages ? Uint32Array.from(sequences[i].ids) : batch.subarray(offset, offset + length);
@@ -111,6 +131,7 @@ export default {
         tokens += length;
         const spans = hasImages ? sequences[i].image_spans.map((span) => ({ start: span.start, len: span.len, rows: images[span.image_index] })) : [];
         rows.set(await engine.gpu.forward(ids, null, spans), i * width);
+        collectPleVectors();
         if (engine.gpu.lastPle) {
           pleTiming.ms += engine.gpu.lastPle.ms;
           pleTiming.cacheHits += engine.gpu.lastPle.cacheHits ?? Number(engine.gpu.lastPle.cacheHit);
@@ -145,9 +166,20 @@ export default {
             rows.set(sharedRows, startIndex * width);
             const reuse = engine.gpu.lastPrefixReuse;
             prefixReuse.enabled = true;
+            prefixReuse.batchedSuffixes ||= reuse.batchedSuffixes;
+            prefixReuse.compactSourceRows ||= reuse.compactSourceRows;
+            prefixReuse.cachedTextPrefix ||= reuse.cachedTextPrefix;
+            prefixReuse.staticPrefixRows += reuse.staticPrefixRows || 0;
+            prefixReuse.retiledPrefixMatrices += reuse.retiledPrefixMatrices || 0;
+            prefixReuse.narrowPrefixMatrices += reuse.narrowPrefixMatrices || 0;
+            prefixReuse.rmsNextFusions += reuse.rmsNextFusions || 0;
+            prefixReuse.prefixGeluFusions += reuse.prefixGeluFusions || 0;
+            prefixReuse.sharedMatvecMatrices += reuse.sharedMatvecMatrices || 0;
+            prefixReuse.splitScratchBytes = Math.max(prefixReuse.splitScratchBytes, reuse.splitScratchBytes || 0);
             prefixReuse.reusedTokens += reuse.reusedTokens;
             prefixReuse.sharedPrefixTokens += reuse.sharedPrefixTokens;
             tokens += reuse.totalTokens;
+            collectPleVectors();
             if (engine.gpu.lastPle) {
               pleTiming.ms += engine.gpu.lastPle.ms;
               pleTiming.cacheHits += engine.gpu.lastPle.cacheHits ?? Number(engine.gpu.lastPle.cacheHit);

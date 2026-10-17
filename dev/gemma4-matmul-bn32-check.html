@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala BN32 matmul guard</title>
+<h1>WG128 BN32 matmul guard</h1>
+<p>Dev-only F32 Q8 candidate. Halves the physical column tile while retaining the production BN64 split rule and K-dot order. Checks Fast prefix T28/R2 and suffix T97/BM56 with all output/partial bits, modes, bias, and tails. Temporary allocations stay below 64 MiB, excluding immutable weights.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-bn32-check.js"></script>

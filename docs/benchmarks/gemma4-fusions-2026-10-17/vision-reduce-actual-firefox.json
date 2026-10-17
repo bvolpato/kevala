@@ -1,0 +1,108 @@
+{
+  "adapter": {
+    "architecture": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "timestampQuery": false,
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "clipFusion": {
+    "attentionLayers": 16,
+    "downLayers": 16,
+    "enabled": true,
+    "gateUpLayers": 16,
+    "originalInputClipPasses": 112,
+    "qkvLayers": 16,
+    "remainingInputClipPasses": 0,
+    "removedInputClipPasses": 112
+  },
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 576,
+        "attentionMode": "fused-f32",
+        "clipFusion": {
+          "baselineCorrectness": {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          "baselineFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceNormPasses": 0,
+            "removedPasses": 64,
+            "residualNormPasses": 31
+          },
+          "baselineWallMs": 120.38,
+          "fusedCorrectness": {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          "fusedFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "reduceNormPasses": 48,
+            "removedPasses": 112,
+            "residualNormPasses": 31
+          },
+          "fusedWallMs": 99.56000000000006,
+          "parity": {
+            "maxAbs": 0,
+            "relativeL2": 0
+          }
+        },
+        "elapsedMs": 99.56000000000006,
+        "id": "rectangular",
+        "patches": 630,
+        "softTokens": 64
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 0.0001
+  },
+  "done": true,
+  "metricMs": 99.56000000000006,
+  "options": {
+    "compactPatches": true,
+    "fusedAttention": true,
+    "submitMode": "split"
+  },
+  "profile": false,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "72 MiB",
+          "pid": 3264296,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

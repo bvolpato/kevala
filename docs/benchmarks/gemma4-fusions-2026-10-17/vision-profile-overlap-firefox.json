@@ -1,0 +1,274 @@
+{
+  "adapter": {
+    "architecture": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "timestampQuery": true,
+    "vendor": null
+  },
+  "backend": "webgpu",
+  "clipFusion": {
+    "attentionLayers": 16,
+    "downLayers": 16,
+    "enabled": true,
+    "gateUpLayers": 16,
+    "originalInputClipPasses": 112,
+    "qkvLayers": 16,
+    "remainingInputClipPasses": 0,
+    "removedInputClipPasses": 112
+  },
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 576,
+        "attentionMode": "fused-f32",
+        "baseline": {
+          "medianWallMs": 99.91999999999985,
+          "samples": [
+            {
+              "wallMs": 100.13999999999989
+            },
+            {
+              "wallMs": 99.70000000000005
+            },
+            {
+              "wallMs": 99.77999999999996
+            },
+            {
+              "wallMs": 99.92000000000009
+            },
+            {
+              "wallMs": 99.91999999999985
+            }
+          ],
+          "warmupRuns": 5
+        },
+        "correctness": [
+          {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          }
+        ],
+        "id": "rectangular",
+        "patches": 630,
+        "profile": {
+          "kernelMedianMs": {
+            "vision.attention_fused": 4.528,
+            "vision.gelu": 0.147,
+            "vision.mm.down": 3.422,
+            "vision.mm.gate": 3.503,
+            "vision.mm.k": 1.08,
+            "vision.mm.o": 1.165,
+            "vision.mm.patch_embed": 0.061,
+            "vision.mm.project": 0.025,
+            "vision.mm.q": 1.005,
+            "vision.mm.up": 3.445,
+            "vision.mm.v": 0.964,
+            "vision.norm.input": 0.006,
+            "vision.norm.post_attention.next_norm": 0.176,
+            "vision.norm.post_feedforward": 0.009,
+            "vision.norm.post_feedforward.next_norm": 0.161,
+            "vision.norm_head.v": 0.219,
+            "vision.norm_rope.k": 0.219,
+            "vision.norm_rope.q": 0.232,
+            "vision.pool_norm": 0.006,
+            "vision.position": 0.006
+          },
+          "medianKernelMs": 20.379,
+          "medianTotalKernelMs": 20.651000000000003,
+          "medianWallMs": 99.74,
+          "samples": [
+            {
+              "gpu": {
+                "vision.attention_fused": 4.462,
+                "vision.gelu": 0.142,
+                "vision.mm.down": 3.434,
+                "vision.mm.gate": 3.72,
+                "vision.mm.k": 1.028,
+                "vision.mm.o": 1.195,
+                "vision.mm.patch_embed": 0.061,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 1.005,
+                "vision.mm.up": 3.604,
+                "vision.mm.v": 0.964,
+                "vision.norm.input": 0.006,
+                "vision.norm.post_attention.next_norm": 0.176,
+                "vision.norm.post_feedforward": 0.007,
+                "vision.norm.post_feedforward.next_norm": 0.172,
+                "vision.norm_head.v": 0.195,
+                "vision.norm_rope.k": 0.219,
+                "vision.norm_rope.q": 0.224,
+                "vision.pool_norm": 0.006,
+                "vision.position": 0.006
+              },
+              "wallMs": 99.74
+            },
+            {
+              "gpu": {
+                "vision.attention_fused": 4.703,
+                "vision.gelu": 0.146,
+                "vision.mm.down": 3.422,
+                "vision.mm.gate": 3.509,
+                "vision.mm.k": 1.222,
+                "vision.mm.o": 1.165,
+                "vision.mm.patch_embed": 0.062,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 1.027,
+                "vision.mm.up": 3.443,
+                "vision.mm.v": 0.96,
+                "vision.norm.input": 0.006,
+                "vision.norm.post_attention.next_norm": 0.236,
+                "vision.norm.post_feedforward": 0.013,
+                "vision.norm.post_feedforward.next_norm": 0.161,
+                "vision.norm_head.v": 0.263,
+                "vision.norm_rope.k": 0.219,
+                "vision.norm_rope.q": 0.232,
+                "vision.pool_norm": 0.006,
+                "vision.position": 0.008
+              },
+              "wallMs": 99.68000000000028
+            },
+            {
+              "gpu": {
+                "vision.attention_fused": 4.571,
+                "vision.gelu": 0.149,
+                "vision.mm.down": 3.415,
+                "vision.mm.gate": 3.423,
+                "vision.mm.k": 1.08,
+                "vision.mm.o": 1.226,
+                "vision.mm.patch_embed": 0.062,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 1.028,
+                "vision.mm.up": 3.445,
+                "vision.mm.v": 0.959,
+                "vision.norm.input": 0.007,
+                "vision.norm.post_attention.next_norm": 0.174,
+                "vision.norm.post_feedforward": 0.009,
+                "vision.norm.post_feedforward.next_norm": 0.158,
+                "vision.norm_head.v": 0.267,
+                "vision.norm_rope.k": 0.231,
+                "vision.norm_rope.q": 0.238,
+                "vision.pool_norm": 0.006,
+                "vision.position": 0.006
+              },
+              "wallMs": 99.88000000000012
+            },
+            {
+              "gpu": {
+                "vision.attention_fused": 4.527,
+                "vision.gelu": 0.147,
+                "vision.mm.down": 3.417,
+                "vision.mm.gate": 3.503,
+                "vision.mm.k": 1.02,
+                "vision.mm.o": 1.053,
+                "vision.mm.patch_embed": 0.061,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 0.97,
+                "vision.mm.up": 3.442,
+                "vision.mm.v": 1.168,
+                "vision.norm.input": 0.007,
+                "vision.norm.post_attention.next_norm": 0.169,
+                "vision.norm.post_feedforward": 0.014,
+                "vision.norm.post_feedforward.next_norm": 0.16,
+                "vision.norm_head.v": 0.201,
+                "vision.norm_rope.k": 0.215,
+                "vision.norm_rope.q": 0.231,
+                "vision.pool_norm": 0.006,
+                "vision.position": 0.006
+              },
+              "wallMs": 100.15999999999984
+            },
+            {
+              "gpu": {
+                "vision.attention_fused": 4.528,
+                "vision.gelu": 0.149,
+                "vision.mm.down": 3.532,
+                "vision.mm.gate": 3.487,
+                "vision.mm.k": 1.229,
+                "vision.mm.o": 0.986,
+                "vision.mm.patch_embed": 0.061,
+                "vision.mm.project": 0.025,
+                "vision.mm.q": 0.962,
+                "vision.mm.up": 3.628,
+                "vision.mm.v": 1.083,
+                "vision.norm.input": 0.006,
+                "vision.norm.post_attention.next_norm": 0.243,
+                "vision.norm.post_feedforward": 0.007,
+                "vision.norm.post_feedforward.next_norm": 0.163,
+                "vision.norm_head.v": 0.219,
+                "vision.norm_rope.k": 0.234,
+                "vision.norm_rope.q": 0.242,
+                "vision.pool_norm": 0.007,
+                "vision.position": 0.006
+              },
+              "wallMs": 99.57999999999991
+            }
+          ],
+          "warmupRuns": 1,
+          "warmupWallMs": 100.30000000000018
+        },
+        "softTokens": 64
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 0.0001
+  },
+  "done": true,
+  "metricMs": 99.91999999999985,
+  "options": {
+    "compactPatches": true,
+    "fusedAttention": true,
+    "submitMode": "split"
+  },
+  "profile": true,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "72 MiB",
+          "pid": 3227963,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

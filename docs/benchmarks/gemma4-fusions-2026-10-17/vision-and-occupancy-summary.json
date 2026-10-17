@@ -1,0 +1,2747 @@
+{
+  "generatedUtc": "2026-10-17T11:40:44.924Z",
+  "baselineSummary": "gpu-image-runtime-summary.json",
+  "baselineSourceHashes": {
+    "js/src/gpu-gemma4.js": "a48ad5ac6575d5ee6f35cb677a5eed691c4d296d287f85a37dd6f7012c9a8d87",
+    "js/src/gpu-gemma4-vision.js": "9e5093d00ac74c9805ba15f0cc921d05c419e203f16d90ce14b0dddcffa852bf",
+    "js/src/archs/gemma4.js": "d913aa933488247871eda55a885bb2ecc14596c32a38e854a2143092ad64ff4a",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "bc885eb06ca9e0feca152174e32a2f6ae6a1de12173345a57bd47835c56d8404",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "fd97b950153fdd5bbf3a8da8bd2651f819210c25e27fd6853e02a97ccb14d0af",
+    "js/src/kevala-simd.wasm": "72131e40c2c194ed9eec021f624ec044f6e0aff9543386e1c1c6af993e33ac45",
+    "js/src/kevala-relaxed.wasm": "afc3da8e6aa2e1e645006ebf6b50b87f5660885e50d36178f42cdf9f8a747152",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4",
+    "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+    "crates/kevala/src/wgsl/matmul_gelu.wgsl": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13",
+    "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+    "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+    "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+    "crates/kevala/src/wgsl/reduce_ple.wgsl": "b78cd3e995fc1a60268e9c9e50808a4d51abe0a85efc4344452e129bbede4a78",
+    "tests/gemma4-ple.test.mjs": "0dabf9c2fb13a1f98be07da3109dab1bf15142533c6c84895b5565bc620889f5",
+    "tests/gemma4-batch.test.mjs": "725a9031eff377fa51d18a47eeeaef07d162a96ad47b1dfe6fbbcda9de512385",
+    "scripts/gpu-guard.mjs": "c8821f802ba2158586a73d65ba9e1de74d615166563a3a9dfa88cf4b872a97cf",
+    "js/src/gemma4-image.js": "3faf0329858ffb90d46e92d6d22106b1e74b4d7191ecf79e376f1f5850b3883a",
+    "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+    "crates/kevala/src/wgsl/matmul_tall.wgsl": "e328c97a07664c82ad77b0a149ea9357e0b8973bc87e00e8c86a414ac642115d",
+    "crates/kevala/tests/wgsl.rs": "59ac2db3540beb8a649fed402492ab01237c986a473e747a9a64db9e7685e7d0",
+    "scripts/bench-gemma4-image-prep.mjs": "96534707a954cc8b5ef278921f95e688ac3e4d510fc01e40213e22b5c7cd9dc3",
+    "tests/gemma4-image.test.mjs": "9fab56e9992ad7e49128bc5aba277b31c1f5c07f2d74dadc64b3adce309318d2",
+    "tests/gemma4-vision.test.mjs": "b2f1a5874ac7e8797efe3c5f63eca0f5b2c7df6b187a70b95cede0269aff4a4f",
+    "tests/gemma4-batch-single.test.mjs": "6e431405ff3b96655ae96e3b7158a1ba98b67366749bebad4a1085c3705fba86",
+    "dev/gemma4-matmul-tail-mask-check.js": "dc2161458a9eeda6c68434c0bf6efe4b58e1abbb3b2de7bb135ce61f43a4084b",
+    "dev/gemma4-matmul-tail-mask-check.html": "b390faeecfb12a68f0bbd3470db160a6a439d60785eea4e5b8f63f584e364ed8",
+    "dev/gemma4-matmul-f16-tall-check.js": "0ce2e6276f858e39cb22e6b7f8c2f09d648c02cd3be88be254aeddcdd8c476db",
+    "dev/gemma4-matmul-f16-tall-check.html": "b92c8565f136a0978b39b8eb1cb44c2d827e848646ae864e6ee93e1384128390",
+    "dev/kernel-compile-check.js": "d4dde514ac9fd65f70149b6810602bf4e2862429c9892e1b6a092c3f0f48d45f",
+    "js/src/gpu-gemma4-image.js": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1",
+    "crates/kevala/src/wgsl/gemma4_image_resize_horizontal.wgsl": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca",
+    "crates/kevala/src/wgsl/gemma4_image_resize_vertical.wgsl": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b",
+    "tests/gemma4-image-gpu.test.mjs": "3304e583120b7128deca7af874b90f8bb086998830b71c159d0d3bef52cf1ce5",
+    "dev/gemma4-image-gpu-check.html": "98875d2b96d2c8f4c297f120f4e57ecec5abe38e2015843da6020b1bc2e0c74e",
+    "dev/gemma4-image-gpu-check.js": "0f2a916905b0c8a1e7c3ab5c4c99fb1fbafe8ff0f627a1a67581d5d482ee7085",
+    "dev/gemma4-image-gpu-check.wgsl": "8f4eb2e3dbc30eb63f58fe9f4d39cb15aadc737e3bc35cce8c094c3f26769d85",
+    "app/views/reaction.js": "313e336074cae0f08236f1f1a9bb92e28efa3e99dba64a6cd4515d60edb9736d",
+    "app/views/reaction-scheduler.js": "afc117120221ccac767280897d739f1c2d4a83fe03cd1a622097d623a34a9b8a",
+    "scripts/bench-reaction.py": "4aa699f82197777a50947c2ab99970e22c006e9f01c2e14644900c1b0bfe21c5",
+    "scripts/stage-site.mjs": "91eff04735e4061dd4955126b382e3e23150603ea8997c2e089522eadc80d028"
+  },
+  "baselineHashesMatch": false,
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "browser": "Chromium 153",
+    "m4Measured": false
+  },
+  "scope": "Exact arithmetic/layout/fusion research with unchanged weights, precision, questions and image budgets. Kernel GPU timestamps are not camera FPS.",
+  "experiments": [
+    {
+      "id": "narrow-serial-decoder-mlp",
+      "sourceHashes": {
+        "dev/gemma4-mlp-narrow-serial-check.html": "b50f9c0d54fb75b8d687d4b5295eabcab144cd9522f765791ddf8fc4fbbe6860",
+        "dev/gemma4-mlp-narrow-serial-check.js": "9ab87a64adf32c4a140e791f337d5a05cce8e1505448b48122fbf6bcc58081a8"
+      },
+      "receipt": {
+        "file": "vision-followup-narrow-serial-chrome.json.gz",
+        "rawSha256": "40318d96aefd7d376df510e19c4c36e94a086665eae3641a2ae4cfdfdcca0cca",
+        "gzipSha256": "cde85667d3ef3c6bc2dced8d88914f19586cbcceec19227e27a24c5494ef4226",
+        "rawBytes": 21300,
+        "gzipBytes": 2465
+      },
+      "bitExact": true,
+      "tolerance": 0,
+      "cases": [
+        {
+          "shape": "gate6144",
+          "T": 97,
+          "N": 6144,
+          "K": 1536,
+          "ok": true,
+          "baselineMs": 0.255488,
+          "candidateMs": 0.275064,
+          "fractionLessTime": -0.07662199398797588,
+          "controlledTemporaryBytes": 29771520
+        },
+        {
+          "shape": "gate12288",
+          "T": 97,
+          "N": 12288,
+          "K": 1536,
+          "ok": true,
+          "baselineMs": 0.489344,
+          "candidateMs": 0.49816,
+          "fractionLessTime": -0.01801595605545381,
+          "controlledTemporaryBytes": 28051200
+        },
+        {
+          "shape": "ragged",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.021672,
+          "candidateMs": 0.052424,
+          "fractionLessTime": -1.4189737910668143,
+          "controlledTemporaryBytes": 3176256
+        },
+        {
+          "shape": "zeros",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.021688,
+          "candidateMs": 0.052224,
+          "fractionLessTime": -1.4079675396532645,
+          "controlledTemporaryBytes": 3176256
+        },
+        {
+          "shape": "zeros-unsplit",
+          "T": 97,
+          "N": 17,
+          "K": 32,
+          "ok": true,
+          "baselineMs": 0.006816,
+          "candidateMs": 0.003824,
+          "fractionLessTime": 0.43896713615023475,
+          "controlledTemporaryBytes": 2150144
+        },
+        {
+          "shape": "cancellation",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.0216,
+          "candidateMs": 0.0524,
+          "fractionLessTime": -1.4259259259259258,
+          "controlledTemporaryBytes": 3176256
+        },
+        {
+          "shape": "saturation",
+          "T": 97,
+          "N": 17,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.020504,
+          "candidateMs": 0.051872,
+          "fractionLessTime": -1.5298478345688644,
+          "controlledTemporaryBytes": 2779968
+        }
+      ],
+      "disposition": "DEV-only, slower on main loaded shape; no runtime change"
+    },
+    {
+      "id": "lossless-bf16-shared-weights-r3",
+      "sourceHashes": {
+        "dev/gemma4-bf16-shared-check.html": "8292d9439133136f2c486998765750ea30f3e157e5df437be792f7b740309089",
+        "dev/gemma4-bf16-shared-check.js": "2167baa25865f20ce259bb7a9723ffabe796e8e9cb11b3c0c5bbc88d6dea0271"
+      },
+      "receipt": {
+        "file": "vision-followup-bf16-shared-chrome.json.gz",
+        "rawSha256": "e8511effa4da7883ec9f08f639e8012892260249ca160a8dbb6090711920dd5d",
+        "gzipSha256": "f0cb96e66a39cf39b2c4851c564b87b80c3154a8038d6e9b20c0313bdab25123",
+        "rawBytes": 14796,
+        "gzipBytes": 2583
+      },
+      "bitExact": true,
+      "tolerance": 0,
+      "geometryNote": "R3/T144 is a valid full square image shape. The current 4:3 Fast camera compacts its 144 padded patches to T108/R4/BM56, so this receipt is not its actual tower shape.",
+      "cases": [
+        {
+          "shape": "gate-up",
+          "T": 144,
+          "N": 3072,
+          "K": 768,
+          "splits": 2,
+          "ok": true,
+          "baselineMs": 0.051096,
+          "candidateMs": 0.054048,
+          "fractionLessTime": -0.05777360263034281,
+          "controlledTemporaryBytes": 19246568
+        },
+        {
+          "shape": "down",
+          "T": 144,
+          "N": 768,
+          "K": 3072,
+          "splits": 8,
+          "ok": true,
+          "baselineMs": 0.0506,
+          "candidateMs": 0.053144,
+          "fractionLessTime": -0.05027667984189721,
+          "controlledTemporaryBytes": 16583144
+        },
+        {
+          "shape": "attention",
+          "T": 144,
+          "N": 768,
+          "K": 768,
+          "splits": 6,
+          "ok": true,
+          "baselineMs": 0.019112,
+          "candidateMs": 0.01884,
+          "fractionLessTime": 0.014231896190874949,
+          "controlledTemporaryBytes": 13486568
+        }
+      ],
+      "guardCorrection": "Initial run failed because PART tail sentinels were checked before initialization. Both active PART regions now start as NaN, both tails are explicitly initialized, and the corrected full checks pass.",
+      "disposition": "DEV-only, primary gate/down regress; no runtime change"
+    },
+    {
+      "id": "paired-bf16-vision-r3",
+      "sourceHashes": {
+        "dev/gemma4-vision-paired-bf16-check.html": "f1ae1abeba47772df50090cefd1665172da250babe39d610eb69a4c7574b87e1",
+        "dev/gemma4-vision-paired-bf16-check.js": "b8f5377ec42fc5c46cc0982d56b8d2698ab30504018e9471e5ee9a23ed20c446"
+      },
+      "receipt": {
+        "file": "vision-followup-paired-bf16-r3-chrome.json.gz",
+        "rawSha256": "d759b1d274b82197300fc069c9da4653540902b186614089f5335a4d7d0df355",
+        "gzipSha256": "baee13dfe624cc12f468b85ff7716c3330195acf326f637afaccf34844a72005",
+        "rawBytes": 135961,
+        "gzipBytes": 4549
+      },
+      "bitExact": true,
+      "tolerance": 0,
+      "geometryNote": "R3/T144 full square image shape; not the current compact 4:3 camera T108. No camera FPS claim.",
+      "cases": [
+        {
+          "T": 144,
+          "N": 3072,
+          "K": 768,
+          "splits": 2,
+          "pattern": "normal",
+          "clipped": true,
+          "ok": true,
+          "baselineMs": 0.096896,
+          "candidateMs": 0.084776,
+          "controlledTemporaryBytes": 33453428
+        },
+        {
+          "T": 143,
+          "N": 3076,
+          "K": 768,
+          "splits": 2,
+          "pattern": "normal",
+          "clipped": false,
+          "ok": true,
+          "baselineMs": 0.096712,
+          "candidateMs": 0.084808,
+          "controlledTemporaryBytes": 33300420
+        },
+        {
+          "T": 17,
+          "N": 260,
+          "K": 768,
+          "splits": 6,
+          "pattern": "cancellation",
+          "clipped": false,
+          "ok": true,
+          "baselineMs": 0.014208,
+          "candidateMs": 0.01112,
+          "controlledTemporaryBytes": 7024292
+        },
+        {
+          "T": 17,
+          "N": 260,
+          "K": 768,
+          "splits": 6,
+          "pattern": "zero",
+          "clipped": true,
+          "ok": true,
+          "baselineMs": 0.014176,
+          "candidateMs": 0.011064,
+          "controlledTemporaryBytes": 7024292
+        },
+        {
+          "T": 144,
+          "N": 3072,
+          "K": 768,
+          "splits": 2,
+          "pattern": "large",
+          "clipped": false,
+          "ok": true,
+          "baselineMs": 0.096864,
+          "candidateMs": 0.085136,
+          "controlledTemporaryBytes": 33453428
+        },
+        {
+          "T": 17,
+          "N": 260,
+          "K": 768,
+          "splits": 6,
+          "pattern": "tiny",
+          "clipped": false,
+          "ok": true,
+          "baselineMs": 0.014152,
+          "candidateMs": 0.011048,
+          "controlledTemporaryBytes": 7024292
+        }
+      ],
+      "disposition": "DEV-only; actual compact-camera R4 guard and end-to-end verification pending"
+    },
+    {
+      "id": "paired-bf16-vision-r4",
+      "sourceHashes": {
+        "dev/gemma4-vision-paired-bf16-r4-check.html": "989dd92ca9e66c680d99e5243746bc62c181d24466cd21d8b6834eb8686e0150",
+        "dev/gemma4-vision-paired-bf16-r4-check.js": "afda862b41b4b062b831feef3fbbd09616b5d253eba40f978a9cc34c69778836",
+        "tmp/vision-paired-bf16-runtime.js": "882139e4258643662e993d9ad1f4cd23d549bb9f3d00bc6ab742776293b3f3bc",
+        "tmp/vision-paired-bf16-proxy.mjs": "c1353b60387eba2473e259f5593d7119ad30d151ba848380d6409dc958eabaeb",
+        "tmp/vision-paired-bf16-model-check.js": "9d358806c7e5993d7c9b2f374723f0562869372220685cea8423515912fc90e7",
+        "tmp/bench-camera-vision-paired-bf16.py": "871baf42f6d1fc5084f2ff7399ddcd51dabd6298720607bb46feba5835c71449"
+      },
+      "geometryNote": "Actual compact 4:3 Fast camera executes T108; padded metadata reports144. R4, physicalBM56, virtualBM64, S3.",
+      "chrome": {
+        "receipt": {
+          "file": "vision-followup-paired-bf16-r4-chrome.json.gz",
+          "rawSha256": "f4f81f6e9bea04d2f957084eff271954a22446dd0901fa82968cae40eb5b8674",
+          "gzipSha256": "1c21c8d7068fe8cd3e37cb43ae928eb0c4114ba9d2db0a58e2ba675e9ee86779",
+          "rawBytes": 135940,
+          "gzipBytes": 4594
+        },
+        "bitExact": true,
+        "tolerance": 0,
+        "cases": [
+          {
+            "T": 108,
+            "N": 3072,
+            "K": 768,
+            "splits": 3,
+            "pattern": "normal",
+            "clipped": true,
+            "ok": true,
+            "baselineMs": 0.07428,
+            "candidateMs": 0.069872,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 32020950
+          },
+          {
+            "T": 107,
+            "N": 3076,
+            "K": 768,
+            "splits": 3,
+            "pattern": "normal",
+            "clipped": false,
+            "ok": true,
+            "baselineMs": 0.0746,
+            "candidateMs": 0.070072,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 31816998
+          },
+          {
+            "T": 17,
+            "N": 260,
+            "K": 768,
+            "splits": 6,
+            "pattern": "cancellation",
+            "clipped": false,
+            "ok": true,
+            "baselineMs": 0.015128,
+            "candidateMs": 0.012504,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 7029510
+          },
+          {
+            "T": 17,
+            "N": 260,
+            "K": 768,
+            "splits": 6,
+            "pattern": "zero",
+            "clipped": true,
+            "ok": true,
+            "baselineMs": 0.015136,
+            "candidateMs": 0.012336,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 7029510
+          },
+          {
+            "T": 108,
+            "N": 3072,
+            "K": 768,
+            "splits": 3,
+            "pattern": "large",
+            "clipped": false,
+            "ok": true,
+            "baselineMs": 0.074448,
+            "candidateMs": 0.069848,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 32020950
+          },
+          {
+            "T": 17,
+            "N": 260,
+            "K": 768,
+            "splits": 6,
+            "pattern": "tiny",
+            "clipped": false,
+            "ok": true,
+            "baselineMs": 0.01536,
+            "candidateMs": 0.012496,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 7029510
+          }
+        ]
+      },
+      "firefox": {
+        "receipt": {
+          "file": "vision-followup-paired-bf16-r4-firefox.json.gz",
+          "rawSha256": "ad920f6359c16bdb514c3e67af86ed525e908d3e28e735261cf9b6fd7e9b3775",
+          "gzipSha256": "a653014e5390a7355ad2490f7e45c1a835e54fe19a6185649a1c54ee8b08be42",
+          "rawBytes": 12104,
+          "gzipBytes": 2424
+        },
+        "bitExact": true,
+        "tolerance": 0,
+        "scope": "Primary mode0, both biases, full partials and outputs before and after timing; no camera FPS inference.",
+        "cases": [
+          {
+            "T": 108,
+            "N": 3072,
+            "K": 768,
+            "splits": 3,
+            "pattern": "normal",
+            "clipped": true,
+            "ok": true,
+            "baselineMs": 0.11252,
+            "candidateMs": 0.08824,
+            "stableFivePercentWin": true,
+            "controlledTemporaryBytes": 32020950
+          }
+        ]
+      },
+      "disposition": "DEV-only. Exact hidden outputs/raw probabilities, but sustained camera throughput is42.8407off/42.7838on/42.7971off-repeat; no demonstrated end-to-end gain, no runtime promotion.",
+      "instrumentation": {
+        "file": "vision-followup-paired-runtime-instrumentation.json.gz",
+        "rawSha256": "e5b37dcfb2e39fde6a5e89db10e0773365089514a6920ff0c9ed1e4e6872b073",
+        "gzipSha256": "86c1b16a14e4d15e7cf8cf37e198d0ab054d5e8007cbac02b8b8b6860cc0f9f8",
+        "rawBytes": 62228,
+        "gzipBytes": 17834
+      },
+      "sameModel": {
+        "browser": "Chromium153",
+        "receipt": {
+          "file": "vision-followup-paired-model-chrome.json.gz",
+          "rawSha256": "0e35b5b0337c064408dfa7c984e2229538b03a730ee75b20cee3110c7cfd5185",
+          "gzipSha256": "9cfafea95426e0a3e9cca0643ff8a81e0fec6d517e7c76185595b240f555bdc6",
+          "rawBytes": 1072239,
+          "gzipBytes": 30049
+        },
+        "measuredDecisions": 36,
+        "warmupDecisions": 18,
+        "comparisons": 42,
+        "correctness": {
+          "bitExact": true,
+          "hiddenTolerance": 0,
+          "hiddenWordsPerDecision": 3072,
+          "ok": true,
+          "probabilityTolerance": 0,
+          "unchangedSelectionsAndFlags": true,
+          "unsupportedBudgetsFallback": true
+        },
+        "counts": [
+          "16:off:0:T108",
+          "16:on:16:T108",
+          "16:off-repeat:0:T108",
+          "40:off:0:T315",
+          "40:on:0:T315",
+          "40:off-repeat:0:T315",
+          "70:off:0:T567",
+          "70:on:0:T567",
+          "70:off-repeat:0:T567"
+        ],
+        "restoredOff": true
+      },
+      "camera": {
+        "receipt": {
+          "file": "vision-followup-paired-camera-chrome.json.gz",
+          "rawSha256": "f856b25fc5f34870bf49bdf6579619158289998acb6dbb0edbfd0d292e18931b",
+          "gzipSha256": "f729a5847956b75598c6e414a840d60727051e8d6f94eb3856a7f11e11234e36",
+          "rawBytes": 4960839,
+          "gzipBytes": 108358
+        },
+        "scope": "One loaded model, unchanged320x240frames/twoquestions/budget16/precision/kernel selections,240measured+4warm perphase,one decisioninflight. Previewcallbacksarenotcompleteddecisions.",
+        "phases": [
+          {
+            "mode": "off",
+            "budget": 16,
+            "discardedWarmups": 4,
+            "measuredDecisions": 240,
+            "decisionWall": {
+              "p50Ms": 22.817499987781048,
+              "p95Ms": 24.350000008940697,
+              "meanMs": 22.917437500382462,
+              "samples": 240
+            },
+            "completedFps": 42.84069509023226,
+            "visionPairFusionCounts": [
+              0
+            ],
+            "submitModes": [
+              "split"
+            ],
+            "imageStages": {
+              "decode": {
+                "p50Ms": 0.06000000238418579,
+                "p95Ms": 0.07999999821186066,
+                "meanMs": 0.05514583320667346,
+                "samples": 240
+              },
+              "preprocess": {
+                "p50Ms": 0.0650000125169754,
+                "p95Ms": 0.09000000357627869,
+                "meanMs": 0.06447916676600775,
+                "samples": 240
+              },
+              "forward": {
+                "p50Ms": 1.0150000005960464,
+                "p95Ms": 1.3699999898672104,
+                "meanMs": 1.0758333335320154,
+                "samples": 240
+              }
+            },
+            "uniqueSyntheticFrameHashes": 244,
+            "previewCadence": {
+              "observedFrames": 357,
+              "reportedPresentedFrames": 358,
+              "droppedTimestampSamples": 0,
+              "p50IntervalMs": 16.665000000000873,
+              "p95IntervalMs": 16.670000000000073,
+              "observedFps": 59.834295976395694
+            }
+          },
+          {
+            "mode": "on",
+            "budget": 16,
+            "discardedWarmups": 4,
+            "measuredDecisions": 240,
+            "decisionWall": {
+              "p50Ms": 22.594999991357327,
+              "p95Ms": 25.34000000357628,
+              "meanMs": 22.947312499644855,
+              "samples": 240
+            },
+            "completedFps": 42.78383733585954,
+            "visionPairFusionCounts": [
+              16
+            ],
+            "submitModes": [
+              "split"
+            ],
+            "imageStages": {
+              "decode": {
+                "p50Ms": 0.06000000238418579,
+                "p95Ms": 0.07999999821186066,
+                "meanMs": 0.056937500027318795,
+                "samples": 240
+              },
+              "preprocess": {
+                "p50Ms": 0.06999999284744263,
+                "p95Ms": 0.09000000357627869,
+                "meanMs": 0.06460416621218125,
+                "samples": 240
+              },
+              "forward": {
+                "p50Ms": 0.9699999988079071,
+                "p95Ms": 1.5700000077486038,
+                "meanMs": 1.061791666969657,
+                "samples": 240
+              }
+            },
+            "uniqueSyntheticFrameHashes": 244,
+            "previewCadence": {
+              "observedFrames": 343,
+              "reportedPresentedFrames": 343,
+              "droppedTimestampSamples": 0,
+              "p50IntervalMs": 16.665000000000873,
+              "p95IntervalMs": 16.67000000000189,
+              "observedFps": 60.0226927899934
+            }
+          },
+          {
+            "mode": "off-repeat",
+            "budget": 16,
+            "discardedWarmups": 4,
+            "measuredDecisions": 240,
+            "decisionWall": {
+              "p50Ms": 22.80749999731779,
+              "p95Ms": 24.474999994039536,
+              "meanMs": 22.939437500076988,
+              "samples": 240
+            },
+            "completedFps": 42.797074106704784,
+            "visionPairFusionCounts": [
+              0
+            ],
+            "submitModes": [
+              "split"
+            ],
+            "imageStages": {
+              "decode": {
+                "p50Ms": 0.06000000238418579,
+                "p95Ms": 0.08500000834465027,
+                "meanMs": 0.06179166709383329,
+                "samples": 240
+              },
+              "preprocess": {
+                "p50Ms": 0.06999999284744263,
+                "p95Ms": 0.0949999988079071,
+                "meanMs": 0.06818749991556008,
+                "samples": 240
+              },
+              "forward": {
+                "p50Ms": 1.0124999955296516,
+                "p95Ms": 1.4000000059604645,
+                "meanMs": 1.080458333157003,
+                "samples": 240
+              }
+            },
+            "uniqueSyntheticFrameHashes": 244,
+            "previewCadence": {
+              "observedFrames": 343,
+              "reportedPresentedFrames": 343,
+              "droppedTimestampSamples": 0,
+              "p50IntervalMs": 16.665000000000873,
+              "p95IntervalMs": 16.67000000000189,
+              "observedFps": 60.023746236449696
+            }
+          }
+        ],
+        "checks": {
+          "maxInFlight": 1,
+          "sameModel": true,
+          "videoCleared": true,
+          "tracksStopped": true,
+          "streamCount": 3,
+          "lastTab": "reaction",
+          "overflow": false
+        },
+        "resources": {
+          "memory.high": "5767168000",
+          "memory.max": "6291456000",
+          "memory.peak": "4556861440",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+          "memory.swap.max": "0",
+          "cpu.max": "400000 100000",
+          "cpu.stat": "usage_usec 26658393\nuser_usec 16564448\nsystem_usec 10093944\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 292\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+        },
+        "pageErrors": [],
+        "unrelatedDispatchesConstant": true,
+        "kernelSelectionsConstant": true,
+        "visionFusionStatsConstant": true,
+        "batchMlpStateConstant": true,
+        "splitSubmissionConstant": true
+      }
+    },
+    {
+      "id": "decoder-bm112-bn32",
+      "sourceHashes": {
+        "dev/gemma4-matmul-tall-narrow-check.html": "bb7ad97f5368d4e367b7c1e503cd6f7870bc8ecefbc424cbf3211a21785cdc33",
+        "dev/gemma4-matmul-tall-narrow-check.js": "1d3ae7c19820b6e5d33f8a2bdb2629bf1f739729d573f9dd298712e91995e640"
+      },
+      "receipt": {
+        "file": "vision-followup-decoder-tall-narrow-chrome.json.gz",
+        "rawSha256": "3107c390fdf389afe087f28b53b5b4b313d467a47329d44c7f3a936877827a73",
+        "gzipSha256": "1a5a11e914d0884c4d2259d7dfb07b824bdb7dad89f8ea861b550ef1efa5f266",
+        "rawBytes": 29043,
+        "gzipBytes": 2500
+      },
+      "bitExact": true,
+      "tolerance": 0,
+      "scope": "T97, physicalBM112/BN32, original virtualBM64/BN64/splitT1 partition,14scalar accumulators, unchangedSX/scales/reducer. Lower weight-load requests, higher X-load requests.",
+      "declaredSharedBytes": 18432,
+      "cases": [
+        {
+          "shape": "gate6144",
+          "T": 97,
+          "N": 6144,
+          "K": 1536,
+          "ok": true,
+          "baselineMs": 0.125424,
+          "candidateMs": 0.228144,
+          "fractionLessTime": -0.8189820130118638,
+          "controlledTemporaryBytes": 23504528
+        },
+        {
+          "shape": "down",
+          "T": 97,
+          "N": 1536,
+          "K": 6144,
+          "ok": true,
+          "baselineMs": 0.124696,
+          "candidateMs": 0.224776,
+          "fractionLessTime": -0.8025919035093347,
+          "controlledTemporaryBytes": 16359056
+        },
+        {
+          "shape": "q2048",
+          "T": 97,
+          "N": 2048,
+          "K": 1536,
+          "ok": true,
+          "baselineMs": 0.0476,
+          "candidateMs": 0.083416,
+          "fractionLessTime": -0.7524369747899159,
+          "controlledTemporaryBytes": 17704592
+        },
+        {
+          "shape": "ragged",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.01016,
+          "candidateMs": 0.014984,
+          "fractionLessTime": -0.4748031496062992,
+          "controlledTemporaryBytes": 3109844
+        },
+        {
+          "shape": "zeros",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.010112,
+          "candidateMs": 0.014992,
+          "fractionLessTime": -0.48259493670886083,
+          "controlledTemporaryBytes": 3109844
+        },
+        {
+          "shape": "zeros-unsplit",
+          "T": 97,
+          "N": 17,
+          "K": 32,
+          "ok": true,
+          "baselineMs": 0.003088,
+          "candidateMs": 0.004224,
+          "fractionLessTime": -0.36787564766839387,
+          "controlledTemporaryBytes": 2132692
+        },
+        {
+          "shape": "cancellation",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "ok": true,
+          "baselineMs": 0.010072,
+          "candidateMs": 0.014968,
+          "fractionLessTime": -0.48610007942811767,
+          "controlledTemporaryBytes": 3109844
+        }
+      ],
+      "disposition": "DEV-only. Main gate/down/Q75–82%slower. No runtime promotion."
+    },
+    {
+      "id": "joint-vision-qkv-bf16",
+      "sourceHashes": {
+        "dev/gemma4-vision-qkv-bf16-check.html": "0d8fd179c5f4af4e1cb90117f156f716818146695e51c5a20fb571ff214a31d9",
+        "dev/gemma4-vision-qkv-bf16-check.js": "29a85303b98b481549945be61b098a151d22737d6188ae9bfa569c8a1d63844b",
+        "tmp/vision-qkv-bf16-runtime.js": "d06946ffe590683cd60682a7afd5b643ab144f894ebd7da3810f21e5d8a62e07",
+        "tmp/vision-qkv-bf16-proxy.mjs": "5619cfc71ec627cfbd782072835b2230ed810befea8df5d80e03296fd48e0700",
+        "tmp/vision-qkv-bf16-model-check.js": "0930ccba9e8fdc1cab84c81c43a1b79ae26011ae375a71fae2f806c2ed007e9c",
+        "tmp/bench-camera-vision-qkv-bf16.py": "80a11dcca1ba699f670b2c9a61cff960cee9527347708d3860e98e1d6a24cda5",
+        "tmp/bench-camera-vision-qkv-interleaved.py": "d959b7098ee93524f9362bc371430071b020d05b9fd61576e7646c5b485d9e70"
+      },
+      "scope": "Actual compactT108/N768/K768R4BM56,S6. One shared input tile, three independent BF16 matrices/ordered F32 accumulators, projection-major/split-majorPART. Three unchanged reduce_norm_rope calls.6→4dispatches/layer; no reducer fusion yet.",
+      "declaredSharedBytes": 20480,
+      "chrome": {
+        "receipt": {
+          "file": "vision-followup-qkv-bf16-chrome.json.gz",
+          "rawSha256": "6e09e04b0790c2aa93fe65adc0078df3b61cd60fe9331bb721002c654bb80080",
+          "gzipSha256": "238d0777b4e96d21c863d0343db061c07ada6cb8ec797aff167de74ebf0317a4",
+          "rawBytes": 32557,
+          "gzipBytes": 2876
+        },
+        "correctness": {
+          "beforeAndAfterTiming": true,
+          "bitExact": true,
+          "finiteActiveValues": true,
+          "fixtureCoverage": [
+            "normal",
+            "tiny-subnormal",
+            "large-finite",
+            "normal",
+            "signed-zero",
+            "cancellation"
+          ],
+          "fullNormalizedQkvAndRopeOutputs": true,
+          "fullRawPartialPlanes": true,
+          "ok": true,
+          "poisonedPartialsAndFourFloatTails": true,
+          "tolerance": 0
+        },
+        "baselineMs": 0.049912,
+        "candidateMs": 0.040808,
+        "fractionLessTime": 0.18240102580541762,
+        "cases": [
+          {
+            "T": 108,
+            "N": 768,
+            "K": 768,
+            "splits": 6,
+            "inputFixture": "normal",
+            "weightFixture": "normal",
+            "ok": true,
+            "controlledTemporaryBytes": 20705853,
+            "baselineMs": 0.049912,
+            "candidateMs": 0.040808
+          },
+          {
+            "T": 108,
+            "N": 768,
+            "K": 768,
+            "splits": 6,
+            "inputFixture": "signed-zero",
+            "weightFixture": "normal",
+            "ok": true,
+            "controlledTemporaryBytes": 20705853
+          },
+          {
+            "T": 108,
+            "N": 768,
+            "K": 768,
+            "splits": 6,
+            "inputFixture": "cancellation",
+            "weightFixture": "normal",
+            "ok": true,
+            "controlledTemporaryBytes": 20705853
+          },
+          {
+            "T": 108,
+            "N": 768,
+            "K": 768,
+            "splits": 6,
+            "inputFixture": "normal",
+            "weightFixture": "tiny-subnormal",
+            "ok": true,
+            "controlledTemporaryBytes": 20705853
+          },
+          {
+            "T": 108,
+            "N": 768,
+            "K": 768,
+            "splits": 6,
+            "inputFixture": "normal",
+            "weightFixture": "large-finite",
+            "ok": true,
+            "controlledTemporaryBytes": 20705853
+          }
+        ]
+      },
+      "firefox": {
+        "receipt": {
+          "file": "vision-followup-qkv-bf16-firefox.json.gz",
+          "rawSha256": "3ddb46836ca84259af1c622cb0a1f004f2c1475d0f739560254eeab7209eeb40",
+          "gzipSha256": "f89bf1f2bb4750581673f6035a1997778d72d9f0f8d6f06cc72aa6b133788e57",
+          "rawBytes": 9745,
+          "gzipBytes": 2650
+        },
+        "correctness": {
+          "beforeAndAfterTiming": true,
+          "bitExact": true,
+          "finiteActiveValues": true,
+          "fixtureCoverage": [
+            "actual T108/N768/K768 normal fixtures"
+          ],
+          "fullNormalizedQkvAndRopeOutputs": true,
+          "fullRawPartialPlanes": true,
+          "ok": true,
+          "poisonedPartialsAndFourFloatTails": true,
+          "tolerance": 0
+        },
+        "baselineMs": 0.085312,
+        "candidateMs": 0.063008,
+        "fractionLessTime": 0.2614403600900226,
+        "cases": [
+          {
+            "T": 108,
+            "N": 768,
+            "K": 768,
+            "splits": 6,
+            "inputFixture": "normal",
+            "weightFixture": "normal",
+            "ok": true,
+            "controlledTemporaryBytes": 20705853,
+            "baselineMs": 0.085312,
+            "candidateMs": 0.063008
+          }
+        ]
+      },
+      "disposition": "Registered with exactness and >=5% paired-GPU-time selection. Balanced prototype +1.58%FPS did not reproduce in finalproduction camera(-0.0543%,mixedquads), so no robust end-to-endgain is established;60FPSunmet.",
+      "instrumentation": {
+        "file": "vision-followup-qkv-runtime-instrumentation.json.gz",
+        "rawSha256": "24fc8db5d6b94ae000964ccacae3726469ee436d01c7889b52454fb637621b76",
+        "gzipSha256": "6b7b996a94aaccdc60e54035bdc69b1b3cacd47c656c9eff71d01b31d48e0202",
+        "rawBytes": 64399,
+        "gzipBytes": 18139
+      },
+      "sameModel": {
+        "browser": "Chromium153",
+        "receipt": {
+          "file": "vision-followup-qkv-model-chrome.json.gz",
+          "rawSha256": "fd3351680674cb40be40b4bd351d2ba18e29af55dfb5ce35a0ea76189109b4dd",
+          "gzipSha256": "68fbd2bc89956eedb5e6ce97a41bc2988265c267ee01eefc07fd58d3356a30db",
+          "rawBytes": 1090764,
+          "gzipBytes": 30420
+        },
+        "measuredDecisions": 36,
+        "warmupDecisions": 18,
+        "comparisons": 42,
+        "correctness": {
+          "bitExact": true,
+          "hiddenTolerance": 0,
+          "hiddenWordsPerDecision": 3072,
+          "ok": true,
+          "probabilityTolerance": 0,
+          "unchangedSelectionsAndFlags": true,
+          "unsupportedBudgetsFallback": true
+        },
+        "counts": [
+          "16:off:0:T108",
+          "16:on:16:T108",
+          "16:off-repeat:0:T108",
+          "40:off:0:T315",
+          "40:on:0:T315",
+          "40:off-repeat:0:T315",
+          "70:off:0:T567",
+          "70:on:0:T567",
+          "70:off-repeat:0:T567"
+        ],
+        "restoredOff": true
+      },
+      "cameraInitial": {
+        "receipt": {
+          "file": "vision-followup-qkv-camera-initial-chrome.json.gz",
+          "rawSha256": "a32ca7c2d5429688bae3417645a8f7bfe524eeb99f1ef421a285edc0e25b193f",
+          "gzipSha256": "9c5bbe43a1f3a61b7cdf1795caa78928f9ff4bf72fcf5abbe32b301a2e74ff1d",
+          "rawBytes": 5320394,
+          "gzipBytes": 110446
+        },
+        "scope": "One loadedmodel,240measured+4warm peroff/on/offphase,sameweights/precision/budget16/twoquestions/camera. Initialcontrolsdrift2.6%; resultinconclusive.",
+        "phases": [
+          {
+            "mode": "off",
+            "budget": 16,
+            "discardedWarmups": 4,
+            "measuredDecisions": 240,
+            "decisionWall": {
+              "p50Ms": 23.18249999731779,
+              "p95Ms": 25.049999997019768,
+              "meanMs": 23.29477083235979,
+              "samples": 240
+            },
+            "completedFps": 42.07865025713114,
+            "visionQkvFusionCounts": [
+              0
+            ],
+            "submitModes": [
+              "split"
+            ],
+            "imageStages": {
+              "decode": {
+                "p50Ms": 0.06000000238418579,
+                "p95Ms": 0.07999999821186066,
+                "meanMs": 0.05812500001241763,
+                "samples": 240
+              },
+              "preprocess": {
+                "p50Ms": 0.07000000774860382,
+                "p95Ms": 0.09999999403953552,
+                "meanMs": 0.06889583375304938,
+                "samples": 240
+              },
+              "forward": {
+                "p50Ms": 1.1049999967217445,
+                "p95Ms": 1.6599999964237213,
+                "meanMs": 1.1689166670044264,
+                "samples": 240
+              }
+            },
+            "uniqueSyntheticFrameHashes": 244,
+            "previewCadence": {
+              "observedFrames": 364,
+              "reportedPresentedFrames": 365,
+              "droppedTimestampSamples": 0,
+              "p50IntervalMs": 16.665000000000873,
+              "p95IntervalMs": 16.670000000000073,
+              "observedFps": 59.65474201789148
+            },
+            "actualRows": [
+              108
+            ],
+            "actualSoftRows": [
+              12
+            ]
+          },
+          {
+            "mode": "on",
+            "budget": 16,
+            "discardedWarmups": 4,
+            "measuredDecisions": 240,
+            "decisionWall": {
+              "p50Ms": 22.677500002086163,
+              "p95Ms": 24.070000007748604,
+              "meanMs": 22.81702083374063,
+              "samples": 240
+            },
+            "completedFps": 43.02189366237176,
+            "visionQkvFusionCounts": [
+              16
+            ],
+            "submitModes": [
+              "split"
+            ],
+            "imageStages": {
+              "decode": {
+                "p50Ms": 0.06499999761581421,
+                "p95Ms": 0.08499999344348907,
+                "meanMs": 0.06127083245664835,
+                "samples": 240
+              },
+              "preprocess": {
+                "p50Ms": 0.07000000774860382,
+                "p95Ms": 0.09999999403953552,
+                "meanMs": 0.06983333347986141,
+                "samples": 240
+              },
+              "forward": {
+                "p50Ms": 0.9675000011920929,
+                "p95Ms": 1.2599999904632568,
+                "meanMs": 1.0040000004072984,
+                "samples": 240
+              }
+            },
+            "uniqueSyntheticFrameHashes": 244,
+            "previewCadence": {
+              "observedFrames": 341,
+              "reportedPresentedFrames": 341,
+              "droppedTimestampSamples": 0,
+              "p50IntervalMs": 16.665000000000873,
+              "p95IntervalMs": 16.67000000000189,
+              "observedFps": 60.02374468723658
+            },
+            "actualRows": [
+              108
+            ],
+            "actualSoftRows": [
+              12
+            ]
+          },
+          {
+            "mode": "off-repeat",
+            "budget": 16,
+            "discardedWarmups": 4,
+            "measuredDecisions": 240,
+            "decisionWall": {
+              "p50Ms": 22.60249999910593,
+              "p95Ms": 23.729999989271164,
+              "meanMs": 22.74664583373815,
+              "samples": 240
+            },
+            "completedFps": 43.19355120276372,
+            "visionQkvFusionCounts": [
+              0
+            ],
+            "submitModes": [
+              "split"
+            ],
+            "imageStages": {
+              "decode": {
+                "p50Ms": 0.06000000238418579,
+                "p95Ms": 0.08000001311302185,
+                "meanMs": 0.060645833735664685,
+                "samples": 240
+              },
+              "preprocess": {
+                "p50Ms": 0.06999999284744263,
+                "p95Ms": 0.09999999403953552,
+                "meanMs": 0.06947916653007269,
+                "samples": 240
+              },
+              "forward": {
+                "p50Ms": 1,
+                "p95Ms": 1.3200000077486038,
+                "meanMs": 1.0443958337108294,
+                "samples": 240
+              }
+            },
+            "uniqueSyntheticFrameHashes": 244,
+            "previewCadence": {
+              "observedFrames": 340,
+              "reportedPresentedFrames": 340,
+              "droppedTimestampSamples": 0,
+              "p50IntervalMs": 16.665000000000873,
+              "p95IntervalMs": 16.67000000000189,
+              "observedFps": 60.02677300318018
+            },
+            "actualRows": [
+              108
+            ],
+            "actualSoftRows": [
+              12
+            ]
+          }
+        ],
+        "checks": {
+          "maxInFlight": 1,
+          "sameModel": true,
+          "videoCleared": true,
+          "tracksStopped": true,
+          "streamCount": 3,
+          "lastTab": "reaction",
+          "overflow": false
+        },
+        "resources": {
+          "memory.high": "5767168000",
+          "memory.max": "6291456000",
+          "memory.peak": "4559642624",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+          "memory.swap.max": "0",
+          "cpu.max": "400000 100000",
+          "cpu.stat": "usage_usec 27847379\nuser_usec 17409756\nsystem_usec 10437622\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 296\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+        },
+        "pageErrors": [],
+        "unrelatedDispatchesConstant": true,
+        "kernelSelectionsConstant": true,
+        "visionFusionStatsConstant": true,
+        "batchMlpStateConstant": true,
+        "splitSubmissionConstant": true
+      },
+      "cameraBalanced": {
+        "receipt": {
+          "file": "vision-followup-qkv-camera-balanced-chrome.json.gz",
+          "rawSha256": "7d4263d88e2ad7b78d59dcceef3d74b061b0545df0e17104bea4d46369b9a53d",
+          "gzipSha256": "bd1c982fedb85837fe22582cae07c42dd793a473937f031c9b56beb4549349e9",
+          "rawBytes": 9375006,
+          "gzipBytes": 280160
+        },
+        "scope": "One model,16ABBAblocks60measuredeach,480/mode;124warmupsfirstblock,4eachremainingblock; actualT108/soft12/padded144; sameweights/precision/questions/budget16; oneinflight.",
+        "aggregate": {
+          "byMode": {
+            "off": {
+              "blocks": 8,
+              "measuredDecisions": 480,
+              "discardedWarmups": 152,
+              "measuredSpanMs": 11201.085000008345,
+              "completedFps": 42.85299147356193,
+              "completionTimePerDecisionMs": 23.335593750017384,
+              "decisionWall": {
+                "p50Ms": 22.722500003874302,
+                "p95Ms": 24.804999992251396,
+                "meanMs": 22.92943749986589,
+                "samples": 480
+              }
+            },
+            "on": {
+              "blocks": 8,
+              "measuredDecisions": 480,
+              "discardedWarmups": 32,
+              "measuredSpanMs": 11027.220000013709,
+              "completedFps": 43.52865001327653,
+              "completionTimePerDecisionMs": 22.97337500002856,
+              "decisionWall": {
+                "p50Ms": 22.450000002980232,
+                "p95Ms": 23.810000002384186,
+                "meanMs": 22.603968750002483,
+                "samples": 480
+              }
+            }
+          },
+          "balancedQuads": [
+            {
+              "quad": 0,
+              "blocks": [
+                0,
+                1,
+                2,
+                3
+              ],
+              "offBlockMeanDecisionWallMs": 22.908416666835546,
+              "onBlockMeanDecisionWallMs": 22.550083333378037,
+              "offMinusOnMeanDecisionWallMs": 0.35833333345750873,
+              "offBlockMeanCompletionTimePerDecisionMs": 23.349833333368103,
+              "onBlockMeanCompletionTimePerDecisionMs": 22.940250000109273,
+              "offMinusOnCompletionTimePerDecisionMs": 0.4095833332588299
+            },
+            {
+              "quad": 1,
+              "blocks": [
+                4,
+                5,
+                6,
+                7
+              ],
+              "offBlockMeanDecisionWallMs": 22.898875000824532,
+              "onBlockMeanDecisionWallMs": 22.569291666770976,
+              "offMinusOnMeanDecisionWallMs": 0.3295833340535559,
+              "offBlockMeanCompletionTimePerDecisionMs": 23.30762500005464,
+              "onBlockMeanCompletionTimePerDecisionMs": 22.957791666686536,
+              "offMinusOnCompletionTimePerDecisionMs": 0.3498333333681032
+            },
+            {
+              "quad": 2,
+              "blocks": [
+                8,
+                9,
+                10,
+                11
+              ],
+              "offBlockMeanDecisionWallMs": 23.194666665916643,
+              "onBlockMeanDecisionWallMs": 22.713541666418315,
+              "offMinusOnMeanDecisionWallMs": 0.4811249994983271,
+              "offBlockMeanCompletionTimePerDecisionMs": 23.634583333383002,
+              "onBlockMeanCompletionTimePerDecisionMs": 23.117500000074507,
+              "offMinusOnCompletionTimePerDecisionMs": 0.517083333308495
+            },
+            {
+              "quad": 3,
+              "blocks": [
+                12,
+                13,
+                14,
+                15
+              ],
+              "offBlockMeanDecisionWallMs": 22.71579166588684,
+              "onBlockMeanDecisionWallMs": 22.582958333442612,
+              "offMinusOnMeanDecisionWallMs": 0.13283333244422835,
+              "offBlockMeanCompletionTimePerDecisionMs": 23.050333333263794,
+              "onBlockMeanCompletionTimePerDecisionMs": 22.877958333243924,
+              "offMinusOnCompletionTimePerDecisionMs": 0.17237500001986916
+            }
+          ],
+          "meanQuadOffMinusOnDecisionWallMs": 0.325468749863405,
+          "meanQuadOffMinusOnCompletionTimePerDecisionMs": 0.3622187499888243,
+          "method": "Completed FPS pools within-block measured spans and excludes inter-block stop/start time. Positive off-minus-on values favor the candidate. Quad effects are point estimates; no statistical confidence is inferred."
+        },
+        "checks": {
+          "maxInFlight": 1,
+          "sameModel": true,
+          "videoCleared": true,
+          "tracksStopped": true,
+          "streamCount": 16,
+          "lastTab": "reaction",
+          "overflow": false
+        },
+        "resources": {
+          "memory.high": "5767168000",
+          "memory.max": "6291456000",
+          "memory.peak": "4638556160",
+          "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+          "memory.swap.max": "0",
+          "cpu.max": "400000 100000",
+          "cpu.stat": "usage_usec 32226833\nuser_usec 21457666\nsystem_usec 10769167\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 403\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+        },
+        "pageErrors": [],
+        "unrelatedDispatchesConstant": true,
+        "kernelSelectionsConstant": true,
+        "visionFusionStatsConstant": true,
+        "batchMlpStateConstant": true,
+        "splitSubmissionConstant": true
+      },
+      "balancedHarness": {
+        "file": "vision-followup-qkv-balanced-harness.py.gz",
+        "rawSha256": "d959b7098ee93524f9362bc371430071b020d05b9fd61576e7646c5b485d9e70",
+        "gzipSha256": "fe31ffebe9bb9835cc61610bbf74643efdd204655112033309b8c7604f82524f",
+        "rawBytes": 25493,
+        "gzipBytes": 7213
+      }
+    }
+  ],
+  "runtimePromotions": [
+    "gemma4_vision_qkv"
+  ],
+  "productionChanges": true,
+  "goal": {
+    "targetCompletedFps": 60,
+    "achieved": false
+  },
+  "validation": {
+    "completed": [
+      "pnpm check(218JavaScript+11inline modules)",
+      "pnpm test(allpassed)",
+      "Rust1.95.0 cargo test --release -p kevala --test wgsl --locked",
+      "Rust1.95.0 pnpm lint:rust(fmt+clippyworkspacealltargets)",
+      "Rust1.95.0 pnpm build(all3WASMflavors)",
+      "pnpm check:wasm(all3valid/48exports)",
+      "All3WASMexport exactaccepted22798-byteQKVshader/hash and rejectinvalidF16spec",
+      "Chromiumexpanded/Firefoxprimaryfullbitexactkernelguards",
+      "FinalproductionChromiumactualmodelall3budgetsoff/on/offexacthidden/probabilities",
+      "FinalproductionFirefoxFast4fixturesoff/on/offexacthidden/probabilities",
+      "Finalproductionexplicitgenericoverridefallbackexactcomparison",
+      "Finalproduction960measured-decisionbalancedcameralifecycle/shape/statecheck",
+      "Independentproductionhelper/integrationreviewclearafterdevice-lossfix",
+      "git diff --check",
+      "pnpm check:package(fresh55filepackage,all3WASMvalid)",
+      "All55unpackedpackagefilesbyte-identicaltoworkspace",
+      "pnpm stage:site(all3WASMABIchecks)",
+      "96stagedsource/document/receiptfilesbyte-identicaltoworkspace",
+      "PlaywrightMCPReactionroute/image-onlypicker/taborder/assetsHTTP200smoke",
+      "34archivedreceipts/sourcebundlesSHA256verified",
+      "55finalsourcehashesverified"
+    ],
+    "limitations": [
+      "M4Max/nativeMetal/MLX/CUDAnotmeasured",
+      "FirefoxadapteridentityredactedandnoownedNVIDIAcontextcapturedinfinalmodelrun;browserfeaturesverified",
+      "ExpandedR3Firefoxguardtimedout240s",
+      "Finalproductioncamerafusionresultneutral;60completedFPSunmet",
+      "FullGPUsuitenotrerun;existingLayaF32parity0.024006444195624588versusunchanged0.024limitremainsseparate"
+    ]
+  },
+  "firefoxExpandedGuard": {
+    "receipt": {
+      "file": "vision-followup-paired-bf16-r3-firefox-timeout.json.gz",
+      "rawSha256": "79dcba366c10710e649e94d3025d7c52ff1db91ef1dc8819fcb76ec866cafb80",
+      "gzipSha256": "a9cdc15095ff9af28e60ac50180047a2167c41b074e47be05bad840e7add3780",
+      "rawBytes": 904,
+      "gzipBytes": 464
+    },
+    "result": "Expanded R3 guard reached240s wrapper timeout; no completed numerical result. Smaller actual R4 primary subsequently passed in24s. No Firefox expanded-matrix pass claimed."
+  },
+  "compiledStatistics": {
+    "api": "VK_KHR_pipeline_executable_properties",
+    "scope": "Compile-time driver statistics for these actual WebGPU/Vulkan pipelines; neither dynamic occupancy/bandwidth counters nor FPS.",
+    "noPerformanceClaimsFromLayerRuns": true,
+    "sourceHashes": {
+      "tmp/vulkan-pipeline-stats/layer.cpp": "3abeb89e5a78b51b0b8497c3e6be498d86da8d72536980e91b0ba0a85525a340",
+      "tmp/vulkan-pipeline-stats/VkLayer_kevala_pipeline_stats.json": "fbcf11431ed14c07d6518440eee014d69b0f7d0daf6277b7614e6fcb2b5084b6"
+    },
+    "limits": {
+      "pipelines": 256,
+      "executablesPerPipeline": 8,
+      "statisticsPerExecutable": 64,
+      "logBytes": 16777216
+    },
+    "rawLocalMemoryStatistic": "Driver reports implausible values near64GiB. Preserve uninterpreted; not evidence of spills or actual per-thread local allocation.",
+    "runs": [
+      {
+        "id": "bf16-shared",
+        "receipt": {
+          "file": "vision-followup-bf16-compiled-stats.jsonl.gz",
+          "rawSha256": "292658c98220058936873eb235aa11f54a1fabe7d7f09be9f3b5e51c28dda728",
+          "gzipSha256": "044c11a102cfce539f78735d7614c90d3ef4cab78d34b821ef5e62e5fb27e617",
+          "rawBytes": 4757,
+          "gzipBytes": 717
+        },
+        "numericalReceipt": {
+          "file": "vision-followup-bf16-compiled-stats-guard.json.gz",
+          "rawSha256": "b0620f724cce59a8401230f95e3aec8a49fec367276ad33a8ddf370b23e736e2",
+          "gzipSha256": "d1cfe9b82c5b471bad2e9aa6769c679a921a18978340b8c38e929f51d95cda38",
+          "rawBytes": 14795,
+          "gzipBytes": 2588
+        },
+        "captureEnabled": true,
+        "queryErrors": [],
+        "pipelines": [
+          {
+            "pipelineId": 1,
+            "spirvFnv1a64": "667d1e9cc4d7ad4a",
+            "spirvWords": 1151,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 2304
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 2,
+            "spirvFnv1a64": "a4aa179d1a169a3a",
+            "spirvWords": 6448,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 64
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 24192
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476768
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 12288
+              }
+            ]
+          },
+          {
+            "pipelineId": 3,
+            "spirvFnv1a64": "d75723f4bd19567a",
+            "spirvWords": 6343,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 21504
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476768
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "narrow-serial",
+        "receipt": {
+          "file": "vision-followup-narrow-compiled-stats.jsonl.gz",
+          "rawSha256": "d0c62fe28ec6b46988ab91c0fb5144a296e06f4ce49c8d55bff4733ae61d43dc",
+          "gzipSha256": "1736c92ed09fa108d53fe69a7e31c314c1d669005366c67361778167d91938be",
+          "rawBytes": 8629,
+          "gzipBytes": 874
+        },
+        "numericalReceipt": {
+          "file": "vision-followup-narrow-compiled-stats-guard.json.gz",
+          "rawSha256": "3db28ae24a96dd5362666aecf1be58f878178b70de7141efa816c9347cf5cb86",
+          "gzipSha256": "033fbcea6ba27a0dbdd38bc5d443760ac60c10526a6f0ac306c4aef6ea784428",
+          "rawBytes": 4311,
+          "gzipBytes": 1572
+        },
+        "captureEnabled": true,
+        "queryErrors": [],
+        "pipelines": [
+          {
+            "pipelineId": 1,
+            "spirvFnv1a64": "03410c34413235ae",
+            "spirvWords": 7003,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 24832
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476768
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          },
+          {
+            "pipelineId": 2,
+            "spirvFnv1a64": "4bde023b1ee38961",
+            "spirvWords": 1127,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 2304
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 3,
+            "spirvFnv1a64": "564f37cb84d3ec80",
+            "spirvWords": 836,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 1664
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 4,
+            "spirvFnv1a64": "df88fd5e8fbc10ac",
+            "spirvWords": 4140,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 25088
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476768
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          },
+          {
+            "pipelineId": 5,
+            "spirvFnv1a64": "116e424562ca7dc6",
+            "spirvWords": 344,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 512
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 6,
+            "spirvFnv1a64": "2cad894b498a763b",
+            "spirvWords": 613,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 1664
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "vision-pair-r4",
+        "receipt": {
+          "file": "vision-followup-pair-r4-compiled-stats.jsonl.gz",
+          "rawSha256": "b589aaa8d5bff1962ecd84506788f001335ed69a13441d44079e73a7609ec38c",
+          "gzipSha256": "df0ca4281468e546e7e2409f00f50fafc2928ecac1f140853fedc7e1a64b9ce5",
+          "rawBytes": 6057,
+          "gzipBytes": 780
+        },
+        "numericalReceipt": {
+          "file": "vision-followup-pair-r4-compiled-stats-guard.json.gz",
+          "rawSha256": "3a1ff3f3c3e6d127973ca3bfcf4a0ffbd6955a4984bf9173383c0e25c99f9dd4",
+          "gzipSha256": "6b2a05e1f555f87995e97efba5d8c92de538edcc8b3bf0b5710081ffcf9b875e",
+          "rawBytes": 11827,
+          "gzipBytes": 2327
+        },
+        "captureEnabled": true,
+        "queryErrors": [],
+        "pipelines": [
+          {
+            "pipelineId": 1,
+            "spirvFnv1a64": "a11954307284fcfa",
+            "spirvWords": 6896,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 24192
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476752
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          },
+          {
+            "pipelineId": 2,
+            "spirvFnv1a64": "c9cf703de185553a",
+            "spirvWords": 10612,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 45440
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476784
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          },
+          {
+            "pipelineId": 3,
+            "spirvFnv1a64": "9327b0c2a884aca4",
+            "spirvWords": 1143,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 2304
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 4,
+            "spirvFnv1a64": "78600e113c4067a5",
+            "spirvWords": 1359,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 48
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 7040
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476768
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 9216
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "decoder-bm112-bn32",
+        "receipt": {
+          "file": "vision-followup-tall-narrow-compiled-stats.jsonl.gz",
+          "rawSha256": "da3f34f4c65be688a906b913169a5e947f6cab3c40c100fcca44b4c8d4b763cb",
+          "gzipSha256": "7dcf90b595fca3cba3dbd26d8fc629f74aaa44417abe635ddc6c778bea666dc1",
+          "rawBytes": 7344,
+          "gzipBytes": 834
+        },
+        "numericalReceipt": {
+          "file": "vision-followup-tall-narrow-compiled-stats-guard.json.gz",
+          "rawSha256": "8cb601b143b6844105b72c28745910a0bbfa72f4affb20505ae059e6da682abc",
+          "gzipSha256": "4d49dbb78c0ca783e0db5eec9da794bac3742fcd41305ad6bf76b4f5e46ff8e8",
+          "rawBytes": 5788,
+          "gzipBytes": 1545
+        },
+        "captureEnabled": true,
+        "queryErrors": [],
+        "pipelines": [
+          {
+            "pipelineId": 1,
+            "spirvFnv1a64": "03410c34413235ae",
+            "spirvWords": 7003,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 24832
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476768
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          },
+          {
+            "pipelineId": 2,
+            "spirvFnv1a64": "6ee797ecf27bc415",
+            "spirvWords": 8986,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 128
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 26240
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476864
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 24576
+              }
+            ]
+          },
+          {
+            "pipelineId": 3,
+            "spirvFnv1a64": "4bde023b1ee38961",
+            "spirvWords": 1127,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 2304
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 4,
+            "spirvFnv1a64": "116e424562ca7dc6",
+            "spirvWords": 344,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 512
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          },
+          {
+            "pipelineId": 5,
+            "spirvFnv1a64": "2cad894b498a763b",
+            "spirvWords": 613,
+            "localSize": [
+              256,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 16
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 1664
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 0
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "joint-vision-qkv-bf16",
+        "receipt": {
+          "file": "vision-followup-qkv-compiled-stats.jsonl.gz",
+          "rawSha256": "2a580a6642e5845c5314bb34736ecf257e5f96e61db3511f24bd397c80aadd4b",
+          "gzipSha256": "9a004dec7eaa5ebc34fa3e823ff258c51e282eb32a232aa39b9047e17e7d3796",
+          "rawBytes": 4765,
+          "gzipBytes": 727
+        },
+        "numericalReceipt": {
+          "file": "vision-followup-qkv-compiled-stats-guard.json.gz",
+          "rawSha256": "b98d2978d1fdc140233ccccf23372a737900a721ac80b6b97892cec5c770fced",
+          "gzipSha256": "726cda9a68851b184673ec373bedc40dd77cdf8e3d4bdcd1ea1c736800562e4c",
+          "rawBytes": 9460,
+          "gzipBytes": 2556
+        },
+        "captureEnabled": true,
+        "queryErrors": [],
+        "pipelines": [
+          {
+            "pipelineId": 1,
+            "spirvFnv1a64": "2d1fe273374ddb4e",
+            "spirvWords": 3117,
+            "localSize": [
+              64,
+              1,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 35
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 11648
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476736
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 1536
+              }
+            ]
+          },
+          {
+            "pipelineId": 2,
+            "spirvFnv1a64": "a11954307284fcfa",
+            "spirvWords": 6896,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 80
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 24192
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476752
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 16384
+              }
+            ]
+          },
+          {
+            "pipelineId": 3,
+            "spirvFnv1a64": "90292b8a24888c72",
+            "spirvWords": 12629,
+            "localSize": [
+              32,
+              8,
+              1
+            ],
+            "statistics": [
+              {
+                "name": "Register Count",
+                "format": "uint64",
+                "value": 128
+              },
+              {
+                "name": "Binary Size",
+                "format": "uint64",
+                "value": 46720
+              },
+              {
+                "name": "Stack Size",
+                "format": "uint64",
+                "value": 0
+              },
+              {
+                "name": "Local Memory Size",
+                "format": "uint64",
+                "value": 68719476752
+              },
+              {
+                "name": "Shared Memory Size",
+                "format": "uint64",
+                "value": 24576
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "instrumentation": {
+      "file": "vision-followup-compiled-stats-instrumentation.json.gz",
+      "rawSha256": "4ff95544b92c361af8be6a7caae01af414f50e4a52cd9fc94d0a8ab6d1ab8323",
+      "gzipSha256": "9c06248143faac28497673e050bce8b0daeb3dfdb3d620204d46e894dc391e37",
+      "rawBytes": 46253,
+      "gzipBytes": 9770
+    }
+  },
+  "packageVerification": {
+    "path": "/tmp/kevala-qkv-package-20261017/kevala-0.1.3.tgz",
+    "sha256": "4be0bcd35fed43b9613ac20fc8b433ab08020b533fb69ba0dc84917d6b53a656",
+    "files": 55,
+    "allFilesMatchWorkspace": true,
+    "published": false
+  },
+  "productionBaselineSnapshot": {
+    "file": "vision-followup-production-baseline.tar.gz",
+    "sha256": "5d99efab5f3f2a35ea8553eecfca2e867b1a4601a4312343b2819e50a60eb128",
+    "files": 51,
+    "bytes": 1378236,
+    "note": "Exact production sources/package ABI before guarded QKV promotion."
+  },
+  "productionPromotion": {
+    "kernel": "gemma4_vision_qkv",
+    "sourceArchive": {
+      "file": "vision-qkv-production-source.json.gz",
+      "rawSha256": "da77881c79ec68a8703206249b918c872e13f5982e32a57cc4c3e7b29cbdb11d",
+      "gzipSha256": "7ff430d6e2d02b2922b7ddb6f58a913b78a64e4a0891d809ba001eff8ad3f44a",
+      "rawBytes": 227307,
+      "gzipBytes": 54123
+    },
+    "sourceHashes": {
+      "crates/kevala/src/wgsl/gemma4_vision_qkv.wgsl": "4367a259a14baf0a651c9eb4d05e6517be8757f9b069c7c7d44bfab2885a9e8b",
+      "crates/kevala/src/gpu.rs": "8bb9fe4ec521473d4f5fb52859cad80224957945dd00c1ced38151166520719e",
+      "crates/kevala/tests/wgsl.rs": "f145f72f927a87b59339e885a72cec7d70b9f9e2fc271449e58342e0582962ab",
+      "js/src/gpu-gemma4-vision-qkv.js": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630",
+      "js/src/gpu-gemma4-vision.js": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560",
+      "js/src/gemma4-vision-pack.js": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54",
+      "tests/gemma4-vision-qkv.test.mjs": "4809b0cef1d015967243b739fb942641a166860392a989b6da9006030f0b63e5",
+      "tmp/production-vision-qkv-proxy.mjs": "c6a6900bce8c92ed3b73509f8262bacfeee5b0f35d1aa096edf02df307351369",
+      "tmp/production-vision-qkv-model-check.js": "a4f170bd293abfba534293941125783a54b9a9140e0eabe470bf3dd1ef545c6b",
+      "tmp/bench-camera-production-qkv.py": "195c2322cf328e7457f87ce757a1633e312f6af7357534cfa9eab9d1cce05cfb",
+      "scripts/bench-gpu.py": "449e4491b83f75d4d4b19825e673c513d6ddfe5fa1ea19b99e89358b24dc61a6",
+      "tmp/bench-firefox-vision-diagnostic.py": "4903e4ebb2361a0b47bfafcb968a1bd3fb78a91920b4cf769de32d01c03fc69d"
+    },
+    "sameModel": {
+      "receipt": {
+        "file": "vision-qkv-production-model-chrome.json.gz",
+        "rawSha256": "8b4545bb40a851b0beedef175db2f1f2b0eb827f8e0f60e3a378bd59dd7ee9bf",
+        "gzipSha256": "19b580dee354aeaed2b7574d83bc3a0a93ecfb3a001ff0544b1c9186b2ef517f",
+        "rawBytes": 1283003,
+        "gzipBytes": 34176
+      },
+      "status": "done",
+      "correctness": {
+        "bitExact": true,
+        "hiddenTolerance": 0,
+        "hiddenWordsPerDecision": 3072,
+        "ok": true,
+        "probabilityTolerance": 0,
+        "unchangedSelectionsAndFlags": true,
+        "unsupportedBudgetsFallback": true
+      },
+      "comparisons": 42,
+      "measuredDecisions": 36,
+      "warmups": 18,
+      "calibration": {
+        "K": 768,
+        "N": 768,
+        "after": {
+          "bitMismatches": 0,
+          "nonFinite": 0,
+          "normalizedValues": 248832,
+          "ok": true,
+          "partialValues": 1492992,
+          "readbackBytes": 16,
+          "signedZeroChecked": true,
+          "tailMismatches": 0
+        },
+        "available": true,
+        "baseline": [
+          0.049832,
+          0.049984,
+          0.049784
+        ],
+        "baselineMs": 0.049832,
+        "before": {
+          "bitMismatches": 0,
+          "nonFinite": 0,
+          "normalizedValues": 248832,
+          "ok": true,
+          "partialValues": 1492992,
+          "readbackBytes": 16,
+          "signedZeroChecked": true,
+          "tailMismatches": 0
+        },
+        "benefit": 0.18365708781505863,
+        "candidate": [
+          0.040656,
+          0.04068,
+          0.040784
+        ],
+        "candidateMs": 0.04068,
+        "copiedWeightBytes": 0,
+        "deadlineMs": 1000,
+        "deadlineScope": "best-effort compilation/calibration cutoff; in-flight compilation is not cancelled",
+        "elapsedMs": 42.58499997854233,
+        "gpuTemporaryBytes": 14294560,
+        "hostAndUploadReserveBytes": 784384,
+        "measuredScope": "original reusable-PART Q/K/V GEMMs+norms vs joint GEMM+same norms",
+        "method": "actual-weight-bitwise-paired-timestamps",
+        "reason": "stable-qkv-win",
+        "repetitions": 4,
+        "rows": 108,
+        "samples": 3,
+        "selected": true,
+        "sharedBytes": 20480,
+        "splits": 6,
+        "temporaryBytes": 15078944,
+        "temporaryLimitBytes": 16777216,
+        "threshold": 0.05
+      },
+      "dispatchModes": [
+        "16/off/0",
+        "16/on/16",
+        "16/off-repeat/0",
+        "40/off/0",
+        "40/on/0",
+        "40/off-repeat/0",
+        "70/off/0",
+        "70/on/0",
+        "70/off-repeat/0"
+      ]
+    },
+    "camera": {
+      "receipt": {
+        "file": "vision-qkv-production-camera-balanced.json.gz",
+        "rawSha256": "82eaecb52b2397026003fab738045b2b57ecd2bdfc47fd9629fa42cea53c9001",
+        "gzipSha256": "174523eca69152b5b141b16d55a270023554f197f7861ad1b66e9ee2d4b0927c",
+        "rawBytes": 8946952,
+        "gzipBytes": 279165
+      },
+      "status": "done",
+      "scope": "One model,16ABBAblocks,60measured/block,480/mode,184warmups; actualT108/soft12/padded144, fixedpixels/weights/precision/questions/budget; oneinflight.",
+      "aggregate": {
+        "byMode": {
+          "off": {
+            "blocks": 8,
+            "measuredDecisions": 480,
+            "discardedWarmups": 152,
+            "measuredSpanMs": 11204.884999960661,
+            "completedFps": 42.83845840467664,
+            "completionTimePerDecisionMs": 23.34351041658471,
+            "decisionWall": {
+              "p50Ms": 22.81749999523163,
+              "p95Ms": 24.375,
+              "meanMs": 22.94352083330353,
+              "samples": 480
+            }
+          },
+          "on": {
+            "blocks": 8,
+            "measuredDecisions": 480,
+            "discardedWarmups": 32,
+            "measuredSpanMs": 11210.97499999404,
+            "completedFps": 42.815187795910276,
+            "completionTimePerDecisionMs": 23.35619791665425,
+            "decisionWall": {
+              "p50Ms": 22.707499995827675,
+              "p95Ms": 25.155000001192093,
+              "meanMs": 22.96190625037998,
+              "samples": 480
+            }
+          }
+        },
+        "balancedQuads": [
+          {
+            "quad": 0,
+            "blocks": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "offBlockMeanDecisionWallMs": 22.738041665405035,
+            "onBlockMeanDecisionWallMs": 22.702958333740632,
+            "offMinusOnMeanDecisionWallMs": 0.035083331664402806,
+            "offBlockMeanCompletionTimePerDecisionMs": 23.144166666269303,
+            "onBlockMeanCompletionTimePerDecisionMs": 23.116750000168878,
+            "offMinusOnCompletionTimePerDecisionMs": 0.027416666100425147
+          },
+          {
+            "quad": 1,
+            "blocks": [
+              4,
+              5,
+              6,
+              7
+            ],
+            "offBlockMeanDecisionWallMs": 23.015583333869774,
+            "onBlockMeanDecisionWallMs": 23.161041667809087,
+            "offMinusOnMeanDecisionWallMs": -0.14545833393931318,
+            "offBlockMeanCompletionTimePerDecisionMs": 23.421166666597127,
+            "onBlockMeanCompletionTimePerDecisionMs": 23.596666666616997,
+            "offMinusOnCompletionTimePerDecisionMs": -0.17550000001986987
+          },
+          {
+            "quad": 2,
+            "blocks": [
+              8,
+              9,
+              10,
+              11
+            ],
+            "offBlockMeanDecisionWallMs": 23.054583332687614,
+            "onBlockMeanDecisionWallMs": 22.789124999195337,
+            "offMinusOnMeanDecisionWallMs": 0.2654583334922762,
+            "offBlockMeanCompletionTimePerDecisionMs": 23.4643333333234,
+            "onBlockMeanCompletionTimePerDecisionMs": 23.20583333323399,
+            "offMinusOnCompletionTimePerDecisionMs": 0.2585000000894091
+          },
+          {
+            "quad": 3,
+            "blocks": [
+              12,
+              13,
+              14,
+              15
+            ],
+            "offBlockMeanDecisionWallMs": 22.965875001251696,
+            "onBlockMeanDecisionWallMs": 23.19450000077486,
+            "offMinusOnMeanDecisionWallMs": -0.22862499952316284,
+            "offBlockMeanCompletionTimePerDecisionMs": 23.34437500014901,
+            "onBlockMeanCompletionTimePerDecisionMs": 23.50554166659713,
+            "offMinusOnCompletionTimePerDecisionMs": -0.16116666644811772
+          }
+        ],
+        "meanQuadOffMinusOnDecisionWallMs": -0.01838541707644925,
+        "meanQuadOffMinusOnCompletionTimePerDecisionMs": -0.012687500069538338,
+        "method": "Completed FPS pools within-block measured spans and excludes inter-block stop/start time. Positive off-minus-on values favor the candidate. Quad effects are point estimates; no statistical confidence is inferred."
+      },
+      "checks": {
+        "maxInFlight": 1,
+        "sameModel": true,
+        "videoCleared": true,
+        "tracksStopped": true,
+        "streamCount": 16,
+        "lastTab": "reaction",
+        "overflow": false
+      },
+      "resources": {
+        "memory.high": "5767168000",
+        "memory.max": "6291456000",
+        "memory.peak": "4665282560",
+        "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+        "memory.swap.max": "0",
+        "cpu.max": "400000 100000",
+        "cpu.stat": "usage_usec 33013797\nuser_usec 22260454\nsystem_usec 10753343\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 418\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+      },
+      "pageErrors": [],
+      "unrelatedDispatchesConstant": true,
+      "kernelSelectionsConstant": true,
+      "visionFusionStatsConstant": true,
+      "batchMlpStateConstant": true,
+      "splitSubmissionConstant": true,
+      "conclusion": "Production camera result is neutral:42.83846off/42.81519onFPS(-0.0543%);2of4quads favor each mode. No camera gain claimed. Reliable18.4%QKVcompositeGPUtime saving retains guarded same-device selection."
+    },
+    "firefoxModel": {
+      "receipt": {
+        "file": "vision-qkv-production-model-firefox.json.gz",
+        "rawSha256": "48e7cfea075fa77f3527a75660d834b7c1c9e0adef7b08a3fd65b57c4262155b",
+        "gzipSha256": "72311a57d0fd9d1d4dd7146f64661b779e53cd1bd008ea699e229179742bdc2e",
+        "rawBytes": 388548,
+        "gzipBytes": 16245
+      },
+      "status": "done",
+      "correctness": {
+        "bitExact": true,
+        "hiddenTolerance": 0,
+        "hiddenWordsPerDecision": 3072,
+        "ok": true,
+        "probabilityTolerance": 0,
+        "unchangedSelectionsAndFlags": true,
+        "unsupportedBudgetsFallback": true
+      },
+      "comparisons": 14,
+      "measuredDecisions": 12,
+      "warmups": 6,
+      "calibration": {
+        "K": 768,
+        "N": 768,
+        "after": {
+          "bitMismatches": 0,
+          "nonFinite": 0,
+          "normalizedValues": 248832,
+          "ok": true,
+          "partialValues": 1492992,
+          "readbackBytes": 16,
+          "signedZeroChecked": true,
+          "tailMismatches": 0
+        },
+        "available": true,
+        "baseline": [
+          0.066112,
+          0.065864,
+          0.064616
+        ],
+        "baselineMs": 0.065864,
+        "before": {
+          "bitMismatches": 0,
+          "nonFinite": 0,
+          "normalizedValues": 248832,
+          "ok": true,
+          "partialValues": 1492992,
+          "readbackBytes": 16,
+          "signedZeroChecked": true,
+          "tailMismatches": 0
+        },
+        "benefit": 0.2947892627231872,
+        "candidate": [
+          0.046448,
+          0.046688,
+          0.045416
+        ],
+        "candidateMs": 0.046448,
+        "copiedWeightBytes": 0,
+        "deadlineMs": 1000,
+        "deadlineScope": "best-effort compilation/calibration cutoff; in-flight compilation is not cancelled",
+        "elapsedMs": 285.6399999999999,
+        "gpuTemporaryBytes": 14294560,
+        "hostAndUploadReserveBytes": 784384,
+        "measuredScope": "original reusable-PART Q/K/V GEMMs+norms vs joint GEMM+same norms",
+        "method": "actual-weight-bitwise-paired-timestamps",
+        "reason": "stable-qkv-win",
+        "repetitions": 4,
+        "rows": 108,
+        "samples": 3,
+        "selected": true,
+        "sharedBytes": 20480,
+        "splits": 6,
+        "temporaryBytes": 15078944,
+        "temporaryLimitBytes": 16777216,
+        "threshold": 0.05
+      },
+      "scope": "FastT108 only,4images,off/on/off; exactfull3072hiddenwords/rawprobabilities; noFPSclaim"
+    },
+    "independentReview": {
+      "completed": true,
+      "remainingActionableFindings": [],
+      "fixed": [
+        "Device loss propagates from calibration",
+        "Unselected candidate pipeline/layout references cleared"
+      ],
+      "deadline": "Best-effort cutoff, in-flight asynchronous compilation uncancelled"
+    },
+    "genericFallback": {
+      "receipt": {
+        "file": "vision-qkv-production-generic-chrome.json.gz",
+        "rawSha256": "a1d68fb22795791c533bb9fac19cea23ea8000130e81747771824b5030e9bf9c",
+        "gzipSha256": "fee40b3c76d010bbf2c77fb27851d6cf6a415af11e0de738acf62a884ac230d8",
+        "rawBytes": 121462,
+        "gzipBytes": 8030
+      },
+      "status": "done",
+      "correctness": {
+        "bitExact": true,
+        "hiddenTolerance": 0,
+        "hiddenWordsPerDecision": 3072,
+        "ok": true,
+        "probabilityTolerance": 0,
+        "unchangedSelectionsAndFlags": true,
+        "unsupportedBudgetsFallback": true
+      },
+      "comparisons": 5,
+      "measuredDecisions": 3,
+      "warmups": 6,
+      "calibration": {
+        "K": 768,
+        "N": 768,
+        "available": false,
+        "copiedWeightBytes": 0,
+        "deadlineMs": 1000,
+        "deadlineScope": "best-effort compilation/calibration cutoff; in-flight compilation is not cancelled",
+        "elapsedMs": 0.02000001072883606,
+        "method": "actual-weight-bitwise-paired-timestamps",
+        "reason": "disabled",
+        "repetitions": 4,
+        "rows": 108,
+        "samples": 3,
+        "selected": false,
+        "sharedBytes": 20480,
+        "splits": 6,
+        "temporaryLimitBytes": 16777216,
+        "threshold": 0.05
+      },
+      "dispatchCounts": [
+        0
+      ],
+      "scope": "Explicit generic override; one Fastfixture; full3072hiddenwords/rawprobabilities off/on/off"
+    }
+  },
+  "baselineHashesMatchedBeforePromotion": true,
+  "finalSourceHashes": {
+    "js/src/gpu-gemma4.js": "a48ad5ac6575d5ee6f35cb677a5eed691c4d296d287f85a37dd6f7012c9a8d87",
+    "js/src/gpu-gemma4-vision.js": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560",
+    "js/src/archs/gemma4.js": "d913aa933488247871eda55a885bb2ecc14596c32a38e854a2143092ad64ff4a",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "crates/kevala/src/gpu.rs": "8bb9fe4ec521473d4f5fb52859cad80224957945dd00c1ced38151166520719e",
+    "crates/kevala/src/wgsl/matmul_bn32.wgsl": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6",
+    "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703",
+    "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0",
+    "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a",
+    "js/src/kevala-base.wasm": "015a77a3c1446eb855f862eead4bfbe6f028b06235ae18de8d947f25fc311d19",
+    "js/src/kevala-simd.wasm": "dd0320e42b197734b4f15f6884b0c5ec820e044492dd4e6d103195c45184a4ed",
+    "js/src/kevala-relaxed.wasm": "92ea599bf18edce5c6c27d999f55ad5c9dff1556367583ba2d83ec25b57a297a",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "crates/kevala/src/wgsl/matvec_two.wgsl": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e",
+    "crates/kevala/src/wgsl/matvec_gelu_two.wgsl": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4",
+    "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+    "crates/kevala/src/wgsl/matmul_gelu.wgsl": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13",
+    "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+    "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+    "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+    "crates/kevala/src/wgsl/reduce_ple.wgsl": "b78cd3e995fc1a60268e9c9e50808a4d51abe0a85efc4344452e129bbede4a78",
+    "tests/gemma4-ple.test.mjs": "0dabf9c2fb13a1f98be07da3109dab1bf15142533c6c84895b5565bc620889f5",
+    "tests/gemma4-batch.test.mjs": "725a9031eff377fa51d18a47eeeaef07d162a96ad47b1dfe6fbbcda9de512385",
+    "scripts/gpu-guard.mjs": "c8821f802ba2158586a73d65ba9e1de74d615166563a3a9dfa88cf4b872a97cf",
+    "js/src/gemma4-image.js": "3faf0329858ffb90d46e92d6d22106b1e74b4d7191ecf79e376f1f5850b3883a",
+    "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+    "crates/kevala/src/wgsl/matmul_tall.wgsl": "e328c97a07664c82ad77b0a149ea9357e0b8973bc87e00e8c86a414ac642115d",
+    "crates/kevala/tests/wgsl.rs": "f145f72f927a87b59339e885a72cec7d70b9f9e2fc271449e58342e0582962ab",
+    "scripts/bench-gemma4-image-prep.mjs": "96534707a954cc8b5ef278921f95e688ac3e4d510fc01e40213e22b5c7cd9dc3",
+    "tests/gemma4-image.test.mjs": "9fab56e9992ad7e49128bc5aba277b31c1f5c07f2d74dadc64b3adce309318d2",
+    "tests/gemma4-vision.test.mjs": "b2f1a5874ac7e8797efe3c5f63eca0f5b2c7df6b187a70b95cede0269aff4a4f",
+    "tests/gemma4-batch-single.test.mjs": "6e431405ff3b96655ae96e3b7158a1ba98b67366749bebad4a1085c3705fba86",
+    "dev/gemma4-matmul-tail-mask-check.js": "dc2161458a9eeda6c68434c0bf6efe4b58e1abbb3b2de7bb135ce61f43a4084b",
+    "dev/gemma4-matmul-tail-mask-check.html": "b390faeecfb12a68f0bbd3470db160a6a439d60785eea4e5b8f63f584e364ed8",
+    "dev/gemma4-matmul-f16-tall-check.js": "0ce2e6276f858e39cb22e6b7f8c2f09d648c02cd3be88be254aeddcdd8c476db",
+    "dev/gemma4-matmul-f16-tall-check.html": "b92c8565f136a0978b39b8eb1cb44c2d827e848646ae864e6ee93e1384128390",
+    "dev/kernel-compile-check.js": "d4dde514ac9fd65f70149b6810602bf4e2862429c9892e1b6a092c3f0f48d45f",
+    "js/src/gpu-gemma4-image.js": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1",
+    "crates/kevala/src/wgsl/gemma4_image_resize_horizontal.wgsl": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca",
+    "crates/kevala/src/wgsl/gemma4_image_resize_vertical.wgsl": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b",
+    "tests/gemma4-image-gpu.test.mjs": "3304e583120b7128deca7af874b90f8bb086998830b71c159d0d3bef52cf1ce5",
+    "dev/gemma4-image-gpu-check.html": "98875d2b96d2c8f4c297f120f4e57ecec5abe38e2015843da6020b1bc2e0c74e",
+    "dev/gemma4-image-gpu-check.js": "0f2a916905b0c8a1e7c3ab5c4c99fb1fbafe8ff0f627a1a67581d5d482ee7085",
+    "dev/gemma4-image-gpu-check.wgsl": "8f4eb2e3dbc30eb63f58fe9f4d39cb15aadc737e3bc35cce8c094c3f26769d85",
+    "app/views/reaction.js": "313e336074cae0f08236f1f1a9bb92e28efa3e99dba64a6cd4515d60edb9736d",
+    "app/views/reaction-scheduler.js": "afc117120221ccac767280897d739f1c2d4a83fe03cd1a622097d623a34a9b8a",
+    "scripts/bench-reaction.py": "4aa699f82197777a50947c2ab99970e22c006e9f01c2e14644900c1b0bfe21c5",
+    "scripts/stage-site.mjs": "91eff04735e4061dd4955126b382e3e23150603ea8997c2e089522eadc80d028",
+    "crates/kevala/src/wgsl/gemma4_vision_qkv.wgsl": "4367a259a14baf0a651c9eb4d05e6517be8757f9b069c7c7d44bfab2885a9e8b",
+    "js/src/gpu-gemma4-vision-qkv.js": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630",
+    "js/src/gemma4-vision-pack.js": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54",
+    "tests/gemma4-vision-qkv.test.mjs": "4809b0cef1d015967243b739fb942641a166860392a989b6da9006030f0b63e5"
+  },
+  "baselineSourceChanges": [
+    "js/src/gpu-gemma4-vision.js",
+    "crates/kevala/src/gpu.rs",
+    "js/src/kevala-base.wasm",
+    "js/src/kevala-simd.wasm",
+    "js/src/kevala-relaxed.wasm",
+    "crates/kevala/tests/wgsl.rs"
+  ],
+  "baselineHashNote": "All51baselinehashes matched before promotion and are preserved in the archived pre-promotion source snapshot. Expected finaldifferences reflect guardedQKVpromotion and rebuiltWASM; other baselinefiles remain identical.",
+  "baselinePackageVerification": {
+    "path": "/tmp/kevala-gpu-pixels-package-20261017/kevala-0.1.3.tgz",
+    "sha256": "3145221d79b71c16e3824e284b6c63c222aba5e1ddfbc8669162758e0e71f591",
+    "files": 54,
+    "allFilesMatchWorkspace": true,
+    "published": false,
+    "note": "Verified before guardedQKVpromotion; retained as historical baseline."
+  },
+  "siteVerification": {
+    "stagedPath": "dist/site",
+    "published": false,
+    "verifiedFiles": 96,
+    "wasmFlavors": 3,
+    "allComparedFilesMatchWorkspace": true,
+    "playwrightMcp": {
+      "reactionRoute": true,
+      "imageModelsOnlyPicker": true,
+      "reactionTabLast": true,
+      "servedAssets200": [
+        "js/src/gpu-gemma4-vision-qkv.js",
+        "js/src/kevala-base.wasm",
+        "js/src/kevala-simd.wasm",
+        "js/src/kevala-relaxed.wasm",
+        "dev/gemma4-vision-qkv-bf16-check.html",
+        "docs/benchmarks/gemma4-fusions-2026-10-17/vision-qkv-production-model-chrome.json.gz"
+      ],
+      "limitations": [
+        "Pointer click waited for stability and timed out; direct route navigation and DOM click opened picker",
+        "Staged static site omits optional local .kevala/models.json catalog(404); no weights loaded in this smoke"
+      ]
+    },
+    "runtimeHashes": {
+      "js/src/gpu-gemma4.js": "a48ad5ac6575d5ee6f35cb677a5eed691c4d296d287f85a37dd6f7012c9a8d87",
+      "js/src/gpu-gemma4-vision.js": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560",
+      "js/src/archs/gemma4.js": "d913aa933488247871eda55a885bb2ecc14596c32a38e854a2143092ad64ff4a",
+      "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+      "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+      "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+      "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+      "js/src/kevala-base.wasm": "015a77a3c1446eb855f862eead4bfbe6f028b06235ae18de8d947f25fc311d19",
+      "js/src/kevala-simd.wasm": "dd0320e42b197734b4f15f6884b0c5ec820e044492dd4e6d103195c45184a4ed",
+      "js/src/kevala-relaxed.wasm": "92ea599bf18edce5c6c27d999f55ad5c9dff1556367583ba2d83ec25b57a297a",
+      "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+      "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+      "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+      "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+      "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+      "js/src/gemma4-image.js": "3faf0329858ffb90d46e92d6d22106b1e74b4d7191ecf79e376f1f5850b3883a",
+      "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+      "js/src/gpu-gemma4-image.js": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1",
+      "js/src/gpu-gemma4-vision-qkv.js": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630",
+      "js/src/gemma4-vision-pack.js": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+    }
+  }
+}

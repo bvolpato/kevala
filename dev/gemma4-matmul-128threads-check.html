@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala WG128 BM28 matmul guard</title>
+<h1>WG128 BM28 matmul guard</h1>
+<p>Dev-only F32 Q8 candidate. Compares WG32x4/BM28 with production WG32x8/BM56 at T97, preserving the independent-suffix split policy. Checks every output and partial bit, bias/modes, and tails before paired timings. Temporary allocations are capped at 64 MiB, excluding immutable weights.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-128threads-check.js"></script>

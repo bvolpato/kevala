@@ -1,0 +1,316 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "baselineDispatches": 5,
+        "candidateDispatches": 3,
+        "f16": false,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "chunkBytes": 1048576,
+          "hostWeightFixturePeakBytes": 10616832,
+          "peaks": {
+            "baselineOutput": 25959520,
+            "baselinePart": 28343344,
+            "candidateOutput": 27008048,
+            "candidatePart": 29391904
+          },
+          "sharedWeightBytes": 21233664,
+          "temporaryLimitBytes": 67108864,
+          "temporaryPeakBytes": 29391904,
+          "weightAccounting": "immutable resident weights are separate from the temporary CPU/GPU scratch cap"
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 595968,
+          "signedZeroChecked": true
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "projection": "gate",
+            "samples": 1787904,
+            "signedZeroChecked": true,
+            "tailGuard": true
+          },
+          {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "projection": "up",
+            "samples": 1787904,
+            "signedZeroChecked": true,
+            "tailGuard": true
+          }
+        ],
+        "physicalBM": 56,
+        "row56": true,
+        "rows": 4,
+        "shaderHashes": {
+          "gelu": "23fab776e6aabf67cd7a0276023ad8c5c25e598cc228b64642caaa41a672417d",
+          "mm": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "reduceGelu": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "splitTarget": 256,
+        "splitTokens": 1,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "allocationsAndUploadsTimed": false,
+          "baseline": [
+            0.258424,
+            0.258392,
+            0.257904
+          ],
+          "baselineMedianMs": 0.258392,
+          "benefit": 0.03501656398030899,
+          "candidate": [
+            0.24912,
+            0.249344,
+            0.249416
+          ],
+          "candidateMedianMs": 0.249344,
+          "candidateWins": false,
+          "order": [
+            {
+              "kind": "baseline",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "noisy",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 97,
+        "f16": false,
+        "kernel": "matmul",
+        "kind": "generic",
+        "ok": true,
+        "physicalBM": 56,
+        "reason": "unsplit-projection-keeps-original-MLP",
+        "row56": true,
+        "rows": 4,
+        "skipped": true,
+        "splitTarget": 256,
+        "splitTokens": 1,
+        "splits": 1
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 241,
+        "baselineDispatches": 5,
+        "candidateDispatches": 3,
+        "f16": false,
+        "kernel": "matmul",
+        "kind": "generic",
+        "memory": {
+          "chunkBytes": 1048576,
+          "hostWeightFixturePeakBytes": 10616832,
+          "peaks": {
+            "baselineOutput": 55155808,
+            "baselinePart": 61078576,
+            "candidateOutput": 56204336,
+            "candidatePart": 62127136
+          },
+          "sharedWeightBytes": 21233664,
+          "temporaryLimitBytes": 67108864,
+          "temporaryPeakBytes": 62127136,
+          "weightAccounting": "immutable resident weights are separate from the temporary CPU/GPU scratch cap"
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 1480704,
+          "signedZeroChecked": true
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "projection": "gate",
+            "samples": 4442112,
+            "signedZeroChecked": true,
+            "tailGuard": true
+          },
+          {
+            "bitMismatches": 0,
+            "firstDifference": null,
+            "maxAbs": 0,
+            "nonfinite": 0,
+            "ok": true,
+            "projection": "up",
+            "samples": 4442112,
+            "signedZeroChecked": true,
+            "tailGuard": true
+          }
+        ],
+        "physicalBM": 64,
+        "row56": false,
+        "rows": 4,
+        "shaderHashes": {
+          "gelu": "23fab776e6aabf67cd7a0276023ad8c5c25e598cc228b64642caaa41a672417d",
+          "mm": "f803b6e8bce6981d0cf475d754fdb44523e50fe21f7eb37688e014c908512947",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949",
+          "reduceGelu": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "splitTarget": 256,
+        "splitTokens": 1,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "allocationsAndUploadsTimed": false,
+          "baseline": [
+            0.53676,
+            0.536128,
+            0.53644
+          ],
+          "baselineMedianMs": 0.53644,
+          "benefit": 0.013421817910670314,
+          "candidate": [
+            0.528472,
+            0.530104,
+            0.52924
+          ],
+          "candidateMedianMs": 0.52924,
+          "candidateWins": false,
+          "order": [
+            {
+              "kind": "baseline",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "noisy",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": false
+        }
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 241,
+        "f16": false,
+        "kernel": "matmul",
+        "kind": "generic",
+        "ok": true,
+        "physicalBM": 64,
+        "reason": "unsplit-projection-keeps-original-MLP",
+        "row56": false,
+        "rows": 4,
+        "skipped": true,
+        "splitTarget": 256,
+        "splitTokens": 1,
+        "splits": 1
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "elapsedMs": 1099.175000011921,
+  "kernel": "generic",
+  "method": "GPU timestamp geometric mean; ordinary gate/up matmuls with fused split reducers and GELU; phased temporary arenas exclude allocation/upload time",
+  "metricMs": 0.36326686961516325,
+  "precision": "f32",
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

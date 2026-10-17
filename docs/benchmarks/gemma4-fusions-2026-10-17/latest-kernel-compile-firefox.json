@@ -1,0 +1,93 @@
+{
+  "adapter": {
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "vendor": ""
+  },
+  "backend": "webgpu",
+  "capabilities": {
+    "shaderF16": true,
+    "subgroup16": false,
+    "subgroup32": false,
+    "subgroup4": false,
+    "subgroup8": false,
+    "timestampQuery": true
+  },
+  "correctness": {
+    "compiled": [
+      {
+        "kernel": "gemma4_vision_residual_norm",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      }
+    ],
+    "failures": [],
+    "ok": true,
+    "registeredKernels": 2,
+    "skipped": [
+      {
+        "kernel": "gemma4_attention_subgroup",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        },
+        "unavailable": [
+          "subgroups",
+          "subgroup_id"
+        ]
+      }
+    ]
+  },
+  "deviceFeatures": [
+    "timestamp-query",
+    "shader-f16",
+    "core-features-and-limits"
+  ],
+  "done": true,
+  "languageFeatures": [
+    "readonly_and_readwrite_storage_textures",
+    "packed_4x8_integer_dot_product",
+    "pointer_composite_access"
+  ],
+  "limits": {
+    "maxComputeWorkgroupStorageSize": 32768
+  },
+  "method": "GPU pipeline compilation wall clock",
+  "metricMs": 5.2000000000000455,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "20 MiB",
+          "pid": 3222295,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done"
+}

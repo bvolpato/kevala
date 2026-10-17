@@ -1,0 +1,89 @@
+{
+  "adapter": {
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "vendor": "nvidia"
+  },
+  "backend": "webgpu",
+  "capabilities": {
+    "shaderF16": false,
+    "subgroup16": true,
+    "subgroup32": true,
+    "subgroup4": true,
+    "subgroup8": true,
+    "timestampQuery": true
+  },
+  "correctness": {
+    "compiled": [
+      {
+        "kernel": "gemma4_attention_subgroup",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "gemma4_vision_residual_norm",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      }
+    ],
+    "failures": [],
+    "ok": true,
+    "registeredKernels": 2,
+    "skipped": []
+  },
+  "deviceFeatures": [
+    "core-features-and-limits",
+    "timestamp-query",
+    "subgroups"
+  ],
+  "done": true,
+  "languageFeatures": [
+    "packed_4x8_integer_dot_product",
+    "subgroup_uniformity",
+    "immediate_address_space",
+    "linear_indexing",
+    "subgroup_id",
+    "readonly_and_readwrite_storage_textures",
+    "swizzle_assignment",
+    "unrestricted_pointer_parameters",
+    "buffer_view",
+    "pointer_composite_access",
+    "texture_and_sampler_let",
+    "texture_formats_tier1",
+    "uniform_buffer_standard_layout"
+  ],
+  "limits": {
+    "maxComputeWorkgroupStorageSize": 32768
+  },
+  "method": "GPU pipeline compilation wall clock",
+  "metricMs": 17.382499992847443,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

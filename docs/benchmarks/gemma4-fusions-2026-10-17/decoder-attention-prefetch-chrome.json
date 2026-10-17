@@ -1,0 +1,28 @@
+{
+  "backend": "webgpu",
+  "code": null,
+  "done": true,
+  "error": "decoder attention plain T17 D256 differs: {\"ok\":false,\"bitExact\":false,\"bitDifferences\":1297,\"maxAbs\":1.4901161193847656e-8,\"firstDifference\":{\"index\":7435,\"old\":0.022876722738146782,\"candidate\":0.02287672460079193,\"oldBits\":1018914807,\"candidateBits\":1018914808},\"checkedOutputs\":17408}",
+  "kernel": "gemma4_attention_subgroup",
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "error"
+}

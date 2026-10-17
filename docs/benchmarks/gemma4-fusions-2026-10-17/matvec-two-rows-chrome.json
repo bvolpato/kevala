@@ -1,0 +1,608 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "zeros"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "saturation"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 2088
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "cancellation"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "zeros"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "saturation"
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "baselineWorkgroups": 10,
+        "candidateWorkgroups": 5,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 40392,
+          "temporaryBytes": 18472
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 34,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "cancellation"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 1,
+        "baselineWorkgroups": 5,
+        "candidateWorkgroups": null,
+        "f16": false,
+        "fallback": true,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 1616
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 17,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": false,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 5,
+        "baselineWorkgroups": 25,
+        "candidateWorkgroups": null,
+        "f16": false,
+        "fallback": true,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 1224,
+          "temporaryBytes": 5352
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 85,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": false,
+        "tailGuard": true,
+        "timing": null,
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 2,
+        "baselineWorkgroups": 3072,
+        "candidateWorkgroups": 1536,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 21233664,
+          "temporaryBytes": 369264
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 12288,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.025552,
+            0.025352,
+            0.025296
+          ],
+          "baselineMedianMs": 0.025352,
+          "benefit": 0.35752603344903755,
+          "candidate": [
+            0.016312,
+            0.016288,
+            0.016288
+          ],
+          "candidateMedianMs": 0.016288,
+          "candidateWins": true,
+          "order": [
+            {
+              "kind": "baseline",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      },
+      {
+        "K": 1536,
+        "N": 12288,
+        "T": 2,
+        "baselineWorkgroups": 6144,
+        "candidateWorkgroups": 3072,
+        "f16": false,
+        "fallback": false,
+        "fixtureCheck": true,
+        "memory": {
+          "limitBytes": 67108864,
+          "sharedBytesPerWorkgroup": {
+            "baseline": 2048,
+            "candidate": 4096
+          },
+          "sharedWeightBytes": 42467328,
+          "temporaryBytes": 713328
+        },
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 24576,
+          "signedZeroChecked": true
+        },
+        "shaderHashes": {
+          "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+          "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+          "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+        },
+        "supported": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.054536,
+            0.053616,
+            0.054024
+          ],
+          "baselineMedianMs": 0.054024,
+          "benefit": 0.39493558418480673,
+          "candidate": [
+            0.032688,
+            0.03272,
+            0.032616
+          ],
+          "candidateMedianMs": 0.032688,
+          "candidateWins": true,
+          "order": [
+            {
+              "kind": "baseline",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 0
+            },
+            {
+              "kind": "candidate",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 1
+            },
+            {
+              "kind": "baseline",
+              "sample": 2
+            },
+            {
+              "kind": "candidate",
+              "sample": 2
+            }
+          ],
+          "reason": "stable-candidate-win",
+          "repetitions": 4,
+          "samples": 3,
+          "stable": true
+        },
+        "unsupportedNoWrite": true,
+        "variant": "normal"
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "elapsedMs": 554.9150000065565,
+  "method": "geometric mean T2 shared-weight candidate GPU timestamp milliseconds",
+  "metricMs": 0.023074274506471485,
+  "precision": "f32",
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "shaderHashes": {
+    "baseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+    "candidate": "2eff865e0b12e121c06148aac9ec08055ffee3035612ebdad3cd7946f08e3691",
+    "fragment": "4b2447d1db9b918280bc353b2a6c877e2c373459c6264b0555a7c0457d0104f3"
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

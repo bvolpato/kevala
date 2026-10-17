@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact F32 paired K16 MLP probe</title>
+<h1>F32 paired K16 staging</h1>
+<p>Dev-only Q8/F32 BM56 comparison: current separate gate/up projections, registered paired K32, and paired K16 staging. The candidate retains ordered vec4 dots, K32 quantization scales, split partitions and the existing GELU reducer, while using 12 KiB of shared memory.</p>
+<p>Defaults to T97, N6144, K1536, S3. Use <code>?guards=1</code> for ragged, signed-zero, cancellation and saturation cases; <code>?shape=gate12288</code> checks the unsplit wide shape. Full raw-bit outputs, partials, inactive padding and tails are checked before and after timing. Controlled temporary allocations stay within 64 MiB; resident immutable weights are reported separately.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-mlp-k16-check.js"></script>

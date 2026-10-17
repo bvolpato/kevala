@@ -1,0 +1,959 @@
+{
+  "adapter": {
+    "architecture": "blackwell",
+    "description": null,
+    "device": null,
+    "features": [
+      "core-features-and-limits",
+      "subgroups",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxBufferSize": 1073741824,
+      "maxComputeWorkgroupStorageSize": 32768,
+      "maxStorageBufferBindingSize": 1073741824
+    },
+    "name": "nvidia blackwell",
+    "powerPreference": "high-performance",
+    "vendor": "nvidia"
+  },
+  "backend": "webgpu",
+  "baselineWasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm",
+  "cases": [
+    {
+      "K": 1536,
+      "N": 12288,
+      "T": 66,
+      "medianMs": 0.278352,
+      "shape": "66x12288x1536",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 0.278352,
+          "physicalBM": 64,
+          "reps": 8,
+          "rows": 4,
+          "samples": [
+            0.255416,
+            0.278352,
+            0.29556
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 0.273268,
+          "physicalBM": 64,
+          "reps": 8,
+          "rows": 4,
+          "samples": [
+            0.2588,
+            0.273268,
+            0.29556
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 1536,
+      "N": 6144,
+      "T": 66,
+      "medianMs": 0.149978,
+      "shape": "66x6144x1536",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 0.149978,
+          "physicalBM": 64,
+          "reps": 16,
+          "rows": 4,
+          "samples": [
+            0.143304,
+            0.15776,
+            0.149978
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 0.133322,
+          "physicalBM": 64,
+          "reps": 16,
+          "rows": 4,
+          "samples": [
+            0.140416,
+            0.133322,
+            0.133066
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 12288,
+      "N": 1536,
+      "T": 66,
+      "medianMs": 1.22296,
+      "shape": "66x1536x12288",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 1.22296,
+          "physicalBM": 64,
+          "reps": 8,
+          "rows": 4,
+          "samples": [
+            1.22296,
+            1.288504,
+            1.222876
+          ],
+          "splitTarget": 128,
+          "splits": 3,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 1.237212,
+          "physicalBM": 64,
+          "reps": 8,
+          "rows": 4,
+          "samples": [
+            1.248356,
+            0.91612,
+            1.237212
+          ],
+          "splitTarget": 128,
+          "splits": 3,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 1536,
+      "N": 12288,
+      "T": 89,
+      "medianMs": 0.39606399999999997,
+      "shape": "89x12288x1536",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 0.39606399999999997,
+          "physicalBM": 64,
+          "reps": 6,
+          "rows": 4,
+          "samples": [
+            0.7657866666666666,
+            0.39606399999999997,
+            0.33849066666666666
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 0.6178613333333333,
+          "physicalBM": 64,
+          "reps": 6,
+          "rows": 4,
+          "samples": [
+            0.6671786666666667,
+            0.6178613333333333,
+            0.316656
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 1536,
+      "N": 6144,
+      "T": 89,
+      "medianMs": 0.46385866666666664,
+      "shape": "89x6144x1536",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 0.46385866666666664,
+          "physicalBM": 64,
+          "reps": 12,
+          "rows": 4,
+          "samples": [
+            0.46385866666666664,
+            0.13842133333333334,
+            0.48125066666666666
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 0.43944,
+          "physicalBM": 64,
+          "reps": 12,
+          "rows": 4,
+          "samples": [
+            0.43944,
+            0.346752,
+            0.49644533333333335
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 12288,
+      "N": 1536,
+      "T": 89,
+      "medianMs": 1.5743733333333332,
+      "shape": "89x1536x12288",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 1.5743733333333332,
+          "physicalBM": 64,
+          "reps": 6,
+          "rows": 4,
+          "samples": [
+            1.607248,
+            1.5422186666666666,
+            1.5743733333333332
+          ],
+          "splitTarget": 128,
+          "splits": 3,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 1.5664213333333334,
+          "physicalBM": 64,
+          "reps": 6,
+          "rows": 4,
+          "samples": [
+            1.5664213333333334,
+            1.5349066666666669,
+            1.5702933333333335
+          ],
+          "splitTarget": 128,
+          "splits": 3,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 1536,
+      "N": 12288,
+      "T": 97,
+      "medianMs": 0.47811839999999994,
+      "shape": "97x12288x1536",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 0.47811839999999994,
+          "physicalBM": 64,
+          "reps": 5,
+          "rows": 4,
+          "samples": [
+            0.492032,
+            0.4640576,
+            0.47811839999999994
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 0.49125120000000005,
+          "physicalBM": 64,
+          "reps": 5,
+          "rows": 4,
+          "samples": [
+            0.4669696,
+            0.49125120000000005,
+            0.5082304
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 1536,
+      "N": 6144,
+      "T": 97,
+      "medianMs": 0.30907636363636365,
+      "shape": "97x6144x1536",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 0.30907636363636365,
+          "physicalBM": 64,
+          "reps": 11,
+          "rows": 4,
+          "samples": [
+            0.3220741818181818,
+            0.30907636363636365,
+            0.26037818181818184
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 0.2627287272727273,
+          "physicalBM": 64,
+          "reps": 11,
+          "rows": 4,
+          "samples": [
+            0.2627287272727273,
+            0.2695127272727273,
+            0.2622429090909091
+          ],
+          "splitTarget": 128,
+          "splits": 1,
+          "virtualBM": 64
+        }
+      ]
+    },
+    {
+      "K": 12288,
+      "N": 1536,
+      "T": 97,
+      "medianMs": 1.1183935999999999,
+      "shape": "97x1536x12288",
+      "timings": [
+        {
+          "groups": 1,
+          "kernel": "matmul_baseline",
+          "medianMs": 1.1183935999999999,
+          "physicalBM": 64,
+          "reps": 5,
+          "rows": 4,
+          "samples": [
+            1.1371072,
+            1.104288,
+            1.1183935999999999
+          ],
+          "splitTarget": 128,
+          "splits": 3,
+          "virtualBM": 64
+        },
+        {
+          "groups": 1,
+          "kernel": "matmul",
+          "medianMs": 1.1172416,
+          "physicalBM": 64,
+          "reps": 5,
+          "rows": 4,
+          "samples": [
+            1.0996928000000001,
+            1.1519488,
+            1.1172416
+          ],
+          "splitTarget": 128,
+          "splits": 3,
+          "virtualBM": 64
+        }
+      ]
+    }
+  ],
+  "correctness": {
+    "cpu": [
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 1.52587890625e-05,
+        "maxRelative": 6.392054387722637e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "66x12288x1536",
+        "worst": {
+          "actual": -19.543590545654297,
+          "col": 12287,
+          "expected": -19.54360580444336,
+          "row": 64
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 1.52587890625e-05,
+        "maxRelative": 6.392054387722637e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "66x12288x1536",
+        "worst": {
+          "actual": -19.543590545654297,
+          "col": 12287,
+          "expected": -19.54360580444336,
+          "row": 64
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 1.9073486328125e-05,
+        "maxRelative": 5.3942203521728516e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "66x6144x1536",
+        "worst": {
+          "actual": -9.955114364624023,
+          "col": 1,
+          "expected": -9.955133438110352,
+          "row": 64
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 1.9073486328125e-05,
+        "maxRelative": 5.3942203521728516e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "66x6144x1536",
+        "worst": {
+          "actual": -9.955114364624023,
+          "col": 1,
+          "expected": -9.955133438110352,
+          "row": 64
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 0.00012969970703125,
+        "maxRelative": 5.5909156799316406e-05,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "66x1536x12288",
+        "worst": {
+          "actual": 33.317848205566406,
+          "col": 1533,
+          "expected": 33.31797790527344,
+          "row": 65
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 0.00012969970703125,
+        "maxRelative": 5.5909156799316406e-05,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "66x1536x12288",
+        "worst": {
+          "actual": 33.317848205566406,
+          "col": 1533,
+          "expected": 33.31797790527344,
+          "row": 65
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 1.9073486328125e-05,
+        "maxRelative": 7.987022399902344e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "89x12288x1536",
+        "worst": {
+          "actual": 12.38635540008545,
+          "col": 12285,
+          "expected": 12.386374473571777,
+          "row": 44
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 1.9073486328125e-05,
+        "maxRelative": 7.987022399902344e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "89x12288x1536",
+        "worst": {
+          "actual": 12.38635540008545,
+          "col": 12285,
+          "expected": 12.386374473571777,
+          "row": 44
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 1.9073486328125e-05,
+        "maxRelative": 4.679467330527099e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "89x6144x1536",
+        "worst": {
+          "actual": -14.57567310333252,
+          "col": 6141,
+          "expected": -14.575654029846191,
+          "row": 2
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 1.9073486328125e-05,
+        "maxRelative": 4.679467330527099e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "89x6144x1536",
+        "worst": {
+          "actual": -14.57567310333252,
+          "col": 6141,
+          "expected": -14.575654029846191,
+          "row": 2
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 0.000179290771484375,
+        "maxRelative": 2.6822684838657546e-05,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "89x1536x12288",
+        "worst": {
+          "actual": 43.020713806152344,
+          "col": 768,
+          "expected": 43.02089309692383,
+          "row": 2
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 0.000179290771484375,
+        "maxRelative": 2.6822684838657546e-05,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "89x1536x12288",
+        "worst": {
+          "actual": 43.020713806152344,
+          "col": 768,
+          "expected": 43.02089309692383,
+          "row": 2
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 2.384185791015625e-05,
+        "maxRelative": 5.7220458984375e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "97x12288x1536",
+        "worst": {
+          "actual": 13.043237686157227,
+          "col": 0,
+          "expected": 13.043213844299316,
+          "row": 1
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 2.384185791015625e-05,
+        "maxRelative": 5.7220458984375e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "97x12288x1536",
+        "worst": {
+          "actual": 13.043237686157227,
+          "col": 0,
+          "expected": 13.043213844299316,
+          "row": 1
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 2.002716064453125e-05,
+        "maxRelative": 5.486154338459039e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "97x6144x1536",
+        "worst": {
+          "actual": 8.464421272277832,
+          "col": 6141,
+          "expected": 8.464401245117188,
+          "row": 48
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 2.002716064453125e-05,
+        "maxRelative": 5.486154338459039e-06,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "97x6144x1536",
+        "worst": {
+          "actual": 8.464421272277832,
+          "col": 6141,
+          "expected": 8.464401245117188,
+          "row": 48
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul_baseline",
+        "maxAbs": 8.0108642578125e-05,
+        "maxRelative": 3.5643577575683594e-05,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "97x1536x12288",
+        "worst": {
+          "actual": 21.821231842041016,
+          "col": 1534,
+          "expected": 21.821151733398438,
+          "row": 48
+        }
+      },
+      {
+        "bias": false,
+        "kernel": "matmul",
+        "maxAbs": 8.0108642578125e-05,
+        "maxRelative": 3.5643577575683594e-05,
+        "mode": 0,
+        "ok": true,
+        "samples": 49,
+        "shape": "97x1536x12288",
+        "worst": {
+          "actual": 21.821231842041016,
+          "col": 1534,
+          "expected": 21.821151733398438,
+          "row": 48
+        }
+      }
+    ],
+    "errors": [],
+    "gatheredWeights": [],
+    "ok": true,
+    "q8Mantissa": [
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "66x12288x1536",
+        "values": 811008
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "66x6144x1536",
+        "values": 405504
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "66x1536x12288",
+        "values": 101376
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "89x12288x1536",
+        "values": 1093632
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "89x6144x1536",
+        "values": 546816
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "89x1536x12288",
+        "values": 136704
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "97x12288x1536",
+        "values": 1191936
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "97x6144x1536",
+        "values": 595968
+      },
+      {
+        "bitMismatches": 0,
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "firstMismatch": null,
+        "ok": true,
+        "shape": "97x1536x12288",
+        "values": 148992
+      }
+    ],
+    "row56": [],
+    "rowTiles": [],
+    "variants": [
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "66x12288x1536"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "66x6144x1536"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "66x1536x12288"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "89x12288x1536"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "89x6144x1536"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "89x1536x12288"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "97x12288x1536"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "97x6144x1536"
+      },
+      {
+        "compared": [
+          "matmul_baseline",
+          "matmul"
+        ],
+        "maxAbs": 0,
+        "maxRelative": 0,
+        "ok": true,
+        "shape": "97x1536x12288"
+      }
+    ]
+  },
+  "kernels": [
+    "matmul_baseline",
+    "matmul"
+  ],
+  "method": "WebGPU timestamp-query",
+  "metric": "geometric mean of per-shape median GPU milliseconds",
+  "metricMs": 0.5125319971975087,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "samples": 3,
+  "seed": 1262835265,
+  "sourceTransforms": {
+    "q8Mantissa": "candidate matmul replaces signed-byte conversion with exact xor/bitcast/subtract; baseline is the same current WASM source without the proxy",
+    "row56": "WASM-rendered physical BM56 with original BM64 grid, split rule, reducer, shared allocation and ordered arithmetic",
+    "shaderHashes": {
+      "matmul_baseline|http://127.0.0.1:18086/js/src/kevala-base.wasm|66": {
+        "matmul": "81b3194e28183b284d08dd319bcc3b4f2fc97f2f6bb1173ac052cbda7590f10e",
+        "reduce": "e31cf7e02983aae9abd3816ded0e29faff800bb71ff3c53cc8d8deae186ca08d"
+      },
+      "matmul_baseline|http://127.0.0.1:18086/js/src/kevala-base.wasm|89": {
+        "matmul": "81b3194e28183b284d08dd319bcc3b4f2fc97f2f6bb1173ac052cbda7590f10e",
+        "reduce": "e31cf7e02983aae9abd3816ded0e29faff800bb71ff3c53cc8d8deae186ca08d"
+      },
+      "matmul_baseline|http://127.0.0.1:18086/js/src/kevala-base.wasm|97": {
+        "matmul": "81b3194e28183b284d08dd319bcc3b4f2fc97f2f6bb1173ac052cbda7590f10e",
+        "reduce": "e31cf7e02983aae9abd3816ded0e29faff800bb71ff3c53cc8d8deae186ca08d"
+      },
+      "matmul|http://127.0.0.1:18086/js/src/kevala-base.wasm|66": {
+        "matmul": "14678f75d011c47ebff8fa54b99c0e42a9653295d2736e31992527f1c4778e82",
+        "reduce": "e31cf7e02983aae9abd3816ded0e29faff800bb71ff3c53cc8d8deae186ca08d"
+      },
+      "matmul|http://127.0.0.1:18086/js/src/kevala-base.wasm|89": {
+        "matmul": "14678f75d011c47ebff8fa54b99c0e42a9653295d2736e31992527f1c4778e82",
+        "reduce": "e31cf7e02983aae9abd3816ded0e29faff800bb71ff3c53cc8d8deae186ca08d"
+      },
+      "matmul|http://127.0.0.1:18086/js/src/kevala-base.wasm|97": {
+        "matmul": "14678f75d011c47ebff8fa54b99c0e42a9653295d2736e31992527f1c4778e82",
+        "reduce": "e31cf7e02983aae9abd3816ded0e29faff800bb71ff3c53cc8d8deae186ca08d"
+      }
+    },
+    "sourceCommit": null
+  },
+  "status": "done",
+  "variantProvenance": {
+    "matmul": {
+      "kernel": "matmul",
+      "source": "current",
+      "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+    },
+    "matmul_baseline": {
+      "kernel": "matmul",
+      "source": "baseline",
+      "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+    }
+  },
+  "warmups": 1,
+  "weights": "q8"
+}

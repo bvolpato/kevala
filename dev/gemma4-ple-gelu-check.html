@@ -1,0 +1,7 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala PLE split reducer and GELU fusion probe</title>
+<p>Dev-only synthetic partial tensors. Checks every output bit, including signed zero and poisoned tails, against the registered reducer followed by Gemma GELU. Paired GPU timestamps measure only those passes. No model is loaded.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-ple-gelu-check.js"></script>

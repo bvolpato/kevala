@@ -1,0 +1,97 @@
+{
+  "adapter": {
+    "architecture": "blackwell",
+    "device": null,
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "timestampQuery": false,
+    "vendor": "nvidia"
+  },
+  "backend": "webgpu",
+  "clipFusion": {
+    "attentionLayers": 16,
+    "downLayers": 16,
+    "enabled": true,
+    "gateUpLayers": 16,
+    "originalInputClipPasses": 112,
+    "qkvLayers": 16,
+    "remainingInputClipPasses": 0,
+    "removedInputClipPasses": 112
+  },
+  "correctness": {
+    "cases": [
+      {
+        "activePatches": 576,
+        "attentionMode": "fused-f32",
+        "clipFusion": {
+          "baselineCorrectness": {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          "baselineFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "removedPasses": 33,
+            "residualNormPasses": 0
+          },
+          "baselineWallMs": 37.144999995827675,
+          "fusedCorrectness": {
+            "maxAbs": 2.065300941467285e-05,
+            "relativeL2": 2.1095542313551476e-06
+          },
+          "fusedFusion": {
+            "enabled": true,
+            "normRope": true,
+            "poolNorm": true,
+            "removedPasses": 64,
+            "residualNormPasses": 31
+          },
+          "fusedWallMs": 26.520000010728836,
+          "parity": {
+            "maxAbs": 0,
+            "relativeL2": 0
+          }
+        },
+        "elapsedMs": 26.520000010728836,
+        "id": "rectangular",
+        "patches": 630,
+        "softTokens": 64
+      }
+    ],
+    "compute": "f32",
+    "ok": true,
+    "sourceCommit": "2c4914fb939fe9de0d8e7a798af4684d552f18b4",
+    "tolerance": 0.0001
+  },
+  "done": true,
+  "metricMs": 26.520000010728836,
+  "options": {
+    "compactPatches": true,
+    "fusedAttention": true,
+    "submitMode": "split"
+  },
+  "profile": false,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

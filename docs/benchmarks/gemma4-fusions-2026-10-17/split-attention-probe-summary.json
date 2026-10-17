@@ -1,0 +1,94 @@
+{
+  "runtimeEnabled": false,
+  "scope": "development attention kernels only, no whole-model integration or camera FPS claim",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "m4Measured": false
+  },
+  "correctness": {
+    "chrome": {
+      "ok": true,
+      "cases": 94
+    },
+    "firefox": {
+      "ok": true,
+      "cases": 47
+    }
+  },
+  "timingScope": "four join copies plus attention; identical marker-pass overhead included on both paths",
+  "timings": [
+    {
+      "variant": "portable",
+      "dim": 256,
+      "baselineMs": 0.074576,
+      "candidateMs": 0.07161600000000001,
+      "speedup": 1.0413315460232349
+    },
+    {
+      "variant": "portable",
+      "dim": 512,
+      "baselineMs": 0.109056,
+      "candidateMs": 0.107312,
+      "speedup": 1.0162516773520203
+    },
+    {
+      "variant": "subgroup",
+      "dim": 256,
+      "baselineMs": 0.066016,
+      "candidateMs": 0.057808,
+      "speedup": 1.1419872681981733
+    },
+    {
+      "variant": "subgroup",
+      "dim": 512,
+      "baselineMs": 0.093856,
+      "candidateMs": 0.092784,
+      "speedup": 1.0115537161579582
+    }
+  ],
+  "shaderHashes": [
+    {
+      "variant": "portable",
+      "baseline": "ecd78124e765b73f27bea6620b308108f1635f7b6bb95ea9e6540ce0b1494930",
+      "candidate": "72a70f40b0136c423b9e22adbb6a248a81aa3b572d564ceb0d3b2b511757c630"
+    },
+    {
+      "variant": "subgroup",
+      "baseline": "0343e7a00ff4368a858745912ff83ad7efe3e4bf9cabfaa19477392cea8f6b25",
+      "candidate": "c722608a050c023b174cb727c68ecc2b8d5f676005eb64289c4b53f8ae327566"
+    }
+  ],
+  "bounds": {
+    "budgetBytes": 33554432,
+    "maxCaseBufferEstimateBytes": 27958800,
+    "sequentialCases": true
+  },
+  "evidence": [
+    "attention-split-hoisted-full-chrome.json.gz",
+    "attention-split-hoisted-full-firefox.json.gz",
+    "attention-split-copy-hoisted-chrome.json.gz"
+  ],
+  "fullModel": {
+    "evidence": "split-attention-model-all-chrome.json.gz",
+    "measuredDecisions": 288,
+    "measuredPairs": 36,
+    "hiddenBitsExact": true,
+    "probabilitiesExact": true,
+    "joinsRemovedPerWarmDecision": 11,
+    "copyCommandsRemovedPerWarmDecision": 44,
+    "consistentSpeedBenefit": false,
+    "decision": "retain joined runtime path",
+    "balanced": {
+      "baselineGpuMs": 20.39744,
+      "candidateGpuMs": 21.100768,
+      "baselineWallMs": 32.8375,
+      "candidateWallMs": 33.3175
+    },
+    "fast": {
+      "baselineGpuMs": 17.485168,
+      "candidateGpuMs": 17.632912,
+      "baselineWallMs": 25.3025,
+      "candidateWallMs": 24.815
+    }
+  }
+}

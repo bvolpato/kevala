@@ -1,0 +1,435 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "gpu": {
+      "architecture": "blackwell",
+      "description": "",
+      "device": "",
+      "isFallbackAdapter": false,
+      "subgroupMatrixConfigs": [
+        {
+          "K": 32,
+          "M": 16,
+          "N": 16,
+          "componentType": "u8",
+          "resultComponentType": "u32"
+        },
+        {
+          "K": 32,
+          "M": 16,
+          "N": 16,
+          "componentType": "i8",
+          "resultComponentType": "i32"
+        },
+        {
+          "K": 32,
+          "M": 16,
+          "N": 8,
+          "componentType": "u8",
+          "resultComponentType": "u32"
+        },
+        {
+          "K": 32,
+          "M": 16,
+          "N": 8,
+          "componentType": "i8",
+          "resultComponentType": "i32"
+        }
+      ],
+      "subgroupMaxSize": 32,
+      "subgroupMinSize": 32,
+      "vendor": "nvidia"
+    },
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "ok": true,
+    "tolerance": "bit-exact"
+  },
+  "identity": {
+    "ok": true,
+    "transform": "q8-sx-marlin-exact-f32-mantissa",
+    "values": 256
+  },
+  "method": "wall clock for numerical and timing probe, not decision latency",
+  "metricMs": 1484.6650000065565,
+  "note": "Direct and paired-kernel controls use identical current WASM shaders except for candidate Q8 sx. End-to-end also compares the existing unfused matvec plus GELU path against the paired candidate. No production files or WASM were changed.",
+  "results": [
+    {
+      "direct": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 24576
+      },
+      "directTiming": {
+        "baselineMs": 0.038226,
+        "candidateMs": 0.036608,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.038226,
+            0.03775,
+            0.038082,
+            0.045052,
+            0.038626,
+            0.04199,
+            0.037864,
+            0.037604
+          ],
+          "candidateMs": [
+            0.036372,
+            0.036896,
+            0.036166,
+            0.03655,
+            0.045956,
+            0.036608,
+            0.0436,
+            0.03651
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 1.0441979895104896
+      },
+      "endToEnd": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 24576
+      },
+      "endToEndTiming": {
+        "baselineMs": 0.07912,
+        "candidateMs": 0.055142,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.07871,
+            0.09837,
+            0.07912,
+            0.092394,
+            0.078864,
+            0.078014,
+            0.08585,
+            0.078148
+          ],
+          "candidateMs": [
+            0.054098,
+            0.055142,
+            0.058102,
+            0.055082,
+            0.054088,
+            0.055102,
+            0.067648,
+            0.058288
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 1.4348409560770374
+      },
+      "pairedKernel": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 24576
+      },
+      "pairedKernelTiming": {
+        "baselineMs": 0.05174,
+        "candidateMs": 0.055036,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.052806,
+            0.050426,
+            0.051632,
+            0.063414,
+            0.054576,
+            0.050576,
+            0.05174,
+            0.05056
+          ],
+          "candidateMs": [
+            0.053968,
+            0.055036,
+            0.062126,
+            0.056306,
+            0.054098,
+            0.054966,
+            0.054214,
+            0.055072
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 0.9401119267388618
+      },
+      "shape": "2x12288x1536"
+    },
+    {
+      "direct": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 3072
+      },
+      "directTiming": {
+        "baselineMs": 0.023848,
+        "candidateMs": 0.024784,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.024984,
+            0.023398,
+            0.023848,
+            0.023398,
+            0.02385,
+            0.023334,
+            0.023936,
+            0.02336
+          ],
+          "candidateMs": [
+            0.024494,
+            0.025204,
+            0.024426,
+            0.024784,
+            0.024504,
+            0.024934,
+            0.024514,
+            0.025518
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 0.9622336991607489
+      },
+      "endToEnd": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 3072
+      },
+      "endToEndTiming": {
+        "baselineMs": 0.051912,
+        "candidateMs": 0.047488,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.051956,
+            0.051028,
+            0.051798,
+            0.050782,
+            0.051912,
+            0.063916,
+            0.054138,
+            0.05102
+          ],
+          "candidateMs": [
+            0.055804,
+            0.04772,
+            0.046702,
+            0.047174,
+            0.046724,
+            0.04938,
+            0.046656,
+            0.047488
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 1.0931603773584906
+      },
+      "pairedKernel": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 3072
+      },
+      "pairedKernelTiming": {
+        "baselineMs": 0.043868,
+        "candidateMs": 0.047174,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.047156,
+            0.04295,
+            0.044032,
+            0.042854,
+            0.043868,
+            0.042836,
+            0.045974,
+            0.043094
+          ],
+          "candidateMs": [
+            0.046768,
+            0.047488,
+            0.04629,
+            0.047174,
+            0.04622,
+            0.047388,
+            0.046696,
+            0.047182
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 0.9299190231907406
+      },
+      "shape": "2x1536x12288"
+    },
+    {
+      "direct": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 12288
+      },
+      "directTiming": {
+        "baselineMs": 0.020136,
+        "candidateMs": 0.019216,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.020366,
+            0.019896,
+            0.020168,
+            0.019922,
+            0.020136,
+            0.01979,
+            0.020188,
+            0.019772
+          ],
+          "candidateMs": [
+            0.019214,
+            0.019544,
+            0.01904,
+            0.019346,
+            0.019034,
+            0.01944,
+            0.019134,
+            0.019216
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 1.0478767693588678
+      },
+      "endToEnd": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 12288
+      },
+      "endToEndTiming": {
+        "baselineMs": 0.041646,
+        "candidateMs": 0.027754,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.041828,
+            0.052544,
+            0.041686,
+            0.041192,
+            0.041522,
+            0.041134,
+            0.041646,
+            0.041336
+          ],
+          "candidateMs": [
+            0.03415,
+            0.028642,
+            0.027392,
+            0.027754,
+            0.027336,
+            0.027754,
+            0.027316,
+            0.02775
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 1.5005404626360164
+      },
+      "pairedKernel": {
+        "bitMismatches": 0,
+        "firstMismatch": null,
+        "maxAbs": 0,
+        "ok": true,
+        "values": 12288
+      },
+      "pairedKernelTiming": {
+        "baselineMs": 0.025668,
+        "candidateMs": 0.027522,
+        "method": "GPU timestamp",
+        "raw": {
+          "baselineMs": [
+            0.026202,
+            0.0251,
+            0.026474,
+            0.025276,
+            0.025668,
+            0.025172,
+            0.02577,
+            0.025234
+          ],
+          "candidateMs": [
+            0.0272,
+            0.027726,
+            0.027396,
+            0.027532,
+            0.027368,
+            0.027522,
+            0.027372,
+            0.027772
+          ]
+        },
+        "repeats": 16,
+        "samples": 8,
+        "speedup": 0.9326357096141268
+      },
+      "shape": "2x6144x1536"
+    }
+  ],
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "shaders": {
+    "directBaseline": "3ac5b570ca0f1d174bc143bea7a4355e787ae84d41aba56a230c45b5e657d560",
+    "directCandidate": "f83cd59453ba1d5f84fbc3fcf0e5e285040c7065cfa9e8d270a4ed431e76fa27",
+    "geluBaseline": "23fab776e6aabf67cd7a0276023ad8c5c25e598cc228b64642caaa41a672417d",
+    "pairedBaseline": "f018c700e80e90bb9388269c64a6dca1adc8351310fe27be1b49a8e447eae7a8",
+    "pairedCandidate": "a137650beb8bc01a02896fa936f37f3dcba3b0a477e4e0eec21a4958cea173dd"
+  },
+  "sourceTransform": "q8-sx-marlin-exact-f32-mantissa",
+  "status": "done",
+  "variant": "F32 Q8 exact Marlin mantissa conversion"
+}

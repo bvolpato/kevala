@@ -1,0 +1,2349 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "shader-f16",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "name": "WebGPU"
+  },
+  "arithmetic": "F32 split PART tensors; no matmul, F16 operand conversion, or default quantization",
+  "backend": "webgpu",
+  "compile": {
+    "kernel": "gemma4_vision_reduce_gelu",
+    "ok": true,
+    "sharedBytes": 8192,
+    "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm",
+    "workgroupSize": 256
+  },
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 108,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 57070064,
+        "ok": true,
+        "ownedGpuBufferBytes": 18579744,
+        "pattern": "signed",
+        "repeatedCorrectness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "splitTarget": 256,
+        "splits": 3,
+        "timing": true,
+        "timings": {
+          "baseline": [
+            0.0105,
+            0.01075,
+            0.0105,
+            0.0105
+          ],
+          "candidate": [
+            0.004,
+            0.004,
+            0.00425,
+            0.004
+          ]
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 108,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 331776,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 57070064,
+        "ok": true,
+        "ownedGpuBufferBytes": 18579744,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 288,
+        "splits": 3,
+        "timing": false,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 6480368,
+        "ok": true,
+        "ownedGpuBufferBytes": 2089248,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 48,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 7733744,
+        "ok": true,
+        "ownedGpuBufferBytes": 2507040,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 96,
+        "splits": 2,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 8987120,
+        "ok": true,
+        "ownedGpuBufferBytes": 2924832,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 144,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 11493872,
+        "ok": true,
+        "ownedGpuBufferBytes": 3760416,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 240,
+        "splits": 5,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 15254000,
+        "ok": true,
+        "ownedGpuBufferBytes": 5013792,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 384,
+        "splits": 8,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 6480368,
+        "ok": true,
+        "ownedGpuBufferBytes": 2089248,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 48,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 7733744,
+        "ok": true,
+        "ownedGpuBufferBytes": 2507040,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 96,
+        "splits": 2,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 8987120,
+        "ok": true,
+        "ownedGpuBufferBytes": 2924832,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 144,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 11493872,
+        "ok": true,
+        "ownedGpuBufferBytes": 3760416,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 240,
+        "splits": 5,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 3072,
+        "T": 17,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 52224,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 15254000,
+        "ok": true,
+        "ownedGpuBufferBytes": 5013792,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 384,
+        "splits": 8,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 1,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 4,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 4,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 4,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 5088,
+        "ok": true,
+        "ownedGpuBufferBytes": 448,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 1,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 1,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 4,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 4,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 4,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 5280,
+        "ok": true,
+        "ownedGpuBufferBytes": 512,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 17,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 68,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 68,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 68,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 13024,
+        "ok": true,
+        "ownedGpuBufferBytes": 3008,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 1,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 17,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 68,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 68,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 68,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 16288,
+        "ok": true,
+        "ownedGpuBufferBytes": 4096,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 3,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 255,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1020,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1020,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1020,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 131072,
+        "ok": true,
+        "ownedGpuBufferBytes": 41088,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 4,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 255,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1020,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1020,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1020,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 180032,
+        "ok": true,
+        "ownedGpuBufferBytes": 57408,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 12,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 132064,
+        "ok": true,
+        "ownedGpuBufferBytes": 41408,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 5,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3071,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12284,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 12284,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12284,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 1527808,
+        "ok": true,
+        "ownedGpuBufferBytes": 491648,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 48,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3071,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12284,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 12284,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12284,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 2117440,
+        "ok": true,
+        "ownedGpuBufferBytes": 688192,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 144,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3073,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12292,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 12292,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12292,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 1528800,
+        "ok": true,
+        "ownedGpuBufferBytes": 491968,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 49,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 3073,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12292,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 12292,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 12292,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 2118816,
+        "ok": true,
+        "ownedGpuBufferBytes": 688640,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 147,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 304768,
+        "ok": true,
+        "ownedGpuBufferBytes": 98976,
+        "pattern": "zero",
+        "repeatedCorrectness": null,
+        "splitTarget": 40,
+        "splits": 8,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 304768,
+        "ok": true,
+        "ownedGpuBufferBytes": 98976,
+        "pattern": "cancellation",
+        "repeatedCorrectness": null,
+        "splitTarget": 40,
+        "splits": 8,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 132064,
+        "ok": true,
+        "ownedGpuBufferBytes": 41408,
+        "pattern": "endpoints",
+        "repeatedCorrectness": null,
+        "splitTarget": 5,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 304768,
+        "ok": true,
+        "ownedGpuBufferBytes": 98976,
+        "pattern": "zero",
+        "repeatedCorrectness": null,
+        "splitTarget": 40,
+        "splits": 8,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 304768,
+        "ok": true,
+        "ownedGpuBufferBytes": 98976,
+        "pattern": "cancellation",
+        "repeatedCorrectness": null,
+        "splitTarget": 40,
+        "splits": 8,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 1024,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "f32",
+        "estimatedCaseBufferBytes": 132064,
+        "ok": true,
+        "ownedGpuBufferBytes": 41408,
+        "pattern": "endpoints",
+        "repeatedCorrectness": null,
+        "splitTarget": 5,
+        "splits": 1,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            "-Infinity",
+            "Infinity"
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": false,
+          "down": [
+            "-Infinity",
+            "Infinity"
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            0,
+            0
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.015625,
+            0.025
+          ],
+          "gate": [
+            "-0",
+            "-0"
+          ],
+          "up": [
+            -0.125,
+            0.5
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            0.125,
+            0.5
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      },
+      {
+        "K": 768,
+        "N": 257,
+        "T": 4,
+        "bounds": {
+          "clampDown": true,
+          "down": [
+            -0.5,
+            -0.125
+          ],
+          "gate": [
+            -0.125,
+            0.375
+          ],
+          "up": [
+            -0.5,
+            0.0625
+          ]
+        },
+        "correctness": {
+          "gateReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original gate reduction vs serial scalar F32",
+            "maxAbs": 0
+          },
+          "outputTailGuard": true,
+          "parity": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original reducers+vision GELU vs candidate",
+            "maxAbs": 0
+          },
+          "upReduction": {
+            "bitExact": true,
+            "checkedOutputs": 1028,
+            "differences": 0,
+            "firstDifference": null,
+            "label": "original up reduction vs serial scalar F32",
+            "maxAbs": 0
+          }
+        },
+        "dtype": "bf16",
+        "estimatedCaseBufferBytes": 181408,
+        "ok": true,
+        "ownedGpuBufferBytes": 57856,
+        "pattern": "signed",
+        "repeatedCorrectness": null,
+        "splitTarget": 15,
+        "splits": 3,
+        "timings": {
+          "baseline": [],
+          "candidate": []
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    }
+  },
+  "done": true,
+  "f16Feature": true,
+  "kernel": "gemma4_vision_reduce_gelu_probe",
+  "metricMs": 4835.62,
+  "resourceBounds": {
+    "budgetBytes": 67108864,
+    "maxCaseBufferEstimateBytes": 57070064,
+    "sequentialCases": true
+  },
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "32 MiB",
+          "pid": 3638964,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done"
+}

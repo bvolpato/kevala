@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gemma 4 Q8/F16 BM104 matmul probe</title>
+<h1>Gemma 4 Q8/F16 BM104 matmul probe</h1>
+<p>Compares the registered Q8/F16 R4 BM64 kernel with the registered physical BM104 kernel at T=97. Before compiling, it asserts that the registered BM104 source and its DEV-derived reference have identical bytes and SHA-256 hashes. The candidate retains the Q8 decode and scale, F16 shared-tile casts and swizzle, K32 staging and barriers, per-output ascending Kq dot/add order, virtual BM64 split policy, and the same reducer.</p>
+<p>Checks every Y value and PART plane bit-for-bit, including non-finite values, signed zeros, NaN input padding, and four-float tails, before and after paired GPU timestamps. Temporary GPU buffers and host staging stay within 64 MiB; immutable Q8 weights and scales are reported separately. Requires <code>shader-f16</code>; no F32 fallback is provided. No runtime kernel is changed.</p>
+<p>Run <code>?shape=down&amp;T=97</code> for the primary 1536x6144 case, or use the default to include the Q projection guard at 2048x1536. Use <code>?shape=q2048&amp;T=97</code> to time only that case. Timing requires WebGPU <code>timestamp-query</code> and <code>shader-f16</code>.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-f16-tall-check.js"></script>

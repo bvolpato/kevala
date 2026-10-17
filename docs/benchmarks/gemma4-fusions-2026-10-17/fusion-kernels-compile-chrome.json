@@ -1,0 +1,699 @@
+{
+  "adapter": {
+    "isFallbackAdapter": false,
+    "name": "nvidia blackwell",
+    "vendor": "nvidia"
+  },
+  "backend": "webgpu",
+  "capabilities": {
+    "shaderF16": false,
+    "subgroup16": true,
+    "subgroup32": true,
+    "subgroup4": true,
+    "subgroup8": true,
+    "timestampQuery": true
+  },
+  "correctness": {
+    "compiled": [
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "row56": true
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "k": 1024,
+          "n": 3072
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 1,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 2,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 3,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 4,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 1,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 2,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 3,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "rows": 4,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "k": 1024,
+          "n": 3072
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 1,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 2,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 3,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 4,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 1,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 2,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 3,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "rows": 4,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "row56": true
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "k": 1024,
+          "n": 3072
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 1,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 2,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 3,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 4,
+          "weights": "bf16"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 1,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 2,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 3,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "rows": 4,
+          "weights": "f32"
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 2,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 3,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "reduce_gemma_source",
+        "spec": {
+          "f16": false,
+          "groups": 2,
+          "rows": 4,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "gemma4_vision_norm_rope",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      },
+      {
+        "kernel": "gemma4_vision_pool_norm",
+        "spec": {
+          "f16": false,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        }
+      }
+    ],
+    "failures": [],
+    "ok": true,
+    "registeredKernels": 6,
+    "skipped": [
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 1,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 2,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 3,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 2,
+          "rows": 4,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_wide_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 1,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 2,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 3,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      },
+      {
+        "kernel": "matmul_k64_gemma_source",
+        "spec": {
+          "f16": true,
+          "groups": 1,
+          "rows": 4,
+          "subgroups": false
+        },
+        "unavailable": [
+          "f16"
+        ]
+      }
+    ]
+  },
+  "deviceFeatures": [
+    "core-features-and-limits",
+    "timestamp-query",
+    "subgroups"
+  ],
+  "done": true,
+  "languageFeatures": [
+    "packed_4x8_integer_dot_product",
+    "subgroup_uniformity",
+    "immediate_address_space",
+    "linear_indexing",
+    "subgroup_id",
+    "readonly_and_readwrite_storage_textures",
+    "swizzle_assignment",
+    "unrestricted_pointer_parameters",
+    "buffer_view",
+    "pointer_composite_access",
+    "texture_and_sampler_let",
+    "texture_formats_tier1",
+    "uniform_buffer_standard_layout"
+  ],
+  "limits": {
+    "maxComputeWorkgroupStorageSize": 32768
+  },
+  "method": "GPU pipeline compilation wall clock",
+  "metricMs": 90.56454545449127,
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

@@ -1,0 +1,1679 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "shader-f16",
+      "core-features-and-limits"
+    ],
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "check": "gemma4-matvec-two",
+  "correctness": {
+    "cases": [
+      {
+        "K": 12288,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1528
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1539
+          }
+        ],
+        "scratchBytes": 406528,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.0232,
+            0.022832,
+            0.022552
+          ],
+          "baselineMs": 0.022832,
+          "candidate": [
+            0.017496,
+            0.017456,
+            0.017456
+          ],
+          "candidateMs": 0.017456,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.307974335472044
+        },
+        "weightBytes": 21233664
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1494
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1547
+          }
+        ],
+        "scratchBytes": 357376,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.013488,
+            0.013408,
+            0.013376
+          ],
+          "baselineMs": 0.013408,
+          "candidate": [
+            0.010344,
+            0.00988,
+            0.010328
+          ],
+          "candidateMs": 0.010328,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.298218435321456
+        },
+        "weightBytes": 10616832
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 2024
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 2043
+          }
+        ],
+        "scratchBytes": 422912,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.00816,
+            0.008376,
+            0.008144
+          ],
+          "baselineMs": 0.00816,
+          "candidate": [
+            0.0068,
+            0.006696,
+            0.006824
+          ],
+          "candidateMs": 0.0068,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.2000000000000002
+        },
+        "weightBytes": 3538944
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1556
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1541
+          }
+        ],
+        "scratchBytes": 324608,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.007136,
+            0.007264,
+            0.007256
+          ],
+          "baselineMs": 0.007256,
+          "candidate": [
+            0.00524,
+            0.005272,
+            0.005168
+          ],
+          "candidateMs": 0.00524,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.384732824427481
+        },
+        "weightBytes": 3538944
+      },
+      {
+        "K": 1536,
+        "N": 256,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 253
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 251
+          }
+        ],
+        "scratchBytes": 64512,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.003144,
+            0.00468,
+            0.003112
+          ],
+          "baselineMs": 0.003144,
+          "candidate": [
+            0.003248,
+            0.003672,
+            0.003696
+          ],
+          "candidateMs": 0.003672,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 0.8562091503267975
+        },
+        "weightBytes": 442368
+      },
+      {
+        "K": 256,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1560
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1538
+          }
+        ],
+        "scratchBytes": 310272,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.004584,
+            0.00624,
+            0.004712
+          ],
+          "baselineMs": 0.004712,
+          "candidate": [
+            0.003032,
+            0.0032,
+            0.00308
+          ],
+          "candidateMs": 0.00308,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.52987012987013
+        },
+        "weightBytes": 442368
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 19
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 16
+          }
+        ],
+        "scratchBytes": 4168,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 612
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "zeros",
+        "rejectedRows": [
+          1,
+          5
+        ],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          }
+        ],
+        "scratchBytes": 4168,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 612
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "cancellation",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 19
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 19
+          }
+        ],
+        "scratchBytes": 4168,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 612
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 17
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 18
+          }
+        ],
+        "scratchBytes": 12360,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 20196
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "zeros",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          }
+        ],
+        "scratchBytes": 12360,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 20196
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": false,
+        "finite": true,
+        "pattern": "cancellation",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 21
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 19
+          }
+        ],
+        "scratchBytes": 12360,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 20196
+      },
+      {
+        "K": 12288,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1530
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1539
+          }
+        ],
+        "scratchBytes": 406528,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.369808,
+            0.296568,
+            0.296264
+          ],
+          "baselineMs": 0.296568,
+          "candidate": [
+            0.31704,
+            0.362608,
+            0.290912
+          ],
+          "candidateMs": 0.31704,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 0.9354277062831188
+        },
+        "weightBytes": 21233664
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1495
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1547
+          }
+        ],
+        "scratchBytes": 357376,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.149536,
+            0.154272,
+            0.17572
+          ],
+          "baselineMs": 0.154272,
+          "candidate": [
+            0.146608,
+            0.187312,
+            0.146992
+          ],
+          "candidateMs": 0.146992,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.049526504843801
+        },
+        "weightBytes": 10616832
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 2025
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 2043
+          }
+        ],
+        "scratchBytes": 422912,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.039496,
+            0.03948,
+            0.039544
+          ],
+          "baselineMs": 0.039496,
+          "candidate": [
+            0.038872,
+            0.03856,
+            0.038744
+          ],
+          "candidateMs": 0.038744,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.0194094569481726
+        },
+        "weightBytes": 3538944
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1556
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1540
+          }
+        ],
+        "scratchBytes": 324608,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.05124,
+            0.051544,
+            0.051544
+          ],
+          "baselineMs": 0.051544,
+          "candidate": [
+            0.050624,
+            0.050808,
+            0.05076
+          ],
+          "candidateMs": 0.05076,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 1.015445232466509
+        },
+        "weightBytes": 3538944
+      },
+      {
+        "K": 1536,
+        "N": 256,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 254
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 251
+          }
+        ],
+        "scratchBytes": 64512,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.038392,
+            0.038216,
+            0.038472
+          ],
+          "baselineMs": 0.038392,
+          "candidate": [
+            0.038352,
+            0.03856,
+            0.03848
+          ],
+          "candidateMs": 0.03848,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 0.9977130977130978
+        },
+        "weightBytes": 442368
+      },
+      {
+        "K": 256,
+        "N": 1536,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1554
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 1537
+          }
+        ],
+        "scratchBytes": 310272,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.00764,
+            0.008264,
+            0.0078
+          ],
+          "baselineMs": 0.0078,
+          "candidate": [
+            0.007864,
+            0.007816,
+            0.007752
+          ],
+          "candidateMs": 0.007816,
+          "method": "GPU timestamp",
+          "repetitions": 4,
+          "samples": 3,
+          "speedup": 0.9979529170931424
+        },
+        "weightBytes": 442368
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 21
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 16
+          }
+        ],
+        "scratchBytes": 4168,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 612
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "zeros",
+        "rejectedRows": [
+          1,
+          5
+        ],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          }
+        ],
+        "scratchBytes": 4168,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 612
+      },
+      {
+        "K": 32,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "cancellation",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 32
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 4
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 32
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 20
+          }
+        ],
+        "scratchBytes": 4168,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 612
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "normal",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 2
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 17
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 18
+          }
+        ],
+        "scratchBytes": 12360,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 20196
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "zeros",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 34
+          }
+        ],
+        "scratchBytes": 12360,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 20196
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 2,
+        "bitMismatches": 0,
+        "f16": true,
+        "finite": true,
+        "pattern": "cancellation",
+        "rejectedRows": [],
+        "results": [
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 32
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 0,
+            "negativeZeros": 0,
+            "zeros": 4
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 1
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 1,
+            "negativeZeros": 0,
+            "zeros": 0
+          },
+          {
+            "bias": 0,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 32
+          },
+          {
+            "bias": 1,
+            "bitMismatches": 0,
+            "mode": 2,
+            "negativeZeros": 0,
+            "zeros": 20
+          }
+        ],
+        "scratchBytes": 12360,
+        "signedZeroBitsChecked": true,
+        "tailGuard": true,
+        "timing": null,
+        "weightBytes": 20196
+      }
+    ],
+    "fullBits": true,
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "metricMs": 4451.24,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "24 MiB",
+          "pid": 3522162,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "scratchLimitBytes": 67108864,
+  "status": "done",
+  "wasm": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

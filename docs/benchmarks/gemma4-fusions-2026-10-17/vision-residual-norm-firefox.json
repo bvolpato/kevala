@@ -1,0 +1,4657 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "name": "WebGPU",
+    "workgroupStorageBytes": 16384
+  },
+  "backend": "webgpu",
+  "compile": {
+    "ok": true,
+    "sharedBytes": 5120,
+    "source": "current kevala-base.wasm rendered production WGSL",
+    "workgroupSize": 256
+  },
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 32,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 544,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 32
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 64,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1088,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 64
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 256,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 4352,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 256
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": false,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": false,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          "Infinity"
+        ],
+        "clampAfter": true,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "zero",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 768,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "zero",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 13056,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "zero",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 1024,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 1,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "zero",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 17408,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 17,
+        "timings": {
+          "fused": [],
+          "old": []
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 1024
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.0044375,
+            0.0044375,
+            0.0044375,
+            0.0045,
+            0.0044375,
+            0.0044375
+          ],
+          "old": [
+            0.00625,
+            0.0061875,
+            0.0063125,
+            0.0061875,
+            0.00625,
+            0.0061875
+          ]
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 241920,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 315,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.0045,
+            0.0044375,
+            0.0044375,
+            0.0045,
+            0.0045,
+            0.0044375
+          ],
+          "old": [
+            0.0061875,
+            0.0061875,
+            0.00625,
+            0.0061875,
+            0.00625,
+            0.0061875
+          ]
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          "-Infinity",
+          "Infinity"
+        ],
+        "clampAfter": false,
+        "clampAfterNext": false,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.0073125,
+            0.00725,
+            0.00725,
+            0.00725,
+            0.0075625,
+            0.007375
+          ],
+          "old": [
+            0.009625,
+            0.0095,
+            0.0096875,
+            0.0095,
+            0.009625,
+            0.00975
+          ]
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      },
+      {
+        "bounds": [
+          -0.75,
+          1.25
+        ],
+        "boundsNext": [
+          -0.1875,
+          0.3125
+        ],
+        "clampAfter": false,
+        "clampAfterNext": true,
+        "disabledInputsPoisoned": true,
+        "normalized": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "normalized",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "ok": true,
+        "outputTailGuard": true,
+        "pattern": "signed",
+        "residual": {
+          "bitDifferences": 0,
+          "bitExact": true,
+          "checkedOutputs": 435456,
+          "firstDifference": null,
+          "label": "residual",
+          "maxAbs": 0,
+          "ok": true
+        },
+        "rows": 567,
+        "timing": true,
+        "timings": {
+          "fused": [
+            0.007125,
+            0.00725,
+            0.007125,
+            0.00725,
+            0.0074375,
+            0.00725
+          ],
+          "old": [
+            0.0095,
+            0.009375,
+            0.009625,
+            0.009625,
+            0.009625,
+            0.009875
+          ]
+        },
+        "weighted": true,
+        "weightedNext": true,
+        "width": 768
+      }
+    ],
+    "ok": true,
+    "tolerance": {
+      "absolute": 0,
+      "relative": 0
+    }
+  },
+  "done": true,
+  "kernel": "gemma4_vision_residual_norm",
+  "metricMs": 14371.5,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "constrainedVulkan": {
+      "backendPreference": "vulkan",
+      "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+      "ownedNvidiaContexts": [
+        {
+          "gpu": "NVIDIA GeForce RTX 5070 Ti",
+          "memory": "24 MiB",
+          "pid": 3168612,
+          "process": "/usr/lib/firefox/firefox",
+          "type": "C+G"
+        }
+      ]
+    },
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+  },
+  "status": "done"
+}

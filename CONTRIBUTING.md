@@ -12,7 +12,7 @@ This page shows where the code lives and which checks to run before a change lan
 | `js/src` | The browser and Node runtime. npm publishes this directory. |
 | `app`, `assets`, `index.html` | The demo site. |
 | `examples` | Standalone pages that show one integration each. |
-| `dev` | Browser harness pages for GPU kernels and model checks. The site publishes every `.html` and `.js` file in this directory. |
+| `dev` | Browser harness pages for GPU kernels and model checks. The site publishes every `.html`, `.js`, and `.wgsl` file in this directory. |
 | `bench.html`, `parity.html`, `parity-kev.html` | The model benchmark page and the model parity pages. |
 | `scripts` | Build, check, and benchmark runners. `scripts/lib` holds the helpers that they share. |
 | `tools` | Python helpers: reference fixture generators, batch conversion, evaluations, and recordings. Run them with `uv run`. |

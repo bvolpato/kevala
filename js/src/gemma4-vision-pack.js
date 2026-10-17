@@ -25,7 +25,7 @@ export async function loadGemma4Vision(engine, options, gpu, signal, progress) {
     const size = packSize(header, headerBytes.byteLength);
     if (size > 1024 ** 3) throw new Error("vision companion exceeds the 1 GiB limit");
     const layout = gpuLayouts(header, headerBytes.byteLength, () => true)[1];
-    const vision = new GpuGemma4Vision(gpu, layout, header, { submitMode: options.submit || "split", fusedAttention: options.visionAttention !== "split" });
+    const vision = new GpuGemma4Vision(gpu, layout, header, { submitMode: options.submit || "split", fusedAttention: options.visionAttention !== "split", gpuKernel: options.gpuKernel || "auto" });
     const imageTokens = options.imageTokens ?? 70;
     const patches = imageTokens * cfg.pool * cfg.pool;
     try { vision.checkBuffer(patches * patches * cfg.heads * 4, "image attention scores"); }
@@ -50,6 +50,6 @@ export async function loadGemma4Vision(engine, options, gpu, signal, progress) {
     engine.vision = vision;
     engine.visionHeader = header;
     engine.imageTokens = imageTokens;
-    engine.visionPack = { bytes: size, cached: pack.cached, model: header.model, precision: "bf16" };
+    engine.visionPack = { bytes: size, cached: pack.cached, model: header.model, precision: "bf16", qkv: vision.qkv.diagnostics };
   } finally { await iterator.return?.(); }
 }

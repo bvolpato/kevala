@@ -1,0 +1,212 @@
+{
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "scope": "development probes before runtime integration",
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "m4Measured": false
+  },
+  "suffixF32": {
+    "enabled": false,
+    "correctness": true,
+    "cases": [
+      {
+        "N": 6144,
+        "K": 1536,
+        "T": 97,
+        "baselineMs": 0.256576,
+        "candidateMs": 0.27456
+      },
+      {
+        "N": 65,
+        "K": 1056,
+        "T": 97,
+        "baselineMs": 0.021744,
+        "candidateMs": 0.011
+      },
+      {
+        "N": 65,
+        "K": 1056,
+        "T": 97,
+        "baselineMs": 0.022192,
+        "candidateMs": 0.011512
+      },
+      {
+        "N": 65,
+        "K": 1056,
+        "T": 97,
+        "baselineMs": 0.021648,
+        "candidateMs": 0.011
+      },
+      {
+        "N": 65,
+        "K": 32,
+        "T": 97,
+        "baselineMs": 0.00796,
+        "candidateMs": 0.003512
+      },
+      {
+        "N": 12288,
+        "K": 1536,
+        "T": 97,
+        "baselineMs": 0.525856,
+        "candidateMs": 0.586888
+      }
+    ]
+  },
+  "suffixF16": {
+    "enabled": false,
+    "correctness": true,
+    "baselineMs": 0.303536,
+    "candidateMs": 0.303952
+  },
+  "pleAlias": {
+    "enabled": false,
+    "correctness": {
+      "allRowsValid": true,
+      "classification": {
+        "person_present": {
+          "accuracy": 1,
+          "correct": 31,
+          "total": 31
+        },
+        "smiling": {
+          "accuracy": 1,
+          "correct": 31,
+          "total": 31
+        }
+      },
+      "coldCaptureCountsUnchanged": true,
+      "coldCaptureParity": true,
+      "coldCheckCount": 1,
+      "hiddenWordsComparedBitForBit": true,
+      "measuredDecisionCount": 25,
+      "measuredPairCount": 3,
+      "ok": true,
+      "probabilityTolerance": 0,
+      "rawProbabilitiesComparedExactly": true,
+      "warmOutputsBitExact": true,
+      "warmupCount": 6
+    },
+    "metric": "Median whole-decoder GPU timestamp milliseconds, including encoded buffer copies. Excludes vision encoding, CPU map wait, image preprocessing, model load, and other CPU work.",
+    "timing": {
+      "alias": {
+        "gpu": {
+          "decisionsPerSecondEstimate": 56.46767158040815,
+          "inverseMedianMs": 0.05646767158040815,
+          "p50Ms": 17.709248000000002,
+          "p95Ms": 18.766688,
+          "samples": 12
+        },
+        "wall": {
+          "decisionsPerSecondEstimate": 38.59513701806357,
+          "inverseMedianMs": 0.038595137018063566,
+          "p50Ms": 25.90999999642372,
+          "p95Ms": 26.780000001192093,
+          "samples": 12
+        }
+      },
+      "copy": {
+        "gpu": {
+          "decisionsPerSecondEstimate": 56.594120550004305,
+          "inverseMedianMs": 0.056594120550004304,
+          "p50Ms": 17.66968,
+          "p95Ms": 18.48672,
+          "samples": 12
+        },
+        "wall": {
+          "decisionsPerSecondEstimate": 39.502271384324736,
+          "inverseMedianMs": 0.03950227138432474,
+          "p50Ms": 25.314999997615814,
+          "p95Ms": 44.435000002384186,
+          "samples": 12
+        }
+      },
+      "offRepeat": {
+        "gpu": {
+          "decisionsPerSecondEstimate": 54.56161271905396,
+          "inverseMedianMs": 0.054561612719053965,
+          "p50Ms": 18.327904,
+          "p95Ms": 18.327904,
+          "samples": 1
+        },
+        "wall": {
+          "decisionsPerSecondEstimate": 37.81433164191602,
+          "inverseMedianMs": 0.03781433164191602,
+          "p50Ms": 26.444999992847443,
+          "p95Ms": 26.444999992847443,
+          "samples": 1
+        }
+      }
+    }
+  },
+  "twoRowVector": {
+    "correctness": true,
+    "bitExact": true,
+    "cases": 34,
+    "metric": "F32 registered two-row matvec versus identical lane64 dot with exact fixed32 subgroup reduction; GPU timestamps, 3 paired samples x4 reps",
+    "shapes": [
+      {
+        "kind": "plain",
+        "N": 6144,
+        "K": 1536,
+        "baselineMs": 0.012832,
+        "candidateMs": 0.011576,
+        "selected": true
+      },
+      {
+        "kind": "plain",
+        "N": 12288,
+        "K": 1536,
+        "baselineMs": 0.02296,
+        "candidateMs": 0.020512,
+        "selected": true
+      },
+      {
+        "kind": "plain",
+        "N": 1536,
+        "K": 6144,
+        "baselineMs": 0.010088,
+        "candidateMs": 0.010032,
+        "selected": false
+      },
+      {
+        "kind": "plain",
+        "N": 2048,
+        "K": 1536,
+        "baselineMs": 0.006576,
+        "candidateMs": 0.006136,
+        "selected": true
+      },
+      {
+        "kind": "plain",
+        "N": 1536,
+        "K": 2048,
+        "baselineMs": 0.005424,
+        "candidateMs": 0.005,
+        "selected": true
+      },
+      {
+        "kind": "gelu",
+        "N": 6144,
+        "K": 1536,
+        "baselineMs": 0.016376,
+        "candidateMs": 0.015088,
+        "selected": true
+      },
+      {
+        "kind": "gelu",
+        "N": 12288,
+        "K": 1536,
+        "baselineMs": 0.034392,
+        "candidateMs": 0.031368,
+        "selected": true
+      }
+    ]
+  },
+  "evidence": [
+    "suffix-gelu-bn32-f32-chrome.json.gz",
+    "suffix-gelu-bn32-first-f16-firefox.json.gz",
+    "matvec-two-subgroup-vector-full-chrome.json.gz",
+    "ple-alias-fast-chrome.json.gz"
+  ]
+}

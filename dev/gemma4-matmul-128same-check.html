@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala WG128 BM56 matmul guard</title>
+<h1>WG128 BM56 matmul guard</h1>
+<p>Dev-only F32 Q8 probe. It compares the registered 256-thread BM56/BN64 kernel with a 128-thread BM56/BN64 candidate. Both retain the virtual BM64/BN64 split policy and the same eight ordered K/4 dot steps; the candidate assigns fourteen vec2 accumulators (28 scalar outputs) to each thread.</p>
+<p>At T=97 it checks full output and split-partial raw bits, all three output modes, bias on/off, and sentinel tails before and after paired GPU timestamp measurements. It covers the Gemma 4 gate, down, Q, and O projections plus a ragged N/K shape. Temporary allocations are capped at 64 MiB, excluding immutable weights.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matmul-128same-check.js"></script>

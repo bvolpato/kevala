@@ -23,6 +23,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   let qbase = t * p.heads * H + head * H;
   let kv_head = head / (p.heads / p.kv_heads);
   let position = POS[t];
+  var branch_offset = 0u;
+  if (p._a != 0u) { branch_offset = POS[g.T + t]; }
   for (var d = lane; d < H; d += 256u) { qtile[d] = Q[qbase + d]; }
   if (lane == 0u) { state[0] = -3.402823466e+38; state[1] = 0.0; }
   workgroupBarrier();
@@ -34,7 +36,8 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
   for (var j0 = start; j0 < end; j0 += 128u) {
     for (var block = 0u; block < 4u; block++) {
       let j = j0 + block * 32u + lane / 8u;
-      let kbase = j * p.kv_heads * H + kv_head * H;
+      let physical_key = j + select(0u, branch_offset, j >= g._b);
+      let kbase = physical_key * p.kv_heads * H + kv_head * H;
       var sum = 0.0;
       if (j < end) {
         if (H % 4u == 0u) {
@@ -83,7 +86,9 @@ fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) l
     acc0 *= correction;
     acc1 *= correction;
     for (var j = 0u; j < min(128u, end - j0); j++) {
-      let vbase = (j0 + j) * p.kv_heads * H + kv_head * H;
+      let logical_key = j0 + j;
+      let physical_key = logical_key + select(0u, branch_offset, logical_key >= g._b);
+      let vbase = physical_key * p.kv_heads * H + kv_head * H;
       let w = scores[j];
       if (lane < H) { acc0 += w * V[vbase + lane]; }
       if (lane + 256u < H) { acc1 += w * V[vbase + lane + 256u]; }

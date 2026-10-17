@@ -1,0 +1,85 @@
+// Fuse the unchanged RMS scale kernel with the following weighted RMS of its stored output.
+//#if SUBGROUPS
+//#include ordered_sum
+//#endif
+//#include common
+
+struct P { D: u32, eps: f32, mode: u32, _a: u32 }
+@group(0) @binding(1) var<uniform> p: P;
+@group(0) @binding(2) var<storage, read> X: array<f32>;
+@group(0) @binding(3) var<storage, read> W: array<f32>;
+@group(0) @binding(4) var<storage, read_write> Y: array<f32>;
+@group(0) @binding(5) var<storage, read> S: array<f32>;
+@group(0) @binding(6) var<storage, read> Wnext: array<f32>;
+@group(0) @binding(7) var<storage, read_write> H: array<f32>;
+var<workgroup> sums: array<f32, 256>;
+
+@compute @workgroup_size(256)
+fn main(@builtin(workgroup_id) wg: vec3<u32>, @builtin(local_invocation_index) lane: u32
+//#if SUBGROUPS
+  , @builtin(subgroup_invocation_id) subgroupLane: u32
+//#endif
+) {
+  let t = wg.x;
+  if (t >= g.T) { return; }
+  let base = t * p.D;
+  var sum = 0.0;
+  for (var d = lane; d < p.D; d += 256u) {
+    let v = X[base + d];
+    sum += v * v;
+  }
+  sums[lane] = sum;
+  workgroupBarrier();
+//#if SUBGROUPS
+  for (var stride = 128u; stride >= 32u; stride >>= 1u) {
+//#else
+  for (var stride = 128u; stride > 0u; stride >>= 1u) {
+//#endif
+    if (lane < stride) { sums[lane] += sums[lane + stride]; }
+    workgroupBarrier();
+  }
+//#if SUBGROUPS
+  let total = ordered_sum32(sums[subgroupLane], subgroupLane);
+//#else
+  let total = sums[0];
+//#endif
+  let inv = inverseSqrt(total / f32(p.D) + p.eps);
+  let scalar = S[0];
+  for (var d = lane; d < p.D; d += 256u) {
+    let factor = select(1.0, W[d], p.mode == 1u || p.mode == 2u);
+    let normalized = X[base + d] * inv;
+    let weighted = normalized * factor;
+    if (p.mode == 2u) {
+      let updated = Y[base + d] + weighted;
+      Y[base + d] = updated * scalar;
+    } else {
+      Y[base + d] = weighted * scalar;
+    }
+  }
+  storageBarrier();
+  var sum2 = 0.0;
+  for (var d = lane; d < p.D; d += 256u) {
+    let updated = Y[base + d];
+    sum2 += updated * updated;
+  }
+  sums[lane] = sum2;
+  workgroupBarrier();
+//#if SUBGROUPS
+  for (var stride = 128u; stride >= 32u; stride >>= 1u) {
+//#else
+  for (var stride = 128u; stride > 0u; stride >>= 1u) {
+//#endif
+    if (lane < stride) { sums[lane] += sums[lane + stride]; }
+    workgroupBarrier();
+  }
+//#if SUBGROUPS
+  let total2 = ordered_sum32(sums[subgroupLane], subgroupLane);
+//#else
+  let total2 = sums[0];
+//#endif
+  let invResidual = inverseSqrt(total2 / f32(p.D) + p.eps);
+  for (var d = lane; d < p.D; d += 256u) {
+    let normalized = Y[base + d] * invResidual;
+    H[base + d] = normalized * Wnext[d];
+  }
+}

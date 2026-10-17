@@ -1,0 +1,5094 @@
+{
+  "adapter": {
+    "architecture": "blackwell",
+    "description": null,
+    "device": null,
+    "isFallbackAdapter": false,
+    "limits": {
+      "maxBufferSize": 4294967292,
+      "maxComputeWorkgroupStorageSize": 49152,
+      "maxStorageBufferBindingSize": 2147483644
+    },
+    "name": "nvidia blackwell",
+    "supportedFeatures": [
+      "bgra8unorm-storage",
+      "chromium-experimental-multi-draw-indirect",
+      "chromium-experimental-sampling-resource-table",
+      "chromium-experimental-subgroup-matrix",
+      "chromium-experimental-timestamp-query-inside-passes",
+      "clip-distances",
+      "core-features-and-limits",
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "dual-source-blending",
+      "float32-blendable",
+      "float32-filterable",
+      "indirect-first-instance",
+      "primitive-index",
+      "rg11b10ufloat-renderable",
+      "subgroup-size-control",
+      "subgroups",
+      "texture-component-swizzle",
+      "texture-compression-bc",
+      "texture-compression-bc-sliced-3d",
+      "texture-compression-unaligned",
+      "texture-formats-tier1",
+      "texture-formats-tier2",
+      "timestamp-query"
+    ],
+    "vendor": "nvidia"
+  },
+  "allocationSequence": [
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 18.78110621072974,
+      "elapsedMs": 53.24499998986721,
+      "frameIndex": 0,
+      "id": "synthetic-0",
+      "phase": "shapeSequence",
+      "rawProbabilities": {
+        "person_present": [
+          2.696762521736673e-06,
+          0.9999972581863403
+        ],
+        "smiling": [
+          1,
+          1.9659517069836596e-10
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.484541796058985,
+          "minFinalRms": 3.2264066494917176
+        },
+        "forward": 47.230000004172325,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.04999999701976776,
+          "forward": 2.875,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 2.1700000017881393,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.024999991059303284,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 5.469999998807907,
+        "readout": 0.16500000655651093,
+        "tokenize": 0.36499999463558197,
+        "tokens": 229,
+        "total": 52.86500000953674
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.34720229493891,
+      "elapsedMs": 69.70000000298023,
+      "frameIndex": 1,
+      "id": "synthetic-1",
+      "phase": "shapeSequence",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          3.588507624385784e-08
+        ],
+        "smiling": [
+          1,
+          3.8359834753087796e-10
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.068579022075698,
+          "minFinalRms": 3.7295208988058257
+        },
+        "forward": 57.525000005960464,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.025000005960464478,
+          "forward": 8.135000005364418,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.4149999916553497,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.014999985694885254,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 11.82999999821186,
+        "readout": 0.11999998986721039,
+        "tokenize": 0.25,
+        "tokens": 331,
+        "total": 69.47499999403954
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 17.946877243743618,
+      "elapsedMs": 55.71999999880791,
+      "frameIndex": 2,
+      "id": "synthetic-2",
+      "phase": "shapeSequence",
+      "rawProbabilities": {
+        "person_present": [
+          7.840528996894136e-05,
+          0.9999215602874756
+        ],
+        "smiling": [
+          1,
+          8.19665030293848e-11
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 2,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.496360261699215,
+          "minFinalRms": 3.239538608672123
+        },
+        "forward": 45.28499999642372,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.08000001311302185,
+          "forward": 7.6400000005960464,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.9749999940395355,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.030000001192092896,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 9.940000012516975,
+        "readout": 0.1850000023841858,
+        "tokenize": 0.24500000476837158,
+        "tokens": 229,
+        "total": 55.41000001132488
+      }
+    }
+  ],
+  "backend": "webgpu",
+  "blockSize": 3,
+  "budgets": [
+    70,
+    40,
+    16
+  ],
+  "comparisonWith70": {
+    "16": {
+      "comparedSamples": 12,
+      "decisionSignChanges": {
+        "person_present": 3,
+        "smiling": 3
+      },
+      "maxProbabilityDelta": 0.9999999994599829
+    },
+    "40": {
+      "comparedSamples": 12,
+      "decisionSignChanges": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "maxProbabilityDelta": 0.07584645694078063
+    }
+  },
+  "correctness": {
+    "actualSoftTokens": {
+      "16": [
+        12
+      ],
+      "40": [
+        35
+      ],
+      "70": [
+        63
+      ]
+    },
+    "allRawProbabilitiesFinite": true,
+    "allSamplesWithinBudget": true,
+    "allScoresFinite": true,
+    "budgets": [
+      70,
+      40,
+      16
+    ],
+    "labelChecks": {
+      "accuracy": 0.875,
+      "checks": [
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 0,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 0,
+          "score": 0.92
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 1,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 1,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": false,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 2,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 2,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 0,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 0,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 1,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 1,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": false,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 2,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 2,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 0,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 0,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 1,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": false,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 1,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 2,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 2,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 3,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 3,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 4,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 4,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 5,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 5,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 3,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 3,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 4,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 4,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 5,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": false,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 5,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 3,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 3,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 4,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 4,
+          "score": 0.92
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 5,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 5,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 6,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 6,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 7,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 7,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 8,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 8,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": false,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 6,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 6,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 7,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 7,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 8,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 8,
+          "score": 0.92
+        },
+        {
+          "budget": 40,
+          "correct": false,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 6,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 6,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 7,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 7,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 8,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_front.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 8,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 9,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 9,
+          "score": 1
+        },
+        {
+          "budget": 70,
+          "correct": false,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 10,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 10,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 11,
+          "score": 0
+        },
+        {
+          "budget": 70,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 11,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 9,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": true,
+          "sampleIndex": 9,
+          "score": 1
+        },
+        {
+          "budget": 40,
+          "correct": false,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 10,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 10,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 11,
+          "score": 0
+        },
+        {
+          "budget": 40,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 11,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 9,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": false,
+          "expected": true,
+          "id": "smiling_outdoors.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 9,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": true,
+          "id": "neutral_woman.jpg",
+          "key": "person_present",
+          "predicted": true,
+          "sampleIndex": 10,
+          "score": 1
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "neutral_woman.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 10,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "person_present",
+          "predicted": false,
+          "sampleIndex": 11,
+          "score": 0
+        },
+        {
+          "budget": 16,
+          "correct": true,
+          "expected": false,
+          "id": "no_person_hubble.jpg",
+          "key": "smiling",
+          "predicted": false,
+          "sampleIndex": 11,
+          "score": 0
+        }
+      ],
+      "correct": 63,
+      "count": 72
+    },
+    "lowHighLowReallocation": {
+      "actualSoftTokens": [
+        12,
+        63,
+        12
+      ],
+      "changedPixels": true,
+      "ok": true,
+      "requestedBudgets": [
+        16,
+        70,
+        16
+      ],
+      "samples": [
+        {
+          "actualSoftTokens": 12,
+          "budget": 16,
+          "completedFps": 18.78110621072974,
+          "elapsedMs": 53.24499998986721,
+          "frameIndex": 0,
+          "id": "synthetic-0",
+          "phase": "shapeSequence",
+          "rawProbabilities": {
+            "person_present": [
+              2.696762521736673e-06,
+              0.9999972581863403
+            ],
+            "smiling": [
+              1,
+              1.9659517069836596e-10
+            ]
+          },
+          "requestedImageTokens": 16,
+          "sampleIndex": 0,
+          "scores": {
+            "person_present": 1,
+            "smiling": 0
+          },
+          "timing": {
+            "batched": 1,
+            "decoder": {
+              "maxFinalRms": 4.484541796058985,
+              "minFinalRms": 3.2264066494917176
+            },
+            "forward": 47.230000004172325,
+            "image": {
+              "attention": "fused-f32",
+              "decode": 0.04999999701976776,
+              "forward": 2.875,
+              "forwardMode": "submission",
+              "images": 1,
+              "patches": 144,
+              "preprocess": 2.1700000017881393,
+              "softTokens": 12
+            },
+            "ple": {
+              "cacheHits": 3,
+              "ms": 0.024999991059303284,
+              "sequences": 2
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "sharedPrefixTokens": 66,
+              "totalTokens": 229
+            },
+            "prepare": 5.469999998807907,
+            "readout": 0.16500000655651093,
+            "tokenize": 0.36499999463558197,
+            "tokens": 229,
+            "total": 52.86500000953674
+          }
+        },
+        {
+          "actualSoftTokens": 63,
+          "budget": 70,
+          "completedFps": 14.34720229493891,
+          "elapsedMs": 69.70000000298023,
+          "frameIndex": 1,
+          "id": "synthetic-1",
+          "phase": "shapeSequence",
+          "rawProbabilities": {
+            "person_present": [
+              1,
+              3.588507624385784e-08
+            ],
+            "smiling": [
+              1,
+              3.8359834753087796e-10
+            ]
+          },
+          "requestedImageTokens": 70,
+          "sampleIndex": 1,
+          "scores": {
+            "person_present": 0,
+            "smiling": 0
+          },
+          "timing": {
+            "batched": 1,
+            "decoder": {
+              "maxFinalRms": 4.068579022075698,
+              "minFinalRms": 3.7295208988058257
+            },
+            "forward": 57.525000005960464,
+            "image": {
+              "attention": "fused-f32",
+              "decode": 0.025000005960464478,
+              "forward": 8.135000005364418,
+              "forwardMode": "submission",
+              "images": 1,
+              "patches": 630,
+              "preprocess": 3.4149999916553497,
+              "softTokens": 63
+            },
+            "ple": {
+              "cacheHits": 3,
+              "ms": 0.014999985694885254,
+              "sequences": 2
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 117,
+              "sharedPrefixTokens": 117,
+              "totalTokens": 331
+            },
+            "prepare": 11.82999999821186,
+            "readout": 0.11999998986721039,
+            "tokenize": 0.25,
+            "tokens": 331,
+            "total": 69.47499999403954
+          }
+        },
+        {
+          "actualSoftTokens": 12,
+          "budget": 16,
+          "completedFps": 17.946877243743618,
+          "elapsedMs": 55.71999999880791,
+          "frameIndex": 2,
+          "id": "synthetic-2",
+          "phase": "shapeSequence",
+          "rawProbabilities": {
+            "person_present": [
+              7.840528996894136e-05,
+              0.9999215602874756
+            ],
+            "smiling": [
+              1,
+              8.19665030293848e-11
+            ]
+          },
+          "requestedImageTokens": 16,
+          "sampleIndex": 2,
+          "scores": {
+            "person_present": 1,
+            "smiling": 0
+          },
+          "timing": {
+            "batched": 1,
+            "decoder": {
+              "maxFinalRms": 4.496360261699215,
+              "minFinalRms": 3.239538608672123
+            },
+            "forward": 45.28499999642372,
+            "image": {
+              "attention": "fused-f32",
+              "decode": 0.08000001311302185,
+              "forward": 7.6400000005960464,
+              "forwardMode": "submission",
+              "images": 1,
+              "patches": 144,
+              "preprocess": 1.9749999940395355,
+              "softTokens": 12
+            },
+            "ple": {
+              "cacheHits": 3,
+              "ms": 0.030000001192092896,
+              "sequences": 2
+            },
+            "prefixReuse": {
+              "enabled": true,
+              "reusedTokens": 66,
+              "sharedPrefixTokens": 66,
+              "totalTokens": 229
+            },
+            "prepare": 9.940000012516975,
+            "readout": 0.1850000023841858,
+            "tokenize": 0.24500000476837158,
+            "tokens": 229,
+            "total": 55.41000001132488
+          }
+        }
+      ]
+    },
+    "maxInFlight": 1,
+    "mixedBudgetBatch": {
+      "budgets": [
+        16,
+        70,
+        40
+      ],
+      "maxProbabilityDelta": 0,
+      "timing": {
+        "batched": 3,
+        "decoder": {
+          "maxFinalRms": 6.354108172811308,
+          "minFinalRms": 2.7030314123779866
+        },
+        "forward": 148.95499999821186,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.20500001311302185,
+          "forward": 18.430000007152557,
+          "forwardMode": "submission",
+          "images": 3,
+          "patches": 1134,
+          "preprocess": 7.214999973773956,
+          "softTokens": 110
+        },
+        "ple": {
+          "cacheHits": 9,
+          "ms": 0.0950000137090683,
+          "sequences": 6
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 272,
+          "sharedPrefixTokens": 272,
+          "totalTokens": 835
+        },
+        "prepare": 26.260000005364418,
+        "readout": 0.375,
+        "tokenize": 0.39000000059604645,
+        "tokens": 835,
+        "total": 175.58500000834465
+      }
+    },
+    "ok": true,
+    "samples": 36,
+    "shapeChanged": true,
+    "warmups": 6
+  },
+  "done": true,
+  "elapsedMs": 15017.335000008345,
+  "frameSize": {
+    "height": 240,
+    "width": 320
+  },
+  "gpuKernel": "generic",
+  "info": {
+    "arch": "gemma4",
+    "backend": "webgpu",
+    "config": {
+      "arch": "gemma4",
+      "attention_bias": false,
+      "attention_dropout": 0,
+      "attention_k_eq_v": false,
+      "backbone": "gemma4_text",
+      "block": 32,
+      "bos_token_id": 2,
+      "dtype": "bfloat16",
+      "embedding_scale": 39.25,
+      "enable_moe_block": false,
+      "eos_token_id": 1,
+      "excluded_modalities": [
+        "image",
+        "video",
+        "audio"
+      ],
+      "expert_intermediate_size": null,
+      "final_logit_softcapping": 30,
+      "global_head_dim": 512,
+      "head_dim": 256,
+      "hidden_activation": "gelu_pytorch_tanh",
+      "hidden_size": 1536,
+      "hidden_size_per_layer_input": 256,
+      "initializer_range": 0.02,
+      "intermediate_size": 6144,
+      "kv_shared_start": 15,
+      "label_token_ids": [
+        236776,
+        236799,
+        236780,
+        236796,
+        236788,
+        236811,
+        236823,
+        236814,
+        236777,
+        236863,
+        236855,
+        236798,
+        236792,
+        236797,
+        236806,
+        236791
+      ],
+      "label_tokens": "ABCDEFGHIJKLMNOP",
+      "layer_types": [
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "sliding_attention",
+        "full_attention"
+      ],
+      "max_input_tokens": 4096,
+      "max_position_embeddings": 131072,
+      "modalities": [
+        "text"
+      ],
+      "model_type": "gemma4_text",
+      "num_attention_heads": 8,
+      "num_experts": null,
+      "num_global_key_value_heads": null,
+      "num_hidden_layers": 35,
+      "num_key_value_heads": 1,
+      "num_kv_shared_layers": 20,
+      "pad_token_id": 0,
+      "ple_embedding_scale": 16,
+      "ple_input_scale": 0.7071067811865475,
+      "ple_projection_scale": 0.025515518153991442,
+      "prompt_version": "direct-options-v1",
+      "readout": "labels",
+      "rms_norm_eps": 1e-06,
+      "rope_parameters": {
+        "full_attention": {
+          "partial_rotary_factor": 0.25,
+          "rope_theta": 1000000,
+          "rope_type": "proportional"
+        },
+        "sliding_attention": {
+          "rope_theta": 10000,
+          "rope_type": "default"
+        }
+      },
+      "sliding_window": 512,
+      "template": {
+        "prompt_version": "direct-options-v1",
+        "type": "gemma4"
+      },
+      "tie_word_embeddings": true,
+      "top_k_experts": null,
+      "use_bidirectional_attention": null,
+      "use_cache": true,
+      "use_double_wide_mlp": true,
+      "vocab_size": 262144,
+      "vocab_size_per_layer_input": 262144
+    },
+    "cpuTiles": null,
+    "cpuTuning": null,
+    "flavor": "relaxed",
+    "gpu": "nvidia blackwell",
+    "gpuPowerPreference": "high-performance",
+    "gpuTuning": {
+      "elapsedMs": 0,
+      "matvec": {
+        "baseline": "generic",
+        "elapsedMs": 0.019999995827674866,
+        "kernel": "generic",
+        "method": "override",
+        "points": [],
+        "reason": "kernel-override",
+        "repetitions": 0,
+        "revision": 1,
+        "samples": 3,
+        "threshold": 0.05,
+        "tokens": 1,
+        "truncated": false
+      },
+      "method": "override",
+      "points": [],
+      "revision": 1,
+      "truncated": false
+    },
+    "gpuUnavailable": null,
+    "imageTokens": 70,
+    "loadMs": 11898.840000003576,
+    "memory": {
+      "embeddingStorage": "opfs-q8-rows",
+      "gpuWeights": 2449759116,
+      "hostWeights": 0,
+      "opfsWeights": 3095396352
+    },
+    "modalities": [
+      "text",
+      "image"
+    ],
+    "model": {
+      "author": "Google (Gemma team)",
+      "base": "https://huggingface.co/google/gemma-4-E2B-it",
+      "base_revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "converter": "kevala 0.1.3",
+      "inspiration": "SemIf direct-options-v1 readout",
+      "license": "apache-2.0",
+      "method_license": "mit",
+      "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+      "method_source": "https://github.com/TheoLeeCJ/SemIf",
+      "name": "gemma-4-e2b",
+      "quantization": "BF16 source converted to symmetric int8 absmax, one f32 scale per 32 weights; norms and direct-option label readout in f32",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "source": "https://huggingface.co/google/gemma-4-E2B-it"
+    },
+    "pack": {
+      "bytes": 5217421952,
+      "cached": false
+    },
+    "stateCache": {
+      "backend": null,
+      "enabled": false,
+      "requested": true,
+      "supported": false
+    },
+    "threads": 1,
+    "vision": {
+      "bytes": 337302144,
+      "cached": false,
+      "model": {
+        "author": "Google (Gemma team)",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "gemma-4-e2b-vision",
+        "precision": "bf16",
+        "quantization": "unquantized BF16 vision weights; norms and clipping bounds in f32",
+        "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+        "source": "https://huggingface.co/google/gemma-4-E2B-it"
+      },
+      "precision": "bf16"
+    },
+    "warmupMs": 131.125
+  },
+  "labelChecks": {
+    "accuracy": 0.875,
+    "checks": [
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 0,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 0,
+        "score": 0.92
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 1,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 1,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": false,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 2,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 2,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 0,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 0,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 1,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 1,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": false,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 2,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 2,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 0,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 0,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 1,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": false,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 1,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 2,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 2,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 3,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 3,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 4,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 4,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 5,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 5,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 3,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 3,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 4,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 4,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 5,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": false,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 5,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 3,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 3,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 4,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 4,
+        "score": 0.92
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 5,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 5,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 6,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 6,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 7,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 7,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 8,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 8,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": false,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 6,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 6,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 7,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 7,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 8,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 8,
+        "score": 0.92
+      },
+      {
+        "budget": 40,
+        "correct": false,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 6,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 6,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 7,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 7,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 8,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_front.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 8,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 9,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 9,
+        "score": 1
+      },
+      {
+        "budget": 70,
+        "correct": false,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 10,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 10,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 11,
+        "score": 0
+      },
+      {
+        "budget": 70,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 11,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 9,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": true,
+        "sampleIndex": 9,
+        "score": 1
+      },
+      {
+        "budget": 40,
+        "correct": false,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 10,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 10,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 11,
+        "score": 0
+      },
+      {
+        "budget": 40,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 11,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 9,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": false,
+        "expected": true,
+        "id": "smiling_outdoors.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 9,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": true,
+        "id": "neutral_woman.jpg",
+        "key": "person_present",
+        "predicted": true,
+        "sampleIndex": 10,
+        "score": 1
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "neutral_woman.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 10,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "person_present",
+        "predicted": false,
+        "sampleIndex": 11,
+        "score": 0
+      },
+      {
+        "budget": 16,
+        "correct": true,
+        "expected": false,
+        "id": "no_person_hubble.jpg",
+        "key": "smiling",
+        "predicted": false,
+        "sampleIndex": 11,
+        "score": 0
+      }
+    ],
+    "correct": 63,
+    "count": 72
+  },
+  "loadMs": 11967.719999998808,
+  "lowHighLowReallocation": {
+    "actualSoftTokens": [
+      12,
+      63,
+      12
+    ],
+    "changedPixels": true,
+    "ok": true,
+    "requestedBudgets": [
+      16,
+      70,
+      16
+    ],
+    "samples": [
+      {
+        "actualSoftTokens": 12,
+        "budget": 16,
+        "completedFps": 18.78110621072974,
+        "elapsedMs": 53.24499998986721,
+        "frameIndex": 0,
+        "id": "synthetic-0",
+        "phase": "shapeSequence",
+        "rawProbabilities": {
+          "person_present": [
+            2.696762521736673e-06,
+            0.9999972581863403
+          ],
+          "smiling": [
+            1,
+            1.9659517069836596e-10
+          ]
+        },
+        "requestedImageTokens": 16,
+        "sampleIndex": 0,
+        "scores": {
+          "person_present": 1,
+          "smiling": 0
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.484541796058985,
+            "minFinalRms": 3.2264066494917176
+          },
+          "forward": 47.230000004172325,
+          "image": {
+            "attention": "fused-f32",
+            "decode": 0.04999999701976776,
+            "forward": 2.875,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 144,
+            "preprocess": 2.1700000017881393,
+            "softTokens": 12
+          },
+          "ple": {
+            "cacheHits": 3,
+            "ms": 0.024999991059303284,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 66,
+            "sharedPrefixTokens": 66,
+            "totalTokens": 229
+          },
+          "prepare": 5.469999998807907,
+          "readout": 0.16500000655651093,
+          "tokenize": 0.36499999463558197,
+          "tokens": 229,
+          "total": 52.86500000953674
+        }
+      },
+      {
+        "actualSoftTokens": 63,
+        "budget": 70,
+        "completedFps": 14.34720229493891,
+        "elapsedMs": 69.70000000298023,
+        "frameIndex": 1,
+        "id": "synthetic-1",
+        "phase": "shapeSequence",
+        "rawProbabilities": {
+          "person_present": [
+            1,
+            3.588507624385784e-08
+          ],
+          "smiling": [
+            1,
+            3.8359834753087796e-10
+          ]
+        },
+        "requestedImageTokens": 70,
+        "sampleIndex": 1,
+        "scores": {
+          "person_present": 0,
+          "smiling": 0
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.068579022075698,
+            "minFinalRms": 3.7295208988058257
+          },
+          "forward": 57.525000005960464,
+          "image": {
+            "attention": "fused-f32",
+            "decode": 0.025000005960464478,
+            "forward": 8.135000005364418,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 630,
+            "preprocess": 3.4149999916553497,
+            "softTokens": 63
+          },
+          "ple": {
+            "cacheHits": 3,
+            "ms": 0.014999985694885254,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 117,
+            "sharedPrefixTokens": 117,
+            "totalTokens": 331
+          },
+          "prepare": 11.82999999821186,
+          "readout": 0.11999998986721039,
+          "tokenize": 0.25,
+          "tokens": 331,
+          "total": 69.47499999403954
+        }
+      },
+      {
+        "actualSoftTokens": 12,
+        "budget": 16,
+        "completedFps": 17.946877243743618,
+        "elapsedMs": 55.71999999880791,
+        "frameIndex": 2,
+        "id": "synthetic-2",
+        "phase": "shapeSequence",
+        "rawProbabilities": {
+          "person_present": [
+            7.840528996894136e-05,
+            0.9999215602874756
+          ],
+          "smiling": [
+            1,
+            8.19665030293848e-11
+          ]
+        },
+        "requestedImageTokens": 16,
+        "sampleIndex": 2,
+        "scores": {
+          "person_present": 1,
+          "smiling": 0
+        },
+        "timing": {
+          "batched": 1,
+          "decoder": {
+            "maxFinalRms": 4.496360261699215,
+            "minFinalRms": 3.239538608672123
+          },
+          "forward": 45.28499999642372,
+          "image": {
+            "attention": "fused-f32",
+            "decode": 0.08000001311302185,
+            "forward": 7.6400000005960464,
+            "forwardMode": "submission",
+            "images": 1,
+            "patches": 144,
+            "preprocess": 1.9749999940395355,
+            "softTokens": 12
+          },
+          "ple": {
+            "cacheHits": 3,
+            "ms": 0.030000001192092896,
+            "sequences": 2
+          },
+          "prefixReuse": {
+            "enabled": true,
+            "reusedTokens": 66,
+            "sharedPrefixTokens": 66,
+            "totalTokens": 229
+          },
+          "prepare": 9.940000012516975,
+          "readout": 0.1850000023841858,
+          "tokenize": 0.24500000476837158,
+          "tokens": 229,
+          "total": 55.41000001132488
+        }
+      }
+    ]
+  },
+  "manifestUrl": "http://127.0.0.1:18086/tmp/vision-quality/images.json",
+  "memory": {
+    "embeddingStorage": "opfs-q8-rows",
+    "gpuWeights": 2449759116,
+    "hostWeights": 0,
+    "opfsWeights": 3095396352
+  },
+  "metricMs": 54.803333333383,
+  "mixedBudgetBatch": {
+    "budgets": [
+      16,
+      70,
+      40
+    ],
+    "maxProbabilityDelta": 0,
+    "timing": {
+      "batched": 3,
+      "decoder": {
+        "maxFinalRms": 6.354108172811308,
+        "minFinalRms": 2.7030314123779866
+      },
+      "forward": 148.95499999821186,
+      "image": {
+        "attention": "fused-f32",
+        "decode": 0.20500001311302185,
+        "forward": 18.430000007152557,
+        "forwardMode": "submission",
+        "images": 3,
+        "patches": 1134,
+        "preprocess": 7.214999973773956,
+        "softTokens": 110
+      },
+      "ple": {
+        "cacheHits": 9,
+        "ms": 0.0950000137090683,
+        "sequences": 6
+      },
+      "prefixReuse": {
+        "enabled": true,
+        "reusedTokens": 272,
+        "sharedPrefixTokens": 272,
+        "totalTokens": 835
+      },
+      "prepare": 26.260000005364418,
+      "readout": 0.375,
+      "tokenize": 0.39000000059604645,
+      "tokens": 835,
+      "total": 175.58500000834465
+    }
+  },
+  "pack": {
+    "bytes": 5217421952,
+    "cached": false
+  },
+  "phase": "disposed",
+  "questions": {
+    "person_present": {
+      "instructions": "Does the frame visibly contain at least one person?",
+      "type": "noul"
+    },
+    "smiling": {
+      "instructions": "Does a visible person have a smiling or visibly happy facial expression? Judge only the visible expression, not inner emotion.",
+      "type": "noul"
+    }
+  },
+  "requestedGpuFeatures": "default",
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "samples": [
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.243999715482804,
+      "elapsedMs": 70.20499999821186,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.1165036737103016e-11,
+          1
+        ],
+        "smiling": [
+          0.07589616626501083,
+          0.924103856086731
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0.92
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 5.155587708624415,
+          "minFinalRms": 3.22072943910983
+        },
+        "forward": 56.21999999880791,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07999999821186066,
+          "forward": 8.600000008940697,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 4.495000004768372,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.02499997615814209,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 13.450000002980232,
+        "readout": 0.17499999701976776,
+        "tokenize": 0.26000000536441803,
+        "tokens": 331,
+        "total": 69.8449999988079
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.26018617399372,
+      "elapsedMs": 65.5300000011921,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.353332195781377e-09,
+          1
+        ],
+        "smiling": [
+          4.7200616748455104e-09,
+          1
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.259202802400381,
+          "minFinalRms": 4.227294518092022
+        },
+        "forward": 56.21499998867512,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06499999761581421,
+          "forward": 3.2450000047683716,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 4.7650000005960464,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.014999985694885254,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 8.430000007152557,
+        "readout": 0.3700000047683716,
+        "tokenize": 0.33500000834465027,
+        "tokens": 331,
+        "total": 65.00499999523163
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.297969688791664,
+      "elapsedMs": 69.93999999761581,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          0.9999970197677612,
+          2.9720620204898296e-06
+        ],
+        "smiling": [
+          1,
+          8.84417694635431e-09
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 2,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.7485599823916105,
+          "minFinalRms": 3.14173595421161
+        },
+        "forward": 55.98499999940395,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07499998807907104,
+          "forward": 3.625,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 9.110000014305115,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.030000001192092896,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 13.159999996423721,
+        "readout": 0.2150000035762787,
+        "tokenize": 0.3149999976158142,
+        "tokens": 331,
+        "total": 69.35499998927116
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 16.091399144377792,
+      "elapsedMs": 62.145000010728836,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          3.322852819565014e-07,
+          0.9999996423721313
+        ],
+        "smiling": [
+          4.970932423020713e-05,
+          0.9999502897262573
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.680855290095353,
+          "minFinalRms": 3.075596100245499
+        },
+        "forward": 47.78499999642372,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.125,
+          "forward": 10.635000005364418,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.5399999916553497,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.0650000125169754,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 13.700000002980232,
+        "readout": 0.18000000715255737,
+        "tokenize": 0.38500000536441803,
+        "tokens": 275,
+        "total": 61.65999999642372
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 18.84303750018421,
+      "elapsedMs": 53.06999999284744,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.8948042185561462e-08,
+          1
+        ],
+        "smiling": [
+          1.4008825928613078e-05,
+          0.999985933303833
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.8802947001683785,
+          "minFinalRms": 2.975323187545435
+        },
+        "forward": 47.45499999821186,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06999999284744263,
+          "forward": 2.365000009536743,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.3599999994039536,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.025000005960464478,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 5.110000014305115,
+        "readout": 0.14499999582767487,
+        "tokenize": 0.3100000023841858,
+        "tokens": 275,
+        "total": 52.71000000834465
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.06577693474322,
+      "elapsedMs": 52.44999998807907,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          0.9996777772903442,
+          0.0003222957602702081
+        ],
+        "smiling": [
+          1,
+          4.092143157663486e-08
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 2,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.5873368449198217,
+          "minFinalRms": 2.7030314123779866
+        },
+        "forward": 46.73499999940395,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06000000238418579,
+          "forward": 2.489999994635582,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.290000006556511,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.034999996423721313,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 5.165000006556511,
+        "readout": 0.2199999988079071,
+        "tokenize": 0.3150000125169754,
+        "tokens": 275,
+        "total": 52.12000000476837
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 18.253171489737674,
+      "elapsedMs": 54.78499999642372,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          7.40085144318621e-14,
+          1
+        ],
+        "smiling": [
+          0.00016789509390946478,
+          0.999832034111023
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 6.354108172811308,
+          "minFinalRms": 3.0929325667105414
+        },
+        "forward": 44.40500000119209,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07999999821186066,
+          "forward": 8.13000001013279,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.2650000005960464,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.025000005960464478,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 9.754999995231628,
+        "readout": 0.23499999940395355,
+        "tokenize": 0.26999999582767487,
+        "tokens": 229,
+        "total": 54.394999995827675
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 19.978024170554512,
+      "elapsedMs": 50.05500000715256,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.2271056110412246e-08,
+          1
+        ],
+        "smiling": [
+          1,
+          5.400170866032283e-10
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.648684068453874,
+          "minFinalRms": 3.973701622696154
+        },
+        "forward": 45.820000007748604,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06000000238418579,
+          "forward": 2.185000002384186,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.1749999970197678,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.02000001072883606,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.6949999928474426,
+        "readout": 0.1850000023841858,
+        "tokenize": 0.26999999582767487,
+        "tokens": 229,
+        "total": 49.70000000298023
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 17.465723519051316,
+      "elapsedMs": 57.25499999523163,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          9.988392412196845e-05,
+          0.9999001026153564
+        ],
+        "smiling": [
+          1,
+          5.511652911849296e-09
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 2,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.130013206372246,
+          "minFinalRms": 3.3416631329592756
+        },
+        "forward": 50.474999994039536,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.025000005960464478,
+          "forward": 3.699999988079071,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 2.060000002384186,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.07500000298023224,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 6.125,
+        "readout": 0.26999999582767487,
+        "tokenize": 0.32500000298023224,
+        "tokens": 229,
+        "total": 56.86999998986721
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 15.748031496062993,
+      "elapsedMs": 63.5,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          2.2228680007785329e-10
+        ],
+        "smiling": [
+          1,
+          1.2213968551832988e-11
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 3,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.431066236155457,
+          "minFinalRms": 3.9973068782135424
+        },
+        "forward": 48.16500000655651,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06000000238418579,
+          "forward": 10.560000002384186,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 3.9449999928474426,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.060000017285346985,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 14.834999993443489,
+        "readout": 0.09999999403953552,
+        "tokenize": 0.26000000536441803,
+        "tokens": 275,
+        "total": 63.099999994039536
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.318072056186335,
+      "elapsedMs": 51.76500000059605,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          3.322852819565014e-07,
+          0.9999996423721313
+        ],
+        "smiling": [
+          4.970932423020713e-05,
+          0.9999502897262573
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 4,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.680855290095353,
+          "minFinalRms": 3.075596100245499
+        },
+        "forward": 46.32500000298023,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06499999761581421,
+          "forward": 2.4549999982118607,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.2450000047683716,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.025000005960464478,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 4.9749999940395355,
+        "readout": 0.14000000059604645,
+        "tokenize": 0.19999998807907104,
+        "tokens": 275,
+        "total": 51.439999997615814
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.18833348972476,
+      "elapsedMs": 52.11500000953674,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.8948042185561462e-08,
+          1
+        ],
+        "smiling": [
+          1.4008825928613078e-05,
+          0.999985933303833
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 5,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.8802947001683785,
+          "minFinalRms": 2.975323187545435
+        },
+        "forward": 46.32999999821186,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06999999284744263,
+          "forward": 2.4549999982118607,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.540000006556511,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.025000005960464478,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 5.334999993443489,
+        "readout": 0.12000000476837158,
+        "tokenize": 0.26500000059604645,
+        "tokens": 275,
+        "total": 51.78499999642372
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 18.573551261767754,
+      "elapsedMs": 53.84000000357628,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          3.239048959602364e-11
+        ],
+        "smiling": [
+          1,
+          1.3742509734349095e-12
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 3,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.989570505349676,
+          "minFinalRms": 4.491771452826162
+        },
+        "forward": 44.60999999940395,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06000000238418579,
+          "forward": 7.3399999886751175,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.1200000047683716,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.03000001609325409,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 8.745000004768372,
+        "readout": 0.1550000011920929,
+        "tokenize": 0.22500000894069672,
+        "tokens": 229,
+        "total": 53.50500001013279
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 20.850708926953875,
+      "elapsedMs": 47.95999999344349,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          7.40085144318621e-14,
+          1
+        ],
+        "smiling": [
+          0.00016789509390946478,
+          0.999832034111023
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 4,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 6.354108172811308,
+          "minFinalRms": 3.0929325667105414
+        },
+        "forward": 43.88500000536442,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.12000000476837158,
+          "forward": 2.070000007748604,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.1949999928474426,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.015000000596046448,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.614999994635582,
+        "readout": 0.125,
+        "tokenize": 0.22499999403953552,
+        "tokens": 229,
+        "total": 47.625
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 20.650490450419067,
+      "elapsedMs": 48.42499999701977,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.2271056110412246e-08,
+          1
+        ],
+        "smiling": [
+          1,
+          5.400170866032283e-10
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 5,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.648684068453874,
+          "minFinalRms": 3.973701622696154
+        },
+        "forward": 44.28499999642372,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06999999284744263,
+          "forward": 2.0850000083446503,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.1599999964237213,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.02000001072883606,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.5650000125169754,
+        "readout": 0.19499999284744263,
+        "tokenize": 0.24500000476837158,
+        "tokens": 229,
+        "total": 48.04500000178814
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.2989919236288,
+      "elapsedMs": 69.93499998748302,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          2.133609261489866e-10
+        ],
+        "smiling": [
+          1,
+          1.817160137640439e-11
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 3,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.607411146300203,
+          "minFinalRms": 4.102865309690149
+        },
+        "forward": 55.75,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.08999998867511749,
+          "forward": 8.390000000596046,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 4.850000008940697,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.015000000596046448,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 13.605000004172325,
+        "readout": 0.1550000011920929,
+        "tokenize": 0.26500000059604645,
+        "tokens": 331,
+        "total": 69.51000000536442
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.725743040474294,
+      "elapsedMs": 63.59000000357628,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.1165036737103016e-11,
+          1
+        ],
+        "smiling": [
+          0.07589616626501083,
+          0.924103856086731
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 4,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0.92
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 5.155587708624415,
+          "minFinalRms": 3.22072943910983
+        },
+        "forward": 54.895000010728836,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.030000001192092896,
+          "forward": 3.9200000017881393,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.9300000071525574,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.025000005960464478,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 8.185000002384186,
+        "readout": 0.14499999582767487,
+        "tokenize": 0.3049999922513962,
+        "tokens": 331,
+        "total": 63.2250000089407
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.654351910999464,
+      "elapsedMs": 63.87999999523163,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.353332195781377e-09,
+          1
+        ],
+        "smiling": [
+          4.7200616748455104e-09,
+          1
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 5,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.259202802400381,
+          "minFinalRms": 4.227294518092022
+        },
+        "forward": 56.310000002384186,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.02000001072883606,
+          "forward": 3.1649999916553497,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.6749999970197678,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.024999991059303284,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 7.165000006556511,
+        "readout": 0.13499999046325684,
+        "tokenize": 0.29500000178813934,
+        "tokens": 331,
+        "total": 63.60999999940395
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 18.19670639673439,
+      "elapsedMs": 54.95499999821186,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          9.988392412196845e-05,
+          0.9999001026153564
+        ],
+        "smiling": [
+          1,
+          5.511652911849296e-09
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 6,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.130013206372246,
+          "minFinalRms": 3.3416631329592756
+        },
+        "forward": 44.34499999880791,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07000000774860382,
+          "forward": 8.70499999821186,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.104999989271164,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.014999985694885254,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 10.16499999165535,
+        "readout": 0.14000000059604645,
+        "tokenize": 0.2749999910593033,
+        "tokens": 229,
+        "total": 54.6499999910593
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 20.323137893229156,
+      "elapsedMs": 49.20499999821186,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          3.239048959602364e-11
+        ],
+        "smiling": [
+          1,
+          1.3742509734349095e-12
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 7,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.989570505349676,
+          "minFinalRms": 4.491771452826162
+        },
+        "forward": 45.28000000119209,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06499999761581421,
+          "forward": 2.070000007748604,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.1349999904632568,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.0299999862909317,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.5150000005960464,
+        "readout": 0.12999999523162842,
+        "tokenize": 0.24500000476837158,
+        "tokens": 229,
+        "total": 48.92499999701977
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 20.23472278356571,
+      "elapsedMs": 49.42000000178814,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          7.40085144318621e-14,
+          1
+        ],
+        "smiling": [
+          0.00016789509390946478,
+          0.999832034111023
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 8,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 6.354108172811308,
+          "minFinalRms": 3.0929325667105414
+        },
+        "forward": 44.940000012516975,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.09000000357627869,
+          "forward": 2.1800000071525574,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.4399999976158142,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999995827674866,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.969999998807907,
+        "readout": 0.16499999165534973,
+        "tokenize": 0.2549999952316284,
+        "tokens": 229,
+        "total": 49.07500000298023
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.246028920890314,
+      "elapsedMs": 70.19499999284744,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          0.9999970197677612,
+          2.9720620204898296e-06
+        ],
+        "smiling": [
+          1,
+          8.84417694635431e-09
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 6,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.7485599823916105,
+          "minFinalRms": 3.14173595421161
+        },
+        "forward": 57.07999999821186,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07000000774860382,
+          "forward": 8.28999999165535,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.9849999994039536,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.04499998688697815,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 12.625,
+        "readout": 0.1550000011920929,
+        "tokenize": 0.2800000011920929,
+        "tokens": 331,
+        "total": 69.85500000417233
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.302218823124841,
+      "elapsedMs": 65.34999999403954,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          2.133609261489866e-10
+        ],
+        "smiling": [
+          1,
+          1.817160137640439e-11
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 7,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.607411146300203,
+          "minFinalRms": 4.102865309690149
+        },
+        "forward": 56.929999992251396,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07499998807907104,
+          "forward": 3.1300000101327896,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 4.450000002980232,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999980926513672,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 7.930000007152557,
+        "readout": 0.15000000596046448,
+        "tokenize": 0.26999999582767487,
+        "tokens": 331,
+        "total": 65.01000000536442
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.790304753327574,
+      "elapsedMs": 63.32999999821186,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.1165036737103016e-11,
+          1
+        ],
+        "smiling": [
+          0.07589616626501083,
+          0.924103856086731
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 8,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0.92
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 5.155587708624415,
+          "minFinalRms": 3.22072943910983
+        },
+        "forward": 55.89000000059605,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06499999761581421,
+          "forward": 3.0250000059604645,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.614999994635582,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.030000001192092896,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 6.979999989271164,
+        "readout": 0.16500000655651093,
+        "tokenize": 0.26500000059604645,
+        "tokens": 331,
+        "total": 63.03499999642372
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 17.48557440184803,
+      "elapsedMs": 57.189999997615814,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          0.9996777772903442,
+          0.0003222957602702081
+        ],
+        "smiling": [
+          1,
+          4.092143157663486e-08
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 6,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.5873368449198217,
+          "minFinalRms": 2.7030314123779866
+        },
+        "forward": 46.644999995827675,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.07000000774860382,
+          "forward": 7.25500001013279,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.554999992251396,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.025000005960464478,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 10.140000000596046,
+        "readout": 0.125,
+        "tokenize": 0.25,
+        "tokens": 275,
+        "total": 56.90999999642372
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.204916461251475,
+      "elapsedMs": 52.06999999284744,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          2.2228680007785329e-10
+        ],
+        "smiling": [
+          1,
+          1.2213968551832988e-11
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 7,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.431066236155457,
+          "minFinalRms": 3.9973068782135424
+        },
+        "forward": 47.01500000059605,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.019999995827674866,
+          "forward": 2.269999995827675,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.145000010728836,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.024999991059303284,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 4.66499999165535,
+        "readout": 0.125,
+        "tokenize": 0.2199999988079071,
+        "tokens": 275,
+        "total": 51.804999992251396
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.116803669554997,
+      "elapsedMs": 52.310000002384186,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          3.322852819565014e-07,
+          0.9999996423721313
+        ],
+        "smiling": [
+          4.970932423020713e-05,
+          0.9999502897262573
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 8,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.680855290095353,
+          "minFinalRms": 3.075596100245499
+        },
+        "forward": 47,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.030000001192092896,
+          "forward": 2.2950000017881393,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.384999990463257,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.02000001072883606,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 4.950000002980232,
+        "readout": 0.11500000953674316,
+        "tokenize": 0.23000000417232513,
+        "tokens": 275,
+        "total": 52.065000012516975
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.382281029524737,
+      "elapsedMs": 69.5300000011921,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.353332195781377e-09,
+          1
+        ],
+        "smiling": [
+          4.7200616748455104e-09,
+          1
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 9,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.259202802400381,
+          "minFinalRms": 4.227294518092022
+        },
+        "forward": 57.49500000476837,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.019999995827674866,
+          "forward": 7.78999999165535,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.580000013113022,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.01000000536441803,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 11.644999995827675,
+        "readout": 0.13499999046325684,
+        "tokenize": 0.25,
+        "tokens": 331,
+        "total": 69.2749999910593
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.662933667768371,
+      "elapsedMs": 63.84499999880791,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          0.9999970197677612,
+          2.9720620204898296e-06
+        ],
+        "smiling": [
+          1,
+          8.84417694635431e-09
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 10,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.7485599823916105,
+          "minFinalRms": 3.14173595421161
+        },
+        "forward": 56.679999992251396,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.03999999165534973,
+          "forward": 3.084999993443489,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.385000005364418,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999995827674866,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 6.769999995827675,
+        "readout": 0.12000000476837158,
+        "tokenize": 0.2549999952316284,
+        "tokens": 331,
+        "total": 63.56999999284744
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 15.499070056798933,
+      "elapsedMs": 64.51999999582767,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          2.133609261489866e-10
+        ],
+        "smiling": [
+          1,
+          1.817160137640439e-11
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 11,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.607411146300203,
+          "minFinalRms": 4.102865309690149
+        },
+        "forward": 57.36499999463558,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.08500000834465027,
+          "forward": 2.9000000059604645,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 3.459999993443489,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.024999991059303284,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 6.71000000834465,
+        "readout": 0.13500000536441803,
+        "tokenize": 0.26500000059604645,
+        "tokens": 331,
+        "total": 64.21000000834465
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 17.29355814869799,
+      "elapsedMs": 57.82500000298023,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.8948042185561462e-08,
+          1
+        ],
+        "smiling": [
+          1.4008825928613078e-05,
+          0.999985933303833
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 9,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.8802947001683785,
+          "minFinalRms": 2.975323187545435
+        },
+        "forward": 47.474999994039536,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06999999284744263,
+          "forward": 7.325000002980232,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.280000001192093,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.030000001192092896,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 9.939999997615814,
+        "readout": 0.12000000476837158,
+        "tokenize": 0.26000000536441803,
+        "tokens": 275,
+        "total": 57.53499999642372
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.201228879307497,
+      "elapsedMs": 52.07999999821186,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          0.9996777772903442,
+          0.0003222957602702081
+        ],
+        "smiling": [
+          1,
+          4.092143157663486e-08
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 10,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.5873368449198217,
+          "minFinalRms": 2.7030314123779866
+        },
+        "forward": 46.445000007748604,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.0650000125169754,
+          "forward": 2.4200000017881393,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.4349999874830246,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999995827674866,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 5.174999997019768,
+        "readout": 0.14999999105930328,
+        "tokenize": 0.25,
+        "tokens": 275,
+        "total": 51.769999995827675
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 19.56181533463854,
+      "elapsedMs": 51.12000000476837,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          2.2228680007785329e-10
+        ],
+        "smiling": [
+          1,
+          1.2213968551832988e-11
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 11,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.431066236155457,
+          "minFinalRms": 3.9973068782135424
+        },
+        "forward": 45.42000000178814,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06999999284744263,
+          "forward": 2.6700000017881393,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.230000004172325,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999995827674866,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 5.230000004172325,
+        "readout": 0.12999999523162842,
+        "tokenize": 0.25,
+        "tokens": 275,
+        "total": 50.78000000119209
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 18.71257484591645,
+      "elapsedMs": 53.440000012516975,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          2.2271056110412246e-08,
+          1
+        ],
+        "smiling": [
+          1,
+          5.400170866032283e-10
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 9,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.648684068453874,
+          "minFinalRms": 3.973701622696154
+        },
+        "forward": 43.730000004172325,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06499999761581421,
+          "forward": 7.6600000113248825,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.2249999940395355,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.030000001192092896,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 9.229999989271164,
+        "readout": 0.1550000011920929,
+        "tokenize": 0.2749999910593033,
+        "tokens": 229,
+        "total": 53.11499999463558
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 20.68894176343534,
+      "elapsedMs": 48.33499999344349,
+      "expectedPerson": true,
+      "expectedSmile": false,
+      "frameIndex": 2,
+      "id": "neutral_woman.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          9.988392412196845e-05,
+          0.9999001026153564
+        ],
+        "smiling": [
+          1,
+          5.511652911849296e-09
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 10,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.130013206372246,
+          "minFinalRms": 3.3416631329592756
+        },
+        "forward": 44.304999992251396,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.015000000596046448,
+          "forward": 2.1000000089406967,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.2899999916553497,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.015000000596046448,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.6299999952316284,
+        "readout": 0.11500000953674316,
+        "tokenize": 0.2199999988079071,
+        "tokens": 229,
+        "total": 48.04999999701977
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 20.068231989481934,
+      "elapsedMs": 49.82999999821186,
+      "expectedPerson": false,
+      "expectedSmile": false,
+      "frameIndex": 3,
+      "id": "no_person_hubble.jpg",
+      "phase": "sample",
+      "rawProbabilities": {
+        "person_present": [
+          1,
+          3.239048959602364e-11
+        ],
+        "smiling": [
+          1,
+          1.3742509734349095e-12
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 11,
+      "scores": {
+        "person_present": 0,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.989570505349676,
+          "minFinalRms": 4.491771452826162
+        },
+        "forward": 45.4750000089407,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.025000005960464478,
+          "forward": 2.1749999970197678,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.280000001192093,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999995827674866,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 3.719999998807907,
+        "readout": 0.20499999821186066,
+        "tokenize": 0.23999999463558197,
+        "tokens": 229,
+        "total": 49.400000005960464
+      }
+    }
+  ],
+  "samplesPerBudget": 12,
+  "schedule": "3-sample budget blocks, order rotated once per block",
+  "source": "manifest",
+  "status": "done",
+  "summary": {
+    "16": {
+      "actualSoftTokens": [
+        12
+      ],
+      "completedFps": 19.433041028157934,
+      "meanMs": 51.45874999960264,
+      "p50Ms": 49.94250000268221,
+      "p95Ms": 55.98999999687076,
+      "requestedImageTokens": 16,
+      "samples": 12,
+      "scoreMeans": {
+        "person_present": 0.75,
+        "smiling": 0.25
+      }
+    },
+    "40": {
+      "actualSoftTokens": [
+        35
+      ],
+      "completedFps": 18.247065263653553,
+      "meanMs": 54.803333333383,
+      "p50Ms": 52.37999999523163,
+      "p95Ms": 62.75475000590086,
+      "requestedImageTokens": 40,
+      "samples": 12,
+      "scoreMeans": {
+        "person_present": 0.5,
+        "smiling": 0.5
+      }
+    },
+    "70": {
+      "actualSoftTokens": [
+        63
+      ],
+      "completedFps": 15.002813028113449,
+      "meanMs": 66.65416666368644,
+      "p50Ms": 65.43999999761581,
+      "p95Ms": 70.19949999526143,
+      "requestedImageTokens": 70,
+      "samples": 12,
+      "scoreMeans": {
+        "person_present": 0.5,
+        "smiling": 0.48
+      }
+    }
+  },
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.0.0 Safari/537.36",
+  "vision": {
+    "bytes": 337302144,
+    "cached": false,
+    "model": {
+      "author": "Google (Gemma team)",
+      "converter": "kevala 0.1.3",
+      "license": "apache-2.0",
+      "name": "gemma-4-e2b-vision",
+      "precision": "bf16",
+      "quantization": "unquantized BF16 vision weights; norms and clipping bounds in f32",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "source": "https://huggingface.co/google/gemma-4-E2B-it"
+    },
+    "precision": "bf16"
+  },
+  "visionAttention": "auto",
+  "warmupCountPerBudget": 2,
+  "warmups": [
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 7.42059958415103,
+      "elapsedMs": 134.76000000536442,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "warmup",
+      "rawProbabilities": {
+        "person_present": [
+          2.1165036737103016e-11,
+          1
+        ],
+        "smiling": [
+          0.07589616626501083,
+          0.924103856086731
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0.92
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 5.155587708624415,
+          "minFinalRms": 3.22072943910983
+        },
+        "forward": 107.93999999761581,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.25,
+          "forward": 15.020000010728836,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 9.689999997615814,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 0,
+          "ms": 37.64000000059605,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 25.59000000357628,
+        "readout": 0.4099999964237213,
+        "tokenize": 0.5900000035762787,
+        "tokens": 331,
+        "total": 133.92499999701977
+      }
+    },
+    {
+      "actualSoftTokens": 63,
+      "budget": 70,
+      "completedFps": 14.615609470532961,
+      "elapsedMs": 68.42000000178814,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "warmup",
+      "rawProbabilities": {
+        "person_present": [
+          2.353332195781377e-09,
+          1
+        ],
+        "smiling": [
+          4.7200616748455104e-09,
+          1
+        ]
+      },
+      "requestedImageTokens": 70,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.259202802400381,
+          "minFinalRms": 4.227294518092022
+        },
+        "forward": 56.104999989271164,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.20499999821186066,
+          "forward": 3.7049999982118607,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 630,
+          "preprocess": 7.519999995827675,
+          "softTokens": 63
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.030000001192092896,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 117,
+          "sharedPrefixTokens": 117,
+          "totalTokens": 331
+        },
+        "prepare": 11.740000009536743,
+        "readout": 0.20000000298023224,
+        "tokenize": 0.2900000065565109,
+        "tokens": 331,
+        "total": 68.03500001132488
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 16.10824742314439,
+      "elapsedMs": 62.07999999821186,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "warmup",
+      "rawProbabilities": {
+        "person_present": [
+          3.322852819565014e-07,
+          0.9999996423721313
+        ],
+        "smiling": [
+          4.970932423020713e-05,
+          0.9999502897262573
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.680855290095353,
+          "minFinalRms": 3.075596100245499
+        },
+        "forward": 49.88000001013279,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.0949999988079071,
+          "forward": 7.949999988079071,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 3.2750000059604645,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 2,
+          "ms": 2.844999998807907,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 11.655000001192093,
+        "readout": 0.1849999874830246,
+        "tokenize": 0.3149999976158142,
+        "tokens": 275,
+        "total": 61.71999999880791
+      }
+    },
+    {
+      "actualSoftTokens": 35,
+      "budget": 40,
+      "completedFps": 15.310418737018447,
+      "elapsedMs": 65.31500001251698,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "warmup",
+      "rawProbabilities": {
+        "person_present": [
+          2.8948042185561462e-08,
+          1
+        ],
+        "smiling": [
+          1.4008825928613078e-05,
+          0.999985933303833
+        ]
+      },
+      "requestedImageTokens": 40,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 3.8802947001683785,
+          "minFinalRms": 2.975323187545435
+        },
+        "forward": 58.84500001370907,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.10000000894069672,
+          "forward": 2.594999998807907,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 360,
+          "preprocess": 2.7849999964237213,
+          "softTokens": 35
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.03000001609325409,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 89,
+          "sharedPrefixTokens": 89,
+          "totalTokens": 275
+        },
+        "prepare": 5.794999986886978,
+        "readout": 0.2449999898672104,
+        "tokenize": 0.29999999701976776,
+        "tokens": 275,
+        "total": 64.87999999523163
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 15.089784217035755,
+      "elapsedMs": 66.26999999582767,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 0,
+      "id": "smiling_front.jpg",
+      "phase": "warmup",
+      "rawProbabilities": {
+        "person_present": [
+          7.40085144318621e-14,
+          1
+        ],
+        "smiling": [
+          0.00016789509390946478,
+          0.999832034111023
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 0,
+      "scores": {
+        "person_present": 1,
+        "smiling": 1
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 6.354108172811308,
+          "minFinalRms": 3.0929325667105414
+        },
+        "forward": 47.99000000953674,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.1550000011920929,
+          "forward": 9.45499999821186,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 7.635000005364418,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 2,
+          "ms": 2.624999985098839,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 17.569999992847443,
+        "readout": 0.16499999165534973,
+        "tokenize": 0.3049999922513962,
+        "tokens": 229,
+        "total": 65.72499999403954
+      }
+    },
+    {
+      "actualSoftTokens": 12,
+      "budget": 16,
+      "completedFps": 19.91436822115957,
+      "elapsedMs": 50.21499998867512,
+      "expectedPerson": true,
+      "expectedSmile": true,
+      "frameIndex": 1,
+      "id": "smiling_outdoors.jpg",
+      "phase": "warmup",
+      "rawProbabilities": {
+        "person_present": [
+          2.2271056110412246e-08,
+          1
+        ],
+        "smiling": [
+          1,
+          5.400170866032283e-10
+        ]
+      },
+      "requestedImageTokens": 16,
+      "sampleIndex": 1,
+      "scores": {
+        "person_present": 1,
+        "smiling": 0
+      },
+      "timing": {
+        "batched": 1,
+        "decoder": {
+          "maxFinalRms": 4.648684068453874,
+          "minFinalRms": 3.973701622696154
+        },
+        "forward": 44.940000012516975,
+        "image": {
+          "attention": "fused-f32",
+          "decode": 0.06999999284744263,
+          "forward": 2.584999993443489,
+          "forwardMode": "submission",
+          "images": 1,
+          "patches": 144,
+          "preprocess": 1.9600000083446503,
+          "softTokens": 12
+        },
+        "ple": {
+          "cacheHits": 3,
+          "ms": 0.019999995827674866,
+          "sequences": 2
+        },
+        "prefixReuse": {
+          "enabled": true,
+          "reusedTokens": 66,
+          "sharedPrefixTokens": 66,
+          "totalTokens": 229
+        },
+        "prepare": 4.8900000005960464,
+        "readout": 0.1599999964237213,
+        "tokenize": 0.26500000059604645,
+        "tokens": 229,
+        "total": 49.99000000953674
+      }
+    }
+  ],
+  "weights": "local"
+}

@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala suffix tall F16 tile guard</title>
+<h1>Suffix paired F16 BM112 tile</h1>
+<p>Dev-only Q8/F16 comparison of the current paired R4/BM64/BN64 kernel against a 112-row paired tile with 14 independent accumulators per thread. The candidate retains the original K32 dot order, F16 operand conversions, virtual BM64/BN64 split policy, and gate/up partial-plane layout. Its 15 KiB workgroup tile loads each weight tile once.</p>
+<p>Checks every activation and both complete partial planes by bits, including signed zeros, padding, and tails before and after alternating paired timestamps. Controlled temporary host/GPU allocations are capped at 64 MiB with 1 MiB staged reads; immutable weights are reported separately. Requires <code>shader-f16</code> and requests F16 and timestamps only.</p>
+<p>Use <code>?f16=1&amp;shape=gate6144&amp;T=97</code> for the primary timing, or omit the shape filter for both actual gate widths and ragged/zero/cancellation/saturation guards. Add <code>?boundaries=1</code> for row-tile boundary cases.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-suffix-tall-check.js"></script>

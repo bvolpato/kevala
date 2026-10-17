@@ -221,6 +221,7 @@ async function main() {
   document.getElementById("download").disabled = true;
   const params = new URLSearchParams(location.search);
   const gpuKernel = params.get("kernel") || "auto";
+  const gpuFeatures = params.get("features") === "none" ? [] : params.get("features") === "f16" ? ["shader-f16"] : undefined;
   const visionAttention = params.get("attention") || "auto";
   let budgets;
   let model;
@@ -269,6 +270,7 @@ async function main() {
     model = await Kevala.load({
       model: modelSource, vision: visionSource,
       backend: "webgpu", cache: hosted, gpuKernel, visionAttention, imageTokens: 70, profile: false,
+      ...(gpuFeatures ? { gpuFeatures } : {}),
       signal: AbortSignal.timeout(hosted ? 30 * 60 * 1000 : 180000),
       onProgress: (progress) => {
         window.gpuBench.phase = progress.phase;
@@ -413,7 +415,7 @@ async function main() {
       pack: model.info.pack, vision: model.info.vision, memory: model.info.memory,
       loadMs, elapsedMs: performance.now() - runStarted,
       metricMs: summary[40]?.meanMs ?? summary[Math.min(...budgets)].meanMs,
-      gpuKernel, visionAttention, source: manifestUrl ? "manifest" : "synthetic", manifestUrl,
+      gpuKernel, visionAttention, requestedGpuFeatures: gpuFeatures ?? "default", source: manifestUrl ? "manifest" : "synthetic", manifestUrl,
       weights: hosted ? "published" : "local", userAgent: navigator.userAgent,
       frameSize: { width: WIDTH, height: HEIGHT }, questions: QUESTIONS, budgets,
       warmupCountPerBudget: WARMUPS, samplesPerBudget: SAMPLE_COUNT, blockSize: BLOCK_SIZE,

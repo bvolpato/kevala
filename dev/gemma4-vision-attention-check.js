@@ -3,7 +3,9 @@
 import { pipeline, Profiler, requestDevice, withGpuErrors } from "../js/src/gpu.js";
 import { kernelSource } from "./wgsl.js";
 
-const state = { status: "running", backend: "webgpu", kernel: "gemma4_vision_attention" };
+const search = new URLSearchParams(location.search);
+const selectedKernel = search.get("subgroup") === "1" ? "gemma4_vision_attention_subgroup" : search.has("fused") ? "gemma4_vision_attention_fused" : "gemma4_vision_attention";
+const state = { status: "running", backend: "webgpu", kernel: selectedKernel };
 window.gpuBench = state;
 const logNode = document.getElementById("log");
 const log = (line) => { logNode.textContent += `${line}\n`; };
@@ -254,7 +256,7 @@ async function main() {
   }
 }
 
-async function fusedCase(runtime, source, c) {
+async function fusedCase(runtime, source, c, subgroup = false) {
   const { device } = runtime, U = GPUBufferUsage;
   const owned = [];
   const make = (bytes, usage, data) => {
@@ -270,24 +272,38 @@ async function fusedCase(runtime, source, c) {
     const keys = Float32Array.from({ length: c.rows * c.kvHeads * 64 }, (_, i) => c.large ? 4 + (Math.floor(i / (c.kvHeads * 64)) % 7 - 3) / 128 : 0.5 * Math.cos(i * 0.031 - 0.3));
     const values = Float32Array.from({ length: keys.length }, (_, i) => Math.sin(i * 0.013));
     const positions = Int32Array.from({ length: c.rows * 2 }, (_, i) => c.allMasked || c.mask && Math.floor(i / 2) % 5 === 0 ? -1 : Math.floor(i / 2));
-    const params = make(16, U.UNIFORM | U.COPY_DST, new Uint32Array([c.rows, c.heads, c.kvHeads, 64]));
+    const parameters = new Uint32Array([c.rows, c.heads, c.kvHeads, 64, 0, 0, Number(Boolean(c.clip)), 0]);
+    const clip = (data) => {
+      if (c.clip) for (let i = 0; i < data.length; i++) data[i] = Math.max(-0.125, Math.min(0.2, data[i]));
+      return data;
+    };
+    if (c.clip) new Float32Array(parameters.buffer).set([-0.125, 0.2], 4);
+    const params = make(32, U.UNIFORM | U.COPY_DST, parameters);
     const inputs = [queries, keys, values, positions].map((data) => make(data.byteLength, U.STORAGE | U.COPY_DST, data));
     const scores = make(c.rows * c.rows * c.heads * 4, U.STORAGE);
-    const outputs = [0, 1].map(() => make(queries.byteLength, U.STORAGE | U.COPY_SRC | U.COPY_DST, new Float32Array(queries.length).fill(NaN)));
-    const readback = make(queries.byteLength * 2, U.COPY_DST | U.MAP_READ);
+    const names = subgroup ? ["split", "fused", "subgroup"] : ["split", "fused"];
+    const outputFloats = queries.length + 4;
+    const outputBytes = outputFloats * 4;
+    const sentinel = 12345.25;
+    const poison = new Float32Array(outputFloats).fill(NaN);
+    poison.fill(sentinel, queries.length);
+    const outputs = names.map(() => make(outputBytes, U.STORAGE | U.COPY_SRC | U.COPY_DST, poison));
+    const readback = make(outputBytes * outputs.length, U.COPY_DST | U.MAP_READ);
     const kernels = [];
-    for (const [name, types, buffers, groups] of [
+    const descriptors = [
       ["gemma4_vision_scores_tiled", ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "storage"], [params, inputs[0], inputs[1], inputs[3], scores], [Math.ceil(c.rows / 16) ** 2 * c.heads]],
       ["gemma4_vision_attention", ["uniform", "storage", "read-only-storage", "storage"], [params, scores, inputs[2], outputs[0]], [c.rows, c.heads]],
       ["gemma4_vision_attention_fused", ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "storage"], [params, ...inputs, outputs[1]], [Math.ceil(c.rows / 16), c.heads]],
-    ]) {
+    ];
+    if (subgroup) descriptors.push(["gemma4_vision_attention_subgroup", ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "read-only-storage", "storage"], [params, ...inputs, outputs[2]], [Math.ceil(c.rows / 16), c.heads]]);
+    for (const [name, types, buffers, groups] of descriptors) {
       const layout = device.createBindGroupLayout({ entries: types.map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
       const compute = await pipeline(device, source(name), name, device.createPipelineLayout({ bindGroupLayouts: [layout] }));
       const group = device.createBindGroup({ layout, entries: buffers.map((buffer, binding) => ({ binding, resource: { buffer } })) });
       kernels.push({ compute, group, groups });
     }
-    const dispatch = (pass, fused) => {
-      for (const kernel of fused ? kernels.slice(2) : kernels.slice(0, 2)) {
+    const dispatch = (pass, name) => {
+      for (const kernel of name === "split" ? kernels.slice(0, 2) : [kernels[name === "fused" ? 2 : 3]]) {
         pass.setPipeline(kernel.compute);
         pass.setBindGroup(0, kernel.group);
         pass.dispatchWorkgroups(...kernel.groups);
@@ -295,15 +311,33 @@ async function fusedCase(runtime, source, c) {
     };
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginComputePass();
-    dispatch(pass, false); dispatch(pass, true); pass.end();
-    outputs.forEach((buffer, i) => encoder.copyBufferToBuffer(buffer, 0, readback, i * queries.byteLength, queries.byteLength));
+    for (const name of names) dispatch(pass, name);
+    pass.end();
+    outputs.forEach((buffer, i) => encoder.copyBufferToBuffer(buffer, 0, readback, i * outputBytes, outputBytes));
     device.queue.submit([encoder.finish()]);
     await readback.mapAsync(GPUMapMode.READ);
     const actual = new Float32Array(readback.getMappedRange().slice(0));
     readback.unmap();
-    const baseline = actual.subarray(0, queries.length), fused = actual.subarray(queries.length);
+    const checked = Object.fromEntries(names.map((name, i) => {
+      const base = i * outputFloats;
+      for (let j = queries.length; j < outputFloats; j++) {
+        if (actual[base + j] !== sentinel) throw new Error(`${name} ${JSON.stringify(c)} overwrote output tail ${j - queries.length}`);
+      }
+      return [name, actual.subarray(base, base + queries.length)];
+    }));
+    const clipping = c.clip ? {
+      low: checked.split.reduce((count, value) => count + Number(value < -0.125), 0),
+      high: checked.split.reduce((count, value) => count + Number(value > 0.2), 0),
+    } : null;
+    if (clipping && (!clipping.low || !clipping.high)) throw new Error("clipping fixture must exercise both bounds");
+    // The original split value kernel has no clamp; emulate its separate clipping epilogue.
+    const baseline = clip(checked.split), fused = checked.fused;
     const parity = compareOutput(fused, baseline);
     if (!parity.ok) throw new Error(`fused ${JSON.stringify(c)} differs from split: ${parity.maxAbs}`);
+    const subgroupParity = subgroup ? { fused: compareOutput(checked.subgroup, fused), split: compareOutput(checked.subgroup, baseline) } : null;
+    if (subgroupParity && (!subgroupParity.fused.ok || !subgroupParity.split.ok)) {
+      throw new Error(`subgroup ${JSON.stringify(c)} differs from fused: ${subgroupParity.fused.maxAbs}, split ${subgroupParity.split.maxAbs}`);
+    }
     let cpu = null;
     if (c.rows <= 33) {
       const scores = new Float32Array(c.rows * c.rows * c.heads);
@@ -319,54 +353,71 @@ async function fusedCase(runtime, source, c) {
         }
         scores[at] = sum;
       }
-      const expected = reference(c, scores, values).outputs;
-      cpu = { fused: compareOutput(fused, expected), split: compareOutput(baseline, expected) };
-      if (!cpu.fused.ok || !cpu.split.ok) throw new Error(`fused ${JSON.stringify(c)} differs from CPU: ${cpu.fused.maxAbs}, split ${cpu.split.maxAbs}`);
+      const expected = clip(reference(c, scores, values).outputs);
+      cpu = Object.fromEntries(names.map((name) => [name, compareOutput(checked[name], expected)]));
+      if (Object.values(cpu).some((check) => !check.ok)) throw new Error(`attention ${JSON.stringify(c)} differs from CPU: ${JSON.stringify(cpu)}`);
     }
-    const timings = { split: [], fused: [] };
+    const timings = Object.fromEntries(names.map((name) => [name, []]));
     if (c.rows >= 315 && device.features.has("timestamp-query")) {
       profiler = new Profiler(device, 4);
       const repeats = 16;
       for (let i = 0; i < 7; i++) {
         const encoder = device.createCommandEncoder();
-        for (const fused of i % 2 ? [true, false] : [false, true]) {
-          const pass = profiler.pass(encoder, fused ? "fused" : "split");
-          for (let n = 0; n < repeats; n++) dispatch(pass, fused);
+        const order = names.slice(i % names.length).concat(names.slice(0, i % names.length));
+        for (const name of order) {
+          const pass = profiler.pass(encoder, name);
+          for (let n = 0; n < repeats; n++) dispatch(pass, name);
           pass.end();
         }
         profiler.finish(encoder);
         device.queue.submit([encoder.finish()]);
         const measured = await profiler.collect();
-        if (i >= 2) for (const name of ["split", "fused"]) timings[name].push(measured[name] / repeats);
+        if (i >= 2) for (const name of names) timings[name].push(measured[name] / repeats);
       }
     }
-    return { ...c, parity, cpu, timings, ok: true };
+    return { ...c, checkedOutputs: queries.length, outputTailGuard: true, ...(clipping ? { clipping } : {}), parity, ...(subgroup ? { subgroupParity } : {}), cpu, timings, ok: true };
   } finally { profiler?.destroy(); for (const buffer of owned) buffer.destroy(); }
 }
 
-async function fusedMain() {
+async function fusedMain(subgroup = false) {
   const started = performance.now();
-  const runtime = await requestDevice({ baseline: true });
+  const runtime = await requestDevice(subgroup ? { features: ["subgroups", "timestamp-query"] } : { baseline: true });
+  const uncaptured = [];
+  runtime.device.addEventListener("uncapturederror", (event) => uncaptured.push(event.error?.message || String(event.error)));
   try {
-    const source = await kernelSource();
+    if (subgroup) {
+      const info = runtime.adapter.info || {};
+      if (!runtime.device.features.has("subgroups") || !navigator.gpu.wgslLanguageFeatures?.has("subgroup_id") || info.subgroupMinSize !== 32 || info.subgroupMaxSize !== 32 || runtime.device.limits.maxComputeWorkgroupStorageSize < 13056) {
+        throw new Error(`subgroup vision attention requires subgroups, WGSL subgroup_id, fixed 32-lane subgroups, and 13056 shared bytes; got ${JSON.stringify({ features: [...runtime.device.features], subgroupId: Boolean(navigator.gpu.wgslLanguageFeatures?.has("subgroup_id")), subgroupMinSize: info.subgroupMinSize, subgroupMaxSize: info.subgroupMaxSize, sharedBytes: runtime.device.limits.maxComputeWorkgroupStorageSize })}`);
+      }
+    }
+    const baseSource = await kernelSource();
+    const candidate = subgroup ? (await import("./gemma4-vision-attention-subgroup.js")).default : null;
+    const source = (name, spec) => name === "gemma4_vision_attention_subgroup" ? candidate : baseSource(name, spec);
     const results = [];
     for (const c of [
       { rows: 1, heads: 4, kvHeads: 2, dim: 64 },
       { rows: 17, heads: 4, kvHeads: 2, dim: 64, allMasked: true },
       { rows: 17, heads: 4, kvHeads: 2, dim: 64, mask: true },
       { rows: 33, heads: 4, kvHeads: 2, dim: 64, large: true },
+      ...(subgroup ? [
+        ...[15, 16, 31, 32].map((rows) => ({ rows, heads: 4, kvHeads: 2, dim: 64, mask: true })),
+        { rows: 17, heads: 4, kvHeads: 2, dim: 64, mask: true, clip: true },
+      ] : []),
       ...[315, 567, 630].map((rows) => ({ rows, heads: 12, kvHeads: 12, dim: 64, mask: true })),
     ]) {
-      const result = await withGpuErrors(runtime, () => fusedCase(runtime, source, c), "checking fused vision attention");
+      const result = await withGpuErrors(runtime, () => fusedCase(runtime, source, c, subgroup), `checking ${subgroup ? "subgroup" : "fused"} vision attention`);
       results.push(result); log(JSON.stringify(result));
     }
+    if (uncaptured.length) throw new Error(`uncaptured WebGPU error: ${uncaptured.join("; ")}`);
     window.gpuBench = { status: "done", done: true, backend: "webgpu", metricMs: performance.now() - started,
       adapter: { name: runtime.name, ...runtime.adapter.info, isFallbackAdapter: Boolean(runtime.adapter.isFallbackAdapter || runtime.adapter.info?.isFallbackAdapter), features: [...runtime.device.features], workgroupStorageBytes: runtime.device.limits.maxComputeWorkgroupStorageSize },
-      correctness: { ok: true, cases: results }, kernel: "gemma4_vision_attention_fused" };
+      compile: { ok: true, source: subgroup ? "development subgroup candidate and current WASM production controls" : "current kevala-base.wasm rendered production WGSL", workgroupSize: 256, sharedBytes: subgroup ? 13056 : 14080, ...(subgroup ? { requiredSubgroupSize: 32, subgroupId: true } : {}) },
+      correctness: { ok: true, tolerance: { outputAbsolute: ATOL, outputRelative: RTOL }, cases: results }, kernel: subgroup ? "gemma4_vision_attention_subgroup" : "gemma4_vision_attention_fused" };
   } finally { runtime.device.destroy(); }
 }
 
-(new URLSearchParams(location.search).has("fused") ? fusedMain() : main()).catch((error) => {
+(search.get("subgroup") === "1" ? fusedMain(true) : search.has("fused") ? fusedMain() : main()).catch((error) => {
   window.gpuBench = { ...state, status: "error", done: true, error: String(error?.message || error), code: error?.code };
   log(error.stack || error);
 });

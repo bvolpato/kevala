@@ -1,0 +1,117 @@
+{
+  "method": "NVIDIA-only Vulkan manifest plus explicit Firefox Vulkan backend; no model, buffers or dispatches",
+  "driverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json",
+  "backendPreference": "vulkan",
+  "probe": {
+    "adapter": {
+      "architecture": "",
+      "description": "",
+      "device": "",
+      "isFallbackAdapter": false,
+      "subgroupMaxSize": 128,
+      "subgroupMinSize": 4,
+      "vendor": ""
+    },
+    "deviceFeatures": [
+      "shader-f16",
+      "timestamp-query",
+      "core-features-and-limits"
+    ],
+    "supportedFeatures": [
+      "depth-clip-control",
+      "depth32float-stencil8",
+      "texture-compression-bc",
+      "texture-compression-bc-sliced-3d",
+      "timestamp-query",
+      "indirect-first-instance",
+      "shader-f16",
+      "rg11b10ufloat-renderable",
+      "bgra8unorm-storage",
+      "float32-filterable",
+      "core-features-and-limits"
+    ],
+    "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0"
+  },
+  "ownedDriverEnvironment": [
+    {
+      "pid": 3094012,
+      "process": "python",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094094,
+      "process": "geckodriver",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094101,
+      "process": "firefox-bin",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094215,
+      "process": "forkserver",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094242,
+      "process": "Socket Process",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094260,
+      "process": "WebExtensions",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094269,
+      "process": "RDD Process",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094396,
+      "process": "Utility Process",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094409,
+      "process": "Privileged Cont",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    },
+    {
+      "pid": 3094455,
+      "process": "Isolated Web Co",
+      "driver": [
+        "VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json"
+      ]
+    }
+  ],
+  "ownedNvidiaContexts": [
+    {
+      "gpu": "NVIDIA GeForce RTX 5070 Ti",
+      "pid": 3094101,
+      "process": "/usr/lib/firefox/firefox",
+      "memory": "20 MiB",
+      "type": "C+G"
+    }
+  ],
+  "status": "done"
+}

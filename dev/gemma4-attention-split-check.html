@@ -1,0 +1,7 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala split prefix and suffix attention probe</title>
+<p>Dev-only address change for cached-prefix and suffix K/V buffers. All output bits must match the current joined-buffer attention before and after paired timing. Default timings cover kernels only; copies=1 includes four join copies with identical timestamp marker overhead on both paths.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-attention-split-check.js"></script>

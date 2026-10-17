@@ -1,0 +1,8 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala Gemma 4 two-row matvec check</title>
+<h1>Two-row matvec check</h1>
+<p>Dev-only Q8 kernels share each weight load across two independent rows. Compares every output bit with the production F32 and optional F16 matvec, then measures alternating timestamp pairs.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-matvec-two-check.js"></script>

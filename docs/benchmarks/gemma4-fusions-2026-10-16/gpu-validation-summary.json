@@ -1,0 +1,157 @@
+{
+  "checks": [
+    {
+      "name": "activations",
+      "status": "passed"
+    },
+    {
+      "name": "attention",
+      "status": "passed"
+    },
+    {
+      "name": "cache",
+      "status": "passed"
+    },
+    {
+      "name": "compile-baseline",
+      "status": "passed"
+    },
+    {
+      "name": "compile",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-attention",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-gelu",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-matmul-gelu",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-matvec-gelu",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-matvec",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-rms-fusions-subgroups",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-rms-fusions",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-rms-subgroups",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-rms",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-tail",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-vision-attention-fused",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-vision-attention",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-vision-scores",
+      "status": "passed"
+    },
+    {
+      "name": "gemma-vision",
+      "status": "passed"
+    },
+    {
+      "name": "kernels",
+      "status": "passed"
+    },
+    {
+      "name": "kev-attention",
+      "status": "passed"
+    },
+    {
+      "name": "kev",
+      "status": "passed"
+    },
+    {
+      "name": "laya",
+      "status": "existing-failure"
+    },
+    {
+      "name": "ordered-rms-2048",
+      "status": "passed"
+    },
+    {
+      "name": "ordered-rms-2560",
+      "status": "passed"
+    },
+    {
+      "name": "ordered-rms-4096",
+      "status": "passed"
+    },
+    {
+      "name": "ordered-sums",
+      "status": "passed"
+    },
+    {
+      "name": "recur16-shared",
+      "status": "passed"
+    },
+    {
+      "name": "recur16-subgroups",
+      "status": "passed"
+    },
+    {
+      "name": "recur4-shared",
+      "status": "passed"
+    },
+    {
+      "name": "recur4-subgroups",
+      "status": "passed"
+    },
+    {
+      "name": "recur8-shared",
+      "status": "passed"
+    },
+    {
+      "name": "recur8-subgroups",
+      "status": "passed"
+    },
+    {
+      "name": "row-tiles",
+      "status": "skipped"
+    },
+    {
+      "name": "tiles",
+      "status": "passed"
+    },
+    {
+      "name": "weights-bf16",
+      "status": "passed"
+    },
+    {
+      "name": "weights-f32",
+      "status": "passed"
+    },
+    {
+      "name": "weights-q8",
+      "status": "passed"
+    }
+  ],
+  "note": "Full runner stopped at Laya. Kev parity and cache guards then ran directly with the same arguments; Laya HEAD comparison is identical."
+}

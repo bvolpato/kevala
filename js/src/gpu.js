@@ -34,27 +34,43 @@ export function matmulConfig(device) {
  * variant covers 16 R rows and 64 J columns per workgroup. `activeT` can trim output
  * dispatches while T retains the shader's split rule and partial-buffer stride.
  */
-export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1, activeT = T) {
+export function dispatchMatmul(pass, pMatmul, pReduce, op, T, target = SPLIT_TARGET, R = 4, J = 1, activeT = T, splitT = T, reduceOverride = null) {
   const bm = 16 * R;
   const bn = 64 * J;
-  const splits = mmSplits(T, op.N, op.K, target, bm, bn);
+  const splits = mmSplits(splitT, op.N, op.K, target, bm, bn);
   pass.setPipeline(pMatmul);
   pass.setBindGroup(0, op.group);
   pass.dispatchWorkgroups(Math.ceil(op.N / bn), Math.ceil(activeT / bm), splits);
   if (splits > 1) {
     const n = Math.ceil((activeT * op.N) / 256);
-    pass.setPipeline(pReduce);
-    pass.setBindGroup(0, op.reduce);
+    pass.setPipeline(reduceOverride?.pipeline || pReduce);
+    pass.setBindGroup(0, reduceOverride?.group || op.reduce);
     pass.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
   }
 }
 
 /** Encodes a matmul with the kernel variant for T. `pipes` comes from `matmulPipelines`. */
-export function encodeMatmul(pass, pipes, op, T) {
+export function encodeMatmul(pass, pipes, op, T, splitT = T, reduceOverride = null) {
   const R = rowsPerThread(T, pipes);
   // BM56 trims padding only when the R4 grid and K partition stay unchanged. Prefer R3 first.
   const row56 = R === 4 && pipes.f16 === false && pipes.groups === 1 && Math.ceil(T / 56) === Math.ceil(T / 64);
-  dispatchMatmul(pass, (row56 && pipes.mm56) || pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups);
+  dispatchMatmul(pass, (row56 && pipes.mm56) || pipes.mm[R], pipes.reduce[R], op, T, pipes.splitTarget, R, pipes.groups, T, splitT, reduceOverride);
+}
+
+/** Direct matrix-vector products, without padded row tiles or a split-K reduction. */
+export function encodeMatvec(pass, pipes, op, T) {
+  pass.setPipeline(pipes.pipeline);
+  pass.setBindGroup(0, op.group);
+  pass.dispatchWorkgroups(Math.ceil(op.N / pipes.columns), T);
+}
+
+export async function matvecPipelines(device, wgsl, weights = "q8", layout = null) {
+  if (!["q8", "bf16", "f32"].includes(weights)) throw new Error(`unsupported GPU matrix dtype ${weights}`);
+  layout ||= matmulLayout(device);
+  const pl = device.createPipelineLayout({ bindGroupLayouts: [layout] });
+  const f16 = weights === "q8" && device.features.has("shader-f16");
+  const spec = { weights, f16, splitTarget: 256, rows: 1, groups: 1 };
+  return { pipeline: await pipeline(device, wgsl("matvec", spec), `matvec_${weights}`, pl), layout, weights, f16, columns: f16 ? 16 : 4 };
 }
 
 /** The matmul bind group layout, explicit so every kernel variant shares one bind group. */
@@ -87,19 +103,22 @@ export async function matmulPipelines(device, wgsl, kernel = "matmul", weights =
   const rpl = device.createPipelineLayout({ bindGroupLayouts: [rlayout] });
   // BF16 has the full F32 exponent range. F16 tiles would narrow that range and
   // change otherwise unquantized weights, so these paths retain F32 tiles.
+  const suffix = ["_gemma_batch", "_gemma_source"].find((value) => kernel.endsWith(value)) || "";
+  const baseKernel = suffix ? kernel.slice(0, -suffix.length) : kernel;
   const config = weights === "q8" ? matmulConfig(device) : { ...matmulConfig(device), f16: false, weights };
+  const reduceKernel = "reduce" + suffix;
   const mm = [];
   const reduce = [];
   const [mm56] = await Promise.all([
-    kernel === "matmul" && !config.f16 && config.groups === 1
+    (baseKernel === "matmul" || baseKernel === "matmul_k64") && !config.f16 && config.groups === 1
       ? pipeline(device, wgsl(kernel, { ...config, rows: 4, row56: true }), "matmul_row56", pl)
       : null,
     ...[1, 2, 3, 4].flatMap((rows) => [
       pipeline(device, wgsl(kernel, { ...config, rows }), `${kernel}_r${rows}`, pl).then((p) => (mm[rows] = p)),
-      pipeline(device, wgsl("reduce", { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
+      pipeline(device, wgsl(reduceKernel, { ...config, rows }), `reduce_r${rows}`, rpl).then((p) => (reduce[rows] = p)),
     ]),
   ]);
-  return { layout, reduceLayout: rlayout, mm, mm56, reduce, kernel, ...config };
+  return { layout, reduceLayout: rlayout, mm, mm56, reduce, kernel: baseKernel, ...config };
 }
 
 /** Conservative scratch bound for split targets up to 256 and 64 x 64 tiles. */

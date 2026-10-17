@@ -1,0 +1,230 @@
+{
+  "hardware": "Linux NVIDIA RTX 5070 Ti",
+  "gpuContention": "unrelated render processes active; timings do not establish idle or M4 performance",
+  "targetCompletedFps": 60,
+  "targetMet": false,
+  "defaultImageBudgetsChanged": false,
+  "numericalTolerancesChanged": false,
+  "sourceSha256": {
+    "js/src/gpu-gemma4.js": "2e21b0e5c77c9cbfef9f0d65fd97a07453d00e0e0aac2f3a266edc4f9700baae",
+    "js/src/gpu-gemma4-vision.js": "071ce35dea7a966a1bd2b32dfb3c8645feb5d27358801f3b233dfc96e1553f3a",
+    "js/src/gpu.js": "8aa73460f7e1ae8d2f52fa1870e9cb53bcfe91f7d76a969b7f0810539a995f61",
+    "js/src/archs/gemma4.js": "d5e09d81d88764de92bf8f8d18a52cd3b44bd68c9135132635cd4e7d225f268f",
+    "crates/kevala/src/gpu.rs": "975fdee6897574c353b48798fc5303fa9d24ffe06801300d14746ba492ddb013",
+    "crates/kevala/src/wgsl/splits.wgsl": "e5fab737d15d4820c84c11ea3044ebab96725a3cc967f6a97e3ce2ab7232e753",
+    "crates/kevala/src/wgsl/gemma4_vision_norm_rope.wgsl": "75791c66cd7713999c93d3453d4c5a3d2bb793991ba2bb3c16118ec10568e2fe",
+    "crates/kevala/src/wgsl/gemma4_vision_pool_norm.wgsl": "5b683f275cc330ca0156d98cd3ff9030abf63a00e6512e1aa473c4647e0687af",
+    "js/src/kevala-base.wasm": "f6319338928bd1fd8374cb9391f698047c51321193c28bd4d484bada8882cd23",
+    "js/src/kevala-simd.wasm": "393b063bac81938086e4ebcfe2f9bf440f325c0f97176e18936b1330cbf64e11",
+    "js/src/kevala-relaxed.wasm": "d0fcf96ec43ded1df986918c0c1d60ebc4aca45c9f226d9cf11f6bfdfa2ee961",
+    "tmp/profile-camera.py": "8ed79056bcf68a21556470313da5f10aadaa51733136077143f5ce3ca7a5d1b5",
+    "tmp/profile-camera-probe.js": "bc225c3233dad444401fcf2b0895951e410fa423b4bb47341ae0b4b3c750292d"
+  },
+  "profile": {
+    "budget": 40,
+    "questions": 2,
+    "normalGraph": true,
+    "coarseMeanGpuMs": {
+      "vision": 8.553328,
+      "prefix": 8.64264,
+      "suffix": 9.837944000000002,
+      "tail": 5.3082959999999995
+    },
+    "topKernels": [
+      [
+        "vision",
+        8.517423999999998
+      ],
+      [
+        "suffix/mm.down",
+        1.9514239999999996
+      ],
+      [
+        "suffix/mm.up",
+        1.9232159999999996
+      ],
+      [
+        "suffix/mm.gate",
+        1.9211919999999996
+      ],
+      [
+        "prefix/mm.down",
+        1.8297520000000003
+      ],
+      [
+        "prefix/mm.gate",
+        1.7749039999999998
+      ],
+      [
+        "prefix/mm.up",
+        1.7412159999999997
+      ],
+      [
+        "tail/mm.gate.up.gelu",
+        1.6688960000000004
+      ],
+      [
+        "suffix/attn",
+        1.1676800000000005
+      ],
+      [
+        "tail/mm.down",
+        1.0161360000000002
+      ],
+      [
+        "tail/attn",
+        0.8148399999999999
+      ],
+      [
+        "suffix/mm.q",
+        0.8114000000000001
+      ],
+      [
+        "prefix/mm.q",
+        0.7909280000000001
+      ],
+      [
+        "suffix/mm.o",
+        0.7817119999999999
+      ],
+      [
+        "prefix/mm.o",
+        0.7328479999999997
+      ],
+      [
+        "prefix/attn",
+        0.5804800000000002
+      ],
+      [
+        "tail/mm.q",
+        0.38636000000000004
+      ],
+      [
+        "tail/mm.o",
+        0.32130400000000015
+      ]
+    ],
+    "decoderEncodeCpuMs": [
+      0.6299999952316284,
+      0.6150000095367432,
+      0.6099999994039536,
+      0.6149999797344208
+    ],
+    "rawSha256": "76e0693b8bd6ae2c10e7a6d09dcc860be276963c2cf465850281b8f2dad3577a"
+  },
+  "cameraSmoke": [
+    {
+      "budget": 70,
+      "discardedWarmups": 4,
+      "meanMs": 62.57125000043639,
+      "p50Ms": 62.98250000178814,
+      "p95Ms": 72.11500000953674,
+      "completedFps": 15.850212608990946
+    },
+    {
+      "budget": 40,
+      "discardedWarmups": 4,
+      "meanMs": 47.95160714324032,
+      "p50Ms": 44.51000000536442,
+      "p95Ms": 69.45000000298023,
+      "completedFps": 20.714187523637943
+    },
+    {
+      "budget": 16,
+      "discardedWarmups": 4,
+      "meanMs": 42.69142857273774,
+      "p50Ms": 42.80499999970198,
+      "p95Ms": 58.42000000178814,
+      "completedFps": 23.211452108338808
+    },
+    {
+      "budget": 40,
+      "discardedWarmups": 4,
+      "meanMs": 48.81044642893331,
+      "p50Ms": 48.007500007748604,
+      "p95Ms": 65.68999999761581,
+      "completedFps": 20.235169460297616
+    }
+  ],
+  "fullModel": [
+    {
+      "browser": "chrome",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true,
+      "actualBudgetMetadata": [
+        {
+          "budget": 70,
+          "removedVisionPasses": 33,
+          "cachedPleVectors": 35,
+          "cacheBytes": 3562496,
+          "compactSourceRows": true
+        },
+        {
+          "budget": 40,
+          "removedVisionPasses": 33,
+          "cachedPleVectors": 35,
+          "cacheBytes": 3562496,
+          "compactSourceRows": true
+        },
+        {
+          "budget": 16,
+          "removedVisionPasses": 33,
+          "cachedPleVectors": 35,
+          "cacheBytes": 3562496,
+          "compactSourceRows": true
+        }
+      ]
+    },
+    {
+      "browser": "firefox",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true,
+      "actualBudgetMetadata": [
+        {
+          "budget": 70,
+          "removedVisionPasses": 33,
+          "cachedPleVectors": 35,
+          "cacheBytes": 3562496,
+          "compactSourceRows": true
+        },
+        {
+          "budget": 40,
+          "removedVisionPasses": 33,
+          "cachedPleVectors": 35,
+          "cacheBytes": 3562496,
+          "compactSourceRows": true
+        },
+        {
+          "budget": 16,
+          "removedVisionPasses": 33,
+          "cachedPleVectors": 35,
+          "cacheBytes": 3562496,
+          "compactSourceRows": true
+        }
+      ]
+    }
+  ],
+  "cameraChecks": {
+    "maxInFlight": 1,
+    "sameModel": true,
+    "videoCleared": true,
+    "tracksStopped": true,
+    "lastTab": "reaction",
+    "overflow": false
+  },
+  "autoDefaultsVerified": true,
+  "validation": {
+    "javascript": "check and tests passed",
+    "rust": "fmt, clippy and WGSL render tests passed",
+    "wasm": "all three builds and ABI checks passed",
+    "package": "package validation passed",
+    "gpu": "focused new-kernel compilation and numerical guards passed in Chromium and Firefox; full actual-model comparisons passed",
+    "fullGpuSuite": "not rerun after these additions; prior separate Laya F32 parity failure remains documented"
+  },
+  "rejectedCandidates": {
+    "subgroupAttention": "bit-exact but slower than the portable fused shader; development only",
+    "q8MantissaDecode": "bit-exact numerical probes but no stable measured win; production unchanged"
+  }
+}

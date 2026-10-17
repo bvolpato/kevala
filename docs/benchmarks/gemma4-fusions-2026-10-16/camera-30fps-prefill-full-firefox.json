@@ -1,0 +1,422 @@
+{
+  "adapter": {
+    "features": [
+      "timestamp-query",
+      "shader-f16",
+      "core-features-and-limits"
+    ],
+    "isFallbackAdapter": false,
+    "maxComputeWorkgroupStorageSize": 32768,
+    "name": "WebGPU"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "cases": [
+      {
+        "K": 32,
+        "N": 1,
+        "T": 1,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 1,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 1
+        },
+        "partialChecks": [],
+        "row56": false,
+        "rows": 1,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "003e110a109d0cc72848b574cb3a1b82fba4098a36108dc0b9eeddbf75ebb34e",
+          "baselineReduce": "617db06055fdeffd3ca87de87c6c14bef7192f8f303332891279b9f40be29c83",
+          "candidate": "aaf7374d8e30d7667bb9f04ba3e2ae7a78cadb2807df6239ef8ee888c62d618b",
+          "candidateReduce": "1e5a8bac4eee6a9fe3031c02cb7cebfd71133597f6f888fbb3fa0f32136f0f26"
+        },
+        "sharedBytes": 12288,
+        "splitT": 1,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 96,
+        "N": 17,
+        "T": 42,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 3,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 714
+        },
+        "partialChecks": [],
+        "row56": false,
+        "rows": 3,
+        "saturated": true,
+        "shaderHashes": {
+          "baseline": "fbd1117c7e66e76d7d2c3e56be71e992e9edc7d49ec1201234682d49fc9dc024",
+          "baselineReduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c",
+          "candidate": "d2abbfe29b03423d491f58bdbd16585b05c7d086ce1e36978e77a9f3511890dd",
+          "candidateReduce": "779f5f660c802b56846ca20804421ce0eade4505c14295a8d4beed545682ffd6"
+        },
+        "sharedBytes": 12288,
+        "splitT": 42,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 1056,
+        "N": 17,
+        "T": 55,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 935
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 7480
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 7480
+          }
+        ],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "b9529b33026d43f8aa5a4d826a5bd7423cb859777d4ea10eb1c688f10d33cdc1",
+          "baselineReduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 55,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 1536,
+        "N": 65,
+        "T": 97,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 6305
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 50440
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 50440
+          }
+        ],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "b9529b33026d43f8aa5a4d826a5bd7423cb859777d4ea10eb1c688f10d33cdc1",
+          "baselineReduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 97,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": null
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 42,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 3,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 258048
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 774144
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 774144
+          }
+        ],
+        "row56": false,
+        "rows": 3,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "fbd1117c7e66e76d7d2c3e56be71e992e9edc7d49ec1201234682d49fc9dc024",
+          "baselineReduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c",
+          "candidate": "d2abbfe29b03423d491f58bdbd16585b05c7d086ce1e36978e77a9f3511890dd",
+          "candidateReduce": "779f5f660c802b56846ca20804421ce0eade4505c14295a8d4beed545682ffd6"
+        },
+        "sharedBytes": 12288,
+        "splitT": 42,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.18175,
+            0.17975,
+            0.18225,
+            0.22675,
+            0.18225
+          ],
+          "baselineMedianMs": 0.18225,
+          "candidate": [
+            0.13925,
+            0.141,
+            0.13925,
+            0.1415,
+            0.139
+          ],
+          "candidateMedianMs": 0.13925
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 55,
+        "baselineDispatches": 5,
+        "candidateDispatches": 2,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 337920
+        },
+        "partialChecks": [
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 1013760
+          },
+          {
+            "bitMismatches": 0,
+            "maxAbs": 0,
+            "ok": true,
+            "samples": 1013760
+          }
+        ],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "b9529b33026d43f8aa5a4d826a5bd7423cb859777d4ea10eb1c688f10d33cdc1",
+          "baselineReduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 55,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.231,
+            0.22925,
+            0.22975,
+            0.22825,
+            0.22975
+          ],
+          "baselineMedianMs": 0.22975,
+          "candidate": [
+            0.1785,
+            0.18175,
+            0.17925,
+            0.1815,
+            0.1785
+          ],
+          "candidateMedianMs": 0.17925
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 89,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 3,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 546816
+        },
+        "partialChecks": [],
+        "row56": false,
+        "rows": 3,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "fbd1117c7e66e76d7d2c3e56be71e992e9edc7d49ec1201234682d49fc9dc024",
+          "baselineReduce": "3d368f1c91c73feaf9b29e30f201f1db40d928cbcd9c93ea863515ca4105472c",
+          "candidate": "d2abbfe29b03423d491f58bdbd16585b05c7d086ce1e36978e77a9f3511890dd",
+          "candidateReduce": "779f5f660c802b56846ca20804421ce0eade4505c14295a8d4beed545682ffd6"
+        },
+        "sharedBytes": 12288,
+        "splitT": 89,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.31325,
+            0.31275,
+            0.31275,
+            0.36975,
+            0.313
+          ],
+          "baselineMedianMs": 0.313,
+          "candidate": [
+            0.25025,
+            0.251,
+            0.25025,
+            0.251,
+            0.24975
+          ],
+          "candidateMedianMs": 0.25025
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "baselineDispatches": 3,
+        "candidateDispatches": 1,
+        "candidateRow56": false,
+        "candidateRows": 4,
+        "f16": true,
+        "kind": "k64",
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "maxAbs": 0,
+          "ok": true,
+          "samples": 595968
+        },
+        "partialChecks": [],
+        "row56": false,
+        "rows": 4,
+        "saturated": false,
+        "shaderHashes": {
+          "baseline": "b9529b33026d43f8aa5a4d826a5bd7423cb859777d4ea10eb1c688f10d33cdc1",
+          "baselineReduce": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "candidate": "b2e27f858e989ce17499105cc3ee85e3d62db1ec4dced0c30ef0f1a5eaa82290",
+          "candidateReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739"
+        },
+        "sharedBytes": 12288,
+        "splitT": 97,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.3905,
+            0.4355,
+            0.41775,
+            0.39,
+            0.38975
+          ],
+          "baselineMedianMs": 0.3905,
+          "candidate": [
+            0.343,
+            0.358,
+            0.31375,
+            0.31575,
+            0.31325
+          ],
+          "candidateMedianMs": 0.31575
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "metricMs": 4525.32,
+  "runner": {
+    "browser": "firefox",
+    "browserContext": "isolated",
+    "browserRequested": "firefox",
+    "browserVersion": "152.0.3",
+    "chromiumArgs": [],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done"
+}

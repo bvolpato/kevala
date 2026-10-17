@@ -15,7 +15,7 @@ async function run() {
     const source = await kernelSource();
     const specifications = [];
     for (const f16 of [false, true]) for (const subgroups of [false, true]) for (const rows of [1, 2, 3, 4]) for (const groups of [1, 2]) specifications.push({ f16, subgroups, rows, groups });
-    specifications.push({ row56: true }, { n: 3072, k: 1024 });
+    specifications.push({ row56: true }, { n: 3072, k: 1024 }, { rows: 2, groups: 1, f16: false, splitTarget: 256 }, { rows: 4, groups: 1, f16: true, splitTarget: 256 });
     for (const weights of ["bf16", "f32"]) for (const rows of [1, 2, 3, 4]) specifications.push({ weights, rows });
     for (const hidden of [2048, 2560, 4096]) specifications.push({ kev: hidden === 2048 ? { hidden } : { hidden, heads: 16, kv_heads: 4, lin_heads: 32 } });
     const compiled = [];
@@ -26,7 +26,10 @@ async function run() {
     for (const kernel of kernels) {
       const seen = new Set();
       for (const spec of specifications) {
-        if (kernel === "matmul_wide" && spec.groups === 2) continue;
+        if (["matmul_gelu_tall", "matmul_tall"].includes(kernel) && (spec.weights && spec.weights !== "q8" || spec.f16 !== true || spec.rows !== 4 || spec.groups !== 1 || spec.row56 || spec.splitTarget !== 256)) continue;
+        if (["matmul_bn32_gemma_source", "matmul_gelu_bn32"].includes(kernel) && (spec.weights && spec.weights !== "q8" || spec.f16 || spec.rows !== 2 || spec.groups !== 1 || spec.row56 || spec.splitTarget !== 256)) continue;
+        if (["matmul_wide", "matmul_k64", "matmul_wide_gemma_batch", "matmul_wide_gemma_source", "matmul_k64_gemma_source", "matmul_gelu", "reduce_gelu"].includes(kernel) && spec.groups === 2) continue;
+        if (["matmul_gelu", "matvec_two", "matvec_gelu_two"].includes(kernel) && spec.weights && spec.weights !== "q8") continue;
         if (kernel === "gemma4_vision_position" && (!spec.weights || spec.weights === "q8")) continue;
         const code = source(kernel, spec);
         if (seen.has(code)) continue;

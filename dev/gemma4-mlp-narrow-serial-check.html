@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala exact BN32 serial-split MLP probe</title>
+<h1>F32 paired BN32 serial splits</h1>
+<p>Dev-only comparison of the current separate gate/up projections, reducers and GELU against a single paired BN32 dispatch. The candidate retains BM56, each original K32 split partition, ordered vec4 dots, ascending split addition and GELU arithmetic. Seven vec2 partial accumulators and seven vec2 final sums use 16 KiB of shared storage. The candidate does not access PART.</p>
+<p>Defaults to T97, N6144, K1536, S3. Use <code>?shape=gate12288</code> or <code>?guards=1</code> for wide, ragged, signed-zero, cancellation, saturation and unsplit cases. Full raw-bit outputs, finiteness, padding and tails are checked before and after three alternating timestamp pairs with four repetitions. Temporary host/GPU allocations stay within 64 MiB; immutable weights are reported separately.</p>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./gemma4-mlp-narrow-serial-check.js"></script>

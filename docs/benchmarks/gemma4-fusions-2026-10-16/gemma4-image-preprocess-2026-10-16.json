@@ -1,0 +1,110 @@
+{
+  "benchmark": "gemma4-image-preprocessing-and-plan",
+  "runtime": "v22.22.2",
+  "resourceLimits": {
+    "scope": "systemd-run --user --scope",
+    "cpuQuota": "100%",
+    "memoryMaxBytes": 536870912
+  },
+  "method": "single Node process, 20 alternating warmups and 50 alternating baseline/current samples per preprocessing budget; exact output checked after each pair",
+  "input": {
+    "width": 320,
+    "height": 240,
+    "rgbaBytes": 307200
+  },
+  "preprocessing": [
+    {
+      "width": 320,
+      "height": 240,
+      "budget": 70,
+      "resizedWidth": 432,
+      "resizedHeight": 336,
+      "softTokens": 63,
+      "baseline": {
+        "medianMs": 3.2193600000000515,
+        "p95Ms": 4.929575999999997,
+        "meanMs": 3.5626644000000054,
+        "samples": 50
+      },
+      "current": {
+        "medianMs": 2.309035999999992,
+        "p95Ms": 3.838380000000029,
+        "meanMs": 2.5566792400000065,
+        "samples": 50
+      },
+      "medianSpeedup": 1.3942441780899315,
+      "parity": {
+        "exact": true,
+        "patchFloatsCompared": 483840,
+        "positionsCompared": 1260
+      }
+    },
+    {
+      "width": 320,
+      "height": 240,
+      "budget": 40,
+      "resizedWidth": 336,
+      "resizedHeight": 240,
+      "softTokens": 35,
+      "baseline": {
+        "medianMs": 2.0380519999999933,
+        "p95Ms": 2.467088999999987,
+        "meanMs": 2.101934619999988,
+        "samples": 50
+      },
+      "current": {
+        "medianMs": 1.4532729999999674,
+        "p95Ms": 1.7685969999999998,
+        "meanMs": 1.5055083399999898,
+        "samples": 50
+      },
+      "medianSpeedup": 1.4023875761815152,
+      "parity": {
+        "exact": true,
+        "patchFloatsCompared": 276480,
+        "positionsCompared": 720
+      }
+    },
+    {
+      "width": 320,
+      "height": 240,
+      "budget": 16,
+      "resizedWidth": 192,
+      "resizedHeight": 144,
+      "softTokens": 12,
+      "baseline": {
+        "medianMs": 1.2498699999999872,
+        "p95Ms": 1.4299030000000812,
+        "meanMs": 1.2402010400000132,
+        "samples": 50
+      },
+      "current": {
+        "medianMs": 0.8432429999999158,
+        "p95Ms": 1.0454560000000583,
+        "meanMs": 0.8822325799999976,
+        "samples": 50
+      },
+      "medianSpeedup": 1.4822180557681617,
+      "parity": {
+        "exact": true,
+        "patchFloatsCompared": 110592,
+        "positionsCompared": 288
+      }
+    }
+  ],
+  "visionImagePlan": {
+    "budget": 40,
+    "compact": true,
+    "cfg": {
+      "patch": 16,
+      "pool": 3,
+      "positionSize": 112,
+      "headDim": 64,
+      "theta": 10000
+    },
+    "medianMs": 0.42734599999994316,
+    "p95Ms": 0.5746590000001106,
+    "meanMs": 0.4553452799999968,
+    "samples": 50
+  }
+}

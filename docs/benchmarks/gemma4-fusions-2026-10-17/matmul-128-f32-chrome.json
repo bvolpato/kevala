@@ -1,0 +1,1035 @@
+{
+  "adapter": {
+    "features": [
+      "core-features-and-limits",
+      "timestamp-query"
+    ],
+    "isFallbackAdapter": false,
+    "maxComputeWorkgroupStorageSize": 32768,
+    "name": "nvidia blackwell"
+  },
+  "backend": "webgpu",
+  "correctness": {
+    "bitExact": true,
+    "cases": [
+      {
+        "K": 1056,
+        "N": 65,
+        "T": 97,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 6305,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 50440,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scope": "batch",
+        "scratchBytes": 2183576,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "6808c7dd78bc918829493b72e8c2545819b5ad456376d7e814725f97c87af5ab",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+        },
+        "shape": "ragged",
+        "sharedWeightBytes": 77220,
+        "splitT": 1,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.010184,
+            0.01016,
+            0.01016
+          ],
+          "baselineMs": 0.01016,
+          "benefit": -0.3826771653543306,
+          "candidate": [
+            0.014048,
+            0.014048,
+            0.01404
+          ],
+          "candidateMs": 0.014048,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 97,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 595968,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 1787904,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scope": "batch",
+        "scratchBytes": 58407104,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "6808c7dd78bc918829493b72e8c2545819b5ad456376d7e814725f97c87af5ab",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+        },
+        "shape": "gate",
+        "sharedWeightBytes": 10616832,
+        "splitT": 1,
+        "splits": 3,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.12604,
+            0.126168,
+            0.125728
+          ],
+          "baselineMs": 0.12604,
+          "benefit": -0.11063154554109793,
+          "candidate": [
+            0.139944,
+            0.140416,
+            0.139984
+          ],
+          "candidateMs": 0.139984,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 97,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 148992,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 1191936,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scope": "batch",
+        "scratchBytes": 36952256,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "6808c7dd78bc918829493b72e8c2545819b5ad456376d7e814725f97c87af5ab",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+        },
+        "shape": "down",
+        "sharedWeightBytes": 10616832,
+        "splitT": 1,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.125424,
+            0.125,
+            0.124912
+          ],
+          "baselineMs": 0.125,
+          "benefit": -0.025600000000000067,
+          "candidate": [
+            0.128232,
+            0.1282,
+            0.128176
+          ],
+          "candidateMs": 0.1282,
+          "reason": "noisy",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 97,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 198656,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 1589248,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scope": "batch",
+        "scratchBytes": 44103872,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "6808c7dd78bc918829493b72e8c2545819b5ad456376d7e814725f97c87af5ab",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+        },
+        "shape": "q",
+        "sharedWeightBytes": 3538944,
+        "splitT": 1,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.047936,
+            0.047792,
+            0.04784
+          ],
+          "baselineMs": 0.04784,
+          "benefit": -0.021906354515050172,
+          "candidate": [
+            0.048712,
+            0.048888,
+            0.048952
+          ],
+          "candidateMs": 0.048888,
+          "reason": "noisy",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 97,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 148992,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 1191936,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_batch",
+        "row56": true,
+        "rows": 4,
+        "scope": "batch",
+        "scratchBytes": 33773760,
+        "shaderHashes": {
+          "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+          "candidate": "6808c7dd78bc918829493b72e8c2545819b5ad456376d7e814725f97c87af5ab",
+          "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+        },
+        "shape": "o",
+        "sharedWeightBytes": 3538944,
+        "splitT": 1,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.047464,
+            0.047576,
+            0.04744
+          ],
+          "baselineMs": 0.047464,
+          "benefit": -0.02443957525703694,
+          "candidate": [
+            0.048552,
+            0.048624,
+            0.04868
+          ],
+          "candidateMs": 0.048624,
+          "reason": "noisy",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1056,
+        "N": 65,
+        "T": 51,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 3315,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 26520,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scope": "balanced",
+        "scratchBytes": 1149128,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "9f90d1c3cde2ef97dcfbd8386ebe1e400b01d595f049b95f2f43b0f801c51275",
+          "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+        },
+        "shape": "ragged",
+        "sharedWeightBytes": 77220,
+        "splitT": 128,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.010104,
+            0.010048,
+            0.01004
+          ],
+          "baselineMs": 0.010048,
+          "benefit": -0.39649681528662417,
+          "candidate": [
+            0.014024,
+            0.014032,
+            0.014032
+          ],
+          "candidateMs": 0.014032,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 51,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 313344,
+          "signedZeroChecked": true
+        },
+        "partialCheck": null,
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scope": "balanced",
+        "scratchBytes": 8149184,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "9f90d1c3cde2ef97dcfbd8386ebe1e400b01d595f049b95f2f43b0f801c51275",
+          "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+        },
+        "shape": "gate",
+        "sharedWeightBytes": 10616832,
+        "splitT": 128,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.086608,
+            0.085688,
+            0.085888
+          ],
+          "baselineMs": 0.085888,
+          "benefit": -0.10329731743666158,
+          "candidate": [
+            0.09476,
+            0.09476,
+            0.0948
+          ],
+          "candidateMs": 0.09476,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 51,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 78336,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 470016,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scope": "balanced",
+        "scratchBytes": 15669440,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "9f90d1c3cde2ef97dcfbd8386ebe1e400b01d595f049b95f2f43b0f801c51275",
+          "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+        },
+        "shape": "down",
+        "sharedWeightBytes": 10616832,
+        "splitT": 128,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.085408,
+            0.085344,
+            0.085072
+          ],
+          "baselineMs": 0.085344,
+          "benefit": -0.26171728533933253,
+          "candidate": [
+            0.107696,
+            0.10768,
+            0.107624
+          ],
+          "candidateMs": 0.10768,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 51,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 104448,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 417792,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scope": "balanced",
+        "scratchBytes": 13162688,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "9f90d1c3cde2ef97dcfbd8386ebe1e400b01d595f049b95f2f43b0f801c51275",
+          "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+        },
+        "shape": "q",
+        "sharedWeightBytes": 3538944,
+        "splitT": 128,
+        "splits": 4,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.026136,
+            0.025952,
+            0.026
+          ],
+          "baselineMs": 0.026,
+          "benefit": -0.07907692307692317,
+          "candidate": [
+            0.028032,
+            0.028096,
+            0.028056
+          ],
+          "candidateMs": 0.028056,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 51,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 78336,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 470016,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": true,
+        "rows": 4,
+        "scope": "balanced",
+        "scratchBytes": 13998272,
+        "shaderHashes": {
+          "baseline": "7151a75a16d0a4428e555c06970a11e4f1c62323cbc2ca34ac5659f218327f85",
+          "candidate": "9f90d1c3cde2ef97dcfbd8386ebe1e400b01d595f049b95f2f43b0f801c51275",
+          "reduce": "7b2b65e55ab7be855647baec4df42914f9731b80e1cb2f33bd273d81cd8b8261"
+        },
+        "shape": "o",
+        "sharedWeightBytes": 3538944,
+        "splitT": 128,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.03088,
+            0.03072,
+            0.03092
+          ],
+          "baselineMs": 0.03088,
+          "benefit": -0.18730569948186532,
+          "candidate": [
+            0.03664,
+            0.036664,
+            0.03668
+          ],
+          "candidateMs": 0.036664,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1056,
+        "N": 65,
+        "T": 28,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 1820,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 14560,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "scratchBytes": 631904,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "f98e04ca38d1151c8a472a471be584131fd0828498c6aa99999baaa089739f30",
+          "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+        },
+        "shape": "ragged",
+        "sharedWeightBytes": 77220,
+        "splitT": 64,
+        "splits": 8,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.007912,
+            0.007904,
+            0.007912
+          ],
+          "baselineMs": 0.007912,
+          "benefit": -0.3943377148634984,
+          "candidate": [
+            0.011032,
+            0.011056,
+            0.011032
+          ],
+          "candidateMs": 0.011032,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1536,
+        "N": 6144,
+        "T": 28,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 172032,
+          "signedZeroChecked": true
+        },
+        "partialCheck": null,
+        "policy": "_gemma_source",
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "scratchBytes": 4475072,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "f98e04ca38d1151c8a472a471be584131fd0828498c6aa99999baaa089739f30",
+          "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+        },
+        "shape": "gate",
+        "sharedWeightBytes": 10616832,
+        "splitT": 64,
+        "splits": 1,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.056888,
+            0.057304,
+            0.057192
+          ],
+          "baselineMs": 0.057192,
+          "benefit": -0.23429850328717308,
+          "candidate": [
+            0.070592,
+            0.070736,
+            0.070536
+          ],
+          "candidateMs": 0.070592,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 6144,
+        "N": 1536,
+        "T": 28,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 43008,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 258048,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "scratchBytes": 8603840,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "f98e04ca38d1151c8a472a471be584131fd0828498c6aa99999baaa089739f30",
+          "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+        },
+        "shape": "down",
+        "sharedWeightBytes": 10616832,
+        "splitT": 64,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.05736,
+            0.057576,
+            0.057672
+          ],
+          "baselineMs": 0.057576,
+          "benefit": -0.26622203695984425,
+          "candidate": [
+            0.072832,
+            0.072904,
+            0.073016
+          ],
+          "candidateMs": 0.072904,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 1536,
+        "N": 2048,
+        "T": 28,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 57344,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 229376,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "scratchBytes": 7227584,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "f98e04ca38d1151c8a472a471be584131fd0828498c6aa99999baaa089739f30",
+          "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+        },
+        "shape": "q",
+        "sharedWeightBytes": 3538944,
+        "splitT": 64,
+        "splits": 4,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.020088,
+            0.018352,
+            0.018352
+          ],
+          "baselineMs": 0.018352,
+          "benefit": -0.1534437663469921,
+          "candidate": [
+            0.022,
+            0.021168,
+            0.021112
+          ],
+          "candidateMs": 0.021168,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      },
+      {
+        "K": 2048,
+        "N": 1536,
+        "T": 28,
+        "baselineColumns": 64,
+        "candidateColumns": 128,
+        "f16": false,
+        "ok": true,
+        "outputCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 43008,
+          "signedZeroChecked": true
+        },
+        "partialCheck": {
+          "bitMismatches": 0,
+          "firstDifference": null,
+          "maxAbs": 0,
+          "nonfinite": 0,
+          "ok": true,
+          "samples": 258048,
+          "signedZeroChecked": true
+        },
+        "policy": "_gemma_source",
+        "row56": false,
+        "rows": 2,
+        "scope": "fast",
+        "scratchBytes": 7686336,
+        "shaderHashes": {
+          "baseline": "364371f9901671b96afdc28fa64b71f064bc9f801b073cbd90d4de4044e3b2d3",
+          "candidate": "f98e04ca38d1151c8a472a471be584131fd0828498c6aa99999baaa089739f30",
+          "reduce": "bd1b47629a04beb9f47eecea4bca443c1480410c7c301174f731f8b6d61107db"
+        },
+        "shape": "o",
+        "sharedWeightBytes": 3538944,
+        "splitT": 64,
+        "splits": 6,
+        "tailGuard": true,
+        "timing": {
+          "baseline": [
+            0.021528,
+            0.021496,
+            0.021504
+          ],
+          "baselineMs": 0.021504,
+          "benefit": -0.1867559523809525,
+          "candidate": [
+            0.02552,
+            0.025576,
+            0.025504
+          ],
+          "candidateMs": 0.02552,
+          "reason": "stable-generic-win",
+          "repetitions": 4,
+          "samples": 3,
+          "selected": false,
+          "stable": false
+        },
+        "virtualColumns": 64,
+        "workgroupStorageBytes": {
+          "baseline": 16384,
+          "candidate": 24576
+        }
+      }
+    ],
+    "ok": true,
+    "tolerance": 0
+  },
+  "done": true,
+  "elapsedMs": 1416.7750000059605,
+  "method": "GPU timestamps, physical BN128 versus BN64 with original virtual BN64 split partition",
+  "metricMs": 0.04254351635128841,
+  "precision": "f32",
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "153.0.8010.12",
+    "chromiumArgs": [
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan"
+    ],
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    },
+    "vkDriverFiles": null
+  },
+  "status": "done",
+  "wasmUrl": "http://127.0.0.1:18086/js/src/kevala-base.wasm"
+}

@@ -1,0 +1,11 @@
+{
+  "status": "unchanged-existing-failure",
+  "threshold": 0.024,
+  "baselineMaxDp": 0.024006444195624588,
+  "currentMaxDp": 0.024006444195624588,
+  "allProbabilitiesIdentical": true,
+  "questions": 41,
+  "baselineRuntime": "HEAD gpu.js plus new-export compatibility shim",
+  "shaderProof": "laya-shader-byteeq-proof.json",
+  "note": "The unchanged F32 parity tolerance fails in both paths. No tolerance was increased."
+}

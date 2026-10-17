@@ -1,0 +1,1253 @@
+{
+  "generatedUtc": "2026-10-17T09:44:51.550Z",
+  "baselineSummary": "compact-and-single-summary.json",
+  "sourceHashes": {
+    "dev/gemma4-mlp-k16-check.html": "798facaec565595423b7843303c090c3dc4c93ff9514304dfd8c2cbb050a2533",
+    "dev/gemma4-mlp-k16-check.js": "a37fb48da2b65efd5cd4e7931b5cc1681036543273899fae10b6319d18636d63",
+    "dev/gemma4-q8-layout-check.html": "495507f5a43bb1f338d973e9ae7c3720c960b68b14c85100ade4c318e8a36fa7",
+    "dev/gemma4-q8-layout-check.js": "8a6e60c0e3c90bc195e63dd8f51869bcb0356f8ac56954db4f8cc6ebbc8b423c",
+    "dev/gemma4-mlp-decode-check.html": "c01c2d8d1fc9bb71187f3d477053991b82fb0d649e5f537835df4ff37d04bc22",
+    "dev/gemma4-mlp-decode-check.js": "ebd167ed810202c76c28030e6bf9ee0afbfcf356a4d6b527f36429020d9a59b8"
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 5070 Ti",
+    "browser": "153.0.8010.12",
+    "m4Measured": false
+  },
+  "experiments": [
+    {
+      "name": "paired-f32-k16",
+      "enabled": false,
+      "reason": "Primary full-MLP candidate is slower than current separate F32 projections.",
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/mlp-k16-guarded-chrome.json.gz",
+        "sha256": "549af6cfeb8125bb98e14513da431857f54b5503137d1ec74678d2ac63ff394c",
+        "rawSha256": "fb86ea306ac30a33276aebe5866a11d75a50dc12a7bc1d3aa06661aa027adde7"
+      },
+      "cases": [
+        {
+          "shape": "gate6144",
+          "T": 97,
+          "N": 6144,
+          "K": 1536,
+          "splits": 3,
+          "before": {
+            "activationValuesPerReference": 595968,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 3575808,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 595968,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 3575808,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 61523744,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.349232,
+            "choices": {
+              "ordinaryVsK16": {
+                "benefit": -0.35655686761963945,
+                "genericMs": 0.25744,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.349232
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": -0.016967060285891792,
+                "genericMs": 0.25744,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.261808
+              },
+              "pairedK32VsK16": {
+                "benefit": -0.33392409704821857,
+                "genericMs": 0.261808,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.349232
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.34904,
+                0.349232,
+                0.366072
+              ],
+              "ordinary": [
+                0.25744,
+                0.257296,
+                0.275912
+              ],
+              "paired": [
+                0.260888,
+                0.261808,
+                0.279064
+              ]
+            }
+          }
+        },
+        {
+          "shape": "ragged",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 4016608,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.023408,
+            "choices": {
+              "ordinaryVsK16": {
+                "benefit": -0.08050221565731179,
+                "genericMs": 0.021664,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.023408
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.30723781388478577,
+                "genericMs": 0.021664,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015008
+              },
+              "pairedK32VsK16": {
+                "benefit": -0.5597014925373135,
+                "genericMs": 0.015008,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.023408
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.023432,
+                0.023312,
+                0.023408
+              ],
+              "ordinary": [
+                0.021584,
+                0.021664,
+                0.021672
+              ],
+              "paired": [
+                0.015016,
+                0.015008,
+                0.015
+              ]
+            }
+          }
+        },
+        {
+          "shape": "zeros",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 4016608,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.023184,
+            "choices": {
+              "ordinaryVsK16": {
+                "benefit": -0.07412898443291331,
+                "genericMs": 0.021584,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.023184
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.30467012601927346,
+                "genericMs": 0.021584,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015008
+              },
+              "pairedK32VsK16": {
+                "benefit": -0.544776119402985,
+                "genericMs": 0.015008,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.023184
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.023184,
+                0.02316,
+                0.023192
+              ],
+              "ordinary": [
+                0.021184,
+                0.021584,
+                0.021688
+              ],
+              "paired": [
+                0.015008,
+                0.014992,
+                0.015016
+              ]
+            }
+          }
+        },
+        {
+          "shape": "zeros-unsplit",
+          "T": 97,
+          "N": 17,
+          "K": 32,
+          "splits": 1,
+          "before": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 0,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 0,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 2158880,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.005864,
+            "choices": {
+              "ordinaryVsK16": {
+                "benefit": 0.16704545454545452,
+                "genericMs": 0.00704,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.005864
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.35681818181818187,
+                "genericMs": 0.00704,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.004528
+              },
+              "pairedK32VsK16": {
+                "benefit": -0.295053003533569,
+                "genericMs": 0.004528,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.005864
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.005864,
+                0.005864,
+                0.005872
+              ],
+              "ordinary": [
+                0.006832,
+                0.00704,
+                0.007096
+              ],
+              "paired": [
+                0.004528,
+                0.004528,
+                0.004544
+              ]
+            }
+          }
+        },
+        {
+          "shape": "cancellation",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 4016608,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.022976,
+            "choices": {
+              "ordinaryVsK16": {
+                "benefit": -0.08664396519107077,
+                "genericMs": 0.021144,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.022976
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.2905788876276958,
+                "genericMs": 0.021144,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015
+              },
+              "pairedK32VsK16": {
+                "benefit": -0.5317333333333334,
+                "genericMs": 0.015,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.022976
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.022936,
+                0.022976,
+                0.023032
+              ],
+              "ordinary": [
+                0.02108,
+                0.02172,
+                0.021144
+              ],
+              "paired": [
+                0.015,
+                0.015056,
+                0.014968
+              ]
+            }
+          }
+        },
+        {
+          "shape": "saturation",
+          "T": 97,
+          "N": 17,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 26384,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 26384,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 2999776,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.021008,
+            "choices": {
+              "ordinaryVsK16": {
+                "benefit": -0.04579848665870157,
+                "genericMs": 0.020088,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.021008
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.29510155316606934,
+                "genericMs": 0.020088,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.01416
+              },
+              "pairedK32VsK16": {
+                "benefit": -0.4836158192090394,
+                "genericMs": 0.01416,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.021008
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.021016,
+                0.021008,
+                0.021008
+              ],
+              "ordinary": [
+                0.019616,
+                0.02016,
+                0.020088
+              ],
+              "paired": [
+                0.01416,
+                0.014184,
+                0.014152
+              ]
+            }
+          }
+        }
+      ],
+      "finalReceipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/mlp-k16-source-final-chrome.json.gz",
+        "sha256": "a8883645ef0f47941d8636f8412fbec55fafcd415584bb7c46641011130214cd",
+        "rawSha256": "2621663bc5026097c000fc00cf61443589cb0b79d4b585ec951d7677d252fe58"
+      },
+      "finalPrimaryTiming": {
+        "allocationsAndUploadsTimed": false,
+        "candidateMs": 0.34904,
+        "choices": {
+          "ordinaryVsK16": {
+            "benefit": -0.3567807942283175,
+            "genericMs": 0.257256,
+            "kernel": "generic",
+            "reason": "stable-generic-win",
+            "stable": false,
+            "wideMs": 0.34904
+          },
+          "ordinaryVsPairedK32": {
+            "benefit": -0.015206642410672742,
+            "genericMs": 0.257256,
+            "kernel": "generic",
+            "reason": "noisy",
+            "stable": false,
+            "wideMs": 0.261168
+          },
+          "pairedK32VsK16": {
+            "benefit": -0.33645775899038166,
+            "genericMs": 0.261168,
+            "kernel": "generic",
+            "reason": "stable-generic-win",
+            "stable": false,
+            "wideMs": 0.34904
+          }
+        },
+        "pairs": 3,
+        "repetitions": 4,
+        "samples": {
+          "candidate": [
+            0.34904,
+            0.349728,
+            0.348568
+          ],
+          "ordinary": [
+            0.257744,
+            0.257256,
+            0.256168
+          ],
+          "paired": [
+            0.260528,
+            0.261728,
+            0.261168
+          ]
+        }
+      },
+      "finalAllCasesExact": true
+    },
+    {
+      "name": "q8-weight-byte-permutation",
+      "enabled": false,
+      "reason": "Primary improvements are below the stable 5 percent threshold and require an extra packed-weight allocation.",
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/q8-layout-fixed-chrome.json.gz",
+        "sha256": "1752e5412b40e26fbc6f3e4189ff76a90b3ed663b1401437cdb0f609ce0fe12c",
+        "rawSha256": "4dbfbf63fe243250d1220e3b4e9ab745b8d7a23b7b4afe7ca675a6715927919a"
+      },
+      "cases": [
+        {
+          "shape": "gate",
+          "T": 97,
+          "N": 6144,
+          "K": 1536,
+          "splits": 3,
+          "controlledTemporaryBytes": 47792528,
+          "timing": {
+            "baseline": [
+              0.127248,
+              0.12684,
+              0.127048
+            ],
+            "baselineMs": 0.127048,
+            "candidate": [
+              0.124168,
+              0.124176,
+              0.124352
+            ],
+            "candidateMs": 0.124176,
+            "method": "paired GPU timestamp-query, matmul plus identical reducer",
+            "repetitions": 4,
+            "samples": 3,
+            "speedup": 1.0231284628269552
+          },
+          "sourceHashes": {
+            "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+            "candidate": "f4b8dfb42ecfc9192a5b80f43f3d7df355e77c50afc60b891a9899f93b4fba1d",
+            "reducer": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+          },
+          "allGuardsExact": true
+        },
+        {
+          "shape": "down",
+          "T": 97,
+          "N": 1536,
+          "K": 6144,
+          "splits": 8,
+          "controlledTemporaryBytes": 35830160,
+          "timing": {
+            "baseline": [
+              0.12652,
+              0.125664,
+              0.125456
+            ],
+            "baselineMs": 0.125664,
+            "candidate": [
+              0.122952,
+              0.123328,
+              0.123248
+            ],
+            "candidateMs": 0.123248,
+            "method": "paired GPU timestamp-query, matmul plus identical reducer",
+            "repetitions": 4,
+            "samples": 3,
+            "speedup": 1.0196027521744775
+          },
+          "sourceHashes": {
+            "baseline": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+            "candidate": "f4b8dfb42ecfc9192a5b80f43f3d7df355e77c50afc60b891a9899f93b4fba1d",
+            "reducer": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+          },
+          "allGuardsExact": true
+        }
+      ]
+    },
+    {
+      "name": "paired-and-ordinary-marlin-q8-decode",
+      "enabled": false,
+      "reason": "Both primary variants are slower than current ordinary F32 row56.",
+      "receipt": {
+        "file": "docs/benchmarks/gemma4-fusions-2026-10-17/mlp-decode-final-chrome.json.gz",
+        "sha256": "52ef84f3b977224270fabaa0e86fae9da4d5dafef3d08ac7bd5f6eb825e6a302",
+        "rawSha256": "e4038fc83acd769399db70a269769ae8cd0e56986ab775d065a95c0bccf976ca"
+      },
+      "proof": {
+        "byteValues": 256,
+        "decodedWords": 1024,
+        "lanes": 4,
+        "ok": true,
+        "scaleBits": [
+          "0x00000000",
+          "0x80000000",
+          "0x3951b717",
+          "0xb951b717",
+          "0x3eaaaaab",
+          "0xbeaaaaab",
+          "0x3f800000",
+          "0xbf800000",
+          "0x41880000",
+          "0xc1880000",
+          "0x00000001",
+          "0x80000001",
+          "0x00800000",
+          "0x80800000",
+          "0x49800000",
+          "0xc9800000"
+        ],
+        "signedScaleProducts": 16384,
+        "signedZeroChecked": true
+      },
+      "shaderHashes": {
+        "candidate": "1337e3af35c4fe88599a189af36bed65a06377b5df4549267f1ee5598b91908b",
+        "gelu": "23fab776e6aabf67cd7a0276023ad8c5c25e598cc228b64642caaa41a672417d",
+        "ordinary": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da",
+        "ordinaryVariant": "a4b734f6b37ebfe205b1c2871f5ebee97693109d7d68e2794936d06b255c1b0d",
+        "pairReduce": "86683d6d4e9cf80af727d8cecff2188219b96d86cded6297489b9dc6daa5c739",
+        "paired": "ec79dd107f07acc3299ec41cc9aa330fc5e8dc5e1311501ada2906b1bb599721",
+        "reduce": "e1040ebe1928bb345bddc6133b693811a65c7cef710e811d26bda0e012b05949"
+      },
+      "cases": [
+        {
+          "shape": "gate6144",
+          "T": 97,
+          "N": 6144,
+          "K": 1536,
+          "splits": 3,
+          "before": {
+            "activationValuesPerReference": 595968,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 3575808,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 595968,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 3575808,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 64669520,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.262024,
+            "choices": {
+              "ordinaryVsDecode": {
+                "benefit": -0.022923888940941273,
+                "genericMs": 0.256152,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.262024
+              },
+              "ordinaryVsOrdinaryDecode": {
+                "benefit": -0.020456603891439547,
+                "genericMs": 0.256152,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.261392
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": -0.017552078453418284,
+                "genericMs": 0.256152,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.260648
+              },
+              "pairedK32VsDecode": {
+                "benefit": -0.005279150425094335,
+                "genericMs": 0.260648,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.262024
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.262024,
+                0.262088,
+                0.261456
+              ],
+              "ordinary": [
+                0.255944,
+                0.256912,
+                0.256152
+              ],
+              "ordinaryVariant": [
+                0.261392,
+                0.261304,
+                0.261784
+              ],
+              "paired": [
+                0.26048,
+                0.260824,
+                0.260648
+              ]
+            }
+          }
+        },
+        {
+          "shape": "ragged",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 4049936,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.015088,
+            "choices": {
+              "ordinaryVsDecode": {
+                "benefit": 0.31517792302106024,
+                "genericMs": 0.022032,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015088
+              },
+              "ordinaryVsOrdinaryDecode": {
+                "benefit": -0.0537400145243283,
+                "genericMs": 0.022032,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.023216
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.31517792302106024,
+                "genericMs": 0.022032,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015088
+              },
+              "pairedK32VsDecode": {
+                "benefit": 0,
+                "genericMs": 0.015088,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.015088
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.01508,
+                0.015088,
+                0.015128
+              ],
+              "ordinary": [
+                0.022032,
+                0.022072,
+                0.02168
+              ],
+              "ordinaryVariant": [
+                0.023144,
+                0.023216,
+                0.02328
+              ],
+              "paired": [
+                0.01504,
+                0.015088,
+                0.015104
+              ]
+            }
+          }
+        },
+        {
+          "shape": "zeros",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 4049936,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.015088,
+            "choices": {
+              "ordinaryVsDecode": {
+                "benefit": 0.3043157506455182,
+                "genericMs": 0.021688,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015088
+              },
+              "ordinaryVsOrdinaryDecode": {
+                "benefit": -0.04721504979712286,
+                "genericMs": 0.021688,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.022712
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.30542235337513834,
+                "genericMs": 0.021688,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015064
+              },
+              "pairedK32VsDecode": {
+                "benefit": -0.001593202336696857,
+                "genericMs": 0.015064,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.015088
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.015088,
+                0.015088,
+                0.015064
+              ],
+              "ordinary": [
+                0.023104,
+                0.0216,
+                0.021688
+              ],
+              "ordinaryVariant": [
+                0.022696,
+                0.022712,
+                0.023136
+              ],
+              "paired": [
+                0.015216,
+                0.015048,
+                0.015064
+              ]
+            }
+          }
+        },
+        {
+          "shape": "zeros-unsplit",
+          "T": 97,
+          "N": 17,
+          "K": 32,
+          "splits": 1,
+          "before": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 0,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 0,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 2167632,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.004536,
+            "choices": {
+              "ordinaryVsDecode": {
+                "benefit": 0.3571428571428571,
+                "genericMs": 0.007056,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.004536
+              },
+              "ordinaryVsOrdinaryDecode": {
+                "benefit": -0.00113378684807259,
+                "genericMs": 0.007056,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.007064
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.3560090702947845,
+                "genericMs": 0.007056,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.004544
+              },
+              "pairedK32VsDecode": {
+                "benefit": 0.001760563380281733,
+                "genericMs": 0.004544,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.004536
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.004536,
+                0.004536,
+                0.004536
+              ],
+              "ordinary": [
+                0.006832,
+                0.007056,
+                0.007088
+              ],
+              "ordinaryVariant": [
+                0.007176,
+                0.007,
+                0.007064
+              ],
+              "paired": [
+                0.004536,
+                0.004544,
+                0.004544
+              ]
+            }
+          }
+        },
+        {
+          "shape": "cancellation",
+          "T": 97,
+          "N": 65,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 6305,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 100880,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 4049936,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.015104,
+            "choices": {
+              "ordinaryVsDecode": {
+                "benefit": 0.282947208507406,
+                "genericMs": 0.021064,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015104
+              },
+              "ordinaryVsOrdinaryDecode": {
+                "benefit": -0.0770983668818838,
+                "genericMs": 0.021064,
+                "kernel": "generic",
+                "reason": "stable-generic-win",
+                "stable": false,
+                "wideMs": 0.022688
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.2856057728826433,
+                "genericMs": 0.021064,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.015048
+              },
+              "pairedK32VsDecode": {
+                "benefit": -0.0037214247740562706,
+                "genericMs": 0.015048,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.015104
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.015136,
+                0.01508,
+                0.015104
+              ],
+              "ordinary": [
+                0.020992,
+                0.021064,
+                0.021184
+              ],
+              "ordinaryVariant": [
+                0.023104,
+                0.022688,
+                0.022608
+              ],
+              "paired": [
+                0.01504,
+                0.015072,
+                0.015048
+              ]
+            }
+          }
+        },
+        {
+          "shape": "saturation",
+          "T": 97,
+          "N": 17,
+          "K": 1056,
+          "splits": 8,
+          "before": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 26384,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "after": {
+            "activationValuesPerReference": 1649,
+            "bitMismatches": 0,
+            "nonFinite": 0,
+            "ok": true,
+            "ordinaryPartialReferenceChecked": true,
+            "paddingAndTailsChecked": true,
+            "pairedPartialValues": 26384,
+            "readbackBytes": 16,
+            "signedZeroChecked": true,
+            "tailMismatches": 0
+          },
+          "controlledTemporaryBytes": 3008528,
+          "timing": {
+            "allocationsAndUploadsTimed": false,
+            "candidateMs": 0.014248,
+            "choices": {
+              "ordinaryVsDecode": {
+                "benefit": 0.29269261318506745,
+                "genericMs": 0.020144,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.014248
+              },
+              "ordinaryVsOrdinaryDecode": {
+                "benefit": -0.0512311358220811,
+                "genericMs": 0.020144,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.021176
+              },
+              "ordinaryVsPairedK32": {
+                "benefit": 0.2962668784749801,
+                "genericMs": 0.020144,
+                "kernel": "wide",
+                "reason": "stable-wide-win",
+                "stable": true,
+                "wideMs": 0.014176
+              },
+              "pairedK32VsDecode": {
+                "benefit": -0.005079006772009092,
+                "genericMs": 0.014176,
+                "kernel": "generic",
+                "reason": "noisy",
+                "stable": false,
+                "wideMs": 0.014248
+              }
+            },
+            "pairs": 3,
+            "repetitions": 4,
+            "samples": {
+              "candidate": [
+                0.014336,
+                0.014248,
+                0.014248
+              ],
+              "ordinary": [
+                0.020144,
+                0.019992,
+                0.020152
+              ],
+              "ordinaryVariant": [
+                0.021176,
+                0.021168,
+                0.0212
+              ],
+              "paired": [
+                0.014176,
+                0.014168,
+                0.01424
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Synthetic kernel measurements, not camera FPS.",
+    "M4 Max, Metal/MLX and native CUDA were not measured.",
+    "The first Q8-layout navigation loaded the wrong script and was discarded; this summary only archives the corrected candidate with its expected shader hash."
+  ],
+  "decoderControlShaderHash": "ee37dc6a8d0c8cda1a6177c1d3e772545c2d4c935234007c38d9ed8c1b88f1da"
+}

@@ -1,0 +1,152 @@
+{
+  "date": "2026-10-17",
+  "baseCommit": "3d8d7d918184c91c11f57bccdec65ac2fcf63126",
+  "scope": "Uncommitted WebGPU source and local Linux NVIDIA Chromium measurements. No new M4, CUDA, native Metal/MLX measurement or deployment.",
+  "targetFps": 60,
+  "targetMet": false,
+  "precisionChanged": false,
+  "imageBudgetChanged": false,
+  "sourceSha256": {
+    "js/src/gpu-gemma4.js": "d22d31b08c559f289a6971e09d8cde070390242818fb464f0065ea08ab899e24",
+    "js/src/gpu-gemma4-prefix-retile.js": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5",
+    "js/src/gpu-gemma4-attention.js": "ac3c3ccc8a0676dfffc4d26a3877f31b77a090a9b927f7e62207140748c9d26f",
+    "js/src/gpu-gemma4-batch-mlp.js": "93b2d07358b16f53730f7dd12a9c2733502c9ce1f5ca6a5dd9d4a2575b83af35",
+    "js/src/gpu-gemma4-prefix-cache.js": "ee443e1a677203d20968bd723f9f31d2ed27f0914dd0a43f9ab2986bcfecd2ea",
+    "js/src/gpu-gemma4-vision.js": "f17997adfa6e923b69d876e17fb03f69f01c376932b6024f1aa6dc9b6da184d8",
+    "js/src/archs/gemma4.js": "dbedf6b336b8610f82f5d51e6c62dd3753e67b7c6ad9619a2b605cc60f3687f9",
+    "js/src/gemma4-image.js": "d549c8a8bb4d857e0d7673b2d2ad65f7472edc1c3084348da045c5eb7b4f09a4",
+    "app/views/reaction-scheduler.js": "afc117120221ccac767280897d739f1c2d4a83fe03cd1a622097d623a34a9b8a"
+  },
+  "camera": {
+    "receipt": "camera-retile-sustained.json",
+    "framesPerStage": 240,
+    "phases": [
+      {
+        "budget": 70,
+        "discardedWarmups": 4,
+        "meanMs": 46.47294491523151,
+        "p50Ms": 46.38500000536442,
+        "p95Ms": 48.01500000059605,
+        "completedFps": 21.274457705021288,
+        "retiledPrefixMatrices": 0
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 34.32690677924429,
+        "p50Ms": 34.287500001490116,
+        "p95Ms": 36.00499999523163,
+        "completedFps": 28.687959236280733,
+        "retiledPrefixMatrices": 76
+      },
+      {
+        "budget": 16,
+        "discardedWarmups": 4,
+        "meanMs": 27.70675847464699,
+        "p50Ms": 27.48249999433756,
+        "p95Ms": 30.424999997019768,
+        "completedFps": 35.377180965634714,
+        "retiledPrefixMatrices": 128
+      },
+      {
+        "budget": 40,
+        "discardedWarmups": 4,
+        "meanMs": 34.509830508507406,
+        "p50Ms": 34.45000001043081,
+        "p95Ms": 36.12999999523163,
+        "completedFps": 28.57785641753217,
+        "retiledPrefixMatrices": 76
+      }
+    ],
+    "checks": {
+      "maxInFlight": 1,
+      "sameModel": true,
+      "videoCleared": true,
+      "tracksStopped": true,
+      "lastTab": "reaction",
+      "overflow": false
+    },
+    "resources": {
+      "memory.max": "6291456000",
+      "memory.peak": "4396597248",
+      "memory.swap.max": "0",
+      "cpu.max": "400000 100000",
+      "cpu.stat": "usage_usec 46334247\nuser_usec 30633091\nsystem_usec 15701156\nnice_usec 0\ncore_sched.force_idle_usec 0\nnr_periods 594\nnr_throttled 0\nthrottled_usec 0\nnr_bursts 0\nburst_usec 0"
+    }
+  },
+  "profile": {
+    "receipt": "retile-camera-profile.json.gz",
+    "samples": 4,
+    "coarseGpuStages": {
+      "vision": {
+        "meanMs": 8.126728000000002,
+        "passes": 9,
+        "dispatches": 264
+      },
+      "prefix": {
+        "meanMs": 6.583096000000001,
+        "passes": 35,
+        "dispatches": 384
+      },
+      "suffix": {
+        "meanMs": 9.409856000000001,
+        "passes": 34,
+        "dispatches": 370
+      },
+      "tail": {
+        "meanMs": 4.878096,
+        "passes": 22,
+        "dispatches": 285
+      }
+    }
+  },
+  "numericalChecks": [
+    {
+      "receipt": "prefix-retile-loaded-chrome.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true
+    },
+    {
+      "receipt": "prefix-retile-loaded-firefox.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true
+    },
+    {
+      "receipt": "retile-latest-five-chrome.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true
+    },
+    {
+      "receipt": "retile-latest-five-firefox.json",
+      "ok": true,
+      "maxProbabilityDelta": 0,
+      "noThresholdFlips": true
+    }
+  ],
+  "validation": {
+    "javascriptCheck": "passed",
+    "javascriptTests": "passed",
+    "rustFmt": "passed",
+    "rustClippy": "passed",
+    "nativeWgsl": "passed",
+    "wasmAbi": "passed",
+    "package": "passed",
+    "siteStaging": "passed",
+    "fullGpuSuite": "not rerun; existing Laya F32 parity failure documented separately"
+  },
+  "devPrototypes": {
+    "enabledInRuntime": false,
+    "shaderSha256": "5ace11f8c77670620bedcccdf188dae72556eeaa01c933147c3ada38178d863c",
+    "shaderPath": "dev/gemma4-reduce-rms.wgsl",
+    "note": "The unchanged prototype shader moved from crates/kevala/src/wgsl/gemma4_reduce_rms.wgsl after measurement. It is not registered in WASM.",
+    "receipts": [
+      "mlp-reduce-f32-chrome.json",
+      "reduce-rms-corrected-chrome.json",
+      "reduce-rms-subgroup-chrome.json",
+      "reduce-rms-firefox.json"
+    ]
+  }
+}
