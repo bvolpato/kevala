@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["torch>=2.6", "transformers>=5.17", "numpy", "accelerate"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Reference direct-label scorer for the SemIf contract.
 

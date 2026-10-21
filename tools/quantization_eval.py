@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["torch>=2.6,<3"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Measure bounded weight-only quantization error on cached safetensors tensors.
 

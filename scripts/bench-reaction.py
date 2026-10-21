@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["playwright==1.63.0"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Measure actual Reaction Recorder decisions with Chromium's synthetic webcam.
 

@@ -10,6 +10,8 @@
 #     "numpy",
 #     "jinja2",
 # ]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Compare Gemma 4 base and IT weights on the same direct-decision rows.
 

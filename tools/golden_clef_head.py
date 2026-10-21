@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["torch"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Generate a small parity fixture from the unmodified upstream Clef head.
 

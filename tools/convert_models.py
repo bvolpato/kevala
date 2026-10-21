@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["huggingface-hub"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Convert pinned optional models serially; publishing is a separate explicit flag.
 

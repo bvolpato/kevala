@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["torch>=2.6", "transformers>=5.17", "accelerate>=1.12", "safetensors", "huggingface_hub", "numpy", "pillow"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Generate a full Clef text reference using its unmodified upstream encoder and head.
 

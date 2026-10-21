@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["torch>=2.6", "transformers>=5.17", "peft>=0.17", "safetensors", "numpy", "pydantic", "huggingface_hub"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Dev-time reference dump for Kev. Never shipped, never needed at runtime.
 

@@ -2,6 +2,8 @@
 # /// script
 # requires-python = ">=3.12"
 # dependencies = ["selenium>=4.25,<5"]
+# [tool.uv]
+# exclude-newer = "P7D"
 # ///
 """Check the website's size picker in an isolated Firefox, without downloading weights."""
 
