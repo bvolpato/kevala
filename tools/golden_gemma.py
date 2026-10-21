@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["torch>=2.6", "transformers>=5.17", "accelerate>=1.12", "huggingface_hub", "safetensors", "numpy", "jinja2"]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Generate a Transformers reference for Gemma 4 direct option scoring.

@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["torch>=2.6", "transformers==5.19.0", "safetensors", "numpy"]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Generate a bounded vision-only reference from pinned Transformers source.

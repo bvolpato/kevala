@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["transformers>=5.17", "requests", "jinja2", "torch>=2.6", "safetensors"]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Freeze H2O's pinned shim prompt, tokenizer, and answer postprocessing.

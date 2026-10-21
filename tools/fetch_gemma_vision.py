@@ -3,6 +3,7 @@
 # requires-python = ">=3.12"
 # dependencies = ["requests"]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Fetch the pinned Gemma 4 E2B vision tower without downloading its decoder.

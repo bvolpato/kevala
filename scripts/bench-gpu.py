@@ -6,6 +6,7 @@
 #   "websockets>=13",
 # ]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Run a deterministic browser benchmark in an isolated headless browser, or in a running Chrome (--cdp).

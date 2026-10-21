@@ -3,6 +3,7 @@
 # requires-python = ">=3.11"
 # dependencies = ["playwright>=1.50"]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Records the model playing Tetris on the clip stage and renders the social video and README GIF.

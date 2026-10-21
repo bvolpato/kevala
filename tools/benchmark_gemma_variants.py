@@ -11,6 +11,7 @@
 #     "jinja2",
 # ]
 # [tool.uv]
+# required-version = ">=0.13.4"
 # exclude-newer = "P7D"
 # ///
 """Compare Gemma 4 base and IT weights on the same direct-decision rows.
