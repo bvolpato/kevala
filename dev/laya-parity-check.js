@@ -12,7 +12,7 @@ function modelOptions(backend) {
   return {
     backend,
     cache: false,
-    flavor: "base",
+    flavor: "simd",
     from: "pack",
     model: PACK_URL,
     precision: "q8",
@@ -22,8 +22,8 @@ function modelOptions(backend) {
 
 function validateModel(model, backend) {
   const info = model?.info;
-  const expected = backend === "wasm" ? "wasm-base" : "webgpu";
-  if (!info || info.arch !== "laya" || info.backend !== expected || info.flavor !== "base" || info.threads !== 1) {
+  const expected = backend === "wasm" ? "wasm-simd" : "webgpu";
+  if (!info || info.arch !== "laya" || info.backend !== expected || info.flavor !== "simd" || info.threads !== 1) {
     throw new Error(`${backend} loaded unexpected model metadata: ${JSON.stringify(info)}`);
   }
   if (!info.pack || !Number.isSafeInteger(info.pack.bytes) || info.pack.bytes <= 0) {
@@ -62,7 +62,7 @@ async function run() {
     if (!response.ok) throw new Error(`could not load Laya golden fixtures: HTTP ${response.status}`);
     const golden = await response.json();
 
-    log("Loading the local Q8 pack on single-threaded base WASM.");
+    log("Loading the local Q8 pack on single-threaded SIMD WASM.");
     wasmModel = await Kevala.load(modelOptions("wasm"));
     const wasmInfo = validateModel(wasmModel, "wasm");
     const wasmRows = await collect(wasmModel, golden, "wasm");
