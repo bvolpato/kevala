@@ -61,6 +61,7 @@ const checks = [
   ["gemma-vision-qkv", "gpu", "/dev/gemma4-vision-qkv-bf16-check.html?registered=1&full=1", undefined, ["timestampQuery", "visionQkv"]],
   ["gemma-grid-mlp", "gpu", "/dev/gemma4-mlp-grid-check.html?registered=1&guards=1", undefined, ["timestampQuery"]],
   ["laya", "gpu", "/dev/laya-parity-check.html"],
+  ["laya-default", "parity", "/parity.html#auto&backend=webgpu&pack=local", "0.03"],
   ["kev", "parity", "/parity-kev.html#backend=webgpu&pack=local", "0.011"],
   ["cache", "cache", "/dev/cache-test.html?backend=webgpu"],
 ];
