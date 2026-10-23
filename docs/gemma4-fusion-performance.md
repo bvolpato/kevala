@@ -1668,6 +1668,10 @@ Model weights and arithmetic are unchanged. The supported Chromium GPU suite com
 including the registered QKV and grid MLP numerical checks. M4 camera timing
 remains unmeasured.
 
+Strict backend parity disables optional F16 and subgroup execution so both
+backends use F32 arithmetic. Default F16 execution is assessed separately against
+the Q8 golden accuracy limit; it must not be mistaken for an F32 backend match.
+
 The final grid MLP and worker-pixel changes passed JavaScript checks and tests,
 Rust formatting/clippy and focused WGSL tests, all three rebuilt WASM ABI checks,
 and package validation. All 56 unpacked package files match the workspace, and
