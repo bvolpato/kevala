@@ -2,6 +2,8 @@
 
 This page shows where the code lives and which checks to run before a change lands. CI runs the same checks on every pull request and on every push to `main`.
 
+See the [release guide](docs/releasing.md) for versioning, package validation, and publication steps.
+
 ## Repository layout
 
 | Path | Contents |

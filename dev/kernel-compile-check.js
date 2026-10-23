@@ -25,7 +25,9 @@ async function run() {
     const started = performance.now();
     for (const kernel of kernels) {
       const seen = new Set();
-      for (const spec of specifications) {
+      const strictWeights = { gemma4_vision_qkv: "bf16", gemma4_mlp_grid: "q8" }[kernel];
+      const variants = strictWeights ? [{ weights: strictWeights, f16: false, rows: 4, row56: true, groups: 1, subgroups: false, splitTarget: 256 }] : specifications;
+      for (const spec of variants) {
         if (["matmul_gelu_tall", "matmul_tall"].includes(kernel) && (spec.weights && spec.weights !== "q8" || spec.f16 !== true || spec.rows !== 4 || spec.groups !== 1 || spec.row56 || spec.splitTarget !== 256)) continue;
         if (["matmul_bn32_gemma_source", "matmul_gelu_bn32"].includes(kernel) && (spec.weights && spec.weights !== "q8" || spec.f16 || spec.rows !== 2 || spec.groups !== 1 || spec.row56 || spec.splitTarget !== 256)) continue;
         if (["matmul_wide", "matmul_k64", "matmul_wide_gemma_batch", "matmul_wide_gemma_source", "matmul_k64_gemma_source", "matmul_gelu", "reduce_gelu"].includes(kernel) && spec.groups === 2) continue;
@@ -60,7 +62,7 @@ async function run() {
       method: "GPU pipeline compilation wall clock", metricMs: (performance.now() - started) / Math.max(1, compiled.length),
       adapter: { name: runtime.name, vendor: runtime.adapter.info?.vendor ?? null, isFallbackAdapter: false },
       deviceFeatures: [...device.features], languageFeatures: [...(languageFeatures || [])],
-      capabilities: { timestampQuery: device.features.has("timestamp-query"), shaderF16: device.features.has("shader-f16"), subgroup4: runtime.subgroup4, subgroup8: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 8, subgroup16: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 16, subgroup32: runtime.subgroup32 },
+      capabilities: { timestampQuery: device.features.has("timestamp-query"), shaderF16: device.features.has("shader-f16"), subgroup4: runtime.subgroup4, subgroup8: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 8, subgroup16: runtime.subgroup4 && runtime.adapter.info.subgroupMinSize >= 16, subgroup32: runtime.subgroup32, visionQkv: device.limits.maxComputeWorkgroupStorageSize >= 20 * 1024 && device.limits.maxStorageBuffersPerShaderStage >= 6 && device.limits.maxBindingsPerBindGroup >= 8 },
       limits: { maxComputeWorkgroupStorageSize: device.limits.maxComputeWorkgroupStorageSize },
       correctness: { ok: !failures.length, registeredKernels: kernels.length, compiled, skipped, failures },
       ...(failures.length ? { error: failures.map((failure) => `${failure.kernel}: ${failure.error}`).join("; ") } : {}),

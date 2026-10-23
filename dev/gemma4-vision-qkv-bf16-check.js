@@ -376,8 +376,10 @@ async function assertTails(device, read, entries, deadline) {
   return { checkedBuffers: entries.length, floatsPerTail: TAIL, sentinel: SENTINEL };
 }
 
-async function compileProbe(device, source) {
-  const baselineCode = source("matmul", SPEC), candidateCode = deriveTriplePackedQkv(baselineCode);
+async function compileProbe(device, source, registered = false) {
+  const baselineCode = source("matmul", SPEC), derived = deriveTriplePackedQkv(baselineCode);
+  const candidateCode = registered ? source("gemma4_vision_qkv", SPEC) : derived;
+  if (registered && candidateCode.trim() !== derived.trim()) throw new Error("registered vision QKV differs from the exact probe");
   const reducerCode = source("gemma4_vision_reduce_norm_rope");
   const ordinaryLayout = matmulLayout(device);
   const candidateLayout = device.createBindGroupLayout({ label: "DEV triple BF16 QKV", entries:
@@ -395,7 +397,7 @@ async function compileProbe(device, source) {
   const codes = { baseline: baselineCode, candidate: candidateCode, reducer: reducerCode };
   const sourceBytes = Object.values(codes).reduce((sum, code) => sum + new TextEncoder().encode(code).byteLength, 0);
   const sourceHashes = Object.fromEntries(await Promise.all(Object.entries(codes).map(async ([name, code]) => [name, await hash(code)])));
-  return { baseline, candidate, reducer, ordinaryLayout, candidateLayout, reductionLayout, sourceBytes, sourceHashes };
+  return { baseline, candidate, reducer, ordinaryLayout, candidateLayout, reductionLayout, sourceBytes, sourceHashes, registered };
 }
 
 function workgroupCounts(T, splits) {
@@ -587,8 +589,8 @@ async function main() {
       log(window.gpuBench); return;
     }
     const source = await kernelSource(query.get("wasm") || undefined);
-    const pipes = await withGpuErrors(runtime, () => compileProbe(d, source), "compile DEV triple QKV BF16 probe");
-    metadata = { ...metadata, sourceHashes: pipes.sourceHashes, sourceBytes: pipes.sourceBytes, wasmUrl: source.wasmUrl };
+    const pipes = await withGpuErrors(runtime, () => compileProbe(d, source, query.get("registered") === "1"), "compile triple QKV BF16 probe");
+    metadata = { ...metadata, sourceHashes: pipes.sourceHashes, sourceBytes: pipes.sourceBytes, wasmUrl: source.wasmUrl, registered: pipes.registered };
     const fixtures = full ? [
       { input: "normal", weight: "normal" }, { input: "signed-zero", weight: "normal" },
       { input: "cancellation", weight: "normal" }, { input: "normal", weight: "tiny-subnormal" },

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala Laya Q8 backend parity</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  h1 { font-size: 1.1rem; }
+  pre { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Laya Q8: WebGPU versus WASM and the PyTorch fixture</h1>
+<p>This check loads the same local Q8 pack on WASM, disposes it, then loads it on WebGPU.</p>
+<pre id="log">running</pre>
+<script type="module" src="./laya-parity-check.js"></script>
+</body>
+</html>

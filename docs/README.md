@@ -2,10 +2,15 @@
 
 Start with [How kevala works](architecture.md). The guides describe the current code. The reports record one measurement each, with its date, hardware, and method.
 
+## Release notes
+
+- [Kevala 0.2.0](releases/0.2.0.md)
+
 ## Guides
 
 | Guide | Subject |
 |---|---|
+| [Release process](releasing.md) | Versioning, CI package validation, tagging, publication, and post-release checks. |
 | [How kevala works](architecture.md) | The Rust engine, the WebAssembly ABI, the browser runtime, the pack format, and the backends. |
 | [Choosing and running models](models.md) | The model families, their sizes, and their memory needs. |
 | [Packs: loading, converting and publishing](packs.md) | How the runtime loads a pack, and how to convert, check, and publish one. |

@@ -58,7 +58,9 @@ const checks = [
   ["recur8-subgroups", "gpu", "/dev/recur-check.html?candidate=recur8&subgroups=1&actual=1&samples=1&warmups=1", undefined, ["timestampQuery", "subgroup8"]],
   ["recur16-subgroups", "gpu", "/dev/recur-check.html?candidate=recur16&subgroups=1&actual=1&samples=1&warmups=1", undefined, ["timestampQuery", "subgroup16"]],
   ["attention", "gpu", "/dev/attn-bench.html?cases=1:0,15:0,16:0,17:0,31:0,32:0,33:0,63:0,64:0,65:0,127:0,128:0,129:0,47:0,512:0,512:64,150/40:64&kernels=attention,attention_subgroup,attention_tile,attention_tile_shared&samples=1&warmups=1&checks=3"],
-  ["laya", "parity", "/parity.html#auto&backend=webgpu&pack=local", "0.024"],
+  ["gemma-vision-qkv", "gpu", "/dev/gemma4-vision-qkv-bf16-check.html?registered=1&full=1", undefined, ["timestampQuery", "visionQkv"]],
+  ["gemma-grid-mlp", "gpu", "/dev/gemma4-mlp-grid-check.html?registered=1&guards=1", undefined, ["timestampQuery"]],
+  ["laya", "gpu", "/dev/laya-parity-check.html"],
   ["kev", "parity", "/parity-kev.html#backend=webgpu&pack=local", "0.011"],
   ["cache", "cache", "/dev/cache-test.html?backend=webgpu"],
 ];
@@ -77,7 +79,7 @@ for (const [name, kind, path, tolerance, required = []] of checks) {
   }
   if (name === "compile") {
     capabilities = JSON.parse(readFileSync(resolve(out, "compile.json"), "utf8")).capabilities;
-    if (!["timestampQuery", "shaderF16", "subgroup4", "subgroup8", "subgroup16", "subgroup32"].every((capability) => typeof capabilities?.[capability] === "boolean")) throw new Error("compile guard did not report device capabilities");
+    if (!["timestampQuery", "shaderF16", "subgroup4", "subgroup8", "subgroup16", "subgroup32", "visionQkv"].every((capability) => typeof capabilities?.[capability] === "boolean")) throw new Error("compile guard did not report device capabilities");
   }
 }
 console.log("All supported GPU numerical guards passed");

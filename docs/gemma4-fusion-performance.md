@@ -1655,6 +1655,17 @@ outputs; it does not establish an isolated camera FPS improvement.
 
 ## Validation
 
+The 0.2.0 release preparation corrects the Laya guard described in the historical
+results below. The old GPU gate compared Q8 weights with the unquantized PyTorch
+fixture. The new [Laya guard](../dev/laya-parity-check.html) separately compares
+WebGPU with single-threaded base WASM on the same Q8 pack at `5e-4`, and checks
+both against the established native/CPU Q8 golden limit of `0.03`. The recorded
+golden delta remains `0.024006444195624588`; all 41 public probability vectors
+match exactly between WASM and Chromium WebGPU. Model weights and arithmetic
+are unchanged. The supported Chromium GPU suite completes with the new guard,
+including the registered QKV and grid MLP numerical checks. M4 camera timing
+remains unmeasured.
+
 The final grid MLP and worker-pixel changes passed JavaScript checks and tests,
 Rust formatting/clippy and focused WGSL tests, all three rebuilt WASM ABI checks,
 and package validation. All 56 unpacked package files match the workspace, and

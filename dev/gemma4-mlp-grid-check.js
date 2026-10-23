@@ -54,10 +54,12 @@ export function memoryPlan(N, K) {
 
 const OFFSET_COMPARE = 'struct P { length: u32, offset: u32, _a: u32, _b: u32 }\n@group(0) @binding(0) var<uniform> p: P;\n@group(0) @binding(1) var<storage, read> A: array<u32>;\n@group(0) @binding(2) var<storage, read> B: array<u32>;\n@group(0) @binding(3) var<storage, read_write> status: array<atomic<u32>>;\n@compute @workgroup_size(256)\nfn main(@builtin(global_invocation_id) gid: vec3<u32>) {\n  let i = gid.x + gid.y * 65535u * 256u;\n  if (i >= p.length) { return; }\n  if (A[i] != B[p.offset + i]) { atomicAdd(&status[0], 1u); }\n}\n';
 
-async function compile(device, source) {
+async function compile(device, source, registered = false) {
   const spec = { weights: 'q8', f16: false, rows: 4, row56: true, groups: 1, splitTarget: 256 };
   const codes = { baseline: source('matmul_gemma_batch', spec), reduce: source('reduce_gemma_batch', spec), gelu: source('gemma4_gelu'), reduceGelu: source('reduce_gelu', spec) };
-  codes.candidate = gridMatmulCode(codes.baseline);
+  const derived = gridMatmulCode(codes.baseline);
+  codes.candidate = registered ? source('gemma4_mlp_grid', spec) : derived;
+  if (registered && codes.candidate.trim() !== derived.trim()) throw new Error('registered grid MLP differs from the exact probe');
   if (body(codes.reduceGelu, 'gelu') !== body(codes.gelu, 'gelu')) throw new Error('grid GELU reducer differs from registered GELU');
   const layout = matmulLayout(device), reduction = reduceLayout(device);
   const pairLayout = device.createBindGroupLayout({ entries: ['uniform', 'uniform', 'read-only-storage', 'read-only-storage', 'read-only-storage', 'read-only-storage', 'read-only-storage', 'storage', 'storage'].map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
@@ -205,7 +207,8 @@ async function main() {
     metadata = { f16: false, adapter: { name: runtime.name, features: [...runtime.device.features] }, temporaryLimitBytes: LIMIT, immutableWeightsExcludedFromTemporaryLimit: true };
     if (!runtime.device.features.has("timestamp-query")) throw new Error("MLP grid probe requires timestamp-query");
     const source = await kernelSource(params.get("wasm") || undefined); metadata.wasmUrl = source.wasmUrl;
-    const pipes = await withGpuErrors(runtime, () => compile(runtime.device, source), "compiling DEV MLP grid"); metadata.shaderHashes = pipes.hashes;
+    const registered = params.get("registered") === "1";
+    const pipes = await withGpuErrors(runtime, () => compile(runtime.device, source, registered), "compiling MLP grid"); metadata.shaderHashes = pipes.hashes; metadata.registered = registered;
     for (const input of inputs) { log({ status: "checking", ...input }); const result = await withGpuErrors(runtime, () => check(runtime, pipes, input), "checking DEV MLP grid"); cases.push(result); log(result); }
     const metricMs = Math.exp(cases.reduce((sum, item) => sum + Math.log(item.timing.candidateMs), 0) / cases.length);
     window.gpuBench = { status: "done", done: true, backend: "webgpu", check: "gemma4-mlp-grid", ...metadata, metricMs, elapsedMs: performance.now() - started, method: "candidate GPU timestamp milliseconds; one grid-stacked BM56 GEMM and registered fused reducer/GELU versus separate gate/up, reducers and GELU", correctness: { ok: true, bitExact: true, tolerance: 0, cases } };

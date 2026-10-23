@@ -13,7 +13,7 @@ import { createGemma4PleResource } from "./gemma4-ple-store.js";
 export { cacheInfo, clearCache, defaultPrecision, isCached, MODELS, precisionOptions } from "./source.js";
 export * as presets from "./presets.js";
 
-export const VERSION = "0.1.3";
+export const VERSION = "0.2.0";
 
 function spawn(file) {
   const url = new URL(file, import.meta.url);
