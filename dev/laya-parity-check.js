@@ -30,8 +30,9 @@ function validateModel(model, backend) {
     throw new Error(`${backend} did not report a loaded Laya pack size`);
   }
   if (backend === "webgpu" && (typeof info.gpu !== "string" || !info.gpu)) throw new Error("WebGPU did not report the selected adapter");
+  if (backend === "webgpu" && !["high-performance", "low-power"].includes(info.gpuPowerPreference)) throw new Error("WebGPU did not report the selected power preference");
   // precision:q8 makes the loader check the pack header before either backend accepts the weights.
-  return { backend: info.backend, flavor: info.flavor, threads: info.threads, arch: info.arch, precision: "q8", packBytes: info.pack.bytes, gpu: info.gpu || null };
+  return { backend: info.backend, flavor: info.flavor, threads: info.threads, arch: info.arch, precision: "q8", packBytes: info.pack.bytes, gpu: info.gpu || null, gpuPowerPreference: info.gpuPowerPreference || null };
 }
 
 async function collect(model, golden, backend) {
@@ -53,17 +54,6 @@ function median(values) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-async function hardwareAdapter() {
-  if (!navigator.gpu) throw new Error("WebGPU is unavailable");
-  const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" }) || await navigator.gpu.requestAdapter();
-  if (!adapter) throw new Error("WebGPU did not return an adapter");
-  const info = adapter.info || {};
-  const isFallbackAdapter = Boolean(info.isFallbackAdapter || adapter.isFallbackAdapter);
-  if (isFallbackAdapter) throw new Error("WebGPU selected a software adapter");
-  const name = [info.vendor, info.architecture, info.device, info.description].filter(Boolean).join(" ");
-  return { name: name || "WebGPU", isFallbackAdapter };
-}
-
 async function run() {
   let wasmModel = null;
   let gpuModel = null;
@@ -83,7 +73,7 @@ async function run() {
     gpuModel = await Kevala.load(modelOptions("webgpu"));
     const gpuInfo = validateModel(gpuModel, "webgpu");
     if (gpuInfo.packBytes !== wasmInfo.packBytes) throw new Error("WASM and WebGPU loaded different pack sizes");
-    const adapter = await hardwareAdapter();
+    const adapter = { name: gpuInfo.gpu, powerPreference: gpuInfo.gpuPowerPreference };
     const gpuRows = await collect(gpuModel, golden, "webgpu");
     const correctness = assessLayaParity(golden, wasmRows, gpuRows);
     const metricMs = median(gpuRows.map((row) => row.forwardMs));
