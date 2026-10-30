@@ -8,8 +8,9 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, matmulPipelines, encodeMatmul, inErrorScopes, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, encodeMatmul, encodeMatvec, inErrorScopes, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
+import { calibrateMatvec } from "./gpu-matvec.js";
 import { calibrateRecurrence } from "./gpu-recur-tuning.js";
 
 let U;
@@ -108,17 +109,20 @@ export class GpuKev {
     const projectionNames = new Set(["qkv", "qkvz", "o", "out", "gate_up", "down"]);
     const dtypes = new Set(this.weights.header.tensors.filter((t) => projectionNames.has(t.name.split(".").at(-1))).map((t) => t.dtype));
     this.precisionMm = new Map();
-    if (dtypes.has("q8")) {
-      this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel });
-      this.precisionMm.set("q8", this.tuning.pipelines.generic);
-    }
+    this.precisionTuning = new Map();
+    this.precisionMatvec = new Map();
     for (const dtype of dtypes) {
-      if (dtype === "q8") continue;
-      this.precisionMm.set(dtype, await matmulPipelines(d, this.wgsl, this.gpuKernel === "wide" ? "matmul_wide" : "matmul", dtype));
+      const tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, dtype });
+      const matvec = await calibrateMatvec(d, this.wgsl, this.weights, tuning, { kernel: this.gpuKernel, dtype });
+      tuning.diagnostics.matvec = matvec.diagnostics;
+      this.precisionTuning.set(dtype, tuning);
+      this.precisionMatvec.set(dtype, matvec);
+      this.precisionMm.set(dtype, tuning.pipelines.generic);
     }
     this.mm = this.precisionMm.values().next().value;
     if (!this.mm) throw new Error("Qwen GPU trunk has no projection matrices");
-    this.tuning ||= { pipelines: { generic: this.mm, wide: null }, selection: new Map(), diagnostics: { method: "generic", reason: "unquantized-weights", points: [] } };
+    this.tuning = this.precisionTuning.values().next().value;
+    this.tuning.diagnostics.precisions = Object.fromEntries([...this.precisionTuning].map(([dtype, tuning]) => [dtype, { ...tuning.diagnostics }]));
     this.tuning.diagnostics.weightPrecision = [...dtypes];
     const recurrence = await calibrateRecurrence(d, [
       { lanes: 4, pipeline: this.p.RECUR },
@@ -175,21 +179,31 @@ export class GpuKev {
     this.rowPipelines = new Map();
   }
 
-  /** Reads selected embedding or lexical rows without placing the full table in WebAssembly. */
-  async weightRows(name, ids) {
+  rowTable(name, ids) {
     const e = this.weights.get(name);
-    const [count, width] = e.info.shape;
+    const [count] = e.info.shape;
     if (!e.shards) throw new Error(`GPU tensor ${name} is not a row table`);
     if (ids.some((id) => !Number.isInteger(id) || id < 0 || id >= count)) throw new Error(`GPU row table ${name} received an out-of-range row`);
-    const out = new Float32Array(ids.length * width);
-    if (!ids.length) return out;
+    return e;
+  }
+
+  async rowPipeline(e) {
     const dtype = e.info.dtype;
     if (!this.rowPipelines.has(dtype)) {
       const layout = this.device.createBindGroupLayout({ entries: ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "storage"].map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
       const pl = this.device.createPipelineLayout({ bindGroupLayouts: [layout] });
       this.rowPipelines.set(dtype, await pipeline(this.device, this.wgsl("weight_rows", { weights: dtype }), `weight_rows_${dtype}`, pl));
     }
-    const p = this.rowPipelines.get(dtype);
+    return this.rowPipelines.get(dtype);
+  }
+
+  /** Reads selected embedding or lexical rows without placing the full table in WebAssembly. */
+  async weightRows(name, ids) {
+    const e = this.rowTable(name, ids);
+    const [, width] = e.info.shape;
+    const out = new Float32Array(ids.length * width);
+    if (!ids.length) return out;
+    const p = await this.rowPipeline(e);
     const d = this.device;
     return inErrorScopes(d, async () => {
       for (const shard of e.shards) {
@@ -232,6 +246,75 @@ export class GpuKev {
     });
   }
 
+  /** Runs a complete record directly from a GPU-resident embedding table. */
+  async forwardRows(name, ids, batch) {
+    const table = this.rowTable(name, ids);
+    if (table.info.shape[1] !== this.cfg.hidden || batch.T1 !== 0 || batch.T2 !== ids.length) throw new Error("GPU row input must match a complete branch and its hidden width");
+    const input = { table, ids: Uint32Array.from(ids), pipeline: await this.rowPipeline(table) };
+    return this.forward(new Float32Array(), input, batch, new Uint32Array());
+  }
+
+  prepareRowInput(input) {
+    if (this.rowInput?.table === input.table) return;
+    if (this.rowInput) {
+      const previous = new Set(this.rowInput.buffers);
+      this.owned = this.owned.filter((buffer) => !previous.has(buffer));
+      for (const buffer of previous) buffer.destroy();
+    }
+    const d = this.device;
+    const [, width] = input.table.info.shape;
+    const alignment = d.limits.minStorageBufferOffsetAlignment;
+    const idStride = Math.ceil(this.cap.T2 * 4 / alignment) * alignment;
+    const paramStride = d.limits.minUniformBufferOffsetAlignment;
+    const buffers = [];
+    const make = (size, usage) => {
+      this.checkBuffer(size, "row input scratch");
+      const buffer = d.createBuffer({ size: Math.max(16, size), usage });
+      buffers.push(buffer);
+      this.owned.push(buffer);
+      return buffer;
+    };
+    const ids = make(idStride * input.table.shards.length, U.STORAGE | U.COPY_DST);
+    const params = make(paramStride * input.table.shards.length, U.UNIFORM | U.COPY_DST);
+    const gathered = input.table.shards.length > 1 ? make(this.cap.T2 * width * 4, U.STORAGE | U.COPY_SRC) : null;
+    const groups = input.table.shards.map((shard, index) => {
+      const common = [{ buffer: params, offset: index * paramStride, size: 16 }, { buffer: ids, offset: index * idStride, size: this.cap.T2 * 4 }, { buffer: shard.buf }, { buffer: shard.sbuf || this.zeros }];
+      return [gathered || this.x2, this.x2].map((buffer) => d.createBindGroup({
+        layout: input.pipeline.getBindGroupLayout(0),
+        entries: [...common, { buffer }].map((resource, binding) => ({ binding, resource })),
+      }));
+    });
+    this.rowInput = { table: input.table, ids, params, idStride, paramStride, gathered, groups, buffers };
+  }
+
+  encodeRowInput(encoder, input) {
+    const active = input.table.shards.flatMap((shard, index) => {
+      const positions = [];
+      for (let row = 0; row < input.ids.length; row++) if (input.ids[row] >= shard.start && input.ids[row] < shard.start + shard.count) positions.push(row);
+      return positions.length ? [{ shard, index, positions }] : [];
+    });
+    const scratch = this.rowInput;
+    const width = input.table.info.shape[1];
+    const direct = active.length === 1;
+    for (const { shard, index, positions } of active) {
+      this.device.queue.writeBuffer(scratch.params, index * scratch.paramStride, new Uint32Array([positions.length, width, input.table.info.block || 0, shard.start]));
+      this.device.queue.writeBuffer(scratch.ids, index * scratch.idStride, Uint32Array.from(positions, (row) => input.ids[row]));
+      const pass = encoder.beginComputePass();
+      pass.setPipeline(input.pipeline);
+      pass.setBindGroup(0, scratch.groups[index][Number(direct)]);
+      pass.dispatchWorkgroups(positions.length);
+      pass.end();
+      if (!direct) {
+        for (let first = 0; first < positions.length;) {
+          let end = first + 1;
+          while (end < positions.length && positions[end] === positions[end - 1] + 1) end++;
+          encoder.copyBufferToBuffer(scratch.gathered, first * width * 4, this.x2, positions[first] * width * 4, (end - first) * width * 4);
+          first = end;
+        }
+      }
+    }
+  }
+
   uni(values) {
     const a = new ArrayBuffer(16);
     const u = new Uint32Array(a);
@@ -253,6 +336,7 @@ export class GpuKev {
     this.carry = null;
     this.kvStage = null;
     this.ops = null;
+    this.rowInput = null;
     this.lru = [];
   }
 
@@ -269,6 +353,7 @@ export class GpuKev {
     this.cap = cap;
     for (const b of this.owned || []) b.destroy();
     this.owned = [];
+    this.rowInput = null;
     for (const b of this.uniforms || []) b.destroy();
     this.uniforms = [];
     const d = this.device;
@@ -423,15 +508,16 @@ export class GpuKev {
       const e = W(w);
       const [N, K] = e.info.shape;
       const u = this.uni([N, K, mode, 0]);
+      const pipes = this.precisionMm.get(e.info.dtype);
       return {
         k: "mm",
         label: "mm." + w.split(".").pop(),
         N,
         K,
         dtype: e.info.dtype,
-        pipes: this.precisionMm.get(e.info.dtype),
-        group: d.createBindGroup({ layout: this.mm.layout, entries: [this.g, u, input, e.buf, e.sbuf || this.zeros, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
-        reduce: d.createBindGroup({ layout: this.mm.reduceLayout, entries: [this.g, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        pipes,
+        group: d.createBindGroup({ layout: pipes.layout, entries: [this.g, u, input, e.buf, e.sbuf || this.zeros, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: pipes.reduceLayout, entries: [this.g, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
     const rms = (w, input, output) => ({ k: "rms", group: bg(this.p.RMS, [this.g, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
@@ -484,10 +570,14 @@ export class GpuKev {
       pass.setBindGroup(0, op.group);
       switch (op.k) {
         case "mm": {
-          if (op.dtype === "q8") {
-            const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, T) : this.gpuKernel;
-            encodeMatmul(pass, this.tuning.pipelines[kernel], op, T);
-          } else encodeMatmul(pass, op.pipes, op, T);
+          const tuning = this.precisionTuning.get(op.dtype);
+          const matvec = this.precisionMatvec.get(op.dtype);
+          if (this.gpuKernel === "auto" && T === 1 && matvec?.selection.has(`${op.N}:${op.K}`)) {
+            encodeMatvec(pass, matvec.pipelines, op, T);
+          } else {
+            const kernel = this.gpuKernel === "auto" ? selectedMatmulKernel(tuning?.selection, op.N, op.K, T) : this.gpuKernel;
+            encodeMatmul(pass, tuning?.pipelines[kernel] || op.pipes, op, T);
+          }
           break;
         }
         case "rms":
@@ -569,6 +659,7 @@ export class GpuKev {
     const d = this.device;
     const D = this.cfg.hidden;
     const { T2, branches, rows } = batch;
+    const rowInput = x2?.table ? x2 : null;
     const B = branches.length;
     this.R = rows.length;
     if (this.stateCacheEnabled === false) this.lru = [];
@@ -583,6 +674,7 @@ export class GpuKev {
       P = plan.segs.length;
       T1 = plan.segs.reduce((a, g) => a + g.len, 0);
       this.ensure(T1, T2, Math.max(P, 1), Math.max(P, B), rows.length);
+      if (rowInput) this.prepareRowInput(rowInput);
     } catch (e) {
       setupError = e;
     }
@@ -620,7 +712,7 @@ export class GpuKev {
     q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
     q.writeBuffer(this.g2, 0, new Uint32Array([T2, rows.length, B, 2]));
     q.writeBuffer(this.x, 0, x1c);
-    q.writeBuffer(this.x2, 0, x2);
+    if (!rowInput) q.writeBuffer(this.x2, 0, x2);
     q.writeBuffer(this.tok, 0, tok1);
     q.writeBuffer(this.tok2, 0, tok2);
     q.writeBuffer(this.segs, 0, seg1);
@@ -656,6 +748,7 @@ export class GpuKev {
       if (yieldable) await flush();
     }
     // switch the shared buffers over to stage 2
+    if (rowInput) this.encodeRowInput(enc, rowInput);
     enc.copyBufferToBuffer(this.x2, 0, this.x, 0, T2 * D * 4);
     enc.copyBufferToBuffer(this.tok2, 0, this.tok, 0, T2 * 16);
     enc.copyBufferToBuffer(this.segs2, 0, this.segs, 0, this.cap.S * 32);

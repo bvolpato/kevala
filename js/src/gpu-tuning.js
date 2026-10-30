@@ -5,7 +5,7 @@
 import { bufferUsage, dispatchMatmul, inErrorScopes, matmulPipelines, mmSplits, rowsPerThread, scratchBuffer } from "./gpu.js";
 import { median } from "./stats.js";
 
-export const GPU_TUNING_REVISION = 1;
+export const GPU_TUNING_REVISION = 2;
 export const MATMUL_TOKENS = [16, 32, 48, 128, 512];
 export const MATMUL_KERNELS = ["generic", "wide"];
 
@@ -50,14 +50,14 @@ export function selectMatmulKernel({ generic, wide }, { threshold = THRESHOLD } 
   return { kernel, reason, genericMs, wideMs, benefit, stable };
 }
 
-/** Return distinct loaded Q8 projection shapes in calibration priority order. */
-export function matmulShapes(weights, maxShapes = MAX_SHAPES) {
+/** Return distinct loaded projection shapes of one precision in calibration priority order. */
+export function matmulShapes(weights, maxShapes = MAX_SHAPES, dtype = "q8") {
   const entries = weights?.tensors instanceof Map ? [...weights.tensors.values()] : [];
   const candidates = entries.flatMap((entry) => {
     const info = entry.info;
     const shape = info?.shape;
     const suffix = String(info?.name || "").split(".").at(-1);
-    if (info?.dtype !== "q8" || !Array.isArray(shape) || shape.length !== 2 || !RANK.has(suffix) || !entry.buf || !entry.sbuf) return [];
+    if (info?.dtype !== dtype || !Array.isArray(shape) || shape.length !== 2 || !RANK.has(suffix) || !entry.buf || dtype === "q8" && !entry.sbuf) return [];
     const [N, K] = shape.map(Number);
     return Number.isSafeInteger(N) && Number.isSafeInteger(K) && N > 0 && K > 0 && K % 32 === 0 ? [{ ...entry, name: info.name, suffix, N, K }] : [];
   });
@@ -71,13 +71,13 @@ export function matmulShapes(weights, maxShapes = MAX_SHAPES) {
   });
 }
 
-async function pipelinesFor(device, wgsl, kind, supplied) {
+async function pipelinesFor(device, wgsl, kind, supplied, dtype) {
   if (supplied?.[kind]) return supplied[kind];
-  return matmulPipelines(device, wgsl, kind === "wide" ? "matmul_wide" : "matmul");
+  return matmulPipelines(device, wgsl, kind === "wide" ? "matmul_wide" : "matmul", dtype);
 }
 
 function operation(device, pipes, shape, globals, params, x, y, bias, part, rows) {
-  const resources = [globals, params, x, shape.buf, shape.sbuf, bias, y, part];
+  const resources = [globals, params, x, shape.buf, shape.sbuf || bias, bias, y, part];
   return {
     N: shape.N,
     K: shape.K,
@@ -97,7 +97,42 @@ function encodePass(encoder, op, tokens, querySet, queryIndex, repetitions = 1) 
   pass.end();
 }
 
-async function measureShape(device, shape, pipes) {
+const deadlineError = () => Object.assign(new Error("matmul calibration deadline exceeded"), { code: "MATMUL_DEADLINE" });
+
+async function mapWithinDeadline(read, bytes, deadline) {
+  const remaining = deadline - now();
+  if (remaining <= 0) throw deadlineError();
+  let timer;
+  try {
+    await Promise.race([
+      read.mapAsync(GPUMapMode.READ, 0, bytes),
+      new Promise((_, reject) => { timer = setTimeout(() => {
+        reject(deadlineError());
+        read.unmap();
+      }, remaining); }),
+    ]);
+    if (now() >= deadline) {
+      read.unmap();
+      throw deadlineError();
+    }
+  } finally { clearTimeout(timer); }
+}
+
+export function compareMatmulOutputs(baseline, candidate) {
+  if (baseline.length !== candidate.length) return { ok: false, reason: "length-mismatch" };
+  let maxAbs = 0;
+  for (let index = 0; index < baseline.length; index++) {
+    const expected = baseline[index], actual = candidate[index];
+    const difference = Math.abs(actual - expected);
+    if (!Number.isFinite(expected) || !Number.isFinite(actual) || difference > 0.0005 + 0.0001 * Math.max(1, Math.abs(expected))) {
+      return { ok: false, reason: "numerical-guard-failed", index, maxAbs: Number.isFinite(difference) ? difference : null };
+    }
+    maxAbs = Math.max(maxAbs, difference);
+  }
+  return { ok: true, maxAbs };
+}
+
+async function measureShape(device, shape, pipes, dtype, deadline) {
   const U = bufferUsage();
   const maxT = Math.max(...MATMUL_TOKENS);
   const points = MATMUL_TOKENS.map((tokens) => ({ tokens, rows: rowsPerThread(tokens) }));
@@ -108,10 +143,11 @@ async function measureShape(device, shape, pipes) {
     const splits = mmSplits(tokens, shape.N, shape.K, p.splitTarget, 16 * rows, 64 * p.groups);
     return splits > 1 ? splits * tokens * shape.N * 4 : 16;
   })));
-  const scratchBytes = xBytes + yBytes + partBytes + shape.N * 4;
+  const guardBytes = dtype === "q8" ? 0 : points.reduce((sum, { tokens }) => sum + tokens * shape.N * 8, 0);
+  const scratchBytes = xBytes + yBytes + partBytes + shape.N * 4 + guardBytes;
   const limit = Math.min(device.limits?.maxStorageBufferBindingSize || Infinity, device.limits?.maxBufferSize || Infinity);
   const base = (tokens) => ({ N: shape.N, K: shape.K, tokens, key: matmulTuningKey(shape.N, shape.K, tokens), kernel: "generic", reason: "scratch-limit" });
-  if (scratchBytes > MAX_SCRATCH || Math.max(xBytes, yBytes, partBytes, shape.N * 4) > limit) return { points: points.map(({ tokens }) => base(tokens)), elapsedMs: 0 };
+  if (scratchBytes > MAX_SCRATCH || Math.max(xBytes, yBytes, partBytes, shape.N * 4, guardBytes) > limit) return { points: points.map(({ tokens }) => base(tokens)), elapsedMs: 0 };
 
   const owned = [];
   let querySet;
@@ -123,7 +159,9 @@ async function measureShape(device, shape, pipes) {
     const part = make(partBytes, U.STORAGE, `${shape.name}.tune.part`);
     const params = make(16, U.UNIFORM | U.COPY_DST, `${shape.name}.tune.params`);
     const globals = points.map(({ tokens }) => make(16, U.UNIFORM | U.COPY_DST, `${shape.name}.tune.g${tokens}`));
-    device.queue.writeBuffer(x, 0, new Float32Array(xBytes / 4));
+    const input = new Float32Array(xBytes / 4);
+    if (guardBytes) for (let index = 0; index < input.length; index++) input[index] = (((Math.imul(index + 1, 1103515245) >>> 16) % 257) - 128) / 4096;
+    device.queue.writeBuffer(x, 0, input);
     device.queue.writeBuffer(bias, 0, new Float32Array(shape.N));
     device.queue.writeBuffer(params, 0, new Uint32Array([shape.N, shape.K, 0, 0]));
     const operations = points.map(({ tokens, rows }, point) => {
@@ -134,8 +172,17 @@ async function measureShape(device, shape, pipes) {
     querySet = device.createQuerySet({ type: "timestamp", count: queryCount, label: `${shape.name}.tune.timestamps` });
     const resolved = make(queryCount * 8, U.QUERY_RESOLVE | U.COPY_SRC, `${shape.name}.tune.resolved`);
     const read = make(Math.max(256, queryCount * 8), U.MAP_READ | U.COPY_DST, `${shape.name}.tune.read`);
+    const guardRead = guardBytes ? make(guardBytes, U.MAP_READ | U.COPY_DST, `${shape.name}.tune.guard`) : null;
     const encoder = device.createCommandEncoder({ label: `${shape.name}.tune` });
-    for (let point = 0; point < operations.length; point++) for (const candidate of operations[point]) encodePass(encoder, candidate, points[point].tokens, null, 0);
+    let guardOffset = 0;
+    for (let point = 0; point < operations.length; point++) for (const candidate of operations[point]) {
+      encodePass(encoder, candidate, points[point].tokens, null, 0);
+      if (guardRead) {
+        const bytes = points[point].tokens * shape.N * 4;
+        encoder.copyBufferToBuffer(y, 0, guardRead, guardOffset, bytes);
+        guardOffset += bytes;
+      }
+    }
     let queryIndex = 0;
     const meta = [];
     for (let point = 0; point < points.length; point++) for (let sample = 0; sample < SAMPLES; sample++) {
@@ -150,12 +197,27 @@ async function measureShape(device, shape, pipes) {
     encoder.copyBufferToBuffer(resolved, 0, read, 0, queryCount * 8);
     const started = now();
     device.queue.submit([encoder.finish()]);
-    await read.mapAsync(GPUMapMode.READ, 0, queryCount * 8);
+    await mapWithinDeadline(read, queryCount * 8, deadline);
     const stamps = new BigInt64Array(read.getMappedRange(0, queryCount * 8).slice(0));
     read.unmap();
+    const checks = [];
+    if (guardRead) {
+      await mapWithinDeadline(guardRead, guardBytes, deadline);
+      const output = new Float32Array(guardRead.getMappedRange(0, guardBytes));
+      let offset = 0;
+      for (const { tokens } of points) {
+        const length = tokens * shape.N;
+        checks.push(compareMatmulOutputs(output.subarray(offset, offset + length), output.subarray(offset + length, offset + 2 * length)));
+        offset += 2 * length;
+      }
+      guardRead.unmap();
+    }
     const timings = points.map(() => ({ generic: [], wide: [] }));
     for (const { point, index, queryIndex: i } of meta) timings[point][MATMUL_KERNELS[index]].push(Number(stamps[i + 1] - stamps[i]) / 1e6 / REPETITIONS);
-    return { points: points.map(({ tokens }, point) => ({ ...base(tokens), ...selectMatmulKernel(timings[point]) })), elapsedMs: now() - started };
+    return { points: points.map(({ tokens }, point) => ({ ...base(tokens),
+      ...(checks[point]?.ok === false ? { reason: "numerical-guard-failed" } : selectMatmulKernel(timings[point])),
+      ...(checks[point] ? { numericalCheck: checks[point] } : {}),
+    })), elapsedMs: now() - started };
   } finally {
     for (const item of owned) item.destroy();
     querySet?.destroy();
@@ -165,24 +227,26 @@ async function measureShape(device, shape, pipes) {
 /** Build and, when possible, measure both candidates on up to six real loaded projection shapes. */
 export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const kernel = options.kernel || "auto";
+  const dtype = options.dtype || "q8";
+  if (!["q8", "bf16", "f32"].includes(dtype)) throw new Error(`unsupported GPU matrix dtype ${dtype}`);
   if (!["auto", ...MATMUL_KERNELS].includes(kernel)) throw new Error('kernel must be "auto", "generic", or "wide"');
-  if (kernel === "wide" && !device.features?.has?.("shader-f16")) throw new Error('wide matmul requires the "shader-f16" feature');
-  const shapes = matmulShapes(weights);
+  if (kernel === "wide" && dtype === "q8" && !device.features?.has?.("shader-f16")) throw new Error('wide matmul requires the "shader-f16" feature');
+  const shapes = matmulShapes(weights, MAX_SHAPES, dtype);
   const selection = new Map();
   const defaults = () => { for (const shape of shapes) for (const T of MATMUL_TOKENS) selection.set(matmulTuningKey(shape.N, shape.K, T), kernel === "wide" ? "wide" : "generic"); };
   defaults();
-  const diagnostics = { revision: GPU_TUNING_REVISION, method: kernel === "auto" ? "generic" : "override", points: [], elapsedMs: 0, truncated: false };
+  const diagnostics = { revision: GPU_TUNING_REVISION, dtype, method: kernel === "auto" ? "generic" : "override", points: [], elapsedMs: 0, truncated: false };
   const started = now();
-  const generic = await pipelinesFor(device, wgsl, "generic", options.pipelines);
+  const generic = await pipelinesFor(device, wgsl, "generic", options.pipelines, dtype);
   if (kernel === "generic") return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
-  if (kernel === "auto" && (!device.features?.has?.("shader-f16") || !device.features?.has?.("timestamp-query"))) {
-    diagnostics.reason = !device.features?.has?.("shader-f16") ? "no-shader-f16" : "no-timestamp-query";
+  if (kernel === "auto" && (dtype === "q8" && !device.features?.has?.("shader-f16") || !device.features?.has?.("timestamp-query"))) {
+    diagnostics.reason = dtype === "q8" && !device.features?.has?.("shader-f16") ? "no-shader-f16" : "no-timestamp-query";
     diagnostics.elapsedMs = now() - started;
     return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
   }
   let wide;
   try {
-    wide = await inErrorScopes(device, () => pipelinesFor(device, wgsl, "wide", options.pipelines));
+    wide = await inErrorScopes(device, () => pipelinesFor(device, wgsl, "wide", options.pipelines, dtype));
   } catch (error) {
     if (kernel === "wide") throw error;
     diagnostics.reason = "wide-pipeline-failed";
@@ -195,25 +259,36 @@ export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   diagnostics.method = "timestamp-query";
   const deadline = started + DEADLINE_MS;
   for (const shape of shapes) {
-    if (now() >= deadline && diagnostics.points.length) {
+    if (now() >= deadline) {
       diagnostics.truncated = true;
+      diagnostics.reason = "deadline";
       break;
     }
     const record = { shape: `${shape.N}x${shape.K}`, name: shape.name, points: [] };
     try {
-      const result = await inErrorScopes(device, () => measureShape(device, shape, pipes));
+      const result = await inErrorScopes(device, () => measureShape(device, shape, pipes, dtype, deadline));
       record.points = result.points.map((point) => ({ ...point, elapsedMs: result.elapsedMs }));
       for (const point of result.points) selection.set(point.key, point.kernel);
     } catch (error) {
-      selection.clear();
-      defaults();
-      diagnostics.reason = "calibration-failed";
-      for (const prior of [...diagnostics.points, record]) for (const point of prior.points) point.kernel = "generic";
-      record.reason = String(error?.message || error);
+      if (error?.code === "MATMUL_DEADLINE") {
+        diagnostics.reason = record.reason = "deadline";
+      } else {
+        selection.clear();
+        defaults();
+        diagnostics.reason = "calibration-failed";
+        for (const prior of diagnostics.points) for (const point of prior.points) {
+          point.kernel = "generic";
+          point.reason = "aborted-after-calibration-failure";
+        }
+        record.reason = String(error?.message || error);
+      }
       diagnostics.truncated = true;
     }
     diagnostics.points.push(record);
-    if (diagnostics.truncated || now() >= deadline) diagnostics.truncated = true;
+    if (!diagnostics.truncated && now() >= deadline) {
+      diagnostics.truncated = true;
+      diagnostics.reason = "deadline";
+    }
     if (diagnostics.truncated) break;
   }
   diagnostics.elapsedMs = now() - started;

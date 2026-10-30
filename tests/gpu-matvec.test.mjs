@@ -99,3 +99,27 @@ test("matvec tuner attempts no-timestamp wall-clock calibration and honors expli
   assert.equal(override.selection.size, 0);
   assert.equal(override.diagnostics.reason, "kernel-override");
 });
+
+test("unquantized matvec calibration uses the loaded dtype and retains F32 operands", async () => {
+  for (const dtype of ["bf16", "f32"]) {
+    const weights = { tensors: new Map([["gate_up", {
+      info: { name: "L.0.gate_up", dtype, shape: [64, 32] }, buf: {},
+    }]]) };
+    const requested = [];
+    const device = {
+      features: new Set(["timestamp-query", "shader-f16"]),
+      createPipelineLayout: () => ({}),
+      createShaderModule: () => ({}),
+      createComputePipelineAsync: async () => { throw new Error("test pipeline failure"); },
+    };
+    const tuning = { pipelines: { generic: { layout: {} } }, selection: new Map() };
+    const result = await calibrateMatvec(device, (name, spec) => { requested.push({ name, spec }); return "unused"; }, weights, tuning, { dtype });
+    assert.equal(result.diagnostics.reason, "pipeline-failed");
+    assert.equal(result.diagnostics.dtype, dtype);
+    assert.equal(result.selection.size, 0);
+    assert.deepEqual(requested, [{ name: "matvec", spec: { weights: dtype, f16: false, splitTarget: 256, rows: 1, groups: 1 } }]);
+    const overridden = await calibrateMatvec(device, null, weights, tuning, { dtype, kernel: "wide" });
+    assert.equal(overridden.diagnostics.reason, "kernel-override");
+    assert.equal(overridden.pipelines, null);
+  }
+});

@@ -1,0 +1,2770 @@
+{
+  "date": "2026-10-30T05:19:50.149346+00:00",
+  "baseCommit": "ea694a3059c47628d0a1ce7bbc707d3b08a33cd4",
+  "workingTreeWasUncommitted": true,
+  "toolchain": {
+    "rust": "1.95.0",
+    "node": "24.21.0",
+    "pnpm": "12.5.1"
+  },
+  "runtimeSha256": {
+    "js/src/archs/clef.js": "b0806823900b203ac7bb84744c8b94ced441f3e8440f9a3523a7b3b4433de4f8",
+    "js/src/archs/gemma4.js": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30",
+    "js/src/archs/index.js": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074",
+    "js/src/archs/kev.js": "6d14aaaa1affd96e74da787027485065fe9dd3fa810a012fb051b1a719f4c2e7",
+    "js/src/archs/laya.js": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00",
+    "js/src/cpu-calibrate.js": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1",
+    "js/src/cpu-policy.js": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed",
+    "js/src/cpu-tune.js": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4",
+    "js/src/engine-worker.js": "13d2dfe71c43509565eacbf2116f79567b89cf333b4221f47fc2ef86a82d559a",
+    "js/src/gemma4-image.js": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4",
+    "js/src/gemma4-ple-store.js": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6",
+    "js/src/gemma4-vision-pack.js": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54",
+    "js/src/gpu-gemma4-attention.js": "ac3c3ccc8a0676dfffc4d26a3877f31b77a090a9b927f7e62207140748c9d26f",
+    "js/src/gpu-gemma4-batch-mlp.js": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650",
+    "js/src/gpu-gemma4-batch-single.js": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9",
+    "js/src/gpu-gemma4-bn32.js": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4",
+    "js/src/gpu-gemma4-grid-mlp.js": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306",
+    "js/src/gpu-gemma4-image.js": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1",
+    "js/src/gpu-gemma4-k64.js": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b",
+    "js/src/gpu-gemma4-mlp.js": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b",
+    "js/src/gpu-gemma4-ple.js": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb",
+    "js/src/gpu-gemma4-prefix-cache.js": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800",
+    "js/src/gpu-gemma4-prefix-gelu.js": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3",
+    "js/src/gpu-gemma4-prefix-retile.js": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5",
+    "js/src/gpu-gemma4-rms-plan.js": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a",
+    "js/src/gpu-gemma4-rms.js": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2",
+    "js/src/gpu-gemma4-vision-qkv.js": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630",
+    "js/src/gpu-gemma4-vision.js": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560",
+    "js/src/gpu-gemma4.js": "791c87c6b0302871670fb71e5adcc0bc16d32baee4b5f54855098b31dbca718a",
+    "js/src/gpu-kev.js": "bf668dac9eba63f232a2039e4524177b2a3b23d25b481395037b68bd20afead8",
+    "js/src/gpu-laya.js": "c69af3036fab3290cd3dd7c46d7e4e060e2876aaef61c8e274c06924be38eccc",
+    "js/src/gpu-matvec-gelu.js": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b",
+    "js/src/gpu-matvec-two.js": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786",
+    "js/src/gpu-matvec.js": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad",
+    "js/src/gpu-recur-tuning.js": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6",
+    "js/src/gpu-tuning.js": "e35b5ba17669bd6b9442487f2d868fd3cc4737bf732ba7862bf62eaecf36a7bc",
+    "js/src/gpu.js": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a",
+    "js/src/image-header.js": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa",
+    "js/src/images.js": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811",
+    "js/src/index.js": "c8ab8e445fb4942931c7ab6f7a95900694ec53d56dcd2c8b77a6e0108c1c8ce8",
+    "js/src/kevala-base.wasm": "ce434cd7a235e0e609f6fd847d8a1d65ab861fff79436a342a8145e43a70a347",
+    "js/src/kevala-relaxed.wasm": "d3da83767565f5c030eb65b6cc0b5d42db35e810ccb6a78020955d3c5a7d3e62",
+    "js/src/kevala-simd.wasm": "b0d912801e39a736ee2a05ba08d935d143bf809bb9e21d0ee8714ebf05a3edeb",
+    "js/src/node.js": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1",
+    "js/src/pack-layout.js": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449",
+    "js/src/presets.js": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a",
+    "js/src/request-queue.js": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30",
+    "js/src/shard-client.js": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c",
+    "js/src/shard-worker.js": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c",
+    "js/src/source.js": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836",
+    "js/src/stats.js": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d",
+    "js/src/wasm.js": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+  },
+  "scope": "Local packs, Firefox WebGPU, typed-answer validity, repeated inference and batch API compatibility. No accuracy claim or cross-device latency ranking.",
+  "gpuChecks": [
+    {
+      "check": "activations",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "45815b2945ee5cfae0416881f60db370954ef9fac0479229345690ac32050cd5"
+    },
+    {
+      "check": "attention",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "553acbf7021c93580cc968a20f1e7aff9b6ef27981d5d2c840293690dbac5061"
+    },
+    {
+      "check": "cache",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "17e4986b72f505c37ede449cd536f00bec630efff8c1b46f0101f9ab6fb6da5a"
+    },
+    {
+      "check": "compile-baseline",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "40fb7de2a915a3f863cff3c8c01878b9b3e859f2ae8aa3e3c5846a8639c7098f"
+    },
+    {
+      "check": "compile",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "621cbce8889d61707854c7f140024d6e0a38f9e88419ce42fa0107138419b27b"
+    },
+    {
+      "check": "gemma-attention",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "58f934616dc8451bc0be3bcb4026db621d44a07cca738326caa924f1ee124afe"
+    },
+    {
+      "check": "gemma-batch-single-tall",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "38dd0e1a80014be223c89f865141df6c4bd735ab49e85d8b55e988b075e5c2a0"
+    },
+    {
+      "check": "gemma-batch-tall",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "ec6b7d78790fa41dbb3ed32009e9923d7de8a10f95dfd22a3978cd86a44ceba8"
+    },
+    {
+      "check": "gemma-batch-validation",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "b95eb8fb3f4558091b2fb1e53e87073a723ea5f41075f7d5c51ba2997c0b8e7d"
+    },
+    {
+      "check": "gemma-gelu",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "f43f1fe0b34ad7b0d9c5934621010aedd5bd4a6c32cd630d5a7ec2dbdf1029ad"
+    },
+    {
+      "check": "gemma-grid-mlp",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "ac327791b825b392dd9728345f4dabdc40e11c0c167b5d289d96dd3107d6397b"
+    },
+    {
+      "check": "gemma-image-preparation",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "71edcda816eaf6b1fc7452a735116bb3a4f4e5dcdcd6554ca1ce26fe05228dcf"
+    },
+    {
+      "check": "gemma-matmul-gelu",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "c25c7dfd7a17ec5f348b0900dc77a86ad87f019248fccf39e81fa66451305ef1"
+    },
+    {
+      "check": "gemma-matvec-gelu",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "e0f63fbc508505c97c724d0d09980da2011e44a72e697277ed8e4c051b37c7f9"
+    },
+    {
+      "check": "gemma-matvec",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "dec645a3631c55d708004fe05be666b5e3f1a5f2b0ddd0de03d871d82c7b6d56"
+    },
+    {
+      "check": "gemma-ple-reduce",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "89aede161c3a62b6166a54b5a704e113c3dc222531231156129c9b75ac93e8a7"
+    },
+    {
+      "check": "gemma-prefix-bn32",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "c8bd01088cc00c00e95effc3c99f904d73028bff0585f9726fc1979001b58542"
+    },
+    {
+      "check": "gemma-prefix-gelu-bn32",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "390ff255c83a1a441e57da0ae946ba19fc57885f70a58749362308f42be41607"
+    },
+    {
+      "check": "gemma-rms-fusions-subgroups",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "gemma-rms-fusions",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "150a5e849b6e8647a9924a4d950a9d2199c1322d44bda64079b3fb65ab266cb5"
+    },
+    {
+      "check": "gemma-rms-scale-next-subgroups",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "gemma-rms-scale-next",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "92c82c63cfc960a7ac138849886b30c7f55a0c661bbe7aafc1b0d324cc2b4b0f"
+    },
+    {
+      "check": "gemma-rms-subgroups",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "gemma-rms",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "178d4ab142ef188574b36254e95b6abd8333b4a3c7f5a288606785fe314fe240"
+    },
+    {
+      "check": "gemma-tail",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "0963cf88e7bbde8eb59e4896153311af858de8870b85b4bce75325456c9e2c78"
+    },
+    {
+      "check": "gemma-two-row-subgroup",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "gemma-vision-attention-fused",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "05c36e0d270ffec16aded2f99b4c20fce88c35360533d5bd489fc6a4f808297c"
+    },
+    {
+      "check": "gemma-vision-attention",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "e2c4b72a78b0a9994dd0afa430ba2ddddc7d9400e083aee6752c2d893c002647"
+    },
+    {
+      "check": "gemma-vision-norm-rope",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "d57e1fa4ab132946067c105f9a597de64f9c962ffad6e91d56f03b562e045df7"
+    },
+    {
+      "check": "gemma-vision-op-fusions",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "2ce96cd454b82928b4625394b49d248019935b9c4a0bb36637824f221343818e"
+    },
+    {
+      "check": "gemma-vision-pool-norm",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "20f3a14153d738d53fc6c4c4fc9b844b88863182dd7c02b734874e73508beef0"
+    },
+    {
+      "check": "gemma-vision-qkv",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "59a41fd842240bdee27809e109be773ceca538ba0ce7e7f9721799d3bf2d5f48"
+    },
+    {
+      "check": "gemma-vision-reduce-gelu",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "8e0980229aee59ecaa4a5b19a19c50d8925b31c0004a2f19a9ae8becffdcb1ed"
+    },
+    {
+      "check": "gemma-vision-reduce-residual",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "40c6d2100cbbe5b7ca801b3a270ad0787fbc1ea0dde1c0f452084ab1d7dfe0d6"
+    },
+    {
+      "check": "gemma-vision-scores",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "6776b89d78f9c4ec32d7228286a3b99d2dde27ff0217d2b6074dec12f653d50e"
+    },
+    {
+      "check": "gemma-vision",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "5cc460ee321fd2fd6192ff61e8f1382c0d1f3eafdf526641f650875396460596"
+    },
+    {
+      "check": "kernels",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "32c64f680338321429a53b03b90d1b82055bf1044d43470ba6f854b6b5a22d66"
+    },
+    {
+      "check": "kev-attention",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "kev",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "fa43159ca6f90d9035886e0065f4433844e279485beb8356ccd773fd17a3cc0b"
+    },
+    {
+      "check": "laya-default",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "adfcc912f0ef096932a18315b1c10818aa620804ef6fabc041f1b1fe76df7a1f"
+    },
+    {
+      "check": "laya",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "c795f6cf65645c5a7b77fb9e9d50b1f68fa25b348bed49d4326b9edb1551676d"
+    },
+    {
+      "check": "ordered-rms-2048",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "ordered-rms-2560",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "ordered-rms-4096",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "ordered-sums",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup32"
+      ],
+      "sourceSha256": "3fafe948a006b8bf23306c294b06475e828ac1cc3e828cf90f5ad44ca8e0095f"
+    },
+    {
+      "check": "recur16-shared",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "d8940c4496c24fea07738e4466d048259925e2918e9523ec3bc5efc10c763d3e"
+    },
+    {
+      "check": "recur16-subgroups",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup16"
+      ],
+      "sourceSha256": "20b8e4e24ffb32588111babc9a9d2bcfa4e50b5a7af8e51e77589bbd080b7d4d"
+    },
+    {
+      "check": "recur4-shared",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "f99f73ef01a1ee54bccf7a00bbc3d2308343daca900f7584425b05776954c008"
+    },
+    {
+      "check": "recur4-subgroups",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup4"
+      ],
+      "sourceSha256": "ca30bb958e26b04f0935fa3700780612efde4d03d92a449112119e3235b87141"
+    },
+    {
+      "check": "recur8-shared",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "87416d3b4f0dd7b41b397b21110beb0d1e4a841231d954c0cf6a891f87770df9"
+    },
+    {
+      "check": "recur8-subgroups",
+      "status": "skipped",
+      "missingCapabilities": [
+        "subgroup8"
+      ],
+      "sourceSha256": "bd9b39d29382a5154e61e23963e5d1bc70f5fda68a139d1ee96fb57d483a6ef2"
+    },
+    {
+      "check": "row-tiles",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "31667fec7f9b1772692367820359ee354fddff9fa5b9419694ed52ca2c2b078b"
+    },
+    {
+      "check": "tiles",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "9e3f709f698241fc90486839f5352cb8823cc4df772a94878c5bf4d5a451bfda"
+    },
+    {
+      "check": "weights-bf16",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "b9cf1bacc01c44c012d5172d7d7f4c019ba67ce3c2314cab4b85bfb9385f44b4"
+    },
+    {
+      "check": "weights-f32",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "ead7c8876224089f2b8d2b9c5177644eb699fa9eb0497ea2bdfddf77249dc32b"
+    },
+    {
+      "check": "weights-q8",
+      "status": "passed",
+      "missingCapabilities": [],
+      "sourceSha256": "bc6b6c7ee8816b715382f274a2ba7db4ddbb320f495ecac6f4348b58b1ef7304"
+    }
+  ],
+  "models": [
+    {
+      "model": "laya",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/laya-q8.json",
+      "sourceSha256": "c4f182288f2c7c35b44f690f9a05cdba9b465ca9306f553926997e30f64d7b50",
+      "identity": {
+        "catalogId": "laya",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Nandakishor M, Convai Innovations",
+        "converter": "kevala 0.1.0",
+        "license": "apache-2.0",
+        "name": "laya",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms, biases, type embedding, scorer and act head in f32",
+        "revision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+        "source": "https://huggingface.co/convaiinnovations/laya"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "features": null,
+        "model": "laya",
+        "pack": "http://127.0.0.1:18137/tmp/laya-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "dev/gemma4-camera-check.js mixed-budget probability guard; response rounding in each family"
+      },
+      "loadMs": 2376,
+      "metricMs": 330.37606347510194,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 100,
+          "samplesMs": [
+            100,
+            101,
+            97
+          ],
+          "usage": {
+            "input_tokens": 175,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 601,
+          "samplesMs": [
+            599,
+            610,
+            601
+          ],
+          "usage": {
+            "input_tokens": 376,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 600,
+          "samplesMs": [
+            600,
+            599,
+            601
+          ],
+          "usage": {
+            "input_tokens": 706,
+            "output_tokens": 0
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.00010000000000000286,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0.00020000000000000573,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "kev-0.8b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/kev-0.8b-q8.json",
+      "sourceSha256": "ff1066fdb730fa335a8d71e97359d94b438239a3b01b39190bb72dfeaa4e482a",
+      "identity": {
+        "catalogId": "kev-0.8b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision",
+          "base",
+          "base_revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Jared Palmer",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B-Base",
+        "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "kev-0.8b",
+        "precision": "q8",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+        "revision": "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+        "source": "https://huggingface.co/jaredpalmer/kev-0.8b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "features": null,
+        "model": "kev-0.8b",
+        "pack": "http://127.0.0.1:18137/tmp/kev-0.8b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "dev/gemma4-camera-check.js mixed-budget probability guard; response rounding in each family"
+      },
+      "loadMs": 5269,
+      "metricMs": 191.46874624873644,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 101,
+          "samplesMs": [
+            98,
+            101,
+            101
+          ],
+          "usage": {
+            "input_tokens": 93,
+            "output_tokens": 176
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 99,
+          "samplesMs": [
+            99,
+            100,
+            98
+          ],
+          "usage": {
+            "input_tokens": 159,
+            "output_tokens": 179
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 702,
+          "samplesMs": [
+            699,
+            702,
+            703
+          ],
+          "usage": {
+            "input_tokens": 268,
+            "output_tokens": 178
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.00014528632164001465,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0.00016355514526367188,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "kev-0.8b",
+      "precision": "bf16",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/kev-0.8b-bf16.json",
+      "sourceSha256": "7d04ffde053fa3f2a11af17c8dcd1d35b5f5f6d564ecbb5a2077f146ac5f72b0",
+      "identity": {
+        "catalogId": "kev-0.8b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision",
+          "base",
+          "base_revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Jared Palmer",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B-Base",
+        "base_revision": "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "kev-0.8b",
+        "precision": "bf16",
+        "quantization": "unquantized BF16 backbone weights; norms, recurrent gates, and decision heads in f32",
+        "revision": "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+        "source": "https://huggingface.co/jaredpalmer/kev-0.8b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "features": null,
+        "model": "kev-0.8b",
+        "pack": "http://127.0.0.1:18137/tmp/kev-0.8b-bf16.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "dev/gemma4-camera-check.js mixed-budget probability guard; response rounding in each family"
+      },
+      "loadMs": 8106,
+      "metricMs": 190.2867599685137,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 99,
+          "samplesMs": [
+            99,
+            99,
+            100
+          ],
+          "usage": {
+            "input_tokens": 93,
+            "output_tokens": 175
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 99,
+          "samplesMs": [
+            99,
+            99,
+            101
+          ],
+          "usage": {
+            "input_tokens": 159,
+            "output_tokens": 179
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 703,
+          "samplesMs": [
+            708,
+            703,
+            701
+          ],
+          "usage": {
+            "input_tokens": 268,
+            "output_tokens": 178
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 4.172325134277344e-07,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 4.172325134277344e-07,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "kev-4b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/kev-4b-q8.json",
+      "sourceSha256": "927ddab66c29d60c0fb7bcbfa619e5a9fe3df19ca4b6a481524063a991a86757",
+      "identity": {
+        "catalogId": "kev-4b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision",
+          "base",
+          "base_revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Jared Palmer",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
+        "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "kev-4b",
+        "precision": "q8",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+        "revision": "139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+        "source": "https://huggingface.co/jaredpalmer/kev-4b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.001,
+        "features": null,
+        "model": "kev-4b",
+        "pack": "http://127.0.0.1:18137/tmp/kev-4b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.001,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 21821,
+      "metricMs": 304.08194063090923,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 202,
+          "samplesMs": [
+            199,
+            202,
+            204
+          ],
+          "usage": {
+            "input_tokens": 93,
+            "output_tokens": 179
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 198,
+          "samplesMs": [
+            195,
+            198,
+            200
+          ],
+          "usage": {
+            "input_tokens": 159,
+            "output_tokens": 176
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 703,
+          "samplesMs": [
+            703,
+            706,
+            695
+          ],
+          "usage": {
+            "input_tokens": 268,
+            "output_tokens": 176
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.0004214048385620117,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 8.633732795715332e-05,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "kev-4b",
+      "precision": "bf16",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/kev-4b-bf16.json",
+      "sourceSha256": "f13146b09e203845ef9692ed218394b4c6fd41c4a6d4a2306417e34d7a4b3d9e",
+      "identity": {
+        "catalogId": "kev-4b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision",
+          "base",
+          "base_revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Jared Palmer",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-4B-Base",
+        "base_revision": "1001bb4d826a52d1f399e183466143f4da7b741b",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "kev-4b",
+        "precision": "bf16",
+        "quantization": "unquantized BF16 backbone weights; norms, recurrent gates, and decision heads in f32",
+        "revision": "139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+        "source": "https://huggingface.co/jaredpalmer/kev-4b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.0005,
+        "features": null,
+        "model": "kev-4b",
+        "pack": "http://127.0.0.1:18137/tmp/kev-4b-bf16.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.0005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 37877,
+      "metricMs": 302.2767517027749,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 197,
+          "samplesMs": [
+            117,
+            197,
+            198
+          ],
+          "usage": {
+            "input_tokens": 93,
+            "output_tokens": 179
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 200,
+          "samplesMs": [
+            200,
+            202,
+            198
+          ],
+          "usage": {
+            "input_tokens": 159,
+            "output_tokens": 178
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 701,
+          "samplesMs": [
+            701,
+            701,
+            700
+          ],
+          "usage": {
+            "input_tokens": 268,
+            "output_tokens": 178
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 5.960464477539062e-07,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 2.7567148208618164e-07,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "kev-9b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/kev-9b-q8.json",
+      "sourceSha256": "515c77d18dfc6874115b222a86500207abe1763d4748e29139ffea7164f0e4dd",
+      "identity": {
+        "catalogId": "kev-9b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision",
+          "base",
+          "base_revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Jared Palmer",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-9B-Base",
+        "base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "kev-9b",
+        "precision": "q8",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+        "revision": "b5d8c18e44c60888d138b65cb6507ff0a5a448a0",
+        "source": "https://huggingface.co/jaredpalmer/kev-9b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.001,
+        "features": null,
+        "model": "kev-9b",
+        "pack": "http://127.0.0.1:18137/tmp/kev-9b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.001,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 46493,
+      "metricMs": 471.6790705962851,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 300,
+          "samplesMs": [
+            300,
+            300,
+            298
+          ],
+          "usage": {
+            "input_tokens": 93,
+            "output_tokens": 178
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 499,
+          "samplesMs": [
+            402,
+            499,
+            501
+          ],
+          "usage": {
+            "input_tokens": 159,
+            "output_tokens": 179
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 701,
+          "samplesMs": [
+            700,
+            701,
+            703
+          ],
+          "usage": {
+            "input_tokens": 268,
+            "output_tokens": 179
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.00015848875045776367,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 4.214048385620117e-05,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "kev-9b",
+      "precision": "bf16",
+      "status": "skipped",
+      "reason": "insufficient-free-vram-with-existing-workloads",
+      "persistentTrunkBytes": 13853820928,
+      "requiredFreeMiB": 14000,
+      "observedFreeMiB": 10996,
+      "scope": "Not executed; Q8 variant passed on NVIDIA. Other GPU workloads were preserved.",
+      "source": "tmp/ship-models-20261030/kev-9b-bf16.json",
+      "sourceSha256": "1c1d2c265154fd967bd77ea3534a0ad39c342cd5ac22f3007ad0559bb2c57a07"
+    },
+    {
+      "model": "h2o-lightning-4b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/h2o-lightning-4b-q8.json",
+      "sourceSha256": "dc7b9f0e2dd79bf26c6dec7ba56c45e0d6fc39a3fdfb8017de3a948d0c1ca5e3",
+      "identity": {
+        "catalogId": "h2o-lightning-4b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "H2O.ai",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+        "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "h2o-lightning-4b",
+        "precision": "q8",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+        "revision": "acaf0d4ea251e54de928c75ef4352670d33192d3",
+        "source": "https://huggingface.co/h2oai/h2o-lightning-4b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.001,
+        "features": null,
+        "model": "h2o-lightning-4b",
+        "pack": "http://127.0.0.1:18137/tmp/h2o-lightning-4b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.001,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 26667,
+      "metricMs": 418.3270754907276,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 201,
+          "samplesMs": [
+            208,
+            201,
+            197
+          ],
+          "usage": {
+            "input_tokens": 194,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 605,
+          "samplesMs": [
+            605,
+            600,
+            607
+          ],
+          "usage": {
+            "input_tokens": 260,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 602,
+          "samplesMs": [
+            606,
+            601,
+            602
+          ],
+          "usage": {
+            "input_tokens": 369,
+            "output_tokens": 0
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.0004233763417031966,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0.0003221128422409292,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "h2o-lightning-4b",
+      "precision": "bf16",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/h2o-lightning-4b-bf16.json",
+      "sourceSha256": "f05978480baf67dafea7631936c0cec3049d552cff8782a59e6f2130f2e88345",
+      "identity": {
+        "catalogId": "h2o-lightning-4b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "H2O.ai",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+        "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "h2o-lightning-4b",
+        "precision": "bf16",
+        "quantization": "unquantized BF16 backbone weights; norms, recurrent gates, and decision heads in f32",
+        "revision": "acaf0d4ea251e54de928c75ef4352670d33192d3",
+        "source": "https://huggingface.co/h2oai/h2o-lightning-4b"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.0005,
+        "features": null,
+        "model": "h2o-lightning-4b",
+        "pack": "http://127.0.0.1:18137/tmp/h2o-lightning-4b-bf16.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.0005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 27342,
+      "metricMs": 418.5543646934306,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 200,
+          "samplesMs": [
+            199,
+            200,
+            202
+          ],
+          "usage": {
+            "input_tokens": 194,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 607,
+          "samplesMs": [
+            607,
+            611,
+            604
+          ],
+          "usage": {
+            "input_tokens": 260,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 604,
+          "samplesMs": [
+            604,
+            599,
+            606
+          ],
+          "usage": {
+            "input_tokens": 369,
+            "output_tokens": 0
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 5.202900377199171e-07,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 4.974613087571633e-07,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "clef-flash",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/clef-flash-q8.json",
+      "sourceSha256": "10e9467b207414eba29ecbd420bc4cb5406a38c7fefb36369d530534abb67779",
+      "identity": {
+        "catalogId": "clef-flash",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Cloudflare",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-9B-Base",
+        "base_revision": "68c46c4b3498877f3ef123c856ecfde50c39f404",
+        "converter": "kevala 0.1.3",
+        "license": "apache-2.0",
+        "name": "clef-flash",
+        "precision": "q8",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; architecture-specific norms and decision heads in f32",
+        "revision": "8b2e5fd17c09fd49bc2880b805d5323ec7ff4ff3",
+        "source": "https://huggingface.co/Cloudflare/clef-flash"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.001,
+        "features": null,
+        "model": "clef-flash",
+        "pack": "http://127.0.0.1:18137/tmp/clef-flash-q8.kevala",
+        "paragraphCounts": [
+          1,
+          2,
+          3
+        ],
+        "samples": 3,
+        "timeoutSeconds": 330,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.001,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.0001,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 25855,
+      "metricMs": 1243.894029840995,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 1376,
+          "samplesMs": [
+            1381,
+            928,
+            1376
+          ],
+          "usage": {
+            "input_tokens": 340,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 1389,
+          "samplesMs": [
+            1389,
+            997,
+            1420
+          ],
+          "usage": {
+            "input_tokens": 372,
+            "output_tokens": 0
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 1007,
+          "samplesMs": [
+            1004,
+            1504,
+            1007
+          ],
+          "usage": {
+            "input_tokens": 406,
+            "output_tokens": 0
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "semif-qwen3.5-0.8b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/semif-qwen3.5-0.8b-q8.json",
+      "sourceSha256": "bbc62193e471f5b7b1422e8511634bba10e6d531ace0ba0ee786b1ee9838ac83",
+      "identity": {
+        "catalogId": "semif-qwen3.5-0.8b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Qwen team (weights); SemIf (decision method)",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-0.8B",
+        "base_revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "semif-qwen3.5-0.8b",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+        "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+        "source": "https://huggingface.co/Qwen/Qwen3.5-0.8B"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.005,
+        "features": null,
+        "model": "semif-qwen3.5-0.8b",
+        "pack": "http://127.0.0.1:18137/tmp/semif-qwen3.5-0.8b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.01,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 6579,
+      "metricMs": 330.37606347510194,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 100,
+          "samplesMs": [
+            100,
+            99,
+            100
+          ],
+          "usage": {
+            "input_tokens": 255,
+            "output_tokens": 159
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 600,
+          "samplesMs": [
+            603,
+            599,
+            600
+          ],
+          "usage": {
+            "input_tokens": 321,
+            "output_tokens": 159
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 601,
+          "samplesMs": [
+            601,
+            603,
+            598
+          ],
+          "usage": {
+            "input_tokens": 430,
+            "output_tokens": 159
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.0005207657814025879,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0.00024934113025665283,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "semif-qwen3.5-2b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/semif-qwen3.5-2b-q8.json",
+      "sourceSha256": "b68e8fcae8344dd319dcde0e21894ff8c1140e4a37bba7942c41c8236969c182",
+      "identity": {
+        "catalogId": "semif-qwen3.5-2b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Qwen team (weights); SemIf (decision method)",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-2B",
+        "base_revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "semif-qwen3.5-2b",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+        "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+        "source": "https://huggingface.co/Qwen/Qwen3.5-2B"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.005,
+        "features": null,
+        "model": "semif-qwen3.5-2b",
+        "pack": "http://127.0.0.1:18137/tmp/semif-qwen3.5-2b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.01,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 10766,
+      "metricMs": 329.45394542079197,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 99,
+          "samplesMs": [
+            100,
+            99,
+            99
+          ],
+          "usage": {
+            "input_tokens": 255,
+            "output_tokens": 154
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 601,
+          "samplesMs": [
+            601,
+            599,
+            601
+          ],
+          "usage": {
+            "input_tokens": 321,
+            "output_tokens": 154
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 601,
+          "samplesMs": [
+            608,
+            601,
+            601
+          ],
+          "usage": {
+            "input_tokens": 430,
+            "output_tokens": 154
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.0009418725967407228,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0.001096487045288086,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "semif-qwen3.5-4b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/semif-qwen3.5-4b-q8.json",
+      "sourceSha256": "a49916af0b0efee7da1dceb9f854344b68d4089ad621539c34d2752f06f68891",
+      "identity": {
+        "catalogId": "semif-qwen3.5-4b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Qwen team (weights); SemIf (decision method)",
+        "base": "https://huggingface.co/Qwen/Qwen3.5-4B",
+        "base_revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "semif-qwen3.5-4b",
+        "quantization": "int8 symmetric absmax, one f32 scale per 32 weights; norms and SemIf label readout in f32",
+        "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+        "source": "https://huggingface.co/Qwen/Qwen3.5-4B"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.005,
+        "features": null,
+        "model": "semif-qwen3.5-4b",
+        "pack": "http://127.0.0.1:18137/tmp/semif-qwen3.5-4b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.01,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 22906,
+      "metricMs": 477.277556908456,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 300,
+          "samplesMs": [
+            300,
+            302,
+            298
+          ],
+          "usage": {
+            "input_tokens": 255,
+            "output_tokens": 155
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 603,
+          "samplesMs": [
+            601,
+            603,
+            803
+          ],
+          "usage": {
+            "input_tokens": 321,
+            "output_tokens": 155
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 601,
+          "samplesMs": [
+            604,
+            601,
+            601
+          ],
+          "usage": {
+            "input_tokens": 430,
+            "output_tokens": 155
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0.0001055598258972168,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0.0011313557624816897,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "gemma-4-e2b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/gemma-4-e2b-q8.json",
+      "sourceSha256": "fc5ee4b9251157de028a071eed9240d2eb7ec3e9965117c6aa9c7384f45bc429",
+      "identity": {
+        "catalogId": "gemma-4-e2b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Google (Gemma team)",
+        "base": "https://huggingface.co/google/gemma-4-E2B-it",
+        "base_revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "gemma-4-e2b",
+        "quantization": "BF16 source converted to symmetric int8 absmax, one f32 scale per 32 weights; norms and direct-option label readout in f32",
+        "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+        "source": "https://huggingface.co/google/gemma-4-E2B-it"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.005,
+        "features": null,
+        "model": "gemma-4-e2b",
+        "pack": "http://127.0.0.1:18137/tmp/gemma-4-e2b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.01,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 29802,
+      "metricMs": 550.1429931233841,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 308,
+          "samplesMs": [
+            301,
+            308,
+            309
+          ],
+          "usage": {
+            "input_tokens": 369,
+            "output_tokens": 146
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 300,
+          "samplesMs": [
+            300,
+            300,
+            302
+          ],
+          "usage": {
+            "input_tokens": 567,
+            "output_tokens": 146
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 1802,
+          "samplesMs": [
+            1802,
+            1806,
+            1801
+          ],
+          "usage": {
+            "input_tokens": 891,
+            "output_tokens": 146
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0,
+          "nearTieChoices": []
+        }
+      ]
+    },
+    {
+      "model": "gemma-4-e4b",
+      "precision": "q8",
+      "status": "passed",
+      "source": "tmp/ship-models-20261030/gemma-4-e4b-q8.json",
+      "sourceSha256": "102dcaa0668526d54e861990caefd0432f5a7060b1f7a947da501271360bc257",
+      "identity": {
+        "catalogId": "gemma-4-e4b",
+        "checked": [
+          "name",
+          "arch",
+          "source",
+          "revision"
+        ],
+        "contentHashVerified": false
+      },
+      "modelHeader": {
+        "author": "Google (Gemma team)",
+        "base": "https://huggingface.co/google/gemma-4-E4B-it",
+        "base_revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+        "converter": "kevala 0.1.3",
+        "inspiration": "SemIf direct-options-v1 readout",
+        "license": "apache-2.0",
+        "method_license": "mit",
+        "method_revision": "1f2dea3e25379f9dfc98cb83c324f00ab5deda37",
+        "method_source": "https://github.com/TheoLeeCJ/SemIf",
+        "name": "gemma-4-e4b",
+        "quantization": "BF16 source converted to symmetric int8 absmax, one f32 scale per 32 weights; norms and direct-option label readout in f32",
+        "revision": "ee0ef6023621cff504d758262d4e04895a5af4a2",
+        "source": "https://huggingface.co/google/gemma-4-E4B-it"
+      },
+      "adapter": {
+        "architecture": null,
+        "available": true,
+        "description": null,
+        "device": null,
+        "features": [
+          "core-features-and-limits",
+          "shader-f16",
+          "timestamp-query"
+        ],
+        "isFallbackAdapter": false,
+        "limits": {
+          "maxBufferSize": 1073741824,
+          "maxComputeWorkgroupStorageSize": 32768,
+          "maxStorageBufferBindingSize": 1073741824
+        },
+        "name": "WebGPU",
+        "vendor": null
+      },
+      "runner": {
+        "browser": "firefox",
+        "browserContext": "isolated",
+        "browserRequested": "firefox",
+        "browserVersion": "152.0.3",
+        "chromiumArgs": [],
+        "expectedBackend": "webgpu",
+        "headless": true,
+        "targetVisibility": "headless",
+        "timerPrivacy": {
+          "firefoxPrecisionDisabled": false,
+          "isolatedSeleniumProfile": true,
+          "note": "unchanged"
+        },
+        "vkDriverFiles": "/usr/share/vulkan/icd.d/nvidia_icd.json"
+      },
+      "request": {
+        "batchTolerance": 0.005,
+        "features": null,
+        "model": "gemma-4-e4b",
+        "pack": "http://127.0.0.1:18137/tmp/gemma-4-e4b-q8.kevala",
+        "samples": 3,
+        "timeoutSeconds": 480,
+        "warmups": 1
+      },
+      "tolerances": {
+        "accuracyEvaluated": false,
+        "batchProbability": 0.005,
+        "probabilitySum": 0.0005,
+        "rawProbability": 0.0005,
+        "roundedAnswerUnit": 0.01,
+        "source": "strict same-model smoke guards with family response rounding; batchTolerance is independently configurable"
+      },
+      "loadMs": 45036,
+      "metricMs": 688.2273352417565,
+      "cases": [
+        {
+          "label": "short",
+          "medianMs": 301,
+          "samplesMs": [
+            301,
+            299,
+            301
+          ],
+          "usage": {
+            "input_tokens": 369,
+            "output_tokens": 146
+          }
+        },
+        {
+          "label": "medium",
+          "medianMs": 601,
+          "samplesMs": [
+            601,
+            601,
+            501
+          ],
+          "usage": {
+            "input_tokens": 567,
+            "output_tokens": 147
+          }
+        },
+        {
+          "label": "long",
+          "medianMs": 1802,
+          "samplesMs": [
+            1801,
+            1802,
+            1811
+          ],
+          "usage": {
+            "input_tokens": 891,
+            "output_tokens": 147
+          }
+        }
+      ],
+      "repeat": {
+        "maxProbabilityDelta": 0,
+        "nearTieChoices": []
+      },
+      "batch": [
+        {
+          "label": "short",
+          "maxProbabilityDelta": 0,
+          "nearTieChoices": []
+        },
+        {
+          "label": "medium",
+          "maxProbabilityDelta": 0,
+          "nearTieChoices": []
+        }
+      ]
+    }
+  ],
+  "performance": {
+    "bf16SingleRow": {
+      "scope": "Loaded Kev 0.8B BF16 weights; per-shape numerical guard and paired GPU timestamps, not whole-request speedup",
+      "selected": [
+        {
+          "baseline": [
+            0.026096,
+            0.026136,
+            0.026192
+          ],
+          "baselineKernel": "generic",
+          "benefit": 0.6360575451484543,
+          "candidate": [
+            0.00928,
+            0.009512,
+            0.00972
+          ],
+          "genericMs": 0.026136,
+          "kernel": "matvec",
+          "key": "7168:1024",
+          "name": "L.0.gate_up",
+          "numericalCheck": {
+            "expectedLength": 7168,
+            "length": 7168,
+            "lengthMismatch": false,
+            "maxAbs": 9.313225746154784e-09,
+            "nonFinite": 0,
+            "ok": true,
+            "tolerance": {
+              "absolute": 0.0005,
+              "f16": false,
+              "relative": 0.0001
+            },
+            "violations": 0,
+            "worstIndex": 3959
+          },
+          "reason": "stable-matvec-win",
+          "selected": true,
+          "shape": "7168:1024",
+          "stable": true,
+          "wideMs": 0.009512
+        },
+        {
+          "baseline": [
+            0.032992,
+            0.032704,
+            0.033192
+          ],
+          "baselineKernel": "generic",
+          "benefit": 0.6840446168768186,
+          "candidate": [
+            0.010424,
+            0.010424,
+            0.010232
+          ],
+          "genericMs": 0.032992,
+          "kernel": "matvec",
+          "key": "8192:1024",
+          "name": "L.0.qkvz",
+          "numericalCheck": {
+            "expectedLength": 8192,
+            "length": 8192,
+            "lengthMismatch": false,
+            "maxAbs": 2.2351741790771484e-08,
+            "nonFinite": 0,
+            "ok": true,
+            "tolerance": {
+              "absolute": 0.0005,
+              "f16": false,
+              "relative": 0.0001
+            },
+            "violations": 0,
+            "worstIndex": 2611
+          },
+          "reason": "stable-matvec-win",
+          "selected": true,
+          "shape": "8192:1024",
+          "stable": true,
+          "wideMs": 0.010424
+        },
+        {
+          "baseline": [
+            0.01696,
+            0.017256,
+            0.016944
+          ],
+          "baselineKernel": "generic",
+          "benefit": 0.6886792452830188,
+          "candidate": [
+            0.0056,
+            0.00528,
+            0.005256
+          ],
+          "genericMs": 0.01696,
+          "kernel": "matvec",
+          "key": "1024:3584",
+          "name": "L.0.down",
+          "numericalCheck": {
+            "expectedLength": 1024,
+            "length": 1024,
+            "lengthMismatch": false,
+            "maxAbs": 1.1175870895385742e-08,
+            "nonFinite": 0,
+            "ok": true,
+            "tolerance": {
+              "absolute": 0.0005,
+              "f16": false,
+              "relative": 0.0001
+            },
+            "violations": 0,
+            "worstIndex": 447
+          },
+          "reason": "stable-matvec-win",
+          "selected": true,
+          "shape": "1024:3584",
+          "stable": true,
+          "wideMs": 0.00528
+        },
+        {
+          "baseline": [
+            0.020624,
+            0.02112,
+            0.020696
+          ],
+          "baselineKernel": "generic",
+          "benefit": 0.6455353691534597,
+          "candidate": [
+            0.007336,
+            0.007912,
+            0.007304
+          ],
+          "genericMs": 0.020696,
+          "kernel": "matvec",
+          "key": "5120:1024",
+          "name": "L.3.qkv",
+          "numericalCheck": {
+            "expectedLength": 5120,
+            "length": 5120,
+            "lengthMismatch": false,
+            "maxAbs": 1.4901161193847656e-08,
+            "nonFinite": 0,
+            "ok": true,
+            "tolerance": {
+              "absolute": 0.0005,
+              "f16": false,
+              "relative": 0.0001
+            },
+            "violations": 0,
+            "worstIndex": 426
+          },
+          "reason": "stable-matvec-win",
+          "selected": true,
+          "shape": "5120:1024",
+          "stable": true,
+          "wideMs": 0.007336
+        },
+        {
+          "baseline": [
+            0.011432,
+            0.011936,
+            0.01128
+          ],
+          "baselineKernel": "generic",
+          "benefit": 0.6284114765570329,
+          "candidate": [
+            0.004248,
+            0.004192,
+            0.004344
+          ],
+          "genericMs": 0.011432,
+          "kernel": "matvec",
+          "key": "1024:2048",
+          "name": "L.0.out",
+          "numericalCheck": {
+            "expectedLength": 1024,
+            "length": 1024,
+            "lengthMismatch": false,
+            "maxAbs": 8.381903171539307e-09,
+            "nonFinite": 0,
+            "ok": true,
+            "tolerance": {
+              "absolute": 0.0005,
+              "f16": false,
+              "relative": 0.0001
+            },
+            "violations": 0,
+            "worstIndex": 910
+          },
+          "reason": "stable-matvec-win",
+          "selected": true,
+          "shape": "1024:2048",
+          "stable": true,
+          "wideMs": 0.004248
+        }
+      ]
+    },
+    "clef": {
+      "scope": "Alternating baseline/resident requests using one loaded model; exact hidden values, WASM head inputs and public answers",
+      "timings": [
+        {
+          "baselineMs": 784,
+          "request": 0,
+          "residentMs": 741,
+          "speedup": 1.058029689608637
+        },
+        {
+          "baselineMs": 1015,
+          "request": 1,
+          "residentMs": 874,
+          "speedup": 1.1613272311212814
+        },
+        {
+          "baselineMs": 1012,
+          "request": 2,
+          "residentMs": 879,
+          "speedup": 1.1513083048919226
+        }
+      ],
+      "aggregateLatencyReduction": 0.10918955745863035
+    },
+    "gemmaVision": {
+      "correctness": {
+        "bitExact": true,
+        "ok": true,
+        "rawProbabilityExact": true
+      },
+      "cases": [
+        {
+          "tokens": 96,
+          "selected": false,
+          "dispatches": [
+            0
+          ],
+          "checks": [
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            },
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            }
+          ]
+        },
+        {
+          "tokens": 98,
+          "selected": false,
+          "dispatches": [
+            0
+          ],
+          "checks": [
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            },
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            }
+          ]
+        },
+        {
+          "tokens": 112,
+          "selected": false,
+          "dispatches": [
+            0
+          ],
+          "checks": [
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            },
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            }
+          ]
+        },
+        {
+          "tokens": 113,
+          "selected": false,
+          "dispatches": [
+            0
+          ],
+          "checks": [
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            },
+            {
+              "hiddenDifferences": 0,
+              "hiddenWords": 3072,
+              "ok": true,
+              "policyDifferences": false,
+              "probabilityDifferences": false
+            }
+          ]
+        }
+      ],
+      "scope": "Timing gates retained baseline in this run; no camera FPS claim"
+    }
+  },
+  "semifBatchBaseline": {
+    "revision": "ea694a3059c47628d0a1ce7bbc707d3b08a33cd4",
+    "model": "semif-qwen3.5-0.8b",
+    "singleRequestVectorsBeforeAfterExact": true,
+    "baselineBatchDeltas": [
+      {
+        "label": "short",
+        "maxProbabilityDelta": 0.0011942386627197266,
+        "nearTieChoices": []
+      },
+      {
+        "label": "medium",
+        "maxProbabilityDelta": 0.0003060251474380493,
+        "nearTieChoices": []
+      }
+    ],
+    "scope": "Batching changes split-K association. Batch API compatibility bounds account for response rounding; raw numerical equivalence is not claimed."
+  },
+  "limits": [
+    "Another GPU workload remained active. Measurements are not a dedicated-GPU performance limit.",
+    "Clef used paragraphCounts=1,2,3 because the larger synthetic request exhausted available NVIDIA memory; both shorter cases had already passed.",
+    "Kev 9B BF16 was not executed because its persistent trunk plus scratch exceeded free NVIDIA VRAM.",
+    "An AMD full-model Clef browser attempt exited; it is not counted as a passing model check.",
+    "Model packs were local. Larger unpublished packs still require converted pack URLs; weights were not published by this deployment."
+  ]
+}

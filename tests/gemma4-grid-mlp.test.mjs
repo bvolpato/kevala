@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { calibrateGemma4GridMlp, encodeGemma4GridMlp, gemma4GridMlpBindGroups, gemma4GridMlpEligible, gemma4GridMlpMemory, selectGemma4GridMlp } from '../js/src/gpu-gemma4-grid-mlp.js';
+import { calibrateGemma4GridMlp, encodeGemma4GridMlp, Gemma4GridMlpCache, gemma4GridMlpBindGroups, gemma4GridMlpEligible, gemma4GridMlpMemory, selectGemma4GridMlp } from '../js/src/gpu-gemma4-grid-mlp.js';
 import { GpuGemma4 } from '../js/src/gpu-gemma4.js';
 
 const baseline = { kernel: 'matmul', f16: false, groups: 1, splitTarget: 256, mm56: 'old-mm', layout: {}, reduceLayout: {}, reduce: { 4: 'old-reduce' } };
@@ -11,7 +11,7 @@ function graph() {
   const gate = { ...up, label: 'mm.gate', params: {}, mlpPartners: [up, gelu], gridMlpSource: { globals: {}, input: {}, output: {}, gate: weight('l.0.gate'), up: weight('l.0.up') } };
   return { gate, up, gelu, ops: [gate, up, gelu] };
 }
-const guard = () => ({ ok: true, bitMismatches: 0, nonfinite: 0, tailMismatches: 0, outputWords: 595968, partialWords: 3575808, rawBits: true });
+const guard = (tokens = 97) => ({ ok: true, bitMismatches: 0, nonfinite: 0, tailMismatches: 0, outputWords: tokens * 6144, partialWords: 6 * tokens * 6144, rawBits: true });
 
 test('grid selection requires full exact guards and all three finite five-percent wins', () => {
   const point = { before: guard(), after: guard(), baseline: [1, 1.01, 1.02], candidate: [0.94, 0.95, 0.96] };
@@ -20,12 +20,17 @@ test('grid selection requires full exact guards and all three finite five-percen
   for (const side of ['before', 'after']) for (const change of [{ bitMismatches: 1 }, { nonfinite: 1 }, { tailMismatches: 1 }, { outputWords: 1 }, { partialWords: 1 }, { rawBits: false }]) {
     assert.equal(selectGemma4GridMlp({ ...point, [side]: { ...guard(), ...change } }).reason, 'numerical-guard-failed');
   }
+  for (const tokens of [98, 105, 112]) {
+    assert.equal(selectGemma4GridMlp({ ...point, tokens, before: guard(tokens), after: guard(tokens) }).selected, true);
+    assert.equal(selectGemma4GridMlp({ ...point, tokens }).reason, 'numerical-guard-failed');
+  }
+  for (const tokens of [96, 113, 97.5, NaN]) assert.equal(selectGemma4GridMlp({ ...point, tokens }).reason, 'ineligible-tokens');
 });
 
 test('grid eligibility preserves actual adjacency, suffix mode, weights, precision and split policy', () => {
   const f = graph();
-  assert.equal(gemma4GridMlpEligible(97, f.gate, f.up, f.gelu, baseline), true);
-  for (const T of [2, 96, 98, 104, 241]) assert.equal(gemma4GridMlpEligible(T, f.gate, f.up, f.gelu, baseline), false);
+  for (let T = 97; T <= 112; T++) assert.equal(gemma4GridMlpEligible(T, f.gate, f.up, f.gelu, baseline), true);
+  for (const T of [2, 96, 113, 128, 241, 97.5, NaN]) assert.equal(gemma4GridMlpEligible(T, f.gate, f.up, f.gelu, baseline), false);
   for (const change of [{ mode: 1 }, { bias: 1 }, { dtype: 'bf16' }, { sourcePolicy: true }, { batched: false }, { N: 12288 }, { K: 6144 }]) {
     assert.equal(gemma4GridMlpEligible(97, { ...f.gate, ...change }, f.up, f.gelu, baseline), false);
     const modified = graph(); Object.assign(modified.up, change);
@@ -40,7 +45,7 @@ test('grid eligibility preserves actual adjacency, suffix mode, weights, precisi
 test('binding and dispatch reuse one private paired scratch without copying inputs or weights', () => {
   const { gate } = graph(), groups = [], calls = [];
   const device = { createBindGroup(value) { groups.push(value); return value; } };
-  const context = { selection: new Set(['6144:1536']), pipeline: 'grid', reduce: { getBindGroupLayout() { return {}; } }, layout: {}, part: {}, unused: {}, params: {}, splits: 3, groups: new WeakMap() };
+  const context = { tokens: 97, selection: new Set(['6144:1536']), pipeline: 'grid', reduce: { getBindGroupLayout() { return {}; } }, layout: {}, part: {}, unused: {}, params: {}, splits: 3, groups: new WeakMap() };
   const bindings = gemma4GridMlpBindGroups(device, context, gate);
   const r = gate.gridMlpSource;
   assert.deepEqual(bindings.matmul.entries.map((e) => e.resource.buffer), [r.globals, gate.params, r.input, r.gate.buf, r.gate.sbuf, r.up.buf, r.up.sbuf, context.unused, context.part]);
@@ -50,19 +55,71 @@ test('binding and dispatch reuse one private paired scratch without copying inpu
   for (let i = 0; i < 2; i++) encodeGemma4GridMlp(pass, context, gate, 97, device, baseline);
   assert.equal(groups.length, 2);
   assert.deepEqual(calls.slice(0, 4), ['grid', [96, 2, 6], context.reduce, [2328, 1]]);
-  assert.throws(() => encodeGemma4GridMlp(pass, context, gate, 98, device, baseline), /calibrated T97/);
+  assert.throws(() => encodeGemma4GridMlp(pass, context, gate, 98, device, baseline), /calibrated row count/);
   const m = gemma4GridMlpMemory();
   assert.equal(m.pair, 2 * 3 * 97 * 6144 * 4 + 16);
   assert.equal(m.totalBytes, m.retainedBytes + m.gpuBytes + m.hostBytes);
   assert.ok(m.totalBytes < 64 * 1024 * 1024);
+  for (const tokens of [98, 105, 112]) {
+    const memory = gemma4GridMlpMemory(tokens);
+    assert.equal(memory.pair, 2 * 3 * tokens * 6144 * 4 + 16);
+    assert.equal(memory.active, tokens * 6144);
+    assert.ok(memory.totalBytes < memory.limitBytes);
+    context.tokens = tokens;
+    calls.length = 0;
+    encodeGemma4GridMlp(pass, context, gate, tokens, device, baseline);
+    assert.deepEqual(calls, ['grid', [96, 2, 6], context.reduce, [tokens * 24, 1]]);
+  }
+  for (const tokens of [96, 113]) assert.throws(() => gemma4GridMlpMemory(tokens), RangeError);
+  const largest = gemma4GridMlpMemory(112);
+  assert.ok(largest.totalBytes + largest.retainedBytes < largest.limitBytes);
+});
+
+test('varying supported suffix rows reuses calibration and pins the default context within bounded storage', async () => {
+  const cache = new Gemma4GridMlpCache(), calls = [], released = [];
+  const get = (tokens) => cache.get(String(tokens), tokens, async () => {
+    calls.push(tokens);
+    return { tokens, selection: new Set(['6144:1536']), diagnostics: { enabled: true }, destroy() { released.push(tokens); this.selection.clear(); } };
+  });
+  const first = await get(97), second = await get(98);
+  for (let i = 0; i < 3; i++) { assert.strictEqual(await get(97), first); assert.strictEqual(await get(98), second); }
+  assert.deepEqual(calls, [97, 98]);
+  await get(105);
+  assert.deepEqual(released, [98]);
+  assert.strictEqual(await get(97), first);
+  assert.equal((await get(98)).diagnostics.reason, 'context-evicted');
+  assert.deepEqual(calls, [97, 98, 105]);
+  await get(112);
+  assert.deepEqual(released, [98, 105]);
+  assert.equal(cache.contexts.size, 2);
+  cache.clear();
+  assert.deepEqual(released, [98, 105, 97, 112]);
+  assert.equal(cache.attempts.size, 0);
+  await get(98);
+  assert.deepEqual(calls, [97, 98, 105, 112, 98]);
+});
+
+test('failed calibration is remembered and changing policies cannot create unbounded attempts', async () => {
+  const cache = new Gemma4GridMlpCache();
+  let attempts = 0;
+  const calibrate = async () => { attempts++; return { tokens: 98, selection: new Set(), diagnostics: { reason: 'deadline' }, destroy() {} }; };
+  const result = await cache.get('first', 98, calibrate);
+  for (let i = 0; i < 3; i++) assert.strictEqual(await cache.get('first', 98, calibrate), result);
+  assert.equal(attempts, 1);
+  for (let i = 1; i <= 40; i++) await cache.get(`policy-${i}`, 98, calibrate);
+  assert.equal(attempts, 32);
+  assert.equal(cache.attempts.size, 32);
+  assert.equal(cache.contexts.size, 0);
+  assert.equal((await cache.get('new-policy', 98, calibrate)).diagnostics.reason, 'calibration-context-limit');
+  assert.equal(attempts, 32);
 });
 
 test('core toggles only grid dispatch and never consumes separated or unsupported partners', () => {
-  const run = (changes = {}, split = false) => {
+  const run = (changes = {}, split = false, tokens = 97) => {
     const f = graph(), calls = [], pass = { setPipeline(p) { calls.push(p); }, setBindGroup() {}, dispatchWorkgroups() {}, end() {} };
     const ctx = { tokens: 97, selection: new Set(['6144:1536']), pipeline: 'grid', reduce: 'grid-reduce', splits: 3, groups: new WeakMap([[f.gate, { matmul: {}, reduce: {} }]]) };
     const value = { gpuKernel: 'auto', fuseGridMlp: true, gridMlp: ctx, lastGridMlpDispatches: 0, tuning: { selection: new Map(), pipelines: { generic: baseline } }, batchMatmul: { generic: baseline }, ...changes };
-    GpuGemma4.prototype.encode.call(value, { beginComputePass() { return pass; } }, split ? f.ops.slice(0, 2) : f.ops, 97, null);
+    GpuGemma4.prototype.encode.call(value, { beginComputePass() { return pass; } }, split ? f.ops.slice(0, 2) : f.ops, tokens, null);
     return { calls, value, ctx };
   };
   assert.deepEqual(run().calls, ['grid', 'grid-reduce']);
@@ -71,10 +128,11 @@ test('core toggles only grid dispatch and never consumes separated or unsupporte
     const result = run(changes); assert.deepEqual(result.calls, ['old-mm', 'old-reduce', 'old-mm', 'old-reduce', 'old-gelu']); assert.strictEqual(result.value.gridMlp, result.ctx);
   }
   assert.deepEqual(run({}, true).calls, ['old-mm', 'old-reduce', 'old-mm', 'old-reduce']);
+  assert.deepEqual(run({}, false, 98).calls, ['old-mm', 'old-reduce', 'old-mm', 'old-reduce', 'old-gelu']);
 });
 
 test('calibrated context survives off/on/off and other token counts without rebuilding caches', async () => {
-  const f = graph(), ctx = { selection: new Set(['6144:1536']), diagnostics: { enabled: true } }, prefix = {};
+  const f = graph(), ctx = { tokens: 97, selection: new Set(['6144:1536']), diagnostics: { enabled: true } }, prefix = {};
   const key = JSON.stringify([97, 'auto', 'generic', 'matmul', false, 1, 256, true, false, 'l.0.gate', 'l.0.up']);
   const gpu = { gpuKernel: 'auto', batchMatmul: { generic: baseline }, tuning: { selection: new Map(), diagnostics: {} }, batchPrefixSuffixOps: f.ops, gridMlp: ctx, gridMlpKey: key, prefixRetile: prefix };
   for (const enabled of [false, true, false]) {

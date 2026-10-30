@@ -3,6 +3,7 @@ import test from "node:test";
 import { encodeMatmul, matmulPipelines, mmSplits, rowsPerThread } from "../js/src/gpu.js";
 import {
   calibrateMatmul,
+  compareMatmulOutputs,
   matmulShapes,
   matmulTokenBucket,
   matmulTuningKey,
@@ -202,4 +203,107 @@ test("GPU tuning recognizes Laya projection suffixes without changing the six-sh
     info: { name: `enc.0.${suffix}`, dtype: "q8", shape: [1024 + i * 32, 1024] }, buf: buffer, sbuf: scales,
   }]));
   assert.deepEqual(matmulShapes({ tensors }).map(({ suffix }) => suffix), suffixes.slice(0, 6));
+});
+
+test("projection calibration isolates BF16/F32 shapes without requiring Q8 scales", () => {
+  const tensors = new Map(["q8", "bf16", "f32"].map((dtype, index) => [dtype, {
+    info: { name: `L.${index}.gate_up`, dtype, shape: [4096, 1024] }, buf: {}, ...(dtype === "q8" ? { sbuf: {} } : {}),
+  }]));
+  for (const dtype of ["q8", "bf16", "f32"]) {
+    assert.deepEqual(matmulShapes({ tensors }, 6, dtype).map(({ info }) => info.dtype), [dtype]);
+  }
+  delete tensors.get("q8").sbuf;
+  assert.equal(matmulShapes({ tensors }).length, 0);
+  assert.equal(matmulShapes({ tensors }, 6, "bf16").length, 1);
+});
+
+test("BF16/F32 auto tuning can compare FP32 kernels without shader-f16", async () => {
+  for (const dtype of ["bf16", "f32"]) {
+    const generic = {}, wide = {};
+    const result = await calibrateMatmul({ features: new Set(["timestamp-query"]) }, null, null, { dtype, pipelines: { generic, wide } });
+    assert.equal(result.pipelines.wide, wide);
+    assert.equal(result.diagnostics.method, "timestamp-query");
+    assert.equal(result.diagnostics.dtype, dtype);
+    const fallback = await calibrateMatmul({ features: new Set(["shader-f16"]) }, null, null, { dtype, pipelines: { generic } });
+    assert.equal(fallback.diagnostics.reason, "no-timestamp-query");
+    assert.equal(fallback.pipelines.wide, null);
+  }
+  await assert.rejects(calibrateMatmul({}, null, null, { dtype: "f16" }), /unsupported GPU matrix dtype f16/);
+});
+
+test("unquantized matrix calibration rejects non-finite and inaccurate wide outputs", () => {
+  assert.equal(compareMatmulOutputs([1, -100], [1.0001, -100.005]).ok, true);
+  assert.equal(compareMatmulOutputs([1], [1.01]).ok, false);
+  assert.equal(compareMatmulOutputs([1], [Number.NaN]).ok, false);
+  assert.equal(compareMatmulOutputs([Infinity], [Infinity]).ok, false);
+  assert.equal(compareMatmulOutputs([1], []).ok, false);
+});
+
+test("completed matrix selections survive the deadline while GPU failures reset them", async (t) => {
+  const saved = { usage: globalThis.GPUBufferUsage, map: globalThis.GPUMapMode };
+  globalThis.GPUBufferUsage = { UNIFORM: 64, STORAGE: 128, COPY_SRC: 4, COPY_DST: 8, MAP_READ: 1, QUERY_RESOLVE: 512 };
+  globalThis.GPUMapMode = { READ: 1 };
+  t.after(() => {
+    if (saved.usage === undefined) delete globalThis.GPUBufferUsage;
+    else globalThis.GPUBufferUsage = saved.usage;
+    if (saved.map === undefined) delete globalThis.GPUMapMode;
+    else globalThis.GPUMapMode = saved.map;
+  });
+  const weights = { tensors: new Map([["first", {
+    info: { name: "L.0.gate_up", dtype: "bf16", shape: [64, 32] }, buf: {},
+  }], ["second", {
+    info: { name: "L.0.qkvz", dtype: "bf16", shape: [96, 32] }, buf: {},
+  }]]) };
+  const pipes = (kind) => ({ layout: {}, reduceLayout: {}, splitTarget: 256, groups: 1,
+    mm: [null, { kind }, { kind }, { kind }, { kind }], reduce: [null, { kind }, { kind }, { kind }, { kind }],
+  });
+  for (const code of ["MATMUL_DEADLINE", "WEBGPU_INIT"]) {
+    const buffers = [];
+    const scopes = [];
+    const device = {
+      features: new Set(["timestamp-query"]),
+      limits: { maxBufferSize: 2 ** 30, maxStorageBufferBindingSize: 2 ** 30 },
+      pushErrorScope: (kind) => scopes.push(kind),
+      popErrorScope: async () => { scopes.pop(); return null; },
+      createBuffer({ size, label }) {
+        const bytes = new Uint8Array(size);
+        const buffer = { bytes, destroyed: false,
+          mapAsync: async () => { if (label === "L.0.qkvz.tune.read") throw Object.assign(new Error("simulated calibration stop"), { code }); },
+          getMappedRange: (offset, length) => bytes.slice(offset, offset + length).buffer,
+          unmap() {}, destroy() { this.destroyed = true; },
+        };
+        buffers.push(buffer);
+        return buffer;
+      },
+      queue: { writeBuffer() {}, submit() {} },
+      createBindGroup: (group) => group,
+      createQuerySet: ({ count }) => ({ values: new BigInt64Array(count), destroy() {} }),
+      createCommandEncoder: () => ({
+        beginComputePass({ timestampWrites } = {}) {
+          let kind;
+          return { setPipeline(pipeline) { kind = pipeline.kind; }, setBindGroup() {}, dispatchWorkgroups() {},
+            end() { if (timestampWrites) {
+              const { querySet, beginningOfPassWriteIndex: start, endOfPassWriteIndex: end } = timestampWrites;
+              querySet.values[start] = 0n;
+              querySet.values[end] = kind === "wide" ? 300000n : 400000n;
+            } },
+          };
+        },
+        resolveQuerySet(query, _start, _count, destination) { destination.bytes.set(new Uint8Array(query.values.buffer)); },
+        copyBufferToBuffer(source, offset, destination, at, size) { destination.bytes.set(source.bytes.subarray(offset, offset + size), at); },
+        finish() { return {}; },
+      }),
+    };
+    const result = await calibrateMatmul(device, null, weights, { dtype: "bf16", pipelines: { generic: pipes("generic"), wide: pipes("wide") } });
+    assert.equal(result.diagnostics.truncated, true);
+    assert.equal(result.diagnostics.reason, code === "MATMUL_DEADLINE" ? "deadline" : "calibration-failed");
+    for (const tokens of [16, 32, 48, 128, 512]) {
+      assert.equal(selectedMatmulKernel(result.selection, 64, 32, tokens), code === "MATMUL_DEADLINE" ? "wide" : "generic");
+      assert.equal(selectedMatmulKernel(result.selection, 96, 32, tokens), "generic");
+    }
+    assert.ok(result.diagnostics.points[0].points.every((point) => point.numericalCheck.ok));
+    assert.ok(result.diagnostics.points[0].points.every((point) => point.reason === (code === "MATMUL_DEADLINE" ? "stable-wide-win" : "aborted-after-calibration-failure")));
+    assert.ok(buffers.every((buffer) => buffer.destroyed));
+    assert.deepEqual(scopes, []);
+  }
 });

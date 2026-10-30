@@ -1,0 +1,12 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kevala model runtime smoke check</title>
+<h1>Model runtime smoke check</h1>
+<p>Checks typed answers, probabilities, repeated requests, and batching on one WebGPU model. This checks the runtime contract, not answer accuracy.</p>
+<p>Set <code>model=laya</code>, or <code>model=kev-0.8b&amp;pack=/tmp/kev-0.8b-bf16.kevala</code>. A pack URL alone also works. Add <code>auto=1</code> to start automatically, <code>timing=1</code> for warmed timing samples, or <code>features=timestamp-query,shader-f16</code> to restrict optional GPU features.</p>
+<p>The default batch bound is <code>max(0.0005, half the response rounding unit)</code>: an API compatibility check, not raw numerical equivalence. An explicit <code>batchTolerance</code> from 0 through 0.01 changes only that bound. Retain the baseline revision and before/after raw-vector artifacts when comparing code revisions; this harness records vectors but does not perform that comparison. Repeat, normalization, and scalar guards remain separate.</p>
+<p>Inputs default to <code>paragraphCounts=1,3,6</code>. For bounded-memory coverage, choose three unique ascending counts from 1 through 6, such as <code>paragraphCounts=1,2,3</code>. The selected counts are recorded with the result.</p>
+<button id="run" type="button">Run check</button>
+<pre id="log" style="font:13px ui-monospace,monospace;white-space:pre-wrap"></pre>
+<script type="module" src="./model-smoke-check.js"></script>

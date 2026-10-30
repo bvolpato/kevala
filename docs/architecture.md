@@ -170,6 +170,12 @@ layer and returns only the rows the head reads. Kernels:
   32, 48 or 64 rows, picked by the input length, so a 20-token request does not pay for 64 rows.
   Narrow outputs at short lengths split K across workgroups (a 1024-wide projection at 64 tokens is
   16 tiles, too few to fill a GPU).
+- Qwen projection selection is calibrated separately for Q8, BF16, and F32 loaded weights.
+  BF16 and F32 retain F32 operands. Automatic selection compares generic and wide tiles;
+  single-row projections can also select direct matvec after numerical and paired timing checks.
+  Calibration has bounded scratch and a deadline. Completed checks survive budget exhaustion;
+  unsupported, slower, or invalid candidates keep the baseline. Explicit `gpuKernel` overrides
+  bypass automatic selection.
 - LayerNorm / RMSNorm, rotary embeddings, sliding-window and global attention (Laya), causal GQA
   attention with online softmax and an output gate (Kev and SemIf), GeGLU / SwiGLU. On GPUs whose subgroups
   are exactly 32 lanes (Apple, NVIDIA), Laya's attention takes 32 keys per step with one key per
@@ -180,6 +186,22 @@ layer and returns only the rows the head reads. Kernels:
   products with `subgroupShuffleXor`, or without subgroups through workgroup memory behind one
   more barrier per token. That is 3-5x faster than one thread per column. The next token's q and
   k are staged while the current one computes.
+
+Clef gathers input embeddings directly into the decoder's GPU buffer, including ordered rows from
+multiple table shards. Its lexical option means retain the original F32 accumulation order and use
+a per-model LRU cache capped at 8 MiB and 256 entries. The joint head still runs in WebAssembly.
+
+Gemma's grid gate/up fusion supports suffix lengths 97 through 112 under its existing Q8 F32
+BM56 policy. Each length needs exact output and partial-buffer checks and a stable timing win.
+The decoder retains at most two calibrated contexts, preserves the standard 97-row context, and
+remembers failed or evicted attempts to avoid repeated calibration as question lengths change.
+
+Development guards cover [loaded Qwen projections](../dev/qwen-projection-check.html),
+[Clef resident rows](../dev/clef-rows-check.html), and the
+[Gemma suffix band](../dev/gemma4-grid-mlp-band-check.html). The model comparisons need local packs;
+the Clef page also runs synthetic Q8, BF16, and F32 row checks without a model pack.
+The [October 30 validation](projection-runtime-validation.md) records catalog coverage,
+performance measurements, numerical tolerances and available-memory limits for this implementation.
 
 Where the time goes is visible per kernel: `kevala.profile(true)` adds `timing.gpu` (milliseconds
 per kernel) to every response, and the Playground's Profile tab shows it for any request.

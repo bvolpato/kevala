@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kevala Gemma grid MLP row-band check</title>
+<main>
+  <h1>Gemma grid MLP row-band check</h1>
+  <p>This opt-in check loads one local Gemma 4 E2B decoder and vision companion. It varies actual question wording to exercise suffix lengths 96, 97, 98, 105, 112 and 113, then compares all returned hidden words and raw probabilities with the fusion off/on/off. Synthetic pixels check execution, not image classification quality.</p>
+  <button id="run">Load local model and run</button>
+  <pre id="log" style="white-space:pre-wrap;overflow-wrap:anywhere"></pre>
+</main>
+<script type="module" src="./gemma4-grid-mlp-band-check.js"></script>

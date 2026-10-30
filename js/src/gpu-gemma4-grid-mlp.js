@@ -3,13 +3,54 @@ import { bufferUsage, inErrorScopes, mmSplits, pipeline, rowsPerThread } from '.
 import { createGemma4BatchMlpValidator } from './gpu-gemma4-batch-mlp.js';
 import { mapBeforeDeadline } from './gpu-matvec.js';
 
-const TOKENS = 97, N = 6144, K = 1536, KEY = `${N}:${K}`, LIMIT = 64 * 1024 * 1024;
+const N = 6144, K = 1536, KEY = `${N}:${K}`, LIMIT = 64 * 1024 * 1024;
 const SPEC = { weights: 'q8', f16: false, rows: 4, row56: true, groups: 1, splitTarget: 256 };
 const SENTINEL = new Uint32Array(new Float32Array([12345.25]).buffer)[0];
 const expired = () => Object.assign(new Error('Gemma grid MLP calibration deadline exceeded'), { code: 'GRID_MLP_DEADLINE' });
 
+export function gemma4GridMlpTokens(tokens) {
+  return Number.isSafeInteger(tokens) && tokens >= 97 && tokens <= 112;
+}
+
+// Two retained T112 contexts plus one calibration's temporary storage stay below 64 MiB.
+export class Gemma4GridMlpCache {
+  constructor() {
+    this.contexts = new Map();
+    this.attempts = new Map();
+  }
+
+  async get(key, tokens, calibrate) {
+    if (this.contexts.has(key)) {
+      const result = this.contexts.get(key);
+      this.contexts.delete(key);
+      this.contexts.set(key, result);
+      return result;
+    }
+    if (this.attempts.has(key)) return this.attempts.get(key);
+    const fallback = (diagnostics) => ({ tokens, selection: new Set(), diagnostics, destroy() {} });
+    if (this.attempts.size >= 32) return fallback({ enabled: false, available: false, reason: 'calibration-context-limit', tokens });
+    if (this.contexts.size >= 2) {
+      const victim = [...this.contexts].find(([, value]) => value.tokens !== 97) || this.contexts.entries().next().value;
+      victim[1].destroy();
+      this.contexts.delete(victim[0]);
+    }
+    const result = await calibrate();
+    if (result.selection.size) {
+      this.contexts.set(key, result);
+      this.attempts.set(key, fallback({ ...result.diagnostics, enabled: false, available: false, reason: 'context-evicted' }));
+    } else this.attempts.set(key, result);
+    return result;
+  }
+
+  clear() {
+    for (const context of this.contexts.values()) context.destroy();
+    this.contexts.clear();
+    this.attempts.clear();
+  }
+}
+
 export function gemma4GridMlpBaseline(tokens, baseline) {
-  return tokens === TOKENS && baseline?.f16 === false && baseline.groups === 1 && baseline.splitTarget === 256 &&
+  return gemma4GridMlpTokens(tokens) && baseline?.f16 === false && baseline.groups === 1 && baseline.splitTarget === 256 &&
     baseline.kernel === 'matmul' && rowsPerThread(tokens, baseline) === 4 && !!baseline.mm56 && !!baseline.reduce?.[4];
 }
 
@@ -39,15 +80,18 @@ export function gemma4GridMlpTiming(baseline, candidate) {
 }
 
 export function selectGemma4GridMlp(point) {
-  const memory = gemma4GridMlpMemory();
+  const tokens = point.tokens ?? 97;
+  if (!gemma4GridMlpTokens(tokens)) return { selected: false, reason: 'ineligible-tokens' };
+  const memory = gemma4GridMlpMemory(tokens);
   const valid = (guard) => guard?.ok === true && guard.bitMismatches === 0 && guard.nonfinite === 0 && guard.tailMismatches === 0 &&
     guard.outputWords === memory.active && guard.partialWords === 2 * memory.partial && guard.rawBits === true;
   if (!valid(point.before) || !valid(point.after)) return { selected: false, reason: 'numerical-guard-failed' };
   return gemma4GridMlpTiming(point.baseline, point.candidate);
 }
 
-export function gemma4GridMlpMemory() {
-  const splits = mmSplits(1, N, K, 256, 64, 64), active = TOKENS * N, partial = splits * active;
+export function gemma4GridMlpMemory(tokens = 97) {
+  if (!gemma4GridMlpTokens(tokens)) throw new RangeError('Gemma grid MLP requires 97 to 112 rows');
+  const splits = mmSplits(1, N, K, 256, 64, 64), active = tokens * N, partial = splits * active;
   const x = 128 * K * 4, y = (128 * N + 4) * 4, part = (partial + 4) * 4, pair = (2 * partial + 4) * 4;
   const retainedBytes = pair + 2 * 16;
   const gpuBytes = x + 4 * y + 2 * part + 16 + 9 * 16 + 16 + 256 + 256;
@@ -65,9 +109,9 @@ export function gemma4GridMlpBindGroups(device, context, op) {
 }
 
 export function encodeGemma4GridMlp(pass, context, op, tokens, device, baseline) {
-  if (!context?.selection?.has(KEY) || context.splits !== 3 ||
+  if (!context?.selection?.has(KEY) || context.tokens !== tokens || context.splits !== 3 ||
       !gemma4GridMlpEligible(tokens, op, op.mlpPartners?.[0], op.mlpPartners?.[1], baseline)) {
-    throw new Error('Gemma grid MLP dispatch requires its calibrated T97 shape and baseline');
+    throw new Error('Gemma grid MLP dispatch requires its calibrated row count and baseline');
   }
   let bindings = context.groups.get(op);
   if (!bindings) { bindings = gemma4GridMlpBindGroups(device, context, op); context.groups.set(op, bindings); }
@@ -84,7 +128,7 @@ export async function calibrateGemma4GridMlp(device, source, shape, { tokens, ba
   if (!automatic) { diagnostics.reason = 'kernel-override'; return fallback(); }
   if (!gemma4GridMlpBaseline(tokens, baseline) || !matchingWeights(shape) || pairedSelected) { diagnostics.reason = 'ineligible-baseline'; return fallback(); }
   if (!device.features.has('timestamp-query')) { diagnostics.reason = 'no-timestamp-query'; return fallback(); }
-  const memory = gemma4GridMlpMemory(), limit = Math.min(device.limits.maxBufferSize, device.limits.maxStorageBufferBindingSize);
+  const memory = gemma4GridMlpMemory(tokens), limit = Math.min(device.limits.maxBufferSize, device.limits.maxStorageBufferBindingSize);
   if (memory.totalBytes > LIMIT || Math.max(memory.x, memory.y, memory.part, memory.pair) > limit || device.limits.maxComputeWorkgroupStorageSize < 16384) { diagnostics.reason = 'scratch-limit'; return fallback(); }
   let context = null, selected = false;
   try {
@@ -129,10 +173,10 @@ export async function calibrateGemma4GridMlp(device, source, shape, { tokens, ba
 }
 
 async function measure(device, context, shape, baseline, gelu, deadline) {
-  const T = TOKENS;
+  const T = context.tokens;
   const splits = mmSplits(1, N, K, 256, 64, 64), active = T * N, partial = splits * active;
   if (splits !== 3 || context.splits !== splits) throw new Error("Gemma grid MLP split geometry changed");
-  const bytes = gemma4GridMlpMemory();
+  const bytes = gemma4GridMlpMemory(T);
   const gpuBytes = bytes.gpuBytes, hostBytes = bytes.hostBytes, scratchBytes = bytes.totalBytes;
   const owned = [];
   let read, queries, mapped = false, allocated = 0;
@@ -231,7 +275,7 @@ async function measure(device, context, shape, baseline, gelu, deadline) {
     const timestamps = new BigInt64Array(read.getMappedRange(0, 96).slice(0)); read.unmap(); mapped = false;
     const [baselineTimes, candidateTimes] = indices.map((values) => values.map((i) => Number(timestamps[i + 1] - timestamps[i]) / 1e6 / 4));
     if ([...baselineTimes, ...candidateTimes].some((v) => !Number.isFinite(v) || v <= 0)) throw new Error('Gemma grid MLP loaded-weight timestamps invalid');
-    const after = await verify(), choice = selectGemma4GridMlp({ baseline: baselineTimes, candidate: candidateTimes, before, after });
+    const after = await verify(), choice = selectGemma4GridMlp({ tokens: T, baseline: baselineTimes, candidate: candidateTimes, before, after });
     return { ...choice, before, after,
       gateName: r.gate.info.name || null, upName: r.up.info.name || null, baselinePartBuffers: 1, gateCaptureTimed: false, baselineDispatches: 5, candidateDispatches: 2,
       timing: { baseline: baselineTimes, candidate: candidateTimes, ...choice, pairs: 3, repetitions: 4, allocationsUploadsAndCaptureTimed: false },

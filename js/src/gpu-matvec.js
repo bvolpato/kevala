@@ -1,10 +1,10 @@
-// Gemma 4's single-row Q8 path is calibrated against the selected matmul kernel using the
+// The single-row path is calibrated against the selected matmul kernel using the
 // model's loaded projection buffers. It keeps no device-specific results beyond this load.
 
 import { bufferUsage, encodeMatmul, encodeMatvec, inErrorScopes, matvecPipelines, mmSplits, rowsPerThread, scratchBuffer } from "./gpu.js";
 import { matmulShapes, selectMatmulKernel, selectedMatmulKernel } from "./gpu-tuning.js";
 
-export const MATVEC_TUNING_REVISION = 1;
+export const MATVEC_TUNING_REVISION = 2;
 
 const SAMPLES = 3;
 const REPETITIONS = 4;
@@ -149,7 +149,7 @@ function untimedPass(encoder, kind, pipes, op) {
 }
 
 function opFor(device, layout, reduceLayout, shape, globals, params, x, bias, y, part) {
-  const resources = [globals, params, x, shape.buf, shape.sbuf, bias, y, part];
+  const resources = [globals, params, x, shape.buf, shape.sbuf || bias, bias, y, part];
   const group = device.createBindGroup({ layout, entries: resources.map((buffer, binding) => ({ binding, resource: { buffer } })) });
   const reduce = reduceLayout ? device.createBindGroup({
     layout: reduceLayout,
@@ -318,12 +318,14 @@ async function calibrateShape(device, shape, baselinePipelines, candidatePipelin
   }
 }
 
-/** Calibrate the Gemma-local Q8, T=1 matvec path against the loaded model's selected matmul. */
-export async function calibrateMatvec(device, wgsl, weights, tuning, { kernel = "auto" } = {}) {
+/** Calibrate one precision's T=1 matvec path against the loaded model's selected matmul. */
+export async function calibrateMatvec(device, wgsl, weights, tuning, { kernel = "auto", dtype = "q8" } = {}) {
   if (!["auto", "generic", "wide"].includes(kernel)) throw new Error('kernel must be "auto", "generic", or "wide"');
+  if (!["q8", "bf16", "f32"].includes(dtype)) throw new Error(`unsupported GPU matrix dtype ${dtype}`);
   const startedAt = now();
   const diagnostics = {
     revision: MATVEC_TUNING_REVISION,
+    dtype,
     method: kernel === "auto" ? "baseline" : "override",
     kernel,
     tokens: 1,
@@ -341,15 +343,15 @@ export async function calibrateMatvec(device, wgsl, weights, tuning, { kernel = 
   diagnostics.method = timing.method;
   diagnostics.repetitions = timing.repetitions;
   if (!hasTimestamps) diagnostics.clockResolutionMs = clockResolution;
-  const shapes = matmulShapes(weights, 12);
-  if (!shapes.length) return fallback("no-q8-projection-shapes", diagnostics);
+  const shapes = matmulShapes(weights, 12, dtype);
+  if (!shapes.length) return fallback(`no-${dtype}-projection-shapes`, diagnostics);
   if (timing.method === "baseline") return fallback(timing.reason, diagnostics);
   if (!tuning?.pipelines?.generic) return fallback("missing-baseline-pipeline", diagnostics);
 
   const selection = new Set();
   let pipelines;
   try {
-    pipelines = await inErrorScopes(device, () => matvecPipelines(device, wgsl, "q8", tuning.pipelines.generic.layout));
+    pipelines = await inErrorScopes(device, () => matvecPipelines(device, wgsl, dtype, tuning.pipelines.generic.layout));
   } catch (error) {
     return fallback("pipeline-failed", diagnostics, { error: String(error?.message || error) });
   }

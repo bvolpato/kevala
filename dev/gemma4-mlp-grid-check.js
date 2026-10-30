@@ -4,7 +4,8 @@ import { mapBeforeDeadline } from "../js/src/gpu-matvec.js";
 import { selectMatmulKernel } from "../js/src/gpu-tuning.js";
 import { kernelSource } from "./wgsl.js";
 
-const T = 97, CHUNK = 1024 * 1024, LIMIT = 64 * CHUNK;
+const T = typeof location === 'undefined' ? 97 : Number(new URLSearchParams(location.search).get('T') || 97);
+const CHUNK = 1024 * 1024, LIMIT = 64 * CHUNK;
 const SENTINEL = new Uint32Array(new Float32Array([12345.25]).buffer)[0];
 const cases = [];
 let metadata = {};
@@ -198,7 +199,7 @@ async function check(runtime, pipes, input) {
 
 async function main() {
   const params = new URLSearchParams(location.search), started = performance.now();
-  if (params.has("T") && Number(params.get("T")) !== T) throw new Error("MLP grid probe supports T97 only");
+  if (!Number.isSafeInteger(T) || T < 97 || T > 112) throw new Error("MLP grid probe supports T97 to T112 only");
   const all = [{ shape: "gate6144", N: 6144, K: 1536 }, { shape: "ragged", N: 65, K: 1056 }, { shape: "zeros", N: 65, K: 1056, pattern: "zeros" }, { shape: "cancellation", N: 65, K: 1056, pattern: "cancellation" }, { shape: "saturation", N: 17, K: 1056, pattern: "saturation" }];
   const inputs = all.filter(({ shape }) => params.has("shape") ? shape === params.get("shape") : params.get("guards") === "1" ? true : shape === "gate6144");
   if (!inputs.length) throw new Error("unknown MLP grid shape");

@@ -13,7 +13,7 @@ import { calibrateGemma4K64, gemma4K64Eligible } from "./gpu-gemma4-k64.js";
 import { calibrateGemma4Mlp, encodeGemma4Mlp, gemma4MlpBindGroup, gemma4MlpEligible } from "./gpu-gemma4-mlp.js";
 import { calibrateGemma4BatchMlp, encodeGemma4BatchMlp, gemma4BatchMlpBindGroups, gemma4BatchMlpEligible, gemma4BatchMlpPartBytes } from "./gpu-gemma4-batch-mlp.js";
 import { calibrateGemma4BatchSingle, encodeGemma4BatchSingle, gemma4BatchSingleEligible } from "./gpu-gemma4-batch-single.js";
-import { calibrateGemma4GridMlp, encodeGemma4GridMlp, gemma4GridMlpEligible } from "./gpu-gemma4-grid-mlp.js";
+import { calibrateGemma4GridMlp, encodeGemma4GridMlp, Gemma4GridMlpCache, gemma4GridMlpEligible, gemma4GridMlpTokens } from "./gpu-gemma4-grid-mlp.js";
 import { validateGemma4Rms } from "./gpu-gemma4-rms.js";
 import { gemma4RmsScaleNextPlan } from "./gpu-gemma4-rms-plan.js";
 import { calibrateGemma4Attention } from "./gpu-gemma4-attention.js";
@@ -255,6 +255,7 @@ export class GpuGemma4 {
     this.fuseGridMlp = true;
     this.gridMlp = null;
     this.gridMlpKey = null;
+    this.gridMlpCache = new Gemma4GridMlpCache();
     this.lastGridMlpDispatches = 0;
     this.compactSourceRows = this.gpuKernel === "auto";
     this.sourceMatmul = null;
@@ -287,7 +288,8 @@ export class GpuGemma4 {
   }
 
   write(dst, bytes) {
-    this.gridMlp?.destroy();
+    if (this.gridMlpCache) this.gridMlpCache.clear();
+    else this.gridMlp?.destroy();
     this.gridMlp = null;
     this.gridMlpKey = null;
     this.batchSingleCache.clear();
@@ -304,7 +306,8 @@ export class GpuGemma4 {
   async finishWeights() { await this.cfg.hostStore?.finish(); }
 
   dispose() {
-    this.gridMlp?.destroy();
+    if (this.gridMlpCache) this.gridMlpCache.clear();
+    else this.gridMlp?.destroy();
     this.gridMlp = null;
     this.gridMlpKey = null;
     this.clearPleVectorCache();
@@ -871,7 +874,7 @@ export class GpuGemma4 {
   }
 
   async prepareGridMlp(tokens, compact = false) {
-    if (tokens === 97) {
+    if (gemma4GridMlpTokens(tokens)) {
       const selected = this.gpuKernel === "auto" ? selectedMatmulKernel(this.tuning.selection, 6144, 1536, 1) : this.gpuKernel;
       const baseline = this.batchMatmul[selected] || this.batchMatmul.generic;
       const pairedSelected = this.batchMlp?.selection.has("6144:1536") === true;
@@ -880,17 +883,15 @@ export class GpuGemma4 {
       const key = JSON.stringify([tokens, this.gpuKernel, selected, baseline?.kernel, baseline?.f16, baseline?.groups,
         baseline?.splitTarget, !!baseline?.mm56, pairedSelected, pair?.gridMlpSource.gate.info.name, pair?.gridMlpSource.up.info.name]);
       if (this.gridMlpKey !== key) {
-        this.gridMlp?.destroy();
-        this.gridMlp = null;
-        this.gridMlpKey = null;
-        const result = await calibrateGemma4GridMlp(this.device, this.wgsl, pair?.gridMlpSource, {
+        this.gridMlpCache ||= new Gemma4GridMlpCache();
+        const result = await this.gridMlpCache.get(key, tokens, () => calibrateGemma4GridMlp(this.device, this.wgsl, pair?.gridMlpSource, {
           tokens, baseline, gelu: this.p.GELU, automatic: this.gpuKernel === "auto", pairedSelected, runtime: this.runtime,
-        });
+        }));
         this.gridMlp = result;
         this.gridMlpKey = key;
       }
     }
-    this.tuning.diagnostics.gridMlp = { enabled: this.fuseGridMlp === true && tokens === 97 && !!this.gridMlp?.selection.size,
+    this.tuning.diagnostics.gridMlp = { enabled: this.fuseGridMlp === true && this.gridMlp?.tokens === tokens && !!this.gridMlp?.selection.size,
       tokens, context: this.gridMlp?.diagnostics || null };
     return this.gridMlp;
   }
@@ -1383,7 +1384,7 @@ export class GpuGemma4 {
       const gridKernel = this.gpuKernel === "auto" && mlpTogether && this.fuseGridMlp === true && this.gridMlp?.selection.has("6144:1536")
         ? selectedMatmulKernel(this.tuning.selection, op.N, op.K, 1) : null;
       const gridBaseline = gridKernel && (this.batchMatmul[gridKernel] || this.batchMatmul.generic);
-      const gridFused = gridBaseline && !this.batchMlp?.selection.has("6144:1536") &&
+      const gridFused = gridBaseline && this.gridMlp.tokens === T && !this.batchMlp?.selection.has("6144:1536") &&
         gemma4GridMlpEligible(T, op, ops[index + 1], ops[index + 2], gridBaseline);
       const prefixGelu = mlpTogether && this.fusePrefixGelu === true && op.logicalRows && op.prefixGelu;
       const fused = mlpTogether && !op.sourcePolicy && (T === 1 || op.batched && T <= 8) && this.fuseMatvecGelu !== false && op.fused;
