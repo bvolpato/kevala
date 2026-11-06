@@ -375,7 +375,7 @@ export class GpuGemma4 {
       this.p.RMS_SCALE_NEXT = await withGpuErrors(this.runtime, () => pipeline(d,
         this.wgsl("gemma4_rms_scale_next", { subgroups: this.subgroup32 }), "gemma4_rms_scale_next"), "preparing Gemma RMS scale/next fusion");
     } catch (error) { this.rmsNextPipelineError = String(error?.message || error); }
-    this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, pipelines: { generic } });
+    this.tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, maxShapes: 12, pipelines: { generic } });
     this.mm = this.tuning.pipelines.generic;
     this.pleReduce = await createGemma4PleReduce(d, this.wgsl);
     this.tuning.diagnostics.pleReduce = this.pleReduce.diagnostics;

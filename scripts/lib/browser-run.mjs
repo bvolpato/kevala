@@ -16,10 +16,14 @@ export const BASE_URL = process.env.KEVALA_BENCH_URL || "http://127.0.0.1:18086"
  * The browser is `browser`, else `KEVALA_BENCH_BROWSER`, else the default of bench-gpu.py.
  * `KEVALA_BENCH_CDP` attaches to a running Chrome instead (see bench-gpu.py).
  */
-export function runPage({ result, url, output, backend, browser = process.env.KEVALA_BENCH_BROWSER, maxDp, timeoutSeconds = 600, cdpDefaultContext = false, stdio = "inherit" }) {
+export function runPage({ result, url, output, backend, browser = process.env.KEVALA_BENCH_BROWSER, binary = process.env.KEVALA_BENCH_BINARY, chromiumArgs, maxDp, timeoutSeconds = 600, cdpDefaultContext = false, stdio = "inherit" }) {
+  const browserArgs = chromiumArgs ?? JSON.parse(process.env.KEVALA_BENCH_CHROMIUM_ARGS || "[]");
+  if (!Array.isArray(browserArgs) || browserArgs.some((arg) => typeof arg !== "string" || !arg.startsWith("--"))) throw new Error("chromiumArgs must be an array of Chromium --flags");
   const args = ["run", "scripts/bench-gpu.py", "--result", result, "--timeout", String(timeoutSeconds), "--url", url, "--output", output];
   if (backend) args.push("--backend", backend);
   if (browser) args.push("--browser", browser);
+  if (binary) args.push("--binary", binary);
+  for (const arg of browserArgs) args.push(`--chromium-arg=${arg}`);
   if (maxDp) args.push("--max-dp", String(maxDp));
   if (cdpDefaultContext && process.env.KEVALA_BENCH_CDP) args.push("--cdp-default-context");
   return spawnSync("uv", args, { cwd: ROOT, stdio, encoding: "utf8", timeout: (timeoutSeconds + 50) * 1000 });

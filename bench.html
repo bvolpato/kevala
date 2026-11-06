@@ -32,11 +32,19 @@ function integerParam(q, name, fallback, minimum) {
   return value;
 }
 
+async function requestHash(requests) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(requests)));
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 async function run() {
   $("log").textContent = "";
   const q = new URLSearchParams(location.hash.slice(1));
   window.bench = { status: "running" };
   let kevala = null;
+  const restore = [];
+  let actualGpu = null;
+  let actualHeader = null;
   try {
     const backend = q.get("backend") || $("backend").value;
     const runtime = new URL(q.get("runtime") || "./js/src/index.js", document.baseURI);
@@ -49,21 +57,48 @@ async function run() {
     if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
     const packUrl = q.get("packUrl") ? new URL(q.get("packUrl"), document.baseURI) : null;
     if (packUrl && packUrl.origin !== location.origin) throw new Error("packUrl must be same-origin");
-    const model = packUrl?.href || (local ? `./tmp/${name}-q8.kevala` : name);
+    const model = packUrl ? { name, url: packUrl.href } : local ? `./tmp/${name}-q8.kevala` : name;
     const runs = integerParam(q, "runs", 10, 1);
     const warmups = integerParam(q, "warmups", 2, 0);
     const requestedFlavor = q.get("flavor") || undefined;
     const unique = q.get("unique") === "1";
+    const profile = q.get("profile") === "1";
+    const cache = q.get("cache") !== "0";
+    const stateCache = q.has("stateCache") ? q.get("stateCache") !== "0" : undefined;
+    const onPage = q.get("onPage") === "1";
+    if (onPage) {
+      const { archPlugin } = await import(new URL("./archs/index.js", runtime));
+      for (const arch of ["laya", "kev", "clef", "gemma4"]) {
+        const plugin = archPlugin(arch);
+        const original = plugin.createGpu;
+        restore.push(() => { plugin.createGpu = original; });
+        plugin.createGpu = function(gpu, ...args) { actualGpu = gpu; actualHeader = args[1]; return original.call(this, gpu, ...args); };
+      }
+    }
     const t0 = performance.now();
     // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
     // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
     const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
-    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", stateCache: q.get("stateCache") === "0" ? false : undefined, profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache, stateCache, profile, ...(onPage ? { onPage: true } : {}), ...(q.has("precision") ? { precision: q.get("precision") } : {}), submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    restore.splice(0).reverse().forEach((callback) => callback());
+    if (profile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
+    const adapterInfo = actualGpu?.adapter.info || {};
+    const precision = actualHeader ? (await import(new URL("./pack-layout.js", runtime))).packPrecision(actualHeader) : kevala.info.model?.precision || null;
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const results = {
       model: name,
       modelInfo: kevala.info.model,
       runtime: runtime.href,
+      precision,
+      profile,
+      context: kevala.info.onPage ? "page" : "worker",
+      cache: { packEnabled: cache, state: kevala.info.stateCache },
+      pack: kevala.info.pack,
+      adapter: actualGpu ? { name: actualGpu.name, vendor: adapterInfo.vendor || null, architecture: adapterInfo.architecture || null,
+        device: adapterInfo.device || null, description: adapterInfo.description || null,
+        isFallbackAdapter: Boolean(adapterInfo.isFallbackAdapter || actualGpu.adapter.isFallbackAdapter),
+        features: [...actualGpu.device.features].sort(), limits: { maxBufferSize: actualGpu.device.limits.maxBufferSize,
+          maxStorageBufferBindingSize: actualGpu.device.limits.maxStorageBufferBindingSize, maxComputeWorkgroupStorageSize: actualGpu.device.limits.maxComputeWorkgroupStorageSize } } : null,
       arch: kevala.info.arch,
       backend: kevala.info.backend,
       gpu: kevala.info.gpu,
@@ -101,15 +136,17 @@ async function run() {
       let tokens = 0;
       let last = null;
       for (let i = 0; i < warmups + runs; i++) {
-        const t = performance.now();
         // Give every measured request a distinct state so the model's request cache cannot help.
         const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+        const fingerprint = await requestHash(reqs);
+        const t = performance.now();
         const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
         const wall = performance.now() - t;
         if (i >= warmups) {
           ms.push(wall);
           wallMs.push(wall);
-          samples.push({ ...r[0].timing, wallMs: wall });
+          samples.push({ ...r[0].timing, wallMs: wall, requestHash: fingerprint,
+            outputs: r.map(({ model, answers, raw_probabilities }) => ({ model, answers, ...(raw_probabilities ? { raw_probabilities } : {}) })) });
         }
         tokens = r[0].timing.tokens;
         last = r[0].timing;
@@ -118,7 +155,7 @@ async function run() {
       ms.sort((a, b) => a - b);
       const middle = ms.length >> 1;
       const p50 = ms.length % 2 ? ms[middle] : (ms[middle - 1] + ms[middle]) / 2;
-      const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.min(ms.length - 1, Math.floor(ms.length * 0.95))], min: ms[0] };
+      const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.ceil(ms.length * 0.95) - 1], min: ms[0] };
       c.last = last;
       c.samples = samples;
       c.wallMs = wallMs;
@@ -132,6 +169,7 @@ async function run() {
     log("ERROR " + message);
     window.bench = { done: true, status: "error", error: message };
   } finally {
+    restore.splice(0).reverse().forEach((callback) => callback());
     kevala?.dispose();
   }
 }

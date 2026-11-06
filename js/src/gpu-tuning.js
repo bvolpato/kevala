@@ -5,7 +5,7 @@
 import { bufferUsage, dispatchMatmul, inErrorScopes, matmulPipelines, mmSplits, rowsPerThread, scratchBuffer } from "./gpu.js";
 import { median } from "./stats.js";
 
-export const GPU_TUNING_REVISION = 2;
+export const GPU_TUNING_REVISION = 3;
 export const MATMUL_TOKENS = [16, 32, 48, 128, 512];
 export const MATMUL_KERNELS = ["generic", "wide"];
 
@@ -224,18 +224,22 @@ async function measureShape(device, shape, pipes, dtype, deadline) {
   }
 }
 
-/** Build and, when possible, measure both candidates on up to six real loaded projection shapes. */
+/** Measure both candidates within the caller's bounded loaded-projection budget. */
 export async function calibrateMatmul(device, wgsl, weights, options = {}) {
   const kernel = options.kernel || "auto";
   const dtype = options.dtype || "q8";
   if (!["q8", "bf16", "f32"].includes(dtype)) throw new Error(`unsupported GPU matrix dtype ${dtype}`);
   if (!["auto", ...MATMUL_KERNELS].includes(kernel)) throw new Error('kernel must be "auto", "generic", or "wide"');
+  const shapeLimit = options.maxShapes ?? MAX_SHAPES;
+  if (!Number.isSafeInteger(shapeLimit) || shapeLimit < 1 || shapeLimit > 12) throw new Error("matrix shape budget must be an integer from 1 through 12");
   if (kernel === "wide" && dtype === "q8" && !device.features?.has?.("shader-f16")) throw new Error('wide matmul requires the "shader-f16" feature');
-  const shapes = matmulShapes(weights, MAX_SHAPES, dtype);
+  const available = matmulShapes(weights, Number.MAX_SAFE_INTEGER, dtype);
+  const shapes = available.slice(0, shapeLimit);
   const selection = new Map();
   const defaults = () => { for (const shape of shapes) for (const T of MATMUL_TOKENS) selection.set(matmulTuningKey(shape.N, shape.K, T), kernel === "wide" ? "wide" : "generic"); };
   defaults();
-  const diagnostics = { revision: GPU_TUNING_REVISION, dtype, method: kernel === "auto" ? "generic" : "override", points: [], elapsedMs: 0, truncated: false };
+  const diagnostics = { revision: GPU_TUNING_REVISION, dtype, shapeLimit, availableShapes: available.length, scheduledShapes: shapes.length,
+    method: kernel === "auto" ? "generic" : "override", points: [], elapsedMs: 0, truncated: false };
   const started = now();
   const generic = await pipelinesFor(device, wgsl, "generic", options.pipelines, dtype);
   if (kernel === "generic") return { pipelines: { generic, wide: options.pipelines?.wide || null }, selection, diagnostics };
