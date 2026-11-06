@@ -19,6 +19,31 @@ test("GPU kernel overrides reach the engine unchanged", async (t) => {
   model.dispose();
 });
 
+test("Clef head overrides reject invalid values before starting a worker", async () => {
+  for (const clefHead of [null, "gpu", 1]) await assert.rejects(Kevala.load({ clefHead }), /clefHead must be/);
+});
+
+test("the guarded Clef head is requested by default", async (t) => {
+  const state = workers(t, [ready()]);
+  const model = await Kevala.load({ backend: "webgpu", cache: false });
+  assert.equal(state.loads[0].clefHead, "auto");
+  model.dispose();
+});
+
+test("the explicit CPU Clef head control reaches the engine unchanged", async (t) => {
+  const state = workers(t, [ready()]);
+  const model = await Kevala.load({ backend: "webgpu", clefHead: "cpu", cache: false });
+  assert.equal(state.loads[0].clefHead, "cpu");
+  model.dispose();
+});
+
+test("the explicit auto Clef head override reaches the engine unchanged", async (t) => {
+  const state = workers(t, [ready()]);
+  const model = await Kevala.load({ backend: "webgpu", clefHead: "auto", cache: false });
+  assert.equal(state.loads[0].clefHead, "auto");
+  model.dispose();
+});
+
 test("Auto retries a GPU load failure once on the low-power adapter", async (t) => {
   const state = workers(t, [gpuError("WebGPU: uploading model weights: Not enough memory left."), ready()]);
   const model = await Kevala.load({ backend: "auto", cache: false });

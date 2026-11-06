@@ -15,6 +15,7 @@ export const KERNEL_HARNESSES = [
   { id: "isolated", path: "/dev/kernel-bench.html?tokens=1,47,128,512&seed=20261106&samples=7&warmups=3", kernels: ISOLATED_KERNELS, kind: "gpu", numerical: "isolated", timing: "isolated", required: ["timestampQuery"] },
   { id: "core-reference", path: "/dev/kernels.html", kernels: ["matmul", "reduce", "norm", "rope", "attention", "geglu"], kind: "kernels", numerical: "cpu", timing: "none", required: [] },
   guard("projections", "/dev/gpu-bench.html?cases=7x132x96,45x132x1024,140x3072x1024&kernels=matmul@256:4,matmul_wide@256:4,matmul_k64@256:4&seed=20261106&samples=7&warmups=3", ["matmul", "matmul_wide", "matmul_k64", "reduce"]),
+  guard("clef-head", "/dev/clef-head-check.html", ["clef_head_projection", "clef_head_tail"]),
   guard("matvec", "/dev/gemma4-matvec-check.html", ["matvec"]),
   guard("matvec-gelu", "/dev/gemma4-matvec-gelu-check.html", ["matvec", "matvec_gelu", "gemma4_gelu"]),
   guard("two-row-subgroups", "/dev/gemma4-matvec-two-subgroup-check.html?strategy=vector&registered=1", ["matvec_two", "matvec_gelu_two"], ["subgroup32", "timestampQuery"]),

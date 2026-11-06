@@ -252,7 +252,7 @@ async function load(o) {
   if (gpu && plugin.gpuLayouts) layouts = plugin.gpuLayouts(header, headerBytes.byteLength);
   else if (external) layouts = parseLayouts(coord.withInput(headerBytes, (p, l) => (coord.check(coord.x.kevala_layouts(p, l, gpu ? 1 : threads)), coord.out().slice())));
   const sinks = [];
-  const engine = { arch, plugin, header, coord, signal, hostStoreResource: o.hostStoreResource ?? null, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached }, registerResource(store) {
+  const engine = { arch, plugin, header, coord, signal, clefHead: o.clefHead ?? "auto", hostStoreResource: o.hostStoreResource ?? null, gpu: null, shards: [], local: null, flavor, threads, pack: { bytes: pack.size, cached: pack.cached }, registerResource(store) {
     fileResources.push(store);
     post({ type: "owned-file", resource: store.resource });
   } };
@@ -405,6 +405,7 @@ async function load(o) {
       cpuTiles,
       cpuTuning,
       gpuTuning: engine.gpu?.tuning?.diagnostics || null,
+      clefHead: arch === "clef" ? { mode: engine.clefHead, requested: engine.clefHead, selected: "cpu", validated: false, reason: "cpu-backend", ...(engine.gpu?.head?.diagnostics || {}) } : null,
       stateCache,
       modalities: engine.vision ? [...new Set([...meta.modalities, "image"])] : meta.modalities,
       vision: engine.visionPack || null,

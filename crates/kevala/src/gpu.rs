@@ -18,6 +18,8 @@ use crate::json::Value;
 /// Every source, embedded at build time. Snippets (`common`, `kev_common`, `splits`) are only
 /// ever included by kernels.
 const SOURCES: &[(&str, &str)] = &[
+    ("clef_head_projection", include_str!("wgsl/clef_head_projection.wgsl")),
+    ("clef_head_tail", include_str!("wgsl/clef_head_tail.wgsl")),
     ("common", include_str!("wgsl/common.wgsl")),
     ("ordered_sum", include_str!("wgsl/ordered_sum.wgsl")),
     ("splits", include_str!("wgsl/splits.wgsl")),
@@ -108,6 +110,8 @@ const SOURCES: &[(&str, &str)] = &[
 
 /// The kernels a runtime can ask for (everything but the snippets).
 pub const KERNELS: &[&str] = &[
+    "clef_head_projection",
+    "clef_head_tail",
     "matmul",
     "matvec",
     "matvec_gelu",

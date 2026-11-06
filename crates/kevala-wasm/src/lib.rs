@@ -29,6 +29,7 @@ use kevala::store::{load_store, AlignedBuf};
 #[cfg(feature = "cpu-bench")]
 mod cpu_bench;
 
+mod clef_head;
 mod cpu_tune;
 
 #[derive(Default)]
@@ -50,6 +51,7 @@ struct State {
     kev_ids: [Vec<u32>; 2],
     gemma4_prepared: Option<kevala::gemma4::Prepared>,
     clef_records: Option<Vec<kevala::clef::encoding::Record>>,
+    clef_head: clef_head::Staging,
 }
 
 static mut STATE: Option<State> = None;
@@ -204,6 +206,8 @@ pub unsafe extern "C" fn kevala_layouts(ptr: *const u8, len: usize, count: usize
 /// `ptr`/`len` must come from `kevala_alloc`. The caller must not use or free the buffer afterwards.
 #[no_mangle]
 pub unsafe extern "C" fn kevala_engine_load(ptr: *mut u8, len: usize) -> u32 {
+    st().clef_head.invalidate();
+    st().clef_records = None;
     done((|| {
         let m = runtime::load(AlignedBuf::from_raw(ptr, len))?;
         let s = st();
@@ -603,6 +607,7 @@ pub unsafe extern "C" fn kevala_kev_finish(ptr: *const f32, n: usize) -> u32 {
 /// `ptr` must be valid for reads of `len` bytes.
 #[no_mangle]
 pub unsafe extern "C" fn kevala_clef_prepare(ptr: *const u8, len: usize) -> u32 {
+    st().clef_head.invalidate();
     done((|| {
         st().clef_records = None;
         let requests = Request::parse_many(&json_input(ptr, len)?)?;
@@ -647,6 +652,7 @@ pub unsafe extern "C" fn kevala_clef_finish(
     lexical_ptr: *const f32,
     lexical_n: usize,
 ) -> u32 {
+    st().clef_head.invalidate();
     done((|| {
         let records = st().clef_records.take().ok_or("nothing prepared")?;
         let e: &mut kevala::clef::ClefEngine = family("a clef model")?;

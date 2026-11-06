@@ -1,6 +1,7 @@
 // Clef text records use every Qwen hidden row. The GPU holds both untied embedding tables;
 // WebAssembly applies Qwen's final RMSNorm and the joint schema head.
-import { GpuKev, kevConfig } from "../gpu-kev.js";
+import { kevConfig } from "../gpu-kev.js";
+import { GpuClef } from "../gpu-clef-head.js";
 import { gpuLayouts } from "../pack-layout.js";
 
 const enc = new TextEncoder();
@@ -59,10 +60,8 @@ export default {
   about: "Qwen3.5 text decoder with a joint schema transformer head",
   maxShards: () => 1,
   gpuLayouts: (header, bytes) => gpuLayouts(header, bytes),
-  createGpu(gpu, layout, header) {
-    const trunk = new GpuKev(gpu, layout, kevConfig(header));
-    trunk.stateCacheEnabled = false;
-    return trunk;
+  createGpu(gpu, layout, header, engine) {
+    return new GpuClef(gpu, layout, kevConfig(header), engine);
   },
   async initGpu(engine) {
     await engine.gpu.init();
@@ -79,6 +78,7 @@ export default {
     // Keep all fields of a record together. Independent records can run sequentially without
     // multiplying the backbone's scratch memory or changing Clef's joint field attention.
     for (const request of requests) {
+      const lease = engine.gpu.head.request();
       const before = performance.now();
       if (request.images?.length || request.videos?.length) {
         throw new Error("Clef in Kevala supports text only; images and videos require the upstream multimodal processor and vision tower");
@@ -90,18 +90,22 @@ export default {
       const batch = { R: 1, T1: 0, T2: count, states: [[0, 0]], branches: [[0, count, 0]], rows: Array.from({ length: count }, (_, i) => i) };
       const residentInput = engine.gpu.gpuKernel === "auto" && engine.gpu.rowInputEnabled !== false;
       const embeddings = residentInput ? null : await engine.gpu.weightRows("emb", ids);
+      engine.gpu.head.assert(lease);
       const ready = performance.now();
       const hidden = residentInput
         ? await engine.gpu.forwardRows("emb", ids, batch)
         : await engine.gpu.forward(new Float32Array(), embeddings, batch, new Uint32Array());
+      engine.gpu.head.assert(lease);
       for (const [kernel, ms] of Object.entries(engine.gpu.lastProfile || {})) profile[kernel] = (profile[kernel] || 0) + ms;
       const means = await lexicalMeans(engine.gpu, ids, plan.option_spans, width, residentInput);
+      engine.gpu.head.assert(lease);
       const finished = performance.now();
       const [hp, hn] = coord.put(new Uint8Array(hidden.buffer, hidden.byteOffset, hidden.byteLength));
       const [lp, ln] = coord.put(new Uint8Array(means.buffer));
       try {
-        coord.call(() => coord.check(coord.x.kevala_clef_finish(hp, hidden.length, lp, means.length)));
-        responses.push(...JSON.parse(coord.outText()));
+        responses.push(...await engine.gpu.head.finish(lease, hp, hidden.length, lp, means.length));
+        engine.gpu.head.assert(lease);
+        for (const [kernel, ms] of Object.entries(engine.gpu.head.lastProfile || {})) profile[kernel] = (profile[kernel] || 0) + ms;
       } finally {
         coord.x.kevala_free(hp, hn);
         coord.x.kevala_free(lp, ln);
