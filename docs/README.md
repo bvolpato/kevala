@@ -41,6 +41,7 @@ Each report covers one retained change.
 
 | Report | Kernel |
 |---|---|
+| [Measured model and kernel optimization](model-optimization-performance.md) | Clef CPU finish, Qwen final rows, Gemma long attention and complete mixed model timings |
 | [Shared WebGPU matrix layout](shared-matmul-performance.md) | Matrix staging shared across families |
 | [Shared FP32 matrix kernels](matmul-32x8-performance.md) | FP32 matrix tiles |
 | [Avoid padded FP32 matrix rows](fp32-row-padding-performance.md) | FP32 matrix row padding |

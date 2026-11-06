@@ -48,6 +48,8 @@ GPU profiles change execution. Each dispatch has its own timed pass, optional pa
 
 Keep per-kernel medians and shares for attribution. Keep wall samples, p95, and block medians for latency. The runner checks backend and adapter identity, request hashes, token counts, model responses, normalized probabilities, and complete finite timestamp samples. Invalid measurements fail validation. Repeated same-runtime outputs must remain within the declared probability tolerance.
 
+See the [2026-11-06 optimization comparison](model-optimization-performance.md) for scoped before/after results, complete mixed model timings, numerical guards and archived evidence.
+
 ## Profile the complete kernel registry
 
 ```sh

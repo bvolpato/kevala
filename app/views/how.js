@@ -2,7 +2,7 @@
 // needed.
 
 import { css, DOCS, REPO } from "../ui.js";
-import { mountKernelProfile } from "./profile-report.js";
+import { mountKernelProfile, mountModelOptimization } from "./profile-report.js";
 
 
 const ARCH_ALT =
@@ -52,10 +52,11 @@ const TEMPLATE = `<div class="wrap">
   <section class="how-sec" id="bench">
     <div class="eyebrow">Speed</div>
     <h2>Latency</h2>
-    <p class="muted">The report below covers the current model and kernel sweep. For decision quality on earlier validated packs, read the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a>.</p>
+    <p class="muted">Measured optimization results and the earlier model/kernel inventory are below. See the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a> for quality results.</p>
+    <div id="model-optimization-report" aria-live="polite"></div>
     <div id="kernel-profile-report" aria-live="polite"></div>
     <h3 class="historical-heading">Historical latency reference</h3>
-    <p class="muted">Earlier Q8 packs on Apple M4 Max, WebGPU in Chrome, cold requests unless noted. These figures predate the current all-model and all-kernel profile above.</p>
+    <p class="muted">Earlier Q8 packs on Apple M4 Max, WebGPU in Chrome, cold requests unless noted. These figures predate both captures above.</p>
     <div class="grid-4 tiles">
       <div class="tile"><span class="tl">Historical · Laya</span><b>11 ms</b><span class="ts">short request · about 45 tokens</span></div>
       <div class="tile"><span class="tl">Historical · Kev-0.8B</span><b>13 ms</b><span class="ts">short request · about 30 tokens</span></div>
@@ -157,6 +158,7 @@ const TEMPLATE = `<div class="wrap">
 export function mount(el) {
   css(new URL("./how.css", import.meta.url).href);
   el.innerHTML = TEMPLATE;
+  mountModelOptimization(el.querySelector("#model-optimization-report"));
   mountKernelProfile(el.querySelector("#kernel-profile-report"));
   const scrollToSection = (id) => el.querySelector(`#${CSS.escape(id)}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
   // the router only scrolls on a hash change; a second click on the same link must too

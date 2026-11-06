@@ -52,7 +52,11 @@ function cases() {
       { ...branched([42, 55], 89, dim, window, { tail: true, label: "tail" }), heads: 8, timing: true },
     );
   }
-  return search.get("cases") === "timing" ? out.filter((c) => c.timing) : out;
+  for (const dim of [256, 512]) for (const kvHeads of [1, 2]) for (const window of [0, 512]) for (const T of [257, 512, 602, 640]) {
+    out.push({ ...plain(T, dim, window, 1, "long-prefill"), heads: 8, kvHeads, long: true, timing: T !== 640 });
+  }
+  const selected = search.get("scope") === "long" ? out.filter((c) => c.long) : out;
+  return search.get("cases") === "timing" ? selected.filter((c) => c.timing) : selected;
 }
 
 function fixture(c, seed) {
@@ -141,6 +145,7 @@ async function checkCase(gpu, kernels, layout, c, seed) {
   const owned = [];
   let profiler;
   const make = (size, usage, data, label) => {
+    if (owned.reduce((bytes, buffer) => bytes + buffer.size, 0) + Math.max(16, size) > 64 * 1024 * 1024) throw new Error("decoder subgroup attention guard exceeds 64 MiB GPU buffer bound");
     const buffer = device.createBuffer({ label, size: Math.max(16, size), usage });
     owned.push(buffer);
     if (data) device.queue.writeBuffer(buffer, 0, data);
@@ -165,22 +170,25 @@ async function checkCase(gpu, kernels, layout, c, seed) {
     const dispatch = (pass, i) => {
       pass.setPipeline(kernels[i]); pass.setBindGroup(0, groups[i]); pass.dispatchWorkgroups(c.T, c.heads);
     };
-    const encoder = device.createCommandEncoder();
-    const pass = encoder.beginComputePass();
-    dispatch(pass, 0); dispatch(pass, 1); pass.end();
-    outputs.forEach((buffer, i) => encoder.copyBufferToBuffer(buffer, 0, readback, i * outputBytes, outputBytes));
-    device.queue.submit([encoder.finish()]);
-    await readback.mapAsync(GPUMapMode.READ);
-    const actual = new Float32Array(readback.getMappedRange().slice(0));
-    readback.unmap();
-    const values = outputs.map((_, i) => {
-      const base = i * outputFloats;
-      for (let j = input.q.length; j < outputFloats; j++) if (actual[base + j] !== SENTINEL) throw new Error(`${names[i]} output overwrote sentinel ${j - input.q.length}`);
-      return actual.subarray(base, base + input.q.length);
-    });
-    const parity = compare(values[0], values[1]);
-    if (!parity.ok) throw new Error(`decoder attention ${c.label} T${c.T} D${c.dim} differs: ${JSON.stringify(parity)}`);
-    const cpu = compareCpu(values[1], checks);
+    const verify = async () => {
+      const encoder = device.createCommandEncoder(), pass = encoder.beginComputePass();
+      dispatch(pass, 0); dispatch(pass, 1); pass.end();
+      outputs.forEach((buffer, i) => encoder.copyBufferToBuffer(buffer, 0, readback, i * outputBytes, outputBytes));
+      device.queue.submit([encoder.finish()]);
+      await readback.mapAsync(GPUMapMode.READ);
+      let actual;
+      try { actual = new Float32Array(readback.getMappedRange().slice(0)); }
+      finally { readback.unmap(); }
+      const values = outputs.map((_, i) => {
+        const base = i * outputFloats;
+        for (let j = input.q.length; j < outputFloats; j++) if (actual[base + j] !== SENTINEL) throw new Error(`${names[i]} output overwrote sentinel ${j - input.q.length}`);
+        return actual.subarray(base, base + input.q.length);
+      });
+      const parity = compare(values[0], values[1]);
+      if (!parity.ok) throw new Error(`decoder attention ${c.label} T${c.T} D${c.dim} differs: ${JSON.stringify(parity)}`);
+      return { parity, cpu: compareCpu(values[1], checks) };
+    };
+    const { parity, cpu } = await verify();
     const timings = { old: [], subgroup: [] };
     if (c.timing && search.get("timing") !== "0" && device.features.has("timestamp-query")) {
       profiler = new Profiler(device, 2);
@@ -198,8 +206,9 @@ async function checkCase(gpu, kernels, layout, c, seed) {
         if (sample >= 2) for (const name of names) timings[name].push(measured[name] / repeats);
       }
     }
+    const afterTimingCheck = await verify();
     const { positions: ignoredPositions, offsets: ignoredOffsets, ...summary } = c;
-    return { ...summary, positionRange: [Math.min(...c.positions), Math.max(...c.positions)], branchOffsets: [...new Set(c.offsets)], parity, cpu, outputTailGuard: true, timings, ok: true };
+    return { ...summary, positionRange: [Math.min(...c.positions), Math.max(...c.positions)], branchOffsets: [...new Set(c.offsets)], parity, cpu, afterTimingCheck, outputTailGuard: true, timings, ok: true };
   } finally { profiler?.destroy(); for (const buffer of owned) buffer.destroy(); }
 }
 
@@ -222,8 +231,10 @@ async function main() {
     ], "compiling decoder subgroup attention guard");
     let calibration;
     if (search.get("tune") === "1") {
-      const tuned = await calibrateGemma4Attention(gpu, source, { heads: 8, kvHeads: 1, localHeadDim: 256, globalHeadDim: 512, window: 512 }, kernels[0]);
-      calibration = { ...tuned.diagnostics, selected: [...tuned.selection] };
+      const cfg = { heads: 8, kvHeads: Number(search.get("kvHeads") || 1), localHeadDim: 256, globalHeadDim: Number(search.get("globalDim") || 512), window: 512 };
+      if (![1, 2].includes(cfg.kvHeads) || ![256, 512].includes(cfg.globalHeadDim)) throw new Error("attention guard tuning requires kvHeads=1/2 and globalDim=256/512");
+      const tuned = await calibrateGemma4Attention(gpu, source, cfg, kernels[0]);
+      calibration = { ...tuned.diagnostics, config: cfg, selected: [...tuned.selection] };
       log(JSON.stringify({ calibration }));
       if (calibration.points.some((point) => point.numericalCheck?.ok === false)) throw new Error("attention calibration numerical guard failed");
     }

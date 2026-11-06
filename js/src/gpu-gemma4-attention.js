@@ -5,12 +5,15 @@ import { bufferUsage, inErrorScopes, pipeline, scratchBuffer } from "./gpu.js";
 import { mapBeforeDeadline } from "./gpu-matvec.js";
 import { selectMatmulKernel } from "./gpu-tuning.js";
 
-export const GEMMA4_ATTENTION_TUNING_REVISION = 1;
+export const GEMMA4_ATTENTION_TUNING_REVISION = 2;
 
 const SAMPLES = 3;
 const REPETITIONS = 2;
 const DEADLINE_MS = 750;
 const MAX_SCRATCH_BYTES = 32 * 1024 * 1024;
+const LONG_MAX_SCRATCH_BYTES = 64 * 1024 * 1024;
+const LONG_CASES = [257, 512, 602];
+const LONG_MAX_TOKENS = 640;
 const PREFIX_TOKENS = 89;
 const BRANCH_A_TOKENS = 42;
 const BRANCH_B_TOKENS = 55;
@@ -20,6 +23,49 @@ const TOTAL_KV_TOKENS = PREFIX_TOKENS + SUFFIX_TOKENS;
 const SENTINEL_BITS = [0x00000000, 0x80000000, 0x3f800000, 0xbf800000, 0x7fc0dead, 0x3eaaaaab, 0x00800000, 0xff800000];
 const OUTPUT_POISON = 0x7fc0beef;
 const now = () => (typeof performance === "undefined" ? Date.now() : performance.now());
+
+export function gemma4AttentionScope(tokens, { batched = false, causal = true, prefixTokens = 0 } = {}) {
+  if (!Number.isSafeInteger(tokens)) return null;
+  if (tokens === 2) return "tail";
+  if (tokens >= 16 && tokens <= 256) return "prefill";
+  return tokens > 256 && tokens <= LONG_MAX_TOKENS && batched === false && (causal === true || causal === 1) && prefixTokens === 0 ? "long" : null;
+}
+
+export function gemma4LongAttentionFamilies(cfg) {
+  const families = [{ headDim: Number(cfg?.localHeadDim), window: Number(cfg?.window) }, { headDim: Number(cfg?.globalHeadDim), window: 0 }];
+  return families.filter((family, index) => [256, 512].includes(family.headDim) && Number.isSafeInteger(family.window) && family.window >= 0
+    && families.findIndex((item) => item.headDim === family.headDim && item.window === family.window) === index);
+}
+
+export function gemma4AttentionScratchPlan({ tokens, total, heads, kvHeads, headDim }) {
+  if (![tokens, total, heads, kvHeads, headDim].every((value) => Number.isSafeInteger(value) && value > 0)
+    || heads % kvHeads || ![256, 512].includes(headDim)) throw new Error("invalid Gemma attention calibration dimensions");
+  const queryBytes = tokens * heads * headDim * 4, kvBytes = total * kvHeads * headDim * 4;
+  const positionBytes = tokens * 2 * 4, activeFloats = tokens * heads * headDim;
+  const outputBytes = (activeFloats + SENTINEL_BITS.length) * 4, resolvedBytes = SAMPLES * 4 * 8;
+  const readBytes = Math.max(256, outputBytes, resolvedBytes);
+  const scratchBytes = 16 + 32 + queryBytes + 2 * kvBytes + positionBytes + 2 * outputBytes + readBytes + resolvedBytes;
+  const limitBytes = tokens > 256 ? LONG_MAX_SCRATCH_BYTES : MAX_SCRATCH_BYTES;
+  return { queryBytes, kvBytes, positionBytes, activeFloats, outputBytes, resolvedBytes, readBytes, scratchBytes, limitBytes,
+    withinBudget: Number.isSafeInteger(scratchBytes) && scratchBytes <= limitBytes };
+}
+
+export function selectGemma4AttentionScopes(headDim, records) {
+  if (![256, 512].includes(headDim)) return new Set();
+  const points = new Map(records.map((point) => [point.kind, point]));
+  if (records.some((point) => point.numericalCheck?.ok === false || point.afterTimingCheck?.ok === false)) return new Set();
+  const won = (kind) => {
+    const point = points.get(kind);
+    return point?.numericalCheck?.ok === true && point.afterTimingCheck?.ok === true
+      && selectMatmulKernel({ generic: point.baselineMs, wide: point.candidateMs }).kernel === "wide";
+  };
+  const selection = new Set();
+  if (won("prefix") && won("suffix")) selection.add(`${headDim}:prefill`);
+  if (won("tail")) selection.add(`${headDim}:tail`);
+  const windows = LONG_CASES.map((tokens) => points.get(`long-${tokens}`)?.window);
+  if (LONG_CASES.every((tokens) => won(`long-${tokens}`)) && windows.every((window) => Number.isSafeInteger(window) && window >= 0 && window === windows[0])) selection.add(`${headDim}:long:${windows[0]}`);
+  return selection;
+}
 
 function finish(diagnostics, candidatePipeline = null, layout = null, selection = new Set()) {
   diagnostics.elapsedMs = now() - diagnostics.startedAt;
@@ -68,6 +114,12 @@ function makeData(headDim, heads, kvHeads) {
 }
 
 function positionsFor(kind) {
+  const longTokens = LONG_CASES.find((tokens) => kind === `long-${tokens}`);
+  if (longTokens) {
+    const positions = new Uint32Array(2 * longTokens);
+    for (let token = 0; token < longTokens; token++) positions[token] = token;
+    return { tokens: longTokens, rows: longTokens, total: longTokens, branchPrefix: 0, batch: 0, positions };
+  }
   if (kind === "prefix") {
     const positions = new Uint32Array(2 * PREFIX_TOKENS);
     for (let token = 0; token < PREFIX_TOKENS; token++) positions[token] = token;
@@ -88,6 +140,7 @@ function positionsFor(kind) {
 }
 
 function queryFor(kind, data, heads, headDim) {
+  if (kind.startsWith("long-")) return data.longQ;
   if (kind === "prefix") return data.prefixQ;
   if (kind === "suffix") return data.suffixQ;
   const width = heads * headDim;
@@ -155,32 +208,32 @@ function deadlineError() {
   return Object.assign(new Error("Gemma 4 subgroup attention calibration deadline exceeded"), { code: "GEMMA4_ATTN_DEADLINE" });
 }
 
-async function measureCase(runtime, baselinePipeline, candidatePipeline, cfg, headDim, kind, data, deadline) {
+async function measureCase(runtime, baselinePipeline, candidatePipeline, cfg, headDim, kind, data, deadline, windowOverride = null) {
   const device = runtime.device;
   const { tokens, rows, total, branchPrefix, batch, positions } = positionsFor(kind);
   const heads = Number(cfg.heads);
   const kvHeads = Number(cfg.kvHeads);
-  const query = queryFor(kind, data, heads, headDim);
-  const queryBytes = query.byteLength;
-  const kvBytes = data.keys.byteLength;
-  const positionBytes = positions.byteLength;
-  const activeFloats = tokens * heads * headDim;
-  const outputBytes = (activeFloats + SENTINEL_BITS.length) * Float32Array.BYTES_PER_ELEMENT;
+  const window = windowOverride ?? (headDim === Number(cfg.localHeadDim) ? Number(cfg.window) : 0);
+  const plan = gemma4AttentionScratchPlan({ tokens, total, heads, kvHeads, headDim });
+  const { queryBytes, kvBytes, positionBytes, activeFloats, outputBytes, readBytes, resolvedBytes, scratchBytes, limitBytes } = plan;
   const queryCount = SAMPLES * 2 * 2;
-  const resolvedBytes = queryCount * 8;
   // Reuse one MAP_READ buffer for the two exactness snapshots. Keeping both snapshots in a
   // single mapped buffer would push the 512-wide, two-branch prefill fixture over 32 MiB.
-  const readBytes = Math.max(256, outputBytes, resolvedBytes);
   const storageSizes = [queryBytes, kvBytes, kvBytes, positionBytes, outputBytes, outputBytes];
-  const scratchBytes = 16 + 32 + queryBytes + kvBytes * 2 + positionBytes + outputBytes * 2 + readBytes + resolvedBytes;
   const limits = device.limits || {};
   const maxBufferSize = limits.maxBufferSize || Infinity;
   const maxStorage = Math.min(maxBufferSize, limits.maxStorageBufferBindingSize || Infinity);
-  const base = { key: `${headDim}:${kind}`, headDim, kind, tokens, rows, total, activeFloats, selected: false, scratchBytes };
-  if (!Number.isSafeInteger(scratchBytes) || scratchBytes > MAX_SCRATCH_BYTES || storageSizes.some((size) => size > maxStorage) || readBytes > maxBufferSize || resolvedBytes > maxBufferSize) {
-    return { ...base, reason: "scratch-limit", maxScratchBytes: MAX_SCRATCH_BYTES };
+  const base = { key: `${headDim}:${kind}${kind.startsWith("long-") ? `:${window}` : ""}`, headDim, kind, tokens, rows, total, window, activeFloats, selected: false, scratchBytes, maxScratchBytes: limitBytes };
+  if (!plan.withinBudget || storageSizes.some((size) => size > maxStorage) || readBytes > maxBufferSize || resolvedBytes > maxBufferSize) {
+    return { ...base, reason: "scratch-limit" };
   }
   if (now() >= deadline) throw deadlineError();
+  if (kind.startsWith("long-")) data = {
+    longQ: signedValues(tokens * heads * headDim, 0x47415454 ^ headDim ^ tokens, 0.035),
+    keys: signedValues(total * kvHeads * headDim, 0x4b455953 ^ headDim ^ tokens, 0.045),
+    values: signedValues(total * kvHeads * headDim, 0x56414c53 ^ headDim ^ tokens, 0.055),
+  };
+  const query = queryFor(kind, data, heads, headDim);
 
   const owned = [];
   let querySet = null;
@@ -205,10 +258,10 @@ async function measureCase(runtime, baselinePipeline, candidatePipeline, cfg, he
     const resolved = make(resolvedBytes, usage.QUERY_RESOLVE | usage.COPY_SRC, "timestamps");
 
     device.queue.writeBuffer(globals, 0, new Uint32Array([tokens, rows, total, branchPrefix]));
-    device.queue.writeBuffer(params, 0, new Uint32Array([heads, kvHeads, headDim, headDim === Number(cfg.localHeadDim) ? Number(cfg.window) : 0, 1, batch, 0, 0]));
+    device.queue.writeBuffer(params, 0, new Uint32Array([heads, kvHeads, headDim, window, 1, batch, 0, 0]));
     device.queue.writeBuffer(q, 0, query);
-    device.queue.writeBuffer(k, 0, data.keys);
-    device.queue.writeBuffer(v, 0, data.values);
+    device.queue.writeBuffer(k, 0, data.keys.subarray(0, kvBytes / 4));
+    device.queue.writeBuffer(v, 0, data.values.subarray(0, kvBytes / 4));
     device.queue.writeBuffer(pos, 0, positions);
     const poisoned = new Uint32Array(activeFloats + SENTINEL_BITS.length).fill(OUTPUT_POISON);
     poisoned.set(SENTINEL_BITS, activeFloats);
@@ -284,12 +337,25 @@ async function measureCase(runtime, baselinePipeline, candidatePipeline, cfg, he
     const timings = (indices) => indices.map((index) => Number(stamps[index + 1] - stamps[index]) / 1e6 / REPETITIONS);
     const baseline = timings(sampleIndices.baseline);
     const candidate = timings(sampleIndices.candidate);
+    const readOutput = async (output) => {
+      const encoder = device.createCommandEncoder();
+      encoder.copyBufferToBuffer(output, 0, read, 0, outputBytes);
+      device.queue.submit([encoder.finish()]);
+      if (!await mapBeforeDeadline(read, outputBytes, deadline)) throw deadlineError();
+      mapped = true;
+      const snapshot = read.getMappedRange(0, outputBytes).slice(0);
+      read.unmap(); mapped = false;
+      return snapshot;
+    };
+    const afterTimingCheck = exactOutputCheck(await readOutput(baselineOutput), await readOutput(candidateOutput), outputBytes, activeFloats);
+    if (!afterTimingCheck.ok) return { ...base, numericalCheck: afterTimingCheck, beforeTimingCheck: parity, reason: "numerical-guard-failed" };
     const picked = selectMatmulKernel({ generic: baseline, wide: candidate });
     return {
       ...base,
       baselineMs: baseline,
       candidateMs: candidate,
       numericalCheck: parity,
+      afterTimingCheck,
       selected: picked.kernel === "wide",
       stable: picked.stable,
       benefit: picked.benefit,
@@ -305,7 +371,7 @@ async function measureCase(runtime, baselinePipeline, candidatePipeline, cfg, he
 /**
  * Exact and paired-timed gate for the fixed-32 subgroup attention kernel. The returned selection
  * is conservative: prefix use requires exact wins for both shared-prefix and branched-suffix
- * cases; tail use is calibrated independently.
+ * cases; long unbatched prefill requires exact wins at 257, 512 and 602 rows.
  */
 export async function calibrateGemma4Attention(runtime, source, cfg, baselinePipeline, { enabled = true } = {}) {
   const startedAt = now();
@@ -318,6 +384,9 @@ export async function calibrateGemma4Attention(runtime, source, cfg, baselinePip
     threshold: 0.05,
     deadlineMs: DEADLINE_MS,
     maxScratchBytes: MAX_SCRATCH_BYTES,
+    longMaxScratchBytes: LONG_MAX_SCRATCH_BYTES,
+    longTokenRange: [257, LONG_MAX_TOKENS],
+    longCases: [...LONG_CASES],
     points: [],
     truncated: false,
     startedAt,
@@ -369,18 +438,16 @@ export async function calibrateGemma4Attention(runtime, source, cfg, baselinePip
   diagnostics.method = "paired-timestamp-query";
   const deadline = startedAt + DEADLINE_MS;
   let fatalFailure = false;
-  for (const headDim of supported) {
-    let data;
-    try {
-      data = makeData(headDim, heads, kvHeads);
-    } catch (error) {
-      diagnostics.error = errorDetails(error);
-      diagnostics.reason = "calibration-failed";
-      fatalFailure = true;
-      break;
-    }
+  const longFamilies = gemma4LongAttentionFamilies(cfg).filter((family) => supported.includes(family.headDim));
+  diagnostics.longFamilies = longFamilies;
+  const jobs = [
+    ...supported.map((headDim) => ({ headDim, kinds: ["prefix", "suffix", "tail"] })),
+    ...longFamilies.map((family) => ({ ...family, kinds: LONG_CASES.map((tokens) => `long-${tokens}`) })),
+  ];
+  for (const { headDim, window: jobWindow, kinds } of jobs) {
     const points = new Map();
-    for (const kind of ["prefix", "suffix", "tail"]) {
+    let data;
+    for (const kind of kinds) {
       if (now() >= deadline) {
         diagnostics.truncated = true;
         diagnostics.reason = "deadline";
@@ -388,7 +455,8 @@ export async function calibrateGemma4Attention(runtime, source, cfg, baselinePip
       }
       let point;
       try {
-        point = await inErrorScopes(device, () => measureCase(runtime, baselinePipeline, candidatePipeline, cfg, headDim, kind, data, deadline));
+        if (!kind.startsWith("long-") && !data) data = makeData(headDim, heads, kvHeads);
+        point = await inErrorScopes(device, () => measureCase(runtime, baselinePipeline, candidatePipeline, cfg, headDim, kind, data, deadline, jobWindow));
       } catch (error) {
         diagnostics.error = errorDetails(error);
         if (error?.code === "MATVEC_DEADLINE" || error?.code === "GEMMA4_ATTN_DEADLINE") {
@@ -409,11 +477,7 @@ export async function calibrateGemma4Attention(runtime, source, cfg, baselinePip
       }
     }
     if (fatalFailure) break;
-    const prefix = points.get("prefix");
-    const suffix = points.get("suffix");
-    if (prefix?.selected && suffix?.selected) selection.add(`${headDim}:prefill`);
-    const tail = points.get("tail");
-    if (tail?.selected) selection.add(`${headDim}:tail`);
+    for (const key of selectGemma4AttentionScopes(headDim, [...points.values()])) selection.add(key);
     if (diagnostics.truncated) break;
   }
   if (fatalFailure) selection.clear();

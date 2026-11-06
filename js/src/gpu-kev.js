@@ -8,7 +8,7 @@
 // The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
 // by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
 
-import { GpuWeights, pipeline, encodeMatmul, encodeMatvec, inErrorScopes, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { GpuWeights, pipeline, mmSplits, rowsPerThread, encodeMatmul, encodeMatvec, inErrorScopes, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
 import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
 import { calibrateMatvec } from "./gpu-matvec.js";
 import { calibrateRecurrence } from "./gpu-recur-tuning.js";
@@ -20,6 +20,37 @@ const CACHE_SLOTS = 4;
 const SLOT_ROWS = 1024;
 const CACHE_MIN = 32;
 const EXTEND_MIN = 16;
+
+/** Compact only a strict subset; an all-row consumer keeps the full graph. */
+export function finalRowPlan(tokens, rows, enabled = true) {
+  const result = { active: false, sourceRows: tokens, scorerRows: rows.length };
+  if (!enabled) return { ...result, reason: "disabled" };
+  if (!Number.isSafeInteger(tokens) || tokens < 1 || !rows.length || rows.some((row) => !Number.isSafeInteger(row) || row < 0 || row >= tokens)) return { ...result, reason: "invalid-rows" };
+  if (rows.length >= tokens) return { ...result, reason: "all-rows" };
+  return { ...result, active: true, reason: "selected-rows" };
+}
+
+/** Keep the full graph's row tile and K partition when only its output rows remain. */
+export function encodeFinalRowMatmul(pass, pipes, op, activeT, sourceT) {
+  const R = rowsPerThread(sourceT, pipes);
+  const row56 = R === 4 && pipes.f16 === false && pipes.groups === 1 && Math.ceil(sourceT / 56) === Math.ceil(sourceT / 64);
+  const splits = mmSplits(sourceT, op.N, op.K, pipes.splitTarget, 16 * R, 64 * pipes.groups);
+  pass.setPipeline((row56 && pipes.mm56) || pipes.mm[R]);
+  pass.setBindGroup(0, op.group);
+  pass.dispatchWorkgroups(Math.ceil(op.N / (64 * pipes.groups)), Math.ceil(activeT / (row56 && pipes.mm56 ? 56 : 16 * R)), splits);
+  if (splits > 1) {
+    const workgroups = Math.ceil((activeT * op.N) / 256);
+    pass.setPipeline(pipes.reduce[R]);
+    pass.setBindGroup(0, op.reduce);
+    pass.dispatchWorkgroups(Math.min(workgroups, 65535), Math.ceil(workgroups / 65535));
+  }
+}
+
+function finalRowVariant(pipes, tokens) {
+  const R = rowsPerThread(tokens, pipes);
+  const row56 = !!pipes.mm56 && R === 4 && pipes.f16 === false && pipes.groups === 1 && Math.ceil(tokens / 56) === Math.ceil(tokens / 64);
+  return { R, row56, physicalRows: row56 ? 56 : 16 * R };
+}
 
 /** The tiled attention's block table for segments of these lengths: blocks of up to 8 tokens. */
 function attnBlocks(lengths, cap) {
@@ -69,6 +100,10 @@ export class GpuKev {
     this.cap = { T1: 0, T2: 0, P: 0, S: 0, R: 0 };
     this.stats = { hits: 0, extensions: 0, misses: 0, tokensSaved: 0 };
     this.stateCacheEnabled = true;
+    this.finalRowsEnabled = true;
+    this.finalRowPipelines = new Map();
+    this.finalRowPipelineErrors = new Map();
+    this.finalRowCompileMs = 0;
   }
 
   write(dst, bytes) {
@@ -336,6 +371,7 @@ export class GpuKev {
     this.carry = null;
     this.kvStage = null;
     this.ops = null;
+    this.finalRows = null;
     this.rowInput = null;
     this.lru = [];
   }
@@ -391,6 +427,8 @@ export class GpuKev {
     this.owned.push(this.g);
     this.g2 = d.createBuffer({ size: 16, usage: U.COPY_DST | U.COPY_SRC });
     this.owned.push(this.g2);
+    this.finalG = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.owned.push(this.finalG);
     if (!this.carry) this.ensureCarries(CACHE_SLOTS + 1, CACHE_SLOTS * SLOT_ROWS + 1024);
     this.build();
   }
@@ -504,7 +542,7 @@ export class GpuKev {
     const cfg = this.cfg;
     const W = (n) => this.weights.get(n);
     const bg = (p, list) => d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: list.map((b, i) => ({ binding: i, resource: { buffer: b } })) });
-    const mm = (w, input, output, mode) => {
+    const mm = (w, input, output, mode, globals = this.g) => {
       const e = W(w);
       const [N, K] = e.info.shape;
       const u = this.uni([N, K, mode, 0]);
@@ -516,13 +554,14 @@ export class GpuKev {
         K,
         dtype: e.info.dtype,
         pipes,
-        group: d.createBindGroup({ layout: pipes.layout, entries: [this.g, u, input, e.buf, e.sbuf || this.zeros, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
-        reduce: d.createBindGroup({ layout: pipes.reduceLayout, entries: [this.g, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        group: d.createBindGroup({ layout: pipes.layout, entries: [globals, u, input, e.buf, e.sbuf || this.zeros, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: pipes.reduceLayout, entries: [globals, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
       };
     };
-    const rms = (w, input, output) => ({ k: "rms", group: bg(this.p.RMS, [this.g, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
+    const rms = (w, input, output, globals = this.g) => ({ k: "rms", group: bg(this.p.RMS, [globals, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
     const one = [];
     const two = [];
+    let finalMlpStart = 0;
     let stateComplete = false;
     const both = (op) => {
       if (!stateComplete) one.push(op);
@@ -553,6 +592,7 @@ export class GpuKev {
         both({ k: "gnorm", group: bg(this.p.GNORM, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("gnorm")).buf, this.core]) });
         both(mm(n("out"), this.core, this.x, 1));
       }
+      if (i === cfg.layers - 1) finalMlpStart = two.length;
       both(rms(W(n("post_norm")).buf, this.x, this.h));
       both(mm(n("gate_up"), this.h, this.up, 0));
       both({ k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) });
@@ -560,9 +600,74 @@ export class GpuKev {
     }
     two.push({ k: "gather", group: bg(this.p.GATHER, [this.g, this.x, this.rows, this.gathered]) });
     this.ops = [one, two];
+    const n = (s) => `L.${cfg.layers - 1}.${s}`;
+    this.finalRows = {
+      prefix: two.slice(0, finalMlpStart),
+      gather: two.at(-1),
+      tail: [
+        rms(W(n("post_norm")).buf, this.gathered, this.h, this.finalG),
+        { ...mm(n("gate_up"), this.h, this.up, 0, this.finalG), finalRows: true },
+        { k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.finalG, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) },
+        { ...mm(n("down"), this.act, this.gathered, 1, this.finalG), finalRows: true },
+      ],
+    };
   }
 
-  encode(enc, ops, T, S) {
+  async prepareFinalRows(tokens, rows) {
+    this.lastFinalRows = finalRowPlan(tokens, rows, this.finalRowsEnabled !== false && !!this.finalRows);
+    if (!this.lastFinalRows.active) return false;
+    const matrices = this.finalRows.tail.filter((item) => item.k === "mm").map((op) => {
+      const tuning = this.precisionTuning.get(op.dtype);
+      const choice = this.gpuKernel === "auto" ? selectedMatmulKernel(tuning?.selection, op.N, op.K, tokens) : this.gpuKernel;
+      const original = tuning?.pipelines[choice] || op.pipes;
+      return { op, original, ...finalRowVariant(original, tokens) };
+    });
+    this.lastFinalRows.tiles = matrices.map(({ op, physicalRows }) => ({ projection: op.label, source: Math.ceil(tokens / physicalRows), compact: Math.ceil(rows.length / physicalRows) }));
+    // Moving rows within the same padded tile rarely repays another compute pass or
+    // cold pipeline compilation. Require an actual projection workgroup reduction.
+    if (!this.lastFinalRows.tiles.some((item) => item.compact < item.source)) {
+      this.lastFinalRows = { ...this.lastFinalRows, active: false, reason: "same-row-tiles" };
+      return false;
+    }
+    for (const { op, original, R, row56 } of matrices) {
+      const key = `${op.dtype}:${original.kernel}:r${R}:${row56 ? "row56" : "standard"}`;
+      if (this.finalRowPipelineErrors.has(key)) {
+        this.lastFinalRows = { ...this.lastFinalRows, active: false, reason: this.finalRowPipelineErrors.get(key) };
+        return false;
+      }
+      if (!this.finalRowPipelines.has(key)) {
+        const started = performance.now();
+        try {
+          const pipes = await inErrorScopes(this.device, async () => {
+            const spec = { weights: op.dtype, f16: original.f16, groups: original.groups, splitTarget: original.splitTarget, rows: R };
+            const layout = this.device.createPipelineLayout({ bindGroupLayouts: [original.layout] });
+            const reduceLayout = this.device.createPipelineLayout({ bindGroupLayouts: [original.reduceLayout] });
+            const [matrix, reducer] = await Promise.all([
+              pipeline(this.device, this.wgsl(`${original.kernel}_gemma_source`, { ...spec, row56 }), "Qwen final-row matrix", layout),
+              pipeline(this.device, this.wgsl("reduce_gemma_source", spec), "Qwen final-row reduce", reduceLayout),
+            ]);
+            const mm = [], reduce = [];
+            mm[R] = matrix; reduce[R] = reducer;
+            return { ...original, mm, reduce, mm56: row56 ? matrix : null };
+          });
+          this.finalRowPipelines.set(key, pipes);
+        } catch (error) {
+          const reason = `source-pipeline-unavailable: ${String(error?.message || error)}`;
+          this.finalRowPipelineErrors.set(key, reason);
+          this.lastFinalRows = { ...this.lastFinalRows, active: false, reason };
+          return false;
+        } finally {
+          const elapsed = performance.now() - started;
+          this.finalRowCompileMs += elapsed;
+          this.lastFinalRows.pipelineCompileMs = (this.lastFinalRows.pipelineCompileMs || 0) + elapsed;
+        }
+      }
+      op.finalPipes = this.finalRowPipelines.get(key);
+    }
+    return true;
+  }
+
+  encode(enc, ops, T, S, sourceT = T) {
     const prof = this.profiler;
     let pass = prof ? null : enc.beginComputePass();
     for (const op of ops) {
@@ -570,6 +675,10 @@ export class GpuKev {
       pass.setBindGroup(0, op.group);
       switch (op.k) {
         case "mm": {
+          if (op.finalRows) {
+            encodeFinalRowMatmul(pass, op.finalPipes, op, T, sourceT);
+            break;
+          }
           const tuning = this.precisionTuning.get(op.dtype);
           const matvec = this.precisionMatvec.get(op.dtype);
           if (this.gpuKernel === "auto" && T === 1 && matvec?.selection.has(`${op.N}:${op.K}`)) {
@@ -684,6 +793,11 @@ export class GpuKev {
       this.resetDynamicBuffers();
       throw setupError || Object.assign(new Error(`WebGPU setup: ${(oom || setup).message}`), { code: "WEBGPU_INIT" });
     }
+    let finalRows = false;
+    if (this.finalRowsEnabled === false || !this.finalRows || T2 <= 64 || rows.length >= T2) {
+      this.lastFinalRows = { active: false, sourceRows: T2, scorerRows: rows.length,
+        reason: this.finalRowsEnabled === false || !this.finalRows ? "disabled" : rows.length >= T2 ? "all-rows" : "same-row-tiles" };
+    } else finalRows = await this.prepareFinalRows(T2, rows);
     const q = d.queue;
     // stage 1: the planned segments, their embedded rows gathered from the full state rows
     const seg1 = new Uint32Array(this.cap.S * 8);
@@ -711,6 +825,7 @@ export class GpuKev {
     d.pushErrorScope("out-of-memory");
     q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
     q.writeBuffer(this.g2, 0, new Uint32Array([T2, rows.length, B, 2]));
+    if (finalRows) q.writeBuffer(this.finalG, 0, new Uint32Array([rows.length, T2, B, 2]));
     q.writeBuffer(this.x, 0, x1c);
     if (!rowInput) q.writeBuffer(this.x2, 0, x2);
     q.writeBuffer(this.tok, 0, tok1);
@@ -754,11 +869,13 @@ export class GpuKev {
     enc.copyBufferToBuffer(this.segs2, 0, this.segs, 0, this.cap.S * 32);
     if (this.attnTile) enc.copyBufferToBuffer(this.ablocks2, 0, this.ablocks, 0, this.blockCap * 16);
     enc.copyBufferToBuffer(this.g2, 0, this.g, 0, 16);
-    const parts2 = yieldable ? chunks(this.ops[1], Math.max(1, Math.round((YIELD_CHUNKS * T2) / (T1 + T2)))) : [this.ops[1]];
+    const branchOps = finalRows ? [...this.finalRows.prefix, this.finalRows.gather] : this.ops[1];
+    const parts2 = yieldable ? chunks(branchOps, Math.max(1, Math.round((YIELD_CHUNKS * T2) / (T1 + T2)))) : [branchOps];
     for (let i = 0; i < parts2.length; i++) {
       if (i) await flush();
       this.encode(enc, parts2[i], T2, B);
     }
+    if (finalRows) this.encode(enc, this.finalRows.tail, rows.length, B, T2);
     this.profiler?.finish(enc);
     const bytes = rows.length * D * 4;
     enc.copyBufferToBuffer(this.gathered, 0, this.readback, 0, bytes);
