@@ -751,7 +751,8 @@ export class GpuKev {
   }
 
   /**
-   * Runs both stages. `x1`/`x2` are the embedded states and branches, `batch` the table from
+   * Runs both stages. `x1` is the embedded states or a synchronous provider called only when
+   * the cache plan needs state rows; `x2` is the embedded branches. `batch` is the table from
    * `kevala_kev_prepare`. Resolves to the pointer rows (`rows * hidden` f32).
    */
   async forward(x1, x2, batch, ids) {
@@ -800,16 +801,20 @@ export class GpuKev {
     } else finalRows = await this.prepareFinalRows(T2, rows);
     const q = d.queue;
     // stage 1: the planned segments, their embedded rows gathered from the full state rows
-    const seg1 = new Uint32Array(this.cap.S * 8);
-    const tok1 = new Uint32Array(Math.max(1, T1) * 4);
-    const x1c = new Float32Array(Math.max(1, T1) * D);
-    let at = 0;
-    plan.segs.forEach((g, si) => {
-      seg1.set([at, g.len, g.parent, g.pstart, g.plen, g.dst, g.kvdst, 0], si * 8);
-      x1c.set(x1.subarray(g.src * D, (g.src + g.len) * D), at * D);
-      for (let r = 0; r < g.len; r++) tok1.set([si, r, g.pos0 + r, 0], (at + r) * 4);
-      at += g.len;
-    });
+    let seg1, tok1, x1c;
+    if (T1 > 0) {
+      const stateRows = typeof x1 === "function" ? x1() : x1;
+      seg1 = new Uint32Array(this.cap.S * 8);
+      tok1 = new Uint32Array(T1 * 4);
+      x1c = new Float32Array(T1 * D);
+      let at = 0;
+      plan.segs.forEach((g, si) => {
+        seg1.set([at, g.len, g.parent, g.pstart, g.plen, g.dst, g.kvdst, 0], si * 8);
+        x1c.set(stateRows.subarray(g.src * D, (g.src + g.len) * D), at * D);
+        for (let r = 0; r < g.len; r++) tok1.set([si, r, g.pos0 + r, 0], (at + r) * 4);
+        at += g.len;
+      });
+    }
     // stage 2: every branch continues its request's carry
     const seg2 = new Uint32Array(this.cap.S * 8);
     const tok2 = new Uint32Array(T2 * 4);
@@ -823,17 +828,19 @@ export class GpuKev {
     // previous pass's rows read back
     d.pushErrorScope("validation");
     d.pushErrorScope("out-of-memory");
-    q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
+    if (T1 > 0) {
+      q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
+      q.writeBuffer(this.x, 0, x1c);
+      q.writeBuffer(this.tok, 0, tok1);
+      q.writeBuffer(this.segs, 0, seg1);
+      if (this.attnTile) q.writeBuffer(this.ablocks, 0, attnBlocks(plan.segs.map((g) => g.len), this.blockCap));
+    }
     q.writeBuffer(this.g2, 0, new Uint32Array([T2, rows.length, B, 2]));
     if (finalRows) q.writeBuffer(this.finalG, 0, new Uint32Array([rows.length, T2, B, 2]));
-    q.writeBuffer(this.x, 0, x1c);
     if (!rowInput) q.writeBuffer(this.x2, 0, x2);
-    q.writeBuffer(this.tok, 0, tok1);
     q.writeBuffer(this.tok2, 0, tok2);
-    q.writeBuffer(this.segs, 0, seg1);
     q.writeBuffer(this.segs2, 0, seg2);
     if (this.attnTile) {
-      q.writeBuffer(this.ablocks, 0, attnBlocks(plan.segs.map((g) => g.len), this.blockCap));
       q.writeBuffer(this.ablocks2, 0, attnBlocks(branches.map(([, len]) => len), this.blockCap));
     }
     q.writeBuffer(this.rows, 0, new Uint32Array(rows));
