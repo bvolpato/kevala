@@ -65,6 +65,8 @@
     "serve": "node scripts/serve.mjs .",
     "smoke": "node scripts/node-smoke.mjs",
     "guard:gpu": "node scripts/gpu-guard.mjs",
+    "profile:models": "node scripts/profile-models.mjs",
+    "profile:kernels": "node scripts/profile-kernels.mjs",
     "guard:cpu": "node scripts/cpu-guard.mjs"
   },
   "dependencies": {},

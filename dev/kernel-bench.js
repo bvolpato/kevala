@@ -1,5 +1,6 @@
 import { matmulConfig, mmSplits, pipeline, requestDevice } from "../js/src/gpu.js";
 import { kernelSource } from "./wgsl.js";
+import { isolatedUnavailable, recurrenceFixtureInput, UTILITY_KERNELS, utilityError, utilityFixture } from "./kernel-profile-fixtures.js";
 
 const query = new URLSearchParams(location.search);
 const usage = GPUBufferUsage;
@@ -10,7 +11,7 @@ const families = {
   kev: ["kev_rms", "kev_gather", "kev_gates", "kev_conv", "kev_save_tail", "kev_qknorm", "kev_recur_lanes", "kev_recur_lanes8", "kev_recur_lanes16", "kev_gnorm", "kev_aprep", "kev_save_kv", "kev_attention_keys", "kev_attention", "kev_attention_tile", "kev_silumul"],
   gemma: ["gemma4_embed", "gemma4_rms", "gemma4_qkv", "gemma4_attention", "gemma4_gelu", "gemma4_ple", "gemma4_residual", "gemma4_gather"],
 };
-const inventory = Object.values(families).flat();
+const inventory = [...Object.values(families).flat(), ...UTILITY_KERNELS];
 
 function integer(name, fallback, minimum, maximum) {
   const value = query.has(name) ? Number(query.get(name)) : fallback;
@@ -30,6 +31,8 @@ function uniform(values) {
 }
 
 function plan(kernel, tokens, gpu) {
+  const utility = utilityFixture(kernel, tokens);
+  if (utility) return { ...utility, globals: [tokens, 0, 0, 0], spec: utility.spec || {}, overrides: { p: uniform(utility.params), ...utility.overrides } };
   const kevHidden = integer("kevHidden", 1024, 1024, 4096);
   if (![1024, 2048, 2560, 4096].includes(kevHidden)) throw new Error("kevHidden must be 1024, 2048, 2560, or 4096");
   const hidden = kernel === "kev_rms" ? kevHidden : 1024;
@@ -101,7 +104,9 @@ function plan(kernel, tokens, gpu) {
   return {
     grid: grids[kernel], params: params[kernel], output: outputs[kernel],
     globals: [tokens, rows, kernel.startsWith("attention") ? blocks : kernel === "gemma4_attention" ? tokens : 1, 0],
-    spec: { ...config, f16: kernel === "attention_tile_f32" ? false : config.f16, subgroups: gpu.subgroup32, ...(kernel === "kev_rms" ? { kev: { hidden } } : {}) },
+    spec: { ...config, f16: kernel === "attention_tile_f32" ? false : config.f16,
+      subgroups: gpu.subgroup32 && (kernel !== "attention_tile_f32" || navigator.gpu.wgslLanguageFeatures?.has("subgroup_id")),
+      ...(kernel === "kev_rms" ? { kev: { hidden } } : {}) },
     overrides: {
       g: uniform([tokens, rows, kernel.startsWith("attention") ? blocks : kernel === "gemma4_attention" ? tokens : 1, 0]),
       p: uniform(params[kernel] || []), tok: tokenData, segs: segments, blocks: blockData, BLOCKS: blockData,
@@ -129,6 +134,8 @@ async function hash(code) {
 }
 
 function cpuError(kernel, tokens, input, output) {
+  const utility = utilityError(kernel, input, output, tokens);
+  if (utility !== null) return utility;
   let maxAbs = 0;
   const check = (index, expected) => { maxAbs = Math.max(maxAbs, Math.abs(output[index] - expected)); };
   if (["norm", "kev_rms", "gemma4_rms", "gemma4_ple"].includes(kernel)) {
@@ -183,9 +190,15 @@ async function main() {
   const queries = device.createQuerySet({ type: "timestamp", count: 2 });
   const resolved = device.createBuffer({ size: 16, usage: usage.QUERY_RESOLVE | usage.COPY_SRC });
   const readback = device.createBuffer({ size: 16, usage: usage.COPY_DST | usage.MAP_READ });
-  const cases = [];
+  const cases = [], skipped = [];
   try {
-    for (const kernel of kernels) for (const length of tokens) {
+    const capabilities = { features: device.features, languageFeatures: navigator.gpu.wgslLanguageFeatures || new Set(),
+      subgroups: gpu.subgroup4, subgroup32: gpu.subgroup32, subgroupMinSize: gpu.adapter.info?.subgroupMinSize || 0,
+      workgroupStorageSize: device.limits.maxComputeWorkgroupStorageSize };
+    for (const kernel of kernels) {
+      const unavailable = [...new Set(sources.flatMap(({ source }) => isolatedUnavailable(kernel, source(kernel, plan(kernel, tokens[0], gpu).spec), capabilities)))];
+      if (unavailable.length) { skipped.push({ kernel, unavailable }); log(`${kernel}: unsupported (${unavailable.join(", ")})`); continue; }
+      for (const length of tokens) {
       const fixture = plan(kernel, length, gpu);
       const bytes = Math.max(4 * 1024 * 1024, length * 8192 * 4, fixture.output[1] * 4);
       const floats = new Float32Array(bytes / 4);
@@ -193,6 +206,10 @@ async function main() {
       for (let index = 0; index < floats.length; index++) {
         if (query.has("seed")) { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; floats[index] = (seed / 0x100000000 - 0.5) * 4; }
         else floats[index] = ((index % 17) - 8) / 64;
+      }
+      if (["kev_recur_lanes", "kev_recur_lanes8", "kev_recur_lanes16"].includes(kernel)) {
+        fixture.overrides.C = recurrenceFixtureInput(floats, length);
+        fixture.inputContract = "default Kev 16-key/16-value-head Q/K/V; Q/K use kev_qknorm F32 tree and query scale; V preserves the seeded input";
       }
       const resources = new Map();
       const owned = [];
@@ -208,7 +225,7 @@ async function main() {
               const key = `${space}:${name}`;
               if (!resources.has(key)) {
                 const inplace = ["rope", "kev_qknorm", "kev_gnorm", "kev_aprep", "gemma4_qkv", "gemma4_residual"].includes(kernel);
-                const initial = name === fixture.output[0] && !inplace
+                const initial = name === fixture.output[0] && !inplace && !fixture.preserveOutputInitialization
                   ? new Float32Array(bytes / 4).fill(NaN)
                   : fixture.overrides[name] || floats;
                 const size = space === "uniform" ? initial.byteLength : bytes;
@@ -297,21 +314,26 @@ async function main() {
           }
         }
         if (query.get("exact") === "1" && bitDifferences) throw new Error(`${kernel}: ${bitDifferences} paired output bits differ`);
-        cases.push({ kernel, tokens: length, grid: fixture.grid, spec: fixture.spec, repetitions, timings: runs.map(({ label, samples, shaderSha256 }) => ({ label, samples, medianMs: median(samples), shaderSha256 })), finiteValues: fixture.output[1], cpuMaxAbs, bitDifferences, maxAbs });
+        cases.push({ kernel, tokens: length, grid: fixture.grid, spec: fixture.spec, repetitions,
+          ...(fixture.inputContract ? { inputContract: fixture.inputContract } : {}), ...(fixture.outputContract ? { outputContract: fixture.outputContract } : {}),
+          timings: runs.map(({ label, samples, shaderSha256 }) => ({ label, samples, medianMs: median(samples), shaderSha256 })), finiteValues: fixture.output[1], cpuMaxAbs, bitDifferences, maxAbs });
         log(`${kernel} T=${length}: ${runs.map((run) => `${run.label}=${median(run.samples).toFixed(6)}ms`).join(" ")} diff=${maxAbs}`);
       } finally {
         for (const buffer of owned) buffer.destroy();
       }
+      }
     }
+    if (!cases.length) throw new Error("no isolated kernels support this device");
     if (uncaptured.length) throw new Error(uncaptured.join("\n"));
     window.gpuBench = {
       status: "done", backend: "webgpu", method: "WebGPU timestamp-query", samples, warmups, kernels, tokens,
       fixtureSeed: query.has("seed") ? integer("seed", 0, 0, 0xffffffff) : null, exactComparisonRequired: query.get("exact") === "1",
+      skippedKernels: skipped.map((item) => item.kernel), skipped,
       metricMs: Math.exp(cases.reduce((sum, item) => sum + Math.log(item.timings.at(-1).medianMs), 0) / cases.length),
       metric: "geometric mean of isolated dispatch batch medians; not model latency",
       adapter: { name: gpu.name, features: [...device.features], info: { vendor: gpu.adapter.info.vendor, architecture: gpu.adapter.info.architecture, subgroupMinSize: gpu.adapter.info.subgroupMinSize, subgroupMaxSize: gpu.adapter.info.subgroupMaxSize } },
       sources: sources.map(({ label, source }) => ({ label, wasmUrl: source.wasmUrl })),
-      correctness: { ok: true, scope: "finite-output smoke and complete overwrite of out-of-place outputs initialized to NaN; CPU-reference checks for listed kernels; independent numerical guards remain required", cpuKernels: [...new Set(cases.filter((item) => item.cpuMaxAbs !== null).map((item) => item.kernel))], finiteValues: cases.reduce((sum, item) => sum + item.finiteValues, 0) },
+      correctness: { ok: true, scope: "finite-output smoke and complete overwrite of out-of-place outputs initialized to NaN; finite scanner uses its zero-initialized atomic status contract; CPU-reference checks for listed kernels; independent numerical guards remain required", cpuKernels: [...new Set(cases.filter((item) => item.cpuMaxAbs !== null).map((item) => item.kernel))], finiteValues: cases.reduce((sum, item) => sum + item.finiteValues, 0) },
       caveats: ["Synthetic throughput fixtures, not model accuracy or serving latency.", "Mutable outputs reset before each batch; repeated in-place dispatches within a batch can change values.", "Matmul and reduce are timed separately, not as a complete projection."],
       cases,
     };

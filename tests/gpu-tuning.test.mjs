@@ -217,6 +217,27 @@ test("projection calibration isolates BF16/F32 shapes without requiring Q8 scale
   assert.equal(matmulShapes({ tensors }, 6, "bf16").length, 1);
 });
 
+test("an explicit bounded matrix budget covers additional loaded projection shapes", async () => {
+  const weights = { tensors: new Map(Array.from({ length: 11 }, (_, index) => [String(index), {
+    info: { name: `L.${index}.o`, dtype: "q8", shape: [64 + 32 * index, 32] }, buf: {}, sbuf: {},
+  }])) };
+  const options = { pipelines: { generic: {} } };
+  const device = { features: new Set() };
+  const ordinary = await calibrateMatmul(device, null, weights, options);
+  assert.equal(ordinary.selection.size, 6 * 5);
+  const expanded = await calibrateMatmul(device, null, weights, { ...options, maxShapes: 12 });
+  assert.equal(expanded.selection.size, 11 * 5);
+  assert.equal(expanded.diagnostics.shapeLimit, 12);
+  assert.equal(expanded.diagnostics.availableShapes, 11);
+  assert.equal(expanded.diagnostics.scheduledShapes, 11);
+  for (const shape of matmulShapes(weights, 12)) for (const tokens of [16, 32, 48, 128, 512]) {
+    assert.equal(expanded.selection.get(matmulTuningKey(shape.N, shape.K, tokens)), "generic");
+  }
+  for (const maxShapes of [0, 13, 1.5, Infinity]) {
+    await assert.rejects(calibrateMatmul(device, null, weights, { ...options, maxShapes }), /shape budget/);
+  }
+});
+
 test("BF16/F32 auto tuning can compare FP32 kernels without shader-f16", async () => {
   for (const dtype of ["bf16", "f32"]) {
     const generic = {}, wide = {};

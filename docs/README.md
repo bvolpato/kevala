@@ -19,6 +19,7 @@ Start with [How kevala works](architecture.md). The guides describe the current 
 | [Gemma 4 decisions](gemma4.md) | The Gemma 4 integration, its limits, and its verification. |
 | [Quantization choice](quantization.md) | Why the packs use int8 weights, and what that costs. |
 | [Automatic CPU tuning](cpu-tuning.md) | How the runtime selects a CPU kernel and a worker count. |
+| [Model and kernel profiling](kernel-profiling.md) | Reproducible all-model captures, kernel coverage, numerical gates, and publication. |
 | [Adding a model family](adding-a-model.md) | The steps to add a backbone, a head, or a request template. |
 | [Tetris demo policy and measurements](tetris-policy.md) | How the Tetris demo uses a decision model. |
 
