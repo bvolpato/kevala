@@ -2,6 +2,7 @@
 
 use crate::kernels::Mat;
 use crate::pack::{self, DType, Header, TensorInfo};
+use crate::simd::dequant16;
 
 /// A 64-byte aligned heap buffer that WebAssembly callers can fill in place.
 pub struct AlignedBuf {
@@ -148,8 +149,19 @@ impl Store {
             }
             Mat::Q8 { k, block, q, scales, .. } => {
                 let nb = k / block;
-                for (c, o) in out.iter_mut().enumerate() {
-                    *o = q[r * k + c] as f32 * scales[r * nb + c / block];
+                for (b, dst) in out.chunks_mut(block).enumerate() {
+                    let scale = scales[r * nb + b];
+                    let start = r * k + b * block;
+                    let src = &q[start..start + dst.len()];
+                    let mut src = src.chunks_exact(16);
+                    let mut dst = dst.chunks_exact_mut(16);
+                    for (src, dst) in src.by_ref().zip(dst.by_ref()) {
+                        // Both slices contain sixteen elements within one scale block.
+                        unsafe { dequant16(src.as_ptr(), scale, dst.as_mut_ptr()) };
+                    }
+                    for (src, dst) in src.remainder().iter().zip(dst.into_remainder()) {
+                        *dst = *src as f32 * scale;
+                    }
                 }
             }
         }
@@ -168,6 +180,58 @@ pub fn load_store(buf: AlignedBuf) -> Result<(Store, Header), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn q8_rows_match_scalar_dequantization_bitwise() {
+        for block in [16, 32, 64, 128] {
+            for k in [block, block * 3, 256, 384] {
+                let rows = 5;
+                let nb = k / block;
+                let scales = [
+                    0.,
+                    -0.,
+                    0.125,
+                    -0.375,
+                    f32::MIN_POSITIVE,
+                    f32::from_bits(1),
+                    f32::MAX / 128.,
+                    f32::MAX,
+                    -f32::MAX,
+                ];
+                let mut writer = pack::Writer::new(crate::json::Value::Null, crate::json::Value::Null, vec![]);
+                writer.add_q8("weight", rows, k, block);
+                let (_, tensors, total) = writer.layout();
+                let tensor = &tensors[0];
+                let mut buf = AlignedBuf::new(total);
+                for i in 0..tensor.size {
+                    buf.as_mut_slice()[tensor.offset + i] = i.wrapping_mul(73).wrapping_add(19) as u8;
+                }
+                for i in 0..tensor.scales_size / 4 {
+                    let at = tensor.scales_offset + i * 4;
+                    buf.as_mut_slice()[at..at + 4].copy_from_slice(&scales[i % scales.len()].to_le_bytes());
+                }
+                let store = Store::new(buf, tensors.clone()).unwrap();
+                let Mat::Q8 { q, scales, .. } = store.mat(tensor) else { unreachable!() };
+                for r in 0..rows {
+                    for len in (0..=k).chain([k + 5].into_iter().filter(|_| r + 1 < rows)) {
+                        let mut storage = vec![f32::from_bits(0x7fc0_1234); len + 2];
+                        store.row(tensor, r, &mut storage[1..len + 1]);
+                        assert_eq!(storage[0].to_bits(), 0x7fc0_1234);
+                        assert_eq!(storage[len + 1].to_bits(), 0x7fc0_1234);
+                        for (c, value) in storage[1..len + 1].iter().enumerate() {
+                            let expected = q[r * k + c] as f32 * scales[r * nb + c / block];
+                            assert_eq!(
+                                value.to_bits(),
+                                expected.to_bits(),
+                                "block={block}, k={k}, r={r}, len={len}, c={c}"
+                            );
+                        }
+                    }
+                }
+                store.row(tensor, rows, &mut []);
+            }
+        }
+    }
 
     #[test]
     fn rejects_invalid_bf16_typed_view_ranges() {
