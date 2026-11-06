@@ -179,6 +179,10 @@ For GPU measurements across the seven Laya, Kev, and SemIf models on Firefox/Lin
 [GPU matrix tuning](docs/semif-matmul.md). Gemma 4's E2B and E4B checks are in the
 [Gemma 4 notes](docs/gemma4.md). Performance depends on the model, request, and hardware.
 
+The [FP32 performance reference](docs/performance-reference.md) records native GEMM
+measurements, browser feature limits and kernel experiments that did not earn a production change.
+The [profiling guide](docs/kernel-profiling.md) covers every catalog model and registered kernel.
+
 The [September 25 M4 Max kernel sweep](docs/m4-max-kernel-performance.md) compares
 all registered kernels, records rejected experiments, and validates the retained optimizations.
 The repeated 140-token Laya comparison reduces mean awaited latency from 24.78 to
