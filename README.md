@@ -50,7 +50,8 @@ From a CDN, in any page:
 </script>
 ```
 
-You can also import the runtime directly from the website:
+To use models that your installed npm version does not support, import the runtime
+directly from the website:
 
 ```js
 import { Kevala } from "https://bvolpato.github.io/kevala/js/src/index.js";
