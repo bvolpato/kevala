@@ -42,6 +42,7 @@ Each report covers one retained change.
 | Report | Kernel |
 |---|---|
 | [Q8 row dequantization](q8-row-dequantization-performance.md) | Block-scaled CPU row reads with native, WASM and paired request evidence |
+| [Performance follow-up](performance-follow-up.md) | Remaining bottlenecks, rejected experiments and cached-state preparation |
 | [Measured model and kernel optimization](model-optimization-performance.md) | Clef CPU finish, Qwen final rows, Gemma long attention and complete mixed model timings |
 | [Shared WebGPU matrix layout](shared-matmul-performance.md) | Matrix staging shared across families |
 | [Shared FP32 matrix kernels](matmul-32x8-performance.md) | FP32 matrix tiles |

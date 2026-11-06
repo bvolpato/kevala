@@ -1,0 +1,4332 @@
+{
+  "schemaVersion": 1,
+  "status": "measured",
+  "generatedAt": "2026-11-06T18:46:05.419Z",
+  "scope": "Exploratory bottlenecks, rejected experiments and separately paired cached-state work",
+  "baseCommit": "4f1bd8998441ebc5579d0bd23b027ec7b88e1e92",
+  "baselineRuntime": {
+    "entry": "http://127.0.0.1:18172/tmp/perf-next-20261106-8H5xqz/baseline-runtime/index.js",
+    "fingerprint": "69840234eb7434ff891c6c164bf5efb7088ac2d99e0131974c83ba7230c821e2",
+    "assets": [
+      {
+        "path": "archs/clef.js",
+        "bytes": 5711,
+        "sha256": "b0806823900b203ac7bb84744c8b94ced441f3e8440f9a3523a7b3b4433de4f8"
+      },
+      {
+        "path": "archs/gemma4.js",
+        "bytes": 12531,
+        "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+      },
+      {
+        "path": "archs/index.js",
+        "bytes": 2743,
+        "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+      },
+      {
+        "path": "archs/kev.js",
+        "bytes": 9983,
+        "sha256": "6d14aaaa1affd96e74da787027485065fe9dd3fa810a012fb051b1a719f4c2e7"
+      },
+      {
+        "path": "archs/laya.js",
+        "bytes": 8417,
+        "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+      },
+      {
+        "path": "cpu-calibrate.js",
+        "bytes": 3092,
+        "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+      },
+      {
+        "path": "cpu-policy.js",
+        "bytes": 3333,
+        "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+      },
+      {
+        "path": "cpu-tune.js",
+        "bytes": 1293,
+        "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+      },
+      {
+        "path": "engine-worker.js",
+        "bytes": 19878,
+        "sha256": "13d2dfe71c43509565eacbf2116f79567b89cf333b4221f47fc2ef86a82d559a"
+      },
+      {
+        "path": "gemma4-image.js",
+        "bytes": 12697,
+        "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+      },
+      {
+        "path": "gemma4-ple-store.js",
+        "bytes": 11274,
+        "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+      },
+      {
+        "path": "gemma4-vision-pack.js",
+        "bytes": 3580,
+        "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+      },
+      {
+        "path": "gpu-gemma4-attention.js",
+        "bytes": 24396,
+        "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+      },
+      {
+        "path": "gpu-gemma4-batch-mlp.js",
+        "bytes": 25939,
+        "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+      },
+      {
+        "path": "gpu-gemma4-batch-single.js",
+        "bytes": 13303,
+        "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+      },
+      {
+        "path": "gpu-gemma4-bn32.js",
+        "bytes": 13497,
+        "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+      },
+      {
+        "path": "gpu-gemma4-grid-mlp.js",
+        "bytes": 21034,
+        "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+      },
+      {
+        "path": "gpu-gemma4-image.js",
+        "bytes": 6179,
+        "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+      },
+      {
+        "path": "gpu-gemma4-k64.js",
+        "bytes": 12881,
+        "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+      },
+      {
+        "path": "gpu-gemma4-mlp.js",
+        "bytes": 14486,
+        "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+      },
+      {
+        "path": "gpu-gemma4-ple.js",
+        "bytes": 3548,
+        "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+      },
+      {
+        "path": "gpu-gemma4-prefix-cache.js",
+        "bytes": 7449,
+        "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+      },
+      {
+        "path": "gpu-gemma4-prefix-gelu.js",
+        "bytes": 16018,
+        "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+      },
+      {
+        "path": "gpu-gemma4-prefix-retile.js",
+        "bytes": 15704,
+        "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+      },
+      {
+        "path": "gpu-gemma4-rms-plan.js",
+        "bytes": 1960,
+        "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+      },
+      {
+        "path": "gpu-gemma4-rms.js",
+        "bytes": 21407,
+        "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+      },
+      {
+        "path": "gpu-gemma4-vision-qkv.js",
+        "bytes": 18378,
+        "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+      },
+      {
+        "path": "gpu-gemma4-vision.js",
+        "bytes": 39775,
+        "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+      },
+      {
+        "path": "gpu-gemma4.js",
+        "bytes": 111663,
+        "sha256": "f47c5b0569297b593d4c784963bc9a4cc013026685b0afad0034fb5f9ef05359"
+      },
+      {
+        "path": "gpu-kev.js",
+        "bytes": 44933,
+        "sha256": "eb313c2fca2c50d43a0d14ab53f52bc426e808501169d5fb355dfbb0b6910246"
+      },
+      {
+        "path": "gpu-laya.js",
+        "bytes": 14668,
+        "sha256": "c69af3036fab3290cd3dd7c46d7e4e060e2876aaef61c8e274c06924be38eccc"
+      },
+      {
+        "path": "gpu-matvec-gelu.js",
+        "bytes": 12270,
+        "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+      },
+      {
+        "path": "gpu-matvec-two.js",
+        "bytes": 22143,
+        "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+      },
+      {
+        "path": "gpu-matvec.js",
+        "bytes": 19542,
+        "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+      },
+      {
+        "path": "gpu-recur-tuning.js",
+        "bytes": 21113,
+        "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+      },
+      {
+        "path": "gpu-tuning.js",
+        "bytes": 16021,
+        "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+      },
+      {
+        "path": "gpu.js",
+        "bytes": 26543,
+        "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+      },
+      {
+        "path": "image-header.js",
+        "bytes": 5607,
+        "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+      },
+      {
+        "path": "images.js",
+        "bytes": 4221,
+        "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+      },
+      {
+        "path": "index.js",
+        "bytes": 19494,
+        "sha256": "5010ab6e6a1ab8f4700d9dbd6f64af488102fae3e6e0874b4bc8bb0ce36e975d"
+      },
+      {
+        "path": "kevala-base.wasm",
+        "bytes": 1324288,
+        "sha256": "d23eff4d918aafc117dd27067e6ebdb8da538b9eff862d5e46cad966b07688f4"
+      },
+      {
+        "path": "kevala-relaxed.wasm",
+        "bytes": 1330459,
+        "sha256": "b4a53ceac06dea00516abeb8e8700fe09be152f38b24a6052139bfe0d21e8e2c"
+      },
+      {
+        "path": "kevala-simd.wasm",
+        "bytes": 1329130,
+        "sha256": "9b6b3998af1b86215f7214c7463c121c4225eb531e99552eb541bb5960ee8481"
+      },
+      {
+        "path": "node.js",
+        "bytes": 2459,
+        "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+      },
+      {
+        "path": "pack-layout.js",
+        "bytes": 8838,
+        "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+      },
+      {
+        "path": "presets.js",
+        "bytes": 5604,
+        "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+      },
+      {
+        "path": "request-queue.js",
+        "bytes": 2205,
+        "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+      },
+      {
+        "path": "shard-client.js",
+        "bytes": 1495,
+        "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+      },
+      {
+        "path": "shard-worker.js",
+        "bytes": 2762,
+        "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+      },
+      {
+        "path": "source.js",
+        "bytes": 33566,
+        "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+      },
+      {
+        "path": "stats.js",
+        "bytes": 279,
+        "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+      },
+      {
+        "path": "wasm.js",
+        "bytes": 4833,
+        "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+      }
+    ]
+  },
+  "catalogCoverage": {
+    "catalogModels": 11,
+    "requestedModels": 11,
+    "catalogModelIds": [
+      "laya",
+      "kev-0.8b",
+      "kev-4b",
+      "kev-9b",
+      "h2o-lightning-4b",
+      "clef-flash",
+      "semif-qwen3.5-0.8b",
+      "semif-qwen3.5-2b",
+      "semif-qwen3.5-4b",
+      "gemma-4-e2b",
+      "gemma-4-e4b"
+    ],
+    "requestedModelIds": [
+      "laya",
+      "kev-0.8b",
+      "kev-4b",
+      "kev-9b",
+      "h2o-lightning-4b",
+      "clef-flash",
+      "semif-qwen3.5-0.8b",
+      "semif-qwen3.5-2b",
+      "semif-qwen3.5-4b",
+      "gemma-4-e2b",
+      "gemma-4-e4b"
+    ],
+    "measuredModelIds": [
+      "laya",
+      "kev-0.8b",
+      "kev-4b",
+      "kev-9b",
+      "h2o-lightning-4b",
+      "clef-flash",
+      "semif-qwen3.5-0.8b",
+      "semif-qwen3.5-2b",
+      "semif-qwen3.5-4b",
+      "gemma-4-e2b",
+      "gemma-4-e4b"
+    ],
+    "allCatalogModelsMeasured": true,
+    "requestedRows": 11,
+    "measured": 11,
+    "blocked": 0,
+    "unsupported": 0,
+    "failed": 0,
+    "pending": 0
+  },
+  "catalogProtocol": {
+    "samples": 9,
+    "warmups": 3,
+    "blocks": 2,
+    "shapes": [
+      0,
+      1,
+      2
+    ],
+    "models": [
+      "laya",
+      "kev-0.8b",
+      "kev-4b",
+      "kev-9b",
+      "h2o-lightning-4b",
+      "clef-flash",
+      "semif-qwen3.5-0.8b",
+      "semif-qwen3.5-2b",
+      "semif-qwen3.5-4b",
+      "gemma-4-e2b",
+      "gemma-4-e4b"
+    ],
+    "precisions": [
+      "q8"
+    ],
+    "browsers": [
+      "chromium"
+    ],
+    "cacheMode": "uncached",
+    "packCache": false,
+    "stateCache": false,
+    "uniqueStates": true,
+    "context": "on-page WebGPU engine",
+    "blockOrder": "wall/profile, then profile/wall, alternating by block",
+    "wall": "unprofiled awaited request milliseconds; loading, tuning and fixture hashing excluded",
+    "gpu": "separate instrumented per-kernel GPU timestamps; profiling changes dispatch passes and may change optional paths; not application latency",
+    "kernelShare": "per-label median divided by the sum of label medians; not a share of wall latency",
+    "probabilityTolerance": 0.0005,
+    "accuracyEvaluated": false
+  },
+  "catalog": [
+    {
+      "id": "laya",
+      "arch": "laya",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.0011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 47,
+          "wall": {
+            "medianMs": 12.449999999254942
+          },
+          "gpu": {
+            "medianMs": 4.152,
+            "kernels": [
+              {
+                "name": "mm.wi",
+                "medianMs": 1.098,
+                "share": 0.26793557833089315
+              },
+              {
+                "name": "mm.wqkv",
+                "medianMs": 0.7905,
+                "share": 0.19289897510980966
+              },
+              {
+                "name": "mm.wo2",
+                "medianMs": 0.6964999999999999,
+                "share": 0.16996095656417762
+              },
+              {
+                "name": "mm.wo",
+                "medianMs": 0.384,
+                "share": 0.09370424597364568
+              },
+              {
+                "name": "attn",
+                "medianMs": 0.359,
+                "share": 0.08760370912640313
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 140,
+          "wall": {
+            "medianMs": 20.75000000372529
+          },
+          "gpu": {
+            "medianMs": 9.430000000000001,
+            "kernels": [
+              {
+                "name": "mm.wi",
+                "medianMs": 2.911,
+                "share": 0.3168780275404125
+              },
+              {
+                "name": "mm.wqkv",
+                "medianMs": 2.0010000000000003,
+                "share": 0.2178196266260273
+              },
+              {
+                "name": "mm.wo2",
+                "medianMs": 1.605,
+                "share": 0.17471289392042666
+              },
+              {
+                "name": "attn",
+                "medianMs": 0.81,
+                "share": 0.08817286235236486
+              },
+              {
+                "name": "mm.wo",
+                "medianMs": 0.7855000000000001,
+                "share": 0.08550590540466989
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 512,
+          "wall": {
+            "medianMs": 45.75
+          },
+          "gpu": {
+            "medianMs": 25.672,
+            "kernels": [
+              {
+                "name": "mm.wi",
+                "medianMs": 8.568999999999999,
+                "share": 0.3387960857961846
+              },
+              {
+                "name": "mm.wqkv",
+                "medianMs": 5.3065,
+                "share": 0.20980527824453887
+              },
+              {
+                "name": "mm.wo2",
+                "medianMs": 4.9015,
+                "share": 0.19379262627261046
+              },
+              {
+                "name": "attn",
+                "medianMs": 2.302,
+                "share": 0.09101512306019571
+              },
+              {
+                "name": "mm.wo",
+                "medianMs": 2.011,
+                "share": 0.07950973608777306
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        45.92,
+        45.17,
+        41.72
+      ],
+      "loadAfter": [
+        50.21,
+        46.3,
+        42.19
+      ]
+    },
+    {
+      "id": "kev-0.8b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.0011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 32,
+          "wall": {
+            "medianMs": 14.600000001490116
+          },
+          "gpu": {
+            "medianMs": 4.346,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 0.956,
+                "share": 0.22367805334581187
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 0.8574999999999999,
+                "share": 0.2006317267197005
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 0.61,
+                "share": 0.14272344408048665
+              },
+              {
+                "name": "recur",
+                "medianMs": 0.399,
+                "share": 0.09335517080018718
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 0.314,
+                "share": 0.07346747777257838
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 125,
+          "wall": {
+            "medianMs": 25.349999997764826
+          },
+          "gpu": {
+            "medianMs": 14.482,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 3.5585,
+                "share": 0.25306688475624933
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 2.8605,
+                "share": 0.20342779931017316
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 1.8769999999999998,
+                "share": 0.13348504782562312
+              },
+              {
+                "name": "recur",
+                "medianMs": 1.5299999999999998,
+                "share": 0.10880773743910677
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 0.966,
+                "share": 0.06869821853998506
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 533,
+          "wall": {
+            "medianMs": 81.14999999850988
+          },
+          "gpu": {
+            "medianMs": 46.75599999999999,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 11.4015,
+                "share": 0.245912777154689
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 9.8915,
+                "share": 0.2133444051419205
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 6.763,
+                "share": 0.14586748339228714
+              },
+              {
+                "name": "recur",
+                "medianMs": 6.124499999999999,
+                "share": 0.13209602277629195
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 3.178,
+                "share": 0.06854456043482013
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        50.21,
+        46.3,
+        42.19
+      ],
+      "loadAfter": [
+        52.43,
+        47.59,
+        42.83
+      ]
+    },
+    {
+      "id": "kev-4b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.0011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 32,
+          "wall": {
+            "medianMs": 32.69999999925494
+          },
+          "gpu": {
+            "medianMs": 20.740499999999997,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 7.969,
+                "share": 0.3865913115191501
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 3.9185,
+                "share": 0.19009387052174548
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 3.528,
+                "share": 0.1711499745312538
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 1.434,
+                "share": 0.069566061076479
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 1.015,
+                "share": 0.04923957600601547
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 125,
+          "wall": {
+            "medianMs": 92.34999999776483
+          },
+          "gpu": {
+            "medianMs": 70.852,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 26.329,
+                "share": 0.3728791955813624
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 13.574,
+                "share": 0.19223905962328283
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 13.183,
+                "share": 0.1867016003398952
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 4.843,
+                "share": 0.06858801869423595
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 3.7005,
+                "share": 0.052407590992777225
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 533,
+          "wall": {
+            "medianMs": 324.1500000022352
+          },
+          "gpu": {
+            "medianMs": 264.8105,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 97.68350000000001,
+                "share": 0.3687617027059676
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 55.595,
+                "share": 0.20987481879681077
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 49.3555,
+                "share": 0.18632029173713452
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 19.7565,
+                "share": 0.07458210014496253
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 13.871,
+                "share": 0.052363946605460246
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        52.43,
+        47.59,
+        42.83
+      ],
+      "loadAfter": [
+        82.22,
+        60.55,
+        48.39
+      ]
+    },
+    {
+      "id": "kev-9b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.0011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 32,
+          "wall": {
+            "medianMs": 47.29999999701977
+          },
+          "gpu": {
+            "medianMs": 36.414,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 14.689499999999999,
+                "share": 0.4062586426240389
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 8.61,
+                "share": 0.23812157752088056
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 5.629,
+                "share": 0.15567785828862213
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 2.1855,
+                "share": 0.06044305547873224
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 1.596,
+                "share": 0.044139609491675426
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 125,
+          "wall": {
+            "medianMs": 154.34999999776483
+          },
+          "gpu": {
+            "medianMs": 124.392,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 50.5025,
+                "share": 0.4057419689160798
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 29.0655,
+                "share": 0.23351503782051022
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 20.982999999999997,
+                "share": 0.16857945119085394
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 7.5965,
+                "share": 0.06103101563033513
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 5.8215,
+                "share": 0.04677049397643599
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 533,
+          "wall": {
+            "medianMs": 565.5000000037253
+          },
+          "gpu": {
+            "medianMs": 485.3315,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 206.6395,
+                "share": 0.4263205726375555
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 113.4345,
+                "share": 0.2340281552987439
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 79.286,
+                "share": 0.1635759519459795
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 28.7145,
+                "share": 0.05924124904967873
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 22.043,
+                "share": 0.04547719280510085
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        82.22,
+        60.55,
+        48.39
+      ],
+      "loadAfter": [
+        64.8,
+        65.46,
+        54.35
+      ]
+    },
+    {
+      "id": "h2o-lightning-4b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.0011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 94,
+          "wall": {
+            "medianMs": 61.50000000372529
+          },
+          "gpu": {
+            "medianMs": 47.19850000000001,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 17.6755,
+                "share": 0.37677992837653473
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 9.257,
+                "share": 0.19732690995907226
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 8.9915,
+                "share": 0.19166737721691676
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 3.1305,
+                "share": 0.066731326739427
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 2.4435000000000002,
+                "share": 0.0520868860845839
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 186,
+          "wall": {
+            "medianMs": 104.15000000223517
+          },
+          "gpu": {
+            "medianMs": 87.06450000000001,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 32.049,
+                "share": 0.36980326544741243
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 17.864,
+                "share": 0.20612704090463277
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 16.9705,
+                "share": 0.19581722725437029
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 6.242,
+                "share": 0.07202446200888478
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 4.24,
+                "share": 0.04892401776957249
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 594,
+          "wall": {
+            "medianMs": 313.94999999925494
+          },
+          "gpu": {
+            "medianMs": 268.976,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 102.482,
+                "share": 0.38169906402124476
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 53.3245,
+                "share": 0.1986096264651438
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 51.086,
+                "share": 0.19027222716759343
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 18.176499999999997,
+                "share": 0.06769923535042402
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 13.998000000000001,
+                "share": 0.052136214146575835
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        64.8,
+        65.46,
+        54.35
+      ],
+      "loadAfter": [
+        65.36,
+        63.7,
+        55.49
+      ]
+    },
+    {
+      "id": "clef-flash",
+      "arch": "clef",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.0011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 159,
+          "wall": {
+            "medianMs": 480.3499999977648
+          },
+          "gpu": {
+            "medianMs": 147.36900000000003,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 63.9165,
+                "share": 0.4345001988395925
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 33.0075,
+                "share": 0.22438283249548788
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 24.4745,
+                "share": 0.16637605495450483
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 8.4765,
+                "share": 0.05762269422549429
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 6.7044999999999995,
+                "share": 0.04557675378220096
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 252,
+          "wall": {
+            "medianMs": 632.1999999992549
+          },
+          "gpu": {
+            "medianMs": 210.2165,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 87.4525,
+                "share": 0.4165356843468984
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 51.885000000000005,
+                "share": 0.24712791495198907
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 33.0145,
+                "share": 0.15724784712696235
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 13.163,
+                "share": 0.06269528273129098
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 10.062999999999999,
+                "share": 0.04793000304831581
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 660,
+          "wall": {
+            "medianMs": 1347.949999999255
+          },
+          "gpu": {
+            "medianMs": 571.3689999999999,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 246.715,
+                "share": 0.43226986577145937
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 133.5,
+                "share": 0.23390562827752598
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 92.8325,
+                "share": 0.16265201675710433
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 32.5085,
+                "share": 0.056958210613183166
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 25.683,
+                "share": 0.04499923783559326
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        65.36,
+        63.7,
+        55.49
+      ],
+      "loadAfter": [
+        46.62,
+        56.18,
+        55.01
+      ]
+    },
+    {
+      "id": "semif-qwen3.5-0.8b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 106,
+          "wall": {
+            "medianMs": 25.649999998509884
+          },
+          "gpu": {
+            "medianMs": 12.023000000000001,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 2.6675,
+                "share": 0.22620309518761925
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 2.4345,
+                "share": 0.2064447742209031
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 1.614,
+                "share": 0.13686665253338987
+              },
+              {
+                "name": "recur",
+                "medianMs": 1.32,
+                "share": 0.11193555225779098
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 0.8095000000000001,
+                "share": 0.06864532541869833
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 199,
+          "wall": {
+            "medianMs": 33.69999999925494
+          },
+          "gpu": {
+            "medianMs": 19.956000000000003,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 4.823499999999999,
+                "share": 0.24436394954151675
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 4.215999999999999,
+                "share": 0.2135873144536197
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 2.7855,
+                "share": 0.14111657125487612
+              },
+              {
+                "name": "recur",
+                "medianMs": 2.349,
+                "share": 0.11900298900653529
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 1.338,
+                "share": 0.06778458888494858
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 607,
+          "wall": {
+            "medianMs": 80.10000000149012
+          },
+          "gpu": {
+            "medianMs": 50.62549999999999,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 12.0505,
+                "share": 0.24000677169431772
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 10.645,
+                "share": 0.2120137823896114
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 7.012499999999999,
+                "share": 0.1396661953036308
+              },
+              {
+                "name": "recur",
+                "medianMs": 6.9719999999999995,
+                "share": 0.1388595670098986
+              },
+              {
+                "name": "attn",
+                "medianMs": 3.3825,
+                "share": 0.06736840008763369
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        46.62,
+        56.18,
+        55.01
+      ],
+      "loadAfter": [
+        48.32,
+        55.34,
+        54.77
+      ]
+    },
+    {
+      "id": "semif-qwen3.5-2b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 106,
+          "wall": {
+            "medianMs": 38.94999999925494
+          },
+          "gpu": {
+            "medianMs": 25.143500000000003,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 8.442499999999999,
+                "share": 0.33749075573144655
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 4.946,
+                "share": 0.19771741520257444
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 4.9155,
+                "share": 0.196498171133897
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 1.467,
+                "share": 0.058643640942615594
+              },
+              {
+                "name": "recur",
+                "medianMs": 1.389,
+                "share": 0.05552557414403071
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 199,
+          "wall": {
+            "medianMs": 62.649999998509884
+          },
+          "gpu": {
+            "medianMs": 44.721999999999994,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 15.979500000000002,
+                "share": 0.35926346437042617
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 9.0835,
+                "share": 0.20422226468968152
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 8.541,
+                "share": 0.19202536056746516
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 2.5835,
+                "share": 0.058084242948840445
+              },
+              {
+                "name": "recur",
+                "medianMs": 2.473,
+                "share": 0.05559989657924615
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 607,
+          "wall": {
+            "medianMs": 165.25
+          },
+          "gpu": {
+            "medianMs": 112.951,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 39.903000000000006,
+                "share": 0.3556528055688012
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 23.749000000000002,
+                "share": 0.21167326966527475
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 20.673499999999997,
+                "share": 0.18426154113541862
+              },
+              {
+                "name": "recur",
+                "medianMs": 6.963,
+                "share": 0.06206075947110649
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 6.171,
+                "share": 0.0550017157397958
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        48.32,
+        55.34,
+        54.77
+      ],
+      "loadAfter": [
+        48.16,
+        53.95,
+        54.35
+      ]
+    },
+    {
+      "id": "semif-qwen3.5-4b",
+      "arch": "kev",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 106,
+          "wall": {
+            "medianMs": 75.35000000149012
+          },
+          "gpu": {
+            "medianMs": 60.294999999999995,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 23.177999999999997,
+                "share": 0.3856796984849367
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 10.9695,
+                "share": 0.18253142861897118
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 10.808,
+                "share": 0.17984408409807562
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 4.3365,
+                "share": 0.07215894436448048
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 3.1304999999999996,
+                "share": 0.05209121995457306
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 199,
+          "wall": {
+            "medianMs": 128.5
+          },
+          "gpu": {
+            "medianMs": 109.80300000000001,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 41.587,
+                "share": 0.3789161978087059
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 21.875500000000002,
+                "share": 0.1993166442677843
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 20.9185,
+                "share": 0.19059702512471238
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 7.5905000000000005,
+                "share": 0.06916015580510693
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 5.6129999999999995,
+                "share": 0.051142342999020506
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 607,
+          "wall": {
+            "medianMs": 336.25
+          },
+          "gpu": {
+            "medianMs": 281.667,
+            "kernels": [
+              {
+                "name": "mm.gate_up",
+                "medianMs": 103.7825,
+                "share": 0.3682986205991007
+              },
+              {
+                "name": "mm.down",
+                "medianMs": 58.4845,
+                "share": 0.20754713633250407
+              },
+              {
+                "name": "mm.qkvz",
+                "medianMs": 51.8845,
+                "share": 0.1841253562062394
+              },
+              {
+                "name": "mm.out",
+                "medianMs": 21.1035,
+                "share": 0.07489114195373132
+              },
+              {
+                "name": "mm.qkv",
+                "medianMs": 14.547,
+                "share": 0.051623732651026114
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        48.16,
+        53.95,
+        54.35
+      ],
+      "loadAfter": [
+        48.78,
+        52.08,
+        53.56
+      ]
+    },
+    {
+      "id": "gemma-4-e2b",
+      "arch": "gemma4",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 100,
+          "wall": {
+            "medianMs": 25.899999998509884
+          },
+          "gpu": {
+            "medianMs": 14.5585,
+            "kernels": [
+              {
+                "name": "mm.down",
+                "medianMs": 2.7270000000000003,
+                "share": 0.192136968928345
+              },
+              {
+                "name": "mm.up",
+                "medianMs": 1.908,
+                "share": 0.13443246670894105
+              },
+              {
+                "name": "mm.gate",
+                "medianMs": 1.871,
+                "share": 0.13182554780525613
+              },
+              {
+                "name": "mm.gate.up.gelu",
+                "medianMs": 1.134,
+                "share": 0.07989854153455929
+              },
+              {
+                "name": "mm.q",
+                "medianMs": 1.082,
+                "share": 0.076234763615867
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 194,
+          "wall": {
+            "medianMs": 35.400000002235174
+          },
+          "gpu": {
+            "medianMs": 23.488999999999997,
+            "kernels": [
+              {
+                "name": "mm.down",
+                "medianMs": 4.907,
+                "share": 0.21375675204739503
+              },
+              {
+                "name": "mm.up",
+                "medianMs": 3.528,
+                "share": 0.15368531102979613
+              },
+              {
+                "name": "mm.gate",
+                "medianMs": 3.519,
+                "share": 0.15329325666492422
+              },
+              {
+                "name": "mm.o",
+                "medianMs": 1.8205,
+                "share": 0.07930388569437184
+              },
+              {
+                "name": "mm.q",
+                "medianMs": 1.7495,
+                "share": 0.07621101237149329
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 602,
+          "wall": {
+            "medianMs": 82.74999999627471
+          },
+          "gpu": {
+            "medianMs": 61.16800000000002,
+            "kernels": [
+              {
+                "name": "mm.down",
+                "medianMs": 11.648,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.19278065573227846
+              },
+              {
+                "name": "attn",
+                "medianMs": 10.704,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.17715694874298668
+              },
+              {
+                "name": "mm.up",
+                "medianMs": 8.909500000000001,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.14745700997997385
+              },
+              {
+                "name": "mm.gate",
+                "medianMs": 8.725,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.14440343589149465
+              },
+              {
+                "name": "attn.subgroup",
+                "medianMs": 4.692,
+                "dispatchedSamples": 9,
+                "totalSamples": 18,
+                "share": 0.07765511990864102
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        48.78,
+        52.08,
+        53.56
+      ],
+      "loadAfter": [
+        47.46,
+        52.05,
+        53.45
+      ]
+    },
+    {
+      "id": "gemma-4-e4b",
+      "arch": "gemma4",
+      "precision": "q8",
+      "correctness": {
+        "maxProbabilityDelta": 0,
+        "probabilityTolerance": 0.0005,
+        "maxPublicNoulDelta": 0,
+        "publicNoulTolerance": 0.011,
+        "scope": "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark"
+      },
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "shape": 0,
+          "tokens": 100,
+          "wall": {
+            "medianMs": 55.75000000372529
+          },
+          "gpu": {
+            "medianMs": 41.1135,
+            "kernels": [
+              {
+                "name": "mm.down",
+                "medianMs": 9.568,
+                "share": 0.23329757144250465
+              },
+              {
+                "name": "mm.up",
+                "medianMs": 8.625,
+                "share": 0.21030430118014243
+              },
+              {
+                "name": "mm.gate",
+                "medianMs": 8.582,
+                "share": 0.20925582756266464
+              },
+              {
+                "name": "mm.o",
+                "medianMs": 2.6895,
+                "share": 0.06557836730712963
+              },
+              {
+                "name": "mm.q",
+                "medianMs": 2.407,
+                "share": 0.05869013947137424
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "shape": 1,
+          "tokens": 194,
+          "wall": {
+            "medianMs": 88.39999999850988
+          },
+          "gpu": {
+            "medianMs": 72.8835,
+            "kernels": [
+              {
+                "name": "mm.down",
+                "medianMs": 17.828,
+                "share": 0.24481780792760374
+              },
+              {
+                "name": "mm.gate",
+                "medianMs": 16.643500000000003,
+                "share": 0.22855200730553477
+              },
+              {
+                "name": "mm.up",
+                "medianMs": 16.5,
+                "share": 0.2265814354277239
+              },
+              {
+                "name": "mm.q",
+                "medianMs": 4.339,
+                "share": 0.059584051413387525
+              },
+              {
+                "name": "mm.o",
+                "medianMs": 4.164,
+                "share": 0.057180914977032864
+              }
+            ]
+          }
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "shape": 2,
+          "tokens": 602,
+          "wall": {
+            "medianMs": 217.54999999701977
+          },
+          "gpu": {
+            "medianMs": 190.0395,
+            "kernels": [
+              {
+                "name": "mm.down",
+                "medianMs": 45.453,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.24021118163417376
+              },
+              {
+                "name": "mm.up",
+                "medianMs": 40.311,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.2130366079874855
+              },
+              {
+                "name": "mm.gate",
+                "medianMs": 39.9875,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.2113269668799974
+              },
+              {
+                "name": "attn",
+                "medianMs": 15.823,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.08362179673503468
+              },
+              {
+                "name": "mm.o",
+                "medianMs": 10.5155,
+                "dispatchedSamples": 18,
+                "totalSamples": 18,
+                "share": 0.05557258443830229
+              }
+            ]
+          }
+        }
+      ],
+      "loadBefore": [
+        47.46,
+        52.05,
+        53.45
+      ],
+      "loadAfter": [
+        38.66,
+        47.96,
+        51.86
+      ]
+    }
+  ],
+  "projection": [
+    {
+      "name": "q8-decode-screen",
+      "sourceFingerprint": "caaec305f58ed94cd90eccbbb45c37308bd3ccddbfc94e68b034448d91bd4801",
+      "capture": {
+        "before": {
+          "at": "2026-11-06T18:18:06.972Z",
+          "loadAverage": [
+            6.76,
+            13.82,
+            31.65
+          ],
+          "freeMemoryBytes": 81978998784,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1142, 2, 37, 39.54"
+        },
+        "after": {
+          "at": "2026-11-06T18:18:21.252Z",
+          "loadAverage": [
+            7.22,
+            13.57,
+            31.28
+          ],
+          "freeMemoryBytes": 79837847552,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1062, 3, 41, 115.44"
+        },
+        "sha256": "1bc06cf7a2ae12db2ced6ad2d1739f012c6cfa5b09f6f771199f22fe15d33a7e",
+        "bytes": 327284,
+        "sourceFingerprint": "caaec305f58ed94cd90eccbbb45c37308bd3ccddbfc94e68b034448d91bd4801",
+        "sourceScope": "runtime assets plus selected harness and transitive local imports",
+        "sourceUnchanged": true,
+        "runnerExit": 0,
+        "runnerError": null
+      },
+      "cases": [
+        {
+          "shape": "47x64x64",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 0.003838,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 0.003959,
+              "ratioOfMedians": 1.0315268368942156,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 0.003811,
+              "ratioOfMedians": 0.9929650859822825,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 0.004179,
+              "ratioOfMedians": 1.0888483585200628,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 0.004179,
+              "ratioOfMedians": 1.0888483585200628,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 0.004163,
+              "ratioOfMedians": 1.0846795205836373,
+              "repetitionsPerTimestamp": 32
+            }
+          ]
+        },
+        {
+          "shape": "47x7168x1024",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 0.050624,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 0.051264,
+              "ratioOfMedians": 1.0126422250316054,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 0.051008,
+              "ratioOfMedians": 1.0075853350189632,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 0.072864,
+              "ratioOfMedians": 1.4393173198482931,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 0.073152,
+              "ratioOfMedians": 1.4450063211125157,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 0.073664,
+              "ratioOfMedians": 1.4551201011378,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "128x7168x1024",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 0.130016,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 0.132416,
+              "ratioOfMedians": 1.018459266551809,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 0.130048,
+              "ratioOfMedians": 1.000246123554024,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 0.18384,
+              "ratioOfMedians": 1.41397981786857,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 0.184736,
+              "ratioOfMedians": 1.4208712773812455,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 0.183936,
+              "ratioOfMedians": 1.4147181885306424,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "512x7168x1024",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 0.386688,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 0.3888,
+              "ratioOfMedians": 1.0054617676266138,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 0.38656,
+              "ratioOfMedians": 0.9996689837802053,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 0.586336,
+              "ratioOfMedians": 1.5163025488248925,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 0.58768,
+              "ratioOfMedians": 1.5197782191327376,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 0.585248,
+              "ratioOfMedians": 1.513488910956637,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "512x18432x2560",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 2.429024,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 2.458336,
+              "ratioOfMedians": 1.0120673982636648,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 2.42912,
+              "ratioOfMedians": 1.000039522046715,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 3.9496,
+              "ratioOfMedians": 1.6260028719353947,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 3.964672,
+              "ratioOfMedians": 1.632207833269659,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 3.949984,
+              "ratioOfMedians": 1.6261609601222549,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "512x2560x9216",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 1.329824,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 1.34912,
+              "ratioOfMedians": 1.0145101908222443,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 1.332704,
+              "ratioOfMedians": 1.002165700122723,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 2.188864,
+              "ratioOfMedians": 1.6459802199388793,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 2.134752,
+              "ratioOfMedians": 1.6052891209663838,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 2.155776,
+              "ratioOfMedians": 1.6210987318622616,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "512x24576x4096",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 5.482528,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 5.657856,
+              "ratioOfMedians": 1.0319794080395028,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 5.164608,
+              "ratioOfMedians": 0.9420121520583206,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 8.317504,
+              "ratioOfMedians": 1.517092844760665,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 8.846464,
+              "ratioOfMedians": 1.6135738841643852,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 8.479296,
+              "ratioOfMedians": 1.5466033187609802,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "512x4096x12288",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 2.79264,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 2.80288,
+              "ratioOfMedians": 1.0036667812535809,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 2.801056,
+              "ratioOfMedians": 1.0030136358427868,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 4.979616,
+              "ratioOfMedians": 1.7831213475421106,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 5.04288,
+              "ratioOfMedians": 1.80577518047439,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 5.257632,
+              "ratioOfMedians": 1.8826744585768305,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        }
+      ],
+      "outcome": "not retained"
+    },
+    {
+      "name": "q8-decode-repeat",
+      "sourceFingerprint": "caaec305f58ed94cd90eccbbb45c37308bd3ccddbfc94e68b034448d91bd4801",
+      "capture": {
+        "before": {
+          "at": "2026-11-06T18:35:47.390Z",
+          "loadAverage": [
+            37.05,
+            29.96,
+            30.46
+          ],
+          "freeMemoryBytes": 75669635072,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1083, 4, 38, 43.00"
+        },
+        "after": {
+          "at": "2026-11-06T18:36:05.344Z",
+          "loadAverage": [
+            34.48,
+            29.74,
+            30.38
+          ],
+          "freeMemoryBytes": 73970069504,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1083, 4, 40, 54.66"
+        },
+        "sha256": "265d81d5c8c7cf3a56d4b093a61aea6c7a76166934c96ee8e4ddd538b78477b8",
+        "bytes": 204399,
+        "sourceFingerprint": "caaec305f58ed94cd90eccbbb45c37308bd3ccddbfc94e68b034448d91bd4801",
+        "sourceScope": "runtime assets plus selected harness and transitive local imports",
+        "sourceUnchanged": true,
+        "runnerExit": 0,
+        "runnerError": null
+      },
+      "cases": [
+        {
+          "shape": "47x64x64",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 0.003818,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 0.00402,
+              "ratioOfMedians": 1.0529072812991094,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 0.003863,
+              "ratioOfMedians": 1.0117862755369302,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 0.004197,
+              "ratioOfMedians": 1.0992666317443687,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 0.004156,
+              "ratioOfMedians": 1.0885280251440543,
+              "repetitionsPerTimestamp": 32
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 0.004158,
+              "ratioOfMedians": 1.0890518596123624,
+              "repetitionsPerTimestamp": 32
+            }
+          ]
+        },
+        {
+          "shape": "512x18432x2560",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 2.618592,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 2.437792,
+              "ratioOfMedians": 0.9309552614534834,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 2.531904,
+              "ratioOfMedians": 0.9668951864207941,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 4.104576,
+              "ratioOfMedians": 1.5674744290061222,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 3.925632,
+              "ratioOfMedians": 1.4991384683066318,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 3.921376,
+              "ratioOfMedians": 1.4975131673815547,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "128x24576x4096",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 1.311136,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 1.332608,
+              "ratioOfMedians": 1.0163766382739852,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 1.3136,
+              "ratioOfMedians": 1.0018792863593098,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 2.069024,
+              "ratioOfMedians": 1.5780391965440657,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 2.07472,
+              "ratioOfMedians": 1.5823835208551973,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 2.063328,
+              "ratioOfMedians": 1.5736948722329336,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        },
+        {
+          "shape": "512x24576x4096",
+          "variants": [
+            {
+              "id": "matmul/current",
+              "medianMs": 5.665632,
+              "ratioOfMedians": 1,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/marlin",
+              "medianMs": 5.810432,
+              "ratioOfMedians": 1.025557607694958,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul/unpack4xi8",
+              "medianMs": 5.520128,
+              "ratioOfMedians": 0.9743181343228787,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/current",
+              "medianMs": 8.817504,
+              "ratioOfMedians": 1.5563142823254317,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/marlin",
+              "medianMs": 8.92176,
+              "ratioOfMedians": 1.5747157598658017,
+              "repetitionsPerTimestamp": 1
+            },
+            {
+              "id": "matmul_k64/unpack4xi8",
+              "medianMs": 8.819008,
+              "ratioOfMedians": 1.5565797425600534,
+              "repetitionsPerTimestamp": 1
+            }
+          ]
+        }
+      ],
+      "outcome": "not retained"
+    }
+  ],
+  "clef": [
+    {
+      "name": "captured relaxed CPU finish",
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "beforeMs": 225.30000000447035,
+          "afterMs": 210,
+          "medianPairedRatio": 0.9994459833712459
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "beforeMs": 291.3999999985099,
+          "afterMs": 306.5,
+          "medianPairedRatio": 1.0091252359692213
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "beforeMs": 676.2000000029802,
+          "afterMs": 682,
+          "medianPairedRatio": 0.9515542995560116
+        }
+      ]
+    },
+    {
+      "name": "clef-wasm-synthetic-relaxed",
+      "cases": [
+        {
+          "name": "short",
+          "beforeMs": 213.97589699999935,
+          "afterMs": 201.48517699999957,
+          "medianPairedRatio": 0.9136591263241702
+        },
+        {
+          "name": "medium",
+          "beforeMs": 256.22149399999944,
+          "afterMs": 236.37866699999904,
+          "medianPairedRatio": 0.9603416604430844
+        },
+        {
+          "name": "long",
+          "beforeMs": 580.0868699999992,
+          "afterMs": 570.8412410000019,
+          "medianPairedRatio": 0.9845246172384564
+        }
+      ]
+    },
+    {
+      "name": "clef-wasm-synthetic-simd",
+      "cases": [
+        {
+          "name": "short",
+          "beforeMs": 297.04351600000064,
+          "afterMs": 321.7495290000006,
+          "medianPairedRatio": 1.0274965543916408
+        },
+        {
+          "name": "medium",
+          "beforeMs": 313.32348600000114,
+          "afterMs": 320.07953500000076,
+          "medianPairedRatio": 0.9699082823588032
+        },
+        {
+          "name": "long",
+          "beforeMs": 492.03597699999955,
+          "afterMs": 493.61884400000054,
+          "medianPairedRatio": 1.0085265504723842
+        }
+      ]
+    }
+  ],
+  "nativeClef": [
+    {
+      "name": "option_context_projection",
+      "beforeMs": 0.55674505,
+      "afterMs": 0.95684875,
+      "medianPairedRatio": 1.306190076755148,
+      "pairsMs": [
+        [
+          4.2955293999999995,
+          0.6505608
+        ],
+        [
+          0.47568255,
+          0.6616406
+        ],
+        [
+          0.39476310000000003,
+          1.5808099
+        ],
+        [
+          0.55674505,
+          0.95684875
+        ],
+        [
+          0.7618579999999999,
+          0.9296726
+        ],
+        [
+          0.50005115,
+          0.65316185
+        ],
+        [
+          0.5019752,
+          0.7702577
+        ],
+        [
+          0.555612,
+          0.9064470499999999
+        ],
+        [
+          0.44802535,
+          3.7525992
+        ],
+        [
+          7.7372569,
+          8.37150795
+        ],
+        [
+          12.64893215,
+          8.909969850000001
+        ],
+        [
+          6.7916568999999996,
+          7.09777435
+        ],
+        [
+          6.8542319,
+          6.24916315
+        ],
+        [
+          0.43179545,
+          5.51300275
+        ],
+        [
+          0.6317768500000001,
+          0.42840639999999997
+        ]
+      ]
+    },
+    {
+      "name": "layers.0.linear1",
+      "beforeMs": 0.4695009,
+      "afterMs": 0.7713977000000001,
+      "medianPairedRatio": 1.3593731864256886,
+      "pairsMs": [
+        [
+          1.2204716,
+          0.85748635
+        ],
+        [
+          0.7844195,
+          0.67400085
+        ],
+        [
+          0.4695009,
+          0.99475515
+        ],
+        [
+          0.6101122999999999,
+          0.7713977000000001
+        ],
+        [
+          0.4700829,
+          1.5080181
+        ],
+        [
+          0.42023920000000003,
+          1.28268865
+        ],
+        [
+          0.28289685,
+          0.44974689999999995
+        ],
+        [
+          0.4264209,
+          0.55908555
+        ],
+        [
+          0.4256098,
+          0.57856255
+        ],
+        [
+          0.3145841,
+          0.78464105
+        ],
+        [
+          0.3626763,
+          0.48069615
+        ],
+        [
+          0.3751081,
+          0.50874935
+        ],
+        [
+          0.4823147,
+          2.42781485
+        ],
+        [
+          0.4994976,
+          0.9280160500000001
+        ],
+        [
+          0.6892392500000001,
+          0.44859734999999995
+        ]
+      ]
+    },
+    {
+      "name": "layers.0.linear2",
+      "beforeMs": 0.45974965,
+      "afterMs": 0.52508575,
+      "medianPairedRatio": 1.3013386742110624,
+      "pairsMs": [
+        [
+          1.8083204,
+          0.46078765
+        ],
+        [
+          0.43184095,
+          0.48696785000000004
+        ],
+        [
+          0.41619659999999997,
+          0.5077458
+        ],
+        [
+          0.58246465,
+          0.52508575
+        ],
+        [
+          0.45974965,
+          0.59829
+        ],
+        [
+          1.8489448499999999,
+          0.57194985
+        ],
+        [
+          0.59090635,
+          1.1077059
+        ],
+        [
+          0.47186744999999997,
+          0.79857035
+        ],
+        [
+          0.79315125,
+          0.5388455999999999
+        ],
+        [
+          0.41451005,
+          0.57123835
+        ],
+        [
+          0.37229105,
+          0.51720555
+        ],
+        [
+          0.23495870000000002,
+          0.44014064999999997
+        ],
+        [
+          0.32661195,
+          0.45390400000000003
+        ],
+        [
+          0.31013199999999996,
+          0.43036495
+        ],
+        [
+          0.6473477,
+          0.5645052
+        ]
+      ]
+    },
+    {
+      "name": "layers.0.self_attn.out_proj",
+      "beforeMs": 0.11272025000000001,
+      "afterMs": 0.16363395,
+      "medianPairedRatio": 1.3033227525227864,
+      "pairsMs": [
+        [
+          0.1524242,
+          0.16793154999999999
+        ],
+        [
+          0.11224920000000001,
+          0.14943565
+        ],
+        [
+          0.10516155,
+          0.16363395
+        ],
+        [
+          0.12056040000000001,
+          0.1306697
+        ],
+        [
+          0.11272025000000001,
+          0.163976
+        ],
+        [
+          0.10726954999999999,
+          0.164934
+        ],
+        [
+          0.10944469999999999,
+          0.12645305
+        ],
+        [
+          0.1069541,
+          0.12473849999999999
+        ],
+        [
+          0.1160178,
+          0.1189914
+        ],
+        [
+          0.10135395000000001,
+          0.11756335000000001
+        ],
+        [
+          0.10461904999999999,
+          0.16289245000000002
+        ],
+        [
+          0.12545605,
+          0.1772508
+        ],
+        [
+          0.1275496,
+          0.19908579999999998
+        ],
+        [
+          0.17528525,
+          0.19484625
+        ],
+        [
+          0.14285295,
+          0.1861835
+        ]
+      ]
+    }
+  ],
+  "overlap": [
+    {
+      "name": "overlap-kev08",
+      "sourceFingerprint": "f32588f66e52ac490870bcbd22988831f78ee841b61bad4825bc67dca5e425bf",
+      "canonicalUnit": "overlap/original",
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "medianPairedRatio": 0.8928571429589638
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "medianPairedRatio": 0.9742198100593605
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "medianPairedRatio": 0.9631675874325902
+        }
+      ],
+      "outcome": "not retained"
+    },
+    {
+      "name": "overlap-laya",
+      "sourceFingerprint": "f32588f66e52ac490870bcbd22988831f78ee841b61bad4825bc67dca5e425bf",
+      "canonicalUnit": "overlap/original",
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "medianPairedRatio": 0.9505813954766485
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "medianPairedRatio": 0.9229357796251227
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "medianPairedRatio": 0.9688000000715256
+        }
+      ],
+      "outcome": "not retained"
+    },
+    {
+      "name": "overlap-laya-reverse",
+      "sourceFingerprint": "f32588f66e52ac490870bcbd22988831f78ee841b61bad4825bc67dca5e425bf",
+      "canonicalUnit": "overlap/original",
+      "cases": [
+        {
+          "name": "1 question, ~40 tokens",
+          "medianPairedRatio": 1.0224355071950733
+        },
+        {
+          "name": "1 question, ~128 tokens",
+          "medianPairedRatio": 1.0424154333808588
+        },
+        {
+          "name": "1 question, ~512 tokens",
+          "medianPairedRatio": 0.9722965351925055
+        }
+      ],
+      "outcome": "not retained"
+    }
+  ],
+  "lazy": [
+    {
+      "name": "lazy-state-q8-valid",
+      "precision": "q8",
+      "sourceFingerprint": "331aed7a22400dd8e2995da8aa4172fec8d76c3203d99a9b74a7fe67893ce163",
+      "capture": {
+        "before": {
+          "at": "2026-11-06T18:44:41.175Z",
+          "loadAverage": [
+            34.72,
+            32.16,
+            31.07
+          ],
+          "freeMemoryBytes": 73156800512,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1520, 3, 38, 42.42"
+        },
+        "after": {
+          "at": "2026-11-06T18:44:53.910Z",
+          "loadAverage": [
+            36.75,
+            32.68,
+            31.25
+          ],
+          "freeMemoryBytes": 72833835008,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1520, 3, 40, 59.38"
+        },
+        "sha256": "d7b8e9bacddf5217121a8f0ea07450faea2c206e4814b85800c8c2c9e0c1902a",
+        "bytes": 1133758,
+        "sourceFingerprint": "331aed7a22400dd8e2995da8aa4172fec8d76c3203d99a9b74a7fe67893ce163",
+        "sourceScope": "runtime assets plus selected harness and transitive local imports",
+        "sourceUnchanged": true,
+        "runnerExit": 0,
+        "runnerError": null
+      },
+      "correctness": {
+        "candidateVersusOriginal": {
+          "maxProbabilityDelta": 0,
+          "maxPublicDelta": 0,
+          "maxHiddenDelta": 0
+        },
+        "withinRuntimeExtensionVersusFresh": {
+          "maxProbabilityDelta": 3.8743019104003906e-7,
+          "maxPublicDelta": 0,
+          "maxHiddenDelta": 0.00000762939453125,
+          "sameInBothArms": true
+        },
+        "aggregate": {
+          "hiddenTolerance": 0.00001,
+          "maxHiddenDelta": 0.00000762939453125,
+          "maxProbabilityDelta": 3.8743019104003906e-7,
+          "maxPublicDelta": 0,
+          "ok": true,
+          "probabilityTolerance": 0.0005,
+          "publicTolerance": 0.0001
+        }
+      },
+      "phaseIdentities": [
+        {
+          "name": "2 questions, short cached state",
+          "phase": "cold",
+          "hiddenSha256": "f741de73a11bafdd77419ef34fcf26f65544af9fc6e13cd3912caf03e751c807",
+          "outputSha256": "2cce88aa071065a7f20c59a36cf8f031759a3cfca2a07708ce1f2e8726876960"
+        },
+        {
+          "name": "2 questions, short cached state",
+          "phase": "extension",
+          "hiddenSha256": "2a24baef947df02648960164869afb04586f5386d38b948d6b658ccc78d72317",
+          "outputSha256": "8d9521767d8ee90dbecdd22cca87ba46a7b6ca1be33898b6ef8b03e678f8f441"
+        },
+        {
+          "name": "2 questions, short cached state",
+          "phase": "extension-fresh",
+          "hiddenSha256": "2a24baef947df02648960164869afb04586f5386d38b948d6b658ccc78d72317",
+          "outputSha256": "8d9521767d8ee90dbecdd22cca87ba46a7b6ca1be33898b6ef8b03e678f8f441"
+        },
+        {
+          "name": "2 questions, short cached state",
+          "phase": "hit",
+          "hiddenSha256": "f741de73a11bafdd77419ef34fcf26f65544af9fc6e13cd3912caf03e751c807",
+          "outputSha256": "2cce88aa071065a7f20c59a36cf8f031759a3cfca2a07708ce1f2e8726876960"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "cold",
+          "hiddenSha256": "97a8fe1c37eb6ed9dbc9a79299a72ce8bb511726cec94ad38880f33807b5af5e",
+          "outputSha256": "65e7c132f1df0415318880cde4434f3a96d854e6883d6f2245a7403122be14a0"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "extension",
+          "hiddenSha256": "733982f491dfa7caac48fc14412bd130ee702d478f22d8a2f15446a1a2c5e0cc",
+          "outputSha256": "fa733da115920548d7c51ac0cc5ae832db056cb07a49da3eeec0e45e609dd640"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "extension-fresh",
+          "hiddenSha256": "0aebc76af1002c7a0bfd217285687b1ef8e58b512addfa576a9f4e9a2fff0535",
+          "outputSha256": "94f711da110e39dba0c20f127ba1014873371191574130e2a0a86f2038f7a9f8"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "hit",
+          "hiddenSha256": "97a8fe1c37eb6ed9dbc9a79299a72ce8bb511726cec94ad38880f33807b5af5e",
+          "outputSha256": "65e7c132f1df0415318880cde4434f3a96d854e6883d6f2245a7403122be14a0"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "cold",
+          "hiddenSha256": "a5614b8ca89a4b6f08fbe5805e752654314254ab865a4791fb1d3f7f9ce7c909",
+          "outputSha256": "ef64e22aad39103ab8bacfdee47cb0960fcfbe502ccb10b97e6fa69bd83c822c"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "extension",
+          "hiddenSha256": "d605b88946c1fa571b87c878be42e52ece22093a1992a4b490f66a6caddca8a8",
+          "outputSha256": "b2c03495efdfa6a54b2b0ae55e53c089eea4dbe878a38fddb814f0e9bcdbe05e"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "extension-fresh",
+          "hiddenSha256": "025b2ae9c8628c2f14a5ba8a2b97f24e5820ede55bfa09d477eacf9be6910b0a",
+          "outputSha256": "e118b446ab32fe7634a4a9b9d16a4f4bb858d26753734c2731c501e4fa16c49a"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "hit",
+          "hiddenSha256": "a5614b8ca89a4b6f08fbe5805e752654314254ab865a4791fb1d3f7f9ce7c909",
+          "outputSha256": "ef64e22aad39103ab8bacfdee47cb0960fcfbe502ccb10b97e6fa69bd83c822c"
+        }
+      ],
+      "protocol": {
+        "cache": false,
+        "cacheProof": "every measured call inspects requested and planned state tokens, native embedding calls, public counters and exact cache deltas",
+        "calibrationSerialized": true,
+        "cpuKernel": "2x4",
+        "flavor": "relaxed",
+        "hiddenProof": "cold, exact-hit and extended-state outputs compared across runtimes and against fresh passes; arrays stay transient and only hashes/deltas are emitted",
+        "loadOrder": [
+          "A",
+          "B"
+        ],
+        "nativeMemory": "before/after WASM linear-memory byteLength is recorded; this committed high-water size does not measure live residual allocation or transient peak; deferred misses retain native stage1 scratch until the next embedding",
+        "pairStatistic": "arithmetic mean of each side's two calls; dimensionless B/A ratio per pair",
+        "profile": false,
+        "queueDrainedBeforeNextLoad": true,
+        "requestIdentity": "fixed state per shape; round-specific two-question instructions shared by all four calls; different complete requests across pairs",
+        "responsiveness": "animation-frame gaps; headless callbacks do not establish foreground compositor responsiveness",
+        "samples": 20,
+        "sequence": "four serial calls per pair; ABBA then BAAB, alternating start side",
+        "sourceCaches": "fetch no-store; isolated runtime directories and page engines",
+        "stateCache": true,
+        "submit": "await",
+        "threads": 1,
+        "timing": "unprofiled complete public decide wall time; loading, hashing and output validation excluded; native call counters run on both sides; hidden capture only during untimed correctness guards",
+        "warmups": 3
+      },
+      "runtime": [
+        {
+          "entry": "http://127.0.0.1:18172/tmp/perf-next-20261106-8H5xqz/q8-row-runtime/index.js",
+          "fingerprint": "a220ceb334260dd5328a9e8fdcf779f3605c4dc22bf368068cdd63d392607828",
+          "side": "A",
+          "assetCount": 52
+        },
+        {
+          "entry": "http://127.0.0.1:18172/tmp/perf-next-20261106-8H5xqz/lazy-state-runtime/index.js",
+          "fingerprint": "721f79a0482aef7776a6f4ec96e74d1f3d903c8926109177c5d67821cb2d116d",
+          "side": "B",
+          "assetCount": 52
+        }
+      ],
+      "cases": [
+        {
+          "name": "2 questions, short cached state",
+          "beforeMs": 13.149999991059303,
+          "afterMs": 13.100000001490116,
+          "pairedRatio": {
+            "median": 1.011042978245427,
+            "sampleCount": 20,
+            "unit": "candidate/baseline"
+          }
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "beforeMs": 12,
+          "afterMs": 11.550000004470348,
+          "pairedRatio": {
+            "median": 0.9915722688570313,
+            "sampleCount": 20,
+            "unit": "candidate/baseline"
+          }
+        },
+        {
+          "name": "2 questions, long cached state",
+          "beforeMs": 14.050000004470348,
+          "afterMs": 12.800000004470348,
+          "pairedRatio": {
+            "median": 0.9186943198144464,
+            "sampleCount": 20,
+            "unit": "candidate/baseline"
+          }
+        }
+      ]
+    },
+    {
+      "name": "lazy-state-q8-repeat",
+      "precision": "q8",
+      "sourceFingerprint": "331aed7a22400dd8e2995da8aa4172fec8d76c3203d99a9b74a7fe67893ce163",
+      "capture": {
+        "before": {
+          "at": "2026-11-06T18:45:56.581Z",
+          "loadAverage": [
+            34.25,
+            33.15,
+            31.54
+          ],
+          "freeMemoryBytes": 75477913600,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1163, 3, 39, 42.87"
+        },
+        "after": {
+          "at": "2026-11-06T18:46:05.419Z",
+          "loadAverage": [
+            32.78,
+            32.87,
+            31.45
+          ],
+          "freeMemoryBytes": 75567460352,
+          "gpu": "NVIDIA GeForce RTX 5070 Ti, 595.71.05, 1163, 3, 41, 100.53"
+        },
+        "sha256": "2046d01fbaba214822a7e61d829268f3eedff649560e67f8cffeed7ae4ab6584",
+        "bytes": 1133644,
+        "sourceFingerprint": "331aed7a22400dd8e2995da8aa4172fec8d76c3203d99a9b74a7fe67893ce163",
+        "sourceScope": "runtime assets plus selected harness and transitive local imports",
+        "sourceUnchanged": true,
+        "runnerExit": 0,
+        "runnerError": null
+      },
+      "correctness": {
+        "candidateVersusOriginal": {
+          "maxProbabilityDelta": 0,
+          "maxPublicDelta": 0,
+          "maxHiddenDelta": 0
+        },
+        "withinRuntimeExtensionVersusFresh": {
+          "maxProbabilityDelta": 3.8743019104003906e-7,
+          "maxPublicDelta": 0,
+          "maxHiddenDelta": 0.00000762939453125,
+          "sameInBothArms": true
+        },
+        "aggregate": {
+          "hiddenTolerance": 0.00001,
+          "maxHiddenDelta": 0.00000762939453125,
+          "maxProbabilityDelta": 3.8743019104003906e-7,
+          "maxPublicDelta": 0,
+          "ok": true,
+          "probabilityTolerance": 0.0005,
+          "publicTolerance": 0.0001
+        }
+      },
+      "phaseIdentities": [
+        {
+          "name": "2 questions, short cached state",
+          "phase": "cold",
+          "hiddenSha256": "f741de73a11bafdd77419ef34fcf26f65544af9fc6e13cd3912caf03e751c807",
+          "outputSha256": "2cce88aa071065a7f20c59a36cf8f031759a3cfca2a07708ce1f2e8726876960"
+        },
+        {
+          "name": "2 questions, short cached state",
+          "phase": "extension",
+          "hiddenSha256": "2a24baef947df02648960164869afb04586f5386d38b948d6b658ccc78d72317",
+          "outputSha256": "8d9521767d8ee90dbecdd22cca87ba46a7b6ca1be33898b6ef8b03e678f8f441"
+        },
+        {
+          "name": "2 questions, short cached state",
+          "phase": "extension-fresh",
+          "hiddenSha256": "2a24baef947df02648960164869afb04586f5386d38b948d6b658ccc78d72317",
+          "outputSha256": "8d9521767d8ee90dbecdd22cca87ba46a7b6ca1be33898b6ef8b03e678f8f441"
+        },
+        {
+          "name": "2 questions, short cached state",
+          "phase": "hit",
+          "hiddenSha256": "f741de73a11bafdd77419ef34fcf26f65544af9fc6e13cd3912caf03e751c807",
+          "outputSha256": "2cce88aa071065a7f20c59a36cf8f031759a3cfca2a07708ce1f2e8726876960"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "cold",
+          "hiddenSha256": "97a8fe1c37eb6ed9dbc9a79299a72ce8bb511726cec94ad38880f33807b5af5e",
+          "outputSha256": "65e7c132f1df0415318880cde4434f3a96d854e6883d6f2245a7403122be14a0"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "extension",
+          "hiddenSha256": "733982f491dfa7caac48fc14412bd130ee702d478f22d8a2f15446a1a2c5e0cc",
+          "outputSha256": "fa733da115920548d7c51ac0cc5ae832db056cb07a49da3eeec0e45e609dd640"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "extension-fresh",
+          "hiddenSha256": "0aebc76af1002c7a0bfd217285687b1ef8e58b512addfa576a9f4e9a2fff0535",
+          "outputSha256": "94f711da110e39dba0c20f127ba1014873371191574130e2a0a86f2038f7a9f8"
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "phase": "hit",
+          "hiddenSha256": "97a8fe1c37eb6ed9dbc9a79299a72ce8bb511726cec94ad38880f33807b5af5e",
+          "outputSha256": "65e7c132f1df0415318880cde4434f3a96d854e6883d6f2245a7403122be14a0"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "cold",
+          "hiddenSha256": "a5614b8ca89a4b6f08fbe5805e752654314254ab865a4791fb1d3f7f9ce7c909",
+          "outputSha256": "ef64e22aad39103ab8bacfdee47cb0960fcfbe502ccb10b97e6fa69bd83c822c"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "extension",
+          "hiddenSha256": "d605b88946c1fa571b87c878be42e52ece22093a1992a4b490f66a6caddca8a8",
+          "outputSha256": "b2c03495efdfa6a54b2b0ae55e53c089eea4dbe878a38fddb814f0e9bcdbe05e"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "extension-fresh",
+          "hiddenSha256": "025b2ae9c8628c2f14a5ba8a2b97f24e5820ede55bfa09d477eacf9be6910b0a",
+          "outputSha256": "e118b446ab32fe7634a4a9b9d16a4f4bb858d26753734c2731c501e4fa16c49a"
+        },
+        {
+          "name": "2 questions, long cached state",
+          "phase": "hit",
+          "hiddenSha256": "a5614b8ca89a4b6f08fbe5805e752654314254ab865a4791fb1d3f7f9ce7c909",
+          "outputSha256": "ef64e22aad39103ab8bacfdee47cb0960fcfbe502ccb10b97e6fa69bd83c822c"
+        }
+      ],
+      "protocol": {
+        "cache": false,
+        "cacheProof": "every measured call inspects requested and planned state tokens, native embedding calls, public counters and exact cache deltas",
+        "calibrationSerialized": true,
+        "cpuKernel": "2x4",
+        "flavor": "relaxed",
+        "hiddenProof": "cold, exact-hit and extended-state outputs compared across runtimes and against fresh passes; arrays stay transient and only hashes/deltas are emitted",
+        "loadOrder": [
+          "A",
+          "B"
+        ],
+        "nativeMemory": "before/after WASM linear-memory byteLength is recorded; this committed high-water size does not measure live residual allocation or transient peak; deferred misses retain native stage1 scratch until the next embedding",
+        "pairStatistic": "arithmetic mean of each side's two calls; dimensionless B/A ratio per pair",
+        "profile": false,
+        "queueDrainedBeforeNextLoad": true,
+        "requestIdentity": "fixed state per shape; round-specific two-question instructions shared by all four calls; different complete requests across pairs",
+        "responsiveness": "animation-frame gaps; headless callbacks do not establish foreground compositor responsiveness",
+        "samples": 20,
+        "sequence": "four serial calls per pair; ABBA then BAAB, alternating start side",
+        "sourceCaches": "fetch no-store; isolated runtime directories and page engines",
+        "stateCache": true,
+        "submit": "await",
+        "threads": 1,
+        "timing": "unprofiled complete public decide wall time; loading, hashing and output validation excluded; native call counters run on both sides; hidden capture only during untimed correctness guards",
+        "warmups": 3
+      },
+      "runtime": [
+        {
+          "entry": "http://127.0.0.1:18172/tmp/perf-next-20261106-8H5xqz/q8-row-runtime/index.js",
+          "fingerprint": "a220ceb334260dd5328a9e8fdcf779f3605c4dc22bf368068cdd63d392607828",
+          "side": "A",
+          "assetCount": 52
+        },
+        {
+          "entry": "http://127.0.0.1:18172/tmp/perf-next-20261106-8H5xqz/lazy-state-runtime/index.js",
+          "fingerprint": "721f79a0482aef7776a6f4ec96e74d1f3d903c8926109177c5d67821cb2d116d",
+          "side": "B",
+          "assetCount": 52
+        }
+      ],
+      "cases": [
+        {
+          "name": "2 questions, short cached state",
+          "beforeMs": 7.950000002980232,
+          "afterMs": 7.799999997019768,
+          "pairedRatio": {
+            "median": 0.9812235963509697,
+            "sampleCount": 20,
+            "unit": "candidate/baseline"
+          }
+        },
+        {
+          "name": "2 questions, medium cached state",
+          "beforeMs": 8.649999998509884,
+          "afterMs": 8.450000002980232,
+          "pairedRatio": {
+            "median": 0.9828165380506821,
+            "sampleCount": 20,
+            "unit": "candidate/baseline"
+          }
+        },
+        {
+          "name": "2 questions, long cached state",
+          "beforeMs": 10.5,
+          "afterMs": 9.399999991059303,
+          "pairedRatio": {
+            "median": 0.9212494297275755,
+            "sampleCount": 20,
+            "unit": "candidate/baseline"
+          }
+        }
+      ]
+    }
+  ],
+  "bf16": {
+    "name": "lazy-state-bf16",
+    "status": "incomplete",
+    "error": "hidden row differs: 0.0000152587890625",
+    "sourceFingerprint": "331aed7a22400dd8e2995da8aa4172fec8d76c3203d99a9b74a7fe67893ce163",
+    "timingClaim": false,
+    "phaseIdentities": [
+      {
+        "shape": 0,
+        "phase": "cold",
+        "hiddenSha256": "6915a9b2619b106822084a168bd7b01d5f5d7e321e6e78016af26d1e735fe57c",
+        "outputSha256": "02a64c72e2a16461ed83f9d6a71bf0e0594f6ce3cf14f9880429741d87af8141"
+      },
+      {
+        "shape": 0,
+        "phase": "hit",
+        "hiddenSha256": "6915a9b2619b106822084a168bd7b01d5f5d7e321e6e78016af26d1e735fe57c",
+        "outputSha256": "02a64c72e2a16461ed83f9d6a71bf0e0594f6ce3cf14f9880429741d87af8141"
+      },
+      {
+        "shape": 0,
+        "phase": "extension",
+        "hiddenSha256": "50daa4ca111e312848794120c2e2d2d49967cbcdd67089c917990f137d8fd80f",
+        "outputSha256": "b98a5db97932cac512450568b84eed24dd3ecb9ceee0175849cf4e16b2cbeab0"
+      },
+      {
+        "shape": 0,
+        "phase": "extension-fresh",
+        "hiddenSha256": "50daa4ca111e312848794120c2e2d2d49967cbcdd67089c917990f137d8fd80f",
+        "outputSha256": "b98a5db97932cac512450568b84eed24dd3ecb9ceee0175849cf4e16b2cbeab0"
+      },
+      {
+        "shape": 1,
+        "phase": "cold",
+        "hiddenSha256": "694fb33499b1b040a7217531cd820cd14ea9765693822a2bd99230d387abffb1",
+        "outputSha256": "80e5c693da33079378dea67b1a4a8b5e724f1de95c332ca8453c3251fc49362e"
+      },
+      {
+        "shape": 1,
+        "phase": "hit",
+        "hiddenSha256": "694fb33499b1b040a7217531cd820cd14ea9765693822a2bd99230d387abffb1",
+        "outputSha256": "80e5c693da33079378dea67b1a4a8b5e724f1de95c332ca8453c3251fc49362e"
+      },
+      {
+        "shape": 1,
+        "phase": "extension",
+        "hiddenSha256": "3a61de0233152366a25d1176236ba46db53d92e70f658c2d040b0e2df45054b2",
+        "outputSha256": "f01c38aab7b829f39a11e9e226e0e4eaa7a2e08ed0ca4afd43249174ba60f6fb"
+      },
+      {
+        "shape": 1,
+        "phase": "extension-fresh",
+        "hiddenSha256": "5d1327b3fbc9b4330c539cd452ce448370e29b06f7ecc470805adf0a6335167d",
+        "outputSha256": "53affd82f4fa57a552c5686ae9cc9f1f6a30a59356b02fd0a8a3073d461e2d92"
+      },
+      {
+        "shape": 2,
+        "phase": "cold",
+        "hiddenSha256": "27750ad42605da319cdd2e6ebc65851def2c9e48889fc1c3ddd226f890123e00",
+        "outputSha256": "423320305b91dedef3e7ab2d0a268624439ce066044e12ac81720973d2774137"
+      },
+      {
+        "shape": 2,
+        "phase": "hit",
+        "hiddenSha256": "27750ad42605da319cdd2e6ebc65851def2c9e48889fc1c3ddd226f890123e00",
+        "outputSha256": "423320305b91dedef3e7ab2d0a268624439ce066044e12ac81720973d2774137"
+      },
+      {
+        "shape": 2,
+        "phase": "extension",
+        "hiddenSha256": "116808c643de285885a195573fa5e2ec282266bb5ca13c31338ea6fa65191f85",
+        "outputSha256": "2ad6e0da2d9876fd7206566b2206d932467450299245e76d8f83e9a1cca01aa4"
+      },
+      {
+        "shape": 2,
+        "phase": "extension-fresh",
+        "hiddenSha256": "a364b0b85dad389323768f231187525b50bf4493b47a06fc92af8bf4d4c17c97",
+        "outputSha256": "a5ae619705292b98bd8dd0851fc10deec537a13b5e80036f2d663d7400a013a8"
+      }
+    ],
+    "observedCommittedMemoryDifferenceBytes": 196608,
+    "note": "The original arm's long extension-versus-fresh guard exceeded the unchanged 0.00001 tolerance. All recorded A/B hidden/output phase hashes match. This does not establish a complete BF16 timing result."
+  },
+  "limitations": [
+    "The Q8 catalog is exploratory, not a causal before/after comparison.",
+    "GPU timestamps and unprofiled wall times come from separate runs. Profiling alters passes and optional paths. Their difference is not measured CPU time.",
+    "Kernel shares use the sum of label medians, not wall time. Optional Gemma labels were dispatched in only some samples.",
+    "The host was contended. Earlier agent-owned builds overlapped parts of this campaign. Serialization of GPU writers did not eliminate CPU interference.",
+    "Laya and Clef expose rounded public outputs. Other models expose raw distributions. Agreement is not a task-accuracy evaluation.",
+    "BF16 stopped at an unchanged numerical guard in the original arm. Partial timing rows are not a complete performance campaign.",
+    "WASM memory byteLength is a committed high-water size. It does not measure live residual allocation or transient peak.",
+    "No universal fastest-kernel, whole-catalog improvement, camera-throughput or foreground-responsiveness claim is made."
+  ],
+  "artifacts": [
+    {
+      "label": "Exploratory Q8 catalog summary and 44 raw blocks",
+      "url": "raw/catalog.json.gz",
+      "sha256": "81a6a4c28a15655a056f8d3532ec3ec9ed3fa07178fda248ef34662730fa101e",
+      "gzipSha256": "7fd61ad9e52fb381bf11f171c2959458c0a6dc52cacb164ed0187712b1dd9e98",
+      "bytes": 6587270,
+      "gzipBytes": 790494,
+      "originals": [
+        {
+          "path": "baseline-catalog/summary.json",
+          "bytes": 2006058,
+          "sha256": "e9721f8c1c99dfca157fc1f18d341a5905472bcc8af3644460265366948dd5b9"
+        },
+        {
+          "path": "baseline-catalog/chromium/laya-q8/0-wall.json",
+          "bytes": 23343,
+          "sha256": "af20c2f4c0b9e0519ebe36d3557cd06b5e8327b36d3c3c70c87efe204f449dbd"
+        },
+        {
+          "path": "baseline-catalog/chromium/laya-q8/0-gpu.json",
+          "bytes": 39557,
+          "sha256": "15a849b04e6ab54acdb72033b2073abebce5c82c44d5271bb40379bda7f68df5"
+        },
+        {
+          "path": "baseline-catalog/chromium/laya-q8/1-gpu.json",
+          "bytes": 39748,
+          "sha256": "efa4e4568d6b391f6e30828798223f0ab6550bba8c8ea392b3449ca446d7ccbf"
+        },
+        {
+          "path": "baseline-catalog/chromium/laya-q8/1-wall.json",
+          "bytes": 23434,
+          "sha256": "71d4109cc6dad2fab7c3bcce040febe746fdcb12a40da3a90c3c2774f09bd1d3"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-0.8b-q8/0-wall.json",
+          "bytes": 48377,
+          "sha256": "ed15092f7f02a1d52c2eeb4412989e62f7206b95426e3109ae2c5b3b0c2d81b3"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-0.8b-q8/0-gpu.json",
+          "bytes": 63295,
+          "sha256": "8255975b7d945b95a647d990661c473797aca85c74d3c7d6894232f7bf2d147d"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-0.8b-q8/1-gpu.json",
+          "bytes": 63520,
+          "sha256": "c91b7f7e219e7b8245637a2803680d49d7e51ea67434120fd14631b681966849"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-0.8b-q8/1-wall.json",
+          "bytes": 48466,
+          "sha256": "c4434e40a678fe38318150e15e9751aff1da2b34974b208966ccf5dacca07134"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-4b-q8/0-wall.json",
+          "bytes": 48511,
+          "sha256": "5df7acd4a97b98ad3004a7d583b8cfae4971a2539712d9f9847ef62d25f5b8e3"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-4b-q8/0-gpu.json",
+          "bytes": 63448,
+          "sha256": "db8438a889b357b58a5224c0f49c4ab5771995037ed54182bcd2f46ba7e1a58e"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-4b-q8/1-gpu.json",
+          "bytes": 63618,
+          "sha256": "02e27aff5eeb2edb709c0f97cde31105982e2cf41f6dcf6205c91b64eafde251"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-4b-q8/1-wall.json",
+          "bytes": 48682,
+          "sha256": "ebfdc9cc45742d55a34f6b41e9ab52a0813c58a30e29147c764c74cc9e651040"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-9b-q8/0-wall.json",
+          "bytes": 48428,
+          "sha256": "10efc08e0e7eef0fea734a72d817aa66852567f38c6250595ac0e5871f46b7cd"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-9b-q8/0-gpu.json",
+          "bytes": 63509,
+          "sha256": "8bed07afbd30996936902f75377dea8e93e0d77f169099ba6dc14c22a0f1de25"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-9b-q8/1-gpu.json",
+          "bytes": 63389,
+          "sha256": "22609cd9a86fc5cbb797de207081810afb1b1470b46746da547b5173a17bbb5f"
+        },
+        {
+          "path": "baseline-catalog/chromium/kev-9b-q8/1-wall.json",
+          "bytes": 48569,
+          "sha256": "c30aed427b5e1a4d618385992e92bba22f096fd2cbf1874d41e0520d5f083ee6"
+        },
+        {
+          "path": "baseline-catalog/chromium/h2o-lightning-4b-q8/0-wall.json",
+          "bytes": 49143,
+          "sha256": "37bf11cc9e6ad69591c88cc1beb5e850cdb303505a4e6e8801926ce666835577"
+        },
+        {
+          "path": "baseline-catalog/chromium/h2o-lightning-4b-q8/0-gpu.json",
+          "bytes": 62842,
+          "sha256": "c6fd9966148dc9e261ee6d6f7e0f4e0b9b0327645b34c8d4b582a187d5ffd566"
+        },
+        {
+          "path": "baseline-catalog/chromium/h2o-lightning-4b-q8/1-gpu.json",
+          "bytes": 63030,
+          "sha256": "a17de81531357c08b5be2b0e4eb1f20a3bf6b00ece3e9ff1cbc9d0db8150656b"
+        },
+        {
+          "path": "baseline-catalog/chromium/h2o-lightning-4b-q8/1-wall.json",
+          "bytes": 49259,
+          "sha256": "da3ef5f418a2dd06506c446ed78c3a7e2e6e5e9188a1ef47f6977f7193453162"
+        },
+        {
+          "path": "baseline-catalog/chromium/clef-flash-q8/0-wall.json",
+          "bytes": 39931,
+          "sha256": "72b8ab2660acd23f610f8ccaa384130f7a17524a9fb29d8da5791a957c8eff28"
+        },
+        {
+          "path": "baseline-catalog/chromium/clef-flash-q8/0-gpu.json",
+          "bytes": 53502,
+          "sha256": "b06afd66a2d4d5393be4364dbf3878160167c8c328da6304b6ec56ed8394a3b3"
+        },
+        {
+          "path": "baseline-catalog/chromium/clef-flash-q8/1-gpu.json",
+          "bytes": 53614,
+          "sha256": "97c1c6d5f99accd3af777961b85dc646ec0820e21a6398b199a3e07c5e75c6c5"
+        },
+        {
+          "path": "baseline-catalog/chromium/clef-flash-q8/1-wall.json",
+          "bytes": 39912,
+          "sha256": "9d5f6ea897e2d896525c4319521b4bc4db368011c25b61eac138c9d4fd363702"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-0.8b-q8/0-wall.json",
+          "bytes": 48897,
+          "sha256": "a9c346a7f03212631aa6cc59d760d0ace12dfc50f8b5865c220952dd3d491cec"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-0.8b-q8/0-gpu.json",
+          "bytes": 64323,
+          "sha256": "4628b15b0a488d5cffbf3f82ff58deee5fe59a83c313ea8fce6789090e15351f"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-0.8b-q8/1-gpu.json",
+          "bytes": 64376,
+          "sha256": "70001848bcc5336639697dbf6696e1db2a1054a5d7088da49ce76d00a26fb11a"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-0.8b-q8/1-wall.json",
+          "bytes": 48862,
+          "sha256": "178892eaf18b67208cc0960781394fe7581e5ef7cb14bf69e33abf58b49fb766"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-2b-q8/0-wall.json",
+          "bytes": 48663,
+          "sha256": "d0eaa1cba28c24188179edd72315c8f417aa2b09e06d30e409c31fe03a94c927"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-2b-q8/0-gpu.json",
+          "bytes": 64061,
+          "sha256": "4c11c208fad687f65faa9e8c250989ecf2128551e9e7a46a79afc275ba675490"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-2b-q8/1-gpu.json",
+          "bytes": 64184,
+          "sha256": "56b93528789cc29c033645d7f1f8ce264a587ac8013f00504bd304eca915a24b"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-2b-q8/1-wall.json",
+          "bytes": 48781,
+          "sha256": "a9ee3e0b32badfeabcb74085ab034c005a3c4b288fac25afde7a3c927b69c8eb"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-4b-q8/0-wall.json",
+          "bytes": 48753,
+          "sha256": "07f89bc6032724885b8999e96a2722bb8d50e6286b2bd44c6c21ff845e26c437"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-4b-q8/0-gpu.json",
+          "bytes": 64557,
+          "sha256": "0f7993710fca731c49843dc0303a27b0c00d99ef47dc5564e9033795a2728e87"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-4b-q8/1-gpu.json",
+          "bytes": 64372,
+          "sha256": "e89082ccc9292eacc9931189ba636302550ad1132dc9e5ad5aa03ae556fead96"
+        },
+        {
+          "path": "baseline-catalog/chromium/semif-qwen3.5-4b-q8/1-wall.json",
+          "bytes": 48778,
+          "sha256": "55002d2c5c5edb39c8e4c986edee196075d7b08777173e953601ce558ea001e0"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e2b-q8/0-wall.json",
+          "bytes": 121720,
+          "sha256": "2b546d407efd987cdfa569f896fb1bbf0a7580671ecb2fa33747921a9f6ff6cb"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e2b-q8/0-gpu.json",
+          "bytes": 146414,
+          "sha256": "008de455f859b61dafed1794af0070152fc99467c35fa9cfc059ecd7b1fb740b"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e2b-q8/1-gpu.json",
+          "bytes": 146861,
+          "sha256": "8601e85ef05d9b24cbd13eae1f08d4c97e623a5010d71fc62836654253f157c1"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e2b-q8/1-wall.json",
+          "bytes": 121815,
+          "sha256": "09a42d3003aeb093a86f9a099e69aa722fdb3deea9bb5909b29bb6e7c22c83eb"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e4b-q8/0-wall.json",
+          "bytes": 112445,
+          "sha256": "fbcb0517add7096b1a1a3bf18c884b8b2106fc0736726525f83a05b1690aee46"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e4b-q8/0-gpu.json",
+          "bytes": 138416,
+          "sha256": "fbc0c55b24bbc14fb360e0718848d1e55c50f22a5578cfa7242e62e2afae7862"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e4b-q8/1-gpu.json",
+          "bytes": 138516,
+          "sha256": "8e660ce22fd804c6a3c9f028a30750010ba5c5935ae6510459f8e9ee2127d41f"
+        },
+        {
+          "path": "baseline-catalog/chromium/gemma-4-e4b-q8/1-wall.json",
+          "bytes": 112396,
+          "sha256": "33aa580d48c3449779178b3aa9fc187a17d5a961484c95f6774d372350ffe355"
+        }
+      ]
+    },
+    {
+      "label": "q8-decode-screen: exact result, capture and source",
+      "url": "raw/q8-decode-screen.json.gz",
+      "sha256": "dd91c99d7e8a4fdf0ae9d9a6e997f70c62210de4591725b3be58342f2ffdaa67",
+      "gzipSha256": "a690263036f5406daba3b68fb1c4ef77ecb2af50abcd22a2574c4e25a98c7b2f",
+      "bytes": 451083,
+      "gzipBytes": 45215,
+      "originals": [
+        {
+          "path": "q8-decode-screen.json",
+          "bytes": 327284,
+          "sha256": "1bc06cf7a2ae12db2ced6ad2d1739f012c6cfa5b09f6f771199f22fe15d33a7e"
+        },
+        {
+          "path": "q8-decode-screen-capture.json",
+          "bytes": 806,
+          "sha256": "7411f9b912cb15696dd2e23394060b9d3a42efb9b5c380954ea7fc5e358d37eb"
+        },
+        {
+          "path": "q8-decode-screen-source.json",
+          "bytes": 9691,
+          "sha256": "5b2d4fe3ac238e7f6ab218f3808073f7d36070c9aa7d5063dd2f6eb3b11f71e3"
+        }
+      ]
+    },
+    {
+      "label": "q8-decode-repeat: exact result, capture and source",
+      "url": "raw/q8-decode-repeat.json.gz",
+      "sha256": "916748c0c5866b7c7d9f92bc19c98f9700cb449bbe21b38669b36bdbdbffd1f6",
+      "gzipSha256": "2965cc33d9ad540d4988acc4b9b9208853c28829c0602cc956f09df17988a6cd",
+      "bytes": 287235,
+      "gzipBytes": 29921,
+      "originals": [
+        {
+          "path": "q8-decode-repeat.json",
+          "bytes": 204399,
+          "sha256": "265d81d5c8c7cf3a56d4b093a61aea6c7a76166934c96ee8e4ddd538b78477b8"
+        },
+        {
+          "path": "q8-decode-repeat-capture.json",
+          "bytes": 807,
+          "sha256": "e84a10748b864ff2b7fe3cc31d92a399916df8b735840928718b597d9e013f90"
+        },
+        {
+          "path": "q8-decode-repeat-source.json",
+          "bytes": 9691,
+          "sha256": "5b2d4fe3ac238e7f6ab218f3808073f7d36070c9aa7d5063dd2f6eb3b11f71e3"
+        }
+      ]
+    },
+    {
+      "label": "clef-head-captured-relaxed: exact result, capture and source",
+      "url": "raw/clef-head-captured-relaxed.json.gz",
+      "sha256": "e0bcbd3736df995cfe6645b549a3382bb6f7d03f7f8261079f5004496648a124",
+      "gzipSha256": "a37c144d536ff78c66d2408626d31c41d5ceb7beef45cc4dbb865858acba1a32",
+      "bytes": 51960,
+      "gzipBytes": 14129,
+      "originals": [
+        {
+          "path": "clef-head-captured-relaxed.json",
+          "bytes": 27978,
+          "sha256": "04ae01327dff67516b3c753592badc1c23710b5c5696e75f3716be2492bfe98c"
+        },
+        {
+          "path": "clef-head-captured-relaxed-capture.json",
+          "bytes": 804,
+          "sha256": "fff4f304d390a24a17a7ae78683f9e147822bb73f7fb322a5849448a81fa0ac6"
+        },
+        {
+          "path": "clef-head-captured-relaxed-source.json",
+          "bytes": 9639,
+          "sha256": "382142068873b93c822822a4f889f7a8e7fc5df9132e1f2a2101ea0233b4d575"
+        }
+      ]
+    },
+    {
+      "label": "clef-wasm-synthetic-relaxed: exact synthetic finish result",
+      "url": "raw/clef-wasm-synthetic-relaxed.json.gz",
+      "sha256": "589b1e808781e3e9b1c64d286721e107e19a7dd8af48c960af6d3162cad203fb",
+      "gzipSha256": "07e5ac8615944d98fbfe26659760766fd455e47b24dd13a8f9f8d37fda1a7cff",
+      "bytes": 17201,
+      "gzipBytes": 3839,
+      "originals": [
+        {
+          "path": "clef-wasm-synthetic-relaxed.json",
+          "bytes": 12683,
+          "sha256": "a3d67769343e3465a2c873f0579bffa6f419ec6acd5c719f828ef2a942954a7a"
+        }
+      ]
+    },
+    {
+      "label": "clef-wasm-synthetic-simd: exact synthetic finish result",
+      "url": "raw/clef-wasm-synthetic-simd.json.gz",
+      "sha256": "d3f8886a55f851b80cfa1cda1a57af161ca7289c3d2e80e44ba057ab79a78746",
+      "gzipSha256": "335645c3a46072c5ce18e383a5d04175df4645da3be95b24a6dcd189f903a2a4",
+      "bytes": 17210,
+      "gzipBytes": 4140,
+      "originals": [
+        {
+          "path": "clef-wasm-synthetic-simd.json",
+          "bytes": 12692,
+          "sha256": "9109929c7081a537f89294c7cbd4d8d2a2d71a958cca7dab88b68402150def32"
+        }
+      ]
+    },
+    {
+      "label": "Rejected Clef native row and finish logs",
+      "url": "raw/clef-native.json.gz",
+      "sha256": "545869bbe57e09fb987503943fc630cba204f50efaf8b69b52720c564e2a5d28",
+      "gzipSha256": "262e401c16d21f87527a1bc66e88d98bf332d9986ad003399b489741d20268e6",
+      "bytes": 32484,
+      "gzipBytes": 7831,
+      "originals": [
+        {
+          "path": "clef-head-native/matvec-exact-1.95.log",
+          "bytes": 2125,
+          "sha256": "978167c1c047bd0210db64c50bc146503c651496f5b0a960a9b845c4195cdb77"
+        },
+        {
+          "path": "clef-head-native/paired-exact-1.95.log",
+          "bytes": 21045,
+          "sha256": "d4a684eb8b3bd039057c1eba3bdc04d092827548c87b64cf81a4c20a3e537d6a"
+        },
+        {
+          "path": "clef-wasm-build-pinned.log",
+          "bytes": 103,
+          "sha256": "9fbb83a3f7e4c7344cf1ef0fc73ba6e4ee55882a29d79f032b0bf36dd28a0620"
+        },
+        {
+          "path": "clef-wasm-build.log",
+          "bytes": 389,
+          "sha256": "56a18d16a9028b9fb581fd57f01de4a3a1a7717f0357104a14134557a825cdad"
+        }
+      ]
+    },
+    {
+      "label": "overlap-kev08: exact result, capture and source",
+      "url": "raw/overlap-kev08.json.gz",
+      "sha256": "5a304a0aecd534ab0eeaa5dcf076dd1e018e6c88c671f09852b11852e5a298ee",
+      "gzipSha256": "623d27fe10d3696129afdaf6c608742fe35f96e5f2e357ba0990d646db5226ca",
+      "bytes": 413838,
+      "gzipBytes": 50826,
+      "originals": [
+        {
+          "path": "overlap-kev08.json",
+          "bytes": 299609,
+          "sha256": "a20e4938a45bee3beee1fc5638bd09195e8036904e802afde26e5bd878888e9d"
+        },
+        {
+          "path": "overlap-kev08-capture.json",
+          "bytes": 603,
+          "sha256": "82bc297c246e350232087a6cdf8f64b8c762e5060c3296dff9da645122bfc464"
+        },
+        {
+          "path": "overlap-kev08-source.json",
+          "bytes": 9645,
+          "sha256": "65af4ab1e551dc1fb81d7c051e4c94879ece392bd08866320e324d24f71bd5c1"
+        }
+      ]
+    },
+    {
+      "label": "overlap-laya: exact result, capture and source",
+      "url": "raw/overlap-laya.json.gz",
+      "sha256": "499cbe1ebc7c32bc86eb5811027bd977c9efa644473f4adbe3f874ea43221ace",
+      "gzipSha256": "29214e1fd65fba9cc960fe1aa4c9bf941be52d3668dfdeb6a3beb52d622454c2",
+      "bytes": 312379,
+      "gzipBytes": 34077,
+      "originals": [
+        {
+          "path": "overlap-laya.json",
+          "bytes": 223516,
+          "sha256": "3b79aa992bcf05452972ecd2220bd1be11a500ccb0139989e49bf61a5e04130b"
+        },
+        {
+          "path": "overlap-laya-capture.json",
+          "bytes": 603,
+          "sha256": "fa664978964d3a52041a4b0b7225486837af0251c6a7c3a2cc0d2bb65f6aec22"
+        },
+        {
+          "path": "overlap-laya-source.json",
+          "bytes": 9645,
+          "sha256": "65af4ab1e551dc1fb81d7c051e4c94879ece392bd08866320e324d24f71bd5c1"
+        }
+      ]
+    },
+    {
+      "label": "overlap-laya-reverse: exact result, capture and source",
+      "url": "raw/overlap-laya-reverse.json.gz",
+      "sha256": "ec591d5f8b712191dfc4cafd79381e4117fd75095342743e646f50adb4be9247",
+      "gzipSha256": "44ab6d4f23870a73ba29ae7541eca810949bf51caaa80f3be0718dfb7f36e418",
+      "bytes": 554711,
+      "gzipBytes": 54346,
+      "originals": [
+        {
+          "path": "overlap-laya-reverse.json",
+          "bytes": 405045,
+          "sha256": "31310b17062c5b66c3909f614eef1b3d91890be61b02e9528b4572c24e6a6291"
+        },
+        {
+          "path": "overlap-laya-reverse-capture.json",
+          "bytes": 805,
+          "sha256": "f1bf5bd49a0c7f793c62a8a9cf1bc6b0fd1ddece50bb478b6baec779bd8b8cc1"
+        },
+        {
+          "path": "overlap-laya-reverse-source.json",
+          "bytes": 9645,
+          "sha256": "65af4ab1e551dc1fb81d7c051e4c94879ece392bd08866320e324d24f71bd5c1"
+        }
+      ]
+    },
+    {
+      "label": "lazy-state-q8-valid: exact result, capture and source",
+      "url": "raw/lazy-state-q8-valid.json.gz",
+      "sha256": "eee56d7ffebef95abe2b469dcb8c1f2356b6ac21242e4c8af7a002863e5f8c53",
+      "gzipSha256": "6ba8c17a053af98678fe88ef9e0c50454e0bae41b8575f2245f47451225c48fe",
+      "bytes": 1526397,
+      "gzipBytes": 132036,
+      "originals": [
+        {
+          "path": "lazy-state-q8-valid.json",
+          "bytes": 1133758,
+          "sha256": "d7b8e9bacddf5217121a8f0ea07450faea2c206e4814b85800c8c2c9e0c1902a"
+        },
+        {
+          "path": "lazy-state-q8-valid-capture.json",
+          "bytes": 808,
+          "sha256": "d72f1916507dda8268a9fbdf325ac879e907fd58dc23a5c6a15af6ffcf02a840"
+        },
+        {
+          "path": "lazy-state-q8-valid-source.json",
+          "bytes": 9693,
+          "sha256": "d2412cdf642cca614a4ccc98b453d5c31a75e811de69828a8b3495be9af23c49"
+        }
+      ]
+    },
+    {
+      "label": "lazy-state-q8-repeat: exact result, capture and source",
+      "url": "raw/lazy-state-q8-repeat.json.gz",
+      "sha256": "d9cb38734ea9642bb4c18fd94c3003d507625e430152620840a9e2ead439ccd2",
+      "gzipSha256": "1aea6c5145ad1a7b0210ccadb6d6e2dff7e45de692074d2c3b2f941826a9a716",
+      "bytes": 1526248,
+      "gzipBytes": 132213,
+      "originals": [
+        {
+          "path": "lazy-state-q8-repeat.json",
+          "bytes": 1133644,
+          "sha256": "2046d01fbaba214822a7e61d829268f3eedff649560e67f8cffeed7ae4ab6584"
+        },
+        {
+          "path": "lazy-state-q8-repeat-capture.json",
+          "bytes": 809,
+          "sha256": "dbc2824e0a01a55fbe9c353c4432c9c7d85f2249ef8059da289e4faf2da9628a"
+        },
+        {
+          "path": "lazy-state-q8-repeat-source.json",
+          "bytes": 9693,
+          "sha256": "d2412cdf642cca614a4ccc98b453d5c31a75e811de69828a8b3495be9af23c49"
+        }
+      ]
+    },
+    {
+      "label": "lazy-state-bf16: exact result, capture and source",
+      "url": "raw/lazy-state-bf16.json.gz",
+      "sha256": "5ff390c6777ccbc33965f3be26ebbce912f04c91fb8ef3fb643e93e1cee45b39",
+      "gzipSha256": "7e3683b640f83136aa7a571094f84f94ad0462d4bb6c878dd7b8f065b4dce55a",
+      "bytes": 761500,
+      "gzipBytes": 62303,
+      "originals": [
+        {
+          "path": "lazy-state-bf16.json",
+          "bytes": 560098,
+          "sha256": "e328d090c90511664345dc57fc4322d54ad014319bc698e5690732adbe3a0049"
+        },
+        {
+          "path": "lazy-state-bf16-capture.json",
+          "bytes": 807,
+          "sha256": "ed9c24f1aa23e83aaf56b80825094dc257fffde2c9559e8259a5019dcec02c92"
+        },
+        {
+          "path": "lazy-state-bf16-source.json",
+          "bytes": 9693,
+          "sha256": "d2412cdf642cca614a4ccc98b453d5c31a75e811de69828a8b3495be9af23c49"
+        }
+      ]
+    },
+    {
+      "label": "Exact cached-state JS and test change sources",
+      "url": "raw/lazy-change.json.gz",
+      "sha256": "c22f2410a99caf5d81489f4862464e5e30fca9332ced5ad16df12581af7fc97c",
+      "gzipSha256": "2e62d49c6f1a49af57ebd630c9e14454bda91a1410ea4cc9325540203dd09e33",
+      "bytes": 135731,
+      "gzipBytes": 51361,
+      "originals": [
+        {
+          "path": "lazy-state-change-source.json",
+          "bytes": 101582,
+          "sha256": "1bc067e233e9e98540e2b396a394f0b154a56ea512e2bdbd2edce85693be12c4"
+        }
+      ]
+    },
+    {
+      "label": "Exact deduplicated source bytes and original path aliases",
+      "url": "raw/source.json.gz",
+      "sha256": "426da7b1f7a598863c45fa4324e032afe565f21e44d6bd829f878cbde9338767",
+      "gzipSha256": "af530174b57542ae74b84593d51582b10adc28706f4e8eb93ca20d732ec0763d",
+      "bytes": 1619182,
+      "gzipBytes": 492361,
+      "originals": [
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/archs/clef.js",
+          "bytes": 5711,
+          "sha256": "b0806823900b203ac7bb84744c8b94ced441f3e8440f9a3523a7b3b4433de4f8"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/archs/gemma4.js",
+          "bytes": 12531,
+          "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/archs/index.js",
+          "bytes": 2743,
+          "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/archs/kev.js",
+          "bytes": 9983,
+          "sha256": "6d14aaaa1affd96e74da787027485065fe9dd3fa810a012fb051b1a719f4c2e7"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/archs/laya.js",
+          "bytes": 8417,
+          "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/cpu-calibrate.js",
+          "bytes": 3092,
+          "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/cpu-policy.js",
+          "bytes": 3333,
+          "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/cpu-tune.js",
+          "bytes": 1293,
+          "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/engine-worker.js",
+          "bytes": 19878,
+          "sha256": "13d2dfe71c43509565eacbf2116f79567b89cf333b4221f47fc2ef86a82d559a"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gemma4-image.js",
+          "bytes": 12697,
+          "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gemma4-ple-store.js",
+          "bytes": 11274,
+          "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gemma4-vision-pack.js",
+          "bytes": 3580,
+          "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-attention.js",
+          "bytes": 24396,
+          "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-batch-mlp.js",
+          "bytes": 25939,
+          "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-batch-single.js",
+          "bytes": 13303,
+          "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-bn32.js",
+          "bytes": 13497,
+          "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-grid-mlp.js",
+          "bytes": 21034,
+          "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-image.js",
+          "bytes": 6179,
+          "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-k64.js",
+          "bytes": 12881,
+          "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-mlp.js",
+          "bytes": 14486,
+          "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-ple.js",
+          "bytes": 3548,
+          "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-prefix-cache.js",
+          "bytes": 7449,
+          "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-prefix-gelu.js",
+          "bytes": 16018,
+          "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-prefix-retile.js",
+          "bytes": 15704,
+          "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-rms-plan.js",
+          "bytes": 1960,
+          "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-rms.js",
+          "bytes": 21407,
+          "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-vision-qkv.js",
+          "bytes": 18378,
+          "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4-vision.js",
+          "bytes": 39775,
+          "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-gemma4.js",
+          "bytes": 111663,
+          "sha256": "f47c5b0569297b593d4c784963bc9a4cc013026685b0afad0034fb5f9ef05359"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-kev.js",
+          "bytes": 44933,
+          "sha256": "eb313c2fca2c50d43a0d14ab53f52bc426e808501169d5fb355dfbb0b6910246"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-laya.js",
+          "bytes": 14668,
+          "sha256": "c69af3036fab3290cd3dd7c46d7e4e060e2876aaef61c8e274c06924be38eccc"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-matvec-gelu.js",
+          "bytes": 12270,
+          "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-matvec-two.js",
+          "bytes": 22143,
+          "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-matvec.js",
+          "bytes": 19542,
+          "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-recur-tuning.js",
+          "bytes": 21113,
+          "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu-tuning.js",
+          "bytes": 16021,
+          "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/gpu.js",
+          "bytes": 26543,
+          "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/image-header.js",
+          "bytes": 5607,
+          "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/images.js",
+          "bytes": 4221,
+          "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/index.js",
+          "bytes": 19494,
+          "sha256": "5010ab6e6a1ab8f4700d9dbd6f64af488102fae3e6e0874b4bc8bb0ce36e975d"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/node.js",
+          "bytes": 2459,
+          "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/pack-layout.js",
+          "bytes": 8838,
+          "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/presets.js",
+          "bytes": 5604,
+          "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/request-queue.js",
+          "bytes": 2205,
+          "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/shard-client.js",
+          "bytes": 1495,
+          "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/shard-worker.js",
+          "bytes": 2762,
+          "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/source.js",
+          "bytes": 33566,
+          "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/stats.js",
+          "bytes": 279,
+          "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/baseline-runtime/wasm.js",
+          "bytes": 4833,
+          "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+        },
+        {
+          "path": "bench.html",
+          "bytes": 10025,
+          "sha256": "3c78d1e230d7a3efba443c7864fb9c09cd1801afe760db3aaa9516f3e2dfcf68"
+        },
+        {
+          "path": "scripts/profile-models.mjs",
+          "bytes": 18331,
+          "sha256": "023442e62e1eaeab2f3b9604a8340f2ee3e167373c51cc06fad8448f58dce135"
+        },
+        {
+          "path": "dev/kernel-profile-fixtures.js",
+          "bytes": 6347,
+          "sha256": "b475acc0ce2868212c6ab7c36129c8010b831da025970df2e5a319ec593fe1b7"
+        },
+        {
+          "path": "dev/wgsl.js",
+          "bytes": 733,
+          "sha256": "23fce0d5a06a0531de98fd5991e232f6fd70dc639ec5a7e53b505178f656743c"
+        },
+        {
+          "path": "scripts/lib/browser-run.mjs",
+          "bytes": 2210,
+          "sha256": "4e2597507b2a0eb5600b0124f4c11c4d439e0dc566515925df9ba1a12b7679b6"
+        },
+        {
+          "path": "scripts/lib/kernel-profile-catalog.mjs",
+          "bytes": 24679,
+          "sha256": "f37171974f398b23673e6727777eb01c985b91a5c32efe291f5435cc5467a952"
+        },
+        {
+          "path": "scripts/lib/profile-lock.mjs",
+          "bytes": 1246,
+          "sha256": "d075e6183cdefe931db03654e9812f7c1a96144f875bfc4f2759b634203744b9"
+        },
+        {
+          "path": "scripts/profile-kernels.mjs",
+          "bytes": 14717,
+          "sha256": "51d032c25b7ab93d64b22681b066f5c4b9da258d42fd5e7076035d8d87d6214b"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/q8-decode-probe.html",
+          "bytes": 896,
+          "sha256": "ce63214b96b54fdf9ba384868808b573235f3520c54a03bca082805d4e4e5ba1"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/q8-decode-probe.js",
+          "bytes": 37597,
+          "sha256": "781a34fa9dd1402b934f9f838dc8aae87861ea6269782d19b7f328c4deb4944c"
+        },
+        {
+          "path": "dev/clef-head-bench.html",
+          "bytes": 952,
+          "sha256": "3e3ab910319d788ab80876b32b3caeded288a3fa17e2e6557d834bb380913126"
+        },
+        {
+          "path": "dev/clef-head-bench.js",
+          "bytes": 20813,
+          "sha256": "afa1d9dc6bc3fb138d7dd1e0503fef13fc52b572289abf53c0001e06815d840a"
+        },
+        {
+          "path": "campaign/clef-matvec-rejected-head.rs",
+          "bytes": 23732,
+          "sha256": "56ec7ccee38301f871ec08e8fdbe5951bd1e2421d6f59afb4868b0cbb638214c"
+        },
+        {
+          "path": "campaign/clef-matvec-rejected.patch",
+          "bytes": 4996,
+          "sha256": "7c0cc32d51b233f19769d12a2b82d459742f63345a1d7c6b6a27faa87ac5bf73"
+        },
+        {
+          "path": "campaign/clef-wasm-pairs.mjs",
+          "bytes": 5998,
+          "sha256": "1ac402b976ed6d82aaf344c7a3bfc07056d065198749ce381be2385e151bd5ba"
+        },
+        {
+          "path": "campaign/clef-head-native/Cargo.toml",
+          "bytes": 221,
+          "sha256": "012743a2113c4374bdd74108067512ad1c70654bd305297443791dafcb9acdb6"
+        },
+        {
+          "path": "campaign/clef-head-native/Cargo.lock",
+          "bytes": 237,
+          "sha256": "ed6640036f748101edca4f24dea3bc309032f57f43b86c4b4d9575d623e8c46f"
+        },
+        {
+          "path": "campaign/clef-head-native/prepare-matvec.mjs",
+          "bytes": 1819,
+          "sha256": "3e50522c0f7c2c7d4fb1477a2a6b83b11fa3e818f491b0b4cf870ff6b5821b2d"
+        },
+        {
+          "path": "campaign/clef-head-native/prepare-exact.mjs",
+          "bytes": 1111,
+          "sha256": "1aa26b08010e3b4fc138db3079cf3bc1371a5eabf7f4e69cf71b13163d989543"
+        },
+        {
+          "path": "campaign/clef-head-native/exact-row.rs",
+          "bytes": 1398,
+          "sha256": "6ad39b6956e0b793a93bcd43902fa24a652d9e6a35163eb47a1c891f864b37c5"
+        },
+        {
+          "path": "campaign/clef-head-native/src/main.rs",
+          "bytes": 5209,
+          "sha256": "f7e9d784f719d8e6423d6a52fbb9d8b408f2bfe66cb6314b36e174342d2614ff"
+        },
+        {
+          "path": "campaign/clef-head-native/baseline.rs",
+          "bytes": 21095,
+          "sha256": "b9b77a27885760d1a8ca8a6bc37a412ac86cb38cda3f8290278ac1589d601177"
+        },
+        {
+          "path": "campaign/clef-head-native/candidate.rs",
+          "bytes": 22832,
+          "sha256": "714ae5224acec18919ea2fc4c6acde9154531e377813dd493c4fdb832bf1986d"
+        },
+        {
+          "path": "dev/runtime-pair-bench.html",
+          "bytes": 817,
+          "sha256": "7eab0ce2acdc96b6d01ede08400b802f5fe51f1c5fbf4a8d3e3559e7fdc5acbf"
+        },
+        {
+          "path": "dev/runtime-pair-bench.js",
+          "bytes": 30389,
+          "sha256": "38ab332af27e82fadcacabf1794db073d2a4cdc575a28612e4e665064f0ccc30"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/overlap-runtime/gpu-kev.js",
+          "bytes": 45268,
+          "sha256": "50585a0a0195916804a8c0f1af95bedae5424ad72a98ea2f51a8b6764b1d615a"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/overlap-runtime/gpu-laya.js",
+          "bytes": 15027,
+          "sha256": "b6e406551ccc3c7d2b0c79336ae47be04502d9b29314cb5e6847698ab9216816"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/lazy-state-pairs.html",
+          "bytes": 999,
+          "sha256": "22ad9378f47dd0e9a591aa3e09dec69f732facca803793b261067fd21cc3710d"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/lazy-state-pairs.js",
+          "bytes": 40837,
+          "sha256": "37ba2f12ea31a681b40bc6873a588bb2842cee6b331d01e436f4ceada0e89376"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/lazy-state-runtime/archs/kev.js",
+          "bytes": 10357,
+          "sha256": "f1ebba93662c9bad0dd1c087e1e4c00d62cbeba29b18edb159451bb3d436b0b7"
+        },
+        {
+          "path": "tmp/perf-next-20261106-8H5xqz/lazy-state-runtime/gpu-kev.js",
+          "bytes": 45173,
+          "sha256": "6c90a235877d57586f1d239c711b953037b477c2baef7572f8c429a60724d202"
+        },
+        {
+          "path": "campaign/run-page.mjs",
+          "bytes": 3752,
+          "sha256": "eba8316d60d43fbca1b987d2ac07f93be1c3614082f40ebfe377975ed871676c"
+        },
+        {
+          "path": "campaign/build-performance-follow-up.mjs",
+          "bytes": 27756,
+          "sha256": "b7f84bc4fec00c88f50485096e6d4c4773d6671e6034a20c3bc1bd7111f74104"
+        }
+      ]
+    }
+  ]
+}

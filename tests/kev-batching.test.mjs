@@ -39,7 +39,8 @@ function fixture(t, { hidden = 2048, limit = 2 ** 30, failAt = 0 } = {}) {
     async forward(x1, x2, batch, ids) {
       const mine = requests.map((r) => r.id);
       leaves.push(mine);
-      assert.equal(x1.length, batch.T1 * hidden);
+      assert.equal(typeof x1, "function");
+      assert.equal(x1().length, batch.T1 * hidden);
       assert.equal(x2.length, batch.T2 * hidden);
       assert.deepEqual(Array.from(ids), mine.flatMap((id) => [id, id]));
       if (leaves.length === failAt) throw failure;
@@ -78,4 +79,51 @@ test("a failed recursive batch rejects the operation after an earlier batch succ
   assert.equal(leaves.length, 2);
   assert.equal(engine.gpu.stats.tokensSeen, leaves[0].length * 3);
   assert.ok(leaves.flat().length < requests.length);
+});
+
+test("deferred state embedding preserves copied branches and ids across native scratch reuse and memory growth", async (t) => {
+  const { engine } = fixture(t, { hidden: 1 });
+  const c = engine.coord, memory = new WebAssembly.Memory({ initial: 1 }), stages = [];
+  const embed = c.x.kevala_kev_embed;
+  c.x.kevala_kev_embed = (stage) => {
+    stages.push(stage);
+    embed(stage);
+    if (stage === 1) {
+      memory.grow(1);
+      new Float32Array(memory.buffer, 0, 2).set([3, 4]);
+      new Uint32Array(memory.buffer, 64, 2).fill(999);
+    } else {
+      new Float32Array(memory.buffer, 0, 1).set([7]);
+      new Uint32Array(memory.buffer, 64, 2).set([5, 5]);
+    }
+    return 0;
+  };
+  c.x.kevala_kev_ids = () => 64;
+  c.f32 = (ptr, length) => new Float32Array(memory.buffer, ptr, length);
+  c.u32 = (ptr, length) => new Uint32Array(memory.buffer, ptr, length);
+  const forward = engine.gpu.forward;
+  engine.gpu.forward = async (...args) => {
+    const result = await forward.apply(engine.gpu, args);
+    assert.deepEqual(Array.from(args[1]), [7]);
+    assert.deepEqual(Array.from(args[3]), [5, 5]);
+    return result;
+  };
+  const result = await kev.run(engine, [{ id: 5 }]);
+  assert.deepEqual(stages, [2, 1]);
+  assert.equal(result.timing.prepare, 4);
+  assert.equal(result.timing.forward, 5);
+  assert.equal(result.timing.total, 10);
+});
+
+test("a hit excludes unused state embedding from preparation and keeps complete request timing", async (t) => {
+  const { engine } = fixture(t, { hidden: 1 });
+  const stages = [], embed = engine.coord.x.kevala_kev_embed;
+  engine.coord.x.kevala_kev_embed = (stage) => { stages.push(stage); return embed(stage); };
+  const forward = engine.gpu.forward;
+  engine.gpu.forward = (x1, ...args) => forward.call(engine.gpu, () => new Float32Array(2), ...args);
+  const result = await kev.run(engine, [{ id: 5 }]);
+  assert.deepEqual(stages, [2]);
+  assert.equal(result.timing.prepare, 3);
+  assert.equal(result.timing.forward, 5);
+  assert.equal(result.timing.total, 9);
 });

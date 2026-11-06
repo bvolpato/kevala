@@ -60,7 +60,17 @@ export default {
         },
       };
     }
-    const x1 = c.f32(c.call(() => c.x.kevala_kev_embed(1)), batch.T1 * D).slice();
+    let stateEmbedMs = 0;
+    const x1 = () => {
+      const start = now();
+      try {
+        return c.f32(c.call(() => c.x.kevala_kev_embed(1)), batch.T1 * D).slice();
+      } finally {
+        stateEmbedMs += now() - start;
+      }
+    };
+    // Both native embedding stages share the residual buffer. Copy the branches before the
+    // GPU cache plan asks for state embeddings, and keep ids outside growable WASM memory.
     const x2 = c.f32(c.call(() => c.x.kevala_kev_embed(2)), batch.T2 * D).slice();
     const t1 = now();
     const ids = c.u32(c.x.kevala_kev_ids(1), batch.T1).slice();
@@ -74,7 +84,7 @@ export default {
     }
     return {
       responses: JSON.parse(c.outText()),
-      timing: { prepare: t1 - t0, forward: t2 - t1, total: now() - t0, tokens: batch.T1 + batch.T2, cache: { ...e.gpu.stats } },
+      timing: { prepare: t1 - t0 + stateEmbedMs, forward: t2 - t1 - stateEmbedMs, total: now() - t0, tokens: batch.T1 + batch.T2, cache: { ...e.gpu.stats } },
     };
   },
 

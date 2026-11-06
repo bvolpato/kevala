@@ -59,6 +59,74 @@ function fakeForward(gpu) {
   };
 }
 
+function tracedForward(t, gpu) {
+  const old = Object.getOwnPropertyDescriptor(globalThis, "GPUMapMode");
+  Object.defineProperty(globalThis, "GPUMapMode", { configurable: true, value: { READ: 1 } });
+  t.after(() => old ? Object.defineProperty(globalThis, "GPUMapMode", old) : delete globalThis.GPUMapMode);
+  fakeForward(gpu);
+  const trace = { scopes: [], writes: [], copies: [], submits: 0 };
+  for (const name of ["g", "g2", "x", "x2", "tok", "tok2", "segs", "segs2", "ablocks", "ablocks2", "rows", "gathered", "readback"]) {
+    if (name !== "readback") gpu[name] = name;
+  }
+  gpu.attnTile = true;
+  gpu.blockCap = 8;
+  gpu.device.pushErrorScope = (kind) => trace.scopes.push(kind);
+  gpu.device.popErrorScope = async () => { assert.ok(trace.scopes.pop()); return null; };
+  gpu.device.queue.writeBuffer = (buffer, offset, data) => trace.writes.push({ buffer, offset, data: data.slice() });
+  gpu.device.queue.submit = () => trace.submits++;
+  gpu.device.createCommandEncoder = () => ({ copyBufferToBuffer: (...args) => trace.copies.push(args), finish: () => ({}) });
+  gpu.readback.getMappedRange = (_offset, bytes) => new ArrayBuffer(bytes);
+  return trace;
+}
+
+test("an exact state hit skips the provider and state uploads while switching every shared branch buffer", async (t) => {
+  const prefix = tokens(1), gpu = cache([prefix]);
+  const trace = tracedForward(t, gpu), b = batch([prefix]);
+  const result = await gpu.forward(() => { throw new Error("a cache hit embedded the state"); }, new Float32Array([7]), b, Uint32Array.from(prefix));
+  assert.equal(result.length, 1);
+  assert.deepEqual(gpu.stats, { hits: 1, extensions: 0, misses: 0, tokensSaved: prefix.length });
+  assert.deepEqual(trace.writes.map(({ buffer }) => buffer), ["g2", "x2", "tok2", "segs2", "ablocks2", "rows"]);
+  assert.deepEqual(Array.from(trace.writes.find(({ buffer }) => buffer === "tok2").data), [0, 0, prefix.length, 0]);
+  assert.deepEqual(trace.copies.slice(0, 5).map(([src, , dst]) => [src, dst]), [["x2", "x"], ["tok2", "tok"], ["segs2", "segs"], ["ablocks2", "ablocks"], ["g2", "g"]]);
+  assert.equal(trace.submits, 1);
+  assert.deepEqual(trace.scopes, []);
+});
+
+for (const extension of [false, true]) {
+  test(`a state ${extension ? "extension" : "miss"} calls its provider once and gathers the planned rows`, async (t) => {
+    const prefix = tokens(1), state = [...prefix, 100, 101], gpu = cache(extension ? [prefix] : []);
+    const trace = tracedForward(t, gpu), b = batch([state]);
+    const values = Float32Array.from(state, (_, i) => i + 0.25);
+    let calls = 0;
+    await gpu.forward(() => {
+      calls++;
+      assert.deepEqual(trace.scopes, [], "provider failures must occur outside GPU error scopes");
+      assert.equal(trace.writes.length, 0);
+      return values;
+    }, new Float32Array([7]), b, Uint32Array.from(state));
+    assert.equal(calls, 1);
+    const start = extension ? prefix.length : 0;
+    assert.deepEqual(trace.writes.find(({ buffer }) => buffer === "x").data, values.slice(start));
+    assert.deepEqual(Array.from(trace.writes.find(({ buffer }) => buffer === "g").data), [state.length - start, 1, 1, 1]);
+    assert.equal(gpu.stats[extension ? "extensions" : "misses"], 1);
+    assert.deepEqual(trace.scopes, []);
+  });
+}
+
+test("a throwing state provider invalidates the planned carry without leaking error scopes or submitting work", async (t) => {
+  const prefix = tokens(1), state = [...prefix, 100], gpu = cache([prefix]);
+  const trace = tracedForward(t, gpu), b = batch([state]), failure = new Error("state embedding failed");
+  await assert.rejects(gpu.forward(() => { throw failure; }, new Float32Array([7]), b, Uint32Array.from(state)), (error) => error === failure);
+  assert.deepEqual(gpu.lru, []);
+  assert.deepEqual(trace.scopes, []);
+  assert.deepEqual(trace.writes, []);
+  assert.equal(trace.submits, 0);
+  await gpu.forward(() => new Float32Array(state.length), new Float32Array([7]), b, Uint32Array.from(state));
+  assert.equal(trace.writes.find(({ buffer }) => buffer === "x").data.length, state.length, "retry must recompute the complete state");
+  assert.equal(trace.submits, 1);
+  assert.deepEqual(trace.scopes, []);
+});
+
 test("fresh prefixes run independently while exact duplicates share their destination", () => {
   const gpu = cache();
   const prefix = tokens(1);
