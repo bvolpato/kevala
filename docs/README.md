@@ -42,6 +42,7 @@ Reports distinguish retained changes from rejected experiments and reference mea
 | Report | Kernel |
 |---|---|
 | [FP32 performance reference](performance-reference.md) | Native GEMM measurements, browser feature limits and rejected kernel experiments |
+| [Native Q8 AVX2 row dequantization](native-q8-performance.md) | Isolated native row decoding, dispatch threshold, paired timings and source archives |
 | [Q8 row dequantization](q8-row-dequantization-performance.md) | Block-scaled CPU row reads with native, WASM and paired request evidence |
 | [Performance follow-up](performance-follow-up.md) | Remaining bottlenecks, rejected experiments and cached-state preparation |
 | [Measured model and kernel optimization](model-optimization-performance.md) | Clef CPU finish, Qwen final rows, Gemma long attention and complete mixed model timings |

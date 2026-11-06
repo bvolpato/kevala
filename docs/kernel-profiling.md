@@ -4,6 +4,8 @@ Use this workflow to compare the registered WebGPU kernels and the current model
 
 See the [native and experimental performance reference](performance-reference.md) for the separate cuBLAS FP32 timing scope, Chrome feature gate, and candidate screens that were not promoted.
 
+The [native Q8 AVX2 row report](native-q8-performance.md) records a separate CPU-only dequantization experiment. Its row timings do not measure WebGPU dispatch or model latency.
+
 These measurements identify the best tested candidates for the recorded shapes and feature set. They do not prove a universal hardware optimum or model accuracy.
 
 ## Prepare the checkout
