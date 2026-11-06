@@ -31,8 +31,8 @@ const kevala = await Kevala.load({
 
 Known names include `kev-0.8b`, `kev-4b`, `kev-9b`, `h2o-lightning-4b`, `clef-flash`,
 `semif-qwen3.5-0.8b`, `semif-qwen3.5-2b`, `semif-qwen3.5-4b`, `gemma-4-e2b`, and `gemma-4-e4b`.
-The current npm release contains `laya` and `kev-0.8b`. For the other names, import
-`https://bvolpato.github.io/kevala/js/src/index.js` until the next release.
+The npm package supports all listed model families. You can also import the runtime
+from `https://bvolpato.github.io/kevala/js/src/index.js`.
 
 - First visit: Laya downloads a 479 MB Q8 pack. Refreshed Kev outputs range from 1.51 GB to
   15.90 GB in BF16; Q8 output is smaller. H2O-Lightning is 8.43 GB BF16, and Clef-flash is 18.41 GB
