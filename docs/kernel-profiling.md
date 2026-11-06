@@ -2,6 +2,8 @@
 
 Use this workflow to compare the registered WebGPU kernels and the current model catalog on one measured browser and adapter. The [current report](benchmarks/kernel-profile-2026-11-06/summary.json) keeps hardware, precision, correctness, and missing coverage separate. The website shows the report under [How it works → Speed](https://bvolpato.github.io/kevala/#/how/bench).
 
+See the [native and experimental performance reference](performance-reference.md) for the separate cuBLAS FP32 timing scope, Chrome feature gate, and candidate screens that were not promoted.
+
 These measurements identify the best tested candidates for the recorded shapes and feature set. They do not prove a universal hardware optimum or model accuracy.
 
 ## Prepare the checkout
