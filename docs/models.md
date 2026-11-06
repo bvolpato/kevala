@@ -160,6 +160,17 @@ between page loads or reduce the memory required for inference. Large packs need
 browser storage quota, and cached load time still depends on file size, storage, shader setup,
 and warmup. Run one large model at a time when comparing performance.
 
+Clef's WebGPU backend defaults to `clefHead: "auto"`. It moves seven large joint-head projections
+to the GPU after checking their outputs against the CPU during the first eligible request,
+normally load warmup. Other head operations remain in WASM. Unsupported coordinator flavors,
+CPU tiles, operand ranges, or memory budgets retain the CPU path. Pass `clefHead: "cpu"` to
+`Kevala.load` for a CPU-head comparison with the same GPU backbone. `model.info.clefHead` records
+the path, validation status, and fallback reason observed during load. This snapshot does not track
+later requests; an ineligible warmup can leave it reporting CPU even if a later request uses the GPU.
+The measured Clef-flash pack adds
+about 64 MiB of resident GPU head weights, plus request scratch. See the
+[Clef head report](clef-head-performance.md) for memory limits and measured latency.
+
 ## Conversion and validation
 
 The pinned-source conversion entry point is [`tools/convert_models.py`](../tools/convert_models.py).
