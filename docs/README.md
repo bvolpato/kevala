@@ -4,6 +4,7 @@ Start with [How kevala works](architecture.md). The guides describe the current 
 
 ## Release notes
 
+- [Kevala 0.2.1](releases/0.2.1.md)
 - [Kevala 0.2.0](releases/0.2.0.md)
 
 ## Guides

@@ -50,8 +50,8 @@ From a CDN, in any page:
 </script>
 ```
 
-The current npm release contains Laya and Kev-0.8B. To load the other families
-before the next release, import the runtime that the website serves:
+To use models that your installed npm version does not support, import the runtime
+directly from the website:
 
 ```js
 import { Kevala } from "https://bvolpato.github.io/kevala/js/src/index.js";
