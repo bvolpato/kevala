@@ -1,7 +1,9 @@
 import { esc } from "../ui.js";
 
 const REPORT_PATH = "docs/benchmarks/kernel-profile-2026-11-06/summary.json";
+const OPTIMIZATION_REPORT_PATH = "docs/benchmarks/model-optimization-2026-11-06/summary.json";
 const RAW_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/kernel-profile-2026-11-06/summary.json";
+const RAW_OPTIMIZATION_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/model-optimization-2026-11-06/summary.json";
 const METHOD_URL = "https://github.com/bvolpato/kevala/blob/main/docs/kernel-profiling.md";
 
 const text = (value, fallback = "Not reported") => {
@@ -347,6 +349,126 @@ function improvementCard(improvement) {
   </article>`;
 }
 
+function comparisonChange(value) {
+  const change = number(value);
+  if (change === null) return { label: "Change not reported", tone: "neutral" };
+  if (Math.abs(change) < 0.05 || change === 0) return { label: "0%", tone: "neutral" };
+  return {
+    label: `${change > 0 ? "+" : ""}${new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 }).format(change)}%`,
+    tone: change > 0 ? "worse" : "better",
+  };
+}
+
+function comparisonMetric(metric) {
+  if (!metric || typeof metric !== "object") return `<span class="profile-missing">Not measured</span>`;
+  const change = comparisonChange(metric.changePercent);
+  return `<div class="profile-improvement-values profile-optimization-values">
+    <span>Before <b>${esc(kernelTiming(metric.beforeMs))}</b></span>
+    <span>After <b>${esc(kernelTiming(metric.afterMs))}</b></span>
+    <strong class="profile-comparison-change ${change.tone}">${esc(change.label)}</strong>
+  </div>`;
+}
+
+function probabilityDelta(value) {
+  const delta = number(value);
+  return delta === null ? "Not reported" : new Intl.NumberFormat(undefined, { maximumSignificantDigits: 5 }).format(delta);
+}
+
+function optimizationModelRows(models, environment) {
+  const rows = [];
+  for (const model of models) {
+    const cases = Array.isArray(model.cases) ? model.cases : [];
+    const name = text(model.name, text(model.id, "Unnamed model"));
+    const id = model.id && model.name ? `<small>${esc(model.id)}</small>` : "";
+    const precision = text(model.precision, "Precision not reported");
+    const browser = browserLabel(model.browser ?? environment.browser);
+    const delta = probabilityDelta(model.correctness?.maxProbabilityDelta);
+    const probabilitySource = text(model.correctness?.probabilitySource, "Source not reported");
+    const probabilityCell = `<td class="profile-probability-delta"><span class="num">${esc(delta)}</span><small>${esc(probabilitySource)}</small></td>`;
+    const metrics = (testCase) => `<td>${comparisonMetric(testCase?.wall)}</td><td>${comparisonMetric(testCase?.gpu)}</td>`;
+    if (!cases.length) {
+      rows.push(`<tr><th scope="row"><span>${esc(name)}</span>${id}<small>${esc(precision)}</small></th><td>${esc(browser)}</td><td class="profile-missing">No case comparisons recorded.</td>${probabilityCell}<td><span class="profile-missing">Not measured</span></td><td><span class="profile-missing">Not measured</span></td></tr>`);
+      continue;
+    }
+    for (const testCase of cases) {
+      rows.push(`<tr><th scope="row"><span>${esc(name)}</span>${id}<small>${esc(precision)}</small></th><td>${esc(browser)}</td><td>${esc(text(testCase.name, "Case not reported"))}</td>${probabilityCell}${metrics(testCase)}</tr>`);
+    }
+  }
+  return rows.length ? rows.join("") : `<tr><td colspan="6" class="profile-missing">No model comparisons were recorded.</td></tr>`;
+}
+
+function sourceSnapshot(label, source, commitLabel) {
+  return `<div><dt>${esc(label)}</dt><dd>${esc(commitLabel)} <code>${esc(text(source?.commit ?? source?.baseCommit))}</code></dd><dd>Source fingerprint <code>${esc(text(source?.fingerprint))}</code></dd></div>`;
+}
+
+function artifactDetails(artifacts) {
+  if (!Array.isArray(artifacts) || !artifacts.length) return `<p class="profile-missing">No comparison artifacts were reported.</p>`;
+  return `<details class="profile-optimization-artifacts">
+    <summary>Measurement artifacts (${artifacts.length})</summary>
+    <ul>${artifacts.map((artifact) => {
+      const url = safeUrl(artifact.url);
+      const label = text(artifact.label, "Report artifact");
+      const size = number(artifact.bytes);
+      const gzipSize = number(artifact.gzipBytes);
+      const hashes = [artifact.sha256 ? `SHA-256 ${text(artifact.sha256)}` : "", artifact.gzipSha256 ? `gzip SHA-256 ${text(artifact.gzipSha256)}` : ""].filter(Boolean).join(" · ");
+      return `<li>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener">${esc(label)} ↗</a>` : esc(label)}<small>${size === null ? "Size not reported" : `${new Intl.NumberFormat().format(size)} bytes`}${gzipSize === null ? "" : ` · gzip ${new Intl.NumberFormat().format(gzipSize)} bytes`}${hashes ? ` · ${esc(hashes)}` : ""}</small></li>`;
+    }).join("")}</ul>
+  </details>`;
+}
+
+function renderModelOptimization(report) {
+  const environment = report.environment ?? {};
+  const improvements = Array.isArray(report.improvements) ? report.improvements : [];
+  const models = Array.isArray(report.models) ? report.models : [];
+  const caseCount = models.reduce((count, model) => count + (Array.isArray(model.cases) ? model.cases.length : 0), 0);
+  const modelCount = new Set(models.map((model) => text(model.id ?? model.name, "")).filter(Boolean)).size;
+  const configurationCount = models.length;
+  const before = report.sources?.before ?? {};
+  const after = report.sources?.after ?? {};
+  return `<section class="profile-optimization">
+    <header class="profile-heading">
+      <div><div class="eyebrow">Measured optimization results</div><h3>Before and after model latency</h3>
+        <p class="muted">End-to-end results apply to this model pack, hardware, browser, and source capture. Lower latency is better.</p>
+      </div>
+      <div class="profile-links">
+        <span class="profile-optimization-status">${badge(report.status, `Report ${text(report.status)}`)}</span>
+        <div class="profile-primary-links"><a href="${RAW_OPTIMIZATION_REPORT_URL}" target="_blank" rel="noopener">Raw summary JSON ↗</a><a href="${METHOD_URL}" target="_blank" rel="noopener">Measurement method ↗</a></div>
+      </div>
+    </header>
+    <div class="profile-optimization-facts">
+      <div><span>Hardware</span><b>${esc(text(environment.hardware))}</b></div>
+      <div><span>Browser</span><b>${esc(browserLabel(environment.browser))}</b></div>
+      <div><span>Capture</span><b>${esc(dateLabel(report.generatedAt))}</b></div>
+      <div><span>Model cases</span><b>${caseCount}</b></div>
+    </div>
+    <p class="profile-method-note"><b>Read the measures separately:</b> wall latency is the end-to-end measure. GPU time is diagnostic. A negative latency change means the measured time decreased. ${esc(compact(text(report.protocol?.description, "Protocol details are in the report summary."), 300))}</p>
+    <p class="profile-separation-note">The model and kernel profile below is a separate capture with its own source fingerprint. It does not claim to measure this optimized runtime.</p>
+    <section class="profile-subsection">
+      <div class="profile-section-head"><div><h4>Optimization changes tested</h4><p class="muted small">Each card reports its scope, outcome status, and measured values when available.</p></div></div>
+      ${improvements.length ? `<div class="grid-2 profile-improvements">${improvements.map(improvementCard).join("")}</div>` : `<p class="profile-missing">No individual optimization changes were reported.</p>`}
+    </section>
+    <section class="profile-subsection profile-optimization-comparisons">
+      <details class="profile-disclosure"><summary>Show comparison table · ${modelCount} ${modelCount === 1 ? "model" : "models"} · ${caseCount} ${caseCount === 1 ? "case" : "cases"}${configurationCount !== modelCount ? ` · ${configurationCount} configurations` : ""}</summary>
+        <div class="profile-optimization-table-wrap" role="region" aria-label="Before and after model latency comparisons" tabindex="0">
+          <table class="data profile-optimization-table"><caption>Recorded maximum |Δp| · source labels distinguish raw distributions from rounded public values</caption>
+            <thead><tr><th scope="col">Model · precision</th><th scope="col">Browser</th><th scope="col">Case</th><th scope="col">Recorded |Δp|</th><th scope="col">Wall latency</th><th scope="col">GPU time</th></tr></thead>
+            <tbody>${optimizationModelRows(models, environment)}</tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+    <section class="profile-subsection profile-optimization-provenance">
+      <h4>Capture and source provenance</h4>
+      <p class="muted small">Fingerprints identify the measured source files. The after capture's commit field is its base commit, not a claim that the checkout was clean.</p>
+      <dl class="profile-optimization-sources">${sourceSnapshot("Before capture", before, "Commit")}${sourceSnapshot("After capture", after, "Base commit")}</dl>
+      <details class="profile-disclosure"><summary>Benchmark protocol and artifacts</summary>
+        <div class="profile-optimization-details"><div><h4>Protocol</h4>${detailList(report.protocol)}</div><div><h4>Artifacts</h4>${artifactDetails(report.artifacts)}</div></div>
+      </details>
+      ${limitations(report.limitations)}
+    </section>
+  </section>`;
+}
+
 function detailList(data) {
   if (!data || typeof data !== "object") return `<p class="profile-missing">Not reported.</p>`;
   const entries = Object.entries(data);
@@ -432,8 +554,8 @@ function renderReport(report) {
   const env = report.environment ?? {};
   return `<div class="kernel-profile">
     <header class="profile-heading">
-      <div><div class="eyebrow">Current profiling report</div><h3>Model latency and kernel coverage</h3>
-        <p class="muted">Best tested on this adapter and build only. These measurements do not prove a kernel is universally fastest.</p>
+      <div><div class="eyebrow">Earlier kernel profile</div><h3>Model latency and kernel coverage</h3>
+        <p class="muted">This profile predates the optimized runtime above and applies only to its recorded adapter and build.</p>
       </div>
       <div class="profile-links">${artifactLinks(report.artifacts)}</div>
     </header>
@@ -474,17 +596,53 @@ function validateReport(report) {
 
 function unavailable(reason) {
   return `<section class="profile-unavailable" role="status">
-    <div class="eyebrow">Current profiling report</div><h3>Report unavailable</h3>
-    <p>The current model and kernel measurements are not available from the published summary file.</p>
+    <div class="eyebrow">Earlier kernel profile</div><h3>Report unavailable</h3>
+    <p>The earlier model and kernel measurements are not available from the published summary file.</p>
     <p class="profile-unavailable-reason"><b>Detail:</b> ${esc(reason)}</p>
     <div class="profile-links"><a href="${RAW_REPORT_URL}" target="_blank" rel="noopener">Check the raw summary file ↗</a><a href="${METHOD_URL}" target="_blank" rel="noopener">Measurement method ↗</a></div>
   </section>`;
 }
 
+function optimizationUnavailable(reason) {
+  return `<section class="profile-unavailable profile-optimization-unavailable" role="status">
+    <div class="eyebrow">Measured optimization results</div><h3>Comparison unavailable</h3>
+    <p>The before-and-after model comparison is not available from the published summary file.</p>
+    <p class="profile-unavailable-reason"><b>Detail:</b> ${esc(reason)}</p>
+    <div class="profile-links"><a href="${RAW_OPTIMIZATION_REPORT_URL}" target="_blank" rel="noopener">Check the raw comparison summary ↗</a><a href="${METHOD_URL}" target="_blank" rel="noopener">Measurement method ↗</a></div>
+  </section>`;
+}
+
+function validateOptimizationReport(report) {
+  if (!report || typeof report !== "object" || report.schemaVersion !== 1) return "Unsupported or missing schemaVersion; expected version 1.";
+  if (!Array.isArray(report.models)) return "The summary does not contain a models array.";
+  return "";
+}
+
+export function mountModelOptimization(container) {
+  if (!container) return () => {};
+  const controller = new AbortController();
+  container.innerHTML = `<p class="profile-loading" role="status">Loading measured optimization results…</p>`;
+  fetch(new URL(OPTIMIZATION_REPORT_PATH, document.baseURI), { signal: controller.signal, cache: "no-cache" })
+    .then(async (response) => {
+      if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${OPTIMIZATION_REPORT_PATH}`);
+      return response.json();
+    })
+    .then((report) => {
+      const problem = validateOptimizationReport(report);
+      if (problem) throw new Error(problem);
+      container.innerHTML = renderModelOptimization(report);
+    })
+    .catch((error) => {
+      if (error?.name === "AbortError") return;
+      container.innerHTML = optimizationUnavailable(error?.message || "The comparison could not be loaded or parsed.");
+    });
+  return () => controller.abort();
+}
+
 export function mountKernelProfile(container) {
   if (!container) return () => {};
   const controller = new AbortController();
-  container.innerHTML = `<p class="profile-loading" role="status">Loading the current model and kernel profile…</p>`;
+  container.innerHTML = `<p class="profile-loading" role="status">Loading the earlier model and kernel profile…</p>`;
   fetch(new URL(REPORT_PATH, document.baseURI), { signal: controller.signal, cache: "no-cache" })
     .then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${REPORT_PATH}`);

@@ -16,7 +16,7 @@ import { calibrateGemma4BatchSingle, encodeGemma4BatchSingle, gemma4BatchSingleE
 import { calibrateGemma4GridMlp, encodeGemma4GridMlp, Gemma4GridMlpCache, gemma4GridMlpEligible, gemma4GridMlpTokens } from "./gpu-gemma4-grid-mlp.js";
 import { validateGemma4Rms } from "./gpu-gemma4-rms.js";
 import { gemma4RmsScaleNextPlan } from "./gpu-gemma4-rms-plan.js";
-import { calibrateGemma4Attention } from "./gpu-gemma4-attention.js";
+import { calibrateGemma4Attention, gemma4AttentionScope } from "./gpu-gemma4-attention.js";
 import { calibrateMatvecGelu, encodeMatvecGelu, matvecGeluBindGroup } from "./gpu-matvec-gelu.js";
 import { calibrateMatvecTwo, encodeMatvecTwo } from "./gpu-matvec-two.js";
 import { gpuVisionProjection } from "./gpu-gemma4-vision.js";
@@ -959,6 +959,9 @@ export class GpuGemma4 {
       const op = { kind: name, label, pipeline: this.p[name], group: bg(this.p[name], bindings), dispatch };
       if (name === "ATTN" && this.attention?.pipeline && this.attention.selection.size) {
         op.attentionDim = values[2];
+        op.attentionWindow = values[3];
+        op.attentionCausal = values[4] === true || values[4] === 1;
+        op.attentionBatched = values[5] === true || values[5] === 1;
         op.subgroup = d.createBindGroup({ layout: this.attention.layout, entries: entries(bindings) });
       }
       return op;
@@ -1393,8 +1396,15 @@ export class GpuGemma4 {
       const batchPrefillFused = mlpTogether && !op.sourcePolicy && op.batched && this.fuseBatchPrefillGelu === true && this.batchMlpScratchReady && this.batchMlp?.tokens === T && gemma4BatchMlpEligible(T) && op.batchMlpFused;
       const nextFusion = skippedNorms && ops.rmsNextLinks.get(op);
       const rmsFusion = this.fuseRms === true && this.rmsValidation.enabled && ops[index + 1] === op.rmsPartner && (nextFusion?.fusion || op.rmsFusion);
-      const attentionScope = T === 2 ? "tail" : T >= 16 && T <= 256 ? "prefill" : null;
-      const subgroupAttention = op.subgroup && this.fuseAttentionSubgroups === true && attentionScope && this.attention.selection.has(`${op.attentionDim}:${attentionScope}`);
+      const attentionScope = gemma4AttentionScope(T, {
+        batched: op.attentionBatched,
+        causal: op.attentionCausal,
+        prefixTokens: this.prefixKV ? this.prefixLength : 0,
+      });
+      const attentionSelection = attentionScope === "long"
+        ? `${op.attentionDim}:long:${op.attentionWindow}`
+        : `${op.attentionDim}:${attentionScope}`;
+      const subgroupAttention = op.subgroup && this.fuseAttentionSubgroups === true && attentionScope && this.attention.selection.has(attentionSelection);
       if (prof) pass = prof.pass(enc, gridFused ? "mm.grid.gate.up.gelu" : prefixGelu ? "mm.prefix.bn32.gate.up.gelu" : twoFused ? "mm.two.gate.up.gelu" : fused ? "mm.gate.up.gelu" : prefillFused ? "mm.prefill.gate.up.gelu" : batchPrefillFused ? "mm.batch.gate.up.gelu" : rmsFusion ? rmsFusion.label : subgroupAttention ? "attn.subgroup" : op.label);
       if (gridFused) {
         encodeGemma4GridMlp(pass, this.gridMlp, op, T, this.device, gridBaseline);

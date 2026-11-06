@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kevala Clef CPU finish benchmark</title>
+<style>body { margin: 2rem; font: 14px/1.5 ui-monospace, monospace; } pre { white-space: pre-wrap; }</style>
+<h1>Clef CPU finish benchmark</h1>
+<p>CPU finish only. The same captured backbone output is replayed through two coordinators. This does not measure an end-to-end speedup.</p>
+<p>Required query parameter: <code>packSha256</code> (verified offline full-pack digest). Optional: <code>runtime</code> (default <code>../js/src/index.js</code>), <code>baseline</code> (default <code>../tmp/baseline-runtime/</code>), <code>pack</code>, <code>flavor</code>, <code>tile=0|1</code>. Pass frozen runtime and baseline URLs explicitly for comparisons. Run through the serialized GPU queue.</p>
+<pre id="log"></pre>
+<script type="module" src="./clef-head-bench.js"></script>
+</html>

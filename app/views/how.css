@@ -27,6 +27,45 @@
 .view-how .historical-heading { margin: 34px 0 8px; font-size: 1.05rem; }
 
 .view-how .kernel-profile { margin-top: 24px; }
+.view-how .profile-optimization { margin: 22px 0 30px; padding: 18px; border: 1px solid var(--border-2); border-radius: var(--radius); background: linear-gradient(115deg, rgba(122, 162, 255, 0.055), rgba(69, 224, 192, 0.025)), var(--bg-2); }
+.view-how .profile-optimization .profile-heading { padding: 0 0 14px; border: 0; border-radius: 0; background: none; }
+.view-how .profile-optimization .profile-heading h3 { font-size: 1.2rem; }
+.view-how .profile-optimization .profile-links { flex-basis: 280px; }
+.view-how .profile-optimization-status { display: flex; }
+.view-how .profile-optimization-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
+.view-how .profile-optimization-facts > div { min-width: 0; display: grid; gap: 3px; padding: 10px 11px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.view-how .profile-optimization-facts span { color: var(--muted); font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.view-how .profile-optimization-facts b { overflow-wrap: anywhere; font-size: 0.8rem; }
+.view-how .profile-separation-note { margin: 10px 0; color: var(--muted); font-size: 0.78rem; }
+.view-how .profile-optimization-table-wrap { max-width: 100%; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
+.view-how .profile-optimization-table { min-width: 1040px; }
+.view-how .profile-optimization-table th, .view-how .profile-optimization-table td { vertical-align: top; white-space: normal; }
+.view-how .profile-optimization-table tbody th { min-width: 155px; color: var(--text-2); text-transform: none; letter-spacing: normal; }
+.view-how .profile-optimization-table tbody th small { display: block; margin-top: 2px; color: var(--muted); font: 0.69rem var(--mono); }
+.view-how .profile-optimization-table tbody td:nth-child(2) { min-width: 135px; }
+.view-how .profile-optimization-table tbody td:nth-child(3) { min-width: 150px; }
+.view-how .profile-optimization-table tbody td:nth-child(4) { min-width: 130px; }
+.view-how .profile-optimization-table tbody td:nth-child(5), .view-how .profile-optimization-table tbody td:nth-child(6) { min-width: 220px; }
+.view-how .profile-probability-delta .num { display: block; text-align: right; }
+.view-how .profile-probability-delta small { display: block; margin-top: 2px; color: var(--muted); font-size: 0.64rem; line-height: 1.3; overflow-wrap: anywhere; }
+.view-how .profile-optimization-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px; margin: 0; font-size: 0.68rem; }
+.view-how .profile-optimization-values > span { min-width: 0; display: grid; gap: 2px; }
+.view-how .profile-optimization-values > span b { font-size: 0.72rem; }
+.view-how .profile-optimization-values > strong { grid-column: 1 / -1; margin: 0; text-align: right; font-size: 0.78rem; }
+.view-how .profile-optimization-values > strong.better { color: var(--accent-2); }
+.view-how .profile-optimization-values > strong.worse { color: var(--bad); }
+.view-how .profile-optimization-values > strong.neutral { color: var(--muted); }
+.view-how .profile-optimization-provenance > h4 { margin: 0 0 4px; font-size: 0.9rem; }
+.view-how .profile-optimization-sources { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin: 10px 0 14px; }
+.view-how .profile-optimization-sources > div { min-width: 0; display: grid; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); }
+.view-how .profile-optimization-sources dt { color: var(--text-2); font-size: 0.73rem; font-weight: 700; }
+.view-how .profile-optimization-sources dd { margin: 0; color: var(--muted); font-size: 0.69rem; overflow-wrap: anywhere; }
+.view-how .profile-optimization-sources code { color: var(--text-2); overflow-wrap: anywhere; }
+.view-how .profile-optimization-details { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 8px 12px 12px; }
+.view-how .profile-optimization-details h4 { margin: 4px 0 8px; font-size: 0.85rem; }
+.view-how .profile-optimization-artifacts ul { display: grid; gap: 8px; margin: 0; padding-left: 18px; }
+.view-how .profile-optimization-artifacts li { color: var(--text-2); font-size: 0.76rem; overflow-wrap: anywhere; }
+.view-how .profile-optimization-artifacts li small { display: block; margin-top: 2px; color: var(--muted); font-size: 0.66rem; overflow-wrap: anywhere; }
 .view-how .profile-heading, .view-how .profile-section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .view-how .profile-heading { padding: 22px; border: 1px solid var(--border-2); border-radius: var(--radius); background: linear-gradient(115deg, rgba(122, 162, 255, 0.08), rgba(69, 224, 192, 0.035)), var(--surface); }
 .view-how .profile-heading { flex-wrap: wrap; }
@@ -217,6 +256,10 @@
   .view-how .profile-heading, .view-how .profile-section-head { display: grid; }
   .view-how .profile-heading { padding: 16px; }
   .view-how .profile-heading .profile-links { justify-content: flex-start; min-width: 0; width: 100%; }
+  .view-how .profile-optimization { padding: 14px; }
+  .view-how .profile-optimization .profile-heading { padding: 0 0 12px; }
+  .view-how .profile-optimization-facts { grid-template-columns: 1fr 1fr; }
+  .view-how .profile-optimization-sources, .view-how .profile-optimization-details { grid-template-columns: 1fr; }
   .view-how .profile-meta-grid { grid-template-columns: 1fr 1fr; }
   .view-how .profile-gates, .view-how .profile-improvements, .view-how .profile-detail-grid { grid-template-columns: 1fr; }
   .view-how .profile-case-grid { grid-template-columns: 1fr; }

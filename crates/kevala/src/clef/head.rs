@@ -2,11 +2,12 @@
 
 use super::encoding::Record;
 use crate::json::Value;
-use crate::kernels::{gelu, linear};
+use crate::kernels::{gelu, linear, Mat};
 use crate::math::softmax;
 use crate::pack::{DType, TensorInfo};
 use crate::store::Store;
 use std::collections::HashMap;
+use std::ops::Range;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -171,29 +172,43 @@ impl Head {
         out
     }
 
+    fn attention_projection(&mut self, x: &[f32], name: &str, rows: Range<usize>) -> Vec<f32> {
+        let w = self.cfg.width;
+        let weight = self.store.f32s(&self.tensors[&format!("{name}.in_proj_weight")]);
+        let bias = self.store.f32s(&self.tensors[&format!("{name}.in_proj_bias")]);
+        let matrix = Mat::F32 { n: rows.len(), k: w, w: &weight[rows.start * w..rows.end * w] };
+        let mut out = vec![0.; x.len() / w * rows.len()];
+        linear(x, x.len() / w, matrix, Some(&bias[rows]), &mut out, &mut self.panel);
+        out
+    }
+
     fn attention(&mut self, queries: &[f32], memory: &[f32], name: &str) -> Vec<f32> {
         let w = self.cfg.width;
         let (nq, nm, hd) = (queries.len() / w, memory.len() / w, w / self.cfg.heads);
-        let t = &self.tensors[&format!("{name}.in_proj_weight")];
-        let mut qkv_query = vec![0.; nq * 3 * w];
-        let mut qkv_memory = vec![0.; nm * 3 * w];
-        let bias = self.values(&format!("{name}.in_proj_bias")).to_vec();
-        linear(queries, nq, self.store.mat(t), Some(&bias), &mut qkv_query, &mut self.panel);
-        linear(memory, nm, self.store.mat(t), Some(&bias), &mut qkv_memory, &mut self.panel);
+        let shared = std::ptr::eq(queries, memory);
+        let query_stride = if shared { 3 * w } else { w };
+        let query = self.attention_projection(queries, name, 0..query_stride);
+        let projected_memory = (!shared).then(|| self.attention_projection(memory, name, w..3 * w));
+        let (memory, memory_stride, key_offset, value_offset) = match projected_memory.as_deref() {
+            Some(memory) => (memory, 2 * w, 0, w),
+            None => (query.as_slice(), 3 * w, w, 2 * w),
+        };
         let mut output = vec![0.; nq * w];
         let scale = (hd as f32).sqrt().recip();
         for q in 0..nq {
             for h in 0..self.cfg.heads {
-                let query = &qkv_query[q * 3 * w + h * hd..q * 3 * w + (h + 1) * hd];
+                let query = &query[q * query_stride + h * hd..q * query_stride + (h + 1) * hd];
                 let logits: Vec<_> = (0..nm)
                     .map(|m| {
-                        let key = &qkv_memory[m * 3 * w + w + h * hd..m * 3 * w + w + (h + 1) * hd];
+                        let key = &memory
+                            [m * memory_stride + key_offset + h * hd..m * memory_stride + key_offset + (h + 1) * hd];
                         query.iter().zip(key).map(|(q, k)| q * k).sum::<f32>() * scale
                     })
                     .collect();
                 for (m, probability) in softmax(&logits).iter().enumerate() {
                     for i in 0..hd {
-                        output[q * w + h * hd + i] += probability * qkv_memory[m * 3 * w + 2 * w + h * hd + i];
+                        output[q * w + h * hd + i] +=
+                            probability * memory[m * memory_stride + value_offset + h * hd + i];
                     }
                 }
             }
@@ -375,4 +390,80 @@ fn dot(x: &[f32], y: &[f32]) -> f32 {
 }
 fn cosine(x: &[f32], y: &[f32], eps: f32) -> f32 {
     dot(x, y) / (dot(x, x).sqrt().max(eps) * dot(y, y).sqrt().max(eps))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pack::Writer;
+    use crate::store::{load_store, AlignedBuf};
+
+    fn head() -> Head {
+        let fixture = Value::parse(include_str!("../../../../tests/fixtures/clef-head.json")).unwrap();
+        let cfg = HeadConfig::from_json(fixture.get("config").unwrap()).unwrap();
+        let mut writer = Writer::new(Value::Null, Value::Null, vec![]);
+        for (name, shape) in cfg.tensors() {
+            writer.add_f32(&format!("clef.{name}"), &shape);
+        }
+        let (prefix, infos, total) = writer.layout();
+        let mut bytes = vec![0; total];
+        bytes[..prefix.len()].copy_from_slice(&prefix);
+        for info in infos {
+            let values = fixture
+                .get("tensors")
+                .unwrap()
+                .get(info.name.strip_prefix("clef.").unwrap())
+                .unwrap()
+                .get("values")
+                .unwrap()
+                .as_array()
+                .unwrap();
+            for (index, value) in values.iter().enumerate() {
+                let offset = info.offset + index * 4;
+                bytes[offset..offset + 4].copy_from_slice(&(value.as_f64().unwrap() as f32).to_le_bytes());
+            }
+        }
+        let (store, _) = load_store(AlignedBuf::from_slice(&bytes)).unwrap();
+        Head::new(cfg, Arc::new(store)).unwrap()
+    }
+
+    fn bits(values: &[f32]) -> Vec<u32> {
+        values.iter().map(|value| value.to_bits()).collect()
+    }
+
+    #[test]
+    fn sliced_attention_projections_match_full_qkv_bits() {
+        let mut head = head();
+        let w = head.cfg.width;
+        let name = "evidence_layers.0.attention";
+        for rows in [1, 2, 3, 5, 16] {
+            let input: Vec<_> = (0..rows * w).map(|i| (i as f32 - 7.) * 0.13).collect();
+            let matrix = &head.tensors[&format!("{name}.in_proj_weight")];
+            let bias = head.values(&format!("{name}.in_proj_bias"));
+            let mut full = vec![0.; rows * 3 * w];
+            linear(&input, rows, head.store.mat(matrix), Some(bias), &mut full, &mut Vec::new());
+            let query = head.attention_projection(&input, name, 0..w);
+            let memory = head.attention_projection(&input, name, w..3 * w);
+            for row in 0..rows {
+                assert_eq!(bits(&query[row * w..(row + 1) * w]), bits(&full[row * 3 * w..row * 3 * w + w]));
+                assert_eq!(
+                    bits(&memory[row * 2 * w..(row + 1) * 2 * w]),
+                    bits(&full[row * 3 * w + w..(row + 1) * 3 * w])
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn shared_self_attention_matches_distinct_equal_inputs_bitwise() {
+        let mut head = head();
+        let w = head.cfg.width;
+        for rows in [1, 2, 5] {
+            let input: Vec<_> = (0..rows * w).map(|i| (i as f32 - 11.) * 0.17).collect();
+            let copy = input.clone();
+            let shared = head.attention(&input, &input, "layers.0.self_attn");
+            let separate = head.attention(&input, &copy, "layers.0.self_attn");
+            assert_eq!(bits(&shared), bits(&separate));
+        }
+    }
 }

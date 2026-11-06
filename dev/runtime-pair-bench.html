@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resident runtime pairs</title>
+<style>
+  body { font: 15px system-ui; max-width: 76rem; margin: 2rem auto; padding: 0 1rem; }
+  #track { height: 1rem; overflow: hidden; background: #ddd; }
+  #frame { width: 1rem; height: 1rem; background: #246; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+<h1>Resident runtime pairs</h1>
+<p>Both small models stay resident. Unprofiled requests run serially in alternating ABBA pairs with the same inputs. Loading, source hashing, and result checks are outside request timing.</p>
+<div id="track"><div id="frame"></div></div>
+<pre id="log">Starting…</pre>
+<script type="module" src="./runtime-pair-bench.js"></script>
+</html>
