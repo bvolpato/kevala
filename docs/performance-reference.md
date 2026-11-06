@@ -15,6 +15,8 @@ The native run used an NVIDIA GeForce RTX 5070 Ti and CUDA 13.2 with cuBLAS 13.4
 
 These are a reference, not a hardware ceiling. FP32-expanded weights take 4 bytes per weight, compared with about 1.125 bytes per weight for Q8 block-32 values and scales. The largest case kept about 440 MiB of device buffers live, excluding the cuBLAS workspace. The much smaller Q8 representation, dequantization, transfer, allocation, and browser work are outside this GEMM timing. See the [cuBLAS compute-type documentation](https://docs.nvidia.com/cuda/cublas/index.html#cublasgemmex) and the [native capture record](benchmarks/performance-reference-2026-11-06/summary.json) for the precise scope and all 19 shapes.
 
+For isolated CPU Q8 row decoding timings, see the [native AVX2 row report](native-q8-performance.md). It uses a different host-side scope and does not alter the GPU comparison above.
+
 ## Chrome feature boundary
 
 The browser capability capture used Chrome for Testing 156.0.8078.4 with Dawn revision [`0a2c7df818e285d6db0f085135139cda04cee8bb`](https://chromium.googlesource.com/chromium/src/+/refs/tags/156.0.8078.4/DEPS). On this workstation, NVIDIA driver 595.71.05 is below Dawn's Vulkan NVIDIA shader-f16 gate of 615.71. The adapter therefore did not expose `shader-f16`. Dawn's [pinned Vulkan feature gate](https://dawn.googlesource.com/dawn/+/0a2c7df818e285d6db0f085135139cda04cee8bb/src/dawn/native/vulkan/PhysicalDeviceVk.cpp) is the reason this browser capture cannot support an f16 performance claim.

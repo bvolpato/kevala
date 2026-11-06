@@ -256,6 +256,34 @@ mod imp {
 
 pub use imp::{dequant16, F4};
 
+/// Dequantizes a row using one AVX2 call for all its scale blocks.
+///
+/// # Safety
+/// The CPU must support AVX2.
+#[cfg(target_arch = "x86_64")]
+#[target_feature(enable = "avx2")]
+pub(crate) unsafe fn dequant_q8_row_avx2(q: &[i8], scales: &[f32], block: usize, out: &mut [f32]) {
+    use core::arch::x86_64::*;
+
+    for (b, dst) in out.chunks_mut(block).enumerate() {
+        let scale = scales[b];
+        let src = &q[b * block..b * block + dst.len()];
+        let mut src = src.chunks_exact(16);
+        let mut dst = dst.chunks_exact_mut(16);
+        let s = _mm256_set1_ps(scale);
+        for (src, dst) in src.by_ref().zip(dst.by_ref()) {
+            let v = _mm_loadu_si128(src.as_ptr() as *const __m128i);
+            let lo = _mm256_cvtepi8_epi32(v);
+            let hi = _mm256_cvtepi8_epi32(_mm_srli_si128::<8>(v));
+            _mm256_storeu_ps(dst.as_mut_ptr(), _mm256_mul_ps(_mm256_cvtepi32_ps(lo), s));
+            _mm256_storeu_ps(dst.as_mut_ptr().add(8), _mm256_mul_ps(_mm256_cvtepi32_ps(hi), s));
+        }
+        for (src, dst) in src.remainder().iter().zip(dst.into_remainder()) {
+            *dst = *src as f32 * scale;
+        }
+    }
+}
+
 /// Dot product of two equal-length slices whose length is a multiple of 16.
 #[inline(always)]
 pub fn dot16(a: &[f32], b: &[f32]) -> f32 {

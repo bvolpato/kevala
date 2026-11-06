@@ -53,7 +53,7 @@ const TEMPLATE = `<div class="wrap">
     <div class="eyebrow">Speed</div>
     <h2>Latency</h2>
     <p class="muted">Measured optimization results and the earlier model/kernel inventory are below. See the <a href="${REPO}/blob/main/BENCHMARK.md">decision benchmark report</a> for quality results.</p>
-    <p class="muted">Latest follow-up: <a href="${DOCS}/q8-row-dequantization-performance.md">Q8 CPU embedding preparation</a>.</p>
+    <p class="muted">Latest follow-up: <a href="${DOCS}/native-q8-performance.md">native AVX2 Q8 row decoding</a> was 1.58× faster at full widths on the Linux test host. This measures the decoder, with no complete-model latency claim. See also <a href="${DOCS}/q8-row-dequantization-performance.md">Q8 CPU embedding preparation</a>.</p>
     <p class="muted">Long cached states in Kev-0.8B Q8 were 7.9–8.1% faster in two repeated-question trials on the Linux test host. Shorter-state results varied. Read the <a href="${DOCS}/performance-follow-up.md">11-model profile, experiments and remaining bottlenecks</a>.</p>
     <p class="muted">Latest kernel research: <a href="${DOCS}/performance-reference.md">native FP32 measurements, browser feature limits and rejected experiments</a>. These measurements guide the next optimizations; they do not establish a model ranking.</p>
     <div id="model-optimization-report" aria-live="polite"></div>

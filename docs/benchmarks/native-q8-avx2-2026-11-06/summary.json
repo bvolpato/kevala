@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "status": "complete",
+  "title": "Native Q8 AVX2 row dequantization",
+  "measuredOn": "2026-11-06",
+  "scope": "Isolated native Store::row row decoding. This does not measure full model latency.",
+  "hardware": {
+    "cpu": "AMD Ryzen 9 9950X3D",
+    "affinityCpu": 7,
+    "governor": "performance",
+    "baselineTarget": "Default x86_64 target features, including SSE2; no AVX2 compile target flag.",
+    "runtimeDispatch": "AVX2 is selected with runtime feature detection.",
+    "loadAverageAtV2Metadata": [
+      29.85,
+      42.35,
+      39.9
+    ],
+    "nonAvx2HardwareTested": false
+  },
+  "protocol": {
+    "shapes": {
+      "k": [
+        1024,
+        2560,
+        4096
+      ],
+      "blocks": [
+        16,
+        32,
+        64
+      ],
+      "tokens": [
+        1,
+        158,
+        659
+      ],
+      "widths": [
+        5,
+        17,
+        63,
+        64,
+        128,
+        "full K"
+      ]
+    },
+    "warmupCallsPerArm": 3,
+    "measuredPairs": 9,
+    "order": "Alternating ABBA and BAAB rounds; each round times four serial batches.",
+    "timing": "Native row helper only. Input preparation, fixture verification, output comparison, and post-run verification are outside the timer.",
+    "correctness": "Exact f32 output bits are compared before and after timing.",
+    "speedupDefinition": "Median paired baseline time divided by candidate time; values above 1 favor the candidate.",
+    "absoluteNsDefinition": "Conventional median of 18 arm observations per case, divided by rowCallsPerSample; displayed group values are medians across 27 case medians.",
+    "derivedStatistics": "derived-statistics.json corrects upper-middle absolute medians in the original summary files without modifying those files."
+  },
+  "versions": {
+    "v1": {
+      "role": "Rejected tiny-row dispatch experiment.",
+      "dispatchThreshold": "Every nonempty row.",
+      "source": {
+        "baseCommit": "91c464557d78d6aa111df84d39545da27e99c343",
+        "patchSha256": "797cb5874bc607b2db7fd7ad914cd1b9087ca5f1605cc8573341f506c1c0a128",
+        "frozenManifest": "frozen-source.json"
+      },
+      "rawRows": 108,
+      "groups": [
+        {
+          "width": 5,
+          "cases": 27,
+          "medianPairedSpeedup": 0.8185235986067662,
+          "minPairedSpeedup": 0.7361660746639915,
+          "maxPairedSpeedup": 0.929057764853578,
+          "slowerCases": 27,
+          "baselineMedianNsPerRow": 8.174357586962829,
+          "candidateMedianNsPerRow": 9.732753004365842,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": 17,
+          "cases": 27,
+          "medianPairedSpeedup": 0.9063993805581808,
+          "minPairedSpeedup": 0.8056500848415724,
+          "maxPairedSpeedup": 1.0620453029617594,
+          "slowerCases": 25,
+          "baselineMedianNsPerRow": 8.066149196561796,
+          "candidateMedianNsPerRow": 9.244115474409952,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": 63,
+          "cases": 27,
+          "medianPairedSpeedup": 1.0610839885827403,
+          "minPairedSpeedup": 0.9525146152225277,
+          "maxPairedSpeedup": 1.2158803779293317,
+          "slowerCases": 4,
+          "baselineMedianNsPerRow": 17.797427036772714,
+          "candidateMedianNsPerRow": 16.582388369717094,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": "full",
+          "cases": 27,
+          "medianPairedSpeedup": 1.6043384466842796,
+          "minPairedSpeedup": 1.199411222971027,
+          "maxPairedSpeedup": 2.1292839566114563,
+          "slowerCases": 0,
+          "baselineMedianNsPerRow": 301.7739797140803,
+          "candidateMedianNsPerRow": 191.62337912936093,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        }
+      ],
+      "preflightFailure": {
+        "commandIssue": "The initial rustup +1.95.0 discovery command was routed to Homebrew rustc 1.98.1 and Homebrew cargo, which rejected +1.95.0. It failed before compilation; subsequent builds used absolute Rust 1.95.0 toolchain paths.",
+        "evidence": "runs-v1/preflight-path-failure.json"
+      }
+    },
+    "v2": {
+      "role": "Timed source with 64-value runtime dispatch threshold.",
+      "dispatchThreshold": "AVX2 row helper is selected when output width is at least 64 and runtime feature detection reports AVX2.",
+      "source": {
+        "baseCommit": "91c464557d78d6aa111df84d39545da27e99c343",
+        "patchSha256": "5150155f7531b5e441fb1ecdb3946db06ab275032b9b22d656321d40e139b00a",
+        "frozenManifest": "frozen-source-v2.json"
+      },
+      "rawRows": 162,
+      "groups": [
+        {
+          "width": 5,
+          "cases": 27,
+          "medianPairedSpeedup": 0.9553654827284908,
+          "minPairedSpeedup": 0.8912068986462304,
+          "maxPairedSpeedup": 1.0322955476803857,
+          "slowerCases": 23,
+          "baselineMedianNsPerRow": 8.04055979569448,
+          "candidateMedianNsPerRow": 8.136768606429502,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": 17,
+          "cases": 27,
+          "medianPairedSpeedup": 0.952129296258833,
+          "minPairedSpeedup": 0.9156038340640481,
+          "maxPairedSpeedup": 1.0369177643029455,
+          "slowerCases": 23,
+          "baselineMedianNsPerRow": 8.487703775986251,
+          "candidateMedianNsPerRow": 8.699265087741075,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": 63,
+          "cases": 27,
+          "medianPairedSpeedup": 0.9895693819362464,
+          "minPairedSpeedup": 0.9153987267893523,
+          "maxPairedSpeedup": 1.0753929670341527,
+          "slowerCases": 14,
+          "baselineMedianNsPerRow": 17.324262120825132,
+          "candidateMedianNsPerRow": 17.735998948277803,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": 64,
+          "cases": 27,
+          "medianPairedSpeedup": 1.1455830374076288,
+          "minPairedSpeedup": 1.064434621999274,
+          "maxPairedSpeedup": 1.3577739196393128,
+          "slowerCases": 0,
+          "baselineMedianNsPerRow": 13.311927795410156,
+          "candidateMedianNsPerRow": 11.379684448242188,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": 128,
+          "cases": 27,
+          "medianPairedSpeedup": 1.3198078303213183,
+          "minPairedSpeedup": 1.124941331699343,
+          "maxPairedSpeedup": 1.4837390936001584,
+          "slowerCases": 0,
+          "baselineMedianNsPerRow": 20.97096771732247,
+          "candidateMedianNsPerRow": 15.86464301686014,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        },
+        {
+          "width": "full",
+          "cases": 27,
+          "medianPairedSpeedup": 1.5845845065981072,
+          "minPairedSpeedup": 1.208455719094017,
+          "maxPairedSpeedup": 2.168801749407602,
+          "slowerCases": 0,
+          "baselineMedianNsPerRow": 338.6241123803643,
+          "candidateMedianNsPerRow": 194.44502937361716,
+          "absoluteTimeSummary": "Median across case-level arm medians; not a pooled latency or full-model result."
+        }
+      ],
+      "lockGuard": {
+        "intentionallyFailed": true,
+        "status": "SIGABRT",
+        "explanation": "The guard test unset KEVALA_PROFILE_LOCK_HELD, causing the benchmark to panic because the expected canonical lock path was absent. Release panic=abort produces SIGABRT, not exit 101. The guard validation was corrected to expect SIGABRT and passed.",
+        "evidence": "runs-v2/guard-validation.json"
+      }
+    },
+    "v3": {
+      "role": "Final test source. It adds infinity and quiet/signaling NaN scales; it was not timed.",
+      "source": {
+        "baseCommit": "91c464557d78d6aa111df84d39545da27e99c343",
+        "patchSha256": "dd235ecc630c73b31f8d185e75b00ea08851459335a24469520f2ac52798b72d",
+        "testOnlyDeltaSha256": "f850a7a7a396500ab1acf286e14acf6284d5c8ee9ef326af917aa901a887e88c",
+        "frozenManifest": "frozen-source-v3.json"
+      },
+      "productionSourceMatchesTimedV2": true,
+      "performanceRerun": false,
+      "validationReceipt": {
+        "path": "full-validation-v2/receipt.json",
+        "sha256": "fbe89f1e517c3acdb741cacbb5131fc2bfd90d95b108c7a82747329c3e3ad7e0",
+        "allPassed": true
+      },
+      "validation": {
+        "formatting": "passed",
+        "clippy": "passed",
+        "focusedReleaseTest": "passed",
+        "workspaceReleaseTests": "passed",
+        "wasmBuilds": "base, SIMD, and relaxed builds passed; check-wasm passed"
+      },
+      "nonAvx2HardwareTested": false,
+      "endToEndModelTiming": false,
+      "optionalKevPackAvailable": false
+    }
+  },
+  "evidence": {
+    "derivedStatistics": "derived-statistics.json",
+    "rawOriginalSummaries": [
+      "runs-v1/summary.json",
+      "runs-v2/summary.json"
+    ],
+    "originalSummariesPreserved": true,
+    "archives": [
+      {
+        "filename": "source-v1-rejected.tar.gz",
+        "compressedBytes": 13110,
+        "compressedSha256": "76647104b70c222e94466a5f1f287181c480fb7ce6c9fee10a194baea9b39e6b",
+        "decodedTarBytes": 61440,
+        "decodedTarSha256": "74d31cb7feccb67670dd2c42eab31ed440f3a9bf257d739a3e076d05a70b393e",
+        "entryCount": 6
+      },
+      {
+        "filename": "source-v2-timed.tar.gz",
+        "compressedBytes": 13178,
+        "compressedSha256": "196b2e3c845e9b712b849a6cd71c6e53f7ac59876f025b67d0e767c07deef165",
+        "decodedTarBytes": 61440,
+        "decodedTarSha256": "0b52deb5c941ced7ef039f6a380926068735b89826c071054be2b4d56b16a228",
+        "entryCount": 6
+      },
+      {
+        "filename": "source-v3-tests.tar.gz",
+        "compressedBytes": 15767,
+        "compressedSha256": "cf5cad89a7967e84ae08a1a15e7303e8ddd4eff2e0f67f77c6aa5dab7f179d37",
+        "decodedTarBytes": 102400,
+        "decodedTarSha256": "49448579d263b2d10d78d1b50acee08acda2746a0184de8abb58722091072c73",
+        "entryCount": 5
+      },
+      {
+        "filename": "raw-evidence-v1-v2-v3.tar.gz",
+        "compressedBytes": 3248112,
+        "compressedSha256": "1879e87903d6f1478066fa6fddf4a2a3a33199a766073dcfb92e4eb252f79d02",
+        "decodedTarBytes": 21544960,
+        "decodedTarSha256": "58482a568a9e7b710e3249893dfdd52dacab1583aa3d3c963a0b17757f8d6f20",
+        "entryCount": 192
+      }
+    ],
+    "archiveManifest": "archive-manifest.json"
+  },
+  "limits": [
+    "All measurements use one busy AMD Ryzen 9 9950X3D with affinity set to CPU 7. Affinity does not reserve an idle core.",
+    "The paired full-row improvement is isolated row decoding, not full model latency.",
+    "Widths below 64 retain small mixed or slower paired medians in v2. The non-AVX2 runtime fallback was not measured on non-AVX2 hardware.",
+    "No model weights or compiled binaries are included in the archives."
+  ]
+}

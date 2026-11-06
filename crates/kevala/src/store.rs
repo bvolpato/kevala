@@ -149,6 +149,12 @@ impl Store {
             }
             Mat::Q8 { k, block, q, scales, .. } => {
                 let nb = k / block;
+                #[cfg(target_arch = "x86_64")]
+                if out.len() >= 64 && std::arch::is_x86_feature_detected!("avx2") {
+                    // Amortize runtime dispatch over at least four sixteen-value chunks.
+                    unsafe { crate::simd::dequant_q8_row_avx2(&q[r * k..], &scales[r * nb..], block, out) };
+                    return;
+                }
                 for (b, dst) in out.chunks_mut(block).enumerate() {
                     let scale = scales[r * nb + b];
                     let start = r * k + b * block;
@@ -180,6 +186,45 @@ pub fn load_store(buf: AlignedBuf) -> Result<(Store, Header), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(target_arch = "x86_64")]
+    #[test]
+    fn avx2_q8_row_matches_scalar_with_unaligned_inputs_and_tails() {
+        if !std::arch::is_x86_feature_detected!("avx2") {
+            return;
+        }
+        let scales = [
+            0.,
+            -0.,
+            0.125,
+            -0.375,
+            f32::MIN_POSITIVE,
+            f32::from_bits(1),
+            f32::MAX / 128.,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::from_bits(0x7fc0_1234),
+            f32::from_bits(0xffc0_5678),
+            f32::from_bits(0x7f80_1234),
+            f32::from_bits(0xff80_5678),
+        ];
+        for block in [16, 32, 64] {
+            let len = scales.len() * block;
+            let q: Vec<i8> = (0..len + 1).map(|i| i.wrapping_mul(73).wrapping_add(19) as i8).collect();
+            let q = &q[1..];
+            for width in 0..=len {
+                let mut out = vec![f32::from_bits(0x7fc0_1234); width + 2];
+                // Feature detection above permits the ISA-specific call; slice offsets test unaligned loads/stores.
+                unsafe { crate::simd::dequant_q8_row_avx2(q, &scales, block, &mut out[1..width + 1]) };
+                assert_eq!(out[0].to_bits(), 0x7fc0_1234);
+                assert_eq!(out[width + 1].to_bits(), 0x7fc0_1234);
+                for (c, value) in out[1..width + 1].iter().enumerate() {
+                    let expected = q[c] as f32 * scales[c / block];
+                    assert_eq!(value.to_bits(), expected.to_bits(), "block={block}, width={width}, c={c}");
+                }
+            }
+        }
+    }
 
     #[test]
     fn q8_rows_match_scalar_dequantization_bitwise() {
