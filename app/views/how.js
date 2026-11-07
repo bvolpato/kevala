@@ -63,7 +63,7 @@ const TEMPLATE = `<div class="wrap">
     <p class="muted">Long cached states in Kev-0.8B Q8 were 7.9–8.1% faster in two repeated-question trials on the Linux test host. Shorter-state results varied. Read the <a href="${DOCS}/performance-follow-up.md">11-model profile, experiments and remaining bottlenecks</a>.</p>
     <p class="muted">A separate short and medium Kev-9B BF16 profile is <a href="${DOCS}/kev9-bf16-profile.md">published here</a>.</p>
     <p class="muted">With the state cache explicitly disabled, Kev-0.8B Q8 used 325.36 MiB less carry storage for its first stateful request on the Linux test host. Default caching is unchanged. The <a href="${DOCS}/gpu-cache-memory.md">GPU carry memory report</a> includes exact source comparisons, later cache growth and the existing cached/uncached numerical limit.</p>
-    <p class="muted">Latest kernel research: <a href="${DOCS}/performance-reference.md">native FP32 measurements, browser feature limits and rejected experiments</a>. These measurements guide the next optimizations; they do not establish a model ranking.</p>
+    <p class="muted">Latest kernel research: <a href="${DOCS}/performance-reference.md">native FP32 measurements, browser feature limits and rejected experiments</a>. The <a href="${DOCS}/host-followup-experiments.md">latest host control results</a> explain the stopped experiments and measurement limits. These measurements guide the next optimizations; they do not establish a model ranking.</p>
     <div id="model-optimization-report" aria-live="polite"></div>
     <div id="kernel-profile-report" aria-live="polite"></div>
     <h3 class="historical-heading">Historical latency reference</h3>
