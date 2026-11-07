@@ -1,0 +1,62 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { runInNewContext } from "node:vm";
+
+const page = readFileSync(new URL("../bench.html", import.meta.url), "utf8");
+const bootstrap = /<script>\s*([\s\S]*?)<\/script>/.exec(page)?.[1];
+assert(bootstrap, "bench page must expose its classic bootstrap for behavior checks");
+assert(page.indexOf("<script>") < page.indexOf('<script type="module">'), "classic bootstrap must precede module evaluation");
+
+function boot() {
+  const listeners = new Map();
+  const window = {
+    bench: null,
+    addEventListener(name, listener) {
+      listeners.set(name, listener);
+    },
+  };
+  class MockErrorEvent {
+    constructor(message, error = null) {
+      this.target = window;
+      this.message = message;
+      this.error = error;
+    }
+  }
+  runInNewContext(bootstrap, { window, ErrorEvent: MockErrorEvent });
+  return { window, listeners, MockErrorEvent };
+}
+
+test("bootstrap creates a terminal sentinel, ignores images and favicon, and reports module load failure", () => {
+  const { window, listeners } = boot();
+  assert.equal(window.bench.done, false);
+  assert.equal(window.bench.status, "loading");
+  assert.equal(window.bench.phase, "module-load");
+
+  const onError = listeners.get("error");
+  onError({ target: { tagName: "IMG" } });
+  onError({ target: { tagName: "LINK" } });
+  assert.equal(window.bench.done, false);
+
+  onError({ target: { tagName: "SCRIPT", type: "module", getAttribute: () => null } });
+  assert.equal(window.bench.done, true);
+  assert.equal(window.bench.status, "error");
+  assert.equal(window.bench.phase, "module-load");
+  assert.match(window.bench.error, /Module script failed to load/);
+});
+
+test("bootstrap publishes uncaught JavaScript errors and unhandled rejections", () => {
+  const runtime = boot();
+  runtime.window.bench = { status: "idle", phase: "document-ready" };
+  runtime.listeners.get("error")(new runtime.MockErrorEvent("uncaught failure"));
+  assert.equal(runtime.window.bench.done, true);
+  assert.equal(runtime.window.bench.phase, "document-ready");
+  assert.equal(runtime.window.bench.error, "uncaught failure");
+
+  const rejection = boot();
+  rejection.window.bench = { status: "running", phase: "runtime-import" };
+  rejection.listeners.get("unhandledrejection")({ reason: new Error("rejected import") });
+  assert.equal(rejection.window.bench.done, true);
+  assert.equal(rejection.window.bench.phase, "runtime-import");
+  assert.equal(rejection.window.bench.error, "rejected import");
+});
