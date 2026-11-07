@@ -41,6 +41,7 @@ Reports distinguish retained changes from rejected experiments and reference mea
 
 | Report | Kernel |
 |---|---|
+| [Native AVX2 matrix projections](native-linear-performance.md) | Runtime dispatch, exact-output checks, bulk and small-shape controls, and paired native CLI requests |
 | [Clef GPU head projections](clef-head-performance.md) | Guarded F32 projections, full-logit parity, and paired complete-request latency |
 | [FP32 performance reference](performance-reference.md) | Native GEMM measurements, browser feature limits and rejected kernel experiments |
 | [Native Q8 AVX2 row dequantization](native-q8-performance.md) | Isolated native row decoding, dispatch threshold, paired timings and source archives |

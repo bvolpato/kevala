@@ -184,6 +184,8 @@ measurements, browser feature limits and kernel experiments that did not earn a 
 The [profiling guide](docs/kernel-profiling.md) covers every catalog model and registered kernel.
 The [Clef GPU head report](docs/clef-head-performance.md) records median paired latency reductions
 of 27–37% for warm Clef-flash Q8 requests across three trials on the Linux test host, with full-logit parity.
+The [native AVX2 matrix report](docs/native-linear-performance.md) records median paired inference-time
+reductions of 17.5% for Laya Q8 and 14.9% for Kev-0.8B Q8 after load on one logical CPU.
 
 The [September 25 M4 Max kernel sweep](docs/m4-max-kernel-performance.md) compares
 all registered kernels, records rejected experiments, and validates the retained optimizations.

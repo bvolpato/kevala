@@ -6,6 +6,10 @@ See the [native and experimental performance reference](performance-reference.md
 
 The [native Q8 AVX2 row report](native-q8-performance.md) records a separate CPU-only dequantization experiment. Its row timings do not measure WebGPU dispatch or model latency.
 
+The [native AVX2 matrix report](native-linear-performance.md) separates projection timings from
+native model inference calls after load. It retains the small-shape controls and labels
+fresh-process request measurements separately from warm resident model latency.
+
 The [Clef GPU head report](clef-head-performance.md) separates exact projection and full-logit
 checks from paired complete-request wall timings. Compare `clefHead: "auto"` with `"cpu"` on
 the same GPU backbone; keep load, warmup, and first-use validation outside warm-request timings.

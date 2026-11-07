@@ -1,0 +1,1018 @@
+{
+  "schemaVersion": 1,
+  "final": "final-v3",
+  "commonBase": "4c659292a9aafcb4b7abac91c94b11455b37792e",
+  "candidateKernelSha256": "4ef34fe7ac7ac6dc1508bdfcc4085f6fb99f2d7157879d183543b65e6038adb9",
+  "finalValidation": {
+    "path": "campaign/validation-final-v3/receipt.json",
+    "sha256": "7046de2de7648b09eaf749e3275e724fff01cc9d461cbc969e42004e15cbeb5c",
+    "allPassed": true
+  },
+  "finalScreen": {
+    "status": "final common-base policy screen completed",
+    "cpu": 7,
+    "warmups": 3,
+    "alternatingAbbaRounds": 9,
+    "baselineCalibrationTargetNs": 20000000,
+    "sameRepetitionsBothVariants": true,
+    "allOutputsBitExact": true,
+    "allCanariesPassed": true,
+    "selectedPolicy": "T>=2,N>=4,K>=64; default x86_64 without global AVX2 only",
+    "rows": [
+      {
+        "name": "f32-memory",
+        "t": 158,
+        "n": 1024,
+        "k": 4096,
+        "kind": 0,
+        "repetitions": 1,
+        "baselineMedianNsPerCall": 92300682,
+        "candidateMedianNsPerCall": 68720829,
+        "pairedMedianSpeedup": 1.3422629824319077,
+        "pairedSpeedups": [
+          1.3291529053508824,
+          1.376935837469641,
+          1.3920713570536434,
+          1.250179030503349,
+          1.3072049384463287,
+          1.3717971176565764,
+          1.3495458497257542,
+          1.3422629824319077,
+          1.265744886251374
+        ],
+        "pairedMinSpeedup": 1.250179030503349,
+        "pairedMaxSpeedup": 1.3920713570536434,
+        "candidateFasterRounds": 9,
+        "baselineCalibrationNs": 79558003,
+        "minimumBaselineSampleNs": 76844204,
+        "minimumCandidateSampleNs": 62655614,
+        "bitsDigest": "03429b98df04cf90"
+      },
+      {
+        "name": "f32-memory-kv",
+        "t": 158,
+        "n": 2048,
+        "k": 1024,
+        "kind": 1,
+        "repetitions": 1,
+        "baselineMedianNsPerCall": 43023387,
+        "candidateMedianNsPerCall": 28741956,
+        "pairedMedianSpeedup": 1.5107331535887907,
+        "pairedSpeedups": [
+          1.5107331535887907,
+          1.6618995053721166,
+          1.396828852998732,
+          1.4204506762637648,
+          1.4485486217251735,
+          1.5196979498974574,
+          1.360927730484196,
+          1.6708119814712035,
+          1.567792806981776
+        ],
+        "pairedMinSpeedup": 1.360927730484196,
+        "pairedMaxSpeedup": 1.6708119814712035,
+        "candidateFasterRounds": 9,
+        "baselineCalibrationNs": 44558279,
+        "minimumBaselineSampleNs": 37990326,
+        "minimumCandidateSampleNs": 25534610,
+        "bitsDigest": "f861f1089e3a179b"
+      },
+      {
+        "name": "q8-trunk-out",
+        "t": 64,
+        "n": 4096,
+        "k": 4096,
+        "kind": 2,
+        "repetitions": 1,
+        "baselineMedianNsPerCall": 127957075,
+        "candidateMedianNsPerCall": 94538663,
+        "pairedMedianSpeedup": 1.3324294024072993,
+        "pairedSpeedups": [
+          1.2861963159582526,
+          1.3054465797617658,
+          1.390762501687932,
+          1.2560054794719444,
+          1.3324294024072993,
+          1.3770631864557796,
+          1.490842585040963,
+          1.3309068461190647,
+          1.3727290341409486
+        ],
+        "pairedMinSpeedup": 1.2560054794719444,
+        "pairedMaxSpeedup": 1.490842585040963,
+        "candidateFasterRounds": 9,
+        "baselineCalibrationNs": 128769217,
+        "minimumBaselineSampleNs": 116279150,
+        "minimumCandidateSampleNs": 85578478,
+        "bitsDigest": "fef99f1b1ebe2620"
+      },
+      {
+        "name": "f32-single-row-control",
+        "t": 1,
+        "n": 1024,
+        "k": 4096,
+        "kind": 0,
+        "repetitions": 64,
+        "baselineMedianNsPerCall": 446350.046875,
+        "candidateMedianNsPerCall": 481734.296875,
+        "pairedMedianSpeedup": 1.0621134900405467,
+        "pairedSpeedups": [
+          0.9967449585676723,
+          1.0621134900405467,
+          1.2256145004910126,
+          0.7736980175327262,
+          1.756009878271893,
+          0.7978607682707807,
+          1.1875326047976338,
+          0.7283588953665799,
+          1.078780602637536
+        ],
+        "pairedMinSpeedup": 0.7283588953665799,
+        "pairedMaxSpeedup": 1.756009878271893,
+        "candidateFasterRounds": 5,
+        "baselineCalibrationNs": 21768137,
+        "minimumBaselineSampleNs": 21828788,
+        "minimumCandidateSampleNs": 20103773,
+        "bitsDigest": "20721c09378ffdf2"
+      },
+      {
+        "name": "q8-single-row-control",
+        "t": 1,
+        "n": 4096,
+        "k": 4096,
+        "kind": 2,
+        "repetitions": 4,
+        "baselineMedianNsPerCall": 7033406.75,
+        "candidateMedianNsPerCall": 7443835,
+        "pairedMedianSpeedup": 0.9875991713954205,
+        "pairedSpeedups": [
+          0.9875991713954205,
+          1.1654987204051612,
+          0.8335049661354951,
+          0.783084970919279,
+          1.193411046869655,
+          0.9547942430405312,
+          0.9540153334250034,
+          1.0152148991141754,
+          1.0954405487884624
+        ],
+        "pairedMinSpeedup": 0.783084970919279,
+        "pairedMaxSpeedup": 1.193411046869655,
+        "candidateFasterRounds": 4,
+        "baselineCalibrationNs": 29495206,
+        "minimumBaselineSampleNs": 21907059,
+        "minimumCandidateSampleNs": 21762987,
+        "bitsDigest": "77964c1605b0f2a9"
+      },
+      {
+        "name": "f32-k32-control",
+        "t": 2,
+        "n": 4,
+        "k": 32,
+        "kind": 3,
+        "repetitions": 524288,
+        "baselineMedianNsPerCall": 43.87333869934082,
+        "candidateMedianNsPerCall": 44.45621299743652,
+        "pairedMedianSpeedup": 0.9005679541800475,
+        "pairedSpeedups": [
+          0.776748664114957,
+          1.0469199848345623,
+          1.1234953532290746,
+          0.8811195164870392,
+          0.8929102768677725,
+          0.9005679541800475,
+          1.0731105504202247,
+          0.8861817333912043,
+          1.0273844406495487
+        ],
+        "pairedMinSpeedup": 0.776748664114957,
+        "pairedMaxSpeedup": 1.1234953532290746,
+        "candidateFasterRounds": 4,
+        "baselineCalibrationNs": 20106734,
+        "minimumBaselineSampleNs": 18155196,
+        "minimumCandidateSampleNs": 20111674,
+        "bitsDigest": "c55ec89d0c422b36"
+      },
+      {
+        "name": "f32-k64-boundary",
+        "t": 2,
+        "n": 4,
+        "k": 64,
+        "kind": 3,
+        "repetitions": 262144,
+        "baselineMedianNsPerCall": 68.87495040893555,
+        "candidateMedianNsPerCall": 58.88117980957031,
+        "pairedMedianSpeedup": 1.22511649113133,
+        "pairedSpeedups": [
+          1.22511649113133,
+          1.150476440477753,
+          1.261829026288967,
+          1.2041179988080792,
+          1.2563874559078856,
+          1.3768774148711,
+          1.145296703445129,
+          1.3886895785044828,
+          1.0289891894204817
+        ],
+        "pairedMinSpeedup": 1.0289891894204817,
+        "pairedMaxSpeedup": 1.3886895785044828,
+        "candidateFasterRounds": 9,
+        "baselineCalibrationNs": 21025367,
+        "minimumBaselineSampleNs": 15539779,
+        "minimumCandidateSampleNs": 12536626,
+        "bitsDigest": "073b8fcd194a03ce"
+      },
+      {
+        "name": "f32-n3-control",
+        "t": 2,
+        "n": 3,
+        "k": 64,
+        "kind": 3,
+        "repetitions": 524288,
+        "baselineMedianNsPerCall": 45.906925201416016,
+        "candidateMedianNsPerCall": 49.02656936645508,
+        "pairedMedianSpeedup": 1.0119972835313824,
+        "pairedSpeedups": [
+          0.8802096561563509,
+          1.0328170692282068,
+          1.0533834143609127,
+          1.0637937893724168,
+          1.0119972835313824,
+          0.9838771094141419,
+          0.9469958216109955,
+          1.0165892500117129,
+          0.9254653920484539
+        ],
+        "pairedMinSpeedup": 0.8802096561563509,
+        "pairedMaxSpeedup": 1.0637937893724168,
+        "candidateFasterRounds": 5,
+        "baselineCalibrationNs": 23438951,
+        "minimumBaselineSampleNs": 21149009,
+        "minimumCandidateSampleNs": 20876715,
+        "bitsDigest": "9fc5313e5d5069a9"
+      }
+    ],
+    "limitations": [
+      "One host and one paired screen.",
+      "Real tensor weights with deterministic finite synthetic activations; no full-model timing in this screen.",
+      "Paired median ratios may differ from ratios of independent arm medians.",
+      "Frequency counters and cross-hardware behavior remain unmeasured."
+    ],
+    "modelRankingClaim": false
+  },
+  "finalScreenOriginalAbsoluteStatistic": "Fields named baselineMedianNsPerCall/candidateMedianNsPerCall are upper-middle observations at sorted index 9 of 18. Conventional medians are in derived-statistics.json; paired medians are unchanged.",
+  "finalModelPilot": {
+    "status": "four-call pilot passed",
+    "planSha256": "b9e7a65887aec0e6a11f857612972c1a30b0c6912e015f7ce84c864e2a8fe8ed",
+    "runnerSha256": "2ce256f7e46b0ea996c63f3754da84dfd96239a367710202d246c32d28d96b5c",
+    "validationReceiptSha256": "7046de2de7648b09eaf749e3275e724fff01cc9d461cbc969e42004e15cbeb5c",
+    "globalPublicParityReceiptSha256": "e54c120cd70cee2e1e47a37a2db6552d61960d44da9404a06d94d12775e9718f",
+    "assemblyReceiptSha256": "438cc481ec9c8cb86bb8e88f349e0ef6a047c0c5a072e597c40784aaab56b862",
+    "screenSummarySha256": "9df9fa58506084a7889af48e709ccc452fceea0988ebadc81eb2e6c37c0efabb",
+    "calls": [
+      {
+        "name": "laya-q8-baseline",
+        "variant": "baseline",
+        "pack": {
+          "name": "laya-q8.kevala",
+          "path": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+          "bytes": 478886720,
+          "headerBytes": 26313,
+          "headerSha256": "f82cc6ce21f0b3f55000f505db8d7ee08f5f956ce9d1d1206607bf2c6476ecc8"
+        },
+        "command": "/usr/bin/timeout",
+        "args": [
+          "--signal=TERM",
+          "--kill-after=5s",
+          "120s",
+          "/usr/bin/time",
+          "-v",
+          "taskset",
+          "-c",
+          "7",
+          "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/pinned/baseline/release/kevala",
+          "decide",
+          "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+          "--state",
+          "Please refund the duplicate charge.",
+          "--questions",
+          "{\"refund\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for a refund?\"}}"
+        ],
+        "started": "2026-11-07T01:10:52.116Z",
+        "ended": "2026-11-07T01:10:54.279Z",
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "processWallNs": "2161833276",
+        "inferenceRequestMs": 1573.6,
+        "modelLoadSeconds": 0.53,
+        "maximumResidentSetKbytes": 477300,
+        "inferenceTimingResolutionMs": 0.1,
+        "inferenceTimingScope": "request preparation + complete native forward + response, excludes model load",
+        "cpu": "7",
+        "stdoutSha256": "7f42d796310d0f3130dd69946dbb93487de89d218ceb19681648944b446a78a8",
+        "stderrSha256": "f30fa02910a4fe81726dac5b36c2dfc892999c4aa76f4fcd1aa3fbed0e657206",
+        "binarySha256": "f5232732650494922a88b6a8662e4433e71e76f429365964f904b0dee9184c94",
+        "singleObservation": true
+      },
+      {
+        "name": "laya-q8-candidate",
+        "variant": "candidate",
+        "pack": {
+          "name": "laya-q8.kevala",
+          "path": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+          "bytes": 478886720,
+          "headerBytes": 26313,
+          "headerSha256": "f82cc6ce21f0b3f55000f505db8d7ee08f5f956ce9d1d1206607bf2c6476ecc8"
+        },
+        "command": "/usr/bin/timeout",
+        "args": [
+          "--signal=TERM",
+          "--kill-after=5s",
+          "120s",
+          "/usr/bin/time",
+          "-v",
+          "taskset",
+          "-c",
+          "7",
+          "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/pinned/candidate/release/kevala",
+          "decide",
+          "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+          "--state",
+          "Please refund the duplicate charge.",
+          "--questions",
+          "{\"refund\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for a refund?\"}}"
+        ],
+        "started": "2026-11-07T01:10:54.286Z",
+        "ended": "2026-11-07T01:10:56.029Z",
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "processWallNs": "1742603329",
+        "inferenceRequestMs": 1351,
+        "modelLoadSeconds": 0.34,
+        "maximumResidentSetKbytes": 477092,
+        "inferenceTimingResolutionMs": 0.1,
+        "inferenceTimingScope": "request preparation + complete native forward + response, excludes model load",
+        "cpu": "7",
+        "stdoutSha256": "7f42d796310d0f3130dd69946dbb93487de89d218ceb19681648944b446a78a8",
+        "stderrSha256": "8abb543c88787ec088158b3f9527f519df94e6ed46bff4b517bb41dd0c5ee01f",
+        "binarySha256": "8b126b5e0d3ef488bc1d035a8f951b5cd07beccc3c73c567ecb50c9d3cc88fe7",
+        "singleObservation": true
+      },
+      {
+        "name": "kev-0.8b-q8-baseline",
+        "variant": "baseline",
+        "pack": {
+          "name": "kev-0.8b-q8.kevala",
+          "path": "/home/bruno/githubworkspace/kevala/tmp/kev-0.8b-q8.kevala",
+          "bytes": 857259648,
+          "headerBytes": 30283,
+          "headerSha256": "bc43c176cf887d05f5e1908fa8a68bb65329d324a78c3fe63053a39df42aab38"
+        },
+        "command": "/usr/bin/timeout",
+        "args": [
+          "--signal=TERM",
+          "--kill-after=5s",
+          "120s",
+          "/usr/bin/time",
+          "-v",
+          "taskset",
+          "-c",
+          "7",
+          "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/pinned/baseline/release/kevala",
+          "decide",
+          "/home/bruno/githubworkspace/kevala/tmp/kev-0.8b-q8.kevala",
+          "--state",
+          "Please refund the duplicate charge.",
+          "--questions",
+          "{\"refund\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for a refund?\"}}"
+        ],
+        "started": "2026-11-07T01:10:56.036Z",
+        "ended": "2026-11-07T01:10:58.269Z",
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "processWallNs": "2232906287",
+        "inferenceRequestMs": 1342.4,
+        "modelLoadSeconds": 0.8,
+        "maximumResidentSetKbytes": 858776,
+        "inferenceTimingResolutionMs": 0.1,
+        "inferenceTimingScope": "request preparation + complete native forward + response, excludes model load",
+        "cpu": "7",
+        "stdoutSha256": "ef17a1ef452d134691126f9213b023dea69743755b29921133eb71d998ca4430",
+        "stderrSha256": "d25841b642ca0129c1b1778985e44f3842f36bf120b8d189e1cea5e3242a5d9b",
+        "binarySha256": "f5232732650494922a88b6a8662e4433e71e76f429365964f904b0dee9184c94",
+        "singleObservation": true
+      },
+      {
+        "name": "kev-0.8b-q8-candidate",
+        "variant": "candidate",
+        "pack": {
+          "name": "kev-0.8b-q8.kevala",
+          "path": "/home/bruno/githubworkspace/kevala/tmp/kev-0.8b-q8.kevala",
+          "bytes": 857259648,
+          "headerBytes": 30283,
+          "headerSha256": "bc43c176cf887d05f5e1908fa8a68bb65329d324a78c3fe63053a39df42aab38"
+        },
+        "command": "/usr/bin/timeout",
+        "args": [
+          "--signal=TERM",
+          "--kill-after=5s",
+          "120s",
+          "/usr/bin/time",
+          "-v",
+          "taskset",
+          "-c",
+          "7",
+          "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/pinned/candidate/release/kevala",
+          "decide",
+          "/home/bruno/githubworkspace/kevala/tmp/kev-0.8b-q8.kevala",
+          "--state",
+          "Please refund the duplicate charge.",
+          "--questions",
+          "{\"refund\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for a refund?\"}}"
+        ],
+        "started": "2026-11-07T01:10:58.276Z",
+        "ended": "2026-11-07T01:11:00.255Z",
+        "status": 0,
+        "signal": null,
+        "error": null,
+        "processWallNs": "1979309151",
+        "inferenceRequestMs": 1177.9,
+        "modelLoadSeconds": 0.71,
+        "maximumResidentSetKbytes": 858780,
+        "inferenceTimingResolutionMs": 0.1,
+        "inferenceTimingScope": "request preparation + complete native forward + response, excludes model load",
+        "cpu": "7",
+        "stdoutSha256": "ef17a1ef452d134691126f9213b023dea69743755b29921133eb71d998ca4430",
+        "stderrSha256": "440114471ea3eb0a29c36b157de4e5681fc0ebecf5ecce9a3ad3ea570d20e9ba",
+        "binarySha256": "8b126b5e0d3ef488bc1d035a8f951b5cd07beccc3c73c567ecb50c9d3cc88fe7",
+        "singleObservation": true
+      }
+    ],
+    "numericValuesCompared": 10,
+    "exactResponseDifferences": [],
+    "allResponsesExact": true,
+    "processCapSeconds": 120,
+    "loadTimingSeparate": true,
+    "modelsRanked": false,
+    "speedClaimAllowed": false,
+    "limitations": [
+      "One cold inference request per variant/model, no warmups or paired repeated blocks.",
+      "Inference-request timing uses existing CLI output with0.1ms resolution; includes tokenization/response as well as model forward.",
+      "Only the short fixed refund request was exercised."
+    ],
+    "clef9BRun": false
+  },
+  "finalActualPublicParity": {
+    "default": {
+      "status": "strict actual-public parity passed",
+      "helperReceiptSha256": "9f53e623c7d8218ed12583adf3f1f0aa02e5069a7e92569d6362e217b4f005e8",
+      "runnerSha256": "b23dd4dea3d7fd4c7dff20a21ce3bb34a2f28f4d54e256ddddae93312930a81c",
+      "sourceReceiptSha256": "7c5495c82070564113b0f6081bbe57cf1889bed641dde8a85160ef25eae428ac",
+      "targetFlags": "default native, no RUSTFLAGS",
+      "binaries": {
+        "baseline": {
+          "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/baseline/release/native-linear-public-parity-diagnostic",
+          "sha256": "403a15f09ae64a51255c70e2bec9992b42eced4f3981d9d4de08c09d0e6e9015"
+        },
+        "candidate": {
+          "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/candidate/release/native-linear-public-parity-diagnostic",
+          "sha256": "566b2ea15437db6256af8421726af54a774c25039b7de45fd31904628abccbed"
+        }
+      },
+      "configurationCount": 96,
+      "outputsCompared": 5484,
+      "differenceCount": 0,
+      "finiteDifferences": 0,
+      "firstDifferences": [],
+      "allCanariesPassed": true,
+      "eligibleNonfiniteOutputCases": 30,
+      "comparedEveryNaNPayloadBit": true,
+      "inlinePrivateOracleUsed": false,
+      "productionSourceEdited": false,
+      "timed": false,
+      "commands": [
+        {
+          "name": "build-baseline",
+          "command": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/cargo",
+          "args": [
+            "build",
+            "--release",
+            "--offline",
+            "--locked",
+            "--manifest-path",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/default-parity-diagnostic-final-v3-opaque/baseline/Cargo.toml"
+          ],
+          "started": "2026-11-07T01:07:11.342Z",
+          "ended": "2026-11-07T01:07:27.265Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/baseline"
+          },
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "c9dfafc206f8605e212be7782b812261ef96383c4fea27481eab450d017164b3"
+        },
+        {
+          "name": "output-baseline",
+          "command": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/baseline/release/native-linear-public-parity-diagnostic",
+          "args": [],
+          "started": "2026-11-07T01:07:27.269Z",
+          "ended": "2026-11-07T01:07:27.280Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "6949380b16825591d1291e33a73fc75e06e336ce1c438d92b0dbabded8f48149",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "symbols-baseline",
+          "command": "nm",
+          "args": [
+            "-nC",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/baseline/release/native-linear-public-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:07:27.282Z",
+          "ended": "2026-11-07T01:07:27.310Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "788387d777ed31b707352929089583d5e05b9ae6043b1cf9f2a4535ffff51513",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "assembly-baseline",
+          "command": "objdump",
+          "args": [
+            "-dC",
+            "--no-show-raw-insn",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/baseline/release/native-linear-public-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:07:27.311Z",
+          "ended": "2026-11-07T01:07:27.361Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "1041c46073a24461e2636333ce8099da851cf3d3f41c24a3cd0e7b54bd91dacb",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "build-candidate",
+          "command": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/cargo",
+          "args": [
+            "build",
+            "--release",
+            "--offline",
+            "--locked",
+            "--manifest-path",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/default-parity-diagnostic-final-v3-opaque/candidate/Cargo.toml"
+          ],
+          "started": "2026-11-07T01:07:27.366Z",
+          "ended": "2026-11-07T01:07:43.505Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/candidate"
+          },
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "ab23ab3e4100853500e995be47efd52478e2a32193216a42f117caafd4631d29"
+        },
+        {
+          "name": "output-candidate",
+          "command": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/candidate/release/native-linear-public-parity-diagnostic",
+          "args": [],
+          "started": "2026-11-07T01:07:43.506Z",
+          "ended": "2026-11-07T01:07:43.517Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "6949380b16825591d1291e33a73fc75e06e336ce1c438d92b0dbabded8f48149",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "symbols-candidate",
+          "command": "nm",
+          "args": [
+            "-nC",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/candidate/release/native-linear-public-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:07:43.518Z",
+          "ended": "2026-11-07T01:07:43.543Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "b08d4a874da41cfcc07140625c779b869c4070aff21aaedd0530e010c3a13505",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "assembly-candidate",
+          "command": "objdump",
+          "args": [
+            "-dC",
+            "--no-show-raw-insn",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/default-public-diagnostic/candidate/release/native-linear-public-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:07:43.544Z",
+          "ended": "2026-11-07T01:07:43.602Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": null,
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "96f7d3ff851d697660a519f20e1e084383317ad298b463beb30bf61b3734e802",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    "globalAvx2": {
+      "status": "strict actual-public parity passed",
+      "helperReceiptSha256": "5a95f3d26f714c607379371375217e67f261f959553dc77a1f12470af2598a00",
+      "runnerSha256": "8139b9fb263396685d90f9df179e5838c80abd75ffc45137e20c8e82a5cfced7",
+      "sourceReceiptSha256": "7c5495c82070564113b0f6081bbe57cf1889bed641dde8a85160ef25eae428ac",
+      "globalFlags": "-C target-feature=+avx2",
+      "binaries": {
+        "baseline": {
+          "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/baseline/release/global-linear-parity-diagnostic",
+          "sha256": "9c9d7e391d20ba40c5018115511f32fddb695cf00d056e43d271fca03c5977b2"
+        },
+        "candidate": {
+          "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/candidate/release/global-linear-parity-diagnostic",
+          "sha256": "dccec5a4439939a5de11ba659715299d68832641c853bfcd55396a57f7f3b1a1"
+        }
+      },
+      "configurationCount": 96,
+      "outputsCompared": 5484,
+      "differenceCount": 0,
+      "finiteDifferences": 0,
+      "firstDifferences": [],
+      "allCanariesPassed": true,
+      "eligibleNonfiniteOutputCases": 30,
+      "comparedEveryNaNPayloadBit": true,
+      "inlinePrivateOracleUsed": false,
+      "productionSourceEdited": false,
+      "timed": false,
+      "commands": [
+        {
+          "name": "build-baseline",
+          "command": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/cargo",
+          "args": [
+            "build",
+            "--release",
+            "--offline",
+            "--locked",
+            "--manifest-path",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/global-parity-diagnostic-final-v3-opaque/baseline/Cargo.toml"
+          ],
+          "started": "2026-11-07T01:06:29.688Z",
+          "ended": "2026-11-07T01:06:45.898Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/baseline"
+          },
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "a108a2ab242aa4ce4424d85ffb7b6e5d2968b0058fb2c774b6e22ce83721de4f"
+        },
+        {
+          "name": "output-baseline",
+          "command": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/baseline/release/global-linear-parity-diagnostic",
+          "args": [],
+          "started": "2026-11-07T01:06:45.902Z",
+          "ended": "2026-11-07T01:06:45.916Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "e5876b326ac52c18fa6bc78c08d4e62ab9f09e7ea2f00645505afbd659c720da",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "symbols-baseline",
+          "command": "nm",
+          "args": [
+            "-nC",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/baseline/release/global-linear-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:06:45.918Z",
+          "ended": "2026-11-07T01:06:45.952Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "04d68e30f51cb6e41a7d0075d4b25c2ef78745717ad78f90f5c1c5fd10d8dd65",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "assembly-baseline",
+          "command": "objdump",
+          "args": [
+            "-dC",
+            "--no-show-raw-insn",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/baseline/release/global-linear-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:06:45.954Z",
+          "ended": "2026-11-07T01:06:46.024Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "726ff665dde91d0995833e46494970378c6705e6cd876121992c600958d44282",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "build-candidate",
+          "command": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/cargo",
+          "args": [
+            "build",
+            "--release",
+            "--offline",
+            "--locked",
+            "--manifest-path",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/global-parity-diagnostic-final-v3-opaque/candidate/Cargo.toml"
+          ],
+          "started": "2026-11-07T01:06:46.028Z",
+          "ended": "2026-11-07T01:07:05.467Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/candidate"
+          },
+          "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderrSha256": "00b72d7eee18577d285b69efe6e8841c9302ed5d74d0eea730c4aacb35c2a1fb"
+        },
+        {
+          "name": "output-candidate",
+          "command": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/candidate/release/global-linear-parity-diagnostic",
+          "args": [],
+          "started": "2026-11-07T01:07:05.468Z",
+          "ended": "2026-11-07T01:07:05.478Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "e5876b326ac52c18fa6bc78c08d4e62ab9f09e7ea2f00645505afbd659c720da",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "symbols-candidate",
+          "command": "nm",
+          "args": [
+            "-nC",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/candidate/release/global-linear-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:07:05.479Z",
+          "ended": "2026-11-07T01:07:05.511Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "e9102bdc5c07e01644ed18563c8a0e43b031b30e2aa8f3488dea64d7a857b3e1",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "name": "assembly-candidate",
+          "command": "objdump",
+          "args": [
+            "-dC",
+            "--no-show-raw-insn",
+            "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/target-final-v3/global-public-diagnostic/candidate/release/global-linear-parity-diagnostic"
+          ],
+          "started": "2026-11-07T01:07:05.512Z",
+          "ended": "2026-11-07T01:07:05.564Z",
+          "status": 0,
+          "signal": null,
+          "environment": {
+            "RUSTC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustc",
+            "RUSTDOC": "/home/bruno/.rustup/toolchains/1.95.0-x86_64-unknown-linux-gnu/bin/rustdoc",
+            "RUSTFLAGS": "-C target-feature=+avx2",
+            "CARGO_ENCODED_RUSTFLAGS": null,
+            "CARGO_HOME": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/cargo-home-final-v3",
+            "CARGO_NET_OFFLINE": "true"
+          },
+          "stdoutSha256": "0138cf18365bf9d73040300ca61bcc8a943b4002d28811eff05a56f82c96b1ee",
+          "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    }
+  },
+  "finalPairedNative": {
+    "status": "complete paired native CLI proof",
+    "metric": "complete CLI inference requests after load; not warm resident latency",
+    "base": "4c659292a9aafcb4b7abac91c94b11455b37792e",
+    "sourceReceiptSha256": "7c5495c82070564113b0f6081bbe57cf1889bed641dde8a85160ef25eae428ac",
+    "kernelSha256": "4ef34fe7ac7ac6dc1508bdfcc4085f6fb99f2d7157879d183543b65e6038adb9",
+    "planSha256": "b4a724a9334b56809640dbd01804658a5a7deeb872de9e1f9a19fa8496d29da3",
+    "runnerSha256": "2cae3c4b0b21feaedf60fb971a70457ca6a2775cb350b2902827e03e213b6855",
+    "receiptSha256": "c7a3e55fbee46636273a7bb452f562283acab2e97dcee4f544fcba9e2adaeaa2",
+    "priorFinalReceiptSha256": "565c540c35f02058bf2b7132ec38be0af0acd10533bfb66223f766e1232e5bfa",
+    "priorFinalInventorySha256": "3b61daf8f564cf51fcf1139a0354c26f5fea08370a2bb0ed8e940a4e60ce74a1",
+    "cpu": 7,
+    "discardedObservations": 12,
+    "measuredObservations": 72,
+    "freshCliProcesses": 84,
+    "allCompleteResponsesExact": true,
+    "allRawResponseAndCommandHashesVerified": true,
+    "modelFullByteHashesBeforeAfter": {
+      "laya-q8": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+      "kev-0.8b-q8": "a121fd39a959423e5f6a07d75a4cb33fdb87c0534aa27b7acf4f5381788097e3"
+    },
+    "binaryHashesVerifiedBeforeAfter": true,
+    "elapsedMs": 184153.215293,
+    "rows": [
+      {
+        "model": "laya-q8",
+        "inputTokens": 40,
+        "outputTokens": 0,
+        "quartets": 9,
+        "candidateFasterQuartets": 9,
+        "pairedMedianRatio": 1.2122518798332205,
+        "pairedRatioRange": [
+          1.0948419301164727,
+          1.2601760373630322
+        ],
+        "pairedLatencyReductionPercent": 17.50889261251727,
+        "baselineIndependentMedianRequestMs": 1748.0500000000002,
+        "candidateIndependentMedianRequestMs": 1443.15
+      },
+      {
+        "model": "kev-0.8b-q8",
+        "inputTokens": 23,
+        "outputTokens": 22,
+        "quartets": 9,
+        "candidateFasterQuartets": 9,
+        "pairedMedianRatio": 1.1756139348943462,
+        "pairedRatioRange": [
+          1.1464827050136028,
+          1.2902408111533585
+        ],
+        "pairedLatencyReductionPercent": 14.938061695409289,
+        "baselineIndependentMedianRequestMs": 1499.1,
+        "candidateIndependentMedianRequestMs": 1274.9
+      }
+    ],
+    "loadTimeReportedSeparately": true,
+    "processCapSeconds": 120,
+    "overallCapSeconds": 480,
+    "retries": 0,
+    "scope": {
+      "sameTwoShortRequests": true,
+      "oneHost": true,
+      "noNewModels": true,
+      "noLongerRequests": true,
+      "no9B": true,
+      "noBuilds": true,
+      "noModelRankingClaim": true
+    },
+    "limitations": [
+      "One host and one short request per model; no general latency guarantee.",
+      "Every observation loads a fresh CLI process; the primary metric begins after model load and includes request preparation and response work.",
+      "CLI request-time output has0.1ms resolution."
+    ],
+    "windowRelease": {
+      "releasedAt": "2026-11-07T01:24:39.121Z",
+      "outerExecSession": 71976,
+      "outerCommand": "flock -x /home/bruno/.cache/kevala/gpu-profile.lock env KEVALA_PROFILE_LOCK_HELD=/home/bruno/.cache/kevala/gpu-profile.lock KEVALA_BENCH_CPU=7 /usr/bin/timeout --signal=TERM --kill-after=1s 479s node /home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-linear/paired-native-final-v3/run.mjs",
+      "exitCode": 0,
+      "nonblockingLockCheckPassed": true,
+      "receiptSha256": "c7a3e55fbee46636273a7bb452f562283acab2e97dcee4f544fcba9e2adaeaa2",
+      "observationsRecorded": 84,
+      "discarded": 12,
+      "measured": 72,
+      "allResponsesExact": true,
+      "elapsedMs": 184153.215293,
+      "buildsRun": false,
+      "extraModelsOrShapesRun": false,
+      "retries": 0
+    }
+  },
+  "nativeTimerScope": "CLI timer surrounds Model::decide after model load and state/questions JSON parsing, before output JSON serialization/stdout; not end-to-end CLI/process time or warm resident latency.",
+  "usageOutputTokens": "Tokenized serialized answers, not generated continuation tokens.",
+  "pairedVerification": {
+    "verified": true,
+    "observations": 84,
+    "measured": 72,
+    "discarded": 12,
+    "rows": [
+      {
+        "model": "laya-q8",
+        "pairedMedianRatio": 1.2122518798332205,
+        "pairedRatioRange": [
+          1.0948419301164727,
+          1.2601760373630322
+        ],
+        "candidateFasterQuartets": 9,
+        "baselineIndependentMedianRequestMs": 1748.0500000000002,
+        "candidateIndependentMedianRequestMs": 1443.15
+      },
+      {
+        "model": "kev-0.8b-q8",
+        "pairedMedianRatio": 1.1756139348943462,
+        "pairedRatioRange": [
+          1.1464827050136028,
+          1.2902408111533585
+        ],
+        "candidateFasterQuartets": 9,
+        "baselineIndependentMedianRequestMs": 1499.1,
+        "candidateIndependentMedianRequestMs": 1274.9
+      }
+    ]
+  },
+  "historicalScope": "Earlier source, timing and failed inline-oracle artifacts retain their original bytes/classifications. They are not final performance claims.",
+  "archiveFiles": 2627
+}
