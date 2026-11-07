@@ -164,14 +164,12 @@ test("an evicted prefix cannot become a parent after its slot has been reassigne
 });
 
 test("disabled state cache misses warm prefixes but shares duplicates within a pass", async (t) => {
-  const oldMapMode = Object.getOwnPropertyDescriptor(globalThis, "GPUMapMode");
-  Object.defineProperty(globalThis, "GPUMapMode", { configurable: true, value: { READ: 1 } });
-  t.after(() => oldMapMode ? Object.defineProperty(globalThis, "GPUMapMode", oldMapMode) : delete globalThis.GPUMapMode);
-
   const prefix = tokens(1);
   const gpu = cache([prefix]);
   gpu.stateCacheEnabled = false;
-  fakeForward(gpu);
+  const trace = tracedForward(t, gpu);
+  const allocations = [];
+  gpu.ensureCarries = (slots, rows) => allocations.push([slots, rows]);
   const plans = [];
   const originalPlan = gpu.plan;
   gpu.plan = (...args) => {
@@ -181,16 +179,105 @@ test("disabled state cache misses warm prefixes but shares duplicates within a p
   };
 
   const warmBatch = batch([prefix]);
+  warmBatch.T2 = 2;
+  warmBatch.branches = [[0, 1, 0], [1, 1, 0]];
+  warmBatch.rows = [0, 1];
   await gpu.forward(new Float32Array(warmBatch.T1), new Float32Array(warmBatch.T2), warmBatch, Uint32Array.from(prefix));
   assert.deepEqual(plans[0].segs.map((s) => [s.parent, s.len, s.plen]), [[NO_PARENT, 32, 0]]);
   assert.deepEqual(plans[0].copies, []);
+  assert.deepEqual(allocations[0], [1, prefix.length]);
+  assert.deepEqual(Array.from(trace.writes.find(({ buffer }) => buffer === "segs2").data.slice(0, 16)), [0, 1, 0, 0, prefix.length, 0, 0, 0, 1, 1, 0, 0, prefix.length, 0, 0, 0]);
+  assert.deepEqual(gpu.lru, []);
 
   const duplicateBatch = batch([prefix, prefix]);
   await gpu.forward(new Float32Array(duplicateBatch.T1), new Float32Array(duplicateBatch.T2), duplicateBatch, Uint32Array.from([...prefix, ...prefix]));
   assert.deepEqual(plans[1].segs.map((s) => [s.parent, s.len, s.plen]), [[NO_PARENT, 32, 0]]);
   assert.deepEqual(plans[1].copies, []);
   assert.equal(plans[1].carries[0], plans[1].carries[1]);
+  assert.equal(plans[1].carries[0].slot, 0);
+  assert.equal(plans[1].carries[0].kvBase, 0);
+  assert.deepEqual(allocations[1], [2, duplicateBatch.T1]);
+  assert.deepEqual(gpu.lru, []);
   assert.deepEqual(gpu.stats, { hits: 0, extensions: 0, misses: 2, tokensSaved: 0 });
+
+  gpu.stateCacheEnabled = true;
+  await gpu.forward(new Float32Array(warmBatch.T1), new Float32Array(warmBatch.T2), warmBatch, Uint32Array.from(prefix));
+  await gpu.forward(() => { throw new Error("a re-enabled cache hit embedded the state"); }, new Float32Array(warmBatch.T2), warmBatch, Uint32Array.from(prefix));
+  assert.equal(plans[2].segs.length, 1);
+  assert.equal(plans[3].segs.length, 0);
+  assert.deepEqual(allocations.slice(2), [[5, 4096 + prefix.length], [5, 4096 + prefix.length]]);
+  assert.deepEqual(gpu.stats, { hits: 1, extensions: 0, misses: 3, tokensSaved: prefix.length });
+});
+
+test("uncached mixed states use bounded scratch carries without retaining prefix extensions", () => {
+  const prefix = tokens(1), longer = [...prefix, 100, 101], long = tokens(200, 1025);
+  const gpu = cache([prefix]);
+  gpu.stateCacheEnabled = false;
+  const result = plan(gpu, [[], prefix, longer, prefix, long]);
+  assert.equal(result.carries[0], null);
+  assert.equal(result.carries[1], result.carries[3]);
+  assert.deepEqual(result.segs.map((s) => [s.parent, s.plen, s.len]), [[NO_PARENT, 0, prefix.length], [NO_PARENT, 0, longer.length], [NO_PARENT, 0, long.length]]);
+  assert.deepEqual(result.copies, []);
+  assert.equal(result.slots, 3);
+  assert.equal(result.rows, prefix.length + longer.length + long.length);
+  assert.deepEqual(result.segs.map((s) => s.kvdst), [0, prefix.length, prefix.length + longer.length]);
+  for (const segment of result.segs) {
+    assert.ok(segment.dst < result.slots);
+    assert.ok(segment.kvdst + segment.len <= result.rows);
+  }
+  assert.deepEqual(gpu.lru, []);
+  assert.equal(plan(gpu, [prefix]).segs.length, 1, "the following request must recompute the prefix");
+  assert.deepEqual(gpu.lru, []);
+});
+
+test("initial uncached carries allocate only the requested batch capacity", (t) => {
+  const old = Object.getOwnPropertyDescriptor(globalThis, "GPUBufferUsage");
+  Object.defineProperty(globalThis, "GPUBufferUsage", { configurable: true, value: { STORAGE: 1, COPY_DST: 2, COPY_SRC: 4, UNIFORM: 8, MAP_READ: 16 } });
+  t.after(() => old ? Object.defineProperty(globalThis, "GPUBufferUsage", old) : delete globalThis.GPUBufferUsage);
+  const header = new TextEncoder().encode('{"tensors":[]}');
+  const prefix = new Uint8Array(16 + header.length);
+  prefix.set(new TextEncoder().encode("KVLA"));
+  new DataView(prefix.buffer).setUint32(4, 1, true);
+  new DataView(prefix.buffer).setUint32(8, header.length, true);
+  prefix.set(header, 16);
+  const cfg = { hidden: 4096, layers: 32, full: Array.from({ length: 32 }, (_, i) => i % 4 === 3), intermediate: 12288, heads: 16, kv_heads: 4, lin_key_heads: 16, lin_heads: 32 };
+  const outcomes = [];
+  for (const enabled of [true, false]) {
+    const allocations = [];
+    const device = {
+      limits: { maxBufferSize: 2 ** 30, maxStorageBufferBindingSize: 2 ** 30 },
+      features: new Set(),
+      createBuffer: (descriptor) => {
+        const buffer = { ...descriptor, destroyed: false, destroy() { this.destroyed = true; } };
+        allocations.push(buffer);
+        return buffer;
+      },
+    };
+    const gpu = new GpuKev({ device }, { prefix }, cfg);
+    gpu.stateCacheEnabled = enabled;
+    gpu.build = () => {};
+    gpu.ensure(512, 1, 1, 1, 1);
+    outcomes.push({ size: gpu.carrySize, bytes: gpu.carryBufs.reduce((sum, buffer) => sum + buffer.size, 0) });
+    const allocationCount = allocations.length;
+    gpu.ensure(512, 1, 1, 1, 1);
+    assert.equal(allocations.length, allocationCount, "the same request capacity must not reallocate buffers");
+    if (!enabled) {
+      const carryBuffers = gpu.carryBufs.slice();
+      gpu.stateCacheEnabled = true;
+      gpu.ensureCarries(5, 4096 + 512);
+      assert.deepEqual(gpu.carrySize, { slots: 8, rows: 8192 });
+      assert.ok(carryBuffers.every((buffer) => buffer.destroyed), "growing for an enabled cache must release the smaller carry buffers");
+      assert.equal(gpu.carryBufs.reduce((sum, buffer) => sum + buffer.size, 0), 922 * 1024 ** 2);
+      const grownCount = allocations.length;
+      gpu.stateCacheEnabled = false;
+      gpu.ensureCarries(1, 512);
+      assert.equal(allocations.length, grownCount, "disabling an existing cache must reuse its capacity without allocation churn");
+    }
+  }
+  assert.deepEqual(outcomes, [
+    { size: { slots: 8, rows: 8192 }, bytes: 922 * 1024 ** 2 },
+    { size: { slots: 1, rows: 512 }, bytes: 90.25 * 1024 ** 2 },
+  ]);
 });
 
 test("a rejected GPU pass cannot leave a reusable carry for the next request", async () => {

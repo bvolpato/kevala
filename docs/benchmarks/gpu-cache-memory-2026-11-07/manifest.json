@@ -1,0 +1,819 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-07T09:06:22.888Z",
+  "verdict": "scoped uncached carry allocation improvement; exact source parity; legacy cross-mode failure retained",
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 26146204,
+    "sha256": "b63a71ab57da9cb29b61d65d8fd156e00e509cc20ea71d158ce1602fb14c73ff",
+    "decodedBytes": 115168059,
+    "decodedSha256": "c3cf105e06916eb4d23356312e8cd8cff427fbbd19f4ee985900f4b54deeb24f"
+  },
+  "files": [
+    {
+      "path": "control/results/command.json",
+      "bytes": 1081,
+      "sha256": "75c816fe9b529af1671579cb79e92af7d770a0bfca0921601f4449251b5497e3"
+    },
+    {
+      "path": "control/results/input.json",
+      "bytes": 4100753,
+      "sha256": "18e81950607d1eda78bd8aee95a8b27dd470cc1f9dd1200769f7ff041cacc63c"
+    },
+    {
+      "path": "control/results/raw-browser.json",
+      "bytes": 63634310,
+      "sha256": "45b0f3e683e8a5e87c2d554a160dc23b88913f884fccd4038363b2400b75b788"
+    },
+    {
+      "path": "control/results/receipt.json",
+      "bytes": 107102,
+      "sha256": "0a88207c22cfad784d2c4b742082b71be7ae04fea508a1bdce934c8d81c5ca69"
+    },
+    {
+      "path": "control/source/plan.json",
+      "bytes": 10566,
+      "sha256": "7fd77ee9e78f0e0f40fe3a6af95a4637ed8d6c6149183edfcb7c0d11085e71ef"
+    },
+    {
+      "path": "control/source/prior-v2.sha256",
+      "bytes": 13292,
+      "sha256": "ce9c9d8789ca614981d16261ab7461016136c3eb89034d8cee6fee046fab0582"
+    },
+    {
+      "path": "control/source/probe.html",
+      "bytes": 170,
+      "sha256": "17e5f64aa57bdad52d46132ef613beee25502852b53d64a290a8e844f404563b"
+    },
+    {
+      "path": "control/source/probe.js",
+      "bytes": 25023,
+      "sha256": "4273f8849a86f96d1a27c078fde8bc6e55410be74303f807a6258c0ccd44b9c1"
+    },
+    {
+      "path": "control/source/run.mjs",
+      "bytes": 22244,
+      "sha256": "be2ca21ef724417646fdc0b1c33c6369b2260db012ae52590d621a1f1ddcf330"
+    },
+    {
+      "path": "control/source/source-index.json",
+      "bytes": 2158,
+      "sha256": "1f2b5aabb568ceab80d1556659528003a846c7fcfb337cfbec398b4526a37c8a"
+    },
+    {
+      "path": "control/source/validate.mjs",
+      "bytes": 13961,
+      "sha256": "9fac868284e115a45a1560cf28ae0141c3986a4cd46653ae3fcda41418281783"
+    },
+    {
+      "path": "dependencies/js/src/pack-layout.js",
+      "bytes": 8838,
+      "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+    },
+    {
+      "path": "dependencies/js/src/source.js",
+      "bytes": 33566,
+      "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    {
+      "path": "dependencies/scripts/bench-gpu.py",
+      "bytes": 37378,
+      "sha256": "17c98e1a4153279cabb8228db5d0286fd3e12fd2f456c22569728a1b05220091"
+    },
+    {
+      "path": "dependencies/scripts/lib/model-profile.mjs",
+      "bytes": 24242,
+      "sha256": "7c4061267aa35176034fdecd4c3ebd6fad161cb04d094beef69398248a404e14"
+    },
+    {
+      "path": "failed-v1/results/command.json",
+      "bytes": 1045,
+      "sha256": "c0090c5a984cc5a5400589205b0e918e70f4d44f9d402d2d43c53cb1809b3de7"
+    },
+    {
+      "path": "failed-v1/results/input.json",
+      "bytes": 20388,
+      "sha256": "8191224bca824abc9be5e86e70a3b834dbbe5660a5bce80c077332247653112f"
+    },
+    {
+      "path": "failed-v1/results/raw-browser.json",
+      "bytes": 29765,
+      "sha256": "235ad5d6e80876ee9fddcfcfac75b77bd5c71e0587c65a046a91309733b71106"
+    },
+    {
+      "path": "failed-v1/results/receipt.json",
+      "bytes": 27380,
+      "sha256": "3ece5ec96030961100719e04f767490e67f00fc5d84a09202c4157a46e492bbf"
+    },
+    {
+      "path": "failed-v1/source/probe.html",
+      "bytes": 163,
+      "sha256": "fe28585671cc018335b7c1ec819a0fa9a9ded078867f6d15d140f2c0b100c302"
+    },
+    {
+      "path": "failed-v1/source/probe.js",
+      "bytes": 15818,
+      "sha256": "cdcd2a85c95247b0da72ab33c4ca10cbb9d9eaf438391f631bea745cf1818bc5"
+    },
+    {
+      "path": "failed-v1/source/run.mjs",
+      "bytes": 18711,
+      "sha256": "348b9130cc127a8e36408ca97bdf6f4ae3c67e8887d6715796107c565f00760a"
+    },
+    {
+      "path": "failed-v1/source/source-index.json",
+      "bytes": 779,
+      "sha256": "709b99d1372cc49c4fec44ef245287a8b20d6b095d4548e242d4bff209c4e9f6"
+    },
+    {
+      "path": "failed-v1/source/validate.mjs",
+      "bytes": 7185,
+      "sha256": "e9e47935a202847045e9e7df352915f9de25468384649f6418ad381b52102509"
+    },
+    {
+      "path": "failed-v2/results/command.json",
+      "bytes": 1045,
+      "sha256": "d4123ba73767a9f3d2cfde6aeeafd5508c5051d235263ce55a1e36a1badb2cb3"
+    },
+    {
+      "path": "failed-v2/results/input.json",
+      "bytes": 20764,
+      "sha256": "1418e55428860b798400317ad82cd540b48338d037cf2e89b1174ddfac63366f"
+    },
+    {
+      "path": "failed-v2/results/raw-browser.json",
+      "bytes": 17980192,
+      "sha256": "77de150e61ef9270c210a0ac158424fd34cd0ff37a4f81bb36335feb7b4d5732"
+    },
+    {
+      "path": "failed-v2/results/receipt.json",
+      "bytes": 27922,
+      "sha256": "86bc04bd8affde2ae8abd2d9d094c6e9c38eb64615ee72acf01ca156095e9780"
+    },
+    {
+      "path": "failed-v2/source/prior-v1.sha256",
+      "bytes": 6028,
+      "sha256": "bdfce4580af775cfb22a897dc9c4b60ecdd9b6b3932fd43ab00bcf9c38a29d84"
+    },
+    {
+      "path": "failed-v2/source/probe.html",
+      "bytes": 163,
+      "sha256": "fe28585671cc018335b7c1ec819a0fa9a9ded078867f6d15d140f2c0b100c302"
+    },
+    {
+      "path": "failed-v2/source/probe.js",
+      "bytes": 19621,
+      "sha256": "85f6cbe038db6c791c0e4d3b5c6b9a321a49648a7d6c4c090f663763ea9afbc7"
+    },
+    {
+      "path": "failed-v2/source/run.mjs",
+      "bytes": 19679,
+      "sha256": "4cd1d10a2ec3110e63694d255cc14eba1b785a3db61a6db9e15908b922210ebd"
+    },
+    {
+      "path": "failed-v2/source/source-index.json",
+      "bytes": 1436,
+      "sha256": "a0a6bb27c1188a9290137532a0de5d5920312b9f397da07e8d36dadae3248d43"
+    },
+    {
+      "path": "failed-v2/source/validate.mjs",
+      "bytes": 9820,
+      "sha256": "ccd77e89590d1d8127772c1819d47aa3dd0552362777e8c858a360bfc23d1371"
+    },
+    {
+      "path": "publication/archive-publication.mjs",
+      "bytes": 13228,
+      "sha256": "30bd1cea150667ffd3656236530eabca6a565e160591018f6ff4063232f5a7bf"
+    },
+    {
+      "path": "publication/gpu-cache-memory.md",
+      "bytes": 4207,
+      "sha256": "11b9c00e176f3a4376f2110f6825814f6afc9f15ee9414d0d84747c902a8364a"
+    },
+    {
+      "path": "publication/how.js",
+      "bytes": 16333,
+      "sha256": "e9775c0596a6c10de048009eee3d9d00a2ae4378fb39458d541ca3bb3de85fa2"
+    },
+    {
+      "path": "publication/README.md",
+      "bytes": 4113,
+      "sha256": "178adc5a6ec68afa8676e519ea3adb0abb37b9dc15e2d9c51cae8c8478a52422"
+    },
+    {
+      "path": "source/candidate-gpu-kev.js",
+      "bytes": 45464,
+      "sha256": "31f9e322832be04b0773e1866be724c49a5d7c9de7d523d5d07fdb8fafd6b614"
+    },
+    {
+      "path": "source/original-gpu-kev.js",
+      "bytes": 45228,
+      "sha256": "37519ef8c06c537c5fc736a7badef762062d082a7c3c19e605e462912c935a57"
+    }
+  ],
+  "references": {
+    "runtime": {
+      "commit": "4e27753e6f385d6fabbb6040fdd82f058a9c48a8",
+      "run": "42350139676",
+      "arms": [
+        {
+          "id": "original-ci73",
+          "assets": [
+            {
+              "path": "archs/clef.js",
+              "bytes": 5976,
+              "sha256": "ac7ba9459a7210e19516ef87bdeeb71e2612b73c44ca289a704f55f1ee5b8b06"
+            },
+            {
+              "path": "archs/gemma4.js",
+              "bytes": 12531,
+              "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+            },
+            {
+              "path": "archs/index.js",
+              "bytes": 2743,
+              "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+            },
+            {
+              "path": "archs/kev.js",
+              "bytes": 10357,
+              "sha256": "f1ebba93662c9bad0dd1c087e1e4c00d62cbeba29b18edb159451bb3d436b0b7"
+            },
+            {
+              "path": "archs/laya.js",
+              "bytes": 8417,
+              "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+            },
+            {
+              "path": "cpu-calibrate.js",
+              "bytes": 3092,
+              "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+            },
+            {
+              "path": "cpu-policy.js",
+              "bytes": 3333,
+              "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+            },
+            {
+              "path": "cpu-tune.js",
+              "bytes": 1293,
+              "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+            },
+            {
+              "path": "engine-worker.js",
+              "bytes": 20118,
+              "sha256": "7f6045b89ad8b353c3b074323c17d321ac40fee17a793ad25c47da52e22718a2"
+            },
+            {
+              "path": "gemma4-image.js",
+              "bytes": 12697,
+              "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+            },
+            {
+              "path": "gemma4-ple-store.js",
+              "bytes": 11274,
+              "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+            },
+            {
+              "path": "gemma4-vision-pack.js",
+              "bytes": 3580,
+              "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+            },
+            {
+              "path": "gpu-clef-head.js",
+              "bytes": 19783,
+              "sha256": "58c083005fec8cd29d54fe9023b14ca05a5428dbce884c979bb77967796e80cb"
+            },
+            {
+              "path": "gpu-gemma4-attention.js",
+              "bytes": 24396,
+              "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+            },
+            {
+              "path": "gpu-gemma4-batch-mlp.js",
+              "bytes": 25939,
+              "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+            },
+            {
+              "path": "gpu-gemma4-batch-single.js",
+              "bytes": 13303,
+              "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+            },
+            {
+              "path": "gpu-gemma4-bn32.js",
+              "bytes": 13497,
+              "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+            },
+            {
+              "path": "gpu-gemma4-grid-mlp.js",
+              "bytes": 21034,
+              "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+            },
+            {
+              "path": "gpu-gemma4-image.js",
+              "bytes": 6179,
+              "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+            },
+            {
+              "path": "gpu-gemma4-k64.js",
+              "bytes": 12881,
+              "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+            },
+            {
+              "path": "gpu-gemma4-mlp.js",
+              "bytes": 14486,
+              "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+            },
+            {
+              "path": "gpu-gemma4-ple.js",
+              "bytes": 3548,
+              "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+            },
+            {
+              "path": "gpu-gemma4-prefix-cache.js",
+              "bytes": 7449,
+              "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+            },
+            {
+              "path": "gpu-gemma4-prefix-gelu.js",
+              "bytes": 16018,
+              "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+            },
+            {
+              "path": "gpu-gemma4-prefix-retile.js",
+              "bytes": 15704,
+              "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+            },
+            {
+              "path": "gpu-gemma4-rms-plan.js",
+              "bytes": 1960,
+              "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+            },
+            {
+              "path": "gpu-gemma4-rms.js",
+              "bytes": 21407,
+              "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+            },
+            {
+              "path": "gpu-gemma4-vision-qkv.js",
+              "bytes": 18378,
+              "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+            },
+            {
+              "path": "gpu-gemma4-vision.js",
+              "bytes": 39775,
+              "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+            },
+            {
+              "path": "gpu-gemma4.js",
+              "bytes": 111718,
+              "sha256": "36fece6876fd4fe0d5177bf7e04ac034e6c0a7a75c31cc1c864449090e87e8b1"
+            },
+            {
+              "path": "gpu-kev.js",
+              "bytes": 45228,
+              "sha256": "37519ef8c06c537c5fc736a7badef762062d082a7c3c19e605e462912c935a57"
+            },
+            {
+              "path": "gpu-laya.js",
+              "bytes": 14723,
+              "sha256": "3f2a2a96324966949fddb8ee4e700550b7db292067c9a93ab8a0fc438de708bc"
+            },
+            {
+              "path": "gpu-matvec-gelu.js",
+              "bytes": 12270,
+              "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+            },
+            {
+              "path": "gpu-matvec-two.js",
+              "bytes": 22143,
+              "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+            },
+            {
+              "path": "gpu-matvec.js",
+              "bytes": 19542,
+              "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+            },
+            {
+              "path": "gpu-recur-tuning.js",
+              "bytes": 21113,
+              "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+            },
+            {
+              "path": "gpu-tuning.js",
+              "bytes": 16021,
+              "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+            },
+            {
+              "path": "gpu.js",
+              "bytes": 26543,
+              "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+            },
+            {
+              "path": "image-header.js",
+              "bytes": 5607,
+              "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+            },
+            {
+              "path": "images.js",
+              "bytes": 4221,
+              "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+            },
+            {
+              "path": "index.js",
+              "bytes": 19761,
+              "sha256": "4ad325c7e3b86442109bc3b6e26a3281b93dee9c43153550aa85348eb9a8d406"
+            },
+            {
+              "path": "kevala-base.wasm",
+              "bytes": 1375777,
+              "sha256": "cd52abd467c0f21a4754fa007d844d5f5c79ed4ef10089afe2c33f978e335e5e"
+            },
+            {
+              "path": "kevala-relaxed.wasm",
+              "bytes": 1383425,
+              "sha256": "93f5383aaa7fffd6e57b6bc6ebb5de9cf6a35e6bc0b4f1b49561c28c2860b65a"
+            },
+            {
+              "path": "kevala-simd.wasm",
+              "bytes": 1382096,
+              "sha256": "d759f008f284d3c2b6caa3ecca542e0d959bb77ee03cd25cfe944b3f57eccdfc"
+            },
+            {
+              "path": "node.js",
+              "bytes": 2459,
+              "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+            },
+            {
+              "path": "pack-layout.js",
+              "bytes": 8838,
+              "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+            },
+            {
+              "path": "presets.js",
+              "bytes": 5604,
+              "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+            },
+            {
+              "path": "request-queue.js",
+              "bytes": 2205,
+              "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+            },
+            {
+              "path": "shard-client.js",
+              "bytes": 1495,
+              "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+            },
+            {
+              "path": "shard-worker.js",
+              "bytes": 2762,
+              "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+            },
+            {
+              "path": "source.js",
+              "bytes": 33566,
+              "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+            },
+            {
+              "path": "stats.js",
+              "bytes": 279,
+              "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+            },
+            {
+              "path": "wasm.js",
+              "bytes": 4833,
+              "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+            }
+          ]
+        },
+        {
+          "id": "candidate",
+          "assets": [
+            {
+              "path": "archs/clef.js",
+              "bytes": 5976,
+              "sha256": "ac7ba9459a7210e19516ef87bdeeb71e2612b73c44ca289a704f55f1ee5b8b06"
+            },
+            {
+              "path": "archs/gemma4.js",
+              "bytes": 12531,
+              "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+            },
+            {
+              "path": "archs/index.js",
+              "bytes": 2743,
+              "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+            },
+            {
+              "path": "archs/kev.js",
+              "bytes": 10357,
+              "sha256": "f1ebba93662c9bad0dd1c087e1e4c00d62cbeba29b18edb159451bb3d436b0b7"
+            },
+            {
+              "path": "archs/laya.js",
+              "bytes": 8417,
+              "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+            },
+            {
+              "path": "cpu-calibrate.js",
+              "bytes": 3092,
+              "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+            },
+            {
+              "path": "cpu-policy.js",
+              "bytes": 3333,
+              "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+            },
+            {
+              "path": "cpu-tune.js",
+              "bytes": 1293,
+              "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+            },
+            {
+              "path": "engine-worker.js",
+              "bytes": 20118,
+              "sha256": "7f6045b89ad8b353c3b074323c17d321ac40fee17a793ad25c47da52e22718a2"
+            },
+            {
+              "path": "gemma4-image.js",
+              "bytes": 12697,
+              "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+            },
+            {
+              "path": "gemma4-ple-store.js",
+              "bytes": 11274,
+              "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+            },
+            {
+              "path": "gemma4-vision-pack.js",
+              "bytes": 3580,
+              "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+            },
+            {
+              "path": "gpu-clef-head.js",
+              "bytes": 19783,
+              "sha256": "58c083005fec8cd29d54fe9023b14ca05a5428dbce884c979bb77967796e80cb"
+            },
+            {
+              "path": "gpu-gemma4-attention.js",
+              "bytes": 24396,
+              "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+            },
+            {
+              "path": "gpu-gemma4-batch-mlp.js",
+              "bytes": 25939,
+              "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+            },
+            {
+              "path": "gpu-gemma4-batch-single.js",
+              "bytes": 13303,
+              "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+            },
+            {
+              "path": "gpu-gemma4-bn32.js",
+              "bytes": 13497,
+              "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+            },
+            {
+              "path": "gpu-gemma4-grid-mlp.js",
+              "bytes": 21034,
+              "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+            },
+            {
+              "path": "gpu-gemma4-image.js",
+              "bytes": 6179,
+              "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+            },
+            {
+              "path": "gpu-gemma4-k64.js",
+              "bytes": 12881,
+              "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+            },
+            {
+              "path": "gpu-gemma4-mlp.js",
+              "bytes": 14486,
+              "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+            },
+            {
+              "path": "gpu-gemma4-ple.js",
+              "bytes": 3548,
+              "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+            },
+            {
+              "path": "gpu-gemma4-prefix-cache.js",
+              "bytes": 7449,
+              "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+            },
+            {
+              "path": "gpu-gemma4-prefix-gelu.js",
+              "bytes": 16018,
+              "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+            },
+            {
+              "path": "gpu-gemma4-prefix-retile.js",
+              "bytes": 15704,
+              "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+            },
+            {
+              "path": "gpu-gemma4-rms-plan.js",
+              "bytes": 1960,
+              "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+            },
+            {
+              "path": "gpu-gemma4-rms.js",
+              "bytes": 21407,
+              "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+            },
+            {
+              "path": "gpu-gemma4-vision-qkv.js",
+              "bytes": 18378,
+              "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+            },
+            {
+              "path": "gpu-gemma4-vision.js",
+              "bytes": 39775,
+              "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+            },
+            {
+              "path": "gpu-gemma4.js",
+              "bytes": 111718,
+              "sha256": "36fece6876fd4fe0d5177bf7e04ac034e6c0a7a75c31cc1c864449090e87e8b1"
+            },
+            {
+              "path": "gpu-kev.js",
+              "bytes": 45464,
+              "sha256": "31f9e322832be04b0773e1866be724c49a5d7c9de7d523d5d07fdb8fafd6b614"
+            },
+            {
+              "path": "gpu-laya.js",
+              "bytes": 14723,
+              "sha256": "3f2a2a96324966949fddb8ee4e700550b7db292067c9a93ab8a0fc438de708bc"
+            },
+            {
+              "path": "gpu-matvec-gelu.js",
+              "bytes": 12270,
+              "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+            },
+            {
+              "path": "gpu-matvec-two.js",
+              "bytes": 22143,
+              "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+            },
+            {
+              "path": "gpu-matvec.js",
+              "bytes": 19542,
+              "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+            },
+            {
+              "path": "gpu-recur-tuning.js",
+              "bytes": 21113,
+              "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+            },
+            {
+              "path": "gpu-tuning.js",
+              "bytes": 16021,
+              "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+            },
+            {
+              "path": "gpu.js",
+              "bytes": 26543,
+              "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+            },
+            {
+              "path": "image-header.js",
+              "bytes": 5607,
+              "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+            },
+            {
+              "path": "images.js",
+              "bytes": 4221,
+              "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+            },
+            {
+              "path": "index.js",
+              "bytes": 19761,
+              "sha256": "4ad325c7e3b86442109bc3b6e26a3281b93dee9c43153550aa85348eb9a8d406"
+            },
+            {
+              "path": "kevala-base.wasm",
+              "bytes": 1375777,
+              "sha256": "cd52abd467c0f21a4754fa007d844d5f5c79ed4ef10089afe2c33f978e335e5e"
+            },
+            {
+              "path": "kevala-relaxed.wasm",
+              "bytes": 1383425,
+              "sha256": "93f5383aaa7fffd6e57b6bc6ebb5de9cf6a35e6bc0b4f1b49561c28c2860b65a"
+            },
+            {
+              "path": "kevala-simd.wasm",
+              "bytes": 1382096,
+              "sha256": "d759f008f284d3c2b6caa3ecca542e0d959bb77ee03cd25cfe944b3f57eccdfc"
+            },
+            {
+              "path": "node.js",
+              "bytes": 2459,
+              "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+            },
+            {
+              "path": "pack-layout.js",
+              "bytes": 8838,
+              "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+            },
+            {
+              "path": "presets.js",
+              "bytes": 5604,
+              "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+            },
+            {
+              "path": "request-queue.js",
+              "bytes": 2205,
+              "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+            },
+            {
+              "path": "shard-client.js",
+              "bytes": 1495,
+              "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+            },
+            {
+              "path": "shard-worker.js",
+              "bytes": 2762,
+              "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+            },
+            {
+              "path": "source.js",
+              "bytes": 33566,
+              "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+            },
+            {
+              "path": "stats.js",
+              "bytes": 279,
+              "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+            },
+            {
+              "path": "wasm.js",
+              "bytes": 4833,
+              "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+            }
+          ]
+        }
+      ],
+      "compiledPayloadsIncluded": false
+    },
+    "controllerCheckout": {
+      "path": "/home/bruno/githubworkspace/kevala",
+      "commit": "8e4ae3a3ff6592e9581696057f07fa90e036e10a",
+      "measuredRuntimeCommit": "4e27753e6f385d6fabbb6040fdd82f058a9c48a8",
+      "measuredRuntimeUsesThisCheckoutHead": false
+    },
+    "model": {
+      "id": "kev-0.8b",
+      "precision": "q8",
+      "bytes": 857259648,
+      "sha256": "a121fd39a959423e5f6a07d75a4cb33fdb87c0534aa27b7acf4f5381788097e3",
+      "headerSha256": "bc43c176cf887d05f5e1908fa8a68bb65329d324a78c3fe63053a39df42aab38"
+    },
+    "auditedReceiptSha256": "0a88207c22cfad784d2c4b742082b71be7ae04fea508a1bdce934c8d81c5ca69"
+  },
+  "exclusions": [
+    "model weights",
+    "copied compiled runtime binaries and runtime trees",
+    "build trees",
+    "browser profiles and logs"
+  ],
+  "freshness": [
+    [
+      "publication/README.md",
+      "docs/benchmarks/gpu-cache-memory-2026-11-07/README.md"
+    ],
+    [
+      "publication/archive-publication.mjs",
+      "docs/benchmarks/gpu-cache-memory-2026-11-07/archive-publication.mjs"
+    ],
+    [
+      "publication/gpu-cache-memory.md",
+      "docs/gpu-cache-memory.md"
+    ],
+    [
+      "publication/how.js",
+      "app/views/how.js"
+    ],
+    [
+      "source/candidate-gpu-kev.js",
+      "js/src/gpu-kev.js"
+    ]
+  ],
+  "lease": {
+    "before": {
+      "pid": 2682642,
+      "device": "66306",
+      "inode": "134897311",
+      "rawKernelLine": "182: FLOCK  ADVISORY  WRITE 2682642 103:02:134897311 0 EOF"
+    },
+    "after": {
+      "pid": 2682642,
+      "device": "66306",
+      "inode": "134897311",
+      "rawKernelLine": "182: FLOCK  ADVISORY  WRITE 2682642 103:02:134897311 0 EOF"
+    }
+  }
+}
