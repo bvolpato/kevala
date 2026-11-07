@@ -132,6 +132,24 @@ unsafe fn dot4(a: *const f32, w: *const f32, k: usize) -> f32 {
 /// out[t][n] = sum_k x[t][k] * w[n][k] (+ bias[n]) for t rows. `k % 4 == 0`, and q8 blocks are
 /// multiples of 16. `panel` is scratch, grown as needed.
 pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
+    #[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
+    if t >= 2 && m.n() >= NR && m.k() >= 64 && std::arch::is_x86_feature_detected!("avx2") {
+        unsafe { linear_avx2(x, t, m, bias, out, panel) };
+        if out[..t * m.n()].iter().all(|value| value.is_finite()) {
+            return;
+        }
+    }
+    linear_impl(x, t, m, bias, out, panel);
+}
+
+#[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
+#[target_feature(enable = "avx2")]
+unsafe fn linear_avx2(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
+    linear_impl(x, t, m, bias, out, panel);
+}
+
+#[inline(always)]
+fn linear_impl(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
     let (n, k) = (m.n(), m.k());
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
@@ -543,5 +561,68 @@ mod tests {
                 assert!((out[r * n + c] - want).abs() < 1e-3 * want.abs().max(1.0), "{r},{c}");
             }
         }
+    }
+
+    #[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
+    #[test]
+    fn avx2_linear_matches_portable_bits_with_unaligned_inputs_and_tails() {
+        if !std::arch::is_x86_feature_detected!("avx2") {
+            return;
+        }
+        fn check(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>) {
+            let len = t * m.n();
+            let guard = 0x7fc0_abcd;
+            let mut expected = vec![f32::from_bits(guard); len + 2];
+            let mut actual = expected.clone();
+            linear_impl(x, t, m, bias, &mut expected[1..len + 1], &mut Vec::new());
+            // Eligible shapes exercise the public ISA dispatch in default native builds.
+            linear(x, t, m, bias, &mut actual[1..len + 1], &mut Vec::new());
+            assert_eq!(actual[0].to_bits(), guard);
+            assert_eq!(actual[len + 1].to_bits(), guard);
+            for (i, (actual, expected)) in actual[1..len + 1].iter().zip(&expected[1..len + 1]).enumerate() {
+                assert_eq!(actual.to_bits(), expected.to_bits(), "t={t}, n={}, k={}, i={i}", m.n(), m.k());
+            }
+        }
+        let values = [
+            0.,
+            -0.,
+            1.,
+            -1.,
+            16_777_216.,
+            -16_777_216.,
+            f32::MIN_POSITIVE,
+            f32::from_bits(1),
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::from_bits(0x7fc0_1234),
+            f32::from_bits(0xffc0_5678),
+            f32::from_bits(0x7f80_1234),
+            f32::from_bits(0xff80_5678),
+        ];
+        let original_tile = tile();
+        for selected_tile in [0, 1] {
+            set_tile(selected_tile);
+            for values in [&values[..8], &values[..]] {
+                for (t, n, k) in [(1, 4, 4), (2, 4, 12), (5, 7, 20), (2, 4, 64), (9, 8, 64), (65, 4, 4096)] {
+                    let x: Vec<f32> = (0..t * k + 1).map(|i| values[i % values.len()]).collect();
+                    let w: Vec<f32> = (0..n * k + 1).map(|i| values[(i * 3 + 1) % values.len()]).collect();
+                    let bf16: Vec<u16> = w.iter().map(|v| crate::convert::f32_to_bf16(*v)).collect();
+                    let bias: Vec<f32> = (0..n).map(|i| values[(i * 5 + 2) % values.len()]).collect();
+                    check(&x[1..], t, Mat::F32 { n, k, w: &w[1..] }, None);
+                    check(&x[1..], t, Mat::F32 { n, k, w: &w[1..] }, Some(&bias));
+                    check(&x[1..], t, Mat::Bf16 { n, k, w: &bf16[1..] }, Some(&bias));
+                }
+                for block in [16, 32, 64] {
+                    let (t, n, k) = (5, 7, 64);
+                    let x: Vec<f32> = (0..t * k + 1).map(|i| values[i % values.len()]).collect();
+                    let q: Vec<i8> = (0..n * k + 1).map(|i: usize| i.wrapping_mul(73).wrapping_add(19) as i8).collect();
+                    let scales: Vec<f32> = (0..n * k / block).map(|i| values[i % values.len()]).collect();
+                    let bias: Vec<f32> = (0..n).map(|i| values[(i * 5 + 2) % values.len()]).collect();
+                    check(&x[1..], t, Mat::Q8 { n, k, block, q: &q[1..], scales: &scales }, None);
+                    check(&x[1..], t, Mat::Q8 { n, k, block, q: &q[1..], scales: &scales }, Some(&bias));
+                }
+            }
+        }
+        set_tile(original_tile);
     }
 }
