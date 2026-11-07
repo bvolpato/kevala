@@ -14,6 +14,9 @@ The [Clef GPU head report](clef-head-performance.md) separates exact projection 
 checks from paired complete-request wall timings. Compare `clefHead: "auto"` with `"cpu"` on
 the same GPU backbone; keep load, warmup, and first-use validation outside warm-request timings.
 
+The [Firefox submission-mode report](firefox-submission-performance.md) compares explicit `await`
+and `split` scheduling on one loaded Laya engine. It does not establish UI responsiveness.
+
 These measurements identify the best tested candidates for the recorded shapes and feature set. They do not prove a universal hardware optimum or model accuracy.
 
 ## Prepare the checkout
@@ -60,7 +63,9 @@ The default cases are short, medium, and long text requests. Use `--shapes=0,1,2
 
 Each model/precision/browser row uses the on-page engine in a fresh isolated browser. Resident lanes share that browser and model load; isolated lanes start separate browsers. The report records that context. These wall timings are completed model-request latency, not camera sensor-to-screen or worker/UI latency.
 
-GPU profiles change execution. Each dispatch has its own timed pass, optional paths can change, and profiling disables the normal long-request chunking in some trunks. The default unprofiled submission policy waits between long-request chunks. A profile can therefore have very different wall latency. Do not subtract profiled kernel totals from unprofiled wall time to estimate overhead, or use profiled wall latency as an application speedup.
+GPU profiles change execution. Each dispatch has its own timed pass, optional paths can change, and profiling disables the normal long-request chunking in some trunks. The unprofiled decoder path defaults to waiting between long-request chunks; Gemma 4 Vision defaults to split submission. A profile can therefore have very different wall latency. Do not subtract profiled kernel totals from unprofiled wall time to estimate overhead, or use profiled wall latency as an application speedup.
+
+Use `--submit=await|split|none` to override submission for a benchmark load. If omitted, the runner leaves the option unset and records `submitMode: "runtime-default"`; an explicit `--submit=await` remains a distinct protocol. The decoder runtime default is `await`, while Gemma 4 Vision defaults to `split` unless the caller sets the option. `await` waits for each submitted long-pass chunk to finish, `split` submits chunks back to back without waiting, and `none` sends one command buffer. This is a benchmark-only override and does not change a production default. The `SUBMIT.mode` controller is module-global in a page realm, so keep one selected on-page engine per page when comparing modes. Headless Firefox timing does not establish visible UI responsiveness. Compare explicit modes as separate captures and keep their recorded protocols separate.
 
 Keep per-kernel medians and shares for attribution. Keep wall samples, p95, and block medians for latency. The runner checks backend and adapter identity, request hashes, token counts, model responses, normalized probabilities, and complete finite timestamp samples. Invalid measurements fail validation. Repeated same-runtime outputs must remain within the declared probability tolerance.
 

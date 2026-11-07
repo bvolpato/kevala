@@ -21,6 +21,7 @@ Options use --name=value:
   --packs=DIRECTORY       Local packs named <model>-<precision>.kevala; default tmp
   --pack-base=URL         Same-origin served pack directory; default tmp/
   --protocol=resident|isolated  Default: resident; isolated preserves per-lane loads
+  --submit=await|split|none  Override the model's runtime-default submission policy
   --samples=9 --warmups=3 --blocks=2 --shapes=0,1,2 --timeout=600 (per lane)
   --binary=PATH           One selected browser's executable
   --chromium-arg=--FLAG    Repeat for isolated Chromium flags
@@ -40,7 +41,7 @@ Exit status: 0 complete, 1 invalid/failed measurement, 2 incomplete coverage.
 function options(args) {
   const values = {};
   const chromiumArgs = [];
-  const allowed = new Set(["base", "output", "models", "precisions", "browser", "browsers", "runtime", "packs", "pack-base", "protocol", "samples", "warmups", "blocks", "shapes", "timeout", "binary", "chromium-arg", "max-pack-bytes", "probability-tolerance", "lock"]);
+  const allowed = new Set(["base", "output", "models", "precisions", "browser", "browsers", "runtime", "packs", "pack-base", "protocol", "submit", "samples", "warmups", "blocks", "shapes", "timeout", "binary", "chromium-arg", "max-pack-bytes", "probability-tolerance", "lock"]);
   for (const arg of args) {
     if (arg === "--help" || arg === "--list") { values[arg.slice(2)] = true; continue; }
     const match = /^--([^=]+)=(.+)$/.exec(arg);
@@ -68,6 +69,7 @@ function options(args) {
   if (!Number.isFinite(probabilityTolerance) || probabilityTolerance < 0 || probabilityTolerance > 0.005) throw new Error("probability-tolerance must be between 0 and 0.005");
   const protocol = values.protocol || "resident";
   if (!["resident", "isolated"].includes(protocol)) throw new Error("protocol must be resident or isolated");
+  if (values.submit !== undefined && !["await", "split", "none"].includes(values.submit)) throw new Error('submit must be "await", "split", or "none"');
   return { ...values, base, runtime, packBase, browsers, chromiumArgs, shapes, probabilityTolerance,
     protocol,
     models: values.models?.split(",") || Object.keys(MODELS),
@@ -129,6 +131,7 @@ async function run(config, plan) {
     protocol: { samples: config.samples, warmups: config.warmups, blocks: config.blocks, shapes: config.shapes,
       models: config.models, precisions: config.precisions, browsers: config.browsers,
       cacheMode: "uncached", packCache: false, stateCache: false, uniqueStates: true, context: "on-page WebGPU engine",
+      submitMode: config.submit ?? "runtime-default", submitExplicit: config.submit !== undefined,
       profileProtocol: config.protocol,
       modelLoadScope: config.protocol === "resident" ? "one model load per row; exact load-time GPU tuning snapshot is recorded; per-shape caches may evolve during measurement" : "isolated model load for each wall/profile lane (legacy protocol)",
       blockOrder: "wall/profile, then profile/wall, alternating by block",
@@ -186,6 +189,7 @@ async function run(config, plan) {
         const page = new URL("bench.html", config.base);
         page.hash = new URLSearchParams({ auto: "", backend: "webgpu", model: row.id, precision: row.precision, packUrl: url.href,
           runtime: config.runtime.href, profile: "0", protocol: "resident", blocks: String(config.blocks), cache: "0", stateCache: "0", unique: "1", onPage: "1",
+          ...(config.submit === undefined ? {} : { submit: config.submit }),
           runs: String(config.samples), warmups: String(config.warmups), shapes: config.shapes.join(",") }).toString();
         const pagePath = resolve(folder, "resident-page.json");
         stage = "browser";
@@ -218,6 +222,7 @@ async function run(config, plan) {
           const page = new URL("bench.html", config.base);
           page.hash = new URLSearchParams({ auto: "", backend: "webgpu", model: row.id, precision: row.precision, packUrl: url.href,
             runtime: config.runtime.href, profile: profile ? "1" : "0", protocol: "isolated", cache: "0", stateCache: "0", unique: "1", onPage: "1",
+            ...(config.submit === undefined ? {} : { submit: config.submit }),
             runs: String(config.samples), warmups: String(config.warmups), shapes: config.shapes.join(",") }).toString();
           const filename = `${block}-${profile ? "gpu" : "wall"}.json`;
           const path = resolve(folder, filename);

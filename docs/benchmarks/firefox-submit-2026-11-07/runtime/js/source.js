@@ -1,0 +1,780 @@
+// Where packs come from: the Cache API, the network with progress, or an upstream Hugging Face
+// checkpoint converted in the browser. Everything streams, so no stage holds a second copy of
+// the weights in JavaScript memory.
+
+import { clearTuning } from "./cpu-policy.js";
+
+export const CACHE_NAME = "kevala-v1";
+
+/** Published packs of the models below, pinned to one commit of their Hugging Face repo. */
+const PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/45da41504c6c117eca940103e49dd5eb1c3eab4f";
+const GEMMA_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/c70e9136938026e00cbbdec9db027d862963f180";
+const GEMMA_VISION_PACKS = "https://huggingface.co/bvolpato/kevala-packs/resolve/712955050042ee5980ba3c37e2da53d79c51d9fe";
+
+/**
+ * Known models, by name. A matching published pack is used when available; browserConvert models
+ * can convert their pinned source, while nativeConversion models need a supplied .kevala URL.
+ */
+export const MODELS = {
+  laya: {
+    arch: "laya",
+    label: "Laya (English), ModernBERT-large encoder, 421M",
+    repo: "convaiinnovations/laya",
+    revision: "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+    author: "Nandakishor M, Convai Innovations",
+    license: "apache-2.0",
+    hosted: `${PACKS}/laya-q8.kevala`,
+    // true when load() can convert it in the browser from upstream files (no pack to host)
+    browserConvert: true,
+    // bytes of the upstream checkpoint and of the int8 pack
+    download: 842609210,
+    pack: 478886720,
+    packSha256: "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+    block: 32,
+  },
+  "kev-0.8b": {
+    arch: "kev",
+    label: "Kev-0.8B v1.0, Qwen3.5-0.8B decoder with a pointer head",
+    repo: "jaredpalmer/kev-0.8b",
+    revision: "9a45d25eb2ab761841196625383fa1dff0e56c1e",
+    author: "Jared Palmer",
+    base: { repo: "Qwen/Qwen3.5-0.8B-Base", revision: "dc7cdfe2ee4154fa7e30f5b51ca41bfa40174e68" },
+    license: "apache-2.0",
+    browserConvert: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 1620000000,
+    downloadApprox: true,
+    precisionPackBytes: { bf16: 1514645952, q8: 857259648, f32: 3430000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
+  },
+  "kev-4b": {
+    arch: "kev", label: "Kev-4B v1.0, Qwen3.5 decoder with a trained pointer head",
+    repo: "jaredpalmer/kev-4b", revision: "139fdd94f1b6a6ad80cc15e08fcb99cac885a101",
+    author: "Jared Palmer",
+    base: { repo: "Qwen/Qwen3.5-4B-Base", revision: "1001bb4d826a52d1f399e183466143f4da7b741b" },
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 9500000000,
+    downloadApprox: true,
+    precisionPackBytes: { bf16: 8432127168, q8: 4756384256, f32: 19020000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
+  },
+  "kev-9b": {
+    arch: "kev", label: "Kev-9B v1.0, Qwen3.5 decoder with a trained pointer head",
+    repo: "jaredpalmer/kev-9b", revision: "b5d8c18e44c60888d138b65cb6507ff0a5a448a0",
+    author: "Jared Palmer",
+    base: { repo: "Qwen/Qwen3.5-9B-Base", revision: "68c46c4b3498877f3ef123c856ecfde50c39f404" },
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 19500000000,
+    downloadApprox: true,
+    precisionPackBytes: { bf16: 15902057920, q8: 8963900032, f32: 38140000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
+  },
+  "h2o-lightning-4b": {
+    arch: "kev",
+    readout: "h2o-lightning",
+    label: "H2O-Lightning-4B, Qwen3.5-4B with H2O's decision prompt and calibration",
+    repo: "h2oai/h2o-lightning-4b",
+    revision: "acaf0d4ea251e54de928c75ef4352670d33192d3",
+    baseSource: { repo: "Qwen/Qwen3.5-4B", revision: "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a" },
+    author: "H2O.ai",
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 9078620536,
+    precisionPackBytes: { bf16: 8429496384, q8: 4753753472, f32: 18160000000 },
+    precisionPackApprox: { bf16: false, q8: false, f32: true },
+    block: 32,
+  },
+  "clef-flash": {
+    arch: "clef",
+    label: "Cloudflare Clef-flash, Qwen3.5-9B with a joint decision head",
+    repo: "Cloudflare/clef-flash",
+    revision: "8b2e5fd17c09fd49bc2880b805d5323ec7ff4ff3",
+    baseSource: { repo: "Qwen/Qwen3.5-9B" },
+    author: "Cloudflare",
+    license: "apache-2.0",
+    browserConvert: false,
+    nativeConversion: true,
+    defaultPrecision: "bf16",
+    precisions: ["bf16", "f32", "q8"],
+    download: 19063259136,
+    precisionPackBytes: { bf16: 18414969408, q8: 10586832640, f32: 38140000000 },
+    precisionPackApprox: { bf16: true, q8: true, f32: true },
+    block: 32,
+  },
+  ...Object.fromEntries([
+    ["0.8b", "0.8B", "2fc06364715b967f1860aea9cf38778875588b17", 1769980465, 855225984, "f06789ea73ec84057cab9c9b12f560c904218d0b1506795727a988a2122add6a"],
+    ["2b", "2B", "15852e8c16360a2fea060d615a32b45270f8a8fc", 4571274023, 2127742976, "5995ad5ed1c44301818185e3af7fd1490b937b36ff6bff7ada15bcd26025e8b2"],
+    ["4b", "4B", "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a", 9342907469, 4751303104, "ad96f2bc64d357bed4c453af3b4af9d166b0f7cde70b509cb842350e83959b5e"],
+  ].map(([size, upstream, revision, download, pack, packSha256]) => [`semif-qwen3.5-${size}`, {
+    arch: "kev", label: `SemIf Qwen3.5-${upstream}, frozen model with direct option scoring`,
+    repo: `Qwen/Qwen3.5-${upstream}`, revision, license: "apache-2.0",
+    hosted: `${PACKS}/semif-qwen3.5-${size}-q8.kevala`,
+    browserConvert: false, download, pack, packSha256, block: 32,
+  }])),
+  ...Object.fromEntries([
+    ["e2b", "E2B", "3e22461f65e89153144f8adb70e3b8c2cc9845a7", 5217421952, "eca77cf11c2c5c4dc456fb9a23df180e971de62fac561d05b9eebab0f2a063df"],
+    ["e4b", "E4B", "ee0ef6023621cff504d758262d4e04895a5af4a2", 8407043136, "1882558a3614f3044e658dda0ef84c394814b38ee955d1cfc0023ceaf4b559be"],
+  ].map(([size, upstream, revision, pack, packSha256]) => [`gemma-4-${size}`, {
+    arch: "gemma4", label: `Gemma 4 ${upstream}, instruction model with direct option scoring`,
+    repo: `google/gemma-4-${upstream}-it`, revision, license: "apache-2.0",
+    hosted: `${GEMMA_PACKS}/gemma-4-${size}-q8.kevala`,
+    browserConvert: false, pack, packSha256, block: 32,
+    ...(size === "e2b" ? {
+      modalities: ["text", "image"],
+      vision: {
+        arch: "gemma4-vision", precision: "bf16", pack: 337302144,
+        packSha256: "6556225c040a5b1d0bc8874a2833ce17cb7579d390f3225995c09ae589214d04",
+        hosted: `${GEMMA_VISION_PACKS}/gemma-4-e2b-vision-bf16.kevala`,
+      },
+    } : {}),
+  }])),
+};
+
+const SOURCE_IDENTITY_FIELDS = ["repo", "revision", "base", "baseSource", "readout", "hosted", "download", "pack", "packSha256", "source"];
+const DERIVED_SOURCE_FIELDS = ["hosted", "download", "pack", "packSha256", "precisionPackBytes", "precisionPackApprox"];
+const PROVENANCE_FIELDS = ["author", "license"];
+
+function hasOwn(value, key) {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function registeredModel(name) {
+  return typeof name === "string" && hasOwn(MODELS, name) ? MODELS[name] : null;
+}
+
+function checkKnownArch(name, known, model) {
+  if (hasOwn(model, "arch") && model.arch !== known.arch) {
+    throw new Error(`model ${JSON.stringify(name)} uses architecture ${JSON.stringify(known.arch)}, not ${JSON.stringify(model.arch)}`);
+  }
+}
+
+/** Merge a known family with an override without carrying stale source provenance across repos. */
+function knownOverride(name, known, model) {
+  checkKnownArch(name, known, model);
+  const sourceOverride = SOURCE_IDENTITY_FIELDS.some((key) => hasOwn(model, key));
+  const spec = { ...known, ...model };
+  if (!sourceOverride) return spec;
+
+  // A changed source must not continue using the old hosted bytes, sizes, or digest. Callers can
+  // provide any of these explicitly when they intentionally publish a matching replacement.
+  for (const key of DERIVED_SOURCE_FIELDS) if (!hasOwn(model, key)) delete spec[key];
+  for (const key of PROVENANCE_FIELDS) if (!hasOwn(model, key)) delete spec[key];
+  if (hasOwn(model, "repo") && !hasOwn(model, "revision")) delete spec.revision;
+  if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "base")) delete spec.base;
+  if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "baseSource")) delete spec.baseSource;
+  if ((hasOwn(model, "repo") || hasOwn(model, "revision")) && !hasOwn(model, "label")) delete spec.label;
+  return spec;
+}
+
+/** Resolves a model option to `{ url }` for a pack or `{ spec }` for an upstream checkpoint. */
+export function resolveModel(model) {
+  if (model == null) return { spec: MODELS.laya };
+  if (typeof model === "string") {
+    const known = registeredModel(model);
+    if (known) return { spec: known };
+    return { url: model };
+  }
+  const known = registeredModel(model.name);
+  if (known) checkKnownArch(model.name, known, model);
+  // Keep a registered model's architecture when its locally converted pack is supplied by URL.
+  if (model.url) return { url: model.url, ...(known ? { spec: knownOverride(model.name, known, model) } : {}) };
+  if (known) return { spec: knownOverride(model.name, known, model) };
+  return { spec: { ...model } };
+}
+
+const PRECISIONS = ["bf16", "f32", "q8"];
+
+export function defaultPrecision(model) {
+  const { spec } = resolveModel(model);
+  return spec?.defaultPrecision || "q8";
+}
+
+/** The precision choices shown for a known model. Older hosted packs stay at their declared format. */
+export function precisionOptions(model) {
+  const { spec } = resolveModel(model);
+  return (spec?.precisions || [spec?.defaultPrecision || "q8"]).filter((precision) => precision === "bf16" || precision === "q8");
+}
+
+function selectPrecision(spec, requested) {
+  const precision = requested || spec?.defaultPrecision || "q8";
+  if (!PRECISIONS.includes(precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
+  const supported = spec?.precisions || [spec?.defaultPrecision || "q8"];
+  if (!supported.includes(precision)) {
+    throw new Error(`${spec?.label || spec?.repo || "This model"} supports ${supported.join(" or ")} precision, not ${precision}.`);
+  }
+  return precision;
+}
+
+// Pack storage. The Origin Private File System takes multi-hundred-megabyte files as streamed
+// writes (the Cache API rejects entries that large in some browsers); the Cache API is the
+// fallback where OPFS is missing. Both expose match(key) -> Response | null, put(key, Response),
+// keys() and remove(key).
+
+/** The OPFS file name of a cache key: a hash for uniqueness, the last path segment for people. */
+function fileName(key) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) h = Math.imul(h ^ key.charCodeAt(i), 0x01000193) >>> 0;
+  return `${h.toString(16).padStart(8, "0")}-${key.split("/").pop().replace(/[^A-Za-z0-9._-]/g, "_")}`;
+}
+
+async function opfsStore() {
+  if (typeof navigator === "undefined" || !navigator.storage?.getDirectory) return null;
+  const dir = await (await navigator.storage.getDirectory()).getDirectoryHandle(CACHE_NAME, { create: true });
+  const readIndex = async () => {
+    try {
+      const index = JSON.parse(await (await (await dir.getFileHandle("index.json")).getFile()).text());
+      return index && typeof index === "object" && !Array.isArray(index) ? index : {};
+    } catch {
+      return {};
+    }
+  };
+  const writeFile = async (name, chunks) => {
+    const fh = await dir.getFileHandle(name, { create: true });
+    let n = 0;
+    if (fh.createWritable) {
+      const out = await fh.createWritable();
+      try {
+        for await (const c of chunks) {
+          await out.write(c);
+          n += c.byteLength;
+        }
+        await out.close();
+      } catch (e) {
+        try { await out.abort?.(); } catch {}
+        throw e;
+      }
+    } else {
+      // Safari workers: synchronous access handles only
+      const h = await fh.createSyncAccessHandle();
+      try {
+        h.truncate(0);
+        for await (const c of chunks) n += h.write(c, { at: n });
+        h.flush();
+      } finally {
+        try { h.close(); } catch {}
+      }
+    }
+    return n;
+  };
+  // Entries are only listed in the index once their file is complete. Keep all index and file
+  // mutations in one queue so stale-entry cleanup cannot race a replacement put.
+  let lock = Promise.resolve();
+  const withLock = (fn) => {
+    const run = lock.then(fn);
+    lock = run.catch(() => {});
+    return run;
+  };
+  const writeIndex = (idx) => writeFile("index.json", [new TextEncoder().encode(JSON.stringify(idx))]);
+  const validEntry = (e) => e && typeof e.name === "string" && Number.isSafeInteger(e.bytes) && e.bytes >= 0;
+  return {
+    kind: "opfs",
+    async match(key) {
+      return withLock(async () => {
+        const idx = await readIndex();
+        const e = idx[key];
+        if (!e) return null;
+        let f;
+        try {
+          if (!validEntry(e)) throw new Error("invalid cache index entry");
+          f = await (await dir.getFileHandle(e.name)).getFile();
+          if (f.size !== e.bytes) throw new Error("stale cache index entry");
+          return new Response(f.stream(), { headers: { "content-length": String(f.size), "x-kevala-size": String(f.size) } });
+        } catch {
+          delete idx[key];
+          await writeIndex(idx).catch(() => {});
+          if (validEntry(e)) await dir.removeEntry(e.name).catch(() => {});
+          return null;
+        }
+      });
+    },
+    async put(key, res) {
+      return withLock(async () => {
+        const name = fileName(key);
+        // Files the index does not list are leftovers of interrupted writes: free their space first.
+        const listed = new Set(Object.values(await readIndex()).filter(validEntry).map((e) => e.name));
+        for await (const [file] of dir.entries()) {
+          if (file !== "index.json" && file !== name && !listed.has(file)) await dir.removeEntry(file).catch(() => {});
+        }
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("cache put requires a response body");
+        const chunks = {
+          async *[Symbol.asyncIterator]() {
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (done) return;
+              yield value;
+            }
+          },
+        };
+        try {
+          const bytes = await writeFile(name, chunks);
+          const idx = await readIndex();
+          idx[key] = { name, bytes };
+          await writeIndex(idx);
+        } catch (e) {
+          await dir.removeEntry(name).catch(() => {}); // a partial file would only hold quota
+          throw e;
+        } finally {
+          try { void reader.cancel().catch(() => {}); } catch {}
+          try { reader.releaseLock(); } catch {}
+        }
+      });
+    },
+    async keys() {
+      return withLock(async () => {
+        const idx = await readIndex();
+        const entries = [];
+        let changed = false;
+        for (const [key, e] of Object.entries(idx)) {
+          let valid = validEntry(e);
+          if (valid) {
+            try {
+              const f = await (await dir.getFileHandle(e.name)).getFile();
+              valid = f.size === e.bytes;
+            } catch {
+              valid = false;
+            }
+          }
+          if (!valid) {
+            delete idx[key];
+            changed = true;
+            if (e?.name) await dir.removeEntry(e.name).catch(() => {});
+          } else {
+            entries.push({ key, bytes: e.bytes });
+          }
+        }
+        if (changed) await writeIndex(idx).catch(() => {});
+        return entries;
+      });
+    },
+    async remove(key) {
+      return withLock(async () => {
+        const idx = await readIndex();
+        const e = idx[key];
+        if (e?.name) await dir.removeEntry(e.name).catch(() => {});
+        if (key in idx) {
+          delete idx[key];
+          await writeIndex(idx);
+        }
+      });
+    },
+  };
+}
+
+async function cacheStore() {
+  if (typeof caches === "undefined") return null;
+  const c = await caches.open(CACHE_NAME);
+  return {
+    kind: "cache",
+    match: (key) => c.match(key).then((r) => r || null),
+    async put(key, res) {
+      try {
+        await c.put(key, res);
+      } catch (e) {
+        try { void res.body?.cancel(e).catch(() => {}); } catch {}
+        throw e;
+      }
+    },
+    async keys() {
+      const out = [];
+      for (const req of await c.keys()) {
+        const r = await c.match(req);
+        out.push({ key: req.url, bytes: Number(r?.headers.get("x-kevala-size")) || Number(r?.headers.get("content-length")) || 0 });
+      }
+      return out;
+    },
+    remove: (key) => c.delete(key),
+  };
+}
+
+async function openCache(enabled) {
+  if (!enabled) return null;
+  for (const make of [opfsStore, cacheStore]) {
+    try {
+      const s = await make();
+      if (s) return s;
+    } catch {}
+  }
+  return null;
+}
+
+/** Cache key for a converted upstream checkpoint: source, readout, revision, and precision matter. */
+export function upstreamKey(up, precision = up?.defaultPrecision || "q8") {
+  const baseInfo = up.base || up.baseSource;
+  const base = baseInfo ? `+${baseInfo.repo}@${baseInfo.revision}` : "";
+  const readout = up.readout ? `-${up.readout}` : "";
+  const artifact = up.packSha256 ? `-${up.packSha256}` : "";
+  return `https://kevala.cache/${up.repo}/${up.revision}${base}${readout}/${precision}-b${up.block}${artifact}.kevala`;
+}
+
+function absoluteUrl(url) {
+  const base = typeof self !== "undefined" ? self.location?.href : undefined;
+  return new URL(url, base).href;
+}
+
+function hasReplacementHosted(model, spec) {
+  if (typeof spec.hosted !== "string" || spec.hosted.length === 0) return false;
+  if (model == null) return false;
+  if (typeof model === "string") return !registeredModel(model);
+  if (typeof model !== "object") return false;
+  return !registeredModel(model.name) || hasOwn(model, "hosted");
+}
+
+/** Cache a custom or explicitly replaced hosted pack by URL, avoiding undefined identity keys. */
+function modelCacheKey(model, which, precision = "q8") {
+  if (which.url) return absoluteUrl(which.url);
+  if (hasReplacementHosted(model, which.spec)) return absoluteUrl(which.spec.hosted);
+  return upstreamKey(which.spec, precision);
+}
+
+async function checked(res, url) {
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  return res;
+}
+
+/** Yields the body of `res` as chunks, reporting progress. */
+async function* body(res, file, total, onProgress, signal) {
+  const reader = res.body.getReader();
+  let loaded = 0;
+  try {
+    for (;;) {
+      if (signal?.aborted) throw signal.reason ?? new DOMException("aborted", "AbortError");
+      const { done, value } = await reader.read();
+      if (done) break;
+      loaded += value.byteLength;
+      onProgress?.({ phase: "download", file, loaded, total });
+      yield value;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+}
+
+/**
+ * Resolves a pack source to `{ size, chunks(), cached, key, expectedArch? }`.
+ * `model` is a URL string, an ArrayBuffer / Uint8Array / Blob, `{ name, url }` with a known
+ * architecture, or `{ repo, revision, block }` naming an upstream checkpoint (the default). For a
+ * known model, `from` picks where its weights come from: "pack" uses a matching hosted pack when
+ * available, and "checkpoint" requests conversion from the pinned original weights.
+ */
+export async function openPack(model, { cache = true, from = "pack", precision, signal, onProgress, convert } = {}) {
+  if (from !== "pack" && from !== "checkpoint") throw new Error(`from must be "pack" or "checkpoint", not ${JSON.stringify(from)}`);
+  if (precision != null && !PRECISIONS.includes(precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
+  if (model instanceof ArrayBuffer || ArrayBuffer.isView(model)) {
+    const bytes = model instanceof ArrayBuffer ? new Uint8Array(model) : new Uint8Array(model.buffer, model.byteOffset, model.byteLength);
+    return { size: bytes.byteLength, cached: false, key: null, ...(precision != null ? { expectedPrecision: precision } : {}), async *chunks() { yield bytes; } };
+  }
+  if (typeof Blob !== "undefined" && model instanceof Blob) {
+    return { ...fromResponse(new Response(model), "pack", model.size, false, null, onProgress, signal), ...(precision != null ? { expectedPrecision: precision } : {}) };
+  }
+  const store = await openCache(cache);
+  const which = resolveModel(model);
+  const selectedPrecision = which.spec ? selectPrecision(which.spec, precision) : precision || "q8";
+  const expectedArch = which.spec?.arch || (model && typeof model === "object" ? model.arch || registeredModel(model.name)?.arch : null);
+  const withExpectedArch = (pack) => ({
+    ...pack,
+    ...(!which.url ? { precision: selectedPrecision } : {}),
+    ...(expectedArch ? { expectedArch } : {}),
+    ...(which.url && precision != null ? { expectedPrecision: selectedPrecision } : {}),
+  });
+  const key = modelCacheKey(model, which, selectedPrecision);
+  if (store) {
+    const hit = await store.match(key).catch(() => null);
+    if (hit) {
+      const size = Number(hit.headers.get("content-length")) || Number(hit.headers.get("x-kevala-size")) || 0;
+      onProgress?.({ phase: "cache", file: key, loaded: size, total: size });
+      return withExpectedArch(fromResponse(hit, "cache", size, true, key, null, signal));
+    }
+  }
+  if (which.url) {
+    const size = await remoteSize(key, signal).catch(() => 0);
+    if (size && (await acceptsRanges(key, signal))) {
+      return withExpectedArch(streamIntoCache(store, key, size, fetchRange(key, 0, size, key.split("/").pop(), { signal, onProgress }), { signal, onProgress }));
+    }
+    // a server without byte ranges (or without HEAD): one plain stream
+    const res = await checked(await fetch(key, { signal }), key);
+    const length = Number(res.headers.get("content-length")) || 0;
+    return withExpectedArch(streamIntoCache(store, key, length, body(res, key.split("/").pop(), length, onProgress, signal), { signal, onProgress }));
+  }
+  const up = which.spec;
+  // a model with a hosted int8 pack downloads that (about half the bytes of the checkpoint and no
+  // conversion); if it is missing or unreachable, convert from the upstream checkpoint instead
+  if (up.hosted && from === "pack" && selectedPrecision === "q8") {
+    const size = await remoteSize(up.hosted, signal).catch((e) => (signal?.aborted ? Promise.reject(e) : 0));
+    if (size) return withExpectedArch(streamIntoCache(store, key, size, fetchRange(up.hosted, 0, size, up.hosted.split("/").pop(), { signal, onProgress }), { signal, onProgress }));
+  }
+  // upstream checkpoint: convert, cache, and hand back the finished bytes
+  if (up.browserConvert === false) {
+    if (!up.hosted) throw new Error(`${up.label || up.repo} has no published ${selectedPrecision.toUpperCase()} pack and cannot be converted in the browser yet. Convert the pinned source with the native CLI, then pass the resulting .kevala URL.`);
+    throw new Error(from === "checkpoint"
+      ? `${up.label || up.repo} requires native ${selectedPrecision} conversion; load its hosted .kevala pack with from: "pack".`
+      : `The hosted pack for ${up.label || up.repo} is unavailable. Retry the download or pass a local .kevala URL.`);
+  }
+  const estimatedOutputBytes = up.precisionPackBytes?.[selectedPrecision];
+  if (estimatedOutputBytes > 0x7fffffc0) {
+    throw Object.assign(new Error(`${up.label || up.repo} ${selectedPrecision.toUpperCase()} output is estimated at ${(estimatedOutputBytes / 2 ** 30).toFixed(2)} GiB and exceeds the browser conversion limit (under 2 GiB). Convert with the native Kevala CLI, then pass the resulting .kevala URL.`), { code: "BROWSER_CONVERSION_TOO_LARGE" });
+  }
+  const made = await convert(up, { precision: selectedPrecision, signal, onProgress });
+  if (!(made instanceof Uint8Array)) return withExpectedArch(streamIntoCache(store, key, made.size, made.chunks(), { signal, onProgress, file: "converted pack" }));
+  const bytes = made;
+  if (store) {
+    onProgress?.({ phase: "cache", file: key, loaded: 0, total: bytes.byteLength });
+    try {
+      await store.put(key, new Response(bytes, { headers: { "content-type": "application/octet-stream", "x-kevala-size": String(bytes.byteLength) } }));
+    } catch (e) {
+      onProgress?.({ phase: "cache-failed", message: String(e?.message || e) });
+    }
+  }
+  return withExpectedArch({ size: bytes.byteLength, cached: false, key, precision: selectedPrecision, async *chunks() { yield bytes; } });
+}
+
+/**
+ * A pack arriving as chunks (an async iterator), copied into the cache under `key` while the
+ * loader reads it. `saving` settles when the cached copy is complete.
+ */
+function streamIntoCache(store, key, size, chunks, { signal, onProgress, file = "pack" } = {}) {
+  let stream = new ReadableStream({
+    async pull(controller) {
+      const { done, value } = await chunks.next();
+      if (done) controller.close();
+      else controller.enqueue(value);
+    },
+  });
+  let saving = null;
+  if (store) {
+    const [toCache, toLoader] = stream.tee();
+    stream = toLoader;
+    const headers = { "content-type": "application/octet-stream", "x-kevala-size": String(size) };
+    // a pack that cannot be stored still loads; say why, so a full disk does not look like a hang
+    const cacheBody = new Response(toCache, { headers });
+    saving = store.put(key, cacheBody).catch((e) => {
+      // Do not await this: ReadableStream tee cancellation may wait for the loader branch, which
+      // is still consuming the pack. Canceling releases the unread cache queue immediately.
+      void toCache.cancel(e).catch(() => {});
+      onProgress?.({ phase: "cache-failed", message: String(e?.message || e) });
+    });
+  }
+  return { ...fromResponse(new Response(stream), file, size, false, key, null, signal), saving };
+}
+
+function fromResponse(res, file, size, cached, key, onProgress, signal) {
+  return {
+    size,
+    cached,
+    key,
+    chunks: () => body(res, file, size, onProgress, signal),
+  };
+}
+
+/** The size of a remote file, from a HEAD request (which follows Hugging Face's CDN redirect). */
+async function remoteSize(url, signal) {
+  const res = await checked(await fetch(url, { method: "HEAD", signal }), url);
+  const size = Number(res.headers.get("content-length")) || Number(res.headers.get("x-linked-size"));
+  if (!size) throw new Error(`${url}: the server did not report the file size`);
+  return size;
+}
+
+/** Whether a server answers byte-range requests, probed with a one-byte range. */
+async function acceptsRanges(url, signal) {
+  try {
+    const res = await fetch(url, { signal, headers: { range: "bytes=0-0" } });
+    await res.body?.cancel();
+    return res.status === 206;
+  } catch (e) {
+    if (signal?.aborted) throw e;
+    return false;
+  }
+}
+
+/** Fetches the upstream files a conversion needs, reporting progress. */
+export async function fetchUpstream(up, { signal, onProgress }) {
+  const text = async (file) => (await checked(await fetch(hfFile(up.repo, up.revision, file), { signal }), file)).text();
+  const [enc, agent, tok] = await Promise.all([text("encoder/config.json"), text("rl_agent_config.json"), text("tokenizer/tokenizer.json")]);
+  const url = hfFile(up.repo, up.revision, "model.safetensors");
+  const total = await remoteSize(url, signal);
+  return { enc, agent, tok, total, chunks: () => fetchRange(url, 0, total, "model.safetensors", { signal, onProgress }) };
+}
+
+/** Lists stored packs with their sizes. */
+export async function cacheInfo() {
+  const store = await openCache(true);
+  if (!store) return { available: false, entries: [], bytes: 0 };
+  const entries = await store.keys();
+  return { available: true, storage: store.kind, entries, bytes: entries.reduce((a, e) => a + e.bytes, 0) };
+}
+
+/** Whether a model (a MODELS name, a spec, or a pack URL) is already stored locally. */
+export async function isCached(model, precision) {
+  const store = await openCache(true);
+  if (!store) return false;
+  const which = resolveModel(model);
+  const selectedPrecision = which.spec ? selectPrecision(which.spec, precision) : precision || "q8";
+  const key = modelCacheKey(model, which, selectedPrecision);
+  return (await store.keys()).some((e) => e.key === key);
+}
+
+/** Deletes stored packs and CPU tuning profiles. */
+export async function clearCache() {
+  const store = await openCache(true);
+  for (const e of (await store?.keys()) || []) await store.remove(e.key);
+  if (typeof caches !== "undefined") await caches.delete(CACHE_NAME).catch(() => {});
+  await clearTuning();
+  return true;
+}
+
+/**
+ * Applies a layout (from `kevala_layouts`) to a pack streaming by. `write(dst, bytes)` receives
+ * fragments in increasing destination order; the layout prefix is written first.
+ */
+export class PieceSink {
+  constructor(layout, write) {
+    this.write = write;
+    this.total = layout.total;
+    const p = layout.pieces;
+    this.pieces = [];
+    for (let i = 0; i < p.length; i += 5) {
+      const [src, dst, len, rows, stride] = [p[i], p[i + 1], p[i + 2], p[i + 3], p[i + 4]];
+      if (rows && len) this.pieces.push({ src, dst, len, rows, stride, row: 0 });
+    }
+    this.pieces.sort((a, b) => a.src - b.src);
+    this.next = 0;
+    write(0, layout.prefix);
+  }
+
+  /** Feeds bytes `[at, at + chunk.length)` of the source. */
+  push(chunk, at) {
+    const end = at + chunk.byteLength;
+    for (let i = this.next; i < this.pieces.length; i++) {
+      const pc = this.pieces[i];
+      if (pc.src >= end) break;
+      while (pc.row < pc.rows) {
+        const s = pc.src + pc.row * pc.stride;
+        if (s >= end) break;
+        const lo = Math.max(s, at);
+        const hi = Math.min(s + pc.len, end);
+        if (hi > lo) this.write(pc.dst + pc.row * pc.len + (lo - s), chunk.subarray(lo - at, hi - at));
+        if (s + pc.len <= end) pc.row++;
+        else break;
+      }
+    }
+    while (this.next < this.pieces.length && this.pieces[this.next].row === this.pieces[this.next].rows) this.next++;
+  }
+
+  get done() {
+    return this.next >= this.pieces.length;
+  }
+}
+
+/** Collects destination fragments into ~4 MB messages for a remote worker. */
+export class Batcher {
+  constructor(send, capacity = 4 << 20) {
+    this.send = send;
+    this.capacity = capacity;
+    this.buf = null;
+    this.base = 0;
+    this.used = 0;
+  }
+
+  write(dst, bytes) {
+    let off = 0;
+    while (off < bytes.byteLength) {
+      if (!this.buf || dst + off < this.base || dst + off >= this.base + this.capacity) {
+        this.flush();
+        this.buf = new Uint8Array(this.capacity);
+        this.base = dst + off;
+        this.used = 0;
+      }
+      const at = dst + off - this.base;
+      const n = Math.min(bytes.byteLength - off, this.capacity - at);
+      this.buf.set(bytes.subarray(off, off + n), at);
+      this.used = Math.max(this.used, at + n);
+      off += n;
+    }
+  }
+
+  flush() {
+    if (this.buf && this.used) this.send(this.base, this.buf.subarray(0, this.used));
+    this.buf = null;
+  }
+}
+
+/** A pinned Hugging Face file URL. */
+export function hfFile(repo, revision, file) {
+  return `https://huggingface.co/${repo}/resolve/${revision}/${file}`;
+}
+
+/** Fetches a whole file with download progress. */
+export async function fetchBytes(url, file, { signal, onProgress } = {}) {
+  const res = await checked(await fetch(url, { signal }), url);
+  const total = Number(res.headers.get("content-length")) || 0;
+  const parts = [];
+  let n = 0;
+  for await (const c of body(res, file, total, onProgress, signal)) {
+    parts.push(c);
+    n += c.byteLength;
+  }
+  const out = new Uint8Array(n);
+  let at = 0;
+  for (const c of parts) {
+    out.set(c, at);
+    at += c.byteLength;
+  }
+  return out;
+}
+
+/**
+ * Streams bytes `[start, end)` of a file as chunks, in order, with progress. Several byte ranges
+ * download at once: a single stream from a CDN often runs far below the connection's bandwidth.
+ * At most `streams` pieces of `piece` bytes are held in memory while they wait their turn.
+ */
+export async function* fetchRange(url, start, end, file, { signal, onProgress, streams = 6, piece = 16 << 20 } = {}) {
+  const total = end - start;
+  let loaded = 0;
+  const download = async (lo, hi) => {
+    const res = await checked(await fetch(url, { signal, headers: { range: `bytes=${lo}-${hi - 1}` } }), url);
+    if (res.status !== 206) throw new Error(`${url}: the server ignored the byte range`);
+    const out = new Uint8Array(hi - lo);
+    let at = 0;
+    const reader = res.body.getReader();
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      out.set(value, at);
+      at += value.byteLength;
+      loaded += value.byteLength;
+      onProgress?.({ phase: "download", file, loaded, total });
+    }
+    if (at !== out.byteLength) throw new Error(`${url}: got ${at} of ${out.byteLength} bytes`);
+    return out;
+  };
+  const pending = [];
+  let next = start;
+  const startNext = () => {
+    const lo = next;
+    next = Math.min(end, lo + piece);
+    const job = download(lo, next);
+    job.catch(() => {}); // each job is awaited in order below; this only covers the ones never reached
+    pending.push(job);
+  };
+  while (next < end && pending.length < streams) startNext();
+  while (pending.length) {
+    const bytes = await pending.shift();
+    if (next < end) startNext();
+    yield bytes;
+  }
+}

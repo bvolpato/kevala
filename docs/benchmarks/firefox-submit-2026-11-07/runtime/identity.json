@@ -1,0 +1,1129 @@
+{
+  "schemaVersion": 1,
+  "name": "staged-runtime-v3",
+  "at": "2026-11-06T23:35:22.249Z",
+  "sourceCommit": "be350ec53b774bbfff3733d690cc9689625a02e7",
+  "sourceWorktree": "/tmp/kevala-clef-gpu-projections",
+  "sourceWorkingTreeDirty": true,
+  "rustSourceReceipt": "staged-validation-v4/source.json",
+  "rustSource": {
+    "start": "2026-11-06T23:28:41.992Z",
+    "worktree": "/tmp/kevala-clef-gpu-projections",
+    "sourceCommit": "be350ec53b774bbfff3733d690cc9689625a02e7",
+    "signatureStatus": "G",
+    "source": {
+      "files": [
+        {
+          "path": "Cargo.lock",
+          "bytes": 313,
+          "sha256": "79c2cf708cd77b01490375152c37d488c4bfb100ad18c72f2d6bebd852c7a2d7"
+        },
+        {
+          "path": "Cargo.toml",
+          "bytes": 598,
+          "sha256": "e788484b57ae48aab33749a061a1e41cde15b0bbcb519855a8d2a1faf8eb4fcd"
+        },
+        {
+          "path": "crates/kevala-cli/Cargo.toml",
+          "bytes": 377,
+          "sha256": "182c7172e41e57c9399beded2fe02403dc2a3b04644e7c91e72e2cf4dc3af98f"
+        },
+        {
+          "path": "crates/kevala-cli/src/bench.rs",
+          "bytes": 4179,
+          "sha256": "ee1bfbe42fe3f2b802444dacbcba85f40635935e76e8cfc6778f8deffded9d55"
+        },
+        {
+          "path": "crates/kevala-cli/src/conversion.rs",
+          "bytes": 48340,
+          "sha256": "79d1b9befa709b67dff0b5428991d059c9ea38b4cb390d471665646bdad43b96"
+        },
+        {
+          "path": "crates/kevala-cli/src/main.rs",
+          "bytes": 8503,
+          "sha256": "1c2733d4a56ad89eb717cb3e87c9f1081324894306cd1a036c8844989920a32f"
+        },
+        {
+          "path": "crates/kevala-cli/src/parity/clef.rs",
+          "bytes": 8119,
+          "sha256": "871e6db0de34af53425330d6351fab088dd6cabf88018697d45b01fa19a7cff3"
+        },
+        {
+          "path": "crates/kevala-cli/src/parity/gemma.rs",
+          "bytes": 1751,
+          "sha256": "a1eddb05432df335835109e6799ccbf03d1f0eb08a0ffa7a8d7e15cc3f7fbd2d"
+        },
+        {
+          "path": "crates/kevala-cli/src/parity/kev.rs",
+          "bytes": 3874,
+          "sha256": "47d7937a75f9d00784ccd3c83a73e9234e224e06fe006d5f1a9ccd474372d6ad"
+        },
+        {
+          "path": "crates/kevala-cli/src/parity/laya.rs",
+          "bytes": 3429,
+          "sha256": "4beddb477d2b8e7b69cadba5714870c3d5bed4dd4788022e7a6e544be286f933"
+        },
+        {
+          "path": "crates/kevala-cli/src/parity/mod.rs",
+          "bytes": 3769,
+          "sha256": "86cea5a6b876eecdfa102d51af28efb51ec4d16764ef63fe83e1495d6f31d70f"
+        },
+        {
+          "path": "crates/kevala-cli/src/parity/semif.rs",
+          "bytes": 1535,
+          "sha256": "298b83b6088caa9e3f600dc27ffaad604ed1945219203a670124f171f30bdd8f"
+        },
+        {
+          "path": "crates/kevala-cli/src/sharded.rs",
+          "bytes": 2052,
+          "sha256": "463eb81e76186bcd30be3355d9ae8f36a48d4ffe1d680aea481c9d8b60ac2427"
+        },
+        {
+          "path": "crates/kevala-wasm/Cargo.toml",
+          "bytes": 357,
+          "sha256": "9657e43e342f5adaf1c84b01f3d69a96c8646e388782f8af62f6c48bb03b8e7e"
+        },
+        {
+          "path": "crates/kevala-wasm/src/clef_head.rs",
+          "bytes": 8798,
+          "sha256": "0b7814505385b02347b6fc0d116e08c2359c0d9472f7fa9512a756ee055059c5"
+        },
+        {
+          "path": "crates/kevala-wasm/src/cpu_bench.rs",
+          "bytes": 4950,
+          "sha256": "91a79df4abeff1ffbf436a7e0f44dfe8de131f712dccafc3511057452e19cf7a"
+        },
+        {
+          "path": "crates/kevala-wasm/src/cpu_tune.rs",
+          "bytes": 9501,
+          "sha256": "ab43f9ad208d22ea20ab82418d32ab0325cd60eb00905cefb46d6a4f57bcacf4"
+        },
+        {
+          "path": "crates/kevala-wasm/src/lib.rs",
+          "bytes": 37229,
+          "sha256": "d4b064ee7b3b96a5eb2ed18f59e08266a5c512a299581bde76e9fbebd13c0022"
+        },
+        {
+          "path": "crates/kevala/Cargo.toml",
+          "bytes": 321,
+          "sha256": "8518dab172aee22340cc1d2341da044ffb87b8b46513e61596bfd87466797edf"
+        },
+        {
+          "path": "crates/kevala/examples/gemma4_image.rs",
+          "bytes": 4581,
+          "sha256": "3eae0d3867239be052a179241b9fabab0d2e0a4ee48deea5e2fc1e9388d463d1"
+        },
+        {
+          "path": "crates/kevala/src/clef/convert.rs",
+          "bytes": 7529,
+          "sha256": "bf0b2e577f4558e20fc3884183fd9712d348110cfa4cddb3d676f4eb36a2fe9f"
+        },
+        {
+          "path": "crates/kevala/src/clef/encoding.rs",
+          "bytes": 6893,
+          "sha256": "41f7edfc330b3e6a29ed8f495be1b55c1610016be569b5bd1fecfc97bbee6d2c"
+        },
+        {
+          "path": "crates/kevala/src/clef/head.rs",
+          "bytes": 21973,
+          "sha256": "4d3d689d659cf768766a37c6e94d656bfc74fe04d702e35a1ac2c1259a72d861"
+        },
+        {
+          "path": "crates/kevala/src/clef/head/staged.rs",
+          "bytes": 26632,
+          "sha256": "96925603f029d013ff0dd7fd6130486bfc7eca53d5c2707cb2fd526c33c80a5b"
+        },
+        {
+          "path": "crates/kevala/src/clef/mod.rs",
+          "bytes": 6534,
+          "sha256": "3bd253b5af96173072263aabf8e866711758ccac5440bb752740f75fe08fbd8c"
+        },
+        {
+          "path": "crates/kevala/src/content.rs",
+          "bytes": 5925,
+          "sha256": "4755abcea4da19bc0febf6e6c798c96680eac2dcfa1521b5a196f336eb281179"
+        },
+        {
+          "path": "crates/kevala/src/convert.rs",
+          "bytes": 6439,
+          "sha256": "590202e2f47bbaa08fb81b2438835db95b2fb263dd61d451544496720f0a563c"
+        },
+        {
+          "path": "crates/kevala/src/direct_options.rs",
+          "bytes": 1379,
+          "sha256": "5e7757a2c50178e07dede12c2173e8c76332934b2822123600134c9e4b660ca9"
+        },
+        {
+          "path": "crates/kevala/src/gemma4/convert.rs",
+          "bytes": 46779,
+          "sha256": "6b380e7ba2dad2c4f8f80333cb9a38f60d129e94fcb85411ea0da245cd65b383"
+        },
+        {
+          "path": "crates/kevala/src/gemma4/mod.rs",
+          "bytes": 66173,
+          "sha256": "0caeae3d939be949962f7d39529fb1fd0302f8289ec64ee3f015f9ebbd948fa3"
+        },
+        {
+          "path": "crates/kevala/src/gpu.rs",
+          "bytes": 23261,
+          "sha256": "b48efc55829dcb0ee112a8cde8743b9456c43048a5d45290f382edc9221dc7f2"
+        },
+        {
+          "path": "crates/kevala/src/h2o/convert.rs",
+          "bytes": 4217,
+          "sha256": "bce0ddd1dc0f3c59ca5a8bc46931f310ded96c75ae9214410a0c43c859cfcfcd"
+        },
+        {
+          "path": "crates/kevala/src/h2o/mod.rs",
+          "bytes": 16612,
+          "sha256": "c4b13889c9ec50098dd1ec8d9eb440449655a63ed3cbcf63babae20d4b105505"
+        },
+        {
+          "path": "crates/kevala/src/json.rs",
+          "bytes": 22686,
+          "sha256": "e361fb0d3a715175ac7f41f8b3d93af250d9ed8d48cefebe2f7a426770922eae"
+        },
+        {
+          "path": "crates/kevala/src/kernels.rs",
+          "bytes": 19786,
+          "sha256": "40c94d5eaac2cc2c36cd4eec355558db8f07dab20a3b0ca8f2a07a42d3447bee"
+        },
+        {
+          "path": "crates/kevala/src/kev/convert.rs",
+          "bytes": 59461,
+          "sha256": "e716e50ceb3925903644bf98d79187001278c16d926a2b033a15256cb4c2f5fe"
+        },
+        {
+          "path": "crates/kevala/src/kev/mod.rs",
+          "bytes": 56555,
+          "sha256": "44922f5d4b285afe6c50e8f3d8d0a817bed31338ba7c288bb8c6edab1e32d0c9"
+        },
+        {
+          "path": "crates/kevala/src/laya/convert.rs",
+          "bytes": 12996,
+          "sha256": "e9d2aa3ebb4812099d4d0b156252dcb18422925480539df94f3a7c56a1bb3a09"
+        },
+        {
+          "path": "crates/kevala/src/laya/mod.rs",
+          "bytes": 11539,
+          "sha256": "35451a08a953b73384ac27d448f3c7f796f76a9e72f97c620f0157c0047a417a"
+        },
+        {
+          "path": "crates/kevala/src/laya/model.rs",
+          "bytes": 19215,
+          "sha256": "82a26662af87d99e0f4208926be171a628bc5c9666954ecdd8828f963971fb17"
+        },
+        {
+          "path": "crates/kevala/src/laya/sequence.rs",
+          "bytes": 10167,
+          "sha256": "944a51d65c5f3d35fc75332d3b769544006e0e4228f03e1813923b8c52840e3e"
+        },
+        {
+          "path": "crates/kevala/src/lib.rs",
+          "bytes": 1053,
+          "sha256": "49d548e2ce40ba5588d3d3905f6ef40e803c89921396def166040bc561576dd8"
+        },
+        {
+          "path": "crates/kevala/src/math.rs",
+          "bytes": 1694,
+          "sha256": "1b4893ccf7cf329dfb8f7d248eacf0e293664a9b16c44df6ecb9927eb8e5a3eb"
+        },
+        {
+          "path": "crates/kevala/src/pack.rs",
+          "bytes": 30012,
+          "sha256": "89cad712c09c648fb1441e2dc0ddfd82ec0294ecef7fda8ed24629c18af34962"
+        },
+        {
+          "path": "crates/kevala/src/runtime.rs",
+          "bytes": 4421,
+          "sha256": "7c5c2c442a15e50bde38838cbb1cd9770290740da4cd32d0598d5fb911a31725"
+        },
+        {
+          "path": "crates/kevala/src/simd.rs",
+          "bytes": 10328,
+          "sha256": "f6c854927f958eb00243fec6ba3f4da6da69a26381b1777eee7a7ede30f34bef"
+        },
+        {
+          "path": "crates/kevala/src/store.rs",
+          "bytes": 11401,
+          "sha256": "24d9761c40d870b354d14a37f2bb39f0040c869cbfd0cf54da7b6d4b89120db4"
+        },
+        {
+          "path": "crates/kevala/src/tokenizer.rs",
+          "bytes": 58208,
+          "sha256": "a0c4820865890b1dea38e0c8f53b08a7acb5d878f8a76dd427e4eaef72875a32"
+        },
+        {
+          "path": "crates/kevala/src/torchpt.rs",
+          "bytes": 16488,
+          "sha256": "ca2adab2c761d0931916cd4991f973a65fd8a19dfef663a9ec0d5eeddb456ecd"
+        },
+        {
+          "path": "crates/kevala/src/unicode.rs",
+          "bytes": 7417,
+          "sha256": "59512bc2fef68e7e6a5ef535ac01e39a09701642fcd365d28f388a23fe6da876"
+        },
+        {
+          "path": "crates/kevala/src/unicode_tables.rs",
+          "bytes": 135304,
+          "sha256": "b6e01c53ce1614857da75a9a17ddf369df26c03618d06aff9b2fa503243f8b6e"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/attention.wgsl",
+          "bytes": 4148,
+          "sha256": "1f9bc443e94dd1e76e337b518679e651c4cd8f962b5fcf3f7c4ca4c046a145c8"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/attention_subgroup.wgsl",
+          "bytes": 3910,
+          "sha256": "4b274c48b8bcb89f44523c829a73cda35e96ff587f3285df03c5099c9f939499"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/attention_tile.wgsl",
+          "bytes": 6649,
+          "sha256": "fca0dbfec8f38a6f0fe430f9a7f3a3a2a636305425076f9ca79e3a2c327f8194"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/attention_tile_f32.wgsl",
+          "bytes": 7120,
+          "sha256": "02ad00dc81ffe4da0bdaf63e6bb47cb2e4eb5ff67f90ff1fe11115310e7a4361"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/clef_head_projection.wgsl",
+          "bytes": 4900,
+          "sha256": "99ad74e763db5a3520b66f07143530d4a81e277c4f85bcb84395452dd43b7520"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/clef_head_tail.wgsl",
+          "bytes": 1518,
+          "sha256": "6a5a547712321f8b2bc5213d91aa0380104b8f3312390629ec5208a06db951d0"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/common.wgsl",
+          "bytes": 154,
+          "sha256": "f5683f65429b092a6f3dd8b7ddf7c65df95eb9e77f852508f13a928ea779a53d"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gather.wgsl",
+          "bytes": 522,
+          "sha256": "cf31c0f0c2f36f0e241a007d54fb8364eb22c692f95d63ea97caf47829dbf2a0"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/geglu.wgsl",
+          "bytes": 1130,
+          "sha256": "9310243591e00a5f5fb2051f6ab71a50180420838b370a8de5c9f767bc8ad56f"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_attention.wgsl",
+          "bytes": 4169,
+          "sha256": "25ee0f6485034d33f6ba1913d31baadc388888ac2bc63ddb58d273d0790cbcb3"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_attention_subgroup.wgsl",
+          "bytes": 4964,
+          "sha256": "228b0f44fc63ab1b799d6961dff8e30497dfd29907e40111f16f3b5aa84ac66e"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_embed.wgsl",
+          "bytes": 1131,
+          "sha256": "6cad03f0aedcd59da222e954c63c52f723213da626a03864b5edca54d7b3cf45"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_gather.wgsl",
+          "bytes": 737,
+          "sha256": "dc288f1a304db59d0faba84cea5da59eb323685411ada1acbce9f79397b7d837"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_gelu.wgsl",
+          "bytes": 910,
+          "sha256": "97e17cd3e1cd84b007d9e7090b67e4280a5a4b320bc80120900e5c80b5743a3f"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_image_resize_horizontal.wgsl",
+          "bytes": 1594,
+          "sha256": "8f4255cf4abd1819c47ebc0603b6045f41b32dc44f5a71d80748e4259336cbca"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_image_resize_vertical.wgsl",
+          "bytes": 1505,
+          "sha256": "947f834c0fb309f03df8caef815932a6efcd30609b4fc0ba5319ba19b89b272b"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_mlp_grid.wgsl",
+          "bytes": 12595,
+          "sha256": "ab5ac615d74a65f5728dfc51b9faa21cbca122591c7abf7f7105d329a71a2afe"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_ple.wgsl",
+          "bytes": 1726,
+          "sha256": "878f1b5e4f3f7038d7036d206c9b943207a7908bd2e2f3df4dbd2c941a7ca0d5"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_qkv.wgsl",
+          "bytes": 3681,
+          "sha256": "38e05c4d3a98d5061eb2efedce89fbc1f7f3e63a65be5a3cdf29bd54adfd7b58"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_residual.wgsl",
+          "bytes": 781,
+          "sha256": "7fc99bc3093036673cf55d12ad9dcc55573fafd225997cca247db221a4396eb2"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_rms.wgsl",
+          "bytes": 1672,
+          "sha256": "63eac848109fde09ec2f7aa3f1a170d94e496b96687f994972b8b7692d8f96c9"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_rms_residual_norm.wgsl",
+          "bytes": 2544,
+          "sha256": "2600206fc944faff96e1173eb1424e45ddce1a9f2beddd2ab5fdc4adb5a7e386"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_rms_scale.wgsl",
+          "bytes": 1789,
+          "sha256": "863bf0b57ec52b21003f06445616de80a16b814a9d9afaba8523bc37b09d137d"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_rms_scale_next.wgsl",
+          "bytes": 2591,
+          "sha256": "a0b2c3db48621f4e0b15b99fbd1ddbf0fd69881d663dcdc0c11fa32a305336d0"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_attention.wgsl",
+          "bytes": 2100,
+          "sha256": "7a610afcafb2db870b6a125a59367212f946e3903fd33a128f8ec7060b7db455"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_attention_fused.wgsl",
+          "bytes": 3068,
+          "sha256": "3a5629b5d16aedeb55be411d9fc7e496de55d96af3e6e671d2b1357fddb5022e"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_clip.wgsl",
+          "bytes": 455,
+          "sha256": "db8a86fc3e5dfc69f5598e42d09e66fbf3a2ecb500ccbc7cca288de3a486e002"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_finite.wgsl",
+          "bytes": 581,
+          "sha256": "5feb8a997bf3295d7c758157923fffeb8fc8bc64db1319dca95dfe14706a08bf"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_gelu.wgsl",
+          "bytes": 866,
+          "sha256": "d7a419b041d556b8da912c064a0ac38d854ce49fc70136c6c9112c2d49bbaf4b"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_norm.wgsl",
+          "bytes": 1504,
+          "sha256": "6361aa42d60919c691e4fb48e89f022811f6703a7b577ef564b7bf343968eeb8"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_norm_rope.wgsl",
+          "bytes": 2464,
+          "sha256": "75791c66cd7713999c93d3453d4c5a3d2bb793991ba2bb3c16118ec10568e2fe"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_pool.wgsl",
+          "bytes": 927,
+          "sha256": "22bcdccb09e0fb4633d19b959827c17faec678cea252f36d4f7cc3126a5907f5"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_pool_norm.wgsl",
+          "bytes": 2005,
+          "sha256": "5b683f275cc330ca0156d98cd3ff9030abf63a00e6512e1aa473c4647e0687af"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_position.wgsl",
+          "bytes": 880,
+          "sha256": "6f141536826ab448a1a84e167d9ab4f6348ea0368313059fae592c9d845073cb"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_qkv.wgsl",
+          "bytes": 22798,
+          "sha256": "4367a259a14baf0a651c9eb4d05e6517be8757f9b069c7c7d44bfab2885a9e8b"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_reduce_gelu.wgsl",
+          "bytes": 1609,
+          "sha256": "7756cc892e47669a5e1e8f28c8a13f27b6e6b17568711d485f5d05a6bfbd6f49"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_reduce_norm_rope.wgsl",
+          "bytes": 2805,
+          "sha256": "8f94d0b577ca6472fa5836269f934364fb72065603b4c8de60558b7cb6e42cee"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_reduce_residual.wgsl",
+          "bytes": 3762,
+          "sha256": "f6305337486ab13963aeec8a52bcba6e871f8f7ff5b22b3bbe7f08a9600ded3a"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_residual_norm.wgsl",
+          "bytes": 3066,
+          "sha256": "f87a19f0cfdbf8ff8ca705c4b2349daa330c18624526441c741120d055caa9c3"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_rope.wgsl",
+          "bytes": 841,
+          "sha256": "eafd8daf0ee2e9104f45adbda5fe025aa40292ae5342ae4a2f3f87f3deb5f39b"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_scores.wgsl",
+          "bytes": 1082,
+          "sha256": "e049590642920ecb084386dc2cc98b3dfa2f75282caa4e01b2394b1df74677d8"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/gemma4_vision_scores_tiled.wgsl",
+          "bytes": 1871,
+          "sha256": "881dbd7acd831c1e690f3a0c33f755b9a88df481098e370ad9ae1897e4715da4"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_aprep.wgsl",
+          "bytes": 1824,
+          "sha256": "a171530a6d6a3531ed6f0321edc1e40f133ae43ee407f5e314db60cf63843e15"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_attention.wgsl",
+          "bytes": 4180,
+          "sha256": "fe32abbd3f37172b5dfa092ba372e0efc8db0db961b0dd7224f3bbda75b0a8e9"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_attention_keys.wgsl",
+          "bytes": 885,
+          "sha256": "952eb0de541621f07b4976ac8fd9eef483a692f8c416510edd16654b4116aed3"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_attention_tile.wgsl",
+          "bytes": 5026,
+          "sha256": "fc2b898fbb182159b014688ea1798e6e5771477eedaf09c17dafbcc6ced4659f"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_common.wgsl",
+          "bytes": 2061,
+          "sha256": "05c1f49b8bad47a2b0f949c9905446e58d69a3b1caa4743f2e755c4e3fbd629c"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_conv.wgsl",
+          "bytes": 1537,
+          "sha256": "8c2a023bd916d8eb57d56d1262459404abe77958d9cff0c2e6f184b6e63c6bf9"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_gates.wgsl",
+          "bytes": 1633,
+          "sha256": "8755d9d947ed265214270682295c0e7f9eb5593cb86db9490376df66587618b8"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_gather.wgsl",
+          "bytes": 562,
+          "sha256": "6b4e3aa6cf1807c0ae5f658078084ca64e8c18bf21ef773a7be34be62ed625a7"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_gnorm.wgsl",
+          "bytes": 910,
+          "sha256": "d01b964c4bb8604c57a384d277dfd66d166188a5b92162c6f599be4c811b07c5"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_qknorm.wgsl",
+          "bytes": 685,
+          "sha256": "213ab80ee613b324e6b873f4d41552875d1532166c13628662cf4b0bbdd91c85"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_recur_lanes.wgsl",
+          "bytes": 12263,
+          "sha256": "c8c7d15d07ddbbc9e082c99f90b2c5a94f546530239a9ecd30bb3333c0ee0e17"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_recur_lanes16.wgsl",
+          "bytes": 8941,
+          "sha256": "ac71442ee9fe3993a665f453733424d62eff4fdf9ec6c1d15e5deab61aa99305"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_recur_lanes8.wgsl",
+          "bytes": 8264,
+          "sha256": "1aa05773fdd6419cf8bf647beb7448c01295cd1929aee8f7ed0cb1eca4b20526"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_rms.wgsl",
+          "bytes": 1368,
+          "sha256": "1af38a4fb5c8c0073b08653b30375499bcaf320bef5de95e1cac0ab67a5b6407"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_save_kv.wgsl",
+          "bytes": 662,
+          "sha256": "1cba23db6900bacf39b67824fac17fdf97c705754605e6186842c70e2ffa078a"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_save_tail.wgsl",
+          "bytes": 976,
+          "sha256": "ea2c2dd45106bc154fbf4476dfb9428fc91a028895db9d74dc97f76bc2998870"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/kev_silumul.wgsl",
+          "bytes": 573,
+          "sha256": "d4f58f66431f4720cfa8f70b0e305eebb1c0096808a034921836efad68cc0f64"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul.wgsl",
+          "bytes": 17868,
+          "sha256": "af1e64f19937b7e5532a3b7b5d888e956f4fd486271fbb21dba7768ccdde8fc7"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_bn32.wgsl",
+          "bytes": 8745,
+          "sha256": "5c2b972f5687ccb392589de723ec5148b0132bac5be858d3aff20d69c359f5b6"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_gelu.wgsl",
+          "bytes": 11595,
+          "sha256": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_gelu_bn32.wgsl",
+          "bytes": 6007,
+          "sha256": "564b8e3becc40b59ac1d04c85302230ded3744eac59b06b36b0f014dec4a1703"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_k64.wgsl",
+          "bytes": 10648,
+          "sha256": "63a42d4314bbbb4a895fc83caa622b769bae45b514504be01ed13802eba8d48c"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_tall.wgsl",
+          "bytes": 18240,
+          "sha256": "e328c97a07664c82ad77b0a149ea9357e0b8973bc87e00e8c86a414ac642115d"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_wide.wgsl",
+          "bytes": 23944,
+          "sha256": "31f0e1b96eb78fcb137c3ea92d6c7062b15ea27c485dc0b1fcd781660c9cff03"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matvec.wgsl",
+          "bytes": 5844,
+          "sha256": "ddea781a26d8c97064c4d7f7f7fefc7074371def5a71b71ce564260b9669d2b6"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matvec_gelu.wgsl",
+          "bytes": 5613,
+          "sha256": "1aee57dfba95f880a46b434b4c62ce56a10fa4dce148829713e62faeb9bcd871"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matvec_gelu_two.wgsl",
+          "bytes": 6866,
+          "sha256": "83033cfb9361c8254e982bc2fb0b0c0cb2188f6efe2470a01bc59fa4a97457f4"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matvec_two.wgsl",
+          "bytes": 5567,
+          "sha256": "4bebc8d276b335504d0e7a9c2cef157b4b065e00e15d076bb497bb1597695e0e"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/norm.wgsl",
+          "bytes": 1967,
+          "sha256": "e61034c673bbee8b03799ee5ffcff25b004bd14c1476e22c867496e2e5a6798b"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/ordered_sum.wgsl",
+          "bytes": 309,
+          "sha256": "81d8d13e95070a66e874d1d7473607d7f23f61f73479e5857154597a63d9e5ac"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/reduce.wgsl",
+          "bytes": 915,
+          "sha256": "03c72c5181986d993e6731d7ba6d45d83b601538f8055cd118d7178421836ef1"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/reduce_gelu.wgsl",
+          "bytes": 982,
+          "sha256": "28974697b80e1b12a36c070dd06ec0e9079e1ad3b08fef6339b59aa3a57d5286"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/reduce_ple.wgsl",
+          "bytes": 1405,
+          "sha256": "b78cd3e995fc1a60268e9c9e50808a4d51abe0a85efc4344452e129bbede4a78"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/rope.wgsl",
+          "bytes": 869,
+          "sha256": "d982ac172127ae7b45ab0bd8f149c447e627e130bc5c0886ced4e9c3a99acf6b"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/splits.wgsl",
+          "bytes": 949,
+          "sha256": "e5fab737d15d4820c84c11ea3044ebab96725a3cc967f6a97e3ce2ab7232e753"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/weight_rows.wgsl",
+          "bytes": 1382,
+          "sha256": "7c0528549d487ba4ac53088ab342faf57d6cec6a49e9f4195dce5926d797630e"
+        },
+        {
+          "path": "crates/kevala/tests/clef.rs",
+          "bytes": 8604,
+          "sha256": "33742f5d4482a05fd391ca512bb63f18755c2ad1db10c11aa74276b4bb6c385f"
+        },
+        {
+          "path": "crates/kevala/tests/h2o.rs",
+          "bytes": 9996,
+          "sha256": "12ac1b48aa53a8463f4553647d733260cf20f2093d1614ac557de2c8d6ddf3bd"
+        },
+        {
+          "path": "crates/kevala/tests/kev_cache.rs",
+          "bytes": 2585,
+          "sha256": "123c635606baca837466deb0b4987d82fe413075edbe43a639952bb8c45e690d"
+        },
+        {
+          "path": "crates/kevala/tests/kev_model.rs",
+          "bytes": 9147,
+          "sha256": "36396805cfd8847b17cb6870a59cf15028f780593601366227b03fc521139acc"
+        },
+        {
+          "path": "crates/kevala/tests/laya_model.rs",
+          "bytes": 6400,
+          "sha256": "a7e57b76d12cbcd5663664d15cd33b18cef7aca1ad679095950fcfa7e2028a00"
+        },
+        {
+          "path": "crates/kevala/tests/semif.rs",
+          "bytes": 5806,
+          "sha256": "15c9ab0393b29682065bce9c58efd0b3e853644d197ba3c07c1e38c3b2af850c"
+        },
+        {
+          "path": "crates/kevala/tests/sequence.rs",
+          "bytes": 5857,
+          "sha256": "10de8ab50975b32ad9d5d5f43d62bcab99e3f26f923af6b8faccc1c73cadcfa8"
+        },
+        {
+          "path": "crates/kevala/tests/support/mod.rs",
+          "bytes": 13335,
+          "sha256": "375f4c0ae45f3d77bce60fb6f5941fa7293748f67f7257d7ade0fcf3585c16a3"
+        },
+        {
+          "path": "crates/kevala/tests/tokenizer.rs",
+          "bytes": 10762,
+          "sha256": "658acea90f2435ae42849cb580261f1f612c974e2b5830ba90423c46bd4db547"
+        },
+        {
+          "path": "crates/kevala/tests/wgsl.rs",
+          "bytes": 12213,
+          "sha256": "e7955d47650c33ee6448a5419803474e30a1591266e8a72c94f6e3581de37724"
+        },
+        {
+          "path": "rust-toolchain.toml",
+          "bytes": 123,
+          "sha256": "5b80f5d572322f87ec024fa217a17ff345a59e0ad63a090646b3dacade08587e"
+        },
+        {
+          "path": "tests/fixtures/clef-head.json",
+          "bytes": 86353,
+          "sha256": "19636815ee9288d1d75f3b41e333a354c0da9631ad53452caa4ea58be13a0866"
+        },
+        {
+          "path": "tests/fixtures/gemma4-vision-tiny.json",
+          "bytes": 382270,
+          "sha256": "e625b7e016663e78522eba7f192bc527a47e1fb9738a2e81c74936b77957e0a3"
+        },
+        {
+          "path": "tests/fixtures/golden-bruv1-4b.json",
+          "bytes": 37694,
+          "sha256": "3aa1a2f41c1330d08c20da1dd6daa1a8230131631a130f4ba9d07712a1db5b17"
+        },
+        {
+          "path": "tests/fixtures/golden-gemma4-e2b.json",
+          "bytes": 38346,
+          "sha256": "51a84d5d02613d4711f80ad55303831292d043830e8550b1b9877bf23353e4e1"
+        },
+        {
+          "path": "tests/fixtures/golden-gemma4-e4b.json",
+          "bytes": 38303,
+          "sha256": "10d710a1c04c407d90dd4672fdf4140f8773f73fd8a58b3e872841ef619bfb2f"
+        },
+        {
+          "path": "tests/fixtures/golden-h2o.json",
+          "bytes": 36851,
+          "sha256": "32111104a6c42c386db6c2b867ec1aa4f42f848f6b72690074197e5931fa1923"
+        },
+        {
+          "path": "tests/fixtures/golden-kev-4b.json",
+          "bytes": 25458,
+          "sha256": "8d0a68c0a19e98529ea019a003040fda98881b98925b45633487aa48f1dcd94a"
+        },
+        {
+          "path": "tests/fixtures/golden-kev-9b.json",
+          "bytes": 6027,
+          "sha256": "c553036549039974c270da9b5a419f8fa1e2575e0d99bb37e22eb4c74b01dfca"
+        },
+        {
+          "path": "tests/fixtures/golden-kev.json",
+          "bytes": 25500,
+          "sha256": "db872d48dca56d0a3e9767920f86055b06ef839eebef92963af5d95b84311f82"
+        },
+        {
+          "path": "tests/fixtures/golden-semif-2b.json",
+          "bytes": 41135,
+          "sha256": "7fc529bbbe195f2249fa973e37476c24b621ab0e3ff8b3096b01c4f190027277"
+        },
+        {
+          "path": "tests/fixtures/golden-semif-4b.json",
+          "bytes": 40763,
+          "sha256": "fdf90ce2da7c9d30bb1c6f3b7ae4fff21479a00896e0d98c9c84ea5b93291d8b"
+        },
+        {
+          "path": "tests/fixtures/golden-semif.json",
+          "bytes": 41140,
+          "sha256": "02e047bff1f87c37c372bd036e691c960e4f328b18f10816b674275fd95db27c"
+        },
+        {
+          "path": "tests/fixtures/golden.json",
+          "bytes": 63374,
+          "sha256": "074d76f6bfa709f3e3b23cd7d792eaf8fca4c4d9a795ad5ebeea6d2e0d4fe77a"
+        },
+        {
+          "path": "tests/fixtures/tokenizer-gemma4.json",
+          "bytes": 3317,
+          "sha256": "45f5ed5960ef8455b47425477d65842ce92ed11ad34f9e3e50bbc38c0abbf0db"
+        },
+        {
+          "path": "tests/fixtures/tokenizer-qwen35-base.json",
+          "bytes": 13145,
+          "sha256": "3d97b40ed47cc0b63d3e826ff6f75d5d29d185f07dcd7e12c31ce4df2ab4414c"
+        },
+        {
+          "path": "tests/fixtures/tokenizer-qwen35.json",
+          "bytes": 13052,
+          "sha256": "f7b25e43959b629f715f4815d8186cd3676ba96ab82f9a0beadfc6822b203658"
+        },
+        {
+          "path": "tests/fixtures/tokenizer.json",
+          "bytes": 25763,
+          "sha256": "ae30afd0a5d44dda61601fb61957c32a40167d7f665b02cf375819ba7cfd0f8e"
+        }
+      ],
+      "fingerprint": "8b7f43f4247542966cf4ef1c92730a90e208ed7327456024da98940941b407ad"
+    },
+    "fixtures": [
+      {
+        "variable": "KEVALA_TOKENIZER_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/laya/tokenizer/tokenizer.json",
+        "bytes": 3583228,
+        "sha256": "6c8aaa9a542084f2457eab775d4eeb51f92a70c0fd9de28d5edb0ddec3c08d30"
+      },
+      {
+        "variable": "KEVALA_QWEN_TOKENIZER_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/kev/tokenizer.json",
+        "bytes": 19989325,
+        "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+      },
+      {
+        "variable": "KEVALA_H2O_TOKENIZER_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/kev/tokenizer.json",
+        "bytes": 19989325,
+        "sha256": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523"
+      },
+      {
+        "variable": "KEVALA_QWEN_BASE_TOKENIZER_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/qwen35/tokenizer.json",
+        "bytes": 12807196,
+        "sha256": "fe000e3ed39ed12b8d2481d527d44f93c65d37e87645d2dcc80d1bf9d50d2927"
+      },
+      {
+        "variable": "KEVALA_QWEN_BASE_TOKENIZER_CONFIG_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/qwen35/tokenizer_config.json",
+        "bytes": 16712,
+        "sha256": "e611fbccc7c29ef3b1cafb1cb7ea548d189968632901d678fd62be68c47885de"
+      },
+      {
+        "variable": "KEVALA_GEMMA4_E2B_TOKENIZER_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/gemma4/E2B/tokenizer.json",
+        "bytes": 32169626,
+        "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+      },
+      {
+        "variable": "KEVALA_GEMMA4_E4B_TOKENIZER_JSON",
+        "path": "/home/bruno/githubworkspace/kevala/tmp/gemma4/E4B/tokenizer.json",
+        "bytes": 32169626,
+        "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+      }
+    ],
+    "optionalKevPack": {
+      "variable": "KEVALA_KEV_PACK",
+      "path": "/home/bruno/githubworkspace/kevala/tmp/kev-0.8b-q8.kevala",
+      "bytes": 857259648,
+      "mtimeMs": 1791782051333.7603,
+      "hashPolicy": "model bytes are not read or archived by the validation controller"
+    },
+    "toolchain": {
+      "rustc": "rustc 1.95.0 (59807616e 2026-04-14)\nbinary: rustc\ncommit-hash: 59807616e1fa2540724bfbac14d7976d7e4a3860\ncommit-date: 2026-04-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.95.0\nLLVM version: 22.1.2\n",
+      "cargo": "cargo 1.95.0 (f2d3ce0bd 2026-03-21)\n"
+    }
+  },
+  "assets": [
+    {
+      "path": "archs/clef.js",
+      "bytes": 5976,
+      "sha256": "ac7ba9459a7210e19516ef87bdeeb71e2612b73c44ca289a704f55f1ee5b8b06"
+    },
+    {
+      "path": "archs/gemma4.js",
+      "bytes": 12531,
+      "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+    },
+    {
+      "path": "archs/index.js",
+      "bytes": 2743,
+      "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+    },
+    {
+      "path": "archs/kev.js",
+      "bytes": 10357,
+      "sha256": "f1ebba93662c9bad0dd1c087e1e4c00d62cbeba29b18edb159451bb3d436b0b7"
+    },
+    {
+      "path": "archs/laya.js",
+      "bytes": 8417,
+      "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+    },
+    {
+      "path": "cpu-calibrate.js",
+      "bytes": 3092,
+      "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+    },
+    {
+      "path": "cpu-policy.js",
+      "bytes": 3333,
+      "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+    },
+    {
+      "path": "cpu-tune.js",
+      "bytes": 1293,
+      "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+    },
+    {
+      "path": "engine-worker.js",
+      "bytes": 20106,
+      "sha256": "bb846a5c653696f5d4df0689726d96b2482e80b0173b712c129be07a0d0fb618"
+    },
+    {
+      "path": "gemma4-image.js",
+      "bytes": 12697,
+      "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+    },
+    {
+      "path": "gemma4-ple-store.js",
+      "bytes": 11274,
+      "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+    },
+    {
+      "path": "gemma4-vision-pack.js",
+      "bytes": 3580,
+      "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+    },
+    {
+      "path": "gpu-clef-head.js",
+      "bytes": 19783,
+      "sha256": "58c083005fec8cd29d54fe9023b14ca05a5428dbce884c979bb77967796e80cb"
+    },
+    {
+      "path": "gpu-gemma4-attention.js",
+      "bytes": 24396,
+      "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+    },
+    {
+      "path": "gpu-gemma4-batch-mlp.js",
+      "bytes": 25939,
+      "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+    },
+    {
+      "path": "gpu-gemma4-batch-single.js",
+      "bytes": 13303,
+      "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+    },
+    {
+      "path": "gpu-gemma4-bn32.js",
+      "bytes": 13497,
+      "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+    },
+    {
+      "path": "gpu-gemma4-grid-mlp.js",
+      "bytes": 21034,
+      "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+    },
+    {
+      "path": "gpu-gemma4-image.js",
+      "bytes": 6179,
+      "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+    },
+    {
+      "path": "gpu-gemma4-k64.js",
+      "bytes": 12881,
+      "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+    },
+    {
+      "path": "gpu-gemma4-mlp.js",
+      "bytes": 14486,
+      "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+    },
+    {
+      "path": "gpu-gemma4-ple.js",
+      "bytes": 3548,
+      "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+    },
+    {
+      "path": "gpu-gemma4-prefix-cache.js",
+      "bytes": 7449,
+      "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+    },
+    {
+      "path": "gpu-gemma4-prefix-gelu.js",
+      "bytes": 16018,
+      "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+    },
+    {
+      "path": "gpu-gemma4-prefix-retile.js",
+      "bytes": 15704,
+      "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+    },
+    {
+      "path": "gpu-gemma4-rms-plan.js",
+      "bytes": 1960,
+      "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+    },
+    {
+      "path": "gpu-gemma4-rms.js",
+      "bytes": 21407,
+      "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+    },
+    {
+      "path": "gpu-gemma4-vision-qkv.js",
+      "bytes": 18378,
+      "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+    },
+    {
+      "path": "gpu-gemma4-vision.js",
+      "bytes": 39775,
+      "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+    },
+    {
+      "path": "gpu-gemma4.js",
+      "bytes": 111663,
+      "sha256": "f47c5b0569297b593d4c784963bc9a4cc013026685b0afad0034fb5f9ef05359"
+    },
+    {
+      "path": "gpu-kev.js",
+      "bytes": 45173,
+      "sha256": "6c90a235877d57586f1d239c711b953037b477c2baef7572f8c429a60724d202"
+    },
+    {
+      "path": "gpu-laya.js",
+      "bytes": 14668,
+      "sha256": "c69af3036fab3290cd3dd7c46d7e4e060e2876aaef61c8e274c06924be38eccc"
+    },
+    {
+      "path": "gpu-matvec-gelu.js",
+      "bytes": 12270,
+      "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+    },
+    {
+      "path": "gpu-matvec-two.js",
+      "bytes": 22143,
+      "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+    },
+    {
+      "path": "gpu-matvec.js",
+      "bytes": 19542,
+      "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+    },
+    {
+      "path": "gpu-recur-tuning.js",
+      "bytes": 21113,
+      "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+    },
+    {
+      "path": "gpu-tuning.js",
+      "bytes": 16021,
+      "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+    },
+    {
+      "path": "gpu.js",
+      "bytes": 26543,
+      "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+    },
+    {
+      "path": "image-header.js",
+      "bytes": 5607,
+      "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+    },
+    {
+      "path": "images.js",
+      "bytes": 4221,
+      "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+    },
+    {
+      "path": "index.js",
+      "bytes": 19761,
+      "sha256": "4ad325c7e3b86442109bc3b6e26a3281b93dee9c43153550aa85348eb9a8d406"
+    },
+    {
+      "path": "kevala-base.wasm",
+      "bytes": 1376177,
+      "sha256": "755b219630c53c6e81641950181852bdd01244f3a5b104164a6c4d8712b136a3"
+    },
+    {
+      "path": "kevala-relaxed.wasm",
+      "bytes": 1383825,
+      "sha256": "939f4c424900c251577b548bc61a9b7ccc4a7ef576468cf37967dd4dae2ef700"
+    },
+    {
+      "path": "kevala-simd.wasm",
+      "bytes": 1382496,
+      "sha256": "b3883e9021065ac0619d0ae2eca957f8cd0e87d074755ddec8124e5152d454b5"
+    },
+    {
+      "path": "node.js",
+      "bytes": 2459,
+      "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+    },
+    {
+      "path": "pack-layout.js",
+      "bytes": 8838,
+      "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+    },
+    {
+      "path": "presets.js",
+      "bytes": 5604,
+      "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+    },
+    {
+      "path": "request-queue.js",
+      "bytes": 2205,
+      "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+    },
+    {
+      "path": "shard-client.js",
+      "bytes": 1495,
+      "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+    },
+    {
+      "path": "shard-worker.js",
+      "bytes": 2762,
+      "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+    },
+    {
+      "path": "source.js",
+      "bytes": 33566,
+      "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    {
+      "path": "stats.js",
+      "bytes": 279,
+      "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+    },
+    {
+      "path": "wasm.js",
+      "bytes": 4833,
+      "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+    }
+  ],
+  "fingerprint": "eb46c3119c1befb08f1e63bcd3499583ed6684af00d9d6094caa845ca7754bc6",
+  "scope": "clean production JS and WASM; no QA capture export"
+}
