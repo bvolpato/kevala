@@ -496,6 +496,10 @@ def chromium_binary(explicit: str | None) -> str:
     raise RuntimeError("Chromium executable not found; set CHROMIUM_BIN or --binary")
 
 
+def precise_firefox_timers(args: argparse.Namespace) -> bool:
+    return args.browser == "firefox" and not args.cdp and args.result in {"bench", "latency", "decision", "kernels"}
+
+
 def create_browser(args: argparse.Namespace):
     """Create the requested Selenium browser after resolving its local binary."""
     if args.browser == "chromium":
@@ -517,9 +521,8 @@ def create_browser(args: argparse.Namespace):
     options.binary_location = binary
     options.set_preference("dom.webgpu.enabled", True)
     options.set_preference("dom.webgpu.workers.enabled", True)
-    # Selenium creates a fresh temporary profile for this process. Relax Firefox's timer privacy
-    # settings only for the isolated decision benchmark profile, never for a user's browser.
-    if args.result == "decision":
+    # These preferences apply only to this benchmark's temporary Selenium profile.
+    if precise_firefox_timers(args):
         options.set_preference("privacy.resistFingerprinting", False)
         options.set_preference("privacy.reduceTimerPrecision", False)
         options.set_preference("privacy.reduceTimerPrecision.jitter", False)
@@ -655,8 +658,8 @@ def main() -> int:
         "vkDriverFiles": os.environ.get("VK_DRIVER_FILES"),
         "timerPrivacy": {
             "isolatedSeleniumProfile": not bool(args.cdp),
-            "firefoxPrecisionDisabled": args.result == "decision" and args.browser == "firefox" and not bool(args.cdp),
-            "note": "Firefox timer privacy settings are changed only in the temporary Selenium profile" if args.result == "decision" and args.browser == "firefox" and not args.cdp else "unchanged",
+            "firefoxPrecisionDisabled": precise_firefox_timers(args),
+            "note": "Firefox timer privacy settings are changed only in the temporary Selenium profile" if precise_firefox_timers(args) else "unchanged",
         },
     }
     result["runner"] = runner
