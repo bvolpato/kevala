@@ -27,7 +27,7 @@ All four calls in each quartet had the same request hash, public-response hash, 
 
 This measures completed request time on one headless Firefox profile, one on-page Laya Q8 engine, one runtime, one pack, and one RTX 5070 Ti host. It does not measure visible page rendering, input-to-screen latency, normal worker-backed inference, model quality, or other browsers and models. The requestAnimationFrame observations came from a headless page and do not prove visible compositor responsiveness.
 
-This experiment changed `SUBMIT.mode` within one JavaScript page realm. The controller is module-global in that realm, so this result does not cover multiple engines using different submission modes at the same time. Keep a single selected on-page engine per page while this remains true.
+This experiment changed the captured runtime's module-global `SUBMIT.mode` within one JavaScript page realm, so its result covers a single engine. The current loader retains each engine's requested policy on its own GPU trunk; loading another on-page engine no longer overwrites that choice. This isolation fix does not extend the archived timing result to concurrent engines.
 
 `await`, `split`, and `none` are API options for model load. `await` waits between long-pass chunks, `split` submits chunks without waiting, and `none` uses one command buffer. This experiment measured only `await` and `split`; it does not justify a performance claim for `none`. The profiler's `--submit` option only changes a benchmark load. When omitted, the runner leaves the option unset and records `runtime-default`; it does not force `await`. The current decoder default is `await`, while Gemma 4 Vision defaults to `split` unless the caller supplies an option.
 

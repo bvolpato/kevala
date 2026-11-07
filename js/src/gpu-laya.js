@@ -17,6 +17,7 @@ export class GpuTrunk {
     this.device = gpu.device;
     this.name = gpu.name;
     this.gpuKernel = gpu.kernel || "auto";
+    this.submitMode = gpu.submitMode;
     this.subgroup32 = !!gpu.subgroup32;
     // queries per attention workgroup: 64 for the tiled kernel, 16 for the others
     const tile = gpu.attentionTile || gpu.attentionTileShared;
@@ -245,7 +246,7 @@ export class GpuTrunk {
     let enc = d.createCommandEncoder();
     for (let gi = 0; gi < groups.length; gi++) {
     // let the page render between chunks of a long pass
-    if (gi) enc = await endChunk(d, enc);
+    if (gi) enc = await endChunk(d, enc, this.submitMode);
     let pass = prof ? null : enc.beginComputePass();
     for (const op of groups[gi]) {
       if (op.kind === "copy") {
