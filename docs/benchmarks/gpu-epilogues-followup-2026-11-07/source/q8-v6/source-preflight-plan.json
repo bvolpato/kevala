@@ -1,0 +1,587 @@
+{
+  "purpose": "One loaded Kev-9B Q8 engine with off, exact-activation verification, and candidate lanes.",
+  "baseCommit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+  "ciRun": 42379873911,
+  "wasm": {
+    "base": {
+      "sha256": "793351ff820ca6818eae749c09c829f974fe718d805447bd2141ab99b4c1e831",
+      "bytes": 1375771
+    },
+    "simd": {
+      "sha256": "f463d88be692c2da5a609cade3216ff94cb05732ab560d0df72517afe9db67f5",
+      "bytes": 1382096
+    },
+    "relaxed": {
+      "sha256": "55aa0e56bce7a8f808d27c8db50767fb24102eb85d8d45bb369451c934836c0a",
+      "bytes": 1383425
+    }
+  },
+  "runtime": {
+    "identity": "prototype-off/on; baseline and candidate share one loaded source tree, runtime-default CI80 WASM flavor, tuning snapshot, model instance, and desktop session",
+    "baseline": "same prototype source with exact one-shot trial permit absent; original gate_up then silumul path",
+    "candidate": "same prototype source with one consumed permit for the latched canonical request SHA and planned prefill layer IDs; fused gate_up epilogue",
+    "promotion": "false means this measurement runner does not promote or change a production selector/default",
+    "browserWasmScope": "Chromium 156 and CI80 WASM are recorded inputs; this protocol does not validate a browser-delivered production bundle",
+    "selection": "WASM flavor and CPU-kernel options are not overridden; wasmFlavor selects relaxed, SIMD, then base when supported and the result records the actual flavor. WebGPU reports cpuTiles=null, so this run has no CPU-tuning or coordinator-tile result",
+    "staticAssets": {
+      "entry": "js/src/index.js",
+      "workerEntry": "js/src/engine-worker.js",
+      "trackedRuntimeModules": [
+        "js/src/archs/clef.js",
+        "js/src/archs/gemma4.js",
+        "js/src/archs/index.js",
+        "js/src/archs/kev.js",
+        "js/src/archs/laya.js",
+        "js/src/cpu-calibrate.js",
+        "js/src/cpu-policy.js",
+        "js/src/cpu-tune.js",
+        "js/src/engine-worker.js",
+        "js/src/gemma4-image.js",
+        "js/src/gemma4-ple-store.js",
+        "js/src/gemma4-vision-pack.js",
+        "js/src/gpu-clef-head.js",
+        "js/src/gpu-gemma4-attention.js",
+        "js/src/gpu-gemma4-batch-mlp.js",
+        "js/src/gpu-gemma4-batch-single.js",
+        "js/src/gpu-gemma4-bn32.js",
+        "js/src/gpu-gemma4-grid-mlp.js",
+        "js/src/gpu-gemma4-image.js",
+        "js/src/gpu-gemma4-k64.js",
+        "js/src/gpu-gemma4-mlp.js",
+        "js/src/gpu-gemma4-ple.js",
+        "js/src/gpu-gemma4-prefix-cache.js",
+        "js/src/gpu-gemma4-prefix-gelu.js",
+        "js/src/gpu-gemma4-prefix-retile.js",
+        "js/src/gpu-gemma4-rms-plan.js",
+        "js/src/gpu-gemma4-rms.js",
+        "js/src/gpu-gemma4-vision-qkv.js",
+        "js/src/gpu-gemma4-vision.js",
+        "js/src/gpu-gemma4.js",
+        "js/src/gpu-kev.js",
+        "js/src/gpu-laya.js",
+        "js/src/gpu-matvec-gelu.js",
+        "js/src/gpu-matvec-two.js",
+        "js/src/gpu-matvec.js",
+        "js/src/gpu-recur-tuning.js",
+        "js/src/gpu-tuning.js",
+        "js/src/gpu.js",
+        "js/src/image-header.js",
+        "js/src/images.js",
+        "js/src/index.js",
+        "js/src/node.js",
+        "js/src/pack-layout.js",
+        "js/src/presets.js",
+        "js/src/request-queue.js",
+        "js/src/shard-client.js",
+        "js/src/shard-worker.js",
+        "js/src/source.js",
+        "js/src/stats.js",
+        "js/src/wasm.js"
+      ],
+      "requiredDevFiles": [
+        "dev/adapter-metadata.js"
+      ],
+      "identity": "SHA-256 and byte size for every listed file are included in sourceIdentity",
+      "preHardwareCheck": "serve the exact pinned source set; import index.js and engine-worker.js as modules; require successful module evaluation and zero .wasm or .kevala requests; do not call Kevala.load, create a GPU device, or dispatch work",
+      "omitted": "Other dev/ files are not imported by this page or runtime module graph and are not included"
+    },
+    "sourcePaths": [
+      "bench.html",
+      "dev/adapter-metadata.js",
+      "js/src/archs/clef.js",
+      "js/src/archs/gemma4.js",
+      "js/src/archs/index.js",
+      "js/src/archs/kev.js",
+      "js/src/archs/laya.js",
+      "js/src/cpu-calibrate.js",
+      "js/src/cpu-policy.js",
+      "js/src/cpu-tune.js",
+      "js/src/engine-worker.js",
+      "js/src/gemma4-image.js",
+      "js/src/gemma4-ple-store.js",
+      "js/src/gemma4-vision-pack.js",
+      "js/src/gpu-clef-head.js",
+      "js/src/gpu-gemma4-attention.js",
+      "js/src/gpu-gemma4-batch-mlp.js",
+      "js/src/gpu-gemma4-batch-single.js",
+      "js/src/gpu-gemma4-bn32.js",
+      "js/src/gpu-gemma4-grid-mlp.js",
+      "js/src/gpu-gemma4-image.js",
+      "js/src/gpu-gemma4-k64.js",
+      "js/src/gpu-gemma4-mlp.js",
+      "js/src/gpu-gemma4-ple.js",
+      "js/src/gpu-gemma4-prefix-cache.js",
+      "js/src/gpu-gemma4-prefix-gelu.js",
+      "js/src/gpu-gemma4-prefix-retile.js",
+      "js/src/gpu-gemma4-rms-plan.js",
+      "js/src/gpu-gemma4-rms.js",
+      "js/src/gpu-gemma4-vision-qkv.js",
+      "js/src/gpu-gemma4-vision.js",
+      "js/src/gpu-gemma4.js",
+      "js/src/gpu-kev.js",
+      "js/src/gpu-laya.js",
+      "js/src/gpu-matvec-gelu.js",
+      "js/src/gpu-matvec-two.js",
+      "js/src/gpu-matvec.js",
+      "js/src/gpu-recur-tuning.js",
+      "js/src/gpu-tuning.js",
+      "js/src/gpu.js",
+      "js/src/image-header.js",
+      "js/src/images.js",
+      "js/src/index.js",
+      "js/src/node.js",
+      "js/src/pack-layout.js",
+      "js/src/presets.js",
+      "js/src/request-queue.js",
+      "js/src/shard-client.js",
+      "js/src/shard-worker.js",
+      "js/src/source.js",
+      "js/src/stats.js",
+      "js/src/wasm.js",
+      "js/src/gpu-q8-swiglu-trial.js",
+      "scripts/bench-gpu.py",
+      "scripts/tests/test_q8_terminal_poll.py",
+      "scripts/tests/q8-monitor-cadence.test.mjs",
+      "scripts/tests/q8-page-bootstrap.test.mjs",
+      "scripts/compare-kev-swiglu.mjs",
+      "scripts/lib/q8-monitor-cadence.mjs",
+      "scripts/serve.mjs",
+      "scripts/lib/local-packs.mjs",
+      "scripts/lib/static-path.mjs",
+      "app/model-policy.js"
+    ]
+  },
+  "launch": {
+    "entrypoint": [
+      "env",
+      "-u",
+      "VK_DRIVER_FILES",
+      "systemd-run",
+      "--user",
+      "--scope",
+      "--collect",
+      "--unit=<unique-scope>.scope",
+      "--property=MemoryHigh=34359738368",
+      "--property=MemoryMax=42949672960",
+      "--property=MemorySwapMax=4294967296",
+      "timeout",
+      "--signal=TERM",
+      "--kill-after=15s",
+      "960s",
+      "flock",
+      "--exclusive",
+      "--nonblock",
+      "--conflict-exit-code",
+      "75",
+      "--no-fork",
+      "/home/bruno/.cache/kevala/gpu-profile.lock",
+      "/home/linuxbrew/.linuxbrew/Cellar/node@22/22.22.2_2/bin/node",
+      "/tmp/kevala-q8-swiglu-epilogue-v6/scripts/compare-kev-swiglu.mjs",
+      "--execute",
+      "--scope-unit",
+      "<unique-scope>.scope",
+      "--output",
+      "<absolute-worktree-tmp-capture>",
+      "--binary",
+      "/home/bruno/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome"
+    ],
+    "lease": "The outer flock --no-fork execs this Node process with the canonical descriptor inherited. This controller verifies its own PID and exact descriptor with the pinned fdinfo guard; no marker or inner lock is accepted.",
+    "leaseHelpers": [
+      {
+        "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/lease-fdinfo-safety-v1/async-bind-r1/fd-lease.mjs",
+        "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+      },
+      {
+        "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/lease-fdinfo-safety-v1/async-bind-r1/lease-parse.mjs",
+        "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+      }
+    ],
+    "timeoutOwner": "systemd-run owns the fresh scope; timeout bounds Node; Node retains the inherited lock through child cleanup, server closure, link cleanup, and final lease proof",
+    "chromium": {
+      "path": "/home/bruno/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome",
+      "version": "156.0.8078.4",
+      "sha256": "377a9fc07b495c3b8d0ab8ec1fdfd153641759f9756fea34d8dfce4de82f5025"
+    }
+  },
+  "fixture": {
+    "state": "words.repeat(30)",
+    "question": "Is the customer asking for money back?",
+    "reportedTotalTokens": "recorded separately; it is not used as stage1 T1",
+    "expectedShape": "one unprofiled prototype-off probe records actual T1, T2, request SHA, and nonempty eligible ops from planned stage1 ops[0]"
+  },
+  "protocol": {
+    "permit": "bench arms one forward permit from the probe request SHA, T1, T2, and planned layer IDs; GPU code consumes it at forward entry; wrong hash/shape/stage/layers or absent permit falls back",
+    "navigation": "Chromium pageLoadStrategy none starts the terminal poll without waiting for page-load or model work",
+    "pageResult": "poll only window.bench.done as a boolean every 250 ms; after terminal=true fetch the full window.bench once; on timeout fetch one compact status/phase/error object and never fetch the full payload",
+    "timeoutDiagnostics": {
+      "pageFields": [
+        "status",
+        "phase",
+        "error"
+      ],
+      "pagePhases": [
+        "module-load",
+        "module-runtime",
+        "document-ready",
+        "runtime-import",
+        "request-setup",
+        "model-load",
+        "model-loaded",
+        "shape-probe",
+        "activation-validation",
+        "warmup",
+        "timing",
+        "medium-fallback",
+        "complete"
+      ],
+      "pageStatusMaxBytes": 4096,
+      "browserConsole": "best-effort retrieval at timeout or terminal page error; retain at most 8 ERROR/SEVERE entries with bounded fields and a 16 KiB output bound; retrieval errors are recorded as unavailable",
+      "cleanup": "diagnostic capture errors remain in the failure result and do not bypass normal browser and child cleanup"
+    },
+    "terminalFailureDiagnostics": "on terminal status=error, retain the full page error and capture the same bounded browser-console summary before browser cleanup",
+    "preHardwarePageSmoke": {
+      "requiredBeforeHardware": true,
+      "url": "/bench.html with no hash or auto parameter",
+      "success": "static module import completes and the page publishes status=idle and phase=document-ready",
+      "staticImports": [
+        "./dev/adapter-metadata.js"
+      ],
+      "runtimeModules": [
+        "/js/src/index.js",
+        "/js/src/engine-worker.js"
+      ],
+      "identityCoverage": "complete tracked js/src JavaScript tree plus the page's adapter-metadata module",
+      "scope": "no Kevala.load, model pack, WASM request, GPU device, or dispatch; ignore unrelated image/favicon resource errors"
+    },
+    "chromiumArgs": [
+      "--enable-gpu",
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan",
+      "--disable-vulkan-surface"
+    ],
+    "warmup": "3 off and 3 candidate full requests after one activation-verification request",
+    "paired": "9 off/off A/A pairs, then 9 alternating off/candidate pairs",
+    "mediumControl": "one off and one candidate-requested distinct fixture; no matching one-shot permit, so candidate must remain off and output must match exactly",
+    "submission": "await",
+    "packCache": false,
+    "stateCache": false,
+    "profiler": false,
+    "oneEngine": true,
+    "cpu": "normal unpinned scheduling"
+  },
+  "validation": {
+    "activation": "every dynamically planned eligible stage1 prefill layer exactly once; exact f32 bit comparison for T1*12288 outputs, finite checks, and 128 canary comparisons per layer",
+    "shadowOutput": "fill active candidate interval with NaN sentinel before each validation-only fused dispatch; validation-only pass does not alter timed candidate pipeline or add maps/readback to timing lanes",
+    "requestOutput": "same model/answers; raw probabilities compared with existing tolerance 0.0005 + 0.0001 * max(1, abs(reference))",
+    "mediumFallback": "exact request output and no fused or skipped-SiLU dispatch",
+    "resources": "device must expose at least 24576 bytes maxComputeWorkgroupStorageSize; no candidate path otherwise"
+  },
+  "acceptance": {
+    "exactActiveActivationBits": true,
+    "actualComparedElementCounts": true,
+    "actualGuardComparisonCounts": true,
+    "allActiveActivationFinite": true,
+    "candidateCanaries": true,
+    "completeOutputTolerance": "0.0005 + 0.0001 * max(1, abs(reference))",
+    "medianPairedGain": "at least 5%",
+    "pairedWins": "all 9 faster and at least 6 of 9 at least 5% faster",
+    "aa": "all 9 absolute ratios within 5%; candidate median ratio must exceed 1 + maximum A/A deviation",
+    "productionPromotion": false
+  },
+  "containment": {
+    "browser": "fresh Chromium 156 session, no existing attachment",
+    "sessionBus": "reviewed absent-endpoint helper passed only through ChromeService.env",
+    "sessionBusHelper": {
+      "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/session_bus.py",
+      "sha256": "bac20966653dfaf8cbd7df636c03d02e77ee80b4ac1e9ac9931a6a30bb40c716"
+    },
+    "priorEndpointCleanupEvidence": {
+      "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/independent-audit-v1.json",
+      "sha256": "d67d3da3f6e92f5b5e185bfb37424606b5b9707fd8f65f3812eacd1e263b04cf"
+    },
+    "diagnostics": {
+      "directory": "unique capture-local diagnostics directory",
+      "files": [
+        "chromedriver.log",
+        "chrome-gpu.log"
+      ],
+      "budgetBytes": 33554432,
+      "sampleIntervalMs": 250,
+      "levels": {
+        "chromeDriver": "WARNING",
+        "chromeGpu": "WARNING"
+      },
+      "overshoot": "stop browser on the next size sample and retain both logs plus overshoot metadata"
+    },
+    "monitor": {
+      "scopeAndKnownPidIntervalMs": 1000,
+      "fullProcessGroupDiscoveryIntervalMs": 5000,
+      "firstFullDiscovery": "immediately after owned browser-runner identity admission",
+      "fastSample": "enumerate exact scope members, then individually check previously observed child PID/startTicks/cgroup identities; stop and retain expected/observed cgroup evidence for a same-identity PID outside the scope",
+      "fullDiscovery": "enumerate /proc and discover processes in the owned browser-runner process group/session",
+      "cadence": "1,000 ms active scope/known-PID target and 5,000 ms full-discovery target; record attempt/completion counts, start gaps, and durations",
+      "cleanup": "full process discovery and previously observed stable PID/startTicks identities remain in cleanup accounting across cgroups; signals still require existing exact scope or owned-session gates; unresolved known survivors keep cleanup failing and the lease held",
+      "assurance": "periodic sampled observation only; the 5-second process-group discovery interval is not continuous containment"
+    },
+    "memory": "32 GiB high, 40 GiB max, 4 GiB swap",
+    "cpu": "normal unpinned scheduling",
+    "cgroups": "sample process and thread IDs, start ticks, and exact cgroups at create/navigation/result/quit bookends; after cleanup, only initial Node and timeout members remain",
+    "assurance": "sampled only, not continuous containment or CPU exclusivity",
+    "session": "same desktop service configuration for all lanes"
+  },
+  "sourceIdentity": {
+    "bench.html": {
+      "bytes": 29425,
+      "sha256": "9cbf1e51010f2efe1ebe3c2dd6923f25d776831bd95f0e0e57479a54be8bf0a7"
+    },
+    "dev/adapter-metadata.js": {
+      "bytes": 898,
+      "sha256": "6aa9f18aef5334eb722749a113a73a02d9e26ec69770ec116a0cf12b98d4c9f8"
+    },
+    "js/src/archs/clef.js": {
+      "bytes": 5976,
+      "sha256": "ac7ba9459a7210e19516ef87bdeeb71e2612b73c44ca289a704f55f1ee5b8b06"
+    },
+    "js/src/archs/gemma4.js": {
+      "bytes": 12531,
+      "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+    },
+    "js/src/archs/index.js": {
+      "bytes": 2743,
+      "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+    },
+    "js/src/archs/kev.js": {
+      "bytes": 10357,
+      "sha256": "f1ebba93662c9bad0dd1c087e1e4c00d62cbeba29b18edb159451bb3d436b0b7"
+    },
+    "js/src/archs/laya.js": {
+      "bytes": 8417,
+      "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+    },
+    "js/src/cpu-calibrate.js": {
+      "bytes": 3092,
+      "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+    },
+    "js/src/cpu-policy.js": {
+      "bytes": 3333,
+      "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+    },
+    "js/src/cpu-tune.js": {
+      "bytes": 1293,
+      "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+    },
+    "js/src/engine-worker.js": {
+      "bytes": 20118,
+      "sha256": "7f6045b89ad8b353c3b074323c17d321ac40fee17a793ad25c47da52e22718a2"
+    },
+    "js/src/gemma4-image.js": {
+      "bytes": 12697,
+      "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+    },
+    "js/src/gemma4-ple-store.js": {
+      "bytes": 11274,
+      "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+    },
+    "js/src/gemma4-vision-pack.js": {
+      "bytes": 3580,
+      "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+    },
+    "js/src/gpu-clef-head.js": {
+      "bytes": 19783,
+      "sha256": "58c083005fec8cd29d54fe9023b14ca05a5428dbce884c979bb77967796e80cb"
+    },
+    "js/src/gpu-gemma4-attention.js": {
+      "bytes": 24396,
+      "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+    },
+    "js/src/gpu-gemma4-batch-mlp.js": {
+      "bytes": 25939,
+      "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+    },
+    "js/src/gpu-gemma4-batch-single.js": {
+      "bytes": 13303,
+      "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+    },
+    "js/src/gpu-gemma4-bn32.js": {
+      "bytes": 13497,
+      "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+    },
+    "js/src/gpu-gemma4-grid-mlp.js": {
+      "bytes": 21034,
+      "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+    },
+    "js/src/gpu-gemma4-image.js": {
+      "bytes": 6179,
+      "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+    },
+    "js/src/gpu-gemma4-k64.js": {
+      "bytes": 12881,
+      "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+    },
+    "js/src/gpu-gemma4-mlp.js": {
+      "bytes": 14486,
+      "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+    },
+    "js/src/gpu-gemma4-ple.js": {
+      "bytes": 3548,
+      "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+    },
+    "js/src/gpu-gemma4-prefix-cache.js": {
+      "bytes": 7449,
+      "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+    },
+    "js/src/gpu-gemma4-prefix-gelu.js": {
+      "bytes": 16018,
+      "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+    },
+    "js/src/gpu-gemma4-prefix-retile.js": {
+      "bytes": 15704,
+      "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+    },
+    "js/src/gpu-gemma4-rms-plan.js": {
+      "bytes": 1960,
+      "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+    },
+    "js/src/gpu-gemma4-rms.js": {
+      "bytes": 21407,
+      "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+    },
+    "js/src/gpu-gemma4-vision-qkv.js": {
+      "bytes": 18378,
+      "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+    },
+    "js/src/gpu-gemma4-vision.js": {
+      "bytes": 39775,
+      "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+    },
+    "js/src/gpu-gemma4.js": {
+      "bytes": 111718,
+      "sha256": "36fece6876fd4fe0d5177bf7e04ac034e6c0a7a75c31cc1c864449090e87e8b1"
+    },
+    "js/src/gpu-kev.js": {
+      "bytes": 59720,
+      "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2"
+    },
+    "js/src/gpu-laya.js": {
+      "bytes": 14723,
+      "sha256": "3f2a2a96324966949fddb8ee4e700550b7db292067c9a93ab8a0fc438de708bc"
+    },
+    "js/src/gpu-matvec-gelu.js": {
+      "bytes": 12270,
+      "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+    },
+    "js/src/gpu-matvec-two.js": {
+      "bytes": 22143,
+      "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+    },
+    "js/src/gpu-matvec.js": {
+      "bytes": 19542,
+      "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+    },
+    "js/src/gpu-recur-tuning.js": {
+      "bytes": 21113,
+      "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+    },
+    "js/src/gpu-tuning.js": {
+      "bytes": 16021,
+      "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+    },
+    "js/src/gpu.js": {
+      "bytes": 26543,
+      "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+    },
+    "js/src/image-header.js": {
+      "bytes": 5607,
+      "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+    },
+    "js/src/images.js": {
+      "bytes": 4221,
+      "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+    },
+    "js/src/index.js": {
+      "bytes": 19761,
+      "sha256": "4ad325c7e3b86442109bc3b6e26a3281b93dee9c43153550aa85348eb9a8d406"
+    },
+    "js/src/node.js": {
+      "bytes": 2459,
+      "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+    },
+    "js/src/pack-layout.js": {
+      "bytes": 8838,
+      "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+    },
+    "js/src/presets.js": {
+      "bytes": 5604,
+      "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+    },
+    "js/src/request-queue.js": {
+      "bytes": 2205,
+      "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+    },
+    "js/src/shard-client.js": {
+      "bytes": 1495,
+      "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+    },
+    "js/src/shard-worker.js": {
+      "bytes": 2762,
+      "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+    },
+    "js/src/source.js": {
+      "bytes": 33566,
+      "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    "js/src/stats.js": {
+      "bytes": 279,
+      "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+    },
+    "js/src/wasm.js": {
+      "bytes": 4833,
+      "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+    },
+    "js/src/gpu-q8-swiglu-trial.js": {
+      "bytes": 8878,
+      "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758"
+    },
+    "scripts/bench-gpu.py": {
+      "bytes": 90973,
+      "sha256": "bf00d6ce15e05887d7c718988b165f07d879d36a5daf5afb598d4cc5ad265de3"
+    },
+    "scripts/tests/test_q8_terminal_poll.py": {
+      "bytes": 12943,
+      "sha256": "a51dde5a4eeee58bec3e1bf350dfc50f491835fab6f0073f71a026d79b1e2e54"
+    },
+    "scripts/tests/q8-monitor-cadence.test.mjs": {
+      "bytes": 2074,
+      "sha256": "4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41"
+    },
+    "scripts/tests/q8-page-bootstrap.test.mjs": {
+      "bytes": 2435,
+      "sha256": "5e5e3de4f04d62c7d08d1bdf093f24793647108299d74fdcf2dafb60ce0c5eb8"
+    },
+    "scripts/compare-kev-swiglu.mjs": {
+      "bytes": 56190,
+      "sha256": "43acefaf46effb6bebbf2551d44e7be4f371304b02c9c47b661623ad7c1ba64d"
+    },
+    "scripts/lib/q8-monitor-cadence.mjs": {
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1"
+    },
+    "scripts/serve.mjs": {
+      "bytes": 7491,
+      "sha256": "8b9e60a814408d41e4f1bfcfb59de21d6daf342ac708828ed2e00b138279e7af"
+    },
+    "scripts/lib/local-packs.mjs": {
+      "bytes": 2664,
+      "sha256": "738ae8c632fe1deaccd6a7e1cd827ef257fd75ec5fc7a992cfaaaa2bda4f0382"
+    },
+    "scripts/lib/static-path.mjs": {
+      "bytes": 838,
+      "sha256": "684d4561fb645641bf3d761d9d7ff45ab63b586fdf2d65e15efdd71cfa080f4f"
+    },
+    "app/model-policy.js": {
+      "bytes": 286,
+      "sha256": "46fdb4df7b41f27f0ac124e412dfb81e36fe213596997fc2caf41bf9836a162c"
+    }
+  }
+}

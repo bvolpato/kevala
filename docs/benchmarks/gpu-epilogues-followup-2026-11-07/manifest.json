@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "plan": {
+    "path": "archive-plan.json",
+    "bytes": 46695,
+    "sha256": "ec3c8627710aeab198357e67da4c5a98addc587ebbfd56bc912de1104e3e1054"
+  },
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 251551,
+    "sha256": "82ff6af0f831daf7101aa5370b9c7be2f69da06dccce48c6cfe6f814cbfaef47",
+    "decodedBytes": 959598,
+    "decodedSha256": "bcb39814a2eaa43063016011de1a0e007cfd1f269a18be1a27363128be4d2c98"
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 9064,
+      "sha256": "01c6b04f7c14221dc7a93bd04cd66ce896706e4fecb70cf754d0372843ab9227"
+    },
+    {
+      "path": "archive-plan.json",
+      "bytes": 46695,
+      "sha256": "ec3c8627710aeab198357e67da4c5a98addc587ebbfd56bc912de1104e3e1054"
+    },
+    {
+      "path": "archive-publication.mjs",
+      "bytes": 12621,
+      "sha256": "cf06d53151ed851a0f8a27abd1553738e52d6c30ee6ab30ef07c3b732d65084c"
+    },
+    {
+      "path": "docs/host-followup-experiments.md",
+      "bytes": 23582,
+      "sha256": "76c4e52a2da7f8cb691c3b8ac66c81dc73fa9c6d795b9bcd1eefafd08c7d2781"
+    },
+    {
+      "path": "evidence/laya-bn32/browser-result.json",
+      "bytes": 95828,
+      "sha256": "69d7f9998011c445fbf7171dcdb940a33eface62164242943b37590ebf1d328d"
+    },
+    {
+      "path": "evidence/laya-bn32/controller-result.json",
+      "bytes": 14692,
+      "sha256": "f79a28abbb5ecdd2d344ad0843e6a60c0d323c9fde725fd947576f57eef8a7aa"
+    },
+    {
+      "path": "evidence/laya-bn32/external-release-v1.json",
+      "bytes": 1768,
+      "sha256": "1d644730b5e944be6b22730783ae785ba4b9fd44225ec8a4e851d2b76c6c9de5"
+    },
+    {
+      "path": "evidence/laya-bn32/lease-events/lease-000-node-own-bind-before-preflight.json",
+      "bytes": 987,
+      "sha256": "416c0ff71c0ff8d3ec252cc8fdfeb4e23afc713f529a2e6908a0084e69a385db"
+    },
+    {
+      "path": "evidence/laya-bn32/lease-events/lease-001-before-chrome-executable-read.json",
+      "bytes": 986,
+      "sha256": "a394d6e286c9e0f21739341b5f5220cdc138e7341de651c09db596a37da27487"
+    },
+    {
+      "path": "evidence/laya-bn32/lease-events/lease-002-before-pack-and-wasm-read.json",
+      "bytes": 982,
+      "sha256": "d86f55a0ad7120885bf3378cc505c82ab89815379e87cd6364e856643a775ca3"
+    },
+    {
+      "path": "evidence/laya-bn32/lease-events/lease-003-before-browser-controller.json",
+      "bytes": 982,
+      "sha256": "dcec0c9ae44be631356f7175082f4b546ad4fcea0acb764f40b3662716d33002"
+    },
+    {
+      "path": "evidence/laya-bn32/lease-events/lease-004-after-browser-controller.json",
+      "bytes": 981,
+      "sha256": "77a1e019f907f3b9e6b37e2288abd85b5e8119215badfbe15354c072464d50a2"
+    },
+    {
+      "path": "evidence/laya-bn32/lease-events/lease-005-after-owned-cleanup.json",
+      "bytes": 976,
+      "sha256": "c0d8e3f8f7a310550b2cc0de4fa941ccfb855f08d7d6611e57e9e7e99c93672c"
+    },
+    {
+      "path": "evidence/laya-bn32/runtime-manifest.json",
+      "bytes": 12652,
+      "sha256": "a5bcc7e2a8b7043bf9b4213fd077fc81c76be9d7284d1e7c1ba85506e24cd175"
+    },
+    {
+      "path": "evidence/q8-v6-r1-launch-failure/controller.json",
+      "bytes": 2658,
+      "sha256": "d327285ddc80da5f6c4725a788fccc7a84c7c5681f91bfa172793f6e8cc347d6"
+    },
+    {
+      "path": "evidence/q8-v6-r1-launch-failure/external-release-v1.json",
+      "bytes": 697,
+      "sha256": "68b1a286a6d9b090dc04b24da036289537c3352878ada1dfd7af63d1037b3287"
+    },
+    {
+      "path": "evidence/q8-v6-r1-launch-failure/lease-events/lease-000-q8-controller-bind-before-inputs.json",
+      "bytes": 989,
+      "sha256": "ecc32b2794944e12f15d2574e969362d46e3981af5fe422f4cd73ccd3ff2c51f"
+    },
+    {
+      "path": "evidence/q8-v6-r1-launch-failure/root-launch-failure-v1.json",
+      "bytes": 640,
+      "sha256": "7ac8afe38b8efa6843ffd0e76ddc41130e2057d00974e30cc1718afcf3599368"
+    },
+    {
+      "path": "evidence/q8-v6-r2/controller.json",
+      "bytes": 25779,
+      "sha256": "2b701f6c576ebc5c6539900925b897cb4189efc8c5263073b72bcbf4e9383e10"
+    },
+    {
+      "path": "evidence/q8-v6-r2/external-release-v1.json",
+      "bytes": 1973,
+      "sha256": "2217c45120dfd3e40b16875d0404fb0f7e4a31ca3286f08d5e4ad62d0a8d6563"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-000-q8-controller-bind-before-inputs.json",
+      "bytes": 989,
+      "sha256": "2d169cb2f016317b16fcbcca02456929c5a53031f24a9d6d23547ef0a313789f"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-001-before-source-and-runtime-inputs.json",
+      "bytes": 989,
+      "sha256": "e3f39039e08e3ee29c43edee41cf55bbf6872106b53c8951bd15abc92d1f704c"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-002-before-ci80-wasm-read.json",
+      "bytes": 978,
+      "sha256": "94de02f1e08dba3ca90dd2ef584c143a0761c43bcffe5ffb25eaa15b3eb6c77d"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-003-before-pack-identity-and-link.json",
+      "bytes": 986,
+      "sha256": "fb30bfea1f88f426cabc748fe73a30ed536f492af2f89f3ae329c20ea2863356"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-004-before-browser-controller.json",
+      "bytes": 982,
+      "sha256": "20cf30e4411888cf5c5135833f01209b57b557f5201a938b83a220989424e86e"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-005-after-browser-controller.json",
+      "bytes": 981,
+      "sha256": "5b6c38c62272afef633c53c3afe512f0c364306ccfc5ca7ecb76b90a9fb83ac5"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-006-before-post-run-source-and-runtime-identity-check.json",
+      "bytes": 1006,
+      "sha256": "56980d5bb1a6720b9205bf04a0a4fa15941fd098e51983b25c6faddb7800ce2c"
+    },
+    {
+      "path": "evidence/q8-v6-r2/lease-events/lease-007-after-owned-process-server-and-link-cleanup-and-scope-proof.json",
+      "bytes": 1016,
+      "sha256": "2d61c491b394510e71d9d2276b419b8087c48e4f5d1745c4814991c86f2d28a7"
+    },
+    {
+      "path": "evidence/q8-v6-r2/result.json",
+      "bytes": 94217,
+      "sha256": "223835bb67f35e62efead56e9809d391a99344cbcb4830ecabaf3c4d4ad9bb2b"
+    },
+    {
+      "path": "fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "path": "lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    },
+    {
+      "path": "provenance.json",
+      "bytes": 22715,
+      "sha256": "56a5b18ebdf1f4f879ff1ea64315a57ce9bfe15504e1033d9f6ddf9c1cb451df"
+    },
+    {
+      "path": "source/laya-bn32/js/src/gpu-laya-geglu-epilogue.js",
+      "bytes": 16374,
+      "sha256": "cd55adb7a377565c3d6bf07d84b0ec5b317b307825aefb82e74020a40bb0d134"
+    },
+    {
+      "path": "source/laya-bn32/scripts/private/laya-geglu-controller-packet.json",
+      "bytes": 42171,
+      "sha256": "cd656b286e5d161e4570831412167442639977b9c24ac818c88ddbc6e424dfef"
+    },
+    {
+      "path": "source/laya-bn32/scripts/private/laya-geglu-protocol.json",
+      "bytes": 21655,
+      "sha256": "8ca5329e28ca4dfaceb1b3f5c7a163bd1b9358ad3b985df7ed8bda45564cb4a5"
+    },
+    {
+      "path": "source/laya-bn32/scripts/private/run-laya-geglu.mjs",
+      "bytes": 29214,
+      "sha256": "2933bbe1d37f12c056d25a410a3950c7ef6644ee29a06e4acd0791086b30c919"
+    },
+    {
+      "path": "source/q8-v6/bench.html",
+      "bytes": 29425,
+      "sha256": "9cbf1e51010f2efe1ebe3c2dd6923f25d776831bd95f0e0e57479a54be8bf0a7"
+    },
+    {
+      "path": "source/q8-v6/js/src/gpu-q8-swiglu-trial.js",
+      "bytes": 8878,
+      "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758"
+    },
+    {
+      "path": "source/q8-v6/scripts/bench-gpu.py",
+      "bytes": 90973,
+      "sha256": "bf00d6ce15e05887d7c718988b165f07d879d36a5daf5afb598d4cc5ad265de3"
+    },
+    {
+      "path": "source/q8-v6/scripts/compare-kev-swiglu.mjs",
+      "bytes": 56190,
+      "sha256": "43acefaf46effb6bebbf2551d44e7be4f371304b02c9c47b661623ad7c1ba64d"
+    },
+    {
+      "path": "source/q8-v6/scripts/lib/q8-monitor-cadence.mjs",
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1"
+    },
+    {
+      "path": "source/q8-v6/source-preflight-plan.json",
+      "bytes": 24684,
+      "sha256": "d0c97a1be9210fd4bd83115618f67b058031a035b95c0e6acfd0bf3e69898b6d"
+    }
+  ],
+  "exclusions": {
+    "sources": [
+      "Model weights and pack payloads",
+      "Compiled WASM binaries, build output and libraries",
+      "Complete raw browser/controller captures",
+      "Full PID/TID inventories, descriptor inventories and global /proc/locks dumps",
+      "Chrome and chromedriver logs, since no log evidence is required to recalculate either completed result",
+      "Unchanged private Laya producer bytes already retained in the preceding publication"
+    ],
+    "other": [
+      "Laya measured complete response bodies were not retained by the producer. Completed frozen-harness gates support equality, not later independent byte comparisons.",
+      "The Q8 result retains every measured output vector and explicit unexecuted layer 31. No claim that all 32 layers were checked is made.",
+      "Earlier unlocked CPU-only Q8 checks may have overlapped BN32 startup. Exact overlap remains unknown. No idle-host or exclusive-CPU claim is made.",
+      "Q8 v6r1 is a separate pre-admission launch failure. Its records are never treated as a completed numerical or timing result.",
+      "Both candidates failed their predeclared latency policies. No promotion, rescue rerun, model-quality score or state-of-the-art claim is authorized."
+    ]
+  }
+}

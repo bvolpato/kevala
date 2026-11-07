@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala benchmark</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  select, button { font: inherit; background: #161b22; color: inherit; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>kevala benchmark</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  threads <select id="threads"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
+  <button id="run">run</button>
+</p>
+<pre id="log"></pre>
+<script>
+(() => {
+  window.bench = { done: false, status: "loading", phase: "module-load" };
+  const publishFailure = (value, phase) => {
+    if (window.bench?.done === true) return;
+    let message;
+    try { message = String(value?.message || value || "page module failed"); }
+    catch { message = "page module failed with an unreadable error"; }
+    window.bench = { done: true, status: "error", phase: window.bench?.phase || phase, error: message.slice(0, 1024) };
+  };
+  window.addEventListener("error", (event) => {
+    const target = event.target;
+    if (target !== window) {
+      if (target?.tagName === "SCRIPT" && target.type === "module") {
+        publishFailure(`Module script failed to load: ${target.getAttribute("src") || "inline module"}`, "module-load");
+      }
+      return;
+    }
+    if (event instanceof ErrorEvent) publishFailure(event.message || event.error, "module-runtime");
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => publishFailure(event.reason, "module-runtime"));
+})();
+</script>
+<script type="module">
+import { adapterFallbackMetadata } from "./dev/adapter-metadata.js";
+
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+let pagePhase = "document-ready";
+function setPagePhase(phase) {
+  pagePhase = phase;
+  if (window.bench && typeof window.bench === "object") window.bench.phase = phase;
+}
+window.bench = { status: "idle", phase: pagePhase };
+
+const words = "the customer wrote in about a recurring charge they did not recognise and wants a refund today ";
+const Q = { type: "noul", instructions: "Is the customer asking for money back?" };
+
+function integerParam(q, name, fallback, minimum) {
+  const raw = q.get(name);
+  const value = raw === null || raw === "" ? fallback : Number(raw);
+  if (!Number.isInteger(value) || value < minimum) throw new Error(`${name} must be an integer >= ${minimum}`);
+  return value;
+}
+
+async function requestHash(requests) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(requests)));
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function canonicalJson(value) {
+  const active = new Set();
+  const encode = (item, path) => {
+    if (item === null) return "null";
+    if (typeof item === "string" || typeof item === "boolean") return JSON.stringify(item);
+    if (typeof item === "number") {
+      if (!Number.isFinite(item)) throw new Error(`GPU tuning snapshot contains a non-finite number at ${path}`);
+      return JSON.stringify(item);
+    }
+    if (typeof item !== "object") throw new Error(`GPU tuning snapshot contains a non-JSON value at ${path}`);
+    if (active.has(item)) throw new Error(`GPU tuning snapshot contains a cycle at ${path}`);
+    active.add(item);
+    try {
+      if (Array.isArray(item)) {
+        const keys = Reflect.ownKeys(item).filter((key) => key !== "length");
+        if (keys.length !== item.length || !keys.every((key, index) => key === String(index))) throw new Error(`GPU tuning snapshot contains a sparse or extended array at ${path}`);
+        return `[${keys.map((key, index) => {
+          const descriptor = Object.getOwnPropertyDescriptor(item, key);
+          if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error(`GPU tuning snapshot contains a hidden or accessor array entry at ${path}[${index}]`);
+          return encode(descriptor.value, `${path}[${index}]`);
+        }).join(",")}]`;
+      }
+      const prototype = Object.getPrototypeOf(item);
+      if (prototype !== Object.prototype && prototype !== null) throw new Error(`GPU tuning snapshot contains a non-plain object at ${path}`);
+      const keys = Reflect.ownKeys(item);
+      if (!keys.every((key) => typeof key === "string")) throw new Error(`GPU tuning snapshot contains a symbol key at ${path}`);
+      keys.sort();
+      return `{${keys.map((key) => {
+        const descriptor = Object.getOwnPropertyDescriptor(item, key);
+        if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error(`GPU tuning snapshot contains a hidden or accessor property at ${path}.${key}`);
+        return `${JSON.stringify(key)}:${encode(descriptor.value, `${path}.${key}`)}`;
+      }).join(",")}}`;
+    } finally { active.delete(item); }
+  };
+  return encode(value, "gpuTuning");
+}
+
+async function tuningSnapshot(value) {
+  const planJson = canonicalJson(value);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(planJson));
+  const sha256 = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return { planJson, sha256 };
+}
+
+async function sha256Text(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function decisionPayload(result) {
+  return { model: result.model, answers: result.answers, raw_probabilities: result.raw_probabilities };
+}
+
+function compareDecisions(baseline, candidate, exact = false) {
+  const left = decisionPayload(baseline), right = decisionPayload(candidate);
+  if (left.model !== right.model || JSON.stringify(left.answers) !== JSON.stringify(right.answers)) throw new Error("Q8 SwiGLU decision model or answers changed");
+  const leftRaw = left.raw_probabilities, rightRaw = right.raw_probabilities;
+  if (!leftRaw || !rightRaw || Array.isArray(leftRaw) || Array.isArray(rightRaw)) throw new Error("Q8 SwiGLU raw probability map is missing or invalid");
+  const keys = Object.keys(leftRaw).sort();
+  if (JSON.stringify(keys) !== JSON.stringify(Object.keys(rightRaw).sort())) throw new Error("Q8 SwiGLU raw probability questions changed");
+  let maxAbs = 0, maxRel = 0, worst = null;
+  for (const key of keys) {
+    const a = leftRaw[key], b = rightRaw[key];
+    if (!a || !b || typeof a !== "object" || typeof b !== "object" || JSON.stringify(Object.keys(a).sort()) !== JSON.stringify(Object.keys(b).sort())) throw new Error(`Q8 SwiGLU raw probability options changed for ${key}`);
+    for (const option of Object.keys(a).sort()) {
+      const expected = a[option], actual = b[option];
+      if (!Number.isFinite(expected) || !Number.isFinite(actual)) throw new Error(`Q8 SwiGLU raw probability is non-finite for ${key}.${option}`);
+      const difference = Math.abs(actual - expected), relative = difference / Math.max(Math.abs(expected), 1e-30);
+      if (difference > maxAbs) { maxAbs = difference; worst = `${key}.${option}`; }
+      maxRel = Math.max(maxRel, relative);
+      if (exact ? actual !== expected : difference > 0.0005 + 0.0001 * Math.max(1, Math.abs(expected))) throw new Error(`Q8 SwiGLU raw probability parity failed at ${key}.${option}: ${difference}`);
+    }
+  }
+  return { exact, maxAbs, maxRel, worst };
+}
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+async function run() {
+  $("log").textContent = "";
+  const q = new URLSearchParams(location.hash.slice(1));
+  pagePhase = "request-setup";
+  window.bench = { status: "running", phase: pagePhase };
+  let kevala = null;
+  const restore = [];
+  let actualGpu = null;
+  let actualHeader = null;
+  try {
+    const backend = q.get("backend") || $("backend").value;
+    const runtime = new URL(q.get("runtime") || "./js/src/index.js", document.baseURI);
+    if (runtime.origin !== location.origin) throw new Error("runtime must be same-origin");
+    setPagePhase("runtime-import");
+    const { Kevala, MODELS } = await import(runtime.href);
+    setPagePhase("request-setup");
+    const threadOption = q.get("threads") || $("threads").value;
+    const threads = threadOption === "auto" ? "auto" : Number(threadOption);
+    const name = q.get("model") || "laya";
+    const local = q.get("pack") === "local";
+    if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
+    const packUrl = q.get("packUrl") ? new URL(q.get("packUrl"), document.baseURI) : null;
+    if (packUrl && packUrl.origin !== location.origin) throw new Error("packUrl must be same-origin");
+    const model = packUrl ? { name, url: packUrl.href } : local ? `./tmp/${name}-q8.kevala` : name;
+    setPagePhase("model-load");
+    const runs = integerParam(q, "runs", 10, 1);
+    const warmups = integerParam(q, "warmups", 2, 0);
+    const protocol = q.get("protocol") || "isolated";
+    if (!["resident", "isolated"].includes(protocol)) throw new Error("protocol must be resident or isolated");
+    const residentProtocol = protocol === "resident";
+    const blocks = residentProtocol ? integerParam(q, "blocks", 2, 2) : 0;
+    const requestedFlavor = q.get("flavor") || undefined;
+    const unique = q.get("unique") === "1";
+    const profile = q.get("profile") === "1";
+    const loadProfile = residentProtocol ? false : profile;
+    const cache = q.get("cache") !== "0";
+    const stateCache = q.has("stateCache") ? q.get("stateCache") !== "0" : undefined;
+    const onPage = q.get("onPage") === "1";
+    const swigluTrial = q.get("swigluTrial") === "1";
+    if (swigluTrial && (name !== "kev-9b" || q.get("pack") !== "local" || q.get("precision") !== "q8" || backend !== "webgpu" || !onPage || cache || stateCache !== false || loadProfile || q.get("gpuKernel") !== "auto" || q.get("submit") !== "await" || q.has("flavor") || q.has("features") || q.get("baseline") === "1")) {
+      throw new Error("Q8 SwiGLU trial requires local Kev-9B Q8, runtime-default WASM selection, on-page WebGPU, disabled caches and profiling, auto matmul, default features, and await submission");
+    }
+    if (onPage) {
+      const { archPlugin } = await import(new URL("./archs/index.js", runtime));
+      for (const arch of ["laya", "kev", "clef", "gemma4"]) {
+        const plugin = archPlugin(arch);
+        const original = plugin.createGpu;
+        restore.push(() => { plugin.createGpu = original; });
+        plugin.createGpu = function(gpu, ...args) {
+          actualGpu = gpu;
+          actualHeader = args[1];
+          if (swigluTrial) {
+            gpu.kevalaQ8SwiGluTrial = true;
+            gpu.kevalaQ8SwiGluMode = "off";
+          }
+          return original.call(this, gpu, ...args);
+        };
+      }
+    }
+    const t0 = performance.now();
+    // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
+    // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
+    const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache, stateCache, profile: loadProfile, ...(onPage ? { onPage: true } : {}), ...(q.has("precision") ? { precision: q.get("precision") } : {}), submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    setPagePhase("model-loaded");
+    restore.splice(0).reverse().forEach((callback) => callback());
+    if (loadProfile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
+    const adapterInfo = actualGpu?.adapter.info || {};
+    const fallbackMetadata = actualGpu ? adapterFallbackMetadata(actualGpu.adapter) : null;
+    const precision = actualHeader ? (await import(new URL("./pack-layout.js", runtime))).packPrecision(actualHeader) : kevala.info.model?.precision || null;
+    log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+    const tuning = residentProtocol ? await tuningSnapshot(kevala.info.gpuTuning) : null;
+    const resident = residentProtocol ? { sessionId: crypto.randomUUID(), loadId: crypto.randomUUID(), tuning } : null;
+    const results = {
+      protocol,
+      model: name,
+      modelInfo: kevala.info.model,
+      runtime: runtime.href,
+      precision,
+      profile: loadProfile,
+      context: kevala.info.onPage ? "page" : "worker",
+      cache: { packEnabled: cache, state: kevala.info.stateCache },
+      pack: kevala.info.pack,
+      adapter: actualGpu ? { name: actualGpu.name, vendor: adapterInfo.vendor || null, architecture: adapterInfo.architecture || null,
+        device: adapterInfo.device || null, description: adapterInfo.description || null, ...fallbackMetadata,
+        features: [...actualGpu.device.features].sort(), limits: { maxBufferSize: actualGpu.device.limits.maxBufferSize,
+          maxStorageBufferBindingSize: actualGpu.device.limits.maxStorageBufferBindingSize, maxComputeWorkgroupStorageSize: actualGpu.device.limits.maxComputeWorkgroupStorageSize } } : null,
+      arch: kevala.info.arch,
+      backend: kevala.info.backend,
+      gpu: kevala.info.gpu,
+      threads: kevala.info.threads,
+      flavor: kevala.info.flavor,
+      cpuTiles: kevala.info.cpuTiles,
+      cpuTuning: kevala.info.cpuTuning,
+      gpuTuning: residentProtocol ? JSON.parse(tuning.planJson) : kevala.info.gpuTuning,
+      ...(residentProtocol ? { resident } : {}),
+      selectedFlavor: kevala.info.flavor || null,
+      hardwareConcurrency: navigator.hardwareConcurrency || null,
+      crossOriginIsolated: globalThis.crossOriginIsolated === true,
+      runs,
+      warmups,
+      unique,
+      load_s: (performance.now() - t0) / 1000,
+      cases: [],
+    };
+    if (swigluTrial) {
+      if (!actualGpu || !actualHeader || actualHeader.model?.name !== "kev-9b" || actualHeader.model?.precision !== "q8" ||
+          actualHeader.config?.hidden_size !== 4096 || actualHeader.config?.intermediate_size !== 12288 || actualHeader.config?.layer_types?.length !== 32) {
+        throw new Error("Q8 SwiGLU trial pack header does not match the pinned Kev-9B Q8 shape");
+      }
+      const capability = actualGpu.kevalaQ8SwiGluCapability;
+      if (!capability?.enabled || !capability.compatibility?.eligible || typeof capability.source !== "string") throw new Error("Q8 SwiGLU trial source or packed tensor binding is unavailable");
+      const wasm = {
+        base: { sha256: "793351ff820ca6818eae749c09c829f974fe718d805447bd2141ab99b4c1e831", bytes: 1375771 },
+        simd: { sha256: "f463d88be692c2da5a609cade3216ff94cb05732ab560d0df72517afe9db67f5", bytes: 1382096 },
+        relaxed: { sha256: "55aa0e56bce7a8f808d27c8db50767fb24102eb85d8d45bb369451c934836c0a", bytes: 1383425 },
+      };
+      const selectedWasm = wasm[kevala.info.flavor];
+      if (!selectedWasm) throw new Error(`Q8 SwiGLU trial used an unpinned WASM flavor ${kevala.info.flavor}`);
+      const sourceSha256 = await sha256Text(capability.source);
+      const tuningBefore = await tuningSnapshot(kevala.info.gpuTuning);
+      const longState = words.repeat(30), mediumState = words.repeat(6);
+      let fixtureIdentity = null;
+      const sample = async (state, mode) => {
+        actualGpu.kevalaQ8SwiGluMode = mode;
+        const requests = [{ state, questions: { q: Q } }];
+        const fingerprint = await requestHash(requests);
+        actualGpu.kevalaQ8SwiGluCurrentRequestHash = fingerprint;
+        actualGpu.kevalaQ8SwiGluPermit = fixtureIdentity && ["verify", "candidate"].includes(mode) && fingerprint === fixtureIdentity.requestHash
+          ? { mode, ...fixtureIdentity }
+          : null;
+        const started = performance.now();
+        let result;
+        try {
+          result = await kevala.decide(state, { q: Q });
+        } finally {
+          actualGpu.kevalaQ8SwiGluCurrentRequestHash = null;
+        }
+        const wallMs = performance.now() - started;
+        const stats = JSON.parse(JSON.stringify(actualGpu.kevalaQ8SwiGluStats || null));
+        if (!Number.isFinite(wallMs) || wallMs <= 0 || !Number.isSafeInteger(result.timing?.tokens)) throw new Error("Q8 SwiGLU trial received invalid request timing");
+        return { mode, requestHash: fingerprint, wallMs, timing: result.timing, reportedTotalTokens: result.timing.tokens, output: decisionPayload(result), trial: stats };
+      };
+      setPagePhase("shape-probe");
+      const shapeProbe = await sample(longState, "off");
+      const probe = shapeProbe.trial;
+      const plannedLayers = probe?.expectedActivationLayers;
+      if (!Array.isArray(plannedLayers) || plannedLayers.length === 0 || new Set(plannedLayers).size !== plannedLayers.length ||
+          !Number.isSafeInteger(probe.stage1Tokens) || probe.stage1Tokens < 1 || !Number.isSafeInteger(probe.stage2Tokens) || probe.stage2Tokens < 1) {
+        throw new Error("Q8 SwiGLU long-request shape probe did not produce a nonempty exact prefill plan");
+      }
+      fixtureIdentity = {
+        requestHash: shapeProbe.requestHash,
+        T1: probe.stage1Tokens,
+        T2: probe.stage2Tokens,
+        plannedLayers: [...plannedLayers],
+      };
+      const assertLongShape = (lane) => {
+        if (lane.requestHash !== fixtureIdentity.requestHash || lane.trial?.stage1Tokens !== fixtureIdentity.T1 || lane.trial?.stage2Tokens !== fixtureIdentity.T2 ||
+            JSON.stringify(lane.trial?.expectedActivationLayers) !== JSON.stringify(fixtureIdentity.plannedLayers)) {
+          throw new Error("Q8 SwiGLU long-request request hash, stage shape, or planned layers changed");
+        }
+      };
+      const assertCandidateDispatch = (lane) => {
+        assertLongShape(lane);
+        if (lane.trial?.effectiveMode !== "candidate" || lane.trial?.permitState !== "consumed" ||
+            lane.trial?.fusedDispatches !== fixtureIdentity.plannedLayers.length || lane.trial?.skippedSilumul !== fixtureIdentity.plannedLayers.length ||
+            JSON.stringify(lane.trial?.fusedActivationLayers) !== JSON.stringify(fixtureIdentity.plannedLayers) ||
+            JSON.stringify(lane.trial?.skippedSilumulLayers) !== JSON.stringify(fixtureIdentity.plannedLayers)) {
+          throw new Error("Q8 SwiGLU one-shot candidate did not fuse each permitted prefill layer exactly once");
+        }
+      };
+      setPagePhase("activation-validation");
+      const verify = await sample(longState, "verify");
+      assertLongShape(verify);
+      if (verify.trial?.effectiveMode !== "verify" || verify.trial?.permitState !== "consumed" || verify.trial?.activationExact !== true ||
+          verify.trial.verifiedLayers !== fixtureIdentity.plannedLayers.length || verify.trial.verifyDispatches !== fixtureIdentity.plannedLayers.length ||
+          verify.trial.fusedDispatches !== 0 || JSON.stringify(verify.trial.verifiedActivationLayers) !== JSON.stringify(fixtureIdentity.plannedLayers) ||
+          JSON.stringify(verify.trial.unexecutedActivationLayers) !== JSON.stringify(probe.unexecutedActivationLayers) ||
+          verify.trial.unexecutedActivationLayers.some((layer) => verify.trial.activationChecks?.[layer]?.status !== "not-planned-in-prefill")) {
+        throw new Error("Q8 SwiGLU full activation bitwise/canary verification failed");
+      }
+      const reference = verify.output;
+      const warmupsByMode = { off: [], candidate: [] };
+      setPagePhase("warmup");
+      for (let i = 0; i < 3; i++) {
+        const off = await sample(longState, "off");
+        assertLongShape(off);
+        compareDecisions(reference, off.output, true);
+        warmupsByMode.off.push(off);
+      }
+      for (let i = 0; i < 3; i++) {
+        const candidate = await sample(longState, "candidate");
+        assertCandidateDispatch(candidate);
+        compareDecisions(reference, candidate.output, false);
+        warmupsByMode.candidate.push(candidate);
+      }
+      setPagePhase("timing");
+      const aa = [], paired = [];
+      for (let i = 0; i < 9; i++) {
+        const aaFirst = await sample(longState, "off"), aaSecond = await sample(longState, "off");
+        assertLongShape(aaFirst);
+        assertLongShape(aaSecond);
+        const aaParity = compareDecisions(aaFirst.output, aaSecond.output, true);
+        aa.push({ pair: i, first: aaFirst, second: aaSecond, ratio: aaFirst.wallMs / aaSecond.wallMs, parity: aaParity });
+        const baselineFirst = i % 2 === 0;
+        const first = await sample(longState, baselineFirst ? "off" : "candidate");
+        const second = await sample(longState, baselineFirst ? "candidate" : "off");
+        const baseline = baselineFirst ? first : second, candidate = baselineFirst ? second : first;
+        assertLongShape(baseline);
+        assertCandidateDispatch(candidate);
+        if (baseline.requestHash !== candidate.requestHash) throw new Error("Q8 SwiGLU paired request hashes differ");
+        const outputCheck = compareDecisions(baseline.output, candidate.output, false);
+        paired.push({ pair: i, order: baselineFirst ? "off-candidate" : "candidate-off", baseline, candidate, ratio: baseline.wallMs / candidate.wallMs, outputCheck });
+      }
+      setPagePhase("medium-fallback");
+      const mediumOff = await sample(mediumState, "off"), mediumCandidate = await sample(mediumState, "candidate");
+      const mediumOutputCheck = compareDecisions(mediumOff.output, mediumCandidate.output, true);
+      if (mediumCandidate.trial?.effectiveMode !== "off" || mediumCandidate.trial?.permitState !== "absent" ||
+          mediumCandidate.trial?.fusedDispatches !== 0 || mediumCandidate.trial?.skippedSilumul !== 0) throw new Error("Q8 SwiGLU one-shot candidate permit escaped the exact long-request fixture");
+      const aaRatios = aa.map((pair) => pair.ratio);
+      const pairedRatios = paired.map((pair) => pair.ratio);
+      const aaDeviation = Math.max(...aaRatios.map((ratio) => Math.abs(ratio - 1)));
+      const pairedRatio = median(pairedRatios);
+      const pairedReduction = 1 - 1 / pairedRatio;
+      const aaStable = aaRatios.every((ratio) => Math.abs(ratio - 1) < 0.05);
+      const stableWins = paired.filter((pair) => pair.candidate.wallMs < pair.baseline.wallMs).length;
+      const thresholdWins = paired.filter((pair) => (pair.baseline.wallMs - pair.candidate.wallMs) / pair.baseline.wallMs >= 0.05).length;
+      const tuningAfter = await tuningSnapshot(kevala.info.gpuTuning);
+      if (tuningBefore.sha256 !== tuningAfter.sha256) throw new Error("Q8 SwiGLU trial changed the load-time tuning snapshot");
+      results.q8SwiGluTrial = {
+        status: "complete",
+        label: "prototype-off/on",
+        baseCommit: "fc7ef15a895587be8c94de96dab8344b89663e13",
+        ciRun: 42379873911,
+        wasm,
+        shapeProbe,
+        fixtureIdentity,
+        prefillCoverage: {
+          plannedLayers: fixtureIdentity.plannedLayers,
+          unexecutedLayers: probe.unexecutedActivationLayers,
+          expectedComparisonsPerLayer: fixtureIdentity.T1 * 12288,
+          expectedCanaryComparisonsPerLayer: 2 * (256 / 4),
+        },
+        selectedWasm: { flavor: kevala.info.flavor, ...selectedWasm },
+        sourceSha256,
+        compatibility: capability.compatibility,
+        tuning: { before: tuningBefore, after: tuningAfter },
+        verification: verify,
+        warmupsByMode,
+        aa,
+        paired,
+        mediumFallback: { baseline: mediumOff, candidateMode: mediumCandidate, outputCheck: mediumOutputCheck },
+        estimator: { pairedRatio, impliedPairedTimeReduction: pairedReduction, aaRatios, aaDeviation, aaStable, stableWins, thresholdWins },
+        acceptance: {
+          exactActivationParity: verify.trial.activationExact === true,
+          completeOutputParity: paired.every((pair) => pair.outputCheck.maxAbs <= 0.0006),
+          mediumFallbackExact: mediumOutputCheck.exact && mediumCandidate.trial.fusedDispatches === 0,
+          tuningUnchanged: tuningBefore.sha256 === tuningAfter.sha256,
+          aaStable,
+          medianGainAtLeastFivePercent: pairedReduction >= 0.05,
+          sixOfNinePairsAtLeastFivePercent: thresholdWins >= 6,
+          everyCandidatePairFaster: stableWins === 9,
+          gainBeyondAaSpread: pairedRatio > 1 + aaDeviation,
+          promote: false,
+        },
+      };
+      setPagePhase("complete");
+      results.phase = pagePhase;
+      results.done = true;
+      window.bench = results;
+      log("Q8 SwiGLU source-only trial protocol complete; timings are recorded only by an explicitly authorized execution.");
+      return;
+    }
+    // shapes: one short question, one long state, several questions, a batch of states
+    const shapes = [
+      { name: "1 question, ~40 tokens", reqs: [{ state: "Refund the duplicate charge today or we cancel.", questions: { q: Q } }] },
+      { name: "1 question, ~128 tokens", reqs: [{ state: words.repeat(6), questions: { q: Q } }] },
+      { name: "1 question, ~512 tokens", reqs: [{ state: words.repeat(30), questions: { q: Q } }] },
+      { name: "5 questions, ~60 tokens each", reqs: [{ state: words.repeat(2), questions: Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`q${i}`, Q])) }] },
+      { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
+    ];
+    const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
+    const runCases = async (profiled) => {
+      const cases = [];
+      for (const s of shapes.filter((_, i) => pick.includes(i))) {
+        // The longest frame gap while this shape runs measures how much it stalls the page.
+        let gap = 0, lastF = performance.now(), on = true;
+        const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        const ms = [];
+        const samples = [];
+        const wallMs = [];
+        let tokens = 0;
+        let last = null;
+        for (let i = 0; i < warmups + runs; i++) {
+          // Give every measured request a distinct state so the model's request cache cannot help.
+          const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+          const fingerprint = await requestHash(reqs);
+          const t = performance.now();
+          const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
+          const wall = performance.now() - t;
+          if (i >= warmups) {
+            ms.push(wall);
+            wallMs.push(wall);
+            samples.push({ ...r[0].timing, wallMs: wall, requestHash: fingerprint,
+              outputs: r.map(({ model, answers, raw_probabilities }) => ({ model, answers, ...(raw_probabilities ? { raw_probabilities } : {}) })) });
+          }
+          tokens = r[0].timing.tokens;
+          last = r[0].timing;
+        }
+        on = false;
+        ms.sort((a, b) => a - b);
+        const middle = ms.length >> 1;
+        const p50 = ms.length % 2 ? ms[middle] : (ms[middle - 1] + ms[middle]) / 2;
+        const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.ceil(ms.length * 0.95) - 1], min: ms[0] };
+        c.last = last;
+        c.samples = samples;
+        c.wallMs = wallMs;
+        cases.push(c);
+        log(`${profiled ? "profile" : "wall"} ${s.name.padEnd(31)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
+      }
+      return cases;
+    };
+    if (residentProtocol) {
+      results.blocks = [];
+      for (let block = 0; block < blocks; block++) {
+        const lanes = [];
+        for (const profiled of block % 2 ? [true, false] : [false, true]) {
+          if (!await kevala.profile(profiled)) throw new Error("timestamp-query is unavailable for GPU profiling");
+          lanes.push({ profile: profiled, cases: await runCases(profiled) });
+        }
+        results.blocks.push({ block, lanes });
+      }
+      results.cases = results.blocks[0].lanes.find((lane) => !lane.profile).cases;
+    } else results.cases = await runCases(profile);
+    results.done = true;
+    window.bench = results;
+  } catch (error) {
+    const message = String(error?.message || error);
+    log("ERROR " + message);
+    window.bench = { done: true, status: "error", phase: pagePhase, error: message };
+  } finally {
+    restore.splice(0).reverse().forEach((callback) => callback());
+    kevala?.dispose();
+  }
+}
+$("run").onclick = () => run();
+if (location.hash.includes("auto")) {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get("backend")) $("backend").value = q.get("backend");
+  if (q.get("threads")) $("threads").value = q.get("threads");
+  $("run").click();
+}
+</script>
+</body>
+</html>

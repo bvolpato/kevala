@@ -1,6 +1,6 @@
 # Host follow-up experiments, 2026-11-07
 
-Four earlier controlled host checks did not justify a production kernel or default change. The additional Q8 controls and startup diagnostic below also preserve separate outcomes and limits. Raw captures, original failures, and later corrections stay separate. These results describe pinned experiment runtimes on one host. They do not describe current production behavior or broad browser performance.
+The controlled host checks below did not justify a production kernel or default change. Completed numerical comparisons, rejected timing candidates, setup failures, and startup diagnostics retain their separate outcomes and limits. Raw captures, original failures, and later corrections stay separate. These results describe pinned experiment runtimes on one host. They do not describe current production behavior or broad browser performance.
 
 ## Laya WebGPU GEGLU epilogue
 
@@ -14,6 +14,16 @@ The R5 runner verified the full 478,886,720-byte Laya pack hash once before mode
 
 This is one Laya experiment on this host. It is not a ranking across the model catalog or a claim of best performance across GPUs or browsers. The candidate remains rejected, and the production runtime and defaults did not change.
 
+### BN32 follow-up
+
+The separate `private-laya-geglu-bn32-v1` run completed on the same host and Chrome 156 with the actual generic FP32 selector, relaxed WASM flavor, coordinator tile 0 and unchanged tuning. Its BM64/BN32 layout restored 656 workgroups, 16 KiB shared storage and 16 FP32 accumulator scalars per thread. The preceding BN64 layout used 328 workgroups, 24 KiB and 32 scalars. These source resource counts do not establish an occupancy or spilling explanation.
+
+The BN32 candidate also passed numerical validation and failed both latency gates. Its median paired kernel gain was -15.0923%, and its median paired complete-request gain was -7.3649%. It lost all nine quartets in each phase. ABBA and BAAB request median gains were -10.6813% and -6.3550%, with a maximum absolute request A/A spread of 8.7956%. Each separate phase preserved three warmups per arm, nine A/A pairs and nine fixed ABBA/BAAB quartets. The kernel metric covers the same 28 baseline `mm.wi` plus `geglu` pairs against 28 fused dispatches.
+
+Both before/after diagnostics retained all 28 layers, each with exactly 1,343,488 active and 753,664 tail comparisons and zero error counters. The default-off golden maximum difference remained 0.024 against the unchanged 0.03 tolerance. Complete-response and fallback gates passed in the frozen harness, but full per-sample response bodies were not retained for later byte comparison. Earlier CPU-only Q8 checks may have overlapped startup, and their exact timestamps are unknown. A later lock-held source preflight does not resolve that uncertainty. No idle-host or exclusive-CPU condition is claimed, and no rescue rerun followed.
+
+The [follow-up evidence package](benchmarks/gpu-epilogues-followup-2026-11-07/README.md) preserves the fixed timing samples, raw numerical vectors and counters, source identities, six inherited-FD proofs and exact release receipt. All 20 tracked processes were absent after cleanup, the scope was collected, and the free-lock probe passed. Both Laya fusion layouts remain private and default off.
+
 ## Q8 fused SwiGLU trial status
 
 The Q8 v4 runs produced no usable numerical or performance result. Run r1 stopped before browser launch because `/tmp/kevala-q8-swiglu-epilogue/js/src/kevala-base.wasm` was missing. Run r2 timed out after 900 seconds with `q8-swiglu page did not expose its terminal flag before timeout`; its result contains no model measurements. A host process sample at 11:03 elapsed during r2 found the host-wide monitor using 82.3% CPU, including 9:06 CPU time. That makes monitoring overhead a possible contributor, but the timeout cause was not established. NVML reported shared-host GPU telemetry of 3,344 MiB and 4% utilization; it cannot be attributed to this model. Both runs passed external cleanup checks.
@@ -21,6 +31,16 @@ The Q8 v4 runs produced no usable numerical or performance result. Run r1 stoppe
 The separate v5-r1 retry also produced no model result. After 900 seconds, the browser still had no terminal status. Its timeout diagnostics recorded a 404 for `/dev/adapter-metadata.js` before page module initialization; the page phase, status, and error fields were null. The console also recorded a favicon 404. This is a setup failure in v5-r1 and does not establish the cause of the v4-r2 timeout.
 
 The completed v5 monitor recorded 899 scope/known-PID samples and 150 full-group discoveries, with zero failures. The maximum scope-sample gap was 2,001 ms and the maximum full-group discovery gap was 7,007 ms. These are sampled intervals, not a continuous monitoring guarantee. External release passed: all 20 tracked PIDs were absent, the scope was empty, and the nonblocking free-lock probe exited 0.
+
+### Completed Kev Q8 v6r2 comparison
+
+The separate v6r1 launch failed before source and runtime admission with `external lock envelope is missing /home/linuxbrew/.linuxbrew/Cellar/node@22/22.22.2_2/bin/node`. The later v6r2 capture completed a fixed Kev 9B Q8 comparison using one model instance, 512 prefill tokens and 16 suffix tokens. It passed numerical checks and failed its predeclared latency policy. These records remain separate from the v6r1 launch failure and the older v4/v5 setup failures.
+
+The unprofiled request comparison retained three warmups per arm, nine A/A pairs and nine alternating baseline/candidate pairs. The median paired `baseline wall / candidate wall` ratio was 0.9805480112706042. Its implied paired time reduction, `1 - 1 / median ratio`, was -1.9838%. Only one pair favored the candidate, and none reached 5% improvement. A/A was within its declared bound, with a maximum ratio deviation of 1.8347%. Independently calculated arm medians were 466.455 ms and 476.815 ms. Those independent medians are a separate statistic and do not replace the paired estimator. This capture contains no separate GPU kernel timing result.
+
+All 44 retained LONG decision outputs matched exactly, including raw probability vectors. Both MEDIUM outputs matched exactly and fell back to the original path. Verification compared layers 0 through 30, each with 6,291,456 active elements and 128 canaries, for totals of 195,035,136 active and 3,968 canary comparisons. All mismatch, nonfinite and canary-change counters were zero. Layer 31 was not executed in this prefill path and retains null comparison counters. Tuning snapshots were unchanged, and all 12 candidate warmup and timed requests consumed the expected 31-layer permits.
+
+The [follow-up evidence package](benchmarks/gpu-epilogues-followup-2026-11-07/README.md) retains those complete output vectors, the explicit unexecuted layer, all timing pairs, 63 source identities, eight inherited-FD proofs, and the exact external-release receipt. All 20 tracked processes were absent, the scope was collected, and the free-lock probe passed. Kev Q8 fusion remains private and disabled by default. No production runtime or default changed.
 
 ## Native Q8 AVX-512 panel controls
 
@@ -89,3 +109,5 @@ The [evidence package README](benchmarks/host-followup-experiments-2026-11-07/RE
 The [host-controls evidence package](benchmarks/host-controls-2026-11-07/README.md) preserves the Q8 panel controls, the separate AA250 baseline control, and the startup diagnostic with their complete retained timing captures and source identities. Its manifest records exact file hashes and archive hashes. The raw startup and lease-event logs are excluded, so the published independent audit is a selected report and cannot reproduce the full startup validator or thread inventory.
 
 The [GPU epilogues evidence package](benchmarks/gpu-epilogues-2026-11-07/README.md) preserves the rejected Laya R5 comparison, its raw timing and correctness projections, the 67-pin source packet, selected lease proofs, and the Q8 setup failure and timeout evidence. It excludes model weights, WASM binaries, and large process and lock-table dumps.
+
+The [GPU epilogue follow-up package](benchmarks/gpu-epilogues-followup-2026-11-07/README.md) preserves the rejected Laya BN32 and completed Kev Q8 v6r2 comparisons, with raw-input hashes and exact projection field selections. The failed Q8 v6r1 launch remains separately labeled. The package retains all Q8 measured output vectors and the Laya response-retention limitation. It excludes model and WASM payloads and full process, thread and global lock-table dumps.
