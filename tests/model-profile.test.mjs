@@ -26,6 +26,15 @@ function result(profile) {
 }
 
 const runs = () => [0, 1].flatMap((block) => [false, true].map((profile) => ({ block, profile, result: result(profile) })));
+const requestStageRuns = () => runs().map((run) => {
+  const scale = run.profile ? 1.25 : 1;
+  run.result.cases[0].samples.forEach((sample, index) => {
+    sample.prepare = (0.2 + index * 0.05) * scale;
+    sample.forward = (0.2 + index * 0.05) * scale;
+    sample.total = sample.prepare + sample.forward + (0.1 + index * 0.05) * scale;
+  });
+  return run;
+});
 
 test("the observed GPU upload exhaustion is a blocked resource limit, not a failed model", () => {
   const reason = "WebGPU: high-performance: out of GPU memory while uploading model weights: Not enough memory left.; low-power: out of GPU memory while uploading model weights: Not enough memory left.";
@@ -172,6 +181,21 @@ test("uncached cases require distinct measured requests even when unique is asse
   assert.doesNotThrow(() => validateProfileRun(r, { ...expected, profile: false, cacheMode: "cached" }));
 });
 
+test("optional request stage timings are complete and consistent across measured samples", () => {
+  const partial = result(false);
+  partial.cases[0].samples[0].prepare = 0.2;
+  assert.throws(() => validateProfileRun(partial, { ...expected, profile: false }), /partial request stage timing fields/);
+
+  const malformed = result(false);
+  malformed.cases[0].samples.forEach((sample) => Object.assign(sample, { prepare: 0.2, forward: 0.2, total: 0.5 }));
+  malformed.cases[0].samples[1].forward = Infinity;
+  assert.throws(() => validateProfileRun(malformed, { ...expected, profile: false }), /invalid request stage timing values/);
+
+  const mixed = requestStageRuns();
+  for (const field of ["prepare", "forward", "total"]) delete mixed[0].result.cases[0].samples[1][field];
+  assert.throws(() => summarizeProfileRuns(mixed, { shapes: [0] }), /mixed request stage timing coverage/);
+});
+
 test("family response aliases preserve Laya and pointer contracts without weakening pack identity", () => {
   assert.equal(responseModelName({ model: { name: "laya" }, config: {} }), "laya-rl-agent");
   assert.equal(responseModelName({ model: { name: "kev-4b" }, config: { arch: "kev" } }), "kev-latest");
@@ -197,6 +221,7 @@ test("separate timing modes retain raw samples, kernel shares and repeated block
   assert.deepEqual(entry.wall.blockMediansMs, [2, 2]);
   assert.equal(entry.wall.samples.length, 6);
   assert.equal(entry.gpu.samples.length, 6);
+  assert.equal(Object.hasOwn(entry, "requestStages"), false);
   assert.equal(entry.gpu.kernels[0].name, "projection");
   assert.equal(Object.hasOwn(entry.gpu, "kernelAttribution"), false);
   assert.deepEqual(Object.keys(entry.gpu.kernels[0]), ["name", "medianMs", "share"]);
@@ -204,6 +229,59 @@ test("separate timing modes retain raw samples, kernel shares and repeated block
   assert.deepEqual(entry.tokenRange, [10, 12]);
   assert.equal(summary.correctness.maxProbabilityDelta, 0);
   assert.deepEqual(metrics(Array.from({ length: 20 }, (_, i) => i + 1), [[1, 2]]).p95Ms, 19);
+});
+
+test("request stage summaries retain samplewise residuals, fractions, lanes, and block identity", () => {
+  const summary = summarizeProfileRuns(requestStageRuns(), { shapes: [0] });
+  const stages = summary.cases[0].requestStages;
+  assert.ok(stages.attribution.includes("architecture-specific"));
+  assert.deepEqual(stages.wall.blocks.map(({ block }) => block), [0, 1]);
+  assert.deepEqual(stages.gpuProfiler.blocks.map(({ block }) => block), [0, 1]);
+
+  const wallSample = stages.wall.blocks[0].samples[0];
+  assert.equal(wallSample.sampleIndex, 0);
+  assert.equal(wallSample.requestHash, createHash("sha256").update("0").digest("hex"));
+  assert.equal(wallSample.tokens, 10);
+  assert.equal(wallSample.reportedPrepareMs, 0.2);
+  assert.equal(wallSample.reportedForwardMs, 0.2);
+  assert.equal(wallSample.reportedTotalMs, 0.5);
+  assert.ok(Math.abs(wallSample.postForwardResidualMs - 0.1) < 1e-12);
+  assert.equal(wallSample.outerResidualMs, 0.5);
+  assert.equal(wallSample.prepareOfRuntimeTotal, 0.4);
+  assert.equal(wallSample.forwardOfRuntimeTotal, 0.4);
+  assert.ok(Math.abs(wallSample.postForwardResidualOfRuntimeTotal - 0.2) < 1e-12);
+  assert.ok(Math.abs(wallSample.postForwardResidualOfWall - 0.1) < 1e-12);
+  assert.equal(wallSample.runtimeTotalOfWall, 0.5);
+  assert.equal(wallSample.outerResidualOfWall, 0.5);
+  assert.equal(stages.gpuProfiler.blocks[0].samples[0].reportedPrepareMs, 0.25);
+
+  const residual = stages.wall.distributions.postForwardResidualMs;
+  assert.equal(residual.samples.length, 6);
+  assert.ok(Math.abs(residual.medianMs - 0.15) < 1e-12);
+  assert.ok(Math.abs(residual.p95Ms - 0.2) < 1e-12);
+  assert.deepEqual(residual.blockMediansMs.map((value) => Math.round(value * 100)), [15, 15]);
+  const fraction = stages.wall.distributions.prepareOfRuntimeTotal;
+  assert.equal(fraction.samples.length, 6);
+  assert.equal(fraction.samples[0], 0.4);
+  assert.ok(Math.abs(fraction.median - 0.3846153846153846) < 1e-12);
+  assert.deepEqual(fraction.blockMedians, [fraction.median, fraction.median]);
+
+  const wallResidualFraction = stages.wall.distributions.postForwardResidualOfWall;
+  assert.equal(wallResidualFraction.samples.length, 6);
+  assert.ok(Math.abs(wallResidualFraction.samples[0] - 0.1) < 1e-12);
+  assert.ok(Math.abs(wallResidualFraction.median - 0.075) < 1e-12);
+  assert.ok(Math.abs(wallResidualFraction.p95 - 0.1) < 1e-12);
+  assert.deepEqual(wallResidualFraction.blockMedians.map((value) => Math.round(value * 1000)), [75, 75]);
+});
+
+test("request stage residuals preserve small signed timer-rounding differences", () => {
+  const data = requestStageRuns();
+  const sample = data[0].result.cases[0].samples[0];
+  Object.assign(sample, { prepare: 0.1, forward: 0.2, total: 0.3 });
+  assert.doesNotThrow(() => validateProfileRun(data[0].result, { ...expected, profile: false }));
+  const residual = summarizeProfileRuns(data, { shapes: [0] }).cases[0].requestStages.wall.blocks[0].samples[0].postForwardResidualMs;
+  assert.ok(residual < 0);
+  assert.equal(residual, sample.total - sample.prepare - sample.forward);
 });
 
 test("cross-lane raw probability drift fails above tolerance even when each lane is stable", () => {
