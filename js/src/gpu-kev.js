@@ -430,14 +430,17 @@ export class GpuKev {
     this.owned.push(this.g2);
     this.finalG = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
     this.owned.push(this.finalG);
-    if (!this.carry) this.ensureCarries(CACHE_SLOTS + 1, CACHE_SLOTS * SLOT_ROWS + 1024);
+    if (!this.carry) {
+      if (this.stateCacheEnabled === false) this.ensureCarries(Math.max(P, 1), Math.max(T1, 16));
+      else this.ensureCarries(CACHE_SLOTS + 1, CACHE_SLOTS * SLOT_ROWS + 1024);
+    }
     this.build();
   }
 
   /**
-   * Carry storage: CACHE_SLOTS slots that outlive a pass (the cross-request state cache, with
-   * SLOT_ROWS rows of keys and values each) plus scratch slots and rows for states this pass
-   * does not cache. Growing it drops the cache and rebuilds the bind groups.
+   * Carry storage: when caching is enabled, CACHE_SLOTS retained slots with SLOT_ROWS rows
+   * of keys and values each, plus scratch slots and rows for states this pass does not cache.
+   * Growing it drops the cache and rebuilds the bind groups.
    */
   ensureCarries(slots, rows) {
     const c = this.carrySize || { slots: 0, rows: 0 };
@@ -471,6 +474,8 @@ export class GpuKev {
    */
   plan(batch, ids) {
     const slotRows = SLOT_ROWS;
+    const cacheSlots = this.stateCacheEnabled === false ? 0 : CACHE_SLOTS;
+    if (!cacheSlots) this.lru = [];
     const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
     const starts = (a, p) => p.length < a.length && p.every((v, i) => v === a[i]);
     // Newly planned states run concurrently. Only retained states from a completed pass
@@ -480,8 +485,8 @@ export class GpuKev {
     const carries = [];
     const segs = [];
     const copies = [];
-    let scratchSlot = CACHE_SLOTS;
-    let scratchRow = CACHE_SLOTS * slotRows;
+    let scratchSlot = cacheSlots;
+    let scratchRow = cacheSlots * slotRows;
     const fresh = new Map();
     batch.states.forEach(([start, len], r) => {
       if (!len) return carries.push(null);
@@ -507,11 +512,11 @@ export class GpuKev {
       let dst;
       let kvBase;
       let entry = null;
-      if (len >= CACHE_MIN && len <= slotRows) {
+      if (cacheSlots && len >= CACHE_MIN && len <= slotRows) {
         let victim = null;
-        if (this.lru.length < CACHE_SLOTS) {
+        if (this.lru.length < cacheSlots) {
           const used = new Set(this.lru.map((e) => e.slot));
-          victim = { slot: [...Array(CACHE_SLOTS).keys()].find((k) => !used.has(k) && !pinned.has(k)) };
+          victim = { slot: [...Array(cacheSlots).keys()].find((k) => !used.has(k) && !pinned.has(k)) };
         } else {
           victim = this.lru.find((e) => !pinned.has(e.slot));
           if (victim) this.lru = this.lru.filter((e) => e !== victim);
@@ -773,14 +778,14 @@ export class GpuKev {
     const rowInput = x2?.table ? x2 : null;
     const B = branches.length;
     this.R = rows.length;
-    if (this.stateCacheEnabled === false) this.lru = [];
+    const cacheSlots = this.stateCacheEnabled === false ? 0 : CACHE_SLOTS;
     // size carries for the worst case first: growing them drops the cache, and the plan must
     // only reference slots that will still hold their data
     d.pushErrorScope("validation");
     d.pushErrorScope("out-of-memory");
     let plan, P, T1, setupError;
     try {
-      this.ensureCarries(batch.T1 ? CACHE_SLOTS + batch.states.length : 1, batch.T1 ? CACHE_SLOTS * SLOT_ROWS + batch.T1 : 16);
+      this.ensureCarries(batch.T1 ? cacheSlots + batch.states.length : 1, batch.T1 ? cacheSlots * SLOT_ROWS + batch.T1 : 16);
       plan = this.plan(batch, ids);
       P = plan.segs.length;
       T1 = plan.segs.reduce((a, g) => a + g.len, 0);
