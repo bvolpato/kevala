@@ -99,6 +99,7 @@ export class Kevala {
    *   threads     "auto" measures CPU worker counts (default); 1..16 overrides, capped by model
    *   cpuKernel   "auto" measures CPU register tiles (default), or "2x4" / "4x4"
    *   gpuKernel   GPU matrices: "auto" measures kernels (default), "generic", or "wide"
+   *   clefHead    Clef projections: guarded WebGPU "auto" (default), or "cpu" as a control
    *   stateCache  keep Kev/SemIf cross-request GPU state caches (default true); false disables
    *               cross-request reuse while retaining duplicate sharing within one pass. It is
    *               ignored by model families without a state cache; Kev/SemIf WASM rejects false
@@ -129,6 +130,7 @@ export class Kevala {
     if (options.backend != null && !["auto", "webgpu", "wasm"].includes(options.backend)) throw new Error('backend must be "auto", "webgpu", or "wasm"');
     if (options.submit != null && !["await", "split", "none"].includes(options.submit)) throw new Error('submit must be "await", "split", or "none"');
     if (options.gpuKernel !== undefined && !["auto", "generic", "wide"].includes(options.gpuKernel)) throw new Error('gpuKernel must be "auto", "generic", or "wide"');
+    if (options.clefHead !== undefined && !["cpu", "auto"].includes(options.clefHead)) throw new Error('clefHead must be "cpu" or "auto"');
     if (options.stateCache !== undefined && typeof options.stateCache !== "boolean") throw new TypeError("stateCache must be a boolean");
     if (options.precision != null && !["bf16", "f32", "q8"].includes(options.precision)) throw new Error('precision must be "bf16", "f32", or "q8"');
     if (options.vision != null && !(typeof options.vision === "string" || options.vision instanceof Blob || options.vision instanceof ArrayBuffer)) throw new TypeError("vision must be a companion pack URL, Blob, or ArrayBuffer");
@@ -167,7 +169,7 @@ export class Kevala {
     else if (typeof model?.url === "string") model = { ...model, url: onPageUrl(model.url) };
     const plugins = (opts.plugins || []).map(onPageUrl);
     const vision = typeof opts.vision === "string" ? onPageUrl(opts.vision) : opts.vision;
-    const options = { ...opts, model, vision, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
+    const options = { ...opts, clefHead: opts.clefHead ?? "auto", model, vision, plugins, wasmBase: opts.wasmBase || new URL("./", import.meta.url).href };
     try {
       let worker = spawn("./engine-worker.js");
       this.#worker = worker;

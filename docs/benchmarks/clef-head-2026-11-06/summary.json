@@ -1,0 +1,1256 @@
+{
+  "schemaVersion": 1,
+  "scope": "warm complete-request auto versus same-binary legacy CPU finish; separate runtime-v2 and final runtime-v3 trials, not universal optimality or accuracy",
+  "measuredRuntime": "4cd7f4932ec08a27852512d4ec854bd18f967bdfe782b2bda520c21e76a4be70",
+  "trials": [
+    {
+      "trial": 1,
+      "runtimeFingerprint": "4cd7f4932ec08a27852512d4ec854bd18f967bdfe782b2bda520c21e76a4be70",
+      "correctness": {
+        "cpuArmUsedOriginalFinish": true,
+        "everyArmPublicResponseEqual": true,
+        "everyAutoRequestUsedStagedPath": true,
+        "ok": true
+      },
+      "setup": {
+        "cache": false,
+        "modelLoadMs": 44906.70000000298,
+        "profile": false,
+        "singleGpuModel": true,
+        "stateCache": false
+      },
+      "protocol": {
+        "alternatingQuartets": 9,
+        "cache": "response cache disabled; state cache disabled",
+        "excluded": "load, warmups, setup, output hashing and comparisons",
+        "order": "ABBA/BAAB alternating",
+        "timed": "awaited full model.decide latency with performance.now",
+        "warmupsPerArm": 3
+      },
+      "rows": [
+        {
+          "name": "record-158",
+          "tokens": 158,
+          "mediansMs": {
+            "cpu": 374.79999999701977,
+            "auto": 263.34999999403954
+          },
+          "medianPairedAutoCpuRatio": 0.7161509335366646,
+          "reductionPercent": 28.38490664633354,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.7586741889859793,
+            0.6596617756874705,
+            0.6724572337727454,
+            0.6553228621490007,
+            0.7410102141007056,
+            0.6509497507611735,
+            0.7161509335366646,
+            0.7260109435646365,
+            0.8550231418273823
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 334.70000000298023,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": false
+            },
+            {
+              "elapsedMs": 548.6000000089407,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 286.29999999701977,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 382.3999999910593,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 350,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 245.90000000596046,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        },
+        {
+          "name": "record-251",
+          "tokens": 251,
+          "mediansMs": {
+            "cpu": 460.8500000014901,
+            "auto": 314.19999999552965
+          },
+          "medianPairedAutoCpuRatio": 0.6704485765144268,
+          "reductionPercent": 32.95514234855732,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6704485765144268,
+            0.6635412123876467,
+            0.7248434704748428,
+            0.6511165156020157,
+            0.666630470194361,
+            0.7480134973340057,
+            0.6852657261036997,
+            0.6922097219016148,
+            0.646940076502372
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 458.59999999403954,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 323.3999999910593,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 425.09999999403954,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 466.80000001192093,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 476.6000000089407,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 275.1000000089407,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        },
+        {
+          "name": "record-659",
+          "tokens": 659,
+          "mediansMs": {
+            "cpu": 1220.1000000014901,
+            "auto": 774.0500000044703
+          },
+          "medianPairedAutoCpuRatio": 0.6405543838526618,
+          "reductionPercent": 35.944561614733814,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6440927987169995,
+            0.6774488861746205,
+            0.6443741893646233,
+            0.6344152118707688,
+            0.6021480629006976,
+            0.6405543838526618,
+            0.6343326998359342,
+            0.6874661331294541,
+            0.640174506826494
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 1285.7000000029802,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 774.3000000119209,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 731.0999999940395,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 1212.2000000029802,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 1118.0999999940395,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 708.2000000029802,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trial": 2,
+      "runtimeFingerprint": "4cd7f4932ec08a27852512d4ec854bd18f967bdfe782b2bda520c21e76a4be70",
+      "correctness": {
+        "cpuArmUsedOriginalFinish": true,
+        "everyArmPublicResponseEqual": true,
+        "everyAutoRequestUsedStagedPath": true,
+        "ok": true
+      },
+      "setup": {
+        "cache": false,
+        "modelLoadMs": 38217.19999998808,
+        "profile": false,
+        "singleGpuModel": true,
+        "stateCache": false
+      },
+      "protocol": {
+        "alternatingQuartets": 9,
+        "cache": "response cache disabled; state cache disabled",
+        "excluded": "load, warmups, setup, output hashing and comparisons",
+        "order": "ABBA/BAAB alternating",
+        "timed": "awaited full model.decide latency with performance.now",
+        "warmupsPerArm": 3
+      },
+      "rows": [
+        {
+          "name": "record-158",
+          "tokens": 158,
+          "mediansMs": {
+            "cpu": 340.6499999985099,
+            "auto": 242.69999999552965
+          },
+          "medianPairedAutoCpuRatio": 0.7216016248701758,
+          "reductionPercent": 27.839837512982424,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6587466587319767,
+            0.7635357463424335,
+            0.7216016248701758,
+            0.7693156732477475,
+            0.7135226314166244,
+            0.7378100941069241,
+            0.7161404544012888,
+            0.6708689779258632,
+            0.7287410926241031
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 320.5,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": false
+            },
+            {
+              "elapsedMs": 513,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 276.3999999910593,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 369.5,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 372,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 250.79999999701977,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        },
+        {
+          "name": "record-251",
+          "tokens": 251,
+          "mediansMs": {
+            "cpu": 463.8999999985099,
+            "auto": 334.1000000014901
+          },
+          "medianPairedAutoCpuRatio": 0.7115425645515896,
+          "reductionPercent": 28.845743544841042,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6520031421881789,
+            0.6340806208222779,
+            0.7115425645515896,
+            0.7072991936301006,
+            0.7496274217569854,
+            0.6970889878723058,
+            0.718557968046358,
+            0.7492378909412982,
+            0.7277056277120785
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 441.30000001192093,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 316.20000000298023,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 289.09999999403954,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 425.1000000089407,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 471.79999999701977,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 272.8999999910593,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        },
+        {
+          "name": "record-659",
+          "tokens": 659,
+          "mediansMs": {
+            "cpu": 1123.5,
+            "auto": 725.6000000014901
+          },
+          "medianPairedAutoCpuRatio": 0.632949777757419,
+          "reductionPercent": 36.7050222242581,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6351799956915217,
+            0.6322661983943955,
+            0.6292185122169656,
+            0.5930242709939456,
+            0.6553251095708105,
+            0.6955997319607056,
+            0.631530865272153,
+            0.6934710925465024,
+            0.632949777757419
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 1177.2000000029802,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 801.4000000059605,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 737.3999999910593,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 1138.4000000059605,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 1115.1000000089407,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 766.4000000059605,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "trial": 3,
+      "runtimeFingerprint": "eb46c3119c1befb08f1e63bcd3499583ed6684af00d9d6094caa845ca7754bc6",
+      "correctness": {
+        "cpuArmUsedOriginalFinish": true,
+        "everyArmPublicResponseEqual": true,
+        "everyAutoRequestUsedStagedPath": true,
+        "ok": true
+      },
+      "setup": {
+        "cache": false,
+        "modelLoadMs": 33471.89999999106,
+        "profile": false,
+        "singleGpuModel": true,
+        "stateCache": false
+      },
+      "protocol": {
+        "alternatingQuartets": 9,
+        "cache": "response cache disabled; state cache disabled",
+        "excluded": "load, warmups, setup, output hashing and comparisons",
+        "order": "ABBA/BAAB alternating",
+        "timed": "awaited full model.decide latency with performance.now",
+        "warmupsPerArm": 3
+      },
+      "rows": [
+        {
+          "name": "record-158",
+          "tokens": 158,
+          "mediansMs": {
+            "cpu": 348.25,
+            "auto": 258.3999999985099
+          },
+          "medianPairedAutoCpuRatio": 0.7302995056907493,
+          "reductionPercent": 26.97004943092507,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.713943268078869,
+            0.7875929102624294,
+            0.7227972027930346,
+            0.6792655139940311,
+            0.7302995056907493,
+            0.7862884877800738,
+            0.6928850664721512,
+            0.7413741374471952,
+            0.7485085509892236
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 358.70000000298023,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": false
+            },
+            {
+              "elapsedMs": 612.3999999910593,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 283.09999999403954,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 406.79999999701977,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 395.29999999701977,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 274.1000000089407,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        },
+        {
+          "name": "record-251",
+          "tokens": 251,
+          "mediansMs": {
+            "cpu": 494.30000000447035,
+            "auto": 343.3500000014901
+          },
+          "medianPairedAutoCpuRatio": 0.698755980864096,
+          "reductionPercent": 30.124401913590404,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6775552131576176,
+            0.8097845494749591,
+            0.6952748312477144,
+            0.6964107676969092,
+            0.7003864064282649,
+            0.6530101171974115,
+            0.698755980864096,
+            0.7630436976530353,
+            0.7324185248557269
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 516,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 344.70000000298023,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 333.8999999910593,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 476.09999999403954,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 491.70000000298023,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 307.6000000089407,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        },
+        {
+          "name": "record-659",
+          "tokens": 659,
+          "mediansMs": {
+            "cpu": 1230.2999999970198,
+            "auto": 838.6000000014901
+          },
+          "medianPairedAutoCpuRatio": 0.6720335717008787,
+          "reductionPercent": 32.79664282991212,
+          "winningQuartets": 9,
+          "quartets": 9,
+          "pairedRatios": [
+            0.6616057233680602,
+            0.6711647437698314,
+            0.6265879116368581,
+            0.6720335717008787,
+            0.7288142707310895,
+            0.7070544554462026,
+            0.6952096787419701,
+            0.6553789633419963,
+            0.6779488384816151
+          ],
+          "warmups": [
+            {
+              "elapsedMs": 1164.5,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 763,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 759.6000000089407,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 1222.7999999970198,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 1150.5999999940395,
+              "mode": "cpu",
+              "stageCalls": {
+                "begin": 0,
+                "cpuFinish": 1,
+                "memoryReady": 0,
+                "stagedFinish": 0
+              },
+              "validated": true
+            },
+            {
+              "elapsedMs": 787.2999999970198,
+              "mode": "auto",
+              "stageCalls": {
+                "begin": 1,
+                "cpuFinish": 0,
+                "memoryReady": 1,
+                "stagedFinish": 1
+              },
+              "validated": true
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "precision": {
+    "correctness": {
+      "everyCpuReferenceBit": true,
+      "everyGpuProjectionBit": true,
+      "everyProjectionInputBit": true,
+      "everyRawLogitBit": true,
+      "gpuStageNeverFellBack": true,
+      "ok": true,
+      "publicResponsesEqual": true,
+      "validate1PerFixture": true
+    },
+    "sourceUnchanged": true,
+    "runtimeFingerprint": "4cd7f4932ec08a27852512d4ec854bd18f967bdfe782b2bda520c21e76a4be70",
+    "cases": [
+      {
+        "name": "record-158",
+        "tokens": 158,
+        "projections": 7,
+        "inputF32Words": 1617920,
+        "outputF32Words": 2103296,
+        "rawLogits": {
+          "comparedOutputBits": 2,
+          "mismatches": 0,
+          "nonfiniteActual": 0,
+          "nonfiniteExpected": 0,
+          "ok": true
+        }
+      },
+      {
+        "name": "record-251",
+        "tokens": 251,
+        "projections": 7,
+        "inputF32Words": 2570240,
+        "outputF32Words": 3341312,
+        "rawLogits": {
+          "comparedOutputBits": 2,
+          "mismatches": 0,
+          "nonfiniteActual": 0,
+          "nonfiniteExpected": 0,
+          "ok": true
+        }
+      },
+      {
+        "name": "record-659",
+        "tokens": 659,
+        "projections": 7,
+        "inputF32Words": 6748160,
+        "outputF32Words": 8772608,
+        "rawLogits": {
+          "comparedOutputBits": 2,
+          "mismatches": 0,
+          "nonfiniteActual": 0,
+          "nonfiniteExpected": 0,
+          "ok": true
+        }
+      }
+    ]
+  },
+  "finalPrecision": {
+    "everyCpuReferenceBit": true,
+    "everyGpuProjectionBit": true,
+    "everyProjectionInputBit": true,
+    "everyRawLogitBit": true,
+    "gpuStageNeverFellBack": true,
+    "ok": true,
+    "publicResponsesEqual": true,
+    "validate1PerFixture": true
+  },
+  "finalDefault": {
+    "defaultAuto": true,
+    "everyUserStaged": true,
+    "firstUserReusedValidation": true,
+    "ok": true,
+    "publicResponsesEqual": true,
+    "warmupValidated": true
+  },
+  "centralGuards": [
+    {
+      "attempt": 1,
+      "status": "failed",
+      "sourceChanged": false,
+      "sourceFingerprint": "51d72e81385d5e729c4e21cd1fda89aa3152dbda2253394288fc3c3c5df23333",
+      "counts": {
+        "registered": 84,
+        "compiled": 81,
+        "numericallyValidated": 0,
+        "isolatedTimed": 0,
+        "profiledTimed": 0,
+        "compositeTimed": 0,
+        "failed": 2,
+        "unsupported": 3,
+        "unmeasured": 81
+      }
+    },
+    {
+      "attempt": 2,
+      "status": "failed",
+      "sourceChanged": false,
+      "sourceFingerprint": "1f55aef1bee9c6a3801b620bec9aca195a750b9680a3cec8c22eebc0da34c900",
+      "counts": {
+        "registered": 84,
+        "compiled": 0,
+        "numericallyValidated": 0,
+        "isolatedTimed": 0,
+        "profiledTimed": 0,
+        "compositeTimed": 0,
+        "failed": 84,
+        "unsupported": 0,
+        "unmeasured": 84
+      }
+    },
+    {
+      "attempt": 3,
+      "status": "failed",
+      "sourceChanged": false,
+      "sourceFingerprint": "1f55aef1bee9c6a3801b620bec9aca195a750b9680a3cec8c22eebc0da34c900",
+      "counts": {
+        "registered": 84,
+        "compiled": 81,
+        "numericallyValidated": 0,
+        "isolatedTimed": 0,
+        "profiledTimed": 0,
+        "compositeTimed": 0,
+        "failed": 2,
+        "unsupported": 3,
+        "unmeasured": 81
+      }
+    },
+    {
+      "attempt": 4,
+      "status": "failed",
+      "sourceChanged": false,
+      "sourceFingerprint": "1f55aef1bee9c6a3801b620bec9aca195a750b9680a3cec8c22eebc0da34c900",
+      "counts": {
+        "registered": 84,
+        "compiled": 81,
+        "numericallyValidated": 0,
+        "isolatedTimed": 0,
+        "profiledTimed": 0,
+        "compositeTimed": 0,
+        "failed": 2,
+        "unsupported": 3,
+        "unmeasured": 81
+      }
+    },
+    {
+      "attempt": 5,
+      "status": "partial",
+      "sourceChanged": false,
+      "sourceFingerprint": "1f55aef1bee9c6a3801b620bec9aca195a750b9680a3cec8c22eebc0da34c900",
+      "counts": {
+        "registered": 84,
+        "compiled": 81,
+        "numericallyValidated": 2,
+        "isolatedTimed": 0,
+        "profiledTimed": 0,
+        "compositeTimed": 2,
+        "failed": 0,
+        "unsupported": 3,
+        "unmeasured": 79
+      }
+    }
+  ],
+  "finalIdentity": {
+    "runtime": "staged-runtime-v3",
+    "fingerprint": "eb46c3119c1befb08f1e63bcd3499583ed6684af00d9d6094caa845ca7754bc6",
+    "rustSourceFingerprint": "8b7f43f4247542966cf4ef1c92730a90e208ed7327456024da98940941b407ad",
+    "validation": "staged-validation-v4",
+    "qa": "production-v3",
+    "qaArtifact": {
+      "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/staged-parity/production-v3/kevala-relaxed-qa.wasm",
+      "bytes": 1393219,
+      "sha256": "228df30e89a9b511c852de44c29d14e945c3dbfc6872c7ed309a2ea852804d9f"
+    },
+    "proof": [
+      "campaign/clef-projection/staged-v3/clef-default-v3-1.json",
+      "campaign/clef-projection/staged-v3/clef-final-parity-v3-1.json",
+      "campaign/clef-projection/staged-v3/clef-final-wall-v3-1.json"
+    ],
+    "scope": "final source/default proof and final wall trial are separate from the earlier runtime-v2 trials"
+  },
+  "historicalValidationSourceGaps": [
+    {
+      "referencedBy": "campaign/staged-validation-v1/check-wasm.json",
+      "path": "js/src/gpu-clef-head.js",
+      "sha256": "93cc3febea87f7f133c7b7a7ceb73c7fe02dbbbddfc2fb0281b2afcbfd7641bf",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-validation-v1/source.json",
+      "path": "crates/kevala-wasm/src/clef_head.rs",
+      "sha256": "b91b97f617a108486581a4842f44afa07165b0c05ee8039ed2e684ab498fc3e6",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-validation-v1/source.json",
+      "path": "crates/kevala/src/clef/head/staged.rs",
+      "sha256": "de20f6bcc471fdc3fb202dad232fcfc6bf7b047e12549e41dccb60721a1864ca",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-js-validation-v1.json",
+      "path": "tests/clef-head.test.mjs",
+      "sha256": "d40ac5b374a7389ae9364d44b0ee95481e723bf96dfab11acae88c24aa12cafe",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-js-validation-v1.json",
+      "path": "tests/load-recovery.test.mjs",
+      "sha256": "353c5b4b698c703e8534cae386808ffa49daf66c3d63eca57cfd81396319c1f8",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-js-validation-v2.json",
+      "path": "js/src/gpu-clef-head.js",
+      "sha256": "ed3a93ac53a27407b6e730de88bac92602cbe2de188d2f1902ba5438fdb07b8a",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-js-validation-v2.json",
+      "path": "tests/clef-head.test.mjs",
+      "sha256": "f9ec239c35641c4b76061d1a7404fed082a2076d5027448b948d7f557189c6c6",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-js-validation-v3.json",
+      "path": "tests/clef-head.test.mjs",
+      "sha256": "90fe496b8b555a8c39cc70a9e98ac7f1d3d45f93e1edbf00369d4c9c4d8c1749",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    },
+    {
+      "referencedBy": "campaign/staged-js-validation-v3.json",
+      "path": "tests/load-recovery.test.mjs",
+      "sha256": "353c5b4b698c703e8534cae386808ffa49daf66c3d63eca57cfd81396319c1f8",
+      "archivedAt": [],
+      "scope": "overwritten validation-only source revision; receipt retained, bytes unavailable"
+    }
+  ],
+  "archives": [
+    {
+      "path": "raw/central-guards.json.gz",
+      "bytes": 78782,
+      "sha256": "bbff2b5f583b245cd2a88342b945f25444320965c6a25fabfad1f1c4ded93528",
+      "decodedBytes": 933429,
+      "decodedSha256": "4a069c70e0dea67be321e09dad492aef9d55ead1af00c7b1c9c9d59189b28290"
+    },
+    {
+      "path": "raw/controller-source.json.gz",
+      "bytes": 161493,
+      "sha256": "40a0f8ec8c8064f16ca5ddb22648232e488f67e0e8811e4538fda147d4280011",
+      "decodedBytes": 475538,
+      "decodedSha256": "f9a07738e7196c1dfab0034c2e3139299727ba7d342f176b78e789dbe63bae07"
+    },
+    {
+      "path": "raw/final-proof.json.gz",
+      "bytes": 124771,
+      "sha256": "a17a07ab5f18b582ac3e4ee5107db0de7ff21eacb2d6361ab5572e4f5bfd94d1",
+      "decodedBytes": 590472,
+      "decodedSha256": "c27fef959efb5ac6c9400441ced6d1f45b3762730615ca5891936495c595b5e3"
+    },
+    {
+      "path": "raw/js-validation.json.gz",
+      "bytes": 64075,
+      "sha256": "0edb67a38c0aca3a7b4f57de42c8b53053a4f3cf48618ee973f98b54e18dfe51",
+      "decodedBytes": 250117,
+      "decodedSha256": "f3195e8a763b3187235a0ef617338ed0c12a0954330f62256e33755fd4863178"
+    },
+    {
+      "path": "raw/old-capture-source.json.gz",
+      "bytes": 868729,
+      "sha256": "a1e50f921f2842b86dfd5b4eaabed005771b4d8e0cde06f91f2f3ad01b6d123d",
+      "decodedBytes": 2938781,
+      "decodedSha256": "178f18157dcfb6126e31476dc7655f7bf63077c23497da78ad5e6eb34ee0e948"
+    },
+    {
+      "path": "raw/precision-wall.json.gz",
+      "bytes": 129308,
+      "sha256": "1d31676d9dbdb131ce83274449ae2bdae2bf5daa89fcc78255193a86c2d17c6b",
+      "decodedBytes": 666036,
+      "decodedSha256": "b1b66a4d6ebdd3473581ace6c8674b83eed84a8d0dbb8d422c7b7f19095dc861"
+    },
+    {
+      "path": "raw/predecessor-probes.json.gz",
+      "bytes": 618283,
+      "sha256": "d91e701043612c43b3769d05f8d4b4b40e9db9b11481c5c0c8bdfdaab14c1f35",
+      "decodedBytes": 6976391,
+      "decodedSha256": "c41bb8fede1513f220be10e1e2f5c79f22c4c764c8d164866948ab40939ed3a2"
+    },
+    {
+      "path": "raw/production-validation.json.gz",
+      "bytes": 119700,
+      "sha256": "6279d980011ba520c6139e6a731b30e9c4508b4f811bbe00e218870ba671f0b5",
+      "decodedBytes": 377837,
+      "decodedSha256": "7f35a7b75fc4e084d01b7ddd129161fd3d3fa46e6d6c8a18e6376844138bd7ef"
+    },
+    {
+      "path": "raw/publication-source.json.gz",
+      "bytes": 22209,
+      "sha256": "8d7b5e1dc1d454cac30dd4dbe891d2774a4d321bd749d979fcc77941b91d181c",
+      "decodedBytes": 59798,
+      "decodedSha256": "f0ce81710c9aa5b3a2732c12e1adc82a59a91a6b77195aa444b2b65a70019dd5"
+    },
+    {
+      "path": "raw/qa-source.json.gz",
+      "bytes": 1066055,
+      "sha256": "a4a5de15e0c1094642dce5655fe7ab9974d0940060097b7f7aa84594db41b7d5",
+      "decodedBytes": 3605899,
+      "decodedSha256": "89a0f2fd861171fa2b1b4a1bc3ddbab4556605fe3bf01ce0292476e804e40cc4"
+    },
+    {
+      "path": "raw/rejected-diagnostics.json.gz",
+      "bytes": 72882,
+      "sha256": "75f687421fb2724a8ee6361a701e8c05621256ce55d09f4c8ee3452bc55b1dec",
+      "decodedBytes": 314728,
+      "decodedSha256": "d7aa3cb0ed18371bb5eef404e64bf779f41c0abbbe16b03ffdd95a1bc454f493"
+    },
+    {
+      "path": "raw/runtime-source.json.gz",
+      "bytes": 1566017,
+      "sha256": "afd4c3052c4d6961a40b594483a6397874f840c84392970976332bd7cd2af30a",
+      "decodedBytes": 5255713,
+      "decodedSha256": "b2fef35aab556229b0d81ebef61326bfd8a3a06dc6f93f26ebda0fed70e9f5c1"
+    },
+    {
+      "path": "raw/staged-harness-source.json.gz",
+      "bytes": 90586,
+      "sha256": "59e308b44a48366e7cc2c111daa0f6d6920b6d02005ff5350163849da347fa24",
+      "decodedBytes": 279932,
+      "decodedSha256": "e44cb8a1052ca2a17b897f2294e81101ed0e662cd0580857e66b22b6237c08db"
+    },
+    {
+      "path": "raw/startup-diagnostics.json.gz",
+      "bytes": 167438,
+      "sha256": "2678180587e67d132c157d9c6981ab3bd34cacfb2c7c3c3f432fc8eafd0663a7",
+      "decodedBytes": 1047791,
+      "decodedSha256": "8b673a8a4d2742a584a01be4c3a8f5c7eef7f68dc474985a11b8d2a1dd28dc12"
+    }
+  ],
+  "manifest": {
+    "path": "manifest.json"
+  }
+}

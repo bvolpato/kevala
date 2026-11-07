@@ -182,6 +182,8 @@ For GPU measurements across the seven Laya, Kev, and SemIf models on Firefox/Lin
 The [FP32 performance reference](docs/performance-reference.md) records native GEMM
 measurements, browser feature limits and kernel experiments that did not earn a production change.
 The [profiling guide](docs/kernel-profiling.md) covers every catalog model and registered kernel.
+The [Clef GPU head report](docs/clef-head-performance.md) records median paired latency reductions
+of 27–37% for warm Clef-flash Q8 requests across three trials on the Linux test host, with full-logit parity.
 
 The [September 25 M4 Max kernel sweep](docs/m4-max-kernel-performance.md) compares
 all registered kernels, records rejected experiments, and validates the retained optimizations.

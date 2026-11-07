@@ -9,8 +9,11 @@ use crate::store::Store;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::sync::Arc;
+use std::sync::OnceLock;
 
-#[derive(Clone, Debug)]
+pub mod staged;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HeadConfig {
     pub hidden: usize,
     pub width: usize,
@@ -121,6 +124,8 @@ pub struct Head {
     tensors: HashMap<String, TensorInfo>,
     lexical: Option<TensorInfo>,
     panel: Vec<f32>,
+    staged_eligible: OnceLock<bool>,
+    staged_config: HeadConfig,
 }
 
 impl Head {
@@ -142,7 +147,8 @@ impl Head {
         } else {
             None
         };
-        Ok(Self { cfg, store, tensors, lexical, panel: Vec::new() })
+        let staged_config = cfg.clone();
+        Ok(Self { cfg, store, tensors, lexical, panel: Vec::new(), staged_eligible: OnceLock::new(), staged_config })
     }
 
     fn values(&self, name: &str) -> &[f32] {
@@ -183,13 +189,24 @@ impl Head {
     }
 
     fn attention(&mut self, queries: &[f32], memory: &[f32], name: &str) -> Vec<f32> {
+        self.attention_with_kv(queries, memory, name, None)
+    }
+
+    fn attention_with_kv(
+        &mut self,
+        queries: &[f32],
+        memory: &[f32],
+        name: &str,
+        prepared_kv: Option<&[f32]>,
+    ) -> Vec<f32> {
         let w = self.cfg.width;
         let (nq, nm, hd) = (queries.len() / w, memory.len() / w, w / self.cfg.heads);
-        let shared = std::ptr::eq(queries, memory);
+        let shared = prepared_kv.is_none() && std::ptr::eq(queries, memory);
         let query_stride = if shared { 3 * w } else { w };
         let query = self.attention_projection(queries, name, 0..query_stride);
-        let projected_memory = (!shared).then(|| self.attention_projection(memory, name, w..3 * w));
-        let (memory, memory_stride, key_offset, value_offset) = match projected_memory.as_deref() {
+        let projected_memory =
+            (!shared && prepared_kv.is_none()).then(|| self.attention_projection(memory, name, w..3 * w));
+        let (memory, memory_stride, key_offset, value_offset) = match prepared_kv.or(projected_memory.as_deref()) {
             Some(memory) => (memory, 2 * w, 0, w),
             None => (query.as_slice(), 3 * w, w, 2 * w),
         };
@@ -258,7 +275,7 @@ impl Head {
         record: &Record,
         lexical_means: &[f32],
     ) -> Result<Vec<Vec<f32>>, String> {
-        let (d, w) = (self.cfg.hidden, self.cfg.width);
+        let d = self.cfg.hidden;
         if hidden.len() != record.ids.len() * d || record.ids.is_empty() || record.questions.is_empty() {
             return Err("clef head: hidden rows do not match the encoded record".into());
         }
@@ -268,18 +285,30 @@ impl Head {
         }
         let sequence = self.norm(hidden, "hidden_norm", d);
         let memory = self.project(&sequence, "memory_projection", false);
+        self.forward_prepared(&sequence, &memory, record, lexical_means, None)
+    }
+
+    fn forward_prepared(
+        &mut self,
+        sequence: &[f32],
+        memory: &[f32],
+        record: &Record,
+        lexical_means: &[f32],
+        prepared_kv: Option<&[&[f32]]>,
+    ) -> Result<Vec<Vec<f32>>, String> {
+        let (d, w) = (self.cfg.hidden, self.cfg.width);
         let global = &sequence[sequence.len() - d..];
         let mut question_vectors = Vec::new();
         let mut lexical = Vec::new();
         let mut queries = Vec::new();
         let mut counts = Vec::new();
         for q in &record.questions {
-            let question = mean_span(&sequence, d, q.span)?;
+            let question = mean_span(sequence, d, q.span)?;
             let option_question = self.project(&question, "option_question_projection", false);
             question_vectors.extend(&question);
             counts.push(q.option_spans.len());
             for span in &q.option_spans {
-                let context = mean_span(&sequence, d, *span)?;
+                let context = mean_span(sequence, d, *span)?;
                 if span.0 >= span.1 || span.1 > record.ids.len() {
                     return Err("clef head: invalid option span".into());
                 }
@@ -296,8 +325,16 @@ impl Head {
         for i in 0..self.cfg.routing {
             let p = format!("evidence_layers.{i}");
             let qn = self.norm(&queries, &format!("{p}.query_norm"), w);
-            let mn = self.norm(&memory, &format!("{p}.memory_norm"), w);
-            add(&mut queries, &self.attention(&qn, &mn, &format!("{p}.attention")));
+            let mn = prepared_kv.is_none().then(|| self.norm(memory, &format!("{p}.memory_norm"), w));
+            add(
+                &mut queries,
+                &self.attention_with_kv(
+                    &qn,
+                    mn.as_deref().unwrap_or(memory),
+                    &format!("{p}.attention"),
+                    prepared_kv.map(|kv| kv[i]),
+                ),
+            );
             let qn = self.norm(&queries, &format!("{p}.feedforward_norm"), w);
             add(&mut queries, &self.feedforward(&qn, &format!("{p}.feedforward.0"), &format!("{p}.feedforward.3")));
         }
@@ -332,7 +369,15 @@ impl Head {
             let normalized = self.norm(&fields, &format!("{p}.norm1"), w);
             add(&mut fields, &self.attention(&normalized, &normalized, &format!("{p}.self_attn")));
             let normalized = self.norm(&fields, &format!("{p}.norm2"), w);
-            add(&mut fields, &self.attention(&normalized, &memory, &format!("{p}.multihead_attn")));
+            add(
+                &mut fields,
+                &self.attention_with_kv(
+                    &normalized,
+                    memory,
+                    &format!("{p}.multihead_attn"),
+                    prepared_kv.map(|kv| kv[self.cfg.routing + i]),
+                ),
+            );
             let normalized = self.norm(&fields, &format!("{p}.norm3"), w);
             add(&mut fields, &self.feedforward(&normalized, &format!("{p}.linear1"), &format!("{p}.linear2")));
         }
@@ -398,7 +443,7 @@ mod tests {
     use crate::pack::Writer;
     use crate::store::{load_store, AlignedBuf};
 
-    fn head() -> Head {
+    pub(super) fn head() -> Head {
         let fixture = Value::parse(include_str!("../../../../tests/fixtures/clef-head.json")).unwrap();
         let cfg = HeadConfig::from_json(fixture.get("config").unwrap()).unwrap();
         let mut writer = Writer::new(Value::Null, Value::Null, vec![]);

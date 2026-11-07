@@ -189,7 +189,13 @@ layer and returns only the rows the head reads. Kernels:
 
 Clef gathers input embeddings directly into the decoder's GPU buffer, including ordered rows from
 multiple table shards. Its lexical option means retain the original F32 accumulation order and use
-a per-model LRU cache capped at 8 MiB and 256 entries. The joint head still runs in WebAssembly.
+a per-model LRU cache capped at 8 MiB and 256 entries. The joint head can run its seven large
+F32 projections on WebGPU; normalization, attention, and the final readout remain in WebAssembly.
+The default `clefHead: "auto"` validates every projection against the CPU during the first eligible
+request, normally model-load warmup. It requires the relaxed coordinator and CPU tile 0, checks
+operand ranges and memory budgets, and falls back to the CPU when those conditions fail.
+Use `clefHead: "cpu"` as a comparison control. The
+[Clef head report](clef-head-performance.md) records bit parity and paired complete-request timings.
 
 Gemma's grid gate/up fusion supports suffix lengths 97 through 112 under its existing Q8 F32
 BM56 policy. Each length needs exact output and partial-buffer checks and a stable timing win.

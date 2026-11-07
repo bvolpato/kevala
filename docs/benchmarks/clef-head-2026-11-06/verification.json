@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "archiveCount": 14,
+  "fileCount": 872,
+  "compressedBytes": 5150328,
+  "requiredSourceGaps": 0,
+  "historicalValidationGapReferences": 9,
+  "sourceReferences": 6539,
+  "winningQuartets": 81,
+  "timedCalls": 324,
+  "finalRuntimeFingerprint": "eb46c3119c1befb08f1e63bcd3499583ed6684af00d9d6094caa845ca7754bc6",
+  "finalRustFingerprint": "8b7f43f4247542966cf4ef1c92730a90e208ed7327456024da98940941b407ad"
+}

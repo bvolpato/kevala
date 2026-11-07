@@ -27,6 +27,18 @@ pub struct ClefEngine {
 }
 
 impl ClefEngine {
+    pub fn begin_staged_head(
+        &self,
+        records: &[Record],
+        hidden: &[f32],
+        lexical: &[f32],
+        validate: bool,
+    ) -> Result<head::staged::StagedHead, &'static str> {
+        head::staged::StagedHead::begin(&self.head, records, hidden, lexical, validate, |rows| {
+            self.model.normalize_hidden_staged(rows);
+        })
+    }
+
     pub fn load(buf: AlignedBuf) -> Result<Self, String> {
         let (store, header) = load_store(buf)?;
         let cfg = KevConfig::from_json(header.config())?;

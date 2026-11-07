@@ -365,6 +365,39 @@ fn rms_norm(x: &[f32], d: usize, w: &[f32], eps: f32, out: &mut [f32]) {
     }
 }
 
+fn rms_norm_in_place(rows: &mut [f32], d: usize, w: &[f32], eps: f32) {
+    let complete_len = rows.len() / d * d;
+    for row in rows[..complete_len].chunks_exact_mut(d) {
+        let mut s = F4::zero();
+        for c in (0..d).step_by(4) {
+            let v = unsafe { F4::load(row.as_ptr().add(c)) };
+            s = s.fma(v, v);
+        }
+        let inv = 1.0 / (s.hsum() / d as f32 + eps).sqrt();
+        for c in 0..d {
+            row[c] = row[c] * inv * w[c];
+        }
+    }
+    rows[complete_len..].fill(0.0);
+}
+
+#[cfg(test)]
+#[test]
+fn staged_rms_norm_preserves_immutable_kernel_bits() {
+    for d in [8, 4096] {
+        let original: Vec<_> = (0..3 * d).map(|i| ((i % 47) as f32 - 17.) * 0.03125).collect();
+        let weights: Vec<_> = (0..d).map(|i| 0.5 + (i % 7) as f32 * 0.0625).collect();
+        let mut expected = vec![0.; original.len()];
+        rms_norm(&original, d, &weights, 1e-6, &mut expected);
+        let mut actual = original.clone();
+        rms_norm_in_place(&mut actual, d, &weights, 1e-6);
+        assert_eq!(
+            expected.iter().map(|v| v.to_bits()).collect::<Vec<_>>(),
+            actual.iter().map(|v| v.to_bits()).collect::<Vec<_>>()
+        );
+    }
+}
+
 #[inline]
 fn silu(x: f32) -> f32 {
     x / (1.0 + (-x).exp())
@@ -575,6 +608,11 @@ impl KevModel {
         let mut normalized = vec![0.; rows.len()];
         rms_norm(rows, self.cfg.hidden, self.store.f32s(&self.norm), self.cfg.eps, &mut normalized);
         rows.copy_from_slice(&normalized);
+    }
+
+    /// The staged Clef head owns this private copy. The ordinary finish path is unchanged.
+    pub fn normalize_hidden_staged(&self, rows: &mut [f32]) {
+        rms_norm_in_place(rows, self.cfg.hidden, self.store.f32s(&self.norm), self.cfg.eps);
     }
 
     /// Run this trunk on existing causal hidden rows without applying the final norm. A
