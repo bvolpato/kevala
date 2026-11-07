@@ -1,0 +1,18 @@
+{
+  "rawSourceSha256": "1c35f869acbf17c874f49f10c67016dc3270f870103ef2d764da360806e32f7b",
+  "error": "q8-swiglu page did not expose its terminal flag before timeout",
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "156.0.8078.4",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    }
+  }
+}

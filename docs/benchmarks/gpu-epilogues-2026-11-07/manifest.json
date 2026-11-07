@@ -1,0 +1,287 @@
+{
+  "schemaVersion": 1,
+  "plan": {
+    "path": "archive-plan.json",
+    "bytes": 24400,
+    "sha256": "010673fe6adff6c0283852ab10080993506f1c08f0a8057358cf2e82b469f4fe"
+  },
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 186588,
+    "sha256": "5d0523cf79807617a12a0d9ea58d0ba2e962dc04a0c2223336b51788a89f9793",
+    "decodedBytes": 803766,
+    "decodedSha256": "a8fc41b41b60c738a6405d4f8f5a270e8b2bde69f6c8c94a6cfcc56102b5bc56"
+  },
+  "files": [
+    {
+      "path": "docs/benchmarks/gpu-epilogues-2026-11-07/README.md",
+      "bytes": 6260,
+      "sha256": "97245be4194375eab1cf250b13ae5e8232a83c68dd5bf4fc1439be6f472e6c09"
+    },
+    {
+      "path": "docs/benchmarks/gpu-epilogues-2026-11-07/archive-plan.json",
+      "bytes": 24400,
+      "sha256": "010673fe6adff6c0283852ab10080993506f1c08f0a8057358cf2e82b469f4fe"
+    },
+    {
+      "path": "docs/benchmarks/gpu-epilogues-2026-11-07/archive-publication.mjs",
+      "bytes": 12581,
+      "sha256": "0451dbf1f6a563439496e90833b4239ae99e663705235cc8011f6043d069b202"
+    },
+    {
+      "path": "docs/benchmarks/gpu-epilogues-2026-11-07/fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "path": "docs/benchmarks/gpu-epilogues-2026-11-07/lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    },
+    {
+      "path": "docs/host-followup-experiments.md",
+      "bytes": 18809,
+      "sha256": "e7515d8ace5ed6e3d310082b6213896a8e340a5abaeb4bcd738ef0047a129903"
+    },
+    {
+      "path": "evidence/laya-r5/browser-result.json",
+      "bytes": 190968,
+      "sha256": "82749339fabb755a15c71e0b081eb900146ba929367e6a4d0b7142264621b3cf"
+    },
+    {
+      "path": "evidence/laya-r5/chrome-gpu.log",
+      "bytes": 4265,
+      "sha256": "ab9fcf2fd0f1b9f206fe0e5e0732c64651c12e2987aafaf5dfccb13f59a79a0b"
+    },
+    {
+      "path": "evidence/laya-r5/controller-result.json",
+      "bytes": 15166,
+      "sha256": "1bfae0d1ce4d336b428340ed03f409f6f16f827dec332edc0f73cc8fbed7cad8"
+    },
+    {
+      "path": "evidence/laya-r5/external-release-v1.json",
+      "bytes": 1744,
+      "sha256": "2f48c5b412c0d4bdf760893f5e07cb96fd703387c1a6412b97fbe9c7db66e6be"
+    },
+    {
+      "path": "evidence/laya-r5/lease-events/000-node-own-bind-before-preflight.json",
+      "bytes": 1400,
+      "sha256": "ba08f660fca630d1881961163abdf2451ec72294255d67b86ce5a091536d6893"
+    },
+    {
+      "path": "evidence/laya-r5/lease-events/001-before-chrome-executable-read.json",
+      "bytes": 1399,
+      "sha256": "21ed3c65b012979e32d765e6e294047a9a186b9a72c7c1192894390cfe685820"
+    },
+    {
+      "path": "evidence/laya-r5/lease-events/002-before-pack-and-wasm-read.json",
+      "bytes": 1395,
+      "sha256": "a3893496fbfb9a55d96e08306aed3a53b39d57f2ceef48f82f7724e9d19edf45"
+    },
+    {
+      "path": "evidence/laya-r5/lease-events/003-before-browser-controller.json",
+      "bytes": 1395,
+      "sha256": "ef8e6b49b572846343c65f9c3b8296e96485fede181ca6a75cc9082dfaf397ff"
+    },
+    {
+      "path": "evidence/laya-r5/lease-events/004-after-browser-controller.json",
+      "bytes": 1394,
+      "sha256": "10d9b77348a36ad136e23fa33f2d9d3109a12fd6c44aaee6a1d5133cbf389c71"
+    },
+    {
+      "path": "evidence/laya-r5/lease-events/005-after-owned-cleanup.json",
+      "bytes": 1389,
+      "sha256": "0338486941ff7a3920a9fdf1992f1f5c377908907da4eb038b7ef5bfa9d4b5d6"
+    },
+    {
+      "path": "evidence/laya-r5/runtime-manifest.json",
+      "bytes": 12745,
+      "sha256": "9d54c30299e69e81c9cf7468c435ffc898422d46aedc551b97d420a6be08160b"
+    },
+    {
+      "path": "evidence/q8-v4/r1-controller-projection.json",
+      "bytes": 6944,
+      "sha256": "755bdc394b6505eeb3f617e9fc158959856c7df45913a958b71795858f2f75e7"
+    },
+    {
+      "path": "evidence/q8-v4/r1-external-release.json",
+      "bytes": 848,
+      "sha256": "162a4fe3548077cb862b86a4591f4829209150f1c84bf3b612ec93ea5c146e8e"
+    },
+    {
+      "path": "evidence/q8-v4/r2-chrome-gpu.log",
+      "bytes": 4430,
+      "sha256": "1fa6c0ac1feac0b57c32e66bdea9082534a1955b7adac6b2e3adddd0b0be2645"
+    },
+    {
+      "path": "evidence/q8-v4/r2-controller-projection.json",
+      "bytes": 15178,
+      "sha256": "b41a644bb41e8006e6b3dbcdc461c3412f8fb06c3c96257746c825f385cb7cdd"
+    },
+    {
+      "path": "evidence/q8-v4/r2-external-release.json",
+      "bytes": 2229,
+      "sha256": "a8e1036a193785baa63874f9e8c7f9bb5c49e659fa63c54e1a4daa311fd8ee2d"
+    },
+    {
+      "path": "evidence/q8-v4/r2-result-projection.json",
+      "bytes": 546,
+      "sha256": "105937f1ae8fafac55c3807729fd07799a1f2dbf8059d1b0739410fcab300fcf"
+    },
+    {
+      "path": "evidence/q8-v5/r1-controller-projection.json",
+      "bytes": 4011,
+      "sha256": "aa869972637f61f20ea3ba6050d92dfad01ec9227daa69bdb3ab9839dbd25270"
+    },
+    {
+      "path": "evidence/q8-v5/r1-external-release.json",
+      "bytes": 1983,
+      "sha256": "7c6c338cbcf8ab747764570c56bb4ecd8512f43d98fa0ca85c86575e25e8b625"
+    },
+    {
+      "path": "evidence/q8-v5/r1-result-projection.json",
+      "bytes": 1325,
+      "sha256": "0fdaa7039e6f8c70e4255c4ab1ca17052cf63c3833f537151f6be97993e6fc9f"
+    },
+    {
+      "path": "source/laya-r5/dev/laya-geglu-private.html",
+      "bytes": 228,
+      "sha256": "3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07"
+    },
+    {
+      "path": "source/laya-r5/dev/laya-geglu-private.js",
+      "bytes": 17706,
+      "sha256": "78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0"
+    },
+    {
+      "path": "source/laya-r5/js/src/gpu-laya-geglu-epilogue.js",
+      "bytes": 13158,
+      "sha256": "72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738"
+    },
+    {
+      "path": "source/laya-r5/js/src/gpu-laya.js",
+      "bytes": 16457,
+      "sha256": "f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5"
+    },
+    {
+      "path": "source/laya-r5/scripts/private/laya-geglu-browser.py",
+      "bytes": 13514,
+      "sha256": "93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8"
+    },
+    {
+      "path": "source/laya-r5/scripts/private/laya-geglu-controller-packet.json",
+      "bytes": 43071,
+      "sha256": "fbda89c1a7806776456605c85e085ae41750483c59ab6913f21ac5a9b4da822b"
+    },
+    {
+      "path": "source/laya-r5/scripts/private/laya-geglu-protocol.json",
+      "bytes": 18208,
+      "sha256": "5c6dda26af52e5af14c3cd62c70f4b82d019649e59d443c607a1cac13a81acef"
+    },
+    {
+      "path": "source/laya-r5/scripts/private/laya-geglu-protocol.mjs",
+      "bytes": 8719,
+      "sha256": "e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496"
+    },
+    {
+      "path": "source/laya-r5/scripts/private/run-laya-geglu.mjs",
+      "bytes": 29209,
+      "sha256": "b1954a3f5411d49d37717407ec05c424e13868f61b05a4e0685425b845f8d82f"
+    },
+    {
+      "path": "source/session/session_bus.py",
+      "bytes": 5979,
+      "sha256": "bac20966653dfaf8cbd7df636c03d02e77ee80b4ac1e9ac9931a6a30bb40c716"
+    },
+    {
+      "path": "source/shared/bench-gpu.py",
+      "bytes": 86154,
+      "sha256": "eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0"
+    }
+  ],
+  "exclusions": {
+    "sources": [
+      {
+        "sourceId": "laya-r5-browser-result-raw",
+        "path": "/runner/containment",
+        "bytes": 577191,
+        "reason": "Full process, TID, cgroup, and containment snapshots are omitted; the source pin is the SHA-256 of the complete browser JSON."
+      },
+      {
+        "sourceId": "laya-r5-controller-raw",
+        "path": "/page",
+        "bytes": 701030,
+        "reason": "The controller embeds the full browser result; the dedicated browser projection preserves selected timing and correctness evidence without this duplicate."
+      },
+      {
+        "sourceId": "laya-r5-controller-raw",
+        "path": "/childCleanup/finalControllerBookend,/childCleanup/finalMembers,/childCleanup/finalProcesses",
+        "reason": "Raw final process and thread snapshots are omitted; selected cleanup summary and complete controller source hash are retained."
+      },
+      {
+        "sourceIds": [
+          "laya-r5-lease-000",
+          "laya-r5-lease-001",
+          "laya-r5-lease-002",
+          "laya-r5-lease-003",
+          "laya-r5-lease-004",
+          "laya-r5-lease-005"
+        ],
+        "path": "/discoveryGlobalRaw,/canonicalDescriptors,/fdInventory,/observation",
+        "reason": "Global lock-table text and large process or descriptor inventories are omitted; each source hash and selected own-FD proof rows are retained."
+      },
+      {
+        "sourceId": "q8-r2-result-raw",
+        "path": "/runner/containment",
+        "bytes": 514438,
+        "reason": "The raw Q8 result source hash is in sourceReferences and the compact docs projection retains its exact terminal error."
+      },
+      {
+        "sourceId": "q8-v5-r1-controller-raw",
+        "path": "/scope/initialMembers,/cleanup/observedOwnedChildren,/scopeAfterCleanup",
+        "reason": "Raw process identities are omitted; the selected cleanup summary and exact external-release receipt remain."
+      },
+      {
+        "sourceId": "q8-v5-r1-result-raw",
+        "path": "/runner/containment",
+        "bytes": 543330,
+        "reason": "Browser process and thread snapshots are omitted; the raw result source hash and small timeout projection remain."
+      },
+      {
+        "path": "tmp/laya-q8.kevala",
+        "bytes": 478886720,
+        "sha256": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+        "reason": "Model pack payload is not read or archived; its identity comes from the retained controller metadata."
+      },
+      {
+        "path": "CI80 run 42379873911 WASM base",
+        "bytes": 1375771,
+        "sha256": "793351ff820ca6818eae749c09c829f974fe718d805447bd2141ab99b4c1e831",
+        "reason": "Binary excluded; source packet and controller retain its exact identity."
+      },
+      {
+        "path": "CI80 run 42379873911 WASM simd",
+        "bytes": 1382096,
+        "sha256": "f463d88be692c2da5a609cade3216ff94cb05732ab560d0df72517afe9db67f5",
+        "reason": "Binary excluded; source packet and controller retain its exact identity."
+      },
+      {
+        "path": "CI80 run 42379873911 WASM relaxed",
+        "bytes": 1383425,
+        "sha256": "55aa0e56bce7a8f808d27c8db50767fb24102eb85d8d45bb369451c934836c0a",
+        "reason": "Binary excluded; source packet and controller retain its exact identity."
+      },
+      {
+        "path": "Laya R5 full per-sample response bodies",
+        "retained": false,
+        "reason": "The frozen harness checked complete response equality and finite outputs but did not retain per-sample full responses; those output bytes cannot be independently replayed from this bundle."
+      }
+    ],
+    "other": [
+      "No model weights, model pack payload, WASM binaries, browser executables, compiled libraries, build output, or unrelated campaign files.",
+      "No broad model-quality score or cross-device/browser ranking is asserted.",
+      "The six run lease projections establish only the retained process's own inherited-FD FLOCK rows. Global /proc/locks output is diagnostic and is not used as unique-owner proof.",
+      "Q8 v4 produced setup failure and timeout evidence only. Q8 v5-r1 produced a separate page bootstrap failure, monitor summary, and cleanup record, with no model numerical or performance result."
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+[803885:803903:1107/124748.397659:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803903:1107/124748.398043:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803903:1107/124748.398063:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803903:1107/124748.414934:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.457652:WARNING:ui/aura/window.cc:1509] StackChildLayerRelativeTo called with unmanaged layer(s). child=WebContentsViewAura child_managed=0 target=WebContentsViewAura target_managed=0
+[803885:803885:1107/124748.457675:WARNING:ui/aura/window.cc:1509] StackChildLayerRelativeTo called with unmanaged layer(s). child=WebContentsViewAura child_managed=0 target=WebContentsViewAura target_managed=0
+[803885:803885:1107/124748.465317:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803903:1107/124748.465387:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.465398:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803903:1107/124748.465419:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.467349:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803903:1107/124748.467415:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.472975:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803885:1107/124748.472990:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803903:1107/124748.473096:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.473376:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803885:1107/124748.476983:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803903:1107/124748.477031:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.479009:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803903:1107/124748.479045:ERROR:dbus/bus.cc:405] Failed to connect to the bus: Failed to connect to socket /tmp/kevala-sbus-dcgam1h8/absent.sock: No such file or directory
+[803885:803885:1107/124748.480683:ERROR:dbus/object_proxy.cc:572] Failed to call method: org.freedesktop.DBus.NameHasOwner: object_path= /org/freedesktop/DBus: unknown error type: 
+[803885:803885:1107/124748.480694:WARNING:ui/base/idle/idle_linux.cc:111] None of the known D-Bus ScreenSaver services could be used.
+[803922:803922:1107/124748.787672:WARNING:media/gpu/vaapi/vaapi_wrapper.cc:130] Should skip nVidia device named: nvidia-drm
+[803922:803922:1107/124748.801545:WARNING:sandbox/policy/linux/sandbox_linux.cc:405] InitializeSandbox() called with multiple threads in process gpu-process.
+[804121:9:1107/124748.886669:ERROR:gpu/ipc/client/command_buffer_proxy_impl.cc:277] ContextResult::kTransientFailure: Failed to send GpuControl.CreateCommandBuffer.
