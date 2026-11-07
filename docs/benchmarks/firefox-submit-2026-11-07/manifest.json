@@ -445,7 +445,7 @@
       },
       {
         "originalPath": "tmp/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/firefox/laya-q8/0-wall.json",
-        "archivePath": "capture-runner/tmp/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/firefox/laya-q8/0-wall.json.gz",
+        "archivePath": "capture-runner/reference/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/firefox/laya-q8/0-wall.json.gz",
         "compression": "gzip",
         "originalBytes": 33035,
         "originalSha256": "2f6316f374500475038c3dab3280223c25b568cb4b061cd676e79eccb37b7375",
@@ -454,7 +454,7 @@
       },
       {
         "originalPath": "tmp/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/summary-validated.json",
-        "archivePath": "capture-runner/tmp/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/summary-validated.json.gz",
+        "archivePath": "capture-runner/reference/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/summary-validated.json.gz",
         "compression": "gzip",
         "originalBytes": 2951113,
         "originalSha256": "65be25781abd02d79c9f0e209465fdba570498a8145472cd87cc096e8bb74922",
@@ -481,11 +481,6 @@
   ],
   "files": [
     {
-      "path": "README.md",
-      "bytes": 2169,
-      "sha256": "dad52ab5b65f34be9f66989b869a4a45cdf03652bb14ebe2ecced2165ea93b53"
-    },
-    {
       "path": "capture-runner/js/src/pack-layout.js",
       "bytes": 8838,
       "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
@@ -494,6 +489,16 @@
       "path": "capture-runner/js/src/source.js",
       "bytes": 33566,
       "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    {
+      "path": "capture-runner/reference/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/firefox/laya-q8/0-wall.json.gz",
+      "bytes": 4460,
+      "sha256": "e2bc86226820d701781553da4a6103eb3713a2cecab26e697fbf9cc3809b70b0"
+    },
+    {
+      "path": "capture-runner/reference/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/summary-validated.json.gz",
+      "bytes": 240383,
+      "sha256": "3a19203eb42a952affb718b5dbcd244c93a58517227ea03203a3a4aee146072a"
     },
     {
       "path": "capture-runner/scripts/bench-gpu.py",
@@ -516,16 +521,6 @@
       "sha256": "d075e6183cdefe931db03654e9812f7c1a96144f875bfc4f2759b634203744b9"
     },
     {
-      "path": "capture-runner/tmp/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/firefox/laya-q8/0-wall.json.gz",
-      "bytes": 4460,
-      "sha256": "e2bc86226820d701781553da4a6103eb3713a2cecab26e697fbf9cc3809b70b0"
-    },
-    {
-      "path": "capture-runner/tmp/kernel-profile-2026-11-06-I6lJc0/firefox-current-models/summary-validated.json.gz",
-      "bytes": 240383,
-      "sha256": "3a19203eb42a952affb718b5dbcd244c93a58517227ea03203a3a4aee146072a"
-    },
-    {
       "path": "derived-statistics.json",
       "bytes": 10466,
       "sha256": "846f19f16f8ed7c3ea342b987f2e87b12adf20287306390d831e5ffad58ae850"
@@ -539,6 +534,11 @@
       "path": "raw/runner.json.gz",
       "bytes": 7771,
       "sha256": "0613ab3f37d8f6493e343af104dd816f1c0a509af4383da11dbf6644fafd394c"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2300,
+      "sha256": "0d10f6a348bf2ab03af82afeaeeb570496400a821607604b4c44f55c8b301acf"
     },
     {
       "path": "runtime/identity.json",
