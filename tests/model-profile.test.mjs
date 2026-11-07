@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { MODELS } from "../js/src/source.js";
-import { adapterKey, classifyProfileFailure, inspectPack, metrics, profilePlan, responseModelName, SHAPES, summarizeProfileRuns, validateProfileRun, verifyPackHeader } from "../scripts/lib/model-profile.mjs";
+import { adapterKey, classifyProfileFailure, inspectPack, metrics, profilePlan, profileTuningSnapshot, responseModelName, SHAPES, splitResidentProfileBlocks, summarizeProfileRuns, validateProfileRun, verifyPackHeader } from "../scripts/lib/model-profile.mjs";
 
 const spec = { arch: "kev", repo: "test/model", revision: "a".repeat(40), precisions: ["q8", "bf16"] };
 const expected = { id: "test", arch: "kev", precision: "q8", spec, samples: 3, warmups: 1, shapes: [0], runtime: "http://localhost/js/src/index.js", packBytes: 4288, responseModel: "test" };
@@ -59,6 +59,41 @@ test("the profiling plan accounts for every catalog model and explicitly request
   assert.equal(rows.find((row) => row.id === "laya" && row.precision === "bf16").status, "unsupported");
   assert.throws(() => profilePlan(MODELS, { models: ["laya", "laya"] }), /unique/);
   assert.throws(() => profilePlan(MODELS, { models: ["unknown"] }), /catalog/);
+});
+
+test("resident lanes retain one load identity and an exact canonical tuning snapshot", () => {
+  const source = { z: 1, a: { y: true, x: null } };
+  const tuning = profileTuningSnapshot(source);
+  source.a.x = false;
+  assert.equal(tuning.planJson, '{"a":{"x":null,"y":true},"z":1}');
+  assert.equal(tuning.sha256, createHash("sha256").update(tuning.planJson).digest("hex"));
+  assert.deepEqual(tuning.value, { a: { x: null, y: true }, z: 1 });
+  assert.throws(() => profileTuningSnapshot({ hidden: undefined }), /non-JSON/);
+  assert.throws(() => profileTuningSnapshot({ invalid: NaN }), /non-finite/);
+
+  const page = { done: true, protocol: "resident", resident: { sessionId: "session-1", loadId: "load-1", tuning },
+    blocks: [0, 1].map((block) => ({ block, lanes: (block ? [true, false] : [false, true]).map((profile) => ({ profile, cases: [{ profile }] })) })) };
+  const lanes = splitResidentProfileBlocks(page, 2);
+  assert.deepEqual(lanes.map(({ block, profile }) => [block, profile]), [[0, false], [0, true], [1, true], [1, false]]);
+  assert.ok(lanes.every(({ result }) => result.resident.sessionId === "session-1" && result.resident.loadId === "load-1"));
+  assert.ok(lanes.every(({ result }) => result.resident.tuning.planJson === tuning.planJson && result.resident.tuning.sha256 === tuning.sha256));
+  assert.notStrictEqual(lanes[0].result.resident.tuning.value, lanes[1].result.resident.tuning.value);
+  assert.deepEqual(lanes[0].result.gpuTuning, JSON.parse(tuning.planJson));
+  lanes[0].result.resident.tuning.value.a.x = "mutated copy";
+  assert.equal(lanes[1].result.resident.tuning.value.a.x, null);
+  assert.throws(() => splitResidentProfileBlocks({ ...page, blocks: page.blocks.slice(0, 1) }, 2), /incomplete blocks/);
+
+  const numericTuning = profileTuningSnapshot({ ratio: 0.12130666177280236 });
+  const transportedTuning = { ...numericTuning, value: { ratio: 0.12130666177280237 } };
+  const numericPage = { ...page, resident: { ...page.resident, tuning: transportedTuning } };
+  const numericLane = splitResidentProfileBlocks(numericPage, 2)[0].result;
+  assert.equal(numericLane.resident.tuning.value.ratio, JSON.parse(numericTuning.planJson).ratio);
+  assert.equal(numericLane.gpuTuning.ratio, JSON.parse(numericTuning.planJson).ratio);
+
+  const comparisons = runs().map((run) => ({ ...run, result: { ...run.result, resident: structuredClone(lanes[1].result.resident) } }));
+  assert.doesNotThrow(() => summarizeProfileRuns(comparisons, { shapes: [0] }));
+  comparisons[1].result.resident.loadId = "load-2";
+  assert.throws(() => summarizeProfileRuns(comparisons, { shapes: [0] }), /share a session, model load/);
 });
 
 test("raw profile validation refuses changed identity, caches, timings, requests and adapters", () => {
@@ -169,6 +204,18 @@ test("separate timing modes retain raw samples, kernel shares and repeated block
   assert.deepEqual(entry.tokenRange, [10, 12]);
   assert.equal(summary.correctness.maxProbabilityDelta, 0);
   assert.deepEqual(metrics(Array.from({ length: 20 }, (_, i) => i + 1), [[1, 2]]).p95Ms, 19);
+});
+
+test("cross-lane raw probability drift fails above tolerance even when each lane is stable", () => {
+  const data = runs();
+  for (const run of data.filter((entry) => entry.profile)) for (const sample of run.result.cases[0].samples) {
+    sample.outputs[0].raw_probabilities.q.false -= 0.0006;
+    sample.outputs[0].raw_probabilities.q.true += 0.0006;
+  }
+  const withinLaneValues = (profile) => data.filter((run) => run.profile === profile).flatMap((run) => run.result.cases[0].samples.map((sample) => sample.outputs[0].raw_probabilities.q.true));
+  assert.equal(new Set(withinLaneValues(false)).size, 1);
+  assert.equal(new Set(withinLaneValues(true)).size, 1);
+  assert.throws(() => summarizeProfileRuns(data, { shapes: [0], probabilityTolerance: 0.0005 }), /exceeding 0.0005/);
 });
 
 test("different valid dispatch paths retain zero contributions and dispatch counts", () => {

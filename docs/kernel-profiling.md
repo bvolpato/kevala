@@ -50,11 +50,15 @@ pnpm profile:models --base=http://127.0.0.1:18171/ --models=laya --samples=3 --w
 pnpm profile:models --base=http://127.0.0.1:18171/ --precisions=q8,bf16 --samples=9 --warmups=3 --blocks=2 --output=tmp/profile-models
 ```
 
-Each block runs wall latency and a diagnostic GPU profile separately. The next block reverses their order. Requests use the same deterministic states, question definitions, and actual token counts. Pack and response/state caches are disabled. Model-internal resident buffers and guarded kernel optimizations remain enabled. Measurements exclude loading, tuning, and fixture hashing.
+The default `--protocol=resident` loads each model once with profiling disabled, then toggles profiling between wall and GPU diagnostic lanes. Each block runs these lanes separately. The next block reverses their order. Requests use the same deterministic states, question definitions, and actual token counts. Pack and response/state caches are disabled. Model-internal resident buffers and guarded kernel optimizations remain enabled. Measurements exclude loading, tuning, and fixture hashing.
+
+Resident lanes record a shared session ID, model-load ID, and exact canonical JSON and SHA-256 for the load-time GPU tuning snapshot. The snapshot is detached from runtime objects and transported as a string before parsing, so diagnostic numbers retain their original JSON representation. This identifies one load; per-shape caches may still evolve during measurement.
+
+Use `--protocol=isolated` to retain the older protocol, which loads a fresh model for every lane. Independent calibration can select different kernels and change raw probabilities. Keep these failed comparisons and their raw samples. Do not increase the probability tolerance to make them pass, or combine resident and isolated captures in one report. `--timeout` is the per-lane budget; the resident browser budget covers all lanes.
 
 The default cases are short, medium, and long text requests. Use `--shapes=0,1,2,3,4` for additional multi-question and batch cases when the model and device have enough memory. The default text cases do not establish image-inference or batch performance.
 
-All measurement blocks use the on-page engine in a fresh isolated browser. The report records that context. These wall timings are completed model-request latency, not camera sensor-to-screen or worker/UI latency.
+Each model/precision/browser row uses the on-page engine in a fresh isolated browser. Resident lanes share that browser and model load; isolated lanes start separate browsers. The report records that context. These wall timings are completed model-request latency, not camera sensor-to-screen or worker/UI latency.
 
 GPU profiles change execution. Each dispatch has its own timed pass, optional paths can change, and profiling disables the normal long-request chunking in some trunks. The default unprofiled submission policy waits between long-request chunks. A profile can therefore have very different wall latency. Do not subtract profiled kernel totals from unprofiled wall time to estimate overhead, or use profiled wall latency as an application speedup.
 

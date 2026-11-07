@@ -8,6 +8,74 @@ export const SHAPES = ["1 question, ~40 tokens", "1 question, ~128 tokens", "1 q
 const finite = (value) => typeof value === "number" && Number.isFinite(value);
 const check = (condition, message) => { if (!condition) throw new Error(message); };
 
+function canonicalJson(value) {
+  const active = new Set();
+  const encode = (item, path) => {
+    if (item === null) return "null";
+    if (typeof item === "string" || typeof item === "boolean") return JSON.stringify(item);
+    if (typeof item === "number") {
+      check(Number.isFinite(item), `GPU tuning snapshot contains a non-finite number at ${path}`);
+      return JSON.stringify(item);
+    }
+    check(typeof item === "object", `GPU tuning snapshot contains a non-JSON value at ${path}`);
+    check(!active.has(item), `GPU tuning snapshot contains a cycle at ${path}`);
+    active.add(item);
+    try {
+      if (Array.isArray(item)) {
+        const keys = Reflect.ownKeys(item).filter((key) => key !== "length");
+        check(keys.length === item.length && keys.every((key, index) => key === String(index)), `GPU tuning snapshot contains a sparse or extended array at ${path}`);
+        return `[${keys.map((key, index) => {
+          const descriptor = Object.getOwnPropertyDescriptor(item, key);
+          check(descriptor.enumerable && Object.hasOwn(descriptor, "value"), `GPU tuning snapshot contains a hidden or accessor array entry at ${path}[${index}]`);
+          return encode(descriptor.value, `${path}[${index}]`);
+        }).join(",")}]`;
+      }
+      const prototype = Object.getPrototypeOf(item);
+      check(prototype === Object.prototype || prototype === null, `GPU tuning snapshot contains a non-plain object at ${path}`);
+      const keys = Reflect.ownKeys(item);
+      check(keys.every((key) => typeof key === "string"), `GPU tuning snapshot contains a symbol key at ${path}`);
+      keys.sort();
+      return `{${keys.map((key) => {
+        const descriptor = Object.getOwnPropertyDescriptor(item, key);
+        check(descriptor.enumerable && Object.hasOwn(descriptor, "value"), `GPU tuning snapshot contains a hidden or accessor property at ${path}.${key}`);
+        return `${JSON.stringify(key)}:${encode(descriptor.value, `${path}.${key}`)}`;
+      }).join(",")}}`;
+    } finally { active.delete(item); }
+  };
+  return encode(value, "gpuTuning");
+}
+
+export function profileTuningSnapshot(value) {
+  const planJson = canonicalJson(value);
+  return { planJson, sha256: createHash("sha256").update(planJson).digest("hex"), value: JSON.parse(planJson) };
+}
+
+function residentProof(proof) {
+  check(proof && typeof proof === "object" && typeof proof.sessionId === "string" && proof.sessionId.length > 0
+    && typeof proof.loadId === "string" && proof.loadId.length > 0, "Resident profile is missing its shared session or model-load identity");
+  check(proof.tuning && typeof proof.tuning.planJson === "string" && /^[a-f0-9]{64}$/.test(proof.tuning.sha256), "Resident profile is missing its canonical tuning snapshot");
+  check(createHash("sha256").update(proof.tuning.planJson).digest("hex") === proof.tuning.sha256, "Resident tuning snapshot hash differs from its canonical JSON");
+  let value;
+  try { value = JSON.parse(proof.tuning.planJson); }
+  catch { throw new Error("Resident tuning snapshot is not valid JSON"); }
+  return { sessionId: proof.sessionId, loadId: proof.loadId,
+    tuning: { planJson: proof.tuning.planJson, sha256: proof.tuning.sha256, value } };
+}
+
+export function splitResidentProfileBlocks(page, expectedBlocks) {
+  check(page?.done === true && !page.error && page.protocol === "resident", "Resident benchmark did not complete with the resident protocol");
+  const proof = residentProof(page.resident);
+  check(Array.isArray(page.blocks) && page.blocks.length >= 2 && (expectedBlocks === undefined || page.blocks.length === expectedBlocks), "Resident benchmark returned incomplete blocks");
+  const { blocks, metricMs, metric, p50CaseMediansMs, ...common } = page;
+  return blocks.flatMap((entry, index) => {
+    check(entry?.block === index && Array.isArray(entry.lanes) && entry.lanes.length === 2, "Resident benchmark returned a missing or reordered lane block");
+    const expectedOrder = index % 2 ? [true, false] : [false, true];
+    check(entry.lanes.every((lane, laneIndex) => lane?.profile === expectedOrder[laneIndex] && Array.isArray(lane.cases)), "Resident benchmark returned an invalid or reordered lane");
+    return entry.lanes.map((lane) => ({ block: entry.block, profile: lane.profile,
+      result: { ...common, gpuTuning: JSON.parse(proof.tuning.planJson), profile: lane.profile, cases: lane.cases, resident: residentProof(proof) } }));
+  });
+}
+
 export function classifyProfileFailure(error, { stage = "browser" } = {}) {
   const reason = String(error?.message || error);
   const failed = { status: "failed", reasonCode: "measurement-failed", reason };
@@ -202,6 +270,15 @@ export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.00
   check([...blocks].every((block) => runs.filter((run) => run.block === block).length === 2 && runs.some((run) => run.block === block && run.profile) && runs.some((run) => run.block === block && !run.profile)), "Incomplete wall/profile block");
   const reference = runs[0].result;
   const hardware = adapterKey(reference.adapter);
+  const residentPresent = runs.map((run) => run.result.resident != null);
+  check(residentPresent.every(Boolean) || residentPresent.every((present) => !present), "Cannot mix resident and isolated profile lanes");
+  const resident = residentPresent[0] ? residentProof(reference.resident) : null;
+  if (resident) for (const run of runs.slice(1)) {
+    const candidate = residentProof(run.result.resident);
+    check(candidate.sessionId === resident.sessionId && candidate.loadId === resident.loadId
+      && candidate.tuning.planJson === resident.tuning.planJson && candidate.tuning.sha256 === resident.tuning.sha256,
+    "Resident profile lanes do not share a session, model load, and exact tuning snapshot");
+  }
   let maxProbabilityDelta = 0;
   let maxPublicNoulDelta = 0;
   const publicNoulTolerance = 2 * probabilityTolerance + answerUnit;
@@ -248,6 +325,6 @@ export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.00
       gpu: { ...metrics(gpuBlocks.flat(), gpuBlocks), kernels,
         ...(heterogeneous ? { kernelAttribution: "median per-request GPU timestamp contribution; labels absent from completed samples were not dispatched and contribute zero" } : {}) } };
   });
-  return { cases, correctness: { maxProbabilityDelta, probabilityTolerance, maxPublicNoulDelta, publicNoulTolerance,
+  return { cases, ...(resident ? { resident } : {}), correctness: { maxProbabilityDelta, probabilityTolerance, maxPublicNoulDelta, publicNoulTolerance,
     scope: "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark" } };
 }
