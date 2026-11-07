@@ -188,6 +188,8 @@ The [native AVX2 matrix report](docs/native-linear-performance.md) records media
 reductions of 17.5% for Laya Q8 and 14.9% for Kev-0.8B Q8 after load on one logical CPU.
 The follow-up [native 2×4 packing report](docs/native-2x4-performance.md) records further median paired
 reductions of 57% and 51% on the same host, with exact response parity and slower small-shape controls.
+The [native 4×4 selection report](docs/native-4x4-performance.md) records another 9.8% and 7.2%
+median paired reduction for those requests by selecting larger AVX2 tiles for large projections.
 The [Firefox submission report](docs/firefox-submission-performance.md) records a headless Laya Q8
 experiment with explicit split submission: a 512-token request's median fell from 592.5 ms to 91.5 ms.
 
