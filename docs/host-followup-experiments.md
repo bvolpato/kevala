@@ -1,6 +1,28 @@
 # Host follow-up experiments, 2026-11-07
 
-Four controlled host checks did not justify a production kernel or default change. The raw captures, original failures, and later corrections stay separate. These results describe the pinned experiment runtimes on one host. They do not describe current production behavior or broad browser performance.
+Four earlier controlled host checks did not justify a production kernel or default change. The additional Q8 controls and startup diagnostic below also preserve separate outcomes and limits. Raw captures, original failures, and later corrections stay separate. These results describe pinned experiment runtimes on one host. They do not describe current production behavior or broad browser performance.
+
+## Native Q8 AVX-512 panel controls
+
+The panel plan uses base commit `f4596f1d239ca84eb18255819f56684a5c5cf086`. Its code-generation gate ran in scope `kevala-q8-panel-v2-gates-20261107-r3.scope` and passed in actual CLI and probe builds, with default and global AVX2 modes. Each strict mode checked 12,028 cases and 8,697,298 values. The gate receipt SHA-256 is `6871878950bdc7b94e13f9cfbdc8074210d13fc9face3e756f455dad6cf597fe`; its source-index SHA-256 is `200919837a6f374a5355a442440b837c8b1068b36121a8e24b9421a9ca1a4029`.
+
+The separate `native-q8-panel-avx512-v2-r3` run in scope `kevala-q8-panel-v2-panel-20261107-r3.scope` timed a synthetic finite 4-row, K=1024 Q8 conversion panel with block size 32 and 131,072 repetitions. It did not read the model pack or run inference. The 25 ms calibration protocol used nine alternating quartets and retained 18 batch observations per arm. Its paired A/B panel ratio was 2.594092, with a range of 2.420875 to 2.919546 and 9 of 9 wins. The identical-library A/A file-copy control had a median ratio of 1.022512, a range of 0.923073 to 1.121150, and 6 of 9 wins. Seventeen A/B candidate batches were below the declared 25 ms target; no baseline batches were below it.
+
+The predeclared policy failed its A/A median and quartet checks, although the A/B median and quartet checks passed. The A/B result therefore remains an isolated conversion-panel result. It is not eligible for a real projection or production promotion. The panel summary SHA-256 is `9ea6b87a611e7b31485dc050ec187e3ca88e47965b75ea618fa10571f21e15f1`; the policy-decision SHA-256 is `a0b5c7182e45ea981d2d9b5da882c30da8758c931d96c20580571cfdae312455`.
+
+A distinct `native-q8-panel-aa250-v1` run in scope `kevala-q8-panel-v2-aa250-20261107-r1.scope` then measured only a baseline-versus-identical-baseline control. Both arms used library SHA-256 `0edb27c57af4246235bd73525dc87fb3ad8f9692ccad3e4657616530ff964a09` at distinct device/inode identities. It used the same 4-row, K=1024 synthetic fixture, but a separate 250 ms minimum-batch protocol. All 45 post-freeze batches met that minimum; the shortest was 303.845 ms. Its nine paired ratios had a median of 1.005728 and a range of 0.712690 to 1.072887. The median check passed its predeclared 0.98 to 1.02 interval, but two quartets failed the 0.95 to 1.05 interval. The independent arm-median ratio was 0.999440. The independent data audit passed, while the control policy failed. This run does not rescue the earlier A/B result. No projection, candidate timing, or promotion followed, and the measurement line stopped. The 25 ms and 250 ms protocols remain separate; the samples do not establish a cause for the A/A spread.
+
+The AA250 receipt SHA-256 is `6d57f30583dc347ef61e393693a4494c4ae955d621dc2fcb9ee750e789533d70`; its plan SHA-256 is `7719bec9a9d1df0698af5f82e0906cd24c2bd45cc936b3184db103a50a7ae5ea`, source-index SHA-256 is `76980f5362c7b1ae713297c56cb017e24f82ede7794932e962815b79b529b5a3`, and independent audit SHA-256 is `9feb034b726753afe8a261e6de2cc013bc978b03fb5984371f200f6393ce0f89`.
+
+## Clef startup affinity diagnostic
+
+The private ChromeService/session-bus startup diagnostic ran in scope `kevala-clef-affinity-startup-v1-private-sbus-r2-20261107.scope` and was stopped before browser navigation, payload access, or benchmark math. Its independent evidence audit passed validation of the retained records, while the run itself ended with an owned-tree affinity rejection. The session-bus endpoint was absent at both recorded bookends, the parent and system bus environment stayed unchanged, and the private empty directory was removed.
+
+The original affinity snapshots passed the CPU 7 check for their observed threads, including the anchor set. TID 46706 was absent from both snapshots. A later owned-tree guard found PID 46595, TID 46706, with an allowed CPU mask of `0-31` (`ffffffff`). The recorded thread start ticks and cgroup matched across the guard's reads, but the explicit identity-recheck flag remained false because the mask assertion raised. This does not establish that the thread changed from CPU 7 to all CPUs. The actor, mechanism, and driver cause remain unknown.
+
+The initial owned-tree snapshot covered 15 processes and 122 threads and found no app scopes. The final guard stopped at the affinity assertion after recording 10 processes and 66 threads. It did not reach the app-scope query, so `newAppScopes` is null and there is no complete final-tree pass. No model, GPU, numerical, or performance result came from this startup-only run.
+
+The startup plan SHA-256 is `49475c0bbadb4a47d8e0cc129fe2f5d656faad2d6cfe342146476d874567b75e`, source-index SHA-256 is `fd214a72b06d8541a3bfecfb54c21def47cc790832c2f87001a23ee3e39cbf1f`, original run-receipt SHA-256 is `06af6fbef28358e01d44763f03e66c09130bd000d59a20631d0c5c3a83ddd8cd`, and independent-audit SHA-256 is `d67d3da3f6e92f5b5e185bfb37424606b5b9707fd8f65f3812eacd1e263b04cf`.
 
 ## Matmul shape constants
 
@@ -43,3 +65,5 @@ This was Firefox 152.0.3 on a historical runtime. The one-ULP derived-ratio disc
 ## Evidence package
 
 The [evidence package README](benchmarks/host-followup-experiments-2026-11-07/README.md) lists the fixed source and raw-data inventory, exclusions, and review commands. The archive preserves original failed receipts separately from corrected supplemental evidence. It excludes weights, compiled WASM, full copied runtime trees, and the 19.5 MB ChromeDriver log.
+
+The [host-controls evidence package](benchmarks/host-controls-2026-11-07/README.md) preserves the Q8 panel controls, the separate AA250 baseline control, and the startup diagnostic with their complete retained timing captures and source identities. Its manifest records exact file hashes and archive hashes. The raw startup and lease-event logs are excluded, so the published independent audit is a selected report and cannot reproduce the full startup validator or thread inventory.

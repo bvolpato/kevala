@@ -1,0 +1,228 @@
+{
+  "schemaVersion": 1,
+  "plan": {
+    "path": "archive-plan.json",
+    "bytes": 19540,
+    "sha256": "01e55e1b80a77ceba45dfc34d8b5dd7538b74d54eb3e23dce535fd3de7cea0f7"
+  },
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 158417,
+    "sha256": "b7b3645ba8f688f49f6cafb5246ff351929588662f8ef0c13ec05ab0d449f661",
+    "decodedBytes": 563661,
+    "decodedSha256": "5111460e38b3deb9f03210f0588a400a65410db31f58610ffb155f0b79cd7c39"
+  },
+  "files": [
+    {
+      "path": "docs/benchmarks/host-controls-2026-11-07/README.md",
+      "bytes": 4706,
+      "sha256": "da8d73ecd712b187cb888a083c8428e1c81e662e2a83c5c70575473dc2037648"
+    },
+    {
+      "path": "docs/benchmarks/host-controls-2026-11-07/archive-plan.json",
+      "bytes": 19540,
+      "sha256": "01e55e1b80a77ceba45dfc34d8b5dd7538b74d54eb3e23dce535fd3de7cea0f7"
+    },
+    {
+      "path": "docs/benchmarks/host-controls-2026-11-07/archive-publication.mjs",
+      "bytes": 12426,
+      "sha256": "2cfcda95edb30303f508196c332f2f4e5bb8f7a13556b4525ca0e9c93787f7ed"
+    },
+    {
+      "path": "docs/benchmarks/host-controls-2026-11-07/fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "path": "docs/benchmarks/host-controls-2026-11-07/lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    },
+    {
+      "path": "docs/host-followup-experiments.md",
+      "bytes": 13474,
+      "sha256": "56ffad36fbca4069ebc2381921d22b3aca0ede2d05eb307743024c8cf7a59043"
+    },
+    {
+      "path": "evidence/clef-startup/r2/affinity.mjs",
+      "bytes": 5653,
+      "sha256": "802c978bec54552da03afd06258452a5144092ab855d84354cc126590eb10b3e"
+    },
+    {
+      "path": "evidence/clef-startup/r2/affinity_probe.py",
+      "bytes": 14000,
+      "sha256": "a2f0598a2e48e66afd55b5b95bd0b03f80a90fbfa20cfcc92fec818d04d53893"
+    },
+    {
+      "path": "evidence/clef-startup/r2/execution-final.json",
+      "bytes": 962,
+      "sha256": "14fed94fdaab7c6a6712073c14407d5ee2d4c1a01de04e9d087d3e97a4268e74"
+    },
+    {
+      "path": "evidence/clef-startup/r2/independent-audit.json",
+      "bytes": 10055,
+      "sha256": "d67d3da3f6e92f5b5e185bfb37424606b5b9707fd8f65f3812eacd1e263b04cf"
+    },
+    {
+      "path": "evidence/clef-startup/r2/inventory.json",
+      "bytes": 1586,
+      "sha256": "11e7f43a7d4854a63d5bacea206a1ccf7389ee73ce83cbf918eabf1684c7512c"
+    },
+    {
+      "path": "evidence/clef-startup/r2/owned_tree.py",
+      "bytes": 9162,
+      "sha256": "53f67f644657d2750a064f34259a689cfc52d505cf997423d49031f0109361da"
+    },
+    {
+      "path": "evidence/clef-startup/r2/plan.json",
+      "bytes": 27508,
+      "sha256": "49475c0bbadb4a47d8e0cc129fe2f5d656faad2d6cfe342146476d874567b75e"
+    },
+    {
+      "path": "evidence/clef-startup/r2/run-receipt.json",
+      "bytes": 29633,
+      "sha256": "06af6fbef28358e01d44763f03e66c09130bd000d59a20631d0c5c3a83ddd8cd"
+    },
+    {
+      "path": "evidence/clef-startup/r2/session_bus.py",
+      "bytes": 5979,
+      "sha256": "bac20966653dfaf8cbd7df636c03d02e77ee80b4ac1e9ac9931a6a30bb40c716"
+    },
+    {
+      "path": "evidence/clef-startup/r2/source-index.json",
+      "bytes": 13131,
+      "sha256": "fd214a72b06d8541a3bfecfb54c21def47cc790832c2f87001a23ee3e39cbf1f"
+    },
+    {
+      "path": "evidence/clef-startup/r2/validate-configuration.mjs",
+      "bytes": 11964,
+      "sha256": "13f40fc1a942f7fc064dc94b4f273752d5339f1dc4a57ed574fc42dca3f460e8"
+    },
+    {
+      "path": "evidence/clef-startup/r2/validate-startup.mjs",
+      "bytes": 5980,
+      "sha256": "799f1aa322c834a9d3056a5640052f316137865c996410b6611c8b90829cc761"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/data-audit-outcome.json",
+      "bytes": 10172,
+      "sha256": "9feb034b726753afe8a261e6de2cc013bc978b03fb5984371f200f6393ce0f89"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/data-audit-release.json",
+      "bytes": 1000,
+      "sha256": "4c9fdb7ba2130471f7271dde550f26e92d2126a055933aaa10583bfab7476491"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/execution-final.json",
+      "bytes": 905,
+      "sha256": "e074307da45f86fcd4e407d834151521360111b1157c3119e58b4f66729ae0e9"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/paired-aa250.jsonl",
+      "bytes": 12774,
+      "sha256": "fbadfb5b319243c0aa968746e7faba2a72ac32d492c696e3ffdc164bfd89227f"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/panel-samples.json",
+      "bytes": 2239,
+      "sha256": "d1b468c77e766bacaf8475dc0189d595037308269ea654fb076f4f8faa0475d6"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/plan.json",
+      "bytes": 6821,
+      "sha256": "7719bec9a9d1df0698af5f82e0906cd24c2bd45cc936b3184db103a50a7ae5ea"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/policy-decision.json",
+      "bytes": 277,
+      "sha256": "349b7b9d0907d00f73048ece2fcf2ecfdc2cf9b95f109961c95e86efb4e52b52"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/run-record.json",
+      "bytes": 1482,
+      "sha256": "7fd3dbfed9a022876d04724625a2cd1dfc1c3855a4b8478fa7106928be01d7fe"
+    },
+    {
+      "path": "evidence/q8-panel/aa250/source-index.json",
+      "bytes": 1942,
+      "sha256": "76980f5362c7b1ae713297c56cb017e24f82ede7794932e962815b79b529b5a3"
+    },
+    {
+      "path": "evidence/q8-panel/gates/data-audit-index.json",
+      "bytes": 2232,
+      "sha256": "0808ed782531887e45867c52b3dfc5f6f513a04b16bb63fa0c38ec9d76e5e457"
+    },
+    {
+      "path": "evidence/q8-panel/gates/data-audit-outcome.json",
+      "bytes": 2300,
+      "sha256": "e20aca1619bea45b1361de3298c5289ae0b6b5e5971635f2176b194bc739c291"
+    },
+    {
+      "path": "evidence/q8-panel/gates/receipt.json",
+      "bytes": 75189,
+      "sha256": "6871878950bdc7b94e13f9cfbdc8074210d13fc9face3e756f455dad6cf597fe"
+    },
+    {
+      "path": "evidence/q8-panel/r3/external-release.json",
+      "bytes": 766,
+      "sha256": "255ab24334e2554e4e7e078394196f2a8dbcb0c01b2aa85e44903214340c53a1"
+    },
+    {
+      "path": "evidence/q8-panel/r3/paired-panel.jsonl",
+      "bytes": 17974,
+      "sha256": "285fe95321dedadaceb7025349aaf4e5db7457854232d281ba478611cafed6b6"
+    },
+    {
+      "path": "evidence/q8-panel/r3/panel-samples.json",
+      "bytes": 4107,
+      "sha256": "c5b31ff36f8b1bae47905f0e3c205312635b1b57cd9c786a6743c167ce0ee2bb"
+    },
+    {
+      "path": "evidence/q8-panel/r3/plan.json",
+      "bytes": 15545,
+      "sha256": "bf78af0110e30d7ef2d27e393d89e2e2739027c23025bd3bbfe9f422adaaaff4"
+    },
+    {
+      "path": "evidence/q8-panel/r3/policy-decision.json",
+      "bytes": 777,
+      "sha256": "a0b5c7182e45ea981d2d9b5da882c30da8758c931d96c20580571cfdae312455"
+    },
+    {
+      "path": "evidence/q8-panel/r3/predeclared-25ms-policy.json",
+      "bytes": 1204,
+      "sha256": "67e8cc559004c5dbb498a9fef78cb6792603793f9aff0497813445f8f12dc8b7"
+    },
+    {
+      "path": "evidence/q8-panel/r3/run-record.json",
+      "bytes": 1820,
+      "sha256": "8e34eff2cffb10f08f022b6a77c3885ba62638c5e3695f1691999dc960cee237"
+    },
+    {
+      "path": "evidence/q8-panel/r3/source-index.json",
+      "bytes": 59780,
+      "sha256": "200919837a6f374a5355a442440b837c8b1068b36121a8e24b9421a9ca1a4029"
+    }
+  ],
+  "exclusions": {
+    "sources": [
+      {
+        "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/runs-v1/raw-startup.json",
+        "bytes": 1630593,
+        "sha256": "60693f4d8eeb2d4e3010db4369de623efa3bd2d83bd32ceb870095b40f2bb5f7",
+        "reason": "Raw startup capture is pinned by the independent audit but is omitted; the published audit is a selected report, not a full startup-validator or thread-inventory reproducer."
+      },
+      {
+        "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/runs-v1/lease-evidence.jsonl",
+        "bytes": 272518,
+        "sha256": "e9b10412d19b94425bfd833f4c9af492cdc5ecbc745965031ee5232cc0b32b59",
+        "reason": "Raw lease observations are pinned by the independent audit but omitted; the published audit does not reproduce the full lease validator inputs."
+      }
+    ],
+    "other": [
+      "model-pack bytes, payload tensors, and weights",
+      "all compiled shared libraries, driver binaries, and build outputs",
+      "unrelated campaign files, full host telemetry, and unselected command logs"
+    ]
+  }
+}

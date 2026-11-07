@@ -1,0 +1,522 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+  "sourceRoot": "canonical primary repository checkout containing tmp/sota-20261106-kdDTGn; the sparse documentation worktree does not contain the campaign inputs",
+  "previousSourcePinsV1": {
+    "report": {
+      "bytes": 13438,
+      "sha256": "f0674379cf2f9174e7f382bf9c3f895d331d219c866105717af5d052335b06f3"
+    },
+    "bundleReadme": {
+      "bytes": 3221,
+      "sha256": "6b5b78531a8cb13f244693e07e255b6759143f9ae04e17e96f72b95de602ceb8"
+    },
+    "archivePlan": {
+      "bytes": 16712,
+      "sha256": "e7fcb6e65ef5ab3e0a70549e2fd7461713b5826c885e9ee88eb7ddb886e128e9"
+    }
+  },
+  "reportPath": "docs/host-followup-experiments.md",
+  "bundleReadmePath": "docs/benchmarks/host-controls-2026-11-07/README.md",
+  "predeclaredPolicySha256": "67e8cc559004c5dbb498a9fef78cb6792603793f9aff0497813445f8f12dc8b7",
+  "archive": {
+    "plannedPath": "evidence.json.gz",
+    "maxDecodedBytes": 1048576,
+    "maxCompressedBytes": 262144,
+    "maxEntries": 64,
+    "entryOrder": "publisher sorts UTF-8 bytewise ascending by archivePath, independent of declaration order",
+    "derivedJson": "JSON.stringify with two-space indentation and one trailing newline",
+    "gzipMtimeSeconds": 0,
+    "overwrite": false,
+    "requiredLock": "/home/bruno/.cache/kevala/gpu-profile.lock",
+    "publisherPattern": "fixed-inventory publisher adapted from docs/benchmarks/host-followup-experiments-2026-11-07/archive-publication.mjs"
+  },
+  "sourcePins": [
+    {
+      "id": "published-report",
+      "path": "docs/host-followup-experiments.md",
+      "bytes": 13474,
+      "sha256": "56ffad36fbca4069ebc2381921d22b3aca0ede2d05eb307743024c8cf7a59043"
+    },
+    {
+      "id": "bundle-readme",
+      "path": "docs/benchmarks/host-controls-2026-11-07/README.md",
+      "bytes": 4706,
+      "sha256": "da8d73ecd712b187cb888a083c8428e1c81e662e2a83c5c70575473dc2037648"
+    },
+    {
+      "id": "q8-r3-plan",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/plan.json",
+      "bytes": 15545,
+      "sha256": "bf78af0110e30d7ef2d27e393d89e2e2739027c23025bd3bbfe9f422adaaaff4"
+    },
+    {
+      "id": "q8-r3-source-index",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/source-index.json",
+      "bytes": 59780,
+      "sha256": "200919837a6f374a5355a442440b837c8b1068b36121a8e24b9421a9ca1a4029"
+    },
+    {
+      "id": "q8-r3-panel-receipt",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/runs/panel-v1/receipt.json",
+      "bytes": 15423,
+      "sha256": "dc0eafc451b326cfc0cdfe3a2cac6c8af0362d06bdb39e511925a674d4faa24d"
+    },
+    {
+      "id": "q8-r3-panel-summary",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/runs/panel-v1/summary.json",
+      "bytes": 8369,
+      "sha256": "9ea6b87a611e7b31485dc050ec187e3ca88e47965b75ea618fa10571f21e15f1"
+    },
+    {
+      "id": "q8-r3-panel-jsonl",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/runs/panel-v1/paired-panel.stdout",
+      "bytes": 17974,
+      "sha256": "285fe95321dedadaceb7025349aaf4e5db7457854232d281ba478611cafed6b6"
+    },
+    {
+      "id": "q8-r3-policy-decision",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/panel-policy-decision-v1.json",
+      "bytes": 777,
+      "sha256": "a0b5c7182e45ea981d2d9b5da882c30da8758c931d96c20580571cfdae312455"
+    },
+    {
+      "id": "q8-r3-predeclared-25ms-policy",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-panel-policy-v1.json",
+      "bytes": 1204,
+      "sha256": "67e8cc559004c5dbb498a9fef78cb6792603793f9aff0497813445f8f12dc8b7"
+    },
+    {
+      "id": "q8-r3-gate-receipt",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/runs/gates-v1/receipt.json",
+      "bytes": 75189,
+      "sha256": "6871878950bdc7b94e13f9cfbdc8074210d13fc9face3e756f455dad6cf597fe"
+    },
+    {
+      "id": "q8-r3-data-audit-outcome",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/data-audit-r1/outcome.json",
+      "bytes": 2300,
+      "sha256": "e20aca1619bea45b1361de3298c5289ae0b6b5e5971635f2176b194bc739c291"
+    },
+    {
+      "id": "q8-r3-data-audit-index",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/data-audit-r1/final-index.json",
+      "bytes": 2232,
+      "sha256": "0808ed782531887e45867c52b3dfc5f6f513a04b16bb63fa0c38ec9d76e5e457"
+    },
+    {
+      "id": "q8-r3-panel-external-release",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-avx512-v2-r3/panel-external-release-v1.json",
+      "bytes": 766,
+      "sha256": "255ab24334e2554e4e7e078394196f2a8dbcb0c01b2aa85e44903214340c53a1"
+    },
+    {
+      "id": "aa250-plan",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/plan.json",
+      "bytes": 6821,
+      "sha256": "7719bec9a9d1df0698af5f82e0906cd24c2bd45cc936b3184db103a50a7ae5ea"
+    },
+    {
+      "id": "aa250-source-index",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/source-index.json",
+      "bytes": 1942,
+      "sha256": "76980f5362c7b1ae713297c56cb017e24f82ede7794932e962815b79b529b5a3"
+    },
+    {
+      "id": "aa250-control-receipt",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/runs/control-v1/receipt.json",
+      "bytes": 14165,
+      "sha256": "6d57f30583dc347ef61e393693a4494c4ae955d621dc2fcb9ee750e789533d70"
+    },
+    {
+      "id": "aa250-control-summary",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/runs/control-v1/summary.json",
+      "bytes": 6504,
+      "sha256": "3ab97a46f69f8636de120e8228fe8737c774f789058bbf8aa9385aebc8fa8c41"
+    },
+    {
+      "id": "aa250-control-jsonl",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/runs/control-v1/paired-aa250.stdout",
+      "bytes": 12774,
+      "sha256": "fbadfb5b319243c0aa968746e7faba2a72ac32d492c696e3ffdc164bfd89227f"
+    },
+    {
+      "id": "aa250-policy-decision",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/runs/control-v1/policy-decision.json",
+      "bytes": 277,
+      "sha256": "349b7b9d0907d00f73048ece2fcf2ecfdc2cf9b95f109961c95e86efb4e52b52"
+    },
+    {
+      "id": "aa250-execution-final",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/execution-final-v1.json",
+      "bytes": 905,
+      "sha256": "e074307da45f86fcd4e407d834151521360111b1157c3119e58b4f66729ae0e9"
+    },
+    {
+      "id": "aa250-data-audit-outcome",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/data-audit-v1/outcome.json",
+      "bytes": 10172,
+      "sha256": "9feb034b726753afe8a261e6de2cc013bc978b03fb5984371f200f6393ce0f89"
+    },
+    {
+      "id": "aa250-data-audit-release",
+      "path": "tmp/sota-20261106-kdDTGn/native-q8-panel-aa250-v1/data-audit-v1/release.json",
+      "bytes": 1000,
+      "sha256": "4c9fdb7ba2130471f7271dde550f26e92d2126a055933aaa10583bfab7476491"
+    },
+    {
+      "id": "archive-publisher",
+      "path": "docs/benchmarks/host-controls-2026-11-07/archive-publication.mjs",
+      "bytes": 12426,
+      "sha256": "2cfcda95edb30303f508196c332f2f4e5bb8f7a13556b4525ca0e9c93787f7ed"
+    },
+    {
+      "id": "lease-fdinfo-helper",
+      "path": "docs/benchmarks/host-controls-2026-11-07/fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "id": "lease-parser",
+      "path": "docs/benchmarks/host-controls-2026-11-07/lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    },
+    {
+      "id": "startup-r2-plan",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/plan.json",
+      "bytes": 27508,
+      "sha256": "49475c0bbadb4a47d8e0cc129fe2f5d656faad2d6cfe342146476d874567b75e"
+    },
+    {
+      "id": "startup-r2-source-index",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/source-index.json",
+      "bytes": 13131,
+      "sha256": "fd214a72b06d8541a3bfecfb54c21def47cc790832c2f87001a23ee3e39cbf1f"
+    },
+    {
+      "id": "startup-r2-run-receipt",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/runs-v1/receipt.json",
+      "bytes": 29633,
+      "sha256": "06af6fbef28358e01d44763f03e66c09130bd000d59a20631d0c5c3a83ddd8cd"
+    },
+    {
+      "id": "startup-r2-inventory",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/runs-v1/inventory.json",
+      "bytes": 1586,
+      "sha256": "11e7f43a7d4854a63d5bacea206a1ccf7389ee73ce83cbf918eabf1684c7512c"
+    },
+    {
+      "id": "startup-r2-execution-final",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/execution-final-v1.json",
+      "bytes": 962,
+      "sha256": "14fed94fdaab7c6a6712073c14407d5ee2d4c1a01de04e9d087d3e97a4268e74"
+    },
+    {
+      "id": "startup-r2-independent-audit",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/independent-audit-v1.json",
+      "bytes": 10055,
+      "sha256": "d67d3da3f6e92f5b5e185bfb37424606b5b9707fd8f65f3812eacd1e263b04cf"
+    },
+    {
+      "id": "startup-r2-validate-startup",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/validate-startup.mjs",
+      "bytes": 5980,
+      "sha256": "799f1aa322c834a9d3056a5640052f316137865c996410b6611c8b90829cc761"
+    },
+    {
+      "id": "startup-r2-validate-configuration",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/validate-configuration.mjs",
+      "bytes": 11964,
+      "sha256": "13f40fc1a942f7fc064dc94b4f273752d5339f1dc4a57ed574fc42dca3f460e8"
+    },
+    {
+      "id": "startup-r2-affinity-module",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/affinity.mjs",
+      "bytes": 5653,
+      "sha256": "802c978bec54552da03afd06258452a5144092ab855d84354cc126590eb10b3e"
+    },
+    {
+      "id": "startup-r2-affinity-probe",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/affinity_probe.py",
+      "bytes": 14000,
+      "sha256": "a2f0598a2e48e66afd55b5b95bd0b03f80a90fbfa20cfcc92fec818d04d53893"
+    },
+    {
+      "id": "startup-r2-owned-tree-validator",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/owned_tree.py",
+      "bytes": 9162,
+      "sha256": "53f67f644657d2750a064f34259a689cfc52d505cf997423d49031f0109361da"
+    },
+    {
+      "id": "startup-r2-session-bus-helper",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/session_bus.py",
+      "bytes": 5979,
+      "sha256": "bac20966653dfaf8cbd7df636c03d02e77ee80b4ac1e9ac9931a6a30bb40c716"
+    }
+  ],
+  "entries": [
+    {
+      "archivePath": "docs/host-followup-experiments.md",
+      "sourceId": "published-report",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "docs/benchmarks/host-controls-2026-11-07/README.md",
+      "sourceId": "bundle-readme",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "docs/benchmarks/host-controls-2026-11-07/archive-plan.json",
+      "method": "copy-plan"
+    },
+    {
+      "archivePath": "docs/benchmarks/host-controls-2026-11-07/archive-publication.mjs",
+      "sourceId": "archive-publisher",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "docs/benchmarks/host-controls-2026-11-07/fd-lease.mjs",
+      "sourceId": "lease-fdinfo-helper",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "docs/benchmarks/host-controls-2026-11-07/lease-parse.mjs",
+      "sourceId": "lease-parser",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/plan.json",
+      "sourceId": "q8-r3-plan",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/source-index.json",
+      "sourceId": "q8-r3-source-index",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/run-record.json",
+      "sourceId": "q8-r3-panel-receipt",
+      "method": "json-select",
+      "select": [
+        "schema",
+        "packet",
+        "stage",
+        "status",
+        "scope",
+        "workPerformed",
+        "A_A_Prelaunch",
+        "leaseRelease"
+      ],
+      "addSourceSha256": true
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/panel-samples.json",
+      "sourceId": "q8-r3-panel-summary",
+      "method": "json-select",
+      "select": [
+        "passed",
+        "estimatorsSeparate",
+        "noAutomaticPromotionOrCorrection",
+        "result.panel4x1024"
+      ],
+      "drop": [
+        "childMetadata"
+      ],
+      "preserveAllSelectedArrays": true,
+      "addSourceSha256": true
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/paired-panel.jsonl",
+      "sourceId": "q8-r3-panel-jsonl",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/policy-decision.json",
+      "sourceId": "q8-r3-policy-decision",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/predeclared-25ms-policy.json",
+      "sourceId": "q8-r3-predeclared-25ms-policy",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/r3/external-release.json",
+      "sourceId": "q8-r3-panel-external-release",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/gates/receipt.json",
+      "sourceId": "q8-r3-gate-receipt",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/gates/data-audit-outcome.json",
+      "sourceId": "q8-r3-data-audit-outcome",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/gates/data-audit-index.json",
+      "sourceId": "q8-r3-data-audit-index",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/plan.json",
+      "sourceId": "aa250-plan",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/source-index.json",
+      "sourceId": "aa250-source-index",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/run-record.json",
+      "sourceId": "aa250-control-receipt",
+      "method": "json-select",
+      "select": [
+        "schema",
+        "packet",
+        "status",
+        "executionPassed",
+        "aaControlPassed",
+        "passed",
+        "scope",
+        "workRequested",
+        "policyDecision",
+        "summary.passed",
+        "leaseRelease"
+      ],
+      "addSourceSha256": true
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/panel-samples.json",
+      "sourceId": "aa250-control-summary",
+      "method": "json-select",
+      "select": [
+        "passed",
+        "aaOnly",
+        "estimatorsSeparate",
+        "noAutomaticPromotionOrCorrection",
+        "result.panel4x1024-aa250.A_A"
+      ],
+      "drop": [
+        "childMetadata"
+      ],
+      "preserveAllSelectedArrays": true,
+      "addSourceSha256": true
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/paired-aa250.jsonl",
+      "sourceId": "aa250-control-jsonl",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/policy-decision.json",
+      "sourceId": "aa250-policy-decision",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/execution-final.json",
+      "sourceId": "aa250-execution-final",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/data-audit-outcome.json",
+      "sourceId": "aa250-data-audit-outcome",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/q8-panel/aa250/data-audit-release.json",
+      "sourceId": "aa250-data-audit-release",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/plan.json",
+      "sourceId": "startup-r2-plan",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/source-index.json",
+      "sourceId": "startup-r2-source-index",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/run-receipt.json",
+      "sourceId": "startup-r2-run-receipt",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/inventory.json",
+      "sourceId": "startup-r2-inventory",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/execution-final.json",
+      "sourceId": "startup-r2-execution-final",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/independent-audit.json",
+      "sourceId": "startup-r2-independent-audit",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/validate-startup.mjs",
+      "sourceId": "startup-r2-validate-startup",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/validate-configuration.mjs",
+      "sourceId": "startup-r2-validate-configuration",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/affinity.mjs",
+      "sourceId": "startup-r2-affinity-module",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/affinity_probe.py",
+      "sourceId": "startup-r2-affinity-probe",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/owned_tree.py",
+      "sourceId": "startup-r2-owned-tree-validator",
+      "method": "copy-exact"
+    },
+    {
+      "archivePath": "evidence/clef-startup/r2/session_bus.py",
+      "sourceId": "startup-r2-session-bus-helper",
+      "method": "copy-exact"
+    }
+  ],
+  "excludedSources": [
+    {
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/runs-v1/raw-startup.json",
+      "bytes": 1630593,
+      "sha256": "60693f4d8eeb2d4e3010db4369de623efa3bd2d83bd32ceb870095b40f2bb5f7",
+      "reason": "Raw startup capture is pinned by the independent audit but is omitted; the published audit is a selected report, not a full startup-validator or thread-inventory reproducer."
+    },
+    {
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/runs-v1/lease-evidence.jsonl",
+      "bytes": 272518,
+      "sha256": "e9b10412d19b94425bfd833f4c9af492cdc5ecbc745965031ee5232cc0b32b59",
+      "reason": "Raw lease observations are pinned by the independent audit but omitted; the published audit does not reproduce the full lease validator inputs."
+    }
+  ],
+  "otherExclusions": [
+    "model-pack bytes, payload tensors, and weights",
+    "all compiled shared libraries, driver binaries, and build outputs",
+    "unrelated campaign files, full host telemetry, and unselected command logs"
+  ],
+  "notes": [
+    "Q8 r3 uses its 25 ms calibration target. AA250 is a distinct baseline-only control with a 250 ms minimum; their timing records remain separate.",
+    "The AA250 data audit passed, but the A/A control policy failed its all-quartet check. It does not rescue the earlier A/B result.",
+    "The startup independent audit is a selected report. The published bundle cannot reproduce the full startup validator or thread inventory because raw startup and lease-event inputs are omitted.",
+    "AA250 summary.passed records complete reduction output only; the run-level passed and aaControlPassed fields are false."
+  ]
+}
