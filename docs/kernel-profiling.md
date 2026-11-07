@@ -14,6 +14,10 @@ The follow-up [native 2×4 packing report](native-2x4-performance.md) compares a
 microkernel against that baseline. It retains strict output-bit checks, paired full-request
 measurements and the slower small-shape controls.
 
+The [native 4×4 selection report](native-4x4-performance.md) measures the next shape-based
+default against that 2×4 path. It separates explicit-tile kernel screens from actual-default
+CLI requests and preserves every slower paired sample.
+
 The [Clef GPU head report](clef-head-performance.md) separates exact projection and full-logit
 checks from paired complete-request wall timings. Compare `clefHead: "auto"` with `"cpu"` on
 the same GPU backbone; keep load, warmup, and first-use validation outside warm-request timings.

@@ -1,0 +1,55 @@
+{
+  "scope": "recomputed from the preserved raw paired record",
+  "observations": 84,
+  "discarded": 12,
+  "measured": 72,
+  "responseBytesAndNumericValuesExact": true,
+  "models": [
+    {
+      "model": "laya-q8",
+      "baselineIndependentMedianMs": 548.4,
+      "candidateIndependentMedianMs": 476.7,
+      "pairedMedianRatio": 1.108545280408641,
+      "pairedRatioRange": [
+        0.953508353221957,
+        1.2846731951719426
+      ],
+      "wins": 8,
+      "pairedLatencyReductionPercent": 9.791686666026688,
+      "quartets": [
+        1.0235544060594863,
+        1.095838218053927,
+        1.1914368494473655,
+        1.151637115196345,
+        1.2846731951719426,
+        1.108545280408641,
+        1.0997091815538014,
+        0.953508353221957,
+        1.1949296336959774
+      ]
+    },
+    {
+      "model": "kev-0.8b-q8",
+      "baselineIndependentMedianMs": 582.5999999999999,
+      "candidateIndependentMedianMs": 535.85,
+      "pairedMedianRatio": 1.0772229441247445,
+      "pairedRatioRange": [
+        0.9489069649211999,
+        1.2122888173773128
+      ],
+      "wins": 8,
+      "pairedLatencyReductionPercent": 7.168705841805945,
+      "quartets": [
+        1.0219081863032025,
+        1.0370118845500849,
+        0.9489069649211999,
+        1.1087309935928087,
+        1.0584663598080502,
+        1.1292802952634817,
+        1.0772229441247445,
+        1.206484135613324,
+        1.2122888173773128
+      ]
+    }
+  ]
+}

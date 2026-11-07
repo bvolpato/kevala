@@ -151,13 +151,91 @@ unsafe fn micro_4x4(a: *const f32, w: *const f32, k: usize) -> [[f32; 4]; 4] {
     o
 }
 
-/// Which register tile `linear` uses: 0 = 2x4, 1 = 4x4. Native ARM defaults to 4x4; WebAssembly
-/// starts at 2x4 and the host switches after timing both (`set_tile`).
+/// Two YMMs per output column hold rows 0/1 and 2/3, with four k lanes per half.
+/// Requires AVX2; called only from the whole-call AVX2 specialization.
+#[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
+#[inline(always)]
+unsafe fn micro_4x4_avx2(a: *const f32, w: *const f32, k: usize) -> [[f32; 4]; 4] {
+    use std::arch::x86_64::*;
+
+    #[inline(always)]
+    unsafe fn hsum(v: __m128) -> f32 {
+        let pairs = _mm_add_ps(v, _mm_shuffle_ps::<0x4e>(v, v));
+        _mm_cvtss_f32(_mm_add_ss(pairs, _mm_shuffle_ps::<0x55>(pairs, pairs)))
+    }
+
+    let (a0, a1, a2, a3) = (a, a.add(k), a.add(2 * k), a.add(3 * k));
+    let (w0, w1, w2, w3) = (w, w.add(k), w.add(2 * k), w.add(3 * k));
+    let mut c = [_mm256_setzero_ps(); 8];
+    let mut i = 0;
+    while i < k {
+        let x0 = _mm_loadu_ps(a0.add(i));
+        let x1 = _mm_loadu_ps(a1.add(i));
+        let x01 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(x0), x1);
+        let x2 = _mm_loadu_ps(a2.add(i));
+        let x3 = _mm_loadu_ps(a3.add(i));
+        let x23 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(x2), x3);
+        let v0 = _mm_loadu_ps(w0.add(i));
+        let v0 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v0), v0);
+        c[0] = _mm256_add_ps(c[0], _mm256_mul_ps(x01, v0));
+        c[4] = _mm256_add_ps(c[4], _mm256_mul_ps(x23, v0));
+        let v1 = _mm_loadu_ps(w1.add(i));
+        let v1 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v1), v1);
+        c[1] = _mm256_add_ps(c[1], _mm256_mul_ps(x01, v1));
+        c[5] = _mm256_add_ps(c[5], _mm256_mul_ps(x23, v1));
+        let v2 = _mm_loadu_ps(w2.add(i));
+        let v2 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v2), v2);
+        c[2] = _mm256_add_ps(c[2], _mm256_mul_ps(x01, v2));
+        c[6] = _mm256_add_ps(c[6], _mm256_mul_ps(x23, v2));
+        let v3 = _mm_loadu_ps(w3.add(i));
+        let v3 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v3), v3);
+        c[3] = _mm256_add_ps(c[3], _mm256_mul_ps(x01, v3));
+        c[7] = _mm256_add_ps(c[7], _mm256_mul_ps(x23, v3));
+        i += 4;
+    }
+    [
+        [
+            hsum(_mm256_castps256_ps128(c[0])),
+            hsum(_mm256_castps256_ps128(c[1])),
+            hsum(_mm256_castps256_ps128(c[2])),
+            hsum(_mm256_castps256_ps128(c[3])),
+        ],
+        [
+            hsum(_mm256_extractf128_ps::<1>(c[0])),
+            hsum(_mm256_extractf128_ps::<1>(c[1])),
+            hsum(_mm256_extractf128_ps::<1>(c[2])),
+            hsum(_mm256_extractf128_ps::<1>(c[3])),
+        ],
+        [
+            hsum(_mm256_castps256_ps128(c[4])),
+            hsum(_mm256_castps256_ps128(c[5])),
+            hsum(_mm256_castps256_ps128(c[6])),
+            hsum(_mm256_castps256_ps128(c[7])),
+        ],
+        [
+            hsum(_mm256_extractf128_ps::<1>(c[4])),
+            hsum(_mm256_extractf128_ps::<1>(c[5])),
+            hsum(_mm256_extractf128_ps::<1>(c[6])),
+            hsum(_mm256_extractf128_ps::<1>(c[7])),
+        ],
+    ]
+}
+
+/// Which register tile `linear` uses: 0 = 2x4, 1 = 4x4, 2 = native auto. Default x86_64 builds
+/// without global AVX2 use auto: 4x4 for t >= 8, n >= 1024, k >= 1024; otherwise 2x4. Without
+/// runtime AVX2, auto also uses 2x4. ARM defaults to 4x4; WebAssembly and global AVX2 start at 2x4.
 static TILE: std::sync::atomic::AtomicU8 =
-    std::sync::atomic::AtomicU8::new(if cfg!(target_arch = "aarch64") { 1 } else { 0 });
+    std::sync::atomic::AtomicU8::new(if cfg!(all(target_arch = "x86_64", not(target_feature = "avx2"))) {
+        2
+    } else if cfg!(target_arch = "aarch64") {
+        1
+    } else {
+        0
+    });
 
 pub fn set_tile(t: u8) {
-    TILE.store(t.min(1), std::sync::atomic::Ordering::Relaxed);
+    let selected = if cfg!(all(target_arch = "x86_64", not(target_feature = "avx2"))) && t == 2 { 2 } else { t.min(1) };
+    TILE.store(selected, std::sync::atomic::Ordering::Relaxed);
 }
 
 pub fn tile() -> u8 {
@@ -197,6 +275,8 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
 unsafe fn linear_avx2(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
     let (n, k) = (m.n(), m.k());
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
+    let selected_tile = tile();
+    let use_four_rows = selected_tile == 1 || selected_tile == 2 && t >= 8 && n >= 1024 && k >= 1024;
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
     let tb = ((1024 * 1024) / (k * 4)).clamp(8, 512) & !1;
     if matches!(m, Mat::Q8 { .. } | Mat::Bf16 { .. }) && panel.len() < NR * k {
@@ -224,9 +304,9 @@ unsafe fn linear_avx2(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &m
             let b = |j: usize| bias.map_or(0.0, |b| b[n0 + j]);
             let mut r = t0;
             unsafe {
-                if rows == NR && tile() == 1 {
+                if rows == NR && use_four_rows {
                     while r + 4 <= t1 {
-                        let o = micro_4x4(x.as_ptr().add(r * k), wp, k);
+                        let o = micro_4x4_avx2(x.as_ptr().add(r * k), wp, k);
                         for (i, row) in o.iter().enumerate() {
                             for j in 0..NR {
                                 out[(r + i) * n + n0 + j] = row[j] + b(j);
@@ -713,8 +793,17 @@ mod tests {
         for selected_tile in [0, 1] {
             set_tile(selected_tile);
             for values in [&values[..8], &values[..]] {
-                for (t, n, k) in [(1, 4, 4), (2, 4, 12), (5, 7, 20), (2, 4, 64), (7, 7, 68), (9, 8, 64), (65, 4, 4096)]
-                {
+                for (t, n, k) in [
+                    (1, 4, 4),
+                    (2, 4, 12),
+                    (5, 7, 20),
+                    (2, 4, 64),
+                    (4, 4, 64),
+                    (6, 7, 68),
+                    (7, 7, 68),
+                    (9, 8, 64),
+                    (65, 4, 4096),
+                ] {
                     let x: Vec<f32> = (0..t * k + 1).map(|i| values[i % values.len()]).collect();
                     let w: Vec<f32> = (0..n * k + 1).map(|i| values[(i * 3 + 1) % values.len()]).collect();
                     let bf16: Vec<u16> = w.iter().map(|v| crate::convert::f32_to_bf16(*v)).collect();
@@ -733,6 +822,26 @@ mod tests {
                     check(&x[1..], t, Mat::Q8 { n, k, block, q: &q[1..], scales: &scales }, Some(&bias));
                 }
             }
+        }
+        set_tile(2);
+        assert_eq!(tile(), 2);
+        for values in [&values[..8], &values[..]] {
+            for (t, n, k) in [(7, 1024, 1024), (8, 1023, 1024), (8, 1024, 1020), (8, 1024, 1024), (9, 1025, 1028)] {
+                let x: Vec<f32> = (0..t * k + 1).map(|i| values[i % values.len()]).collect();
+                let w: Vec<f32> = (0..n * k + 1).map(|i| values[(i * 3 + 1) % values.len()]).collect();
+                let bf16: Vec<u16> = w.iter().map(|v| crate::convert::f32_to_bf16(*v)).collect();
+                let bias: Vec<f32> = (0..n).map(|i| values[(i * 5 + 2) % values.len()]).collect();
+                check(&x[1..], t, Mat::F32 { n, k, w: &w[1..] }, None);
+                check(&x[1..], t, Mat::F32 { n, k, w: &w[1..] }, Some(&bias));
+                check(&x[1..], t, Mat::Bf16 { n, k, w: &bf16[1..] }, Some(&bias));
+            }
+            let (t, n, k, block) = (9, 1025, 1024, 32);
+            let x: Vec<f32> = (0..t * k + 1).map(|i| values[i % values.len()]).collect();
+            let q: Vec<i8> = (0..n * k + 1).map(|i: usize| i.wrapping_mul(73).wrapping_add(19) as i8).collect();
+            let scales: Vec<f32> = (0..n * k / block).map(|i| values[i % values.len()]).collect();
+            let bias: Vec<f32> = (0..n).map(|i| values[(i * 5 + 2) % values.len()]).collect();
+            check(&x[1..], t, Mat::Q8 { n, k, block, q: &q[1..], scales: &scales }, None);
+            check(&x[1..], t, Mat::Q8 { n, k, block, q: &q[1..], scales: &scales }, Some(&bias));
         }
         set_tile(original_tile);
     }
