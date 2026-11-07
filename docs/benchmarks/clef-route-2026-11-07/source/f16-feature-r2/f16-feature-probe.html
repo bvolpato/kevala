@@ -1,0 +1,64 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Private WebGPU feature metadata</title>
+<script type="module">
+const result = window.f16FeatureProbe = { status: "running", done: false, scope: "capability-metadata-only" };
+const text = (value) => typeof value === "string" ? value.slice(0, 512) : null;
+const flag = (value) => typeof value === "boolean" ? value : null;
+function features(set) {
+  const names = [...set].sort();
+  if (names.length > 128 || names.some((name) => typeof name !== "string" || name.length > 128)) throw new Error("Feature metadata exceeded its bound");
+  return names;
+}
+let device;
+try {
+  if (!navigator.gpu) throw new Error("navigator.gpu is missing");
+  result.adapterRequests = { highPerformanceReturnedNull: null, defaultFallbackRequested: false, defaultFallbackReturnedAdapter: null, defaultFallbackReturnedNull: null };
+  let adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  result.adapterRequests.highPerformanceReturnedNull = adapter === null;
+  if (!adapter) {
+    result.adapterRequests.defaultFallbackRequested = true;
+    adapter = await navigator.gpu.requestAdapter();
+    result.adapterRequests.defaultFallbackReturnedAdapter = Boolean(adapter);
+    result.adapterRequests.defaultFallbackReturnedNull = adapter === null;
+  }
+  if (!adapter) throw new Error("No WebGPU adapter after high-performance and default requests");
+  const info = adapter.info || {};
+  const fallbackFlags = { adapterInfo: flag(info.isFallbackAdapter), adapter: flag(adapter.isFallbackAdapter) };
+  const observed = Object.values(fallbackFlags).filter((value) => value !== null);
+  const isFallbackAdapter = observed.length && observed.every((value) => value === observed[0]) ? observed[0] : null;
+  result.adapter = {
+    info: { vendor: text(info.vendor), architecture: text(info.architecture), device: text(info.device), description: text(info.description) },
+    features: features(adapter.features), fallbackFlags, isFallbackAdapter,
+  };
+  result.identity = {
+    nvidia: /nvidia/i.test([info.vendor, info.description].join(" ")),
+    blackwell: /blackwell/i.test(info.architecture || ""),
+    nonfallback: isFallbackAdapter === false,
+  };
+  if (!Object.values(result.identity).every(Boolean)) throw new Error("Expected NVIDIA Blackwell nonfallback adapter metadata was not established");
+  const optional = ["timestamp-query", "shader-f16", "subgroups"];
+  const requiredFeatures = optional.filter((name) => adapter.features.has(name));
+  const requiredLimits = {
+    maxStorageBufferBindingSize: Math.min(adapter.limits.maxStorageBufferBindingSize, 1 << 30),
+    maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1 << 30),
+    maxComputeWorkgroupStorageSize: Math.min(adapter.limits.maxComputeWorkgroupStorageSize, 32768),
+  };
+  result.deviceRequest = { requiredFeatures, requiredLimits, source: "js/src/gpu.js optional features and limits; no runtime module import" };
+  device = await adapter.requestDevice({ requiredFeatures, requiredLimits });
+  result.device = { features: features(device.features), created: true, destroyed: false };
+  device.destroy();
+  result.device.destroyed = true;
+  device = null;
+  result.status = "complete";
+} catch (error) {
+  result.status = "error";
+  result.error = String(error?.message || error).slice(0, 4096);
+} finally {
+  if (device) {
+    device.destroy();
+    if (result.device) result.device.destroyed = true;
+  }
+  result.done = true;
+}
+</script>

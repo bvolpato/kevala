@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "81a27608f24e0b2252318515e272387c48dec7d8",
+  "sourceRoot": "Fixed package sources and compact field-whitelisted projections; no raw runtime tree or full controller capture is packaged.",
+  "reportPath": "docs/clef-head-route-diagnostic.md",
+  "bundleReadmePath": "docs/benchmarks/clef-route-2026-11-07/README.md",
+  "archive": {
+    "plannedPath": "evidence.json.gz",
+    "maxSourceBytes": 1572864,
+    "maxDecodedBytes": 1048576,
+    "maxCompressedBytes": 262144,
+    "estimatedDecodedBytes": 661808,
+    "compressedSizeMeasured": false,
+    "sizeEstimateMethod": "Exact copied byte sizes plus base64 lengths and pretty-JSON descriptor/plan framing, measured by --plan without creating gzip output.",
+    "maxEntries": 64,
+    "entryOrder": "UTF-8 bytewise ascending by archivePath",
+    "derivedJson": "Evidence projections are compact JSON plus one trailing newline. The archive payload and plan use JSON.stringify with two-space indentation and one trailing newline.",
+    "gzipMtimeSeconds": 0,
+    "overwrite": false,
+    "requiredLock": "/home/bruno/.cache/kevala/gpu-profile.lock",
+    "publisherPattern": "Fixed-inventory publisher with pinned helper hashes, a nonblocking inherited-FD proof, and bounded archive verification."
+  },
+  "sourcePins": [
+    {
+      "id": "README.md",
+      "path": "docs/benchmarks/clef-route-2026-11-07/README.md",
+      "bytes": 4211,
+      "sha256": "fda1d29fea9215a357ac71df6f1dbf0809a2752c015b6c2b457f8551c0d82c68"
+    },
+    {
+      "id": "archive-publication.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/archive-publication.mjs",
+      "bytes": 14972,
+      "sha256": "65dd7b1cadf34dd1651ee0256f0144f3944024787a32e5f36575145bef3a50d2"
+    },
+    {
+      "id": "evidence/clef-route-r1/leases.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/clef-route-r1/leases.json",
+      "bytes": 4467,
+      "sha256": "a68ceaddb7c64fbde065540476a9ec932a54a19348208b45036e43c0c5a62f3c"
+    },
+    {
+      "id": "evidence/clef-route-r1/result.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/clef-route-r1/result.json",
+      "bytes": 32877,
+      "sha256": "a0e28b49662aac05744b501437737ab004b8d5997436c30f26ba80df913f3b40"
+    },
+    {
+      "id": "evidence/clef-route-r1/source-identities.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/clef-route-r1/source-identities.json",
+      "bytes": 7350,
+      "sha256": "4e455e7d99149b3440b7d43d0472628bfadae18ace585630a513c2bd65d37483"
+    },
+    {
+      "id": "evidence/clef-route-r1/source-release.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/clef-route-r1/source-release.json",
+      "bytes": 3388,
+      "sha256": "53d941ff74a8b170f7a93f2e3d5868c57002e87467eb321db76368f274c3bddc"
+    },
+    {
+      "id": "evidence/clef-route-r1/static-browser-smoke.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/clef-route-r1/static-browser-smoke.json",
+      "bytes": 1645,
+      "sha256": "e999c8052b2d2c8b91a44290a52f94451b40870d8506a874f6588e3a2a5d74a0"
+    },
+    {
+      "id": "evidence/clef-route-r1/validation.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/clef-route-r1/validation.json",
+      "bytes": 2382,
+      "sha256": "18e790c7792864a8e7b469cdf24c982ec28d79b97543a489289e15e489063f1e"
+    },
+    {
+      "id": "evidence/f16-feature-r1/failure.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/f16-feature-r1/failure.json",
+      "bytes": 1055,
+      "sha256": "246f3e4db6dab936ac009115d1b274b839fc853511961e36d89661794e2170a8"
+    },
+    {
+      "id": "evidence/f16-feature-r1/source-release.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/f16-feature-r1/source-release.json",
+      "bytes": 2363,
+      "sha256": "3bc3d7ff0bcfe2283633c2dd063ddecce174249df69dceb3b5270b789fe98b9b"
+    },
+    {
+      "id": "evidence/f16-feature-r2/capabilities.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/f16-feature-r2/capabilities.json",
+      "bytes": 9114,
+      "sha256": "135c0e904a8b0fcc59ca46982ae4510d118fb34274d50e38d796d8c2a6856cea"
+    },
+    {
+      "id": "evidence/host/driver-metadata.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/evidence/host/driver-metadata.json",
+      "bytes": 1641,
+      "sha256": "6dfc5331a4e50147bc921581e1289b98eecc1861bd3f7c87f6bbc0a372b301af"
+    },
+    {
+      "id": "fd-lease.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "id": "lease-parse.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    },
+    {
+      "id": "prepare-evidence.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/prepare-evidence.mjs",
+      "bytes": 32144,
+      "sha256": "e5989310c624d40578a4160548e45ce193ddb28839d2d347cd2217d0bec4a691"
+    },
+    {
+      "id": "provenance.json",
+      "path": "docs/benchmarks/clef-route-2026-11-07/provenance.json",
+      "bytes": 23591,
+      "sha256": "0d057865c34edc862c59aa16cd108e049c6584d1ee19b1b249bf6147fc95abc2"
+    },
+    {
+      "id": "report",
+      "path": "docs/clef-head-route-diagnostic.md",
+      "bytes": 6632,
+      "sha256": "d4689c320f9c842dde102af101e27f012bacbca0928fed81e3f7e4be627169bc"
+    },
+    {
+      "id": "source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs",
+      "bytes": 64936,
+      "sha256": "ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049"
+    },
+    {
+      "id": "source/clef-route-r1-original/bench-clef-route-smoke.html",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/bench-clef-route-smoke.html",
+      "bytes": 1966,
+      "sha256": "16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee"
+    },
+    {
+      "id": "source/clef-route-r1-original/bench-clef-route.html",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/bench-clef-route.html",
+      "bytes": 20397,
+      "sha256": "a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9"
+    },
+    {
+      "id": "source/clef-route-r1-original/scripts/private/clef-route-browser.py",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/scripts/private/clef-route-browser.py",
+      "bytes": 95445,
+      "sha256": "3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619"
+    },
+    {
+      "id": "source/clef-route-r1-original/scripts/private/clef-route-diagnostic.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/scripts/private/clef-route-diagnostic.mjs",
+      "bytes": 63530,
+      "sha256": "de9fd3cb6b81df9a17bf6bbe464527ad925500c96e1537396d0e0036f5285167"
+    },
+    {
+      "id": "source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs",
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1"
+    },
+    {
+      "id": "source/f16-feature-common/f16-feature-probe.py",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-common/f16-feature-probe.py",
+      "bytes": 11053,
+      "sha256": "cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2"
+    },
+    {
+      "id": "source/f16-feature-r1/f16-feature-probe.html",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r1/f16-feature-probe.html",
+      "bytes": 2906,
+      "sha256": "4d11ba2c83dc9ca3349ae129faba8f95ede0f60423d3ddebcbeebab4b0cd7cf8"
+    },
+    {
+      "id": "source/f16-feature-r1/f16-feature-probe.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r1/f16-feature-probe.mjs",
+      "bytes": 24551,
+      "sha256": "a502ea8d38637e4d9660a38b1bff641379a1fa75782979f08f6f223c04120170"
+    },
+    {
+      "id": "source/f16-feature-r2/f16-feature-probe.html",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r2/f16-feature-probe.html",
+      "bytes": 3463,
+      "sha256": "df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a"
+    },
+    {
+      "id": "source/f16-feature-r2/f16-feature-probe.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r2/f16-feature-probe.mjs",
+      "bytes": 24714,
+      "sha256": "1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8"
+    },
+    {
+      "id": "source/f16-feature-r2/f16-feature-probe.test.mjs",
+      "path": "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r2/f16-feature-probe.test.mjs",
+      "bytes": 3619,
+      "sha256": "63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8"
+    }
+  ],
+  "entries": [
+    {
+      "archivePath": "README.md",
+      "method": "copy-exact",
+      "sourceId": "README.md"
+    },
+    {
+      "archivePath": "archive-plan.json",
+      "method": "copy-plan"
+    },
+    {
+      "archivePath": "archive-publication.mjs",
+      "method": "copy-exact",
+      "sourceId": "archive-publication.mjs"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/leases.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/clef-route-r1/leases.json"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/result.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/clef-route-r1/result.json"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/source-identities.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/clef-route-r1/source-identities.json"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/source-release.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/clef-route-r1/source-release.json"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/static-browser-smoke.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/clef-route-r1/static-browser-smoke.json"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/validation.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/clef-route-r1/validation.json"
+    },
+    {
+      "archivePath": "evidence/f16-feature-r1/failure.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/f16-feature-r1/failure.json"
+    },
+    {
+      "archivePath": "evidence/f16-feature-r1/source-release.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/f16-feature-r1/source-release.json"
+    },
+    {
+      "archivePath": "evidence/f16-feature-r2/capabilities.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/f16-feature-r2/capabilities.json"
+    },
+    {
+      "archivePath": "evidence/host/driver-metadata.json",
+      "method": "copy-exact",
+      "sourceId": "evidence/host/driver-metadata.json"
+    },
+    {
+      "archivePath": "fd-lease.mjs",
+      "method": "copy-exact",
+      "sourceId": "fd-lease.mjs"
+    },
+    {
+      "archivePath": "lease-parse.mjs",
+      "method": "copy-exact",
+      "sourceId": "lease-parse.mjs"
+    },
+    {
+      "archivePath": "prepare-evidence.mjs",
+      "method": "copy-exact",
+      "sourceId": "prepare-evidence.mjs"
+    },
+    {
+      "archivePath": "provenance.json",
+      "method": "copy-exact",
+      "sourceId": "provenance.json"
+    },
+    {
+      "archivePath": "report/clef-head-route-diagnostic.md",
+      "method": "copy-exact",
+      "sourceId": "report"
+    },
+    {
+      "archivePath": "source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs",
+      "method": "copy-exact",
+      "sourceId": "source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/bench-clef-route-smoke.html",
+      "method": "copy-exact",
+      "sourceId": "source/clef-route-r1-original/bench-clef-route-smoke.html"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/bench-clef-route.html",
+      "method": "copy-exact",
+      "sourceId": "source/clef-route-r1-original/bench-clef-route.html"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/scripts/private/clef-route-browser.py",
+      "method": "copy-exact",
+      "sourceId": "source/clef-route-r1-original/scripts/private/clef-route-browser.py"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/scripts/private/clef-route-diagnostic.mjs",
+      "method": "copy-exact",
+      "sourceId": "source/clef-route-r1-original/scripts/private/clef-route-diagnostic.mjs"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs",
+      "method": "copy-exact",
+      "sourceId": "source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs"
+    },
+    {
+      "archivePath": "source/f16-feature-common/f16-feature-probe.py",
+      "method": "copy-exact",
+      "sourceId": "source/f16-feature-common/f16-feature-probe.py"
+    },
+    {
+      "archivePath": "source/f16-feature-r1/f16-feature-probe.html",
+      "method": "copy-exact",
+      "sourceId": "source/f16-feature-r1/f16-feature-probe.html"
+    },
+    {
+      "archivePath": "source/f16-feature-r1/f16-feature-probe.mjs",
+      "method": "copy-exact",
+      "sourceId": "source/f16-feature-r1/f16-feature-probe.mjs"
+    },
+    {
+      "archivePath": "source/f16-feature-r2/f16-feature-probe.html",
+      "method": "copy-exact",
+      "sourceId": "source/f16-feature-r2/f16-feature-probe.html"
+    },
+    {
+      "archivePath": "source/f16-feature-r2/f16-feature-probe.mjs",
+      "method": "copy-exact",
+      "sourceId": "source/f16-feature-r2/f16-feature-probe.mjs"
+    },
+    {
+      "archivePath": "source/f16-feature-r2/f16-feature-probe.test.mjs",
+      "method": "copy-exact",
+      "sourceId": "source/f16-feature-r2/f16-feature-probe.test.mjs"
+    }
+  ],
+  "excludedSources": [
+    "model weights",
+    "pack payloads",
+    "compiled WASM",
+    "copied runtime trees",
+    "complete raw controller captures",
+    "browser diagnostic logs",
+    "full process/thread inventories",
+    "global /proc/locks text"
+  ],
+  "otherExclusions": [
+    "The Clef capture has no decision vectors, answer text, logits, or raw probabilities.",
+    "F16 evidence covers adapter/device capability only; no shaders, buffers, dispatches, model outputs, correctness, or latency."
+  ]
+}
