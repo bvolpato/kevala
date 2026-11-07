@@ -1,0 +1,135 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-07T09:40:48.994Z",
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 208729,
+    "sha256": "664d0ff69eab7d55a9071bffc78fad3f2517ffa210c555215e2ffacc4fa2cbfb",
+    "decodedBytes": 1381305,
+    "decodedSha256": "f299ff35354d0d271aef1006d21b6084fde9ae96eb22c4c35989e306f2d25f62"
+  },
+  "files": [
+    {
+      "path": "capture/chromium/kev-9b-bf16/0-gpu.json",
+      "bytes": 149829,
+      "sha256": "a579a27b8b20d20d0f2883d9df1fcc5870f4e606e4239e38ec666a40b542ee80"
+    },
+    {
+      "path": "capture/chromium/kev-9b-bf16/0-wall.json",
+      "bytes": 139961,
+      "sha256": "01842ce8dbc5ea6084e25b6f99abb34254c8c51af074f9163e87a098e180bd47"
+    },
+    {
+      "path": "capture/chromium/kev-9b-bf16/1-gpu.json",
+      "bytes": 149837,
+      "sha256": "0c7bfc6b6487da1ae201b7e30669bd40788f0dca8ba0d77bbae240674cc8355b"
+    },
+    {
+      "path": "capture/chromium/kev-9b-bf16/1-wall.json",
+      "bytes": 140129,
+      "sha256": "c5e94ef076c8f50c3dd9ed3ebe0a71faee6ddacf2da6f4e22097596cefa7ab7f"
+    },
+    {
+      "path": "capture/summary.json",
+      "bytes": 335457,
+      "sha256": "f97535b017116d31133e5ea0386502158148864ff4c7d657ad88ab5a27022855"
+    },
+    {
+      "path": "harness/bench.html",
+      "bytes": 14112,
+      "sha256": "b77a603f70145f8404e93dc74b2c6b8a3a6b35e50ede0ed10ecd5ed59d540d6c"
+    },
+    {
+      "path": "harness/dev/adapter-metadata.js",
+      "bytes": 898,
+      "sha256": "6aa9f18aef5334eb722749a113a73a02d9e26ec69770ec116a0cf12b98d4c9f8"
+    },
+    {
+      "path": "publication/app/views/how.js",
+      "bytes": 16468,
+      "sha256": "dad62d1697a37c2456c3be6e3fcf0fb0d7a634dcde51d799b331270b356dc7d5"
+    },
+    {
+      "path": "publication/docs/benchmarks/kev9-bf16-2026-11-07/archive-publication.mjs",
+      "bytes": 12837,
+      "sha256": "07fc7cee5a4aea9c650ebbc88aed5b48f043cf04f037381cecb3f322314f79ce"
+    },
+    {
+      "path": "publication/docs/benchmarks/kev9-bf16-2026-11-07/README.md",
+      "bytes": 3688,
+      "sha256": "94ddbb9cbf0569bacb55ae6012e98b5e9d3e914363c9916a926a498a07242db3"
+    },
+    {
+      "path": "publication/docs/kev9-bf16-profile.md",
+      "bytes": 2863,
+      "sha256": "c9a20a9b791443e57e950d81b0517b0aa4df57d1b361199319b29a1b4375212b"
+    },
+    {
+      "path": "reproduction/scripts/profile-models.mjs",
+      "bytes": 22747,
+      "sha256": "85b2990345d39fdf0425639843dc3051aea33a0aa01dccf2fc8fef379fe1e7d1"
+    },
+    {
+      "path": "runtime/js/src/gpu-kev.js",
+      "bytes": 45464,
+      "sha256": "31f9e322832be04b0773e1866be724c49a5d7c9de7d523d5d07fdb8fafd6b614"
+    }
+  ],
+  "references": {
+    "runtime": {
+      "commit": "2883619ff46856be57760112ae250df272e82b82",
+      "tree": "c3069b7aace1bae00273de34b6e262593f831f68",
+      "fingerprint": "311d4bc4b2046c5f13918135368b8805065e1ac4f26124b6c4232a77ac95271b",
+      "assetCount": 53,
+      "wasm": [
+        {
+          "path": "kevala-base.wasm",
+          "bytes": 1375777,
+          "sha256": "cd52abd467c0f21a4754fa007d844d5f5c79ed4ef10089afe2c33f978e335e5e"
+        },
+        {
+          "path": "kevala-relaxed.wasm",
+          "bytes": 1383425,
+          "sha256": "93f5383aaa7fffd6e57b6bc6ebb5de9cf6a35e6bc0b4f1b49561c28c2860b65a"
+        },
+        {
+          "path": "kevala-simd.wasm",
+          "bytes": 1382096,
+          "sha256": "d759f008f284d3c2b6caa3ecca542e0d959bb77ee03cd25cfe944b3f57eccdfc"
+        }
+      ]
+    },
+    "adapter": {
+      "browser": "Chromium 156",
+      "fallbackStatus": "adapter.info.isFallbackAdapter=false; GPUAdapter.isFallbackAdapter unavailable"
+    },
+    "pack": {
+      "bytes": 15902057920,
+      "sha256": "32610758de1b2a192c668cc05cc6bbc97808bd74160f8034c1d11ea15070ff4e",
+      "verification": "local conversion SHA-256, header identity, layout, and size; no catalog-pinned digest",
+      "catalogHashVerified": false
+    },
+    "sourceProfile": "resident uncached WebGPU; wall and diagnostic GPU blocks are separate"
+  },
+  "exclusions": [
+    "Kev-9B BF16 model weight and scale payloads",
+    "WASM binaries and other compiled runtime payloads",
+    "build trees and credentials"
+  ],
+  "lease": {
+    "before": {
+      "pid": 2870226,
+      "major": "259",
+      "minor": "2",
+      "inode": "134897311",
+      "rawLine": "1: FLOCK  ADVISORY  WRITE 2870226 103:02:134897311 0 EOF"
+    },
+    "after": {
+      "pid": 2870226,
+      "major": "259",
+      "minor": "2",
+      "inode": "134897311",
+      "rawLine": "1: FLOCK  ADVISORY  WRITE 2870226 103:02:134897311 0 EOF"
+    }
+  }
+}
