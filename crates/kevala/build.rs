@@ -1,0 +1,32 @@
+use std::{env, process::Command};
+
+fn main() {
+    println!("cargo:rustc-check-cfg=cfg(kevala_avx512)");
+    for name in ["RUSTC", "CARGO_CFG_TARGET_ARCH", "CARGO_CFG_TARGET_FEATURE"] {
+        println!("cargo:rerun-if-env-changed={name}");
+    }
+    if env::var("CARGO_CFG_TARGET_ARCH").as_deref() != Ok("x86_64")
+        || env::var("CARGO_CFG_TARGET_FEATURE").is_ok_and(|features| features.split(',').any(|f| f == "avx2"))
+    {
+        return;
+    }
+    let Some(rustc) = env::var_os("RUSTC") else { return };
+    let Ok(output) = Command::new(rustc).arg("--version").output() else { return };
+    if !output.status.success() {
+        return;
+    }
+    let Ok(version) = std::str::from_utf8(&output.stdout) else { return };
+    let mut words = version.split_whitespace();
+    if words.next() != Some("rustc") {
+        return;
+    }
+    let Some(version) = words.next() else { return };
+    let mut parts = version.split('.');
+    let Some(major) = parts.next().and_then(|p| p.parse::<u32>().ok()) else { return };
+    let Some(minor) = parts.next().and_then(|p| p.parse::<u32>().ok()) else { return };
+    // Early 1.89 prereleases lack these APIs. Malformed and prerelease versions stay disabled.
+    let Some(_) = parts.next().and_then(|p| p.parse::<u32>().ok()) else { return };
+    if parts.next().is_none() && (major, minor) >= (1, 89) {
+        println!("cargo:rustc-cfg=kevala_avx512");
+    }
+}

@@ -277,6 +277,8 @@ unsafe fn linear_avx2(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &m
     debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
     let selected_tile = tile();
     let use_four_rows = selected_tile == 1 || selected_tile == 2 && t >= 8 && n >= 1024 && k >= 1024;
+    #[cfg(all(kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+    let use_avx512_four_rows = selected_tile == 2 && t >= 8 && n >= 1024 && k >= 1024 && avx512_auto4_available();
     // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
     let tb = ((1024 * 1024) / (k * 4)).clamp(8, 512) & !1;
     if matches!(m, Mat::Q8 { .. } | Mat::Bf16 { .. }) && panel.len() < NR * k {
@@ -305,6 +307,10 @@ unsafe fn linear_avx2(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &m
             let mut r = t0;
             unsafe {
                 if rows == NR && use_four_rows {
+                    #[cfg(all(kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+                    if use_avx512_four_rows {
+                        r = linear_four_rows_avx512(x, wp, k, n, bias, out, r, t1, n0);
+                    }
                     while r + 4 <= t1 {
                         let o = micro_4x4_avx2(x.as_ptr().add(r * k), wp, k);
                         for (i, row) in o.iter().enumerate() {
@@ -844,5 +850,136 @@ mod tests {
             check(&x[1..], t, Mat::Q8 { n, k, block, q: &q[1..], scales: &scales }, Some(&bias));
         }
         set_tile(original_tile);
+    }
+}
+
+#[cfg(all(kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+#[target_feature(enable = "avx512f,avx2")]
+#[allow(clippy::too_many_arguments)] // Preserve the measured helper signature.
+unsafe fn linear_four_rows_avx512(
+    x: &[f32],
+    wp: *const f32,
+    k: usize,
+    n: usize,
+    bias: Option<&[f32]>,
+    out: &mut [f32],
+    mut r: usize,
+    t1: usize,
+    n0: usize,
+) -> usize {
+    let b = |j: usize| bias.map_or(0.0, |b| b[n0 + j]);
+    while r + 4 <= t1 {
+        let o = micro_4x4_avx512(x.as_ptr().add(r * k), wp, k);
+        for (i, row) in o.iter().enumerate() {
+            for j in 0..NR {
+                out[(r + i) * n + n0 + j] = row[j] + b(j);
+            }
+        }
+        r += 4;
+    }
+    r
+}
+
+#[cfg(all(kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+#[inline(always)]
+#[clippy::msrv = "1.89"]
+unsafe fn micro_4x4_avx512(a: *const f32, w: *const f32, k: usize) -> [[f32; 4]; 4] {
+    use std::arch::x86_64::*;
+
+    #[inline(always)]
+    unsafe fn hsum(v: __m128) -> f32 {
+        let pairs = _mm_add_ps(v, _mm_shuffle_ps::<0x4e>(v, v));
+        _mm_cvtss_f32(_mm_add_ss(pairs, _mm_shuffle_ps::<0x55>(pairs, pairs)))
+    }
+
+    let (a0, a1, a2, a3) = (a, a.add(k), a.add(2 * k), a.add(3 * k));
+    let (w0, w1, w2, w3) = (w, w.add(k), w.add(2 * k), w.add(3 * k));
+    let mut c = [_mm512_setzero_ps(); 4];
+    let mut i = 0;
+    while i < k {
+        let x = _mm512_castps128_ps512(_mm_loadu_ps(a0.add(i)));
+        let x = _mm512_insertf32x4::<1>(x, _mm_loadu_ps(a1.add(i)));
+        let x = _mm512_insertf32x4::<2>(x, _mm_loadu_ps(a2.add(i)));
+        let x = _mm512_insertf32x4::<3>(x, _mm_loadu_ps(a3.add(i)));
+        let v0 = _mm512_broadcast_f32x4(_mm_loadu_ps(w0.add(i)));
+        c[0] = _mm512_add_ps(c[0], _mm512_mul_ps(x, v0));
+        let v1 = _mm512_broadcast_f32x4(_mm_loadu_ps(w1.add(i)));
+        c[1] = _mm512_add_ps(c[1], _mm512_mul_ps(x, v1));
+        let v2 = _mm512_broadcast_f32x4(_mm_loadu_ps(w2.add(i)));
+        c[2] = _mm512_add_ps(c[2], _mm512_mul_ps(x, v2));
+        let v3 = _mm512_broadcast_f32x4(_mm_loadu_ps(w3.add(i)));
+        c[3] = _mm512_add_ps(c[3], _mm512_mul_ps(x, v3));
+        i += 4;
+    }
+    [
+        [
+            hsum(_mm512_castps512_ps128(c[0])),
+            hsum(_mm512_castps512_ps128(c[1])),
+            hsum(_mm512_castps512_ps128(c[2])),
+            hsum(_mm512_castps512_ps128(c[3])),
+        ],
+        [
+            hsum(_mm512_extractf32x4_ps::<1>(c[0])),
+            hsum(_mm512_extractf32x4_ps::<1>(c[1])),
+            hsum(_mm512_extractf32x4_ps::<1>(c[2])),
+            hsum(_mm512_extractf32x4_ps::<1>(c[3])),
+        ],
+        [
+            hsum(_mm512_extractf32x4_ps::<2>(c[0])),
+            hsum(_mm512_extractf32x4_ps::<2>(c[1])),
+            hsum(_mm512_extractf32x4_ps::<2>(c[2])),
+            hsum(_mm512_extractf32x4_ps::<2>(c[3])),
+        ],
+        [
+            hsum(_mm512_extractf32x4_ps::<3>(c[0])),
+            hsum(_mm512_extractf32x4_ps::<3>(c[1])),
+            hsum(_mm512_extractf32x4_ps::<3>(c[2])),
+            hsum(_mm512_extractf32x4_ps::<3>(c[3])),
+        ],
+    ]
+}
+
+#[cfg(all(kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+#[inline]
+#[allow(unused_unsafe)] // __cpuid is unsafe on Rust 1.89 and safe on newer toolchains.
+fn avx512_auto4_available() -> bool {
+    static AVAILABLE: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *AVAILABLE.get_or_init(|| {
+        if !std::arch::is_x86_feature_detected!("avx512f") {
+            return false;
+        }
+        let vendor = unsafe { std::arch::x86_64::__cpuid(0) };
+        if vendor.eax < 1 {
+            return false;
+        }
+        let signature = unsafe { std::arch::x86_64::__cpuid(1) }.eax;
+        avx512_cpu_matches([vendor.ebx, vendor.edx, vendor.ecx], signature)
+    })
+}
+
+#[cfg(all(kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+fn avx512_cpu_matches(vendor: [u32; 3], signature: u32) -> bool {
+    let base_family = (signature >> 8) & 0xf;
+    let family = base_family + if base_family == 0xf { (signature >> 20) & 0xff } else { 0 };
+    let model = ((signature >> 4) & 0xf) | if matches!(base_family, 6 | 0xf) { (signature >> 12) & 0xf0 } else { 0 };
+    // Keep the allowlist at the measured Ryzen CPUID family, model and stepping.
+    vendor == [u32::from_le_bytes(*b"Auth"), u32::from_le_bytes(*b"enti"), u32::from_le_bytes(*b"cAMD")]
+        && (family, model, signature & 0xf) == (0x1a, 0x44, 0)
+}
+
+#[cfg(all(test, kevala_avx512, target_arch = "x86_64", not(target_feature = "avx2")))]
+mod avx512_dispatch_tests {
+    use super::avx512_cpu_matches;
+
+    #[test]
+    fn avx512_allowlist_requires_measured_vendor_family_model_and_stepping() {
+        let amd = [u32::from_le_bytes(*b"Auth"), u32::from_le_bytes(*b"enti"), u32::from_le_bytes(*b"cAMD")];
+        let intel = [u32::from_le_bytes(*b"Genu"), u32::from_le_bytes(*b"ineI"), u32::from_le_bytes(*b"ntel")];
+        let measured = 0x00b4_0f40;
+        assert!(avx512_cpu_matches(amd, measured));
+        assert!(!avx512_cpu_matches(intel, measured));
+        for signature in [0x00a6_0f12, 0x00b0_0f20, 0x00b4_0f41, 0x00b4_0f50, 0x00c4_0f40, 0x0004_0640] {
+            assert!(!avx512_cpu_matches(amd, signature), "signature {signature:08x}");
+        }
     }
 }
