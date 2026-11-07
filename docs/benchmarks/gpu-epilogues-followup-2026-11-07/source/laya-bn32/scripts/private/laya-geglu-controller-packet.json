@@ -1,0 +1,913 @@
+{
+  "schemaVersion": 1,
+  "id": "private-laya-geglu-bn32-v1-controller-r1",
+  "stage": "source-only preparation",
+  "executionRequirement": "root authorization and source review PASS; prospective command has not been executed",
+  "frozenRuntimeBase": "5becbb0d35208ba6b0a2ff04c0535a52a8963d5a",
+  "primaryHeadGate": false,
+  "worktree": "/tmp/kevala-laya-geglu-bn32",
+  "sourcePins": [
+    {
+      "path": "app/model-policy.js",
+      "bytes": 286,
+      "sha256": "46fdb4df7b41f27f0ac124e412dfb81e36fe213596997fc2caf41bf9836a162c"
+    },
+    {
+      "path": "crates/kevala/src/wgsl/geglu.wgsl",
+      "bytes": 1130,
+      "sha256": "9310243591e00a5f5fb2051f6ab71a50180420838b370a8de5c9f767bc8ad56f"
+    },
+    {
+      "path": "crates/kevala/src/wgsl/matmul.wgsl",
+      "bytes": 17868,
+      "sha256": "af1e64f19937b7e5532a3b7b5d888e956f4fd486271fbb21dba7768ccdde8fc7"
+    },
+    {
+      "path": "crates/kevala/src/wgsl/matmul_gelu.wgsl",
+      "bytes": 11595,
+      "sha256": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13"
+    },
+    {
+      "path": "dev/adapter-metadata.js",
+      "bytes": 898,
+      "sha256": "6aa9f18aef5334eb722749a113a73a02d9e26ec69770ec116a0cf12b98d4c9f8"
+    },
+    {
+      "path": "dev/laya-geglu-private.html",
+      "bytes": 228,
+      "sha256": "3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07"
+    },
+    {
+      "path": "dev/laya-geglu-private.js",
+      "bytes": 17706,
+      "sha256": "78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0"
+    },
+    {
+      "path": "dev/laya-parity-metrics.js",
+      "bytes": 11822,
+      "sha256": "ff8006a0bae57d8211f1eac1453f48e475b4c9511cd06f71aec297f79a35c740"
+    },
+    {
+      "path": "js/src/archs/clef.js",
+      "bytes": 5976,
+      "sha256": "ac7ba9459a7210e19516ef87bdeeb71e2612b73c44ca289a704f55f1ee5b8b06"
+    },
+    {
+      "path": "js/src/archs/gemma4.js",
+      "bytes": 12531,
+      "sha256": "f7f6394cbb9f4f95874b1fd45744ad10de2f9102d2d34cc87188f90acb2faf30"
+    },
+    {
+      "path": "js/src/archs/index.js",
+      "bytes": 2743,
+      "sha256": "d6bad5e520b55ee1768a89f3c8dd0e918641b72f5c3181bf66baba2644e30074"
+    },
+    {
+      "path": "js/src/archs/kev.js",
+      "bytes": 10357,
+      "sha256": "f1ebba93662c9bad0dd1c087e1e4c00d62cbeba29b18edb159451bb3d436b0b7"
+    },
+    {
+      "path": "js/src/archs/laya.js",
+      "bytes": 8417,
+      "sha256": "24394d347aab611ce48582d062c777d3804fa92ca62b2cb8ee5936cdb01f5a00"
+    },
+    {
+      "path": "js/src/cpu-calibrate.js",
+      "bytes": 3092,
+      "sha256": "2059c4c0800ef4f5fb3607393b8390cd5080173f3043b7e8880e093f8469dfe1"
+    },
+    {
+      "path": "js/src/cpu-policy.js",
+      "bytes": 3333,
+      "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+    },
+    {
+      "path": "js/src/cpu-tune.js",
+      "bytes": 1293,
+      "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+    },
+    {
+      "path": "js/src/engine-worker.js",
+      "bytes": 20118,
+      "sha256": "7f6045b89ad8b353c3b074323c17d321ac40fee17a793ad25c47da52e22718a2"
+    },
+    {
+      "path": "js/src/gemma4-image.js",
+      "bytes": 12697,
+      "sha256": "ecb9a68ecdecaa2f63b9e5672b78ae914fbceddca3125a94dc36f1196c292df4"
+    },
+    {
+      "path": "js/src/gemma4-ple-store.js",
+      "bytes": 11274,
+      "sha256": "e2022efc809547ccc93accd998298b9e850f77f49340f4c4394defbc70e91fe6"
+    },
+    {
+      "path": "js/src/gemma4-vision-pack.js",
+      "bytes": 3580,
+      "sha256": "deb0759339fd4f31a69fa541083b63f588059089e1c7bf3f7ace9c8df34eef54"
+    },
+    {
+      "path": "js/src/gpu-clef-head.js",
+      "bytes": 19783,
+      "sha256": "58c083005fec8cd29d54fe9023b14ca05a5428dbce884c979bb77967796e80cb"
+    },
+    {
+      "path": "js/src/gpu-gemma4-attention.js",
+      "bytes": 24396,
+      "sha256": "9a9ad0932a1a1e1d265dfadd4ec2c2b2886c47aa4e67add6aae0b81d3d0ecc2d"
+    },
+    {
+      "path": "js/src/gpu-gemma4-batch-mlp.js",
+      "bytes": 25939,
+      "sha256": "78010a5394eeba63e87675607632f399adfebb8af8ee41176017334e01d7d650"
+    },
+    {
+      "path": "js/src/gpu-gemma4-batch-single.js",
+      "bytes": 13303,
+      "sha256": "6a2739946b947133f3493607ebf45fe7725957282a1bc47b5c833e623f05dab9"
+    },
+    {
+      "path": "js/src/gpu-gemma4-bn32.js",
+      "bytes": 13497,
+      "sha256": "7bfe76fa5235b37115f9ac428621f5f9a003ec44de735c5021eb4595a695f6e4"
+    },
+    {
+      "path": "js/src/gpu-gemma4-grid-mlp.js",
+      "bytes": 21034,
+      "sha256": "79f02caf52270352b3d2b4afd4fb4dc824a8c9e0e00a7e679dbd53fc11cd9306"
+    },
+    {
+      "path": "js/src/gpu-gemma4-image.js",
+      "bytes": 6179,
+      "sha256": "d5f4a0486fac8e55f24a656b7e81da17f435c65e56b8b80b1a1b499ab53e04a1"
+    },
+    {
+      "path": "js/src/gpu-gemma4-k64.js",
+      "bytes": 12881,
+      "sha256": "51cd74810a886e49fc4763a470bd5061918ecc0b356949023478170b4f22374b"
+    },
+    {
+      "path": "js/src/gpu-gemma4-mlp.js",
+      "bytes": 14486,
+      "sha256": "82cc000344962c596f70bac0600a9e5a2cdd3fb21c62c2002d0d3e704017c00b"
+    },
+    {
+      "path": "js/src/gpu-gemma4-ple.js",
+      "bytes": 3548,
+      "sha256": "c93a7e4233bffab3c4199dd872853f3f719984544938cc860e8ddd51c9ecd9fb"
+    },
+    {
+      "path": "js/src/gpu-gemma4-prefix-cache.js",
+      "bytes": 7449,
+      "sha256": "136495c79d37ca246fa8ba476a3ce6b6e4a250a1104528421bb81bf1f1719800"
+    },
+    {
+      "path": "js/src/gpu-gemma4-prefix-gelu.js",
+      "bytes": 16018,
+      "sha256": "89fbd6fd2c1c22bfa8d5025e912447e486b13d600ac0a7ddfccbd33ce2deb1f3"
+    },
+    {
+      "path": "js/src/gpu-gemma4-prefix-retile.js",
+      "bytes": 15704,
+      "sha256": "92f92a22e6e0e70444a404205d8ca91431369d15eac89e9e3774994c59237ff5"
+    },
+    {
+      "path": "js/src/gpu-gemma4-rms-plan.js",
+      "bytes": 1960,
+      "sha256": "d4b6fea7ca32817f8dba8a0928c4c5fcbf0a40adc8f04eba4da5d1f68a17bd8a"
+    },
+    {
+      "path": "js/src/gpu-gemma4-rms.js",
+      "bytes": 21407,
+      "sha256": "f3b7198040ce122976d65ffa2abebaa0a94cd8183e11245c0920bf785ab3bfe2"
+    },
+    {
+      "path": "js/src/gpu-gemma4-vision-qkv.js",
+      "bytes": 18378,
+      "sha256": "b1ca0c21cad33f0fafcd9b0cd81f2c41d5d3f224e433c38ba2f3fe0d3f754630"
+    },
+    {
+      "path": "js/src/gpu-gemma4-vision.js",
+      "bytes": 39775,
+      "sha256": "36a0481cde2055b7a5b484d9a441d30df837928c67d0d371ad068cd0c2d63560"
+    },
+    {
+      "path": "js/src/gpu-gemma4.js",
+      "bytes": 111718,
+      "sha256": "36fece6876fd4fe0d5177bf7e04ac034e6c0a7a75c31cc1c864449090e87e8b1"
+    },
+    {
+      "path": "js/src/gpu-kev.js",
+      "bytes": 45464,
+      "sha256": "31f9e322832be04b0773e1866be724c49a5d7c9de7d523d5d07fdb8fafd6b614"
+    },
+    {
+      "path": "js/src/gpu-laya-geglu-epilogue.js",
+      "bytes": 16374,
+      "sha256": "cd55adb7a377565c3d6bf07d84b0ec5b317b307825aefb82e74020a40bb0d134"
+    },
+    {
+      "path": "js/src/gpu-laya.js",
+      "bytes": 16457,
+      "sha256": "f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5"
+    },
+    {
+      "path": "js/src/gpu-matvec-gelu.js",
+      "bytes": 12270,
+      "sha256": "9c4110ba52c207c9a1846d3024a7b0cc0b58bb0c1e831085cc0f9fa8da8f6c1b"
+    },
+    {
+      "path": "js/src/gpu-matvec-two.js",
+      "bytes": 22143,
+      "sha256": "ffb6c9ca422740297b4d1119ae08744e7ae4dd424aa2d7baaf96be25f31ac786"
+    },
+    {
+      "path": "js/src/gpu-matvec.js",
+      "bytes": 19542,
+      "sha256": "9879bb9f9ed51f272fe5250c23b14ef5085ad0c1f3270f9e601b621031b7abad"
+    },
+    {
+      "path": "js/src/gpu-recur-tuning.js",
+      "bytes": 21113,
+      "sha256": "47396a17c1b86e54b8a611729f24933d9864d85017cff53b94f200642b221df6"
+    },
+    {
+      "path": "js/src/gpu-tuning.js",
+      "bytes": 16021,
+      "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+    },
+    {
+      "path": "js/src/gpu.js",
+      "bytes": 26543,
+      "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+    },
+    {
+      "path": "js/src/image-header.js",
+      "bytes": 5607,
+      "sha256": "eb34af48c1dbcaa78d70cfd58ae752323a1870a1e3b2b8a6808ad0eef7e75eaa"
+    },
+    {
+      "path": "js/src/images.js",
+      "bytes": 4221,
+      "sha256": "5c0e992fbc553efd4b4154dbaadb456123b05e88e688487ee3dbde751dbfd811"
+    },
+    {
+      "path": "js/src/index.js",
+      "bytes": 19761,
+      "sha256": "4ad325c7e3b86442109bc3b6e26a3281b93dee9c43153550aa85348eb9a8d406"
+    },
+    {
+      "path": "js/src/node.js",
+      "bytes": 2459,
+      "sha256": "3424b37e1e0dc67539a4e0102f3ad2954fe0effc4e93c6b31b8d9000c05dcaf1"
+    },
+    {
+      "path": "js/src/pack-layout.js",
+      "bytes": 8838,
+      "sha256": "d9236befd7e033ef8f2598ba39c73fbe050c02226691755815bb7d8e87f5d449"
+    },
+    {
+      "path": "js/src/presets.js",
+      "bytes": 5604,
+      "sha256": "92b31ae3c5f96d462b6fd306523d3f822be0e4d25efbc8b486b3fd8cabbe555a"
+    },
+    {
+      "path": "js/src/request-queue.js",
+      "bytes": 2205,
+      "sha256": "39997630c01699baf039d9d72549fe7d5dacf567df740107da7d15765aaa2c30"
+    },
+    {
+      "path": "js/src/shard-client.js",
+      "bytes": 1495,
+      "sha256": "1e58818feb25691379ee0f38e66bec3135dda37f3c165bc06ed8ffe9aded127c"
+    },
+    {
+      "path": "js/src/shard-worker.js",
+      "bytes": 2762,
+      "sha256": "f7119c65fe0179bc0cc01fd1103ae5e6e42ba154bcc1f182f978145e33bc3a9c"
+    },
+    {
+      "path": "js/src/source.js",
+      "bytes": 33566,
+      "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    {
+      "path": "js/src/stats.js",
+      "bytes": 279,
+      "sha256": "51f952c3fd1f3e7f884d87d623d7787d7cb9edbd7cdefc9ec491fb7083e9b57d"
+    },
+    {
+      "path": "js/src/wasm.js",
+      "bytes": 4833,
+      "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+    },
+    {
+      "path": "scripts/lib/local-packs.mjs",
+      "bytes": 2664,
+      "sha256": "738ae8c632fe1deaccd6a7e1cd827ef257fd75ec5fc7a992cfaaaa2bda4f0382"
+    },
+    {
+      "path": "scripts/lib/static-path.mjs",
+      "bytes": 838,
+      "sha256": "684d4561fb645641bf3d761d9d7ff45ab63b586fdf2d65e15efdd71cfa080f4f"
+    },
+    {
+      "path": "scripts/private/laya-geglu-browser.py",
+      "bytes": 13514,
+      "sha256": "93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8"
+    },
+    {
+      "path": "scripts/private/laya-geglu-protocol.json",
+      "bytes": 21655,
+      "sha256": "8ca5329e28ca4dfaceb1b3f5c7a163bd1b9358ad3b985df7ed8bda45564cb4a5"
+    },
+    {
+      "path": "scripts/private/laya-geglu-protocol.mjs",
+      "bytes": 8719,
+      "sha256": "e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496"
+    },
+    {
+      "path": "scripts/private/run-laya-geglu.mjs",
+      "bytes": 29214,
+      "sha256": "2933bbe1d37f12c056d25a410a3950c7ef6644ee29a06e4acd0791086b30c919"
+    },
+    {
+      "path": "scripts/serve.mjs",
+      "bytes": 7491,
+      "sha256": "8b9e60a814408d41e4f1bfcfb59de21d6daf342ac708828ed2e00b138279e7af"
+    },
+    {
+      "path": "tests/fixtures/golden.json",
+      "bytes": 63374,
+      "sha256": "074d76f6bfa709f3e3b23cd7d792eaf8fca4c4d9a795ad5ebeea6d2e0d4fe77a"
+    }
+  ],
+  "browserResources": [
+    "app/model-policy.js",
+    "crates/kevala/src/wgsl/geglu.wgsl",
+    "crates/kevala/src/wgsl/matmul.wgsl",
+    "crates/kevala/src/wgsl/matmul_gelu.wgsl",
+    "dev/adapter-metadata.js",
+    "dev/laya-geglu-private.html",
+    "dev/laya-geglu-private.js",
+    "dev/laya-parity-metrics.js",
+    "js/src/archs/clef.js",
+    "js/src/archs/gemma4.js",
+    "js/src/archs/index.js",
+    "js/src/archs/kev.js",
+    "js/src/archs/laya.js",
+    "js/src/cpu-calibrate.js",
+    "js/src/cpu-policy.js",
+    "js/src/cpu-tune.js",
+    "js/src/engine-worker.js",
+    "js/src/gemma4-image.js",
+    "js/src/gemma4-ple-store.js",
+    "js/src/gemma4-vision-pack.js",
+    "js/src/gpu-clef-head.js",
+    "js/src/gpu-gemma4-attention.js",
+    "js/src/gpu-gemma4-batch-mlp.js",
+    "js/src/gpu-gemma4-batch-single.js",
+    "js/src/gpu-gemma4-bn32.js",
+    "js/src/gpu-gemma4-grid-mlp.js",
+    "js/src/gpu-gemma4-image.js",
+    "js/src/gpu-gemma4-k64.js",
+    "js/src/gpu-gemma4-mlp.js",
+    "js/src/gpu-gemma4-ple.js",
+    "js/src/gpu-gemma4-prefix-cache.js",
+    "js/src/gpu-gemma4-prefix-gelu.js",
+    "js/src/gpu-gemma4-prefix-retile.js",
+    "js/src/gpu-gemma4-rms-plan.js",
+    "js/src/gpu-gemma4-rms.js",
+    "js/src/gpu-gemma4-vision-qkv.js",
+    "js/src/gpu-gemma4-vision.js",
+    "js/src/gpu-gemma4.js",
+    "js/src/gpu-kev.js",
+    "js/src/gpu-laya-geglu-epilogue.js",
+    "js/src/gpu-laya.js",
+    "js/src/gpu-matvec-gelu.js",
+    "js/src/gpu-matvec-two.js",
+    "js/src/gpu-matvec.js",
+    "js/src/gpu-recur-tuning.js",
+    "js/src/gpu-tuning.js",
+    "js/src/gpu.js",
+    "js/src/image-header.js",
+    "js/src/images.js",
+    "js/src/index.js",
+    "js/src/node.js",
+    "js/src/pack-layout.js",
+    "js/src/presets.js",
+    "js/src/request-queue.js",
+    "js/src/shard-client.js",
+    "js/src/shard-worker.js",
+    "js/src/source.js",
+    "js/src/stats.js",
+    "js/src/wasm.js",
+    "scripts/lib/local-packs.mjs",
+    "scripts/lib/static-path.mjs",
+    "scripts/private/laya-geglu-browser.py",
+    "scripts/private/laya-geglu-protocol.json",
+    "scripts/private/laya-geglu-protocol.mjs",
+    "scripts/private/run-laya-geglu.mjs",
+    "scripts/serve.mjs",
+    "tests/fixtures/golden.json"
+  ],
+  "sharedWrapper": {
+    "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/shared-browser-boundary-v4/bench-gpu.py",
+    "bytes": 86154,
+    "sha256": "eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0"
+  },
+  "sessionBusHelper": {
+    "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/session_bus.py",
+    "bytes": 5979,
+    "sha256": "bac20966653dfaf8cbd7df636c03d02e77ee80b4ac1e9ac9931a6a30bb40c716"
+  },
+  "leaseHelpers": [
+    {
+      "path": "/tmp/kevala-host-controls-docs/docs/benchmarks/host-controls-2026-11-07/fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "path": "/tmp/kevala-host-controls-docs/docs/benchmarks/host-controls-2026-11-07/lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    }
+  ],
+  "emitterPreflight": {
+    "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/gpu-epilogue-wgsl-preflight-v1/receipt.json",
+    "bytes": 1141,
+    "sha256": "216ba6942d1ba80083d186e6a9fd644dbca9978d614c85361af26c8edb94b35d",
+    "scope": "Prior root-owned CI80 BN64 emitter proof only; BN32 source was transformed from its pinned text without executing WASM; no BN32 compilation, numerical or timing proof",
+    "layaSourceBytes": 8328,
+    "layaSourceSha256": "3e156fff6c95ba671c0eb09a1b95a8743b27c9b571ce2100219d2234cb290f78"
+  },
+  "prospectiveLaunch": {
+    "cwd": "/tmp/kevala-laya-geglu-bn32",
+    "unit": "kevala-laya-geglu-bn32-private-r1.scope",
+    "output": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/laya-geglu-bn32-private-r1",
+    "argv": [
+      "env",
+      "-u",
+      "VK_DRIVER_FILES",
+      "systemd-run",
+      "--user",
+      "--scope",
+      "--collect",
+      "--unit=kevala-laya-geglu-bn32-private-r1.scope",
+      "-p",
+      "MemoryHigh=32G",
+      "-p",
+      "MemoryMax=40G",
+      "-p",
+      "MemorySwapMax=4G",
+      "--",
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=15s",
+      "780s",
+      "flock",
+      "--exclusive",
+      "--nonblock",
+      "--no-fork",
+      "/home/bruno/.cache/kevala/gpu-profile.lock",
+      "node",
+      "/tmp/kevala-laya-geglu-bn32/scripts/private/run-laya-geglu.mjs",
+      "--execute",
+      "--scope-unit",
+      "kevala-laya-geglu-bn32-private-r1.scope",
+      "--packet-sha256",
+      "REPLACE_WITH_THIS_PACKET_SHA256",
+      "--binary",
+      "/home/bruno/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome",
+      "--output",
+      "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/laya-geglu-bn32-private-r1"
+    ],
+    "forbiddenFlags": [
+      "--wait with --scope",
+      "--cdp",
+      "taskset or CPU7 pinning"
+    ],
+    "nestedFlock": false
+  },
+  "leaseContract": {
+    "owner": "this Node PID must directly inherit the canonical exclusive FLOCK through --no-fork",
+    "proof": "reviewed async-bind-r1 guard; exact own fdinfo ownership; global rows are diagnostics only",
+    "durability": "exclusive raw evidence JSON with file fsync and directory fsync; every bind/check awaited",
+    "bookends": [
+      "before-preflight bind",
+      "before-chrome-executable-read",
+      "before-pack-and-wasm-read",
+      "before-browser-controller",
+      "after-browser-controller",
+      "after-owned-cleanup"
+    ],
+    "release": "Node retains inherited descriptor until owned process and HTTP cleanup plus final durable proof finish"
+  },
+  "cleanup": {
+    "basis": "accepted canonical clef cleanupChildren pattern plus exact known browser PID/startTicks and owned PGID/session",
+    "scopeAdmission": "must initially contain only this Node and its exact direct outer timeout",
+    "central": "bounded idempotent cleanup runs first in FINALLY; TERM then KILL verified owned groups/identities; reap leader and close stdio; leader exit does not cancel escalation",
+    "termGraceMs": 600,
+    "maximumCleanupMs": 5000,
+    "httpCloseGraceMs": 1000,
+    "httpDestroyGraceMs": 500,
+    "positiveProof": "zero known survivors; only admitted controllers in scope with Node positively present; repeat before final lease proof",
+    "failure": "retain raw failure evidence and inherited lease for admitted outer timeout bounded termination; no unrelated process signals",
+    "priorReviewedRunner": {
+      "path": "/tmp/kevala-laya-geglu-controller-fb90-review-snapshot/run-laya-geglu.mjs",
+      "sha256": "fb90ee777550dc7bb91a189faac72540e51b94d617a2d3577b7049128bce86ae"
+    },
+    "evidenceFailurePolicy": "Saving an unresolved-cleanup record is best effort; an unconditional finally holds the inherited lease for the admitted outer timeout even if evidence I/O fails"
+  },
+  "browserBoundary": {
+    "oneFreshChrome156": true,
+    "existingBrowserAttached": false,
+    "serviceEnvOnly": true,
+    "sharedFactoryLegacyResultDiscriminator": "q8-swiglu only selects pageLoadStrategy none; Laya parser uses window.gpuBench",
+    "terminalPoll": "one boolean every 250 ms; at most one full result fetch total",
+    "processAndTidBookends": true,
+    "warningLogs": [
+      "chromedriver.log",
+      "chrome-gpu.log"
+    ],
+    "chromeCombinedLogBudgetBytes": 33554432,
+    "nodeWrapperLogBudgetBytes": 4194304,
+    "missingLogs": "fail; no silent missing-log fallback",
+    "overshoot": "retained and failed; never trimmed",
+    "continuousContainmentClaim": false,
+    "idleHostClaim": false,
+    "cpuPolicy": "normal inherited scheduling; no fixed CPU affinity",
+    "nodeWrapperStreamErrors": "Immediate error listener retains exact error, aborts, signals only owned children, and rejects the body wait into the same finally; final close handles errored/destroyed streams and records actual retained bytes",
+    "chromiumArgs": [
+      "--enable-gpu",
+      "--enable-unsafe-webgpu",
+      "--use-angle=vulkan",
+      "--enable-features=Vulkan",
+      "--disable-vulkan-surface"
+    ],
+    "driverEnvironment": "VK_DRIVER_FILES unset only in the new launch environment; parent/global environment remains unchanged",
+    "acceptedHardwareLaunchEvidence": {
+      "path": "/tmp/kevala-profile-4e27753-20261107/tmp/profile-ci73-all11-q8-chromium/chromium/laya-q8/0-wall.json",
+      "bytes": 24017,
+      "sha256": "c572c56a44461b35dbfc78c6e879de985542eedc8b5c9b02d42eb82cff284176",
+      "browserVersion": "156.0.8078.4",
+      "adapter": "nvidia blackwell",
+      "isFallbackAdapter": false,
+      "vkDriverFiles": null,
+      "scope": "historical configuration evidence only; no historical timing comparison",
+      "guide": "/home/bruno/githubworkspace/kevala/docs/kernel-profiling.md:112"
+    },
+    "terminalOutcome": "explicit page-completed, page-error, or controller-deadline; immediate page error keeps its original error and is not labeled as timeout",
+    "tidInventoryContract": "Per-process PID/startTicks/cgroup bookends and positive individual TID identity/cgroup checks; observed new/disappeared churn retained; no stable, atomic or continuous inventory claim",
+    "snapshotPartial": {
+      "exceptionAttribute": "q8_partial_snapshot",
+      "schema": [
+        "stage",
+        "roots",
+        "phases",
+        "current",
+        "passes",
+        "assurance",
+        "error"
+      ],
+      "maximumBytes": 524288,
+      "scopeHistoryMaximumBytes": 1048576,
+      "capturedIn": [
+        "main controller exception",
+        "after-browser-quit exception"
+      ],
+      "retention": "stage/bytes/SHA256/storedUnder reference when already in containment.scope.snapshotFailures; otherwise preserve bounded dict once",
+      "referenceSerialization": "UTF8 JSON with sorted keys, compact separators, ensure_ascii false"
+    }
+  },
+  "modelProtocol": {
+    "loadedLayaGpuInstances": 1,
+    "cache": false,
+    "stateCache": false,
+    "gpuPolicy": "actual runtime defaults and gpuKernel:auto; reject ineligible baseline rather than force a slower generic/f32 path",
+    "firstGuard": "default-off existing Q8 golden public probability vectors and argmax using existing 0.03 bound; this is not new WASM/WebGPU parity",
+    "requests": {
+      "format": "UTF-8 JSON.stringify(requests), exact property order stored below",
+      "long": {
+        "caseId": "long:first",
+        "canonicalRequestsJson": "[{\"state\":\"Run 0. the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today \",\"questions\":{\"q\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for money back?\"}}}]",
+        "sha256": "68561030404558e75b42f22a4e04de3b500520cdf89792ca2f30fa255757990f",
+        "expectedActiveT": 512
+      },
+      "medium": {
+        "caseId": "medium:fallback",
+        "canonicalRequestsJson": "[{\"state\":\"Run 0. the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today \",\"questions\":{\"q\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for money back?\"}}}]",
+        "sha256": "9b5ccb3bc564ca164ba25eb6bd329f7547bb83dac0c671fc9be04dd500d76444",
+        "expectedEligibility": "fallback because no exact LONG permit and active T differs from 512"
+      },
+      "cache": false,
+      "stateCache": false,
+      "variableMeasuredInputs": false,
+      "authorization": {
+        "lifetime": "one forward only; consumed and cleared at entry including off mode and ineligible lengths",
+        "arm": "run(requests, {beforeDecide}) must invoke beforeDecide(actualRequests) immediately before decide; exact actual request JSON and role long:first are required",
+        "fallbackCases": [
+          "absent permit at T512",
+          "wrong role at T512",
+          "wrong request Run 1 at T512",
+          "MEDIUM request"
+        ],
+        "reusedPermitEligible": false
+      },
+      "wrongLong": {
+        "caseId": "long:wrong-request",
+        "canonicalRequestsJson": "[{\"state\":\"Run 1. the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today \",\"questions\":{\"q\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for money back?\"}}}]",
+        "sha256": "ae84bba6eab212af763ab323133b03566fb758441656650459a900e036b1e92e",
+        "expectedActiveT": 512,
+        "expectedEligibility": "fallback because request is not the exact pinned LONG"
+      }
+    },
+    "prototypeValidation": "frozen v2 exact per-layer GPU u32 counters and full inactive-tail sentinel; complete request output equality; missing/wrong-role/wrong-request T512 contexts and MEDIUM must fall back",
+    "sampling": {
+      "machine": "RTX 5070 Ti 16GB / Ryzen 9950X3D / Chrome 156",
+      "machineVerifiedThisTurn": false,
+      "loadedInstances": 1,
+      "tuning": "preserve one actual load-time selector plan; never force generic or recalibrate per lane",
+      "lanes": {
+        "A": "off",
+        "B": "on"
+      },
+      "diagnostics": "before and after timings; baseline plus shadow candidate at every layer; exact u32 comparison, separate finite counters, GPU activeCompared and tailCompared counts; activeCompared must equal 1,343,488 and tailCompared actual act buffer elements minus active count; sentinel across entire inactive act allocation; 24 bytes status per layer; complete response equality excluding top-level timing only",
+      "diagnosticsDuringTiming": false,
+      "requestWarmups": "ABABAB, three per lane",
+      "quartets": [
+        "ABBA",
+        "BAAB",
+        "ABBA",
+        "BAAB",
+        "ABBA",
+        "BAAB",
+        "ABBA",
+        "BAAB",
+        "ABBA"
+      ],
+      "aaBeforeEachQuartet": "AA",
+      "quartetCount": 9,
+      "aaPairCount": 9,
+      "pairedKernelPhase": "separate existing-profiler phase after unprofiled requests; same 3 warmups and 9 fixed ABBA/BAAB quartets plus AA; preserve mm.wi+geglu baseline and paired candidate samples",
+      "ordersAndInputsFixedBeforeExecution": true,
+      "outlierRemoval": false,
+      "corrections": false,
+      "retries": false,
+      "hardCampaignDeadlineSeconds": 600,
+      "perRequestDeadlineSeconds": 30,
+      "abort": "Any request failure, validation error, device loss, incomplete evidence, deadline or containment bookend failure stops campaign; retain failed record, no replacement samples",
+      "acceptance": {
+        "exactLayerComparisons": true,
+        "completeRequestOutputs": "exact, including finite probabilities; only top-level timing excluded",
+        "kernelMedianGainMinimum": 0.05,
+        "kernelStableRule": "candidate faster in every paired quartet; at least six of nine quartet gains at least 5 percent",
+        "requestRule": "positive median gain in both ABBA and BAAB subsets; at least eight of nine quartets improve; median relative gain exceeds maximum absolute AA relative spread",
+        "promotion": "separate review required; this prototype does not promote itself"
+      },
+      "gpuCoverage": {
+        "statusWordsPerLayer": 6,
+        "statusBytesPerLayer": 24,
+        "readbackBytesFor28Layers": 672,
+        "requiredActiveComparedPerLayer": 1343488,
+        "requiredTailComparedPerLayer": "trunk.act.size / 4 - 1343488",
+        "zeroStatusAccepted": false,
+        "partialComparisonAccepted": false,
+        "duplicateComparisonAccepted": false
+      }
+    },
+    "acceptance": {
+      "exactLayerComparisons": true,
+      "completeRequestOutputs": "exact, including finite probabilities; only top-level timing excluded",
+      "kernelMedianGainMinimum": 0.05,
+      "kernelStableRule": "candidate faster in every paired quartet; at least six of nine quartet gains at least 5 percent",
+      "requestRule": "positive median gain in both ABBA and BAAB subsets; at least eight of nine quartets improve; median relative gain exceeds maximum absolute AA relative spread",
+      "promotion": "separate review required; this prototype does not promote itself"
+    },
+    "promotion": "not authorized; prototype remains private and default off",
+    "loadDiagnostics": "Private load-only Worker/page MessagePort observers preserve the first exact serialized WEBGPU_INIT error before facade retry handling; the low-power retry remains forbidden; constructors/listeners restore in finally before requests",
+    "wasmFlavorSelection": {
+      "mode": "automatic runtime default via wasmFlavor; no flavor override",
+      "preference": "highest validated build: relaxed, simd, base",
+      "sharedByBothArms": true,
+      "recorded": "actual engine flavor, API flavor, coordinator.tile and API cpuTiles before/after protocol; asserted unchanged",
+      "necessityForForcedSimd": "none; prior forced choice came from backend parity harness, while accepted physical-GPU capture selected relaxed",
+      "preservedPriorInputs": "/tmp/kevala-laya-geglu-before-default-flavor-snapshot"
+    }
+  },
+  "expectedInputs": {
+    "packPath": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+    "headerReceipt": {
+      "path": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+      "realpath": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+      "identity": {
+        "dev": "66306",
+        "ino": "169085205",
+        "size": "478886720",
+        "mtimeNs": "1790052955230485668"
+      },
+      "reads": [
+        {
+          "offset": 0,
+          "length": 16
+        },
+        {
+          "offset": 16,
+          "length": 26297
+        }
+      ],
+      "hashedRange": {
+        "start": 0,
+        "endExclusive": 26313
+      },
+      "sha256": "f82cc6ce21f0b3f55000f505db8d7ee08f5f956ce9d1d1206607bf2c6476ecc8",
+      "payloadRead": false,
+      "scalesRead": false,
+      "wholePackHash": false,
+      "headerReadBudget": 8388608,
+      "modelRevision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+      "I": 2624,
+      "K": 1024,
+      "layers": 28,
+      "wi": {
+        "dtype": "q8",
+        "shape": [
+          5248,
+          1024
+        ],
+        "block": 32,
+        "bytes": 5373952,
+        "scalesBytes": 671744
+      },
+      "halfBindings": {
+        "first": "activated u",
+        "second": "multiplier gate",
+        "weightOffsetBytes": 2686976,
+        "scaleOffsetBytes": 335872
+      }
+    },
+    "fullPackExpectedSha256": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+    "actualFullPackHashComputedThisStage": false,
+    "actualWasmBinariesReadThisStage": false,
+    "wasm": [
+      {
+        "flavor": "base",
+        "path": "js/src/kevala-base.wasm",
+        "bytes": 1375771,
+        "sha256": "793351ff820ca6818eae749c09c829f974fe718d805447bd2141ab99b4c1e831"
+      },
+      {
+        "flavor": "simd",
+        "path": "js/src/kevala-simd.wasm",
+        "bytes": 1382096,
+        "sha256": "f463d88be692c2da5a609cade3216ff94cb05732ab560d0df72517afe9db67f5"
+      },
+      {
+        "flavor": "relaxed",
+        "path": "js/src/kevala-relaxed.wasm",
+        "bytes": 1383425,
+        "sha256": "55aa0e56bce7a8f808d27c8db50767fb24102eb85d8d45bb369451c934836c0a"
+      }
+    ]
+  },
+  "sourceValidation": [
+    "node --check dev/laya-geglu-private.js",
+    "node --check scripts/private/run-laya-geglu.mjs",
+    "offline stdlib-only uv ast.parse of browser adapter without imports",
+    "git diff --check",
+    "Helper eee15de6 source review PASS; positive TID churn, bounded partial retention, standalone import and after-quit anchors reviewed; no helper execution by this agent",
+    "Copied R5 page, browser adapter, gpu-laya integration and executable request protocol retained; runner control behavior retained with source pins and execution identity updated",
+    "node --check js/src/gpu-laya.js, js/src/gpu-laya-geglu-epilogue.js, scripts/private/laya-geglu-protocol.mjs, scripts/private/run-laya-geglu.mjs and dev/laya-geglu-private.js passed",
+    "Generated BN32 plus fill/compare diagnostic WGSL lexically audited against all 146 reserved words; no forbidden identifiers; no shader compilation",
+    "Positive comparison/canary shaders are byte-identical to R5; request fixtures, sampling, thresholds, browser/page adapter and containment/cleanup controls unchanged",
+    "All sourcePins, protocol source identities and runner FROZEN identities verified from source bytes; R5 source packet pins remain intact"
+  ],
+  "notExecuted": [
+    "controller admission or lease guard",
+    "browser launch",
+    "model load",
+    "shader compilation",
+    "GPU numerical comparison",
+    "request or kernel timing",
+    "full pack payload read or hash",
+    "WASM binary read or hash",
+    "archive generation",
+    "commit",
+    "push",
+    "PR"
+  ],
+  "browserExecutable": {
+    "path": "/home/bruno/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome",
+    "version": "156.0.8078.4",
+    "bytes": 301186376,
+    "sha256": "377a9fc07b495c3b8d0ab8ec1fdfd153641759f9756fea34d8dfce4de82f5025",
+    "sourceAuthority": "Root verified --version and supplied the prior startup plan pin; no executable bytes read during this source-only edit",
+    "verification": "Controller records fstat metadata and full streaming SHA256 under its inherited lease before pack reads, then checks metadata at the campaign bookend"
+  },
+  "candidateVariant": {
+    "id": "private-laya-geglu-bn32-v1",
+    "geometry": {
+      "BM": 64,
+      "BN": 32,
+      "threadsX": 32,
+      "threadsY": 8,
+      "sharedBytes": 16384,
+      "accumulatorScalars": 16
+    },
+    "baseline": {
+      "BM": 64,
+      "BN": 64,
+      "projectionColumns": 5248,
+      "dispatch": [
+        82,
+        8,
+        1
+      ],
+      "workgroups": 656,
+      "sharedBytes": 16384,
+      "accumulatorScalars": 16
+    },
+    "rejectedBN64": {
+      "BM": 64,
+      "BN": 64,
+      "pairedColumns": 2624,
+      "dispatch": [
+        41,
+        8,
+        1
+      ],
+      "workgroups": 328,
+      "sharedBytes": 24576,
+      "accumulatorScalars": 32
+    },
+    "bindings": "Same Q8/scales buffers and half offsets; same N=2624 K=1024 uniforms and act output; same zero-bias stores",
+    "hostShaderAgreement": "BN32 in host dispatch, host split-count eligibility and generated WGSL mm_splits; BM64 and splitTarget256 unchanged; baseline and candidate must both be unsplit",
+    "sourceFeasibility": {
+      "scope": "Pure source text transformation and integer geometry only; no WASM, GPU, model or timing execution",
+      "inputPaired": {
+        "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/gpu-epilogue-wgsl-preflight-v1/paired-original.wgsl",
+        "bytes": 8083,
+        "sha256": "a8620670ceeaf2ab6304312be61f64ebcf484007ddbd3699793bf5d782b0bf4a"
+      },
+      "inputLaya": {
+        "path": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/gpu-epilogue-wgsl-preflight-v1/laya-fused.wgsl",
+        "bytes": 8328,
+        "sha256": "3e156fff6c95ba671c0eb09a1b95a8743b27c9b571ce2100219d2234cb290f78"
+      },
+      "output": {
+        "bytes": 7440,
+        "sha256": "939e7b84af0df827009b53058691fefed9926f451509373907503b9420a609ca"
+      },
+      "dispatch": [
+        82,
+        8,
+        1
+      ],
+      "workgroups": 656,
+      "rows": 512,
+      "columns": 2624,
+      "activeElements": 1343488,
+      "sharedWeightVectorSlotsPerProjection": 256,
+      "inputVectorSlots": 512,
+      "orderedKqCalls": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "activationAndStoresUnchanged": true,
+      "negativeSourceContractsPassed": true
+    },
+    "hypothesis": "Restore baseline workgroup count, FP32 accumulator storage and shared-memory footprint while retaining the fused exact erf epilogue; occupancy/spilling and performance remain unmeasured for BN32",
+    "reservedIdentifierAudit": {
+      "authority": "https://www.w3.org/TR/2026/CRD-WGSL-20261106/#reserved-words",
+      "completePrivateShadersAudited": 3,
+      "reservedWordCount": 146,
+      "forbiddenIdentifiers": 0,
+      "scope": "Lexical audit of generated BN32 shader and unchanged fill/compare diagnostic shaders; no compilation"
+    }
+  },
+  "rejectedPredecessor": {
+    "id": "private-laya-geglu-v2-r5",
+    "worktree": "/tmp/kevala-laya-geglu-epilogue-v2",
+    "packetSha256": "fbda89c1a7806776456605c85e085ae41750483c59ab6913f21ac5a9b4da822b",
+    "helperSha256": "72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738",
+    "resultPath": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/laya-geglu-v2-private-r5/browser.json",
+    "rootReported": {
+      "candidateAccepted": false,
+      "numericalAndFullOutputPassed": true,
+      "kernelMedianGain": -0.045282359111836416,
+      "requestMedianGain": -0.007534138898262348,
+      "maximumAbsoluteAaSpread": 0.07389910573040563,
+      "cleanupRelease": "PASS; owner774620 absent; all20 known PIDs gone; scope empty; freeprobe0"
+    },
+    "preserved": true,
+    "retry": false,
+    "promotion": false
+  }
+}

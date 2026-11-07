@@ -1,0 +1,110 @@
+{
+  "timestamp": "2026-11-07T19:23:43.100Z",
+  "controllerSha256": "6f2398397f8e67140498c977c7c422a10a9cfdaccade8d3ed1b351dac97ac0fc",
+  "resultSha256": "559633195570fea1359389b4fb905f3e293dd174cad89e71c25faaa9ff9989aa",
+  "status": "complete",
+  "owner": {
+    "pid": 1202836,
+    "state": "S",
+    "ppid": 1202835,
+    "pgrp": 1202835,
+    "session": 1202835,
+    "startTicks": "15709253",
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-v6-r2.scope"
+  },
+  "processes": [
+    {
+      "pid": 1202835,
+      "absent": true
+    },
+    {
+      "pid": 1202836,
+      "absent": true
+    },
+    {
+      "pid": 1202857,
+      "absent": true
+    },
+    {
+      "pid": 1202860,
+      "absent": true
+    },
+    {
+      "pid": 1202882,
+      "absent": true
+    },
+    {
+      "pid": 1202890,
+      "absent": true
+    },
+    {
+      "pid": 1202892,
+      "absent": true
+    },
+    {
+      "pid": 1202894,
+      "absent": true
+    },
+    {
+      "pid": 1202898,
+      "absent": true
+    },
+    {
+      "pid": 1202899,
+      "absent": true
+    },
+    {
+      "pid": 1202901,
+      "absent": true
+    },
+    {
+      "pid": 1202926,
+      "absent": true
+    },
+    {
+      "pid": 1202927,
+      "absent": true
+    },
+    {
+      "pid": 1202933,
+      "absent": true
+    },
+    {
+      "pid": 1202972,
+      "absent": true
+    },
+    {
+      "pid": 1202988,
+      "absent": true
+    },
+    {
+      "pid": 1203007,
+      "absent": true
+    },
+    {
+      "pid": 1203068,
+      "absent": true
+    },
+    {
+      "pid": 1203076,
+      "absent": true
+    },
+    {
+      "pid": 1204022,
+      "absent": true
+    }
+  ],
+  "scope": {
+    "unit": "kevala-q8-swiglu-v6-r2.scope",
+    "stdout": "ControlGroup=\nLoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+    "stderr": "",
+    "showExit": 0
+  },
+  "lock": {
+    "device": 66306,
+    "inode": 134897311,
+    "freeProbeExit": 0
+  },
+  "runnerStdioClosed": true,
+  "releaseVerified": true
+}

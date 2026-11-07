@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-11-07T19:22:05.656Z",
+  "error": "external lock envelope is missing /home/linuxbrew/.linuxbrew/Cellar/node@22/22.22.2_2/bin/node",
+  "scope": "kevala-q8-swiglu-v6-r1.scope",
+  "members": [
+    1196939,
+    1196940
+  ],
+  "nodeExecutable": "/home/linuxbrew/.linuxbrew/Cellar/node@22/22.22.2_2/bin/node",
+  "noModelOrBrowserStarted": true,
+  "ownFD": {
+    "canonicalPath": "/home/bruno/.cache/kevala/gpu-profile.lock",
+    "pid": "1196940",
+    "startTicks": "15700830",
+    "device": "66306",
+    "inode": "134897311",
+    "major": "259",
+    "minor": "2",
+    "fd": 3,
+    "mntId": "33",
+    "flags": "557056"
+  }
+}

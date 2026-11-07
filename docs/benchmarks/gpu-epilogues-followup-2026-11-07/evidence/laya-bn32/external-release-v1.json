@@ -1,0 +1,103 @@
+{
+  "timestamp": "2026-11-07T19:17:14.004Z",
+  "controllerSha256": "5c2be7d59248955785c7bf35e7addf12706534a57c9496c173f44fccd950ffa3",
+  "browserSha256": "cefda6a39983170940993d02a2e54cfdab2b498f07326cc454ef10b23bebf608",
+  "status": "complete",
+  "browserStatus": "done",
+  "owner": 1178696,
+  "processes": [
+    {
+      "pid": 1178696,
+      "absent": true
+    },
+    {
+      "pid": 1178692,
+      "absent": true
+    },
+    {
+      "pid": 1178744,
+      "absent": true
+    },
+    {
+      "pid": 1178800,
+      "absent": true
+    },
+    {
+      "pid": 1178823,
+      "absent": true
+    },
+    {
+      "pid": 1178838,
+      "absent": true
+    },
+    {
+      "pid": 1178840,
+      "absent": true
+    },
+    {
+      "pid": 1178842,
+      "absent": true
+    },
+    {
+      "pid": 1178846,
+      "absent": true
+    },
+    {
+      "pid": 1178847,
+      "absent": true
+    },
+    {
+      "pid": 1178849,
+      "absent": true
+    },
+    {
+      "pid": 1178875,
+      "absent": true
+    },
+    {
+      "pid": 1178876,
+      "absent": true
+    },
+    {
+      "pid": 1178881,
+      "absent": true
+    },
+    {
+      "pid": 1178920,
+      "absent": true
+    },
+    {
+      "pid": 1178934,
+      "absent": true
+    },
+    {
+      "pid": 1178948,
+      "absent": true
+    },
+    {
+      "pid": 1178998,
+      "absent": true
+    },
+    {
+      "pid": 1179007,
+      "absent": true
+    },
+    {
+      "pid": 1179251,
+      "absent": true
+    }
+  ],
+  "scope": {
+    "unit": "kevala-laya-geglu-bn32-private-r1.scope",
+    "showExit": 0,
+    "stdout": "ControlGroup=\nLoadState=not-found\nActiveState=inactive\nSubState=dead\n",
+    "stderr": "",
+    "members": null
+  },
+  "lock": {
+    "device": 66306,
+    "inode": 134897311,
+    "freeProbeExit": 0
+  },
+  "releaseVerified": true
+}
