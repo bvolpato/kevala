@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clef route module smoke</title>
+</head>
+<body>
+<pre id="status">loading static modules</pre>
+<script>
+(() => {
+  window.bench = { done: false, status: "loading", phase: "module-load" };
+  const publishFailure = (value, phase) => {
+    if (window.bench?.done === true) return;
+    let message;
+    try { message = String(value?.message || value || "page module failed"); }
+    catch { message = "page module failed with an unreadable error"; }
+    window.bench = { done: true, status: "error", phase: window.bench?.phase || phase, error: message.slice(0, 1024) };
+  };
+  window.addEventListener("error", (event) => {
+    const target = event.target;
+    if (target !== window) {
+      if (target?.tagName === "SCRIPT" && target.type === "module") {
+        publishFailure(`Module script failed to load: ${target.getAttribute("src") || "inline module"}`, "module-load");
+      }
+      return;
+    }
+    if (event instanceof ErrorEvent) publishFailure(event.message || event.error, "module-runtime");
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => publishFailure(event.reason, "module-runtime"));
+})();
+</script>
+<script type="module">
+import "./dev/adapter-metadata.js";
+import "./js/src/index.js";
+import "./js/src/engine-worker.js";
+
+const forbiddenResourceRequests = performance.getEntriesByType("resource")
+  .map(({ name }) => name)
+  .filter((name) => /\.(?:wasm|kevala)(?:$|[?#])/i.test(name));
+window.bench = {
+  done: true,
+  status: forbiddenResourceRequests.length === 0 ? "done" : "error",
+  phase: "module-smoke-complete",
+  modulesLoaded: ["dev/adapter-metadata.js", "js/src/index.js", "js/src/engine-worker.js"],
+  modelLoads: 0,
+  gpuDeviceRequests: 0,
+  forbiddenResourceRequests,
+};
+document.getElementById("status").textContent = JSON.stringify(window.bench);
+</script>
+</body>
+</html>

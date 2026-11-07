@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "plan": {
+    "path": "archive-plan.json",
+    "bytes": 14575,
+    "sha256": "6a798433a907fd9552a52e1fb14916c631b4ee74189a9d528fea7bea7f07d329"
+  },
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 204731,
+    "sha256": "084c8278d51a71b29707722e0622092140a7b495ea59baa8ff4a95b0a4c7e148",
+    "decodedBytes": 661808,
+    "decodedSha256": "e25ab5419de4422c6669624053594f80f5b2a9689cfaf11ad58536479a1d5578"
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 4211,
+      "sha256": "fda1d29fea9215a357ac71df6f1dbf0809a2752c015b6c2b457f8551c0d82c68"
+    },
+    {
+      "path": "archive-plan.json",
+      "bytes": 14575,
+      "sha256": "6a798433a907fd9552a52e1fb14916c631b4ee74189a9d528fea7bea7f07d329"
+    },
+    {
+      "path": "archive-publication.mjs",
+      "bytes": 14972,
+      "sha256": "65dd7b1cadf34dd1651ee0256f0144f3944024787a32e5f36575145bef3a50d2"
+    },
+    {
+      "path": "evidence/clef-route-r1/leases.json",
+      "bytes": 4467,
+      "sha256": "a68ceaddb7c64fbde065540476a9ec932a54a19348208b45036e43c0c5a62f3c"
+    },
+    {
+      "path": "evidence/clef-route-r1/result.json",
+      "bytes": 32877,
+      "sha256": "a0e28b49662aac05744b501437737ab004b8d5997436c30f26ba80df913f3b40"
+    },
+    {
+      "path": "evidence/clef-route-r1/source-identities.json",
+      "bytes": 7350,
+      "sha256": "4e455e7d99149b3440b7d43d0472628bfadae18ace585630a513c2bd65d37483"
+    },
+    {
+      "path": "evidence/clef-route-r1/source-release.json",
+      "bytes": 3388,
+      "sha256": "53d941ff74a8b170f7a93f2e3d5868c57002e87467eb321db76368f274c3bddc"
+    },
+    {
+      "path": "evidence/clef-route-r1/static-browser-smoke.json",
+      "bytes": 1645,
+      "sha256": "e999c8052b2d2c8b91a44290a52f94451b40870d8506a874f6588e3a2a5d74a0"
+    },
+    {
+      "path": "evidence/clef-route-r1/validation.json",
+      "bytes": 2382,
+      "sha256": "18e790c7792864a8e7b469cdf24c982ec28d79b97543a489289e15e489063f1e"
+    },
+    {
+      "path": "evidence/f16-feature-r1/failure.json",
+      "bytes": 1055,
+      "sha256": "246f3e4db6dab936ac009115d1b274b839fc853511961e36d89661794e2170a8"
+    },
+    {
+      "path": "evidence/f16-feature-r1/source-release.json",
+      "bytes": 2363,
+      "sha256": "3bc3d7ff0bcfe2283633c2dd063ddecce174249df69dceb3b5270b789fe98b9b"
+    },
+    {
+      "path": "evidence/f16-feature-r2/capabilities.json",
+      "bytes": 9114,
+      "sha256": "135c0e904a8b0fcc59ca46982ae4510d118fb34274d50e38d796d8c2a6856cea"
+    },
+    {
+      "path": "evidence/host/driver-metadata.json",
+      "bytes": 1641,
+      "sha256": "6dfc5331a4e50147bc921581e1289b98eecc1861bd3f7c87f6bbc0a372b301af"
+    },
+    {
+      "path": "fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "path": "lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    },
+    {
+      "path": "prepare-evidence.mjs",
+      "bytes": 32144,
+      "sha256": "e5989310c624d40578a4160548e45ce193ddb28839d2d347cd2217d0bec4a691"
+    },
+    {
+      "path": "provenance.json",
+      "bytes": 23591,
+      "sha256": "0d057865c34edc862c59aa16cd108e049c6584d1ee19b1b249bf6147fc95abc2"
+    },
+    {
+      "path": "report/clef-head-route-diagnostic.md",
+      "bytes": 6632,
+      "sha256": "d4689c320f9c842dde102af101e27f012bacbca0928fed81e3f7e4be627169bc"
+    },
+    {
+      "path": "source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs",
+      "bytes": 64936,
+      "sha256": "ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049"
+    },
+    {
+      "path": "source/clef-route-r1-original/bench-clef-route-smoke.html",
+      "bytes": 1966,
+      "sha256": "16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee"
+    },
+    {
+      "path": "source/clef-route-r1-original/bench-clef-route.html",
+      "bytes": 20397,
+      "sha256": "a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9"
+    },
+    {
+      "path": "source/clef-route-r1-original/scripts/private/clef-route-browser.py",
+      "bytes": 95445,
+      "sha256": "3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619"
+    },
+    {
+      "path": "source/clef-route-r1-original/scripts/private/clef-route-diagnostic.mjs",
+      "bytes": 63530,
+      "sha256": "de9fd3cb6b81df9a17bf6bbe464527ad925500c96e1537396d0e0036f5285167"
+    },
+    {
+      "path": "source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs",
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1"
+    },
+    {
+      "path": "source/f16-feature-common/f16-feature-probe.py",
+      "bytes": 11053,
+      "sha256": "cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2"
+    },
+    {
+      "path": "source/f16-feature-r1/f16-feature-probe.html",
+      "bytes": 2906,
+      "sha256": "4d11ba2c83dc9ca3349ae129faba8f95ede0f60423d3ddebcbeebab4b0cd7cf8"
+    },
+    {
+      "path": "source/f16-feature-r1/f16-feature-probe.mjs",
+      "bytes": 24551,
+      "sha256": "a502ea8d38637e4d9660a38b1bff641379a1fa75782979f08f6f223c04120170"
+    },
+    {
+      "path": "source/f16-feature-r2/f16-feature-probe.html",
+      "bytes": 3463,
+      "sha256": "df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a"
+    },
+    {
+      "path": "source/f16-feature-r2/f16-feature-probe.mjs",
+      "bytes": 24714,
+      "sha256": "1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8"
+    },
+    {
+      "path": "source/f16-feature-r2/f16-feature-probe.test.mjs",
+      "bytes": 3619,
+      "sha256": "63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8"
+    }
+  ],
+  "exclusions": {
+    "sources": [
+      "model weights",
+      "pack payloads",
+      "compiled WASM",
+      "copied runtime trees",
+      "complete raw controller captures",
+      "browser diagnostic logs",
+      "full process/thread inventories",
+      "global /proc/locks text"
+    ],
+    "other": [
+      "The Clef capture has no decision vectors, answer text, logits, or raw probabilities.",
+      "F16 evidence covers adapter/device capability only; no shaders, buffers, dispatches, model outputs, correctness, or latency."
+    ]
+  }
+}

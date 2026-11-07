@@ -1,0 +1,672 @@
+{
+  "schemaVersion": 1,
+  "baseCommit": "81a27608f24e0b2252318515e272387c48dec7d8",
+  "preparedAt": "2026-11-07T21:22:46.610Z",
+  "preparationLock": {
+    "canonicalPath": "/home/bruno/.cache/kevala/gpu-profile.lock",
+    "device": "66306",
+    "inode": "134897311",
+    "fd": 3,
+    "exactInheritedFdOwnershipProved": true,
+    "checks": [
+      {
+        "label": "clef-evidence-preparation-admission",
+        "passed": true,
+        "exactInheritedFdOwnershipProved": true,
+        "ownerStableBeforeAfter": true,
+        "descriptorStableBeforeAfter": true,
+        "canonicalDevice": "66306",
+        "canonicalInode": "134897311",
+        "fdNumber": 3,
+        "primaryFdLockRowsBefore": 1,
+        "primaryFdLockRowsAfter": 1
+      }
+    ],
+    "rawGlobalLockTablesStored": false
+  },
+  "rawInputs": [
+    {
+      "id": "clefResult",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/result.json",
+      "bytes": 1125124,
+      "sha256": "2e64adef39e6a4cd03b772d01474343e3f44df04f5be8a3a4c2ef45dd98aa932"
+    },
+    {
+      "id": "clefController",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/controller.json",
+      "bytes": 40135,
+      "sha256": "a3323956bc7f4f9be293aac0d4ad292da87dbb55c91b7dc607aa1a8c86f6f188"
+    },
+    {
+      "id": "clefRelease",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/external-release-v1.json",
+      "bytes": 2135,
+      "sha256": "e4544ac91edd872317946707a3e73118589565d2db05797894b8c84292491399"
+    },
+    {
+      "id": "clefLease0",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/lease-000-clef-route-controller-bind-before-inputs.json",
+      "bytes": 108928,
+      "sha256": "397a3227d5d44c741aa4c35fb15bb9040516830164c3fe8f8b38cb6f9dd0d4ff"
+    },
+    {
+      "id": "clefLease1",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/lease-001-before-source-and-runtime-inputs.json",
+      "bytes": 55617,
+      "sha256": "e19b34299365e7b835e5384f052596ae2081cfa9d3e418849cd9311450ec1e58"
+    },
+    {
+      "id": "clefLease2",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/lease-002-before-browser-load-of-runtime-wasm-and-model-pack.json",
+      "bytes": 55639,
+      "sha256": "a820595c2138d46e39c9221d35712bf4e850fe402c5478437b7086cb2533a9af"
+    },
+    {
+      "id": "clefLease3",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/lease-003-before-pack-identity-and-link.json",
+      "bytes": 55616,
+      "sha256": "0234a485c53bc7e386798b4e492e3a3771d5260b8d9c6111d83e3dae15ad9a21"
+    },
+    {
+      "id": "clefLease4",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/lease-004-before-browser-controller.json",
+      "bytes": 55614,
+      "sha256": "e911473fcd7a6001168152a821ceb27ceebdc13dedf63856c31719398e15e63a"
+    },
+    {
+      "id": "clefLease5",
+      "root": "clef",
+      "path": "tmp/clef-route-20261107-r1/lease-005-after-owned-process-server-and-link-cleanup-and-scope-proof.json",
+      "bytes": 55605,
+      "sha256": "ba2cb886710ea38e465362f57e22d976e74edb56759f21c45e234ef68331375e"
+    },
+    {
+      "id": "clefPresReceipt",
+      "root": "campaign",
+      "path": "clef-route-r1-source-preservation-v1/receipt.json",
+      "bytes": 5725,
+      "sha256": "aa1d9d49dd15d63eaea013862cfc587700fed468c5313b633b33d15c7c08e95a"
+    },
+    {
+      "id": "clefPresRelease",
+      "root": "campaign",
+      "path": "clef-route-r1-source-preservation-v1/release.json",
+      "bytes": 370,
+      "sha256": "803e98354d02d2c0071615744ebdd0ebecade993828dc82bad5e8a017b1cfe5f"
+    },
+    {
+      "id": "clefPresLease0",
+      "root": "campaign",
+      "path": "clef-route-r1-source-preservation-v1/lease-0.json",
+      "bytes": 105828,
+      "sha256": "2ab27978219affbed494866716d3cb74d910305f3aac7885e6361117b756f0ed"
+    },
+    {
+      "id": "clefPresLease1",
+      "root": "campaign",
+      "path": "clef-route-r1-source-preservation-v1/lease-1.json",
+      "bytes": 54072,
+      "sha256": "99c9a03ca65af456be22f49e20484d583bd7242efaa42000c48ca8fe3829f0f3"
+    },
+    {
+      "id": "clefCorrectedReceipt",
+      "root": "campaign",
+      "path": "clef-route-r1-corrected-validation-v1/receipt.json",
+      "bytes": 7900,
+      "sha256": "c2c22511db87d993e631f7ab8558ee5b4450ff4d4fda3304913064f74f4d5249"
+    },
+    {
+      "id": "clefCorrectedLease0",
+      "root": "campaign",
+      "path": "clef-route-r1-corrected-validation-v1/lease-00-clef-r1-offline-validation-before-inputs.json",
+      "bytes": 110342,
+      "sha256": "b89e2e1f4e09f959a44e891335b6b337af3d1c157faea806ba472c1d10b729d3"
+    },
+    {
+      "id": "clefCorrectedLease1",
+      "root": "campaign",
+      "path": "clef-route-r1-corrected-validation-v1/lease-01-clef-r1-offline-validation-after-result-gates.json",
+      "bytes": 56339,
+      "sha256": "311ec15e39a3e5e5e024ca06485d3ca91b60d5b669c8d6f09e8902ac200b2880"
+    },
+    {
+      "id": "clefSmoke",
+      "root": "campaign",
+      "path": "clef-route-static-browser-smoke-v1.json",
+      "bytes": 2214,
+      "sha256": "7952adafc6cfca19b98a5d816881eb0aeb38cf004fa76023319502da039efac0"
+    },
+    {
+      "id": "clefPreflight",
+      "root": "campaign",
+      "path": "clef-route-source-preflight-v1/plan.json",
+      "bytes": 22913,
+      "sha256": "260e437231f8c795d7c0afefef03c3239ca52b76eaeb31700079eabf8d8b8378"
+    },
+    {
+      "id": "f16R1Result",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/baseline/result.json",
+      "bytes": 1003800,
+      "sha256": "739e057deb7797296fd1917619b5fda61a5dfadc39365282767435c528ee9c3e"
+    },
+    {
+      "id": "f16R1Controller",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/controller.json",
+      "bytes": 27967,
+      "sha256": "2e6c90362229c8eecb7ce4a960034b4db4b7f957cace20f2016cde6acada3cda"
+    },
+    {
+      "id": "f16R1Release",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/external-release-v1.json",
+      "bytes": 1636,
+      "sha256": "42f5b20e752708d45e147a3557d5e1a0e941b9cc3b56d5ef8a5d9a6aecfd8e3f"
+    },
+    {
+      "id": "f16R1PresReceipt",
+      "root": "campaign",
+      "path": "f16-feature-r1-source-preservation-v1/receipt.json",
+      "bytes": 5237,
+      "sha256": "34fe385005d3f7e86da51a5f9166ed63d153320aac61b908e25f1cb49ecad693"
+    },
+    {
+      "id": "f16R1PresRelease",
+      "root": "campaign",
+      "path": "f16-feature-r1-source-preservation-v1/release.json",
+      "bytes": 462,
+      "sha256": "2922320f940e4624148edfa0b30e362fe82795b45fb8208123c10d5b14cb1180"
+    },
+    {
+      "id": "f16R1PresLease0",
+      "root": "campaign",
+      "path": "f16-feature-r1-source-preservation-v1/lease-0.json",
+      "bytes": 109963,
+      "sha256": "b48c649dbd653ae82b960bcf189a988309801a5383f80b46a4032c4678456072"
+    },
+    {
+      "id": "f16R1PresLease1",
+      "root": "campaign",
+      "path": "f16-feature-r1-source-preservation-v1/lease-1.json",
+      "bytes": 56141,
+      "sha256": "c8e07dc3a2fa64555852f629a84116110824a43080cec97562c2b90fc8ea7627"
+    },
+    {
+      "id": "f16R1Lease0",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/lease-000-feature-controller-bind-inherited-fd.json",
+      "bytes": 106892,
+      "sha256": "e55b2710b3ae00a72101e56dcbc3aa73491973fbd76728f737d27678a73771f9"
+    },
+    {
+      "id": "f16R1Lease1",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/lease-001-before-browser-binary-identity-read.json",
+      "bytes": 54605,
+      "sha256": "8713b893d0ff024f74425b0db0d44c282c12ee2b04f3200fceb6d8878af6ca62"
+    },
+    {
+      "id": "f16R1Lease2",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/lease-002-before-baseline-browser.json",
+      "bytes": 54597,
+      "sha256": "1d8c3feb230983edb2e000b273b421e58e465a52c8a0320a813da03c12dbb3e2"
+    },
+    {
+      "id": "f16R1Lease3",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r1/lease-003-after-owned-processes-stdio-and-server-closed.json",
+      "bytes": 54706,
+      "sha256": "05e4b5dff2f4898cc256d2cd708fa30ee533db77fe21b362c12c54106403edee"
+    },
+    {
+      "id": "f16R2Baseline",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/baseline/result.json",
+      "bytes": 860015,
+      "sha256": "bae48d2bade445bb96d67731ceceace0896da0a5c25a4f0264906408ce87d557"
+    },
+    {
+      "id": "f16R2Toggle",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/f16-toggle/result.json",
+      "bytes": 844777,
+      "sha256": "f9da9f0c2fb9f3cc11cacd0a668b4a500fe147b185c788ad88d4454c194539b7"
+    },
+    {
+      "id": "f16R2Controller",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/controller.json",
+      "bytes": 50612,
+      "sha256": "fdefaddf6b8cf0f572a26ec2b14b2efbc17d1f9b2fae282186b5a803ff8636fc"
+    },
+    {
+      "id": "f16R2Release",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/external-release-v1.json",
+      "bytes": 2806,
+      "sha256": "8362a6ee20e1faa05e6c813e33a3c9eb68e4e3316573ef6b177a3901612a5f4d"
+    },
+    {
+      "id": "f16R2Lease0",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-000-feature-controller-bind-inherited-fd.json",
+      "bytes": 111418,
+      "sha256": "69c6ee28f751142d3c826f0dcb152a599c0abd7390cbc737df2043e234a766f0"
+    },
+    {
+      "id": "f16R2Lease1",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-001-before-browser-binary-identity-read.json",
+      "bytes": 56865,
+      "sha256": "0965dad06b118bc75bc23c7ad0fdf8480c6cf1139ea080a5b25333ee7887995e"
+    },
+    {
+      "id": "f16R2Lease2",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-002-before-baseline-browser.json",
+      "bytes": 56859,
+      "sha256": "02cf1178675915142c55c1579a758be2dc9a88148c9d883d6b7d59671b39d048"
+    },
+    {
+      "id": "f16R2Lease3",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-003-after-baseline-children-and-stdio-closed.json",
+      "bytes": 56910,
+      "sha256": "1df5021c97e66bf993b59a84c05351f138f29c34ba602c6c405bc0bfb7e38ef0"
+    },
+    {
+      "id": "f16R2Lease4",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-004-before-f16-toggle-browser.json",
+      "bytes": 56895,
+      "sha256": "bbef932855e93c513942c9036a6805f49a0ba42914c62a2617b770fa7e125482"
+    },
+    {
+      "id": "f16R2Lease5",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-005-after-f16-toggle-children-and-stdio-closed.json",
+      "bytes": 57066,
+      "sha256": "c6b44c8523b0847b46596b5502ace535795235ed13528888c9bb326340bf97d7"
+    },
+    {
+      "id": "f16R2Lease6",
+      "root": "f16",
+      "path": "tmp/capture-20261107-r2/lease-006-after-owned-processes-stdio-and-server-closed.json",
+      "bytes": 56935,
+      "sha256": "f30895825318673ca5ca5c1ab1fab2b8670f6a166ed657a6a47a9f03bc581a08"
+    },
+    {
+      "id": "f16R2Plan",
+      "root": "campaign",
+      "path": "f16-feature-source-preflight-r2-v1/parsed-plan.json",
+      "bytes": 4539,
+      "sha256": "70c31b39e324bd0b024394f96a01abedd7ee2d14e3b20fe335a92b69f5cf6150"
+    },
+    {
+      "id": "f16R2Preflight",
+      "root": "campaign",
+      "path": "f16-feature-source-preflight-r2-v1/parsed-source-preflight.json",
+      "bytes": 1104,
+      "sha256": "bb641498cc88cb894fb6ad83b6fb9ef4b77be1dc1d34fd92e1f4986e18b3a63b"
+    },
+    {
+      "id": "driverReceipt",
+      "root": "campaign",
+      "path": "host-capability-metadata-20261107-v1/receipt.json",
+      "bytes": 4596,
+      "sha256": "0f231beb6b8f9b17b90fdc10a41cd581f4f7633529e7bdae052e8dfd01d61d9c"
+    },
+    {
+      "id": "driverRelease",
+      "root": "campaign",
+      "path": "host-capability-metadata-20261107-v1/release.json",
+      "bytes": 520,
+      "sha256": "d5f2e5f195115f7d6fb1eb8bce79b2125178679c85f1ad186a9ba5a0edd2d7b3"
+    },
+    {
+      "id": "driverLease0",
+      "root": "campaign",
+      "path": "host-capability-metadata-20261107-v1/lease-0.json",
+      "bytes": 110947,
+      "sha256": "c8a00a859bb4d33f65d23d44f8c247abfc6b895f8e3b0900146eabda3c1a6df8"
+    },
+    {
+      "id": "driverLease1",
+      "root": "campaign",
+      "path": "host-capability-metadata-20261107-v1/lease-1.json",
+      "bytes": 56631,
+      "sha256": "cfe2e4f9b27ff6985dc1004f4b0cf0b9ffdb50387e6b04d3cf5c5ab286d09d84"
+    }
+  ],
+  "sourceCopies": [
+    {
+      "archivePath": "source/clef-route-r1-original/bench-clef-route.html",
+      "sourceRoot": "campaign",
+      "sourcePath": "clef-route-r1-source-preservation-v1/source/bench-clef-route.html",
+      "bytes": 20397,
+      "sha256": "a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/bench-clef-route-smoke.html",
+      "sourceRoot": "campaign",
+      "sourcePath": "clef-route-r1-source-preservation-v1/source/bench-clef-route-smoke.html",
+      "bytes": 1966,
+      "sha256": "16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/scripts/private/clef-route-browser.py",
+      "sourceRoot": "campaign",
+      "sourcePath": "clef-route-r1-source-preservation-v1/source/scripts/private/clef-route-browser.py",
+      "bytes": 95445,
+      "sha256": "3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/scripts/private/clef-route-diagnostic.mjs",
+      "sourceRoot": "campaign",
+      "sourcePath": "clef-route-r1-source-preservation-v1/source/scripts/private/clef-route-diagnostic.mjs",
+      "bytes": 63530,
+      "sha256": "de9fd3cb6b81df9a17bf6bbe464527ad925500c96e1537396d0e0036f5285167"
+    },
+    {
+      "archivePath": "source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs",
+      "sourceRoot": "campaign",
+      "sourcePath": "clef-route-r1-source-preservation-v1/source/scripts/private/q8-monitor-cadence.mjs",
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1"
+    },
+    {
+      "archivePath": "source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs",
+      "sourceRoot": "clef",
+      "sourcePath": "scripts/private/clef-route-diagnostic.mjs",
+      "bytes": 64936,
+      "sha256": "ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049"
+    },
+    {
+      "archivePath": "source/f16-feature-r1/f16-feature-probe.mjs",
+      "sourceRoot": "campaign",
+      "sourcePath": "f16-feature-r1-source-preservation-v1/source/scripts/private/f16-feature-probe.mjs",
+      "bytes": 24551,
+      "sha256": "a502ea8d38637e4d9660a38b1bff641379a1fa75782979f08f6f223c04120170"
+    },
+    {
+      "archivePath": "source/f16-feature-common/f16-feature-probe.py",
+      "sourceRoot": "campaign",
+      "sourcePath": "f16-feature-r1-source-preservation-v1/source/scripts/private/f16-feature-probe.py",
+      "bytes": 11053,
+      "sha256": "cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2"
+    },
+    {
+      "archivePath": "source/f16-feature-r1/f16-feature-probe.html",
+      "sourceRoot": "campaign",
+      "sourcePath": "f16-feature-r1-source-preservation-v1/source/scripts/private/f16-feature-probe.html",
+      "bytes": 2906,
+      "sha256": "4d11ba2c83dc9ca3349ae129faba8f95ede0f60423d3ddebcbeebab4b0cd7cf8"
+    },
+    {
+      "archivePath": "source/f16-feature-r2/f16-feature-probe.html",
+      "sourceRoot": "f16",
+      "sourcePath": "scripts/private/f16-feature-probe.html",
+      "bytes": 3463,
+      "sha256": "df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a"
+    },
+    {
+      "archivePath": "source/f16-feature-r2/f16-feature-probe.mjs",
+      "sourceRoot": "f16",
+      "sourcePath": "scripts/private/f16-feature-probe.mjs",
+      "bytes": 24714,
+      "sha256": "1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8"
+    },
+    {
+      "archivePath": "source/f16-feature-r2/f16-feature-probe.test.mjs",
+      "sourceRoot": "f16",
+      "sourcePath": "scripts/private/f16-feature-probe.test.mjs",
+      "bytes": 3619,
+      "sha256": "63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8"
+    }
+  ],
+  "toolSources": [
+    {
+      "path": "prepare-evidence.mjs",
+      "bytes": 32144,
+      "sha256": "e5989310c624d40578a4160548e45ce193ddb28839d2d347cd2217d0bec4a691"
+    },
+    {
+      "path": "fd-lease.mjs",
+      "bytes": 6091,
+      "sha256": "cf3ad8822a1386ec435723bb478b6a2ef1d753a0b9896c23e1b27d6e6d4b2915"
+    },
+    {
+      "path": "lease-parse.mjs",
+      "bytes": 5062,
+      "sha256": "6efc5046dc7b769f4c59ea256661581087b6e3ee1a366898b7852192697b5a31"
+    }
+  ],
+  "projections": [
+    {
+      "archivePath": "evidence/clef-route-r1/result.json",
+      "sourceIds": [
+        "clefResult"
+      ],
+      "selectedFields": [
+        "model",
+        "modelInfo",
+        "arch",
+        "backend",
+        "flavor",
+        "selectedFlavor",
+        "precision",
+        "adapter",
+        "cache",
+        "pack",
+        "protocol",
+        "warmups",
+        "runs",
+        "unique",
+        "profile",
+        "clefHeadAfterWarmup",
+        "clefHeadInstrumentation",
+        "cases (complete records: wall vectors, all samples/routes/hashes/timing maps, and cases[].last timing objects)"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 32877,
+      "sha256": "a0e28b49662aac05744b501437737ab004b8d5997436c30f26ba80df913f3b40"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/validation.json",
+      "sourceIds": [
+        "clefController",
+        "clefCorrectedReceipt"
+      ],
+      "selectedFields": [
+        "controller.status/error/stopReason/runnerExit/result.status/result.error",
+        "corrected receipt status/originalControllerFailureStatusPreserved/originalRawFilesChanged",
+        "validator identity and offline summary",
+        "original raw identities and failure text",
+        "independent audit route/timing/FD summary"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 2382,
+      "sha256": "18e790c7792864a8e7b469cdf24c982ec28d79b97543a489289e15e489063f1e"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/leases.json",
+      "sourceIds": [
+        "clefLease0",
+        "clefLease1",
+        "clefLease2",
+        "clefLease3",
+        "clefLease4",
+        "clefLease5",
+        "clefPresLease0",
+        "clefPresLease1",
+        "clefCorrectedLease0",
+        "clefCorrectedLease1"
+      ],
+      "selectedFields": [
+        "sequence",
+        "label",
+        "timestamp",
+        "sourceSha256",
+        "passed",
+        "exactInheritedFdOwnershipProved",
+        "owner/descriptor stability booleans",
+        "canonical device/inode",
+        "exact own-FD lock-row booleans"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 4467,
+      "sha256": "a68ceaddb7c64fbde065540476a9ec932a54a19348208b45036e43c0c5a62f3c"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/source-release.json",
+      "sourceIds": [
+        "clefRelease",
+        "clefPresReceipt",
+        "clefPresRelease",
+        "clefPresLease0",
+        "clefPresLease1"
+      ],
+      "selectedFields": [
+        "release verified/controller status/known process count and absence summary/collected scope/canonical lock and free probe",
+        "61-pin audit/copies/source lease refs/before-after own-FD summaries",
+        "source preservation release summary"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 3388,
+      "sha256": "53d941ff74a8b170f7a93f2e3d5868c57002e87467eb321db76368f274c3bddc"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/source-identities.json",
+      "sourceIds": [
+        "clefPreflight"
+      ],
+      "selectedFields": [
+        "baseCommit",
+        "sourceIdentity (all 61 path, byte-count, SHA-256 entries)"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 7350,
+      "sha256": "4e455e7d99149b3440b7d43d0472628bfadae18ace585630a513c2bd65d37483"
+    },
+    {
+      "archivePath": "evidence/clef-route-r1/static-browser-smoke.json",
+      "sourceIds": [
+        "clefSmoke"
+      ],
+      "selectedFields": [
+        "timestamp",
+        "pageSha256",
+        "smokePageSha256",
+        "result",
+        "scope"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 1645,
+      "sha256": "e999c8052b2d2c8b91a44290a52f94451b40870d8506a874f6588e3a2a5d74a0"
+    },
+    {
+      "archivePath": "evidence/f16-feature-r1/failure.json",
+      "sourceIds": [
+        "f16R1Controller",
+        "f16R1Result",
+        "f16R1Release"
+      ],
+      "selectedFields": [
+        "controller status/capability-only flags/error and bounded lane result identities",
+        "baseline status/done/lane/complete page object",
+        "release verification summary"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 1055,
+      "sha256": "246f3e4db6dab936ac009115d1b274b839fc853511961e36d89661794e2170a8"
+    },
+    {
+      "archivePath": "evidence/f16-feature-r1/source-release.json",
+      "sourceIds": [
+        "f16R1PresReceipt",
+        "f16R1PresRelease",
+        "f16R1PresLease0",
+        "f16R1PresLease1"
+      ],
+      "selectedFields": [
+        "source preservation status/copies/source lease refs and own-FD proof summaries",
+        "release summary"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 2363,
+      "sha256": "3bc3d7ff0bcfe2283633c2dd063ddecce174249df69dceb3b5270b789fe98b9b"
+    },
+    {
+      "archivePath": "evidence/f16-feature-r2/capabilities.json",
+      "sourceIds": [
+        "f16R2Controller",
+        "f16R2Baseline",
+        "f16R2Toggle",
+        "f16R2Release",
+        "f16R2Plan",
+        "f16R2Preflight",
+        "f16R2Lease0",
+        "f16R2Lease1",
+        "f16R2Lease2",
+        "f16R2Lease3",
+        "f16R2Lease4",
+        "f16R2Lease5",
+        "f16R2Lease6"
+      ],
+      "selectedFields": [
+        "controller status/capability-only/no-promotion flags, bounded lane result identities, and actual browser executable bytes/hash/version identity",
+        "complete baseline and toggle page capability objects",
+        "per-lane browser version/arguments/attachment flag and shared wrapper/session-bus helper hashes",
+        "release summary",
+        "Chrome version/hash pin and source identity",
+        "all seven bounded own-FD lease summaries"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 9114,
+      "sha256": "135c0e904a8b0fcc59ca46982ae4510d118fb34274d50e38d796d8c2a6856cea"
+    },
+    {
+      "archivePath": "evidence/host/driver-metadata.json",
+      "sourceIds": [
+        "driverReceipt",
+        "driverRelease",
+        "driverLease0",
+        "driverLease1"
+      ],
+      "selectedFields": [
+        "read-only nvidia-smi command/exit/stdout/stderr",
+        "bounded release summary",
+        "two bounded own-FD proof summaries"
+      ],
+      "transformation": "field-whitelisted-json",
+      "bytes": 1641,
+      "sha256": "6dfc5331a4e50147bc921581e1289b98eecc1861bd3f7c87f6bbc0a372b301af"
+    }
+  ],
+  "sourceReferences": [
+    {
+      "kind": "immutable public repository snapshot",
+      "commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "note": "Unchanged production modules are not copied into the evidence bundle."
+    }
+  ],
+  "exclusions": [
+    "model weights and pack payloads",
+    "compiled WASM",
+    "complete browser/controller captures",
+    "full PID/TID inventories",
+    "global /proc/locks text",
+    "browser diagnostic logs",
+    "Clef decision vectors, answer text, logits and raw probabilities, which are absent from the saved route capture"
+  ]
+}
