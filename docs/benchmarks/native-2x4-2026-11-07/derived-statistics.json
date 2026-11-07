@@ -1,0 +1,486 @@
+{
+  "schemaVersion": 1,
+  "scope": "recomputed from preserved raw paired observations; original summaries and records are unchanged",
+  "finalValidation": {
+    "originalReceiptSha256": "113dae26ef03fa193f573e25af944fbad0e26429d4f75f61c7474ad3043b9b5f",
+    "originalInventorySha256": "ddb3d3d8fe8ebd4167d6fc61329641a400cf8f2c5bb944af42772df7528f1137",
+    "correctiveReceiptSha256": "3ad9b9a350cda8c88109e3404d94aa2f2ab6fbfdd2e0b69918245af5b863e53a",
+    "correctionInventorySha256": "3732451842f13e3e64498f23cf6e268fe0cfd20e4e8561ebcb45239fe8d9b73d",
+    "amendmentSha256": "ce296ce68b0b50bff616142c1130a8d17fedbac01204e2c9e494dbd497611423",
+    "previousFinalReceiptSha256": "038afe92c07cf49c6042e6c6aa1d0b24c5d14901dd280cfd76fffbc4960be478",
+    "correctionAmendmentAgreementVerified": true
+  },
+  "pairedCli": [
+    {
+      "model": "kev-0.8b-q8",
+      "baselineIndependentMedianRequestMs": 1217.95,
+      "candidateIndependentMedianRequestMs": 616.1500000000001,
+      "pairedMedianRatio": 2.0486275838698744,
+      "pairedRatioRange": [
+        1.9049336174397644,
+        2.214346317007327
+      ],
+      "candidateFasterQuartets": 9,
+      "quartets": [
+        {
+          "index": 0,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1102.4,
+            1046.5
+          ],
+          "candidateRequestMs": [
+            537.9,
+            505.1
+          ],
+          "pairedRatio": 2.0603068072866733
+        },
+        {
+          "index": 1,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1177.5,
+            1146.9
+          ],
+          "candidateRequestMs": [
+            578.3,
+            641.9
+          ],
+          "pairedRatio": 1.9049336174397644
+        },
+        {
+          "index": 2,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1559.1,
+            1311.8
+          ],
+          "candidateRequestMs": [
+            676.6,
+            619.9
+          ],
+          "pairedRatio": 2.214346317007327
+        },
+        {
+          "index": 3,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1208.7,
+            1209.5
+          ],
+          "candidateRequestMs": [
+            560.7,
+            619.7
+          ],
+          "pairedRatio": 2.0486275838698744
+        },
+        {
+          "index": 4,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1228.9,
+            1182.3
+          ],
+          "candidateRequestMs": [
+            584.8,
+            577.2
+          ],
+          "pairedRatio": 2.0750430292598967
+        },
+        {
+          "index": 5,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1226.4,
+            1201.7
+          ],
+          "candidateRequestMs": [
+            612.6,
+            565.7
+          ],
+          "pairedRatio": 2.0606806416023082
+        },
+        {
+          "index": 6,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1194.3,
+            1303.4
+          ],
+          "candidateRequestMs": [
+            632.9,
+            629.1
+          ],
+          "pairedRatio": 1.979160063391442
+        },
+        {
+          "index": 7,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1234.3,
+            1471.6
+          ],
+          "candidateRequestMs": [
+            681.4,
+            709.6
+          ],
+          "pairedRatio": 1.94529115744069
+        },
+        {
+          "index": 8,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1262,
+            1298
+          ],
+          "candidateRequestMs": [
+            658.1,
+            603.9
+          ],
+          "pairedRatio": 2.028526148969889
+        }
+      ],
+      "all84ModelResponsesByteExact": true
+    },
+    {
+      "model": "laya-q8",
+      "baselineIndependentMedianRequestMs": 1401.6,
+      "candidateIndependentMedianRequestMs": 596.65,
+      "pairedMedianRatio": 2.3275164390490644,
+      "pairedRatioRange": [
+        2.1537694608482245,
+        2.7019212109450805
+      ],
+      "candidateFasterQuartets": 9,
+      "quartets": [
+        {
+          "index": 0,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1414.3,
+            1370.3
+          ],
+          "candidateRequestMs": [
+            509,
+            521.6
+          ],
+          "pairedRatio": 2.7019212109450805
+        },
+        {
+          "index": 1,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1370.9,
+            1422.8
+          ],
+          "candidateRequestMs": [
+            640.8,
+            608.3
+          ],
+          "pairedRatio": 2.2365703306380595
+        },
+        {
+          "index": 2,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1350.6,
+            1331.4
+          ],
+          "candidateRequestMs": [
+            586.9,
+            527.5
+          ],
+          "pairedRatio": 2.4066762383345295
+        },
+        {
+          "index": 3,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1356.9,
+            1404
+          ],
+          "candidateRequestMs": [
+            588.2,
+            598
+          ],
+          "pairedRatio": 2.3275164390490644
+        },
+        {
+          "index": 4,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1381.2,
+            1402.6
+          ],
+          "candidateRequestMs": [
+            622.4,
+            585.5
+          ],
+          "pairedRatio": 2.30466098186936
+        },
+        {
+          "index": 5,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1395.2,
+            1448.6
+          ],
+          "candidateRequestMs": [
+            591.3,
+            619.3
+          ],
+          "pairedRatio": 2.349083099289609
+        },
+        {
+          "index": 6,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1458.9,
+            1349.4
+          ],
+          "candidateRequestMs": [
+            666,
+            637.9
+          ],
+          "pairedRatio": 2.1537694608482245
+        },
+        {
+          "index": 7,
+          "order": "BAAB",
+          "baselineRequestMs": [
+            1400.6,
+            1468.1
+          ],
+          "candidateRequestMs": [
+            621.5,
+            595.3
+          ],
+          "pairedRatio": 2.357577251808021
+        },
+        {
+          "index": 8,
+          "order": "ABBA",
+          "baselineRequestMs": [
+            1418.9,
+            1446.6
+          ],
+          "candidateRequestMs": [
+            736,
+            574.4
+          ],
+          "pairedRatio": 2.1867368742368742
+        }
+      ],
+      "all84ModelResponsesByteExact": true
+    }
+  ],
+  "microScreen": [
+    {
+      "name": "f32-memory",
+      "repetitions": 1,
+      "baselineConventionalMedianNsPerCall": 58691823.5,
+      "candidateConventionalMedianNsPerCall": 25951228,
+      "pairedMedianRatio": 2.2614749860173706,
+      "pairedRatioRange": [
+        1.6909513148285067,
+        2.5832048192814643
+      ],
+      "candidateFasterQuartets": 9,
+      "pairedRatios": [
+        2.3990593318734237,
+        2.27838710195024,
+        1.6909513148285067,
+        2.3815959432831013,
+        2.000069207785009,
+        2.0893639240953488,
+        2.2614749860173706,
+        2.1295985856231914,
+        2.5832048192814643
+      ]
+    },
+    {
+      "name": "f32-memory-kv",
+      "repetitions": 1,
+      "baselineConventionalMedianNsPerCall": 25931887.5,
+      "candidateConventionalMedianNsPerCall": 12558836.5,
+      "pairedMedianRatio": 2.201681334596281,
+      "pairedRatioRange": [
+        1.822517076720137,
+        2.634120171009221
+      ],
+      "candidateFasterQuartets": 9,
+      "pairedRatios": [
+        2.1859502133856212,
+        1.822517076720137,
+        2.201681334596281,
+        2.3124923310611893,
+        2.4571639461367596,
+        2.2662568980197815,
+        2.1009028822585445,
+        2.634120171009221,
+        2.054216960204203
+      ]
+    },
+    {
+      "name": "q8-trunk-out",
+      "repetitions": 1,
+      "baselineConventionalMedianNsPerCall": 83968754,
+      "candidateConventionalMedianNsPerCall": 37642984.5,
+      "pairedMedianRatio": 2.2123261662041362,
+      "pairedRatioRange": [
+        2.0133402967539666,
+        2.4477784567138996
+      ],
+      "candidateFasterQuartets": 9,
+      "pairedRatios": [
+        2.4477784567138996,
+        2.211419427490298,
+        2.1850163200403667,
+        2.0133402967539666,
+        2.2147928197585163,
+        2.397632652407791,
+        2.148947191020298,
+        2.37558736555027,
+        2.2123261662041362
+      ]
+    },
+    {
+      "name": "f32-single-row-control",
+      "repetitions": 64,
+      "baselineConventionalMedianNsPerCall": 414702.078125,
+      "candidateConventionalMedianNsPerCall": 401986.4609375,
+      "pairedMedianRatio": 0.9459864168679214,
+      "pairedRatioRange": [
+        0.7262396155847628,
+        1.2458216533249686
+      ],
+      "candidateFasterQuartets": 3,
+      "pairedRatios": [
+        0.9439478684891462,
+        0.9459864168679214,
+        1.2458216533249686,
+        0.8649141479048613,
+        0.9441654697384617,
+        0.7262396155847628,
+        1.0701278305331636,
+        1.1823966603733103,
+        0.9689816466308826
+      ]
+    },
+    {
+      "name": "q8-single-row-control",
+      "repetitions": 4,
+      "baselineConventionalMedianNsPerCall": 8109203.375,
+      "candidateConventionalMedianNsPerCall": 8383399.625,
+      "pairedMedianRatio": 0.9616177590398878,
+      "pairedRatioRange": [
+        0.6558241205984607,
+        1.024940478610943
+      ],
+      "candidateFasterQuartets": 2,
+      "pairedRatios": [
+        0.7155368571591553,
+        0.9859424818127449,
+        0.8460068370134244,
+        0.9755266600650868,
+        0.8277553040706777,
+        0.6558241205984607,
+        1.0113197591029404,
+        0.9616177590398878,
+        1.024940478610943
+      ]
+    },
+    {
+      "name": "f32-k32-control",
+      "repetitions": 1048576,
+      "baselineConventionalMedianNsPerCall": 36.33448314666748,
+      "candidateConventionalMedianNsPerCall": 37.51573371887207,
+      "pairedMedianRatio": 0.986471182443236,
+      "pairedRatioRange": [
+        0.9446904858392717,
+        1.089216621005545
+      ],
+      "candidateFasterQuartets": 4,
+      "pairedRatios": [
+        1.074603365927994,
+        0.9607798151660818,
+        1.0253132340627344,
+        1.089216621005545,
+        0.9852187166957324,
+        0.9462731927424699,
+        1.0190459370862688,
+        0.986471182443236,
+        0.9446904858392717
+      ]
+    },
+    {
+      "name": "f32-k64-boundary",
+      "repetitions": 524288,
+      "baselineConventionalMedianNsPerCall": 53.32857418060303,
+      "candidateConventionalMedianNsPerCall": 33.56869316101074,
+      "pairedMedianRatio": 1.5678037380784386,
+      "pairedRatioRange": [
+        1.262107974742416,
+        2.073862346713635
+      ],
+      "candidateFasterQuartets": 9,
+      "pairedRatios": [
+        2.073862346713635,
+        1.822695955244726,
+        1.6862107944626918,
+        1.7657628006516377,
+        1.5678037380784386,
+        1.5421649240312107,
+        1.508155493312167,
+        1.5083174024566761,
+        1.262107974742416
+      ]
+    },
+    {
+      "name": "f32-n3-control",
+      "repetitions": 524288,
+      "baselineConventionalMedianNsPerCall": 37.36011028289795,
+      "candidateConventionalMedianNsPerCall": 46.993693351745605,
+      "pairedMedianRatio": 0.8203376577983178,
+      "pairedRatioRange": [
+        0.7386703923656487,
+        1.2442031322257068
+      ],
+      "candidateFasterQuartets": 2,
+      "pairedRatios": [
+        0.8103129026294901,
+        1.0011601583829275,
+        0.7386703923656487,
+        0.7552139334292737,
+        0.768313839219924,
+        0.8407650013475896,
+        1.2442031322257068,
+        0.8203376577983178,
+        0.9920490425620591
+      ]
+    },
+    {
+      "name": "q8-nonfinite-k64-control",
+      "repetitions": 131072,
+      "baselineConventionalMedianNsPerCall": 150.8139419555664,
+      "candidateConventionalMedianNsPerCall": 134.02639389038086,
+      "pairedMedianRatio": 1.2018045378860278,
+      "pairedRatioRange": [
+        1.075971899747713,
+        1.2526845163154716
+      ],
+      "candidateFasterQuartets": 9,
+      "pairedRatios": [
+        1.1362782907696873,
+        1.2424501261698604,
+        1.1528927392223807,
+        1.2018045378860278,
+        1.2393236960192324,
+        1.2526845163154716,
+        1.1840118658857615,
+        1.075971899747713,
+        1.208282808624117
+      ]
+    }
+  ]
+}

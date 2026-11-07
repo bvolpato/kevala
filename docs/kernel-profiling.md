@@ -10,6 +10,10 @@ The [native AVX2 matrix report](native-linear-performance.md) separates projecti
 native model inference calls after load. It retains the small-shape controls and labels
 fresh-process request measurements separately from warm resident model latency.
 
+The follow-up [native 2×4 packing report](native-2x4-performance.md) compares a wider AVX2
+microkernel against that baseline. It retains strict output-bit checks, paired full-request
+measurements and the slower small-shape controls.
+
 The [Clef GPU head report](clef-head-performance.md) separates exact projection and full-logit
 checks from paired complete-request wall timings. Compare `clefHead: "auto"` with `"cpu"` on
 the same GPU backbone; keep load, warmup, and first-use validation outside warm-request timings.

@@ -1,0 +1,483 @@
+{
+  "schemaVersion": 1,
+  "archiveSet": "native-2x4-2026-11-07",
+  "sourceBase": "97778af0ed881c876313fcefa5a17399ceb10f2d",
+  "candidateKernelSha256": "d7bfece0d5fdbaa4e22c6681ff32720e4bbe074378d83fd61f814b0dc280623f",
+  "pairedResponses": 84,
+  "discardedObservations": 12,
+  "measuredObservations": 72,
+  "microTelemetryIncluded": true,
+  "publicFixtureAudit": [
+    {
+      "fixture": "clef-head.json",
+      "sha256": "19636815ee9288d1d75f3b41e333a354c0da9631ad53452caa4ea58be13a0866",
+      "topLevelKeys": [
+        "config",
+        "encoding",
+        "encoding_request",
+        "hidden",
+        "input_ids",
+        "lexical",
+        "lexical_shape",
+        "logits",
+        "questions",
+        "revision",
+        "tensors",
+        "truncated_ids",
+        "upstream"
+      ],
+      "arrays": 217,
+      "numericArrays": 197,
+      "maxArrayLength": 868,
+      "maxNumericArrayLength": 868,
+      "tensorLikeFields": [
+        "evidence_layers.0.attention.in_proj_weight",
+        "evidence_layers.0.attention.out_proj.weight",
+        "evidence_layers.0.feedforward.0.weight",
+        "evidence_layers.0.feedforward.3.weight",
+        "evidence_layers.0.feedforward_norm.weight",
+        "evidence_layers.0.memory_norm.weight",
+        "evidence_layers.0.query_norm.weight",
+        "evidence_layers.1.attention.in_proj_weight",
+        "evidence_layers.1.attention.out_proj.weight",
+        "evidence_layers.1.feedforward.0.weight",
+        "evidence_layers.1.feedforward.3.weight",
+        "evidence_layers.1.feedforward_norm.weight",
+        "evidence_layers.1.memory_norm.weight",
+        "evidence_layers.1.query_norm.weight",
+        "field_norm.weight",
+        "global_projection.weight",
+        "hidden",
+        "hidden_norm.bias",
+        "hidden_norm.weight",
+        "hidden_size",
+        "layers.0.linear1.weight",
+        "layers.0.linear2.weight",
+        "layers.0.multihead_attn.in_proj_weight",
+        "layers.0.multihead_attn.out_proj.weight",
+        "layers.0.norm1.weight",
+        "layers.0.norm2.weight",
+        "layers.0.norm3.weight",
+        "layers.0.self_attn.in_proj_weight",
+        "layers.0.self_attn.out_proj.weight",
+        "layers.1.linear1.weight",
+        "layers.1.linear2.weight",
+        "layers.1.multihead_attn.in_proj_weight",
+        "layers.1.multihead_attn.out_proj.weight",
+        "layers.1.norm1.weight",
+        "layers.1.norm2.weight",
+        "layers.1.norm3.weight",
+        "layers.1.self_attn.in_proj_weight",
+        "layers.1.self_attn.out_proj.weight",
+        "memory_projection.weight",
+        "option_context_projection.weight",
+        "option_lexical_projection.weight",
+        "option_norm.weight",
+        "option_question_projection.weight",
+        "option_summary_norm.weight",
+        "question_projection.weight",
+        "residual_scorer.0.weight",
+        "residual_scorer.3.weight",
+        "tensors",
+        "type_embedding.weight",
+        "values"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/clef-head.json",
+        "frozen-v1/candidate/tests/fixtures/clef-head.json",
+        "frozen-v2/baseline/tests/fixtures/clef-head.json",
+        "frozen-v2/candidate/tests/fixtures/clef-head.json"
+      ]
+    },
+    {
+      "fixture": "gemma4-vision-tiny.json",
+      "sha256": "e625b7e016663e78522eba7f192bc527a47e1fb9738a2e81c74936b77957e0a3",
+      "topLevelKeys": [
+        "cases",
+        "compute",
+        "config",
+        "model",
+        "revision",
+        "sourceCommit",
+        "sourceHashes",
+        "tensors"
+      ],
+      "arrays": 89,
+      "numericArrays": 87,
+      "maxArrayLength": 87,
+      "maxNumericArrayLength": 3,
+      "tensorLikeFields": [
+        "hidden_activation",
+        "hidden_size",
+        "max_position_embeddings",
+        "num_hidden_layers",
+        "num_key_value_heads",
+        "output_hidden_states",
+        "patch_size",
+        "patches",
+        "position_embedding_size",
+        "tensors",
+        "text_hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/gemma4-vision-tiny.json",
+        "frozen-v1/candidate/tests/fixtures/gemma4-vision-tiny.json",
+        "frozen-v2/baseline/tests/fixtures/gemma4-vision-tiny.json",
+        "frozen-v2/candidate/tests/fixtures/gemma4-vision-tiny.json"
+      ]
+    },
+    {
+      "fixture": "golden-bruv1-4b.json",
+      "sha256": "3aa1a2f41c1330d08c20da1dd6daa1a8230131631a130f4ba9d07712a1db5b17",
+      "topLevelKeys": [
+        "cases",
+        "label_contract",
+        "model",
+        "probability_status",
+        "prompt_version",
+        "readout",
+        "skipped"
+      ],
+      "arrays": 93,
+      "numericArrays": 49,
+      "maxArrayLength": 479,
+      "maxNumericArrayLength": 479,
+      "tensorLikeFields": [
+        "hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-bruv1-4b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-bruv1-4b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-bruv1-4b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-bruv1-4b.json"
+      ]
+    },
+    {
+      "fixture": "golden-gemma4-e2b.json",
+      "sha256": "51a84d5d02613d4711f80ad55303831292d043830e8550b1b9877bf23353e4e1",
+      "topLevelKeys": [
+        "cases",
+        "chat_template",
+        "final_logit_softcapping",
+        "kv_sharing",
+        "label_contract",
+        "load_policy",
+        "model",
+        "probability_status",
+        "prompt_version",
+        "readout",
+        "skipped"
+      ],
+      "arrays": 117,
+      "numericArrays": 61,
+      "maxArrayLength": 474,
+      "maxNumericArrayLength": 474,
+      "tensorLikeFields": [
+        "hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-gemma4-e2b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-gemma4-e2b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-gemma4-e2b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-gemma4-e2b.json"
+      ]
+    },
+    {
+      "fixture": "golden-gemma4-e4b.json",
+      "sha256": "10d710a1c04c407d90dd4672fdf4140f8773f73fd8a58b3e872841ef619bfb2f",
+      "topLevelKeys": [
+        "cases",
+        "chat_template",
+        "final_logit_softcapping",
+        "kv_sharing",
+        "label_contract",
+        "load_policy",
+        "model",
+        "probability_status",
+        "prompt_version",
+        "readout",
+        "skipped"
+      ],
+      "arrays": 117,
+      "numericArrays": 61,
+      "maxArrayLength": 474,
+      "maxNumericArrayLength": 474,
+      "tensorLikeFields": [
+        "hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-gemma4-e4b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-gemma4-e4b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-gemma4-e4b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-gemma4-e4b.json"
+      ]
+    },
+    {
+      "fixture": "golden-h2o.json",
+      "sha256": "32111104a6c42c386db6c2b867ec1aa4f42f848f6b72690074197e5931fa1923",
+      "topLevelKeys": [
+        "cases",
+        "label_token_ids",
+        "model",
+        "numeric",
+        "revision",
+        "scope",
+        "serve_config",
+        "source_sha256"
+      ],
+      "arrays": 72,
+      "numericArrays": 24,
+      "maxArrayLength": 255,
+      "maxNumericArrayLength": 255,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-h2o.json",
+        "frozen-v1/candidate/tests/fixtures/golden-h2o.json",
+        "frozen-v2/baseline/tests/fixtures/golden-h2o.json",
+        "frozen-v2/candidate/tests/fixtures/golden-h2o.json"
+      ]
+    },
+    {
+      "fixture": "golden-kev-4b.json",
+      "sha256": "8d0a68c0a19e98529ea019a003040fda98881b98925b45633487aa48f1dcd94a",
+      "topLevelKeys": [
+        "cases",
+        "source"
+      ],
+      "arrays": 121,
+      "numericArrays": 71,
+      "maxArrayLength": 418,
+      "maxNumericArrayLength": 418,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-kev-4b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-kev-4b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-kev-4b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-kev-4b.json"
+      ]
+    },
+    {
+      "fixture": "golden-kev-9b.json",
+      "sha256": "c553036549039974c270da9b5a419f8fa1e2575e0d99bb37e22eb4c74b01dfca",
+      "topLevelKeys": [
+        "cases",
+        "source"
+      ],
+      "arrays": 38,
+      "numericArrays": 23,
+      "maxArrayLength": 101,
+      "maxNumericArrayLength": 101,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-kev-9b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-kev-9b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-kev-9b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-kev-9b.json"
+      ]
+    },
+    {
+      "fixture": "golden-kev.json",
+      "sha256": "db872d48dca56d0a3e9767920f86055b06ef839eebef92963af5d95b84311f82",
+      "topLevelKeys": [
+        "cases",
+        "source"
+      ],
+      "arrays": 121,
+      "numericArrays": 71,
+      "maxArrayLength": 418,
+      "maxNumericArrayLength": 418,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-kev.json",
+        "frozen-v1/candidate/tests/fixtures/golden-kev.json",
+        "frozen-v2/baseline/tests/fixtures/golden-kev.json",
+        "frozen-v2/candidate/tests/fixtures/golden-kev.json"
+      ]
+    },
+    {
+      "fixture": "golden-semif-2b.json",
+      "sha256": "7fc529bbbe195f2249fa973e37476c24b621ab0e3ff8b3096b01c4f190027277",
+      "topLevelKeys": [
+        "cases",
+        "label_contract",
+        "model",
+        "probability_status",
+        "prompt_version",
+        "readout",
+        "skipped"
+      ],
+      "arrays": 93,
+      "numericArrays": 49,
+      "maxArrayLength": 479,
+      "maxNumericArrayLength": 479,
+      "tensorLikeFields": [
+        "hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-semif-2b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-semif-2b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-semif-2b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-semif-2b.json"
+      ]
+    },
+    {
+      "fixture": "golden-semif-4b.json",
+      "sha256": "fdf90ce2da7c9d30bb1c6f3b7ae4fff21479a00896e0d98c9c84ea5b93291d8b",
+      "topLevelKeys": [
+        "cases",
+        "label_contract",
+        "model",
+        "probability_status",
+        "prompt_version",
+        "readout",
+        "skipped"
+      ],
+      "arrays": 93,
+      "numericArrays": 49,
+      "maxArrayLength": 479,
+      "maxNumericArrayLength": 479,
+      "tensorLikeFields": [
+        "hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-semif-4b.json",
+        "frozen-v1/candidate/tests/fixtures/golden-semif-4b.json",
+        "frozen-v2/baseline/tests/fixtures/golden-semif-4b.json",
+        "frozen-v2/candidate/tests/fixtures/golden-semif-4b.json"
+      ]
+    },
+    {
+      "fixture": "golden-semif.json",
+      "sha256": "02e047bff1f87c37c372bd036e691c960e4f328b18f10816b674275fd95db27c",
+      "topLevelKeys": [
+        "cases",
+        "label_contract",
+        "model",
+        "probability_status",
+        "prompt_version",
+        "readout",
+        "skipped"
+      ],
+      "arrays": 93,
+      "numericArrays": 49,
+      "maxArrayLength": 479,
+      "maxNumericArrayLength": 479,
+      "tensorLikeFields": [
+        "hidden_size"
+      ],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden-semif.json",
+        "frozen-v1/candidate/tests/fixtures/golden-semif.json",
+        "frozen-v2/baseline/tests/fixtures/golden-semif.json",
+        "frozen-v2/candidate/tests/fixtures/golden-semif.json"
+      ]
+    },
+    {
+      "fixture": "golden.json",
+      "sha256": "074d76f6bfa709f3e3b23cd7d792eaf8fca4c4d9a795ad5ebeea6d2e0d4fe77a",
+      "topLevelKeys": [
+        "cases",
+        "source",
+        "temperature",
+        "temperature_by_options"
+      ],
+      "arrays": 217,
+      "numericArrays": 165,
+      "maxArrayLength": 512,
+      "maxNumericArrayLength": 512,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/golden.json",
+        "frozen-v1/candidate/tests/fixtures/golden.json",
+        "frozen-v2/baseline/tests/fixtures/golden.json",
+        "frozen-v2/candidate/tests/fixtures/golden.json"
+      ]
+    },
+    {
+      "fixture": "tokenizer-gemma4.json",
+      "sha256": "45f5ed5960ef8455b47425477d65842ce92ed11ad34f9e3e50bbc38c0abbf0db",
+      "topLevelKeys": [],
+      "arrays": 13,
+      "numericArrays": 12,
+      "maxArrayLength": 80,
+      "maxNumericArrayLength": 80,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/tokenizer-gemma4.json",
+        "frozen-v1/candidate/tests/fixtures/tokenizer-gemma4.json",
+        "frozen-v2/baseline/tests/fixtures/tokenizer-gemma4.json",
+        "frozen-v2/candidate/tests/fixtures/tokenizer-gemma4.json"
+      ]
+    },
+    {
+      "fixture": "tokenizer-qwen35-base.json",
+      "sha256": "3d97b40ed47cc0b63d3e826ff6f75d5d29d185f07dcd7e12c31ce4df2ab4414c",
+      "topLevelKeys": [],
+      "arrays": 159,
+      "numericArrays": 157,
+      "maxArrayLength": 158,
+      "maxNumericArrayLength": 82,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/tokenizer-qwen35-base.json",
+        "frozen-v1/candidate/tests/fixtures/tokenizer-qwen35-base.json",
+        "frozen-v2/baseline/tests/fixtures/tokenizer-qwen35-base.json",
+        "frozen-v2/candidate/tests/fixtures/tokenizer-qwen35-base.json"
+      ]
+    },
+    {
+      "fixture": "tokenizer-qwen35.json",
+      "sha256": "f7b25e43959b629f715f4815d8186cd3676ba96ab82f9a0beadfc6822b203658",
+      "topLevelKeys": [],
+      "arrays": 159,
+      "numericArrays": 157,
+      "maxArrayLength": 158,
+      "maxNumericArrayLength": 82,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/tokenizer-qwen35.json",
+        "frozen-v1/candidate/tests/fixtures/tokenizer-qwen35.json",
+        "frozen-v2/baseline/tests/fixtures/tokenizer-qwen35.json",
+        "frozen-v2/candidate/tests/fixtures/tokenizer-qwen35.json"
+      ]
+    },
+    {
+      "fixture": "tokenizer.json",
+      "sha256": "ae30afd0a5d44dda61601fb61957c32a40167d7f665b02cf375819ba7cfd0f8e",
+      "topLevelKeys": [],
+      "arrays": 101,
+      "numericArrays": 98,
+      "maxArrayLength": 1081,
+      "maxNumericArrayLength": 1081,
+      "tensorLikeFields": [],
+      "paths": [
+        "frozen-v1/baseline/tests/fixtures/tokenizer.json",
+        "frozen-v1/candidate/tests/fixtures/tokenizer.json",
+        "frozen-v2/baseline/tests/fixtures/tokenizer.json",
+        "frozen-v2/candidate/tests/fixtures/tokenizer.json"
+      ]
+    }
+  ],
+  "excludedPayloadPolicy": [
+    "model weights",
+    "measured activation and hidden-state buffers; tracked public source fixtures are listed separately",
+    "compiled binaries",
+    "build output and caches",
+    "credentials",
+    "two full microbenchmark disassemblies retained by exact hash descriptor"
+  ],
+  "omittedDisassembly": [
+    {
+      "path": "native-2x4/micro-v2/assembly-baseline.stdout",
+      "bytes": 3240293,
+      "sha256": "5b3826dd4eeb9b853ffa907f53d467d79429672e1a65b0b30604da43181ca4a8",
+      "reason": "complete broad microbenchmark disassembly omitted; scoped function extracts are retained"
+    },
+    {
+      "path": "native-2x4/micro-v2/assembly-candidate.stdout",
+      "bytes": 3239250,
+      "sha256": "16841d3ff6e177b85b6da7498b220ac92f1162219346ed284a241517c38e7507",
+      "reason": "complete broad microbenchmark disassembly omitted; scoped function extracts are retained"
+    }
+  ]
+}
