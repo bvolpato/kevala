@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-11-07T17:45:16.540Z",
+  "executionExit": 1,
+  "status": "failed",
+  "error": "verified CI80 WASM artifact is missing: /tmp/kevala-q8-swiglu-epilogue/js/src/kevala-base.wasm",
+  "browserStarted": false,
+  "owner": 791859,
+  "ownerAbsent": true,
+  "unit": "kevala-q8-swiglu-20261107-r1.scope",
+  "scopeProperties": "ControlGroup=\nActiveState=inactive\nSubState=dead\n",
+  "scopeShowExit": 0,
+  "freeProbeExit": 0,
+  "canonical": {
+    "device": 66306,
+    "inode": 134897311
+  },
+  "cleanupChecked": true,
+  "remainingScopeChildren": [],
+  "remainingProcessGroup": [],
+  "runnerStdioClosed": true,
+  "controllerSha256": "68afd7ef439b7cd08879c65dca5bcdacac411cbf7c5120080b91e4f5fb49f25b",
+  "passed": true,
+  "browserStartEvidence": {
+    "runnerExit": null,
+    "childProcessGroup": null,
+    "observedOwnedChildren": 0
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "rawSourceSha256": "7c5806c4410a9691eed5d3b110b2c83d68dee2842a2bbe09759b1b413485834e",
+  "status": "failed",
+  "error": "browser runner failed: exit=1 signal=null stop=none page=error: q8-swiglu page did not expose its terminal flag before timeout",
+  "sourceIdentity": {
+    "bench.html": {
+      "bytes": 28384,
+      "sha256": "f83e4391bdf8ebf2e4aa6fd90f0ae0820784cf0b9f088ef7fe7c353a593909b4"
+    },
+    "js/src/wasm.js": {
+      "bytes": 4833,
+      "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+    },
+    "js/src/cpu-tune.js": {
+      "bytes": 1293,
+      "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+    },
+    "js/src/engine-worker.js": {
+      "bytes": 20118,
+      "sha256": "7f6045b89ad8b353c3b074323c17d321ac40fee17a793ad25c47da52e22718a2"
+    },
+    "js/src/gpu-kev.js": {
+      "bytes": 59720,
+      "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2"
+    },
+    "js/src/gpu-q8-swiglu-trial.js": {
+      "bytes": 8878,
+      "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758"
+    },
+    "scripts/bench-gpu.py": {
+      "bytes": 90029,
+      "sha256": "84fbb84ab58d5f5e4628934ccf7b9caa5920d27a1b6e6432550c91639e31f00b"
+    },
+    "scripts/tests/test_q8_terminal_poll.py": {
+      "bytes": 12246,
+      "sha256": "8039f02c565eb75c8aa0d9bbe845db4db1a0c3d4e3575f74a9aacc44827c33ce"
+    },
+    "scripts/tests/q8-monitor-cadence.test.mjs": {
+      "bytes": 2074,
+      "sha256": "4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41"
+    },
+    "scripts/compare-kev-swiglu.mjs": {
+      "bytes": 53307,
+      "sha256": "90e5685c301c765aceb465f94f2d2d6ac28224540c3a43340ec75cad3ab39b4e"
+    },
+    "scripts/lib/q8-monitor-cadence.mjs": {
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1"
+    },
+    "scripts/serve.mjs": {
+      "bytes": 7491,
+      "sha256": "8b9e60a814408d41e4f1bfcfb59de21d6daf342ac708828ed2e00b138279e7af"
+    },
+    "scripts/lib/local-packs.mjs": {
+      "bytes": 2664,
+      "sha256": "738ae8c632fe1deaccd6a7e1cd827ef257fd75ec5fc7a992cfaaaa2bda4f0382"
+    },
+    "scripts/lib/static-path.mjs": {
+      "bytes": 838,
+      "sha256": "684d4561fb645641bf3d761d9d7ff45ab63b586fdf2d65e15efdd71cfa080f4f"
+    },
+    "app/model-policy.js": {
+      "bytes": 286,
+      "sha256": "46fdb4df7b41f27f0ac124e412dfb81e36fe213596997fc2caf41bf9836a162c"
+    },
+    "js/src/source.js": {
+      "bytes": 33566,
+      "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    "js/src/cpu-policy.js": {
+      "bytes": 3333,
+      "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+    }
+  },
+  "monitor": {
+    "scopeAndKnownPidIntervalMs": 1000,
+    "fullGroupDiscoveryIntervalMs": 5000,
+    "firstFullGroupDiscovery": "immediately after child identity admission",
+    "scopeAndKnownPidSampleAttempts": 899,
+    "scopeAndKnownPidSamplesCompleted": 899,
+    "fullGroupDiscoveryAttempts": 150,
+    "fullGroupDiscoveriesCompleted": 150,
+    "sampleFailures": 0,
+    "lastSampleElapsedMs": 902810,
+    "lastSampleStartElapsedMs": 902807,
+    "lastSampleGapMs": 1001,
+    "maxSampleGapMs": 2001,
+    "lastSampleDurationMs": 2,
+    "maxSampleDurationMs": 1181,
+    "lastFullGroupDiscoveryElapsedMs": 898404,
+    "lastFullGroupDiscoveryGapMs": 6007,
+    "maxFullGroupDiscoveryGapMs": 7007,
+    "cleanupFullGroupScanMinDelayMs": 100,
+    "assurance": "periodic sampled active monitoring only; cleanup retains full process-group scans and exact identity/signal proofs"
+  },
+  "result": {
+    "status": "invalid-or-missing",
+    "error": "Error: Q8 page reported error: q8-swiglu page did not expose its terminal flag before timeout"
+  },
+  "productionPromotion": false,
+  "cleanup": {
+    "checked": true,
+    "remainingLiveProcessGroup": [],
+    "remainingLiveScopeChildren": [],
+    "runnerStdioClosed": true,
+    "runnerLogError": null
+  },
+  "serverClosed": true
+}

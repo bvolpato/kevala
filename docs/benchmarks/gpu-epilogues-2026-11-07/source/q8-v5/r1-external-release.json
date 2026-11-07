@@ -1,0 +1,105 @@
+{
+  "timestamp": "2026-11-07T18:50:51.171Z",
+  "executionExit": 1,
+  "status": "failed",
+  "error": "browser runner failed: exit=1 signal=null stop=none page=error: q8-swiglu page did not expose its terminal flag before timeout",
+  "owner": 1019348,
+  "processes": [
+    {
+      "pid": 1019348,
+      "absent": true
+    },
+    {
+      "pid": 1019315,
+      "absent": true
+    },
+    {
+      "pid": 1019373,
+      "absent": true
+    },
+    {
+      "pid": 1019376,
+      "absent": true
+    },
+    {
+      "pid": 1019512,
+      "absent": true
+    },
+    {
+      "pid": 1019536,
+      "absent": true
+    },
+    {
+      "pid": 1019538,
+      "absent": true
+    },
+    {
+      "pid": 1019540,
+      "absent": true
+    },
+    {
+      "pid": 1019544,
+      "absent": true
+    },
+    {
+      "pid": 1019545,
+      "absent": true
+    },
+    {
+      "pid": 1019551,
+      "absent": true
+    },
+    {
+      "pid": 1019577,
+      "absent": true
+    },
+    {
+      "pid": 1019578,
+      "absent": true
+    },
+    {
+      "pid": 1019581,
+      "absent": true
+    },
+    {
+      "pid": 1019623,
+      "absent": true
+    },
+    {
+      "pid": 1019646,
+      "absent": true
+    },
+    {
+      "pid": 1019658,
+      "absent": true
+    },
+    {
+      "pid": 1019773,
+      "absent": true
+    },
+    {
+      "pid": 1019784,
+      "absent": true
+    },
+    {
+      "pid": 1019863,
+      "absent": true
+    }
+  ],
+  "unit": "kevala-q8-swiglu-v5-20261107-r1.scope",
+  "scopeProperties": "ControlGroup=\nActiveState=inactive\nSubState=dead\n",
+  "scopeShowExit": 0,
+  "freeProbeExit": 0,
+  "canonical": {
+    "device": 66306,
+    "inode": 134897311
+  },
+  "cleanupChecked": true,
+  "remainingScopeChildren": [],
+  "remainingProcessGroup": [],
+  "runnerStdioClosed": true,
+  "controllerSha256": "7c5806c4410a9691eed5d3b110b2c83d68dee2842a2bbe09759b1b413485834e",
+  "resultSha256": "efc95d9a296c58adccc22539da65a579d48edd8770d74a399d71379730fd5641",
+  "performanceEvidenceQualified": false,
+  "passed": true
+}

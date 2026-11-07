@@ -1,0 +1,212 @@
+{
+  "rawSourceSha256": "68afd7ef439b7cd08879c65dca5bcdacac411cbf7c5120080b91e4f5fb49f25b",
+  "status": "failed",
+  "sourceIdentity": {
+    "bench.html": {
+      "bytes": 27746,
+      "sha256": "73bc768c7d15f542a5ac3102ced4018a1db574dfd328e465c0152c895c537e57"
+    },
+    "js/src/wasm.js": {
+      "bytes": 4833,
+      "sha256": "7459bcd4162c8d1e4770902b5c88fae974dde9dfff0b2ff520e3b29e4885bb17"
+    },
+    "js/src/cpu-tune.js": {
+      "bytes": 1293,
+      "sha256": "d11116a2b160bfa66b5365571687e38e5a6870f3073f66d7fc85bfa4d6fa5cf4"
+    },
+    "js/src/engine-worker.js": {
+      "bytes": 20118,
+      "sha256": "7f6045b89ad8b353c3b074323c17d321ac40fee17a793ad25c47da52e22718a2"
+    },
+    "js/src/gpu-kev.js": {
+      "bytes": 59720,
+      "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2"
+    },
+    "js/src/gpu-q8-swiglu-trial.js": {
+      "bytes": 8878,
+      "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758"
+    },
+    "scripts/bench-gpu.py": {
+      "bytes": 86154,
+      "sha256": "eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0"
+    },
+    "scripts/tests/test_q8_terminal_poll.py": {
+      "bytes": 6949,
+      "sha256": "d6b7dc134c6f14826419c8620ba169e5a970ed9233b77c9d9388138c0232d0cc"
+    },
+    "scripts/compare-kev-swiglu.mjs": {
+      "bytes": 47400,
+      "sha256": "680ee840e662711aacdefb4aae8e5715e06abe2b43bb53fdb72f0ec865e5f7b6"
+    },
+    "scripts/serve.mjs": {
+      "bytes": 7491,
+      "sha256": "8b9e60a814408d41e4f1bfcfb59de21d6daf342ac708828ed2e00b138279e7af"
+    },
+    "scripts/lib/local-packs.mjs": {
+      "bytes": 2664,
+      "sha256": "738ae8c632fe1deaccd6a7e1cd827ef257fd75ec5fc7a992cfaaaa2bda4f0382"
+    },
+    "scripts/lib/static-path.mjs": {
+      "bytes": 838,
+      "sha256": "684d4561fb645641bf3d761d9d7ff45ab63b586fdf2d65e15efdd71cfa080f4f"
+    },
+    "app/model-policy.js": {
+      "bytes": 286,
+      "sha256": "46fdb4df7b41f27f0ac124e412dfb81e36fe213596997fc2caf41bf9836a162c"
+    },
+    "js/src/source.js": {
+      "bytes": 33566,
+      "sha256": "7661d83ba865cee8ef07c4a2e6874d2de5a1628598cde2bb19418f53f4133836"
+    },
+    "js/src/cpu-policy.js": {
+      "bytes": 3333,
+      "sha256": "a60976180b5f9b72ab8df650282ff5e173a05fc84e09361770ecf7bd55ae44ed"
+    }
+  },
+  "scope": {
+    "unit": "kevala-q8-swiglu-20261107-r1.scope",
+    "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope",
+    "directory": "/sys/fs/cgroup/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope",
+    "expectedLimits": {
+      "memory.high": "34359738368",
+      "memory.max": "42949672960",
+      "memory.swap.max": "4294967296"
+    },
+    "owner": {
+      "pid": 791859,
+      "state": "S",
+      "ppid": 791858,
+      "pgrp": 791858,
+      "session": 791858,
+      "startTicks": "15118943",
+      "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope"
+    },
+    "timeoutParent": {
+      "pid": 791858,
+      "state": "S",
+      "ppid": 1857410,
+      "pgrp": 791858,
+      "session": 791858,
+      "startTicks": "15118940",
+      "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope",
+      "args": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=15s",
+        "960s",
+        "flock",
+        "--exclusive",
+        "--nonblock",
+        "--conflict-exit-code",
+        "75",
+        "--no-fork",
+        "/home/bruno/.cache/kevala/gpu-profile.lock",
+        "/home/linuxbrew/.linuxbrew/Cellar/node@22/22.22.2_2/bin/node",
+        "/tmp/kevala-q8-swiglu-epilogue/scripts/compare-kev-swiglu.mjs",
+        "--execute",
+        "--scope-unit",
+        "kevala-q8-swiglu-20261107-r1.scope",
+        "--output",
+        "/tmp/kevala-q8-swiglu-epilogue/tmp/q8-swiglu-20261107-r1",
+        "--binary",
+        "/home/bruno/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome"
+      ]
+    },
+    "initialMembers": [
+      {
+        "pid": 791858,
+        "state": "S",
+        "ppid": 1857410,
+        "pgrp": 791858,
+        "session": 791858,
+        "startTicks": "15118940",
+        "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope"
+      },
+      {
+        "pid": 791859,
+        "state": "R",
+        "ppid": 791858,
+        "pgrp": 791858,
+        "session": 791858,
+        "startTicks": "15118943",
+        "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope"
+      }
+    ]
+  },
+  "error": "verified CI80 WASM artifact is missing: /tmp/kevala-q8-swiglu-epilogue/js/src/kevala-base.wasm",
+  "browser": "Chromium 156",
+  "browserExecutable": {
+    "path": "/home/bruno/.cache/ms-playwright/chromium-1248/chrome-linux64/chrome",
+    "dev": "66306",
+    "ino": "152968806",
+    "bytes": "301186376",
+    "mtimeNs": "1792186598034300837",
+    "ctimeNs": "1792186598355304091",
+    "version": "156.0.8078.4",
+    "sha256": "377a9fc07b495c3b8d0ab8ec1fdfd153641759f9756fea34d8dfce4de82f5025"
+  },
+  "productionPromotion": false,
+  "cleanup": {
+    "checked": true,
+    "childProcessGroup": null,
+    "scopeMembershipOwner": "fresh isolated scope; process identity checked by PID/startTicks/cgroup, plus detached child process group/session",
+    "observedOwnedChildren": [],
+    "signals": [],
+    "remainingLiveScopeChildren": [],
+    "remainingLiveProcessGroup": [],
+    "runnerStdioClosed": true,
+    "runnerLogError": null
+  },
+  "scopeAfterCleanup": [
+    {
+      "pid": 791858,
+      "state": "S",
+      "ppid": 1857410,
+      "pgrp": 791858,
+      "session": 791858,
+      "startTicks": "15118940",
+      "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope"
+    },
+    {
+      "pid": 791859,
+      "state": "S",
+      "ppid": 791858,
+      "pgrp": 791858,
+      "session": 791858,
+      "startTicks": "15118943",
+      "cgroup": "0::/user.slice/user-1000.slice/user@1000.service/app.slice/kevala-q8-swiglu-20261107-r1.scope"
+    }
+  ],
+  "lease": {
+    "bind": {
+      "binding": {
+        "canonicalPath": "/home/bruno/.cache/kevala/gpu-profile.lock",
+        "pid": "791859",
+        "startTicks": "15118943",
+        "device": "66306",
+        "inode": "134897311",
+        "major": "259",
+        "minor": "2",
+        "fd": 3,
+        "mntId": "33",
+        "flags": "557056"
+      },
+      "exactInheritedFdOwnershipProved": true
+    },
+    "afterOwnedCleanup": {
+      "binding": {
+        "canonicalPath": "/home/bruno/.cache/kevala/gpu-profile.lock",
+        "pid": "791859",
+        "startTicks": "15118943",
+        "device": "66306",
+        "inode": "134897311",
+        "major": "259",
+        "minor": "2",
+        "fd": 3,
+        "mntId": "33",
+        "flags": "557056"
+      },
+      "exactInheritedFdOwnershipProved": true
+    }
+  }
+}

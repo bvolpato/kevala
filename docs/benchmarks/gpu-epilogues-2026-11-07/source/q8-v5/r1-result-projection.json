@@ -1,0 +1,44 @@
+{
+  "rawSourceSha256": "efc95d9a296c58adccc22539da65a579d48edd8770d74a399d71379730fd5641",
+  "error": "q8-swiglu page did not expose its terminal flag before timeout",
+  "timeoutDiagnostics": {
+    "browserConsole": {
+      "errorCount": 2,
+      "errors": [
+        {
+          "level": "SEVERE",
+          "message": "http://127.0.0.1:35207/dev/adapter-metadata.js - Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "source": "network",
+          "timestamp": "1794076523260"
+        },
+        {
+          "level": "SEVERE",
+          "message": "http://127.0.0.1:35207/favicon.ico - Failed to load resource: the server responded with a status of 404 (Not Found)",
+          "source": "network",
+          "timestamp": "1794076523512"
+        }
+      ],
+      "state": "available",
+      "truncated": false
+    },
+    "page": {
+      "error": null,
+      "phase": null,
+      "status": null
+    }
+  },
+  "runner": {
+    "browser": "chrome",
+    "browserContext": "isolated",
+    "browserRequested": "chromium",
+    "browserVersion": "156.0.8078.4",
+    "expectedBackend": "webgpu",
+    "headless": true,
+    "targetVisibility": "headless",
+    "timerPrivacy": {
+      "firefoxPrecisionDisabled": false,
+      "isolatedSeleniumProfile": true,
+      "note": "unchanged"
+    }
+  }
+}

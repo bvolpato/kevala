@@ -1,0 +1,116 @@
+{
+  "timestamp": "2026-11-07T18:03:39.705Z",
+  "executionExit": 1,
+  "status": "failed",
+  "error": "browser runner failed: exit=1 signal=null stop=none page=error: q8-swiglu page did not expose its terminal flag before timeout",
+  "owner": 803755,
+  "processes": [
+    {
+      "pid": 803755,
+      "absent": true
+    },
+    {
+      "pid": 803753,
+      "absent": true
+    },
+    {
+      "pid": 803776,
+      "absent": true
+    },
+    {
+      "pid": 803811,
+      "absent": true
+    },
+    {
+      "pid": 803875,
+      "absent": true
+    },
+    {
+      "pid": 803885,
+      "absent": true
+    },
+    {
+      "pid": 803887,
+      "absent": true
+    },
+    {
+      "pid": 803889,
+      "absent": true
+    },
+    {
+      "pid": 803893,
+      "absent": true
+    },
+    {
+      "pid": 803894,
+      "absent": true
+    },
+    {
+      "pid": 803896,
+      "absent": true
+    },
+    {
+      "pid": 803922,
+      "absent": true
+    },
+    {
+      "pid": 803923,
+      "absent": true
+    },
+    {
+      "pid": 803933,
+      "absent": true
+    },
+    {
+      "pid": 804008,
+      "absent": true
+    },
+    {
+      "pid": 804022,
+      "absent": true
+    },
+    {
+      "pid": 804035,
+      "absent": true
+    },
+    {
+      "pid": 804121,
+      "absent": true
+    },
+    {
+      "pid": 804130,
+      "absent": true
+    },
+    {
+      "pid": 804262,
+      "absent": true
+    }
+  ],
+  "unit": "kevala-q8-swiglu-20261107-r2.scope",
+  "scopeProperties": "ControlGroup=\nActiveState=inactive\nSubState=dead\n",
+  "scopeShowExit": 0,
+  "freeProbeExit": 0,
+  "canonical": {
+    "device": 66306,
+    "inode": 134897311
+  },
+  "cleanupChecked": true,
+  "remainingScopeChildren": [],
+  "remainingProcessGroup": [],
+  "runnerStdioClosed": true,
+  "controllerSha256": "f7c8a58df2eb96c972d99ed477f47798d1c12f9b513dcb3f4a94a2283c29001a",
+  "monitorObservation": {
+    "at": "2026-11-07T17:58 approximate",
+    "nodeCpuSeconds": 546,
+    "nodeCpuPercent": 82.3,
+    "elapsedSeconds": 663
+  },
+  "nvmlObservation": {
+    "at": "2026-11-07T18:00:12Z",
+    "aggregateGpuMemoryMiB": 3344,
+    "aggregateGpuUtilizationPercent": 4,
+    "scope": "shared-host aggregate, not per-model attribution"
+  },
+  "performanceEvidenceQualified": false,
+  "passed": true
+}
