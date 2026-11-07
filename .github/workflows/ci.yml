@@ -166,6 +166,35 @@ jobs:
           name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: dist/site
           include-hidden-files: true
+      - name: Wait for Pages artifact visibility
+        timeout-minutes: 2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_CONFIG_DIR: ${{ runner.temp }}/gh-pages-artifact-readiness
+        run: |
+          set -euo pipefail
+          mkdir -p "$GH_CONFIG_DIR"
+          chmod 700 "$GH_CONFIG_DIR"
+          expected_name="github-pages-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          for poll in {1..12}; do
+            if ! artifacts=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/artifacts?per_page=100"); then
+              echo "::error::GitHub Actions artifact lookup failed on poll ${poll}."
+              exit 1
+            fi
+            if ! visible=$(jq -r --arg expected "$expected_name" '.artifacts | any(.[]; .name == $expected)' <<<"$artifacts"); then
+              echo "::error::GitHub Actions artifact lookup returned invalid metadata."
+              exit 1
+            fi
+            if [[ "$visible" == true ]]; then
+              echo "Pages artifact is visible to the deploy job."
+              exit 0
+            fi
+            if [[ "$poll" -lt 12 ]]; then
+              sleep 5
+            fi
+          done
+          echo "::error::Pages artifact '${expected_name}' was not visible after 12 polls."
+          exit 1
       - name: Deploy Pages
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
