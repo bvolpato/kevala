@@ -1,6 +1,6 @@
 # Performance reference for projection kernels
 
-This 2026-11-06 capture compares bounded synthetic projection screens and a separate native reference. It does not establish that every Kevala kernel is globally optimal, or that a kernel change improves full-model latency. No candidate from these screens was enabled in production. The archived [summary and raw capture manifest](benchmarks/performance-reference-2026-11-06/summary.json) identifies the source commit, measurements, failures, and compressed raw evidence. It omits model weights and compiled binaries.
+The original 2026-11-06 capture compares bounded synthetic projection screens and a separate native reference. The dated extension below compares one real Q8 projection with its exact FP32 weight expansion, using synthetic activations. Neither establishes that every Kevala kernel is globally optimal or that a kernel change improves full-model latency. No candidate from these screens was enabled in production. The original [summary and raw capture manifest](benchmarks/performance-reference-2026-11-06/summary.json) identifies the November 6 source commit, measurements, failures, and compressed raw evidence. It omits model weights and compiled binaries.
 
 ## Native cuBLAS reference
 
@@ -42,3 +42,26 @@ The [GPU Goldmines paper](https://arxiv.org/abs/2610.17321) is relevant WebGPU k
 These failures did not produce valid timing or correctness evidence: the first Chromium capability probe returned `no WebGPU adapter`; the initial Gemma harness stopped with `ReferenceError: gpuJsSha256 is not defined` before a screen ran; and a portable-tile request was rejected because its case exceeded the harness bounds (`T<=512`, `N<=32768`, `K<=16384`, with K a multiple of 32). Later capability and Gemma probes are recorded separately. The archive also records two older failed capability-harness source versions that could not be recovered byte-for-byte; their hashes are listed in its manifest. None of these are kernel correctness failures.
 
 The screens cover selected projection shapes, not all model paths, all supported devices, image inference, sustained application workloads, or competing libraries under a matched protocol. Treat browser and native references separately. Promote a candidate only after numerical gates, repeatable paired timings, and unprofiled full-model latency checks pass, as described in the [kernel profiling workflow](kernel-profiling.md).
+
+## November 7: matched real-weight FP32 cache screen
+
+**Decision: reject promotion.** Replacing on-the-fly Q8 decoding with a resident FP32 cache did not produce a convincing projection win. This screen used the real Kev-0.8B `L.0.gate_up` matrix, shaped 7,168 × 1,024, with deterministic finite activations. The Q8 and FP32 paths used the same weights, inputs, FP32 workgroup tiles, row geometry, split-K rule, bias and output modes. Each cached weight was `Math.fround(signed_int8 * original_f32_scale_per_K32_block)`. No model or runtime default changed.
+
+The host was the Ryzen 9 9950X3D and RTX 5070 Ti with NVIDIA driver 595.71.05. Chrome 156.0.8078.4 used Vulkan and a hardware adapter. The device requested timestamp queries and omitted `shader-f16`. Each arm had three warmups and nine alternating ABBA/BAAB quartets. Common repetition counts came from one Q8 calibration targeting 20 ms, capped at 128 repetitions. The T=1 and T=47 batches reached the cap before reaching that target. All slower samples remain included.
+
+The primary ratio is the median of nine Q8/FP32 quartet ratios. Independent medians and observed ranges are separate statistics; the ranges are not confidence intervals. The identical Q8 A/A control used the same pipeline, buffers and inputs. No A/A correction was applied.
+
+| T | Independent Q8 / FP32 medians | Paired Q8 / FP32 ratio | Observed ratio range | FP32 faster | Identical Q8 A/A ratio | A/A range | A/A second arm faster |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.026744 / 0.032933 ms | 0.81010 | 0.67673–0.87313 | 0/9 | 0.99430 | 0.94772–1.05080 | 3/9 |
+| 47 | 0.048487 / 0.049320 ms | 0.97661 | 0.94538–1.04182 | 2/9 | 0.99686 | 0.94952–1.01825 | 4/9 |
+| 158 | 0.146694 / 0.148352 ms | 0.99052 | 0.94741–1.02847 | 4/9 | 0.98947 | 0.97383–1.02095 | 3/9 |
+| 512 | 0.413942 / 0.408906 ms | 1.00629 | 0.98430–1.02847 | 6/9 | 0.99528 | 0.98254–1.04205 | 3/9 |
+
+FP32 was slower at T=1 and showed mixed paired results at T=47 and T=158. Its 0.63% paired latency reduction at T=512 fell within the observed A/A spread. These results do not support a cache promotion. T=1 is a padded matrix-kernel memory control; it does not measure the runtime's matrix-vector selector.
+
+All active output bits matched between Q8 and FP32 before and after timing. Finite-output checks, output and partial-buffer canaries, and the bias, residual and ReLU controls passed. Independent audit recomputed the paired summaries and verified positive, chronological GPU timestamps. Timings cover a resident projection's matrix dispatch and split-K reducer when used. They exclude fetching, uploads, cache construction, pipeline compilation, readback and model execution.
+
+One cache construction took 93.2 ms: 38.8 ms for CPU decoding and 54.4 ms for allocation, upload and completion. This is one observed construction, not a repeated benchmark. The cache added 28 MiB beside the 7.875 MiB Q8 representation, for 35.875 MiB of coexisting weight buffers. Releasing Q8 would instead make the representation increase 20.125 MiB. The exact peak of explicitly created GPU buffers was 69,103,968 bytes. It excludes driver, pipeline, query, browser and WebAssembly allocations and is not a total VRAM peak.
+
+The [November 7 evidence archive](benchmarks/f32-weight-cache-2026-11-07/README.md) preserves the source protocol, raw samples, receipts, identity records and the unexecuted earlier source draft. The whole-pack hash is historical; this run freshly bound the header and selected weight/scale ranges to local and HTTP hashes and checked before/after file metadata. It does not claim a fresh whole-pack or whole-HTTP hash. Exact CI runtime bytes were verified for this local experiment, while the referenced CI71 Pages deployment remained unverified.

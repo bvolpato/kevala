@@ -1,8 +1,8 @@
 import { esc } from "../ui.js";
 
-const REPORT_PATH = "docs/benchmarks/kernel-profile-2026-11-06/summary.json";
+const REPORT_PATH = "docs/benchmarks/kernel-profile-2026-11-07/summary.json";
 const OPTIMIZATION_REPORT_PATH = "docs/benchmarks/model-optimization-2026-11-06/summary.json";
-const RAW_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/kernel-profile-2026-11-06/summary.json";
+const RAW_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/kernel-profile-2026-11-07/summary.json";
 const RAW_OPTIMIZATION_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/model-optimization-2026-11-06/summary.json";
 const METHOD_URL = "https://github.com/bvolpato/kevala/blob/main/docs/kernel-profiling.md";
 
@@ -102,9 +102,23 @@ function measuredMetric(metric) {
 }
 
 function caseLabel(testCase) {
-  const name = text(testCase.name, "Case");
-  const tokenCount = testCase.tokens === undefined ? "" : ` · ${text(testCase.tokens)} tokens`;
-  return `${name}${tokenCount}`;
+  const names = {
+    "1 question, ~40 tokens": "Short fixture · one question",
+    "1 question, ~128 tokens": "Medium fixture · one question",
+    "1 question, ~512 tokens": "Long fixture · one question",
+  };
+  const name = names[testCase.name] || text(testCase.name, "Case");
+  const observed = Array.isArray(testCase.tokenCounts)
+    ? [...new Set(testCase.tokenCounts.filter(Number.isSafeInteger))].sort((a, b) => a - b)
+    : [];
+  const range = testCase.tokenRange;
+  const counts = observed.length
+    ? observed.length === 1 ? String(observed[0]) : `${observed.slice(0, -1).join(", ")} or ${observed.at(-1)}`
+    : Array.isArray(range) && range.length === 2 && range.every(Number.isSafeInteger)
+      ? range[0] === range[1] ? String(range[0]) : `${range[0]}–${range[1]}`
+      : testCase.tokens === undefined ? "" : text(testCase.tokens);
+  const count = counts ? `${counts} input tokens` : "";
+  return `${name}${count ? ` · ${count}` : ""}`;
 }
 
 function metricList(model, kind) {
@@ -442,7 +456,7 @@ function renderModelOptimization(report) {
       <div><span>Model cases</span><b>${caseCount}</b></div>
     </div>
     <p class="profile-method-note"><b>Read the measures separately:</b> wall latency is the end-to-end measure. GPU time is diagnostic. A negative latency change means the measured time decreased. ${esc(compact(text(report.protocol?.description, "Protocol details are in the report summary."), 300))}</p>
-    <p class="profile-separation-note">The model and kernel profile below is a separate capture with its own source fingerprint. It does not claim to measure this optimized runtime.</p>
+    <p class="profile-separation-note">The model and kernel profile below uses separate fixtures and a separate source fingerprint. Its latency values are not paired before-and-after comparisons for the optimization results above.</p>
     <section class="profile-subsection">
       <div class="profile-section-head"><div><h4>Optimization changes tested</h4><p class="muted small">Each card reports its scope, outcome status, and measured values when available.</p></div></div>
       ${improvements.length ? `<div class="grid-2 profile-improvements">${improvements.map(improvementCard).join("")}</div>` : `<p class="profile-missing">No individual optimization changes were reported.</p>`}
@@ -554,8 +568,8 @@ function renderReport(report) {
   const env = report.environment ?? {};
   return `<div class="kernel-profile">
     <header class="profile-heading">
-      <div><div class="eyebrow">Earlier kernel profile</div><h3>Model latency and kernel coverage</h3>
-        <p class="muted">This profile predates the optimized runtime above and applies only to its recorded adapter and build.</p>
+      <div><div class="eyebrow">Latest measured profile</div><h3>Current model latency and kernel coverage</h3>
+        <p class="muted">All 11 Q8 models completed. One kernel harness failed during browser device creation; a separate recheck passed. The original failure remains recorded.</p>
       </div>
       <div class="profile-links">${artifactLinks(report.artifacts)}</div>
     </header>
@@ -596,8 +610,8 @@ function validateReport(report) {
 
 function unavailable(reason) {
   return `<section class="profile-unavailable" role="status">
-    <div class="eyebrow">Earlier kernel profile</div><h3>Report unavailable</h3>
-    <p>The earlier model and kernel measurements are not available from the published summary file.</p>
+    <div class="eyebrow">Latest measured profile</div><h3>Report unavailable</h3>
+    <p>The current model and kernel measurements are not available from the published summary file.</p>
     <p class="profile-unavailable-reason"><b>Detail:</b> ${esc(reason)}</p>
     <div class="profile-links"><a href="${RAW_REPORT_URL}" target="_blank" rel="noopener">Check the raw summary file ↗</a><a href="${METHOD_URL}" target="_blank" rel="noopener">Measurement method ↗</a></div>
   </section>`;
@@ -642,7 +656,7 @@ export function mountModelOptimization(container) {
 export function mountKernelProfile(container) {
   if (!container) return () => {};
   const controller = new AbortController();
-  container.innerHTML = `<p class="profile-loading" role="status">Loading the earlier model and kernel profile…</p>`;
+  container.innerHTML = `<p class="profile-loading" role="status">Loading the latest model and kernel profile…</p>`;
   fetch(new URL(REPORT_PATH, document.baseURI), { signal: controller.signal, cache: "no-cache" })
     .then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${REPORT_PATH}`);
