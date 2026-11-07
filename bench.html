@@ -18,6 +18,8 @@
 </p>
 <pre id="log"></pre>
 <script type="module">
+import { adapterFallbackMetadata } from "./dev/adapter-metadata.js";
+
 const $ = (id) => document.getElementById(id);
 const log = (s) => ($("log").textContent += s + "\n");
 window.bench = { status: "idle" };
@@ -132,6 +134,7 @@ async function run() {
     restore.splice(0).reverse().forEach((callback) => callback());
     if (loadProfile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
     const adapterInfo = actualGpu?.adapter.info || {};
+    const fallbackMetadata = actualGpu ? adapterFallbackMetadata(actualGpu.adapter) : null;
     const precision = actualHeader ? (await import(new URL("./pack-layout.js", runtime))).packPrecision(actualHeader) : kevala.info.model?.precision || null;
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
     const tuning = residentProtocol ? await tuningSnapshot(kevala.info.gpuTuning) : null;
@@ -147,8 +150,7 @@ async function run() {
       cache: { packEnabled: cache, state: kevala.info.stateCache },
       pack: kevala.info.pack,
       adapter: actualGpu ? { name: actualGpu.name, vendor: adapterInfo.vendor || null, architecture: adapterInfo.architecture || null,
-        device: adapterInfo.device || null, description: adapterInfo.description || null,
-        isFallbackAdapter: Boolean(adapterInfo.isFallbackAdapter || actualGpu.adapter.isFallbackAdapter),
+        device: adapterInfo.device || null, description: adapterInfo.description || null, ...fallbackMetadata,
         features: [...actualGpu.device.features].sort(), limits: { maxBufferSize: actualGpu.device.limits.maxBufferSize,
           maxStorageBufferBindingSize: actualGpu.device.limits.maxStorageBufferBindingSize, maxComputeWorkgroupStorageSize: actualGpu.device.limits.maxComputeWorkgroupStorageSize } } : null,
       arch: kevala.info.arch,

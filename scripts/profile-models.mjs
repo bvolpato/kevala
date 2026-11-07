@@ -38,6 +38,8 @@ Every pack is checked against its header and hashed before and after measurement
 Exit status: 0 complete, 1 invalid/failed measurement, 2 incomplete coverage.
 `;
 
+const HARNESS_ASSETS = ["bench.html", "dev/adapter-metadata.js"];
+
 function options(args) {
   const values = {};
   const chromiumArgs = [];
@@ -112,6 +114,19 @@ async function fingerprint(runtime, base) {
   return { sha256: digest.digest("hex"), assets };
 }
 
+async function fingerprintHarness(base) {
+  const assets = [];
+  for (const path of HARNESS_ASSETS) {
+    const local = await readFile(resolve(ROOT, path));
+    const response = await fetch(new URL(path, base));
+    if (!response.ok) throw new Error(`Harness ${path}: HTTP ${response.status}`);
+    const served = Buffer.from(await response.arrayBuffer());
+    if (!served.equals(local)) throw new Error(`Harness ${path}: served bytes differ from the local source`);
+    assets.push({ path, bytes: local.length, sha256: createHash("sha256").update(local).digest("hex") });
+  }
+  return { assets, sha256: assets[0].sha256 };
+}
+
 const git = (...args) => {
   const result = spawnSync("git", args, { cwd: ROOT, encoding: "utf8" });
   if (result.status !== 0) throw new Error(`git ${args[0]} failed`);
@@ -123,11 +138,10 @@ async function run(config, plan) {
   try { await stat(resolve(config.output, "summary.json")); throw new Error("Output already contains a profile; choose a fresh output directory to avoid mixing captures"); }
   catch (error) { if (error.code !== "ENOENT") throw error; }
   const initialFingerprint = await fingerprint(config.runtime, config.base);
-  const htmlResponse = await fetch(new URL("bench.html", config.base));
-  if (!htmlResponse.ok) throw new Error(`Benchmark page: HTTP ${htmlResponse.status}`);
-  const harnessSha256 = createHash("sha256").update(await htmlResponse.text()).digest("hex");
+  const initialHarness = await fingerprintHarness(config.base);
+  const harnessSha256 = initialHarness.sha256;
   const summary = { schemaVersion: 1, status: "running", generatedAt: new Date().toISOString(),
-    runtime: { entry: config.runtime.href, commit: git("rev-parse", "HEAD"), tree: git("rev-parse", "HEAD^{tree}"), workingTreeDirty: git("status", "--porcelain=v1").length > 0, ...initialFingerprint, harnessSha256 },
+    runtime: { entry: config.runtime.href, commit: git("rev-parse", "HEAD"), tree: git("rev-parse", "HEAD^{tree}"), workingTreeDirty: git("status", "--porcelain=v1").length > 0, ...initialFingerprint, harnessSha256, harnessAssets: initialHarness.assets },
     protocol: { samples: config.samples, warmups: config.warmups, blocks: config.blocks, shapes: config.shapes,
       models: config.models, precisions: config.precisions, browsers: config.browsers,
       cacheMode: "uncached", packCache: false, stateCache: false, uniqueStates: true, context: "on-page WebGPU engine",
@@ -250,8 +264,8 @@ async function run(config, plan) {
       const after = await stat(packPath);
       if (after.size !== pack.file.size || after.ino !== pack.file.ino || after.mtimeMs !== pack.file.mtimeMs) throw new Error(`${row.id}: pack file identity changed during measurement`);
       if ((await fingerprint(config.runtime, config.base)).sha256 !== initialFingerprint.sha256) throw Object.assign(new Error("Runtime changed during measurement"), { fatal: true });
-      const currentHarness = await fetch(new URL("bench.html", config.base));
-      if (createHash("sha256").update(await currentHarness.text()).digest("hex") !== harnessSha256) throw Object.assign(new Error("Benchmark harness changed during measurement"), { fatal: true });
+      const currentHarness = await fingerprintHarness(config.base);
+      if (JSON.stringify(currentHarness.assets) !== JSON.stringify(initialHarness.assets)) throw Object.assign(new Error("Benchmark harness changed during measurement"), { fatal: true });
       Object.assign(row, measured, { status: "measured", adapter: runs[0].result.adapter, runner: runs[0].result.runner,
         tuning: runs.map((record) => ({ block: record.block, profile: record.profile, gpuTuning: record.result.gpuTuning })) });
     } catch (error) {

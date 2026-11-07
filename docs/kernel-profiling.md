@@ -1,6 +1,6 @@
 # Profiling models and kernels
 
-Use this workflow to compare the registered WebGPU kernels and the current model catalog on one measured browser and adapter. The [current report](benchmarks/kernel-profile-2026-11-06/summary.json) keeps hardware, precision, correctness, and missing coverage separate. The website shows the report under [How it works → Speed](https://bvolpato.github.io/kevala/#/how/bench).
+Use this workflow to compare the registered WebGPU kernels and the current model catalog on one measured browser and adapter. The [latest host profile](benchmarks/kernel-profile-2026-11-07/README.md) records resident latency and kernel coverage on an RTX 5070 Ti and Ryzen 9 9950X3D. The [published summary](benchmarks/kernel-profile-2026-11-07/summary.json) keeps hardware, precision, correctness, and missing coverage separate. The website shows the report under [How it works → Speed](https://bvolpato.github.io/kevala/#/how/bench).
 
 See the [native and experimental performance reference](performance-reference.md) for the separate cuBLAS FP32 timing scope, Chrome feature gate, and candidate screens that were not promoted.
 
