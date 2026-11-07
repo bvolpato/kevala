@@ -37,6 +37,50 @@ async function requestHash(requests) {
   return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function canonicalJson(value) {
+  const active = new Set();
+  const encode = (item, path) => {
+    if (item === null) return "null";
+    if (typeof item === "string" || typeof item === "boolean") return JSON.stringify(item);
+    if (typeof item === "number") {
+      if (!Number.isFinite(item)) throw new Error(`GPU tuning snapshot contains a non-finite number at ${path}`);
+      return JSON.stringify(item);
+    }
+    if (typeof item !== "object") throw new Error(`GPU tuning snapshot contains a non-JSON value at ${path}`);
+    if (active.has(item)) throw new Error(`GPU tuning snapshot contains a cycle at ${path}`);
+    active.add(item);
+    try {
+      if (Array.isArray(item)) {
+        const keys = Reflect.ownKeys(item).filter((key) => key !== "length");
+        if (keys.length !== item.length || !keys.every((key, index) => key === String(index))) throw new Error(`GPU tuning snapshot contains a sparse or extended array at ${path}`);
+        return `[${keys.map((key, index) => {
+          const descriptor = Object.getOwnPropertyDescriptor(item, key);
+          if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error(`GPU tuning snapshot contains a hidden or accessor array entry at ${path}[${index}]`);
+          return encode(descriptor.value, `${path}[${index}]`);
+        }).join(",")}]`;
+      }
+      const prototype = Object.getPrototypeOf(item);
+      if (prototype !== Object.prototype && prototype !== null) throw new Error(`GPU tuning snapshot contains a non-plain object at ${path}`);
+      const keys = Reflect.ownKeys(item);
+      if (!keys.every((key) => typeof key === "string")) throw new Error(`GPU tuning snapshot contains a symbol key at ${path}`);
+      keys.sort();
+      return `{${keys.map((key) => {
+        const descriptor = Object.getOwnPropertyDescriptor(item, key);
+        if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error(`GPU tuning snapshot contains a hidden or accessor property at ${path}.${key}`);
+        return `${JSON.stringify(key)}:${encode(descriptor.value, `${path}.${key}`)}`;
+      }).join(",")}}`;
+    } finally { active.delete(item); }
+  };
+  return encode(value, "gpuTuning");
+}
+
+async function tuningSnapshot(value) {
+  const planJson = canonicalJson(value);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(planJson));
+  const sha256 = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return { planJson, sha256 };
+}
+
 async function run() {
   $("log").textContent = "";
   const q = new URLSearchParams(location.hash.slice(1));
@@ -60,9 +104,14 @@ async function run() {
     const model = packUrl ? { name, url: packUrl.href } : local ? `./tmp/${name}-q8.kevala` : name;
     const runs = integerParam(q, "runs", 10, 1);
     const warmups = integerParam(q, "warmups", 2, 0);
+    const protocol = q.get("protocol") || "isolated";
+    if (!["resident", "isolated"].includes(protocol)) throw new Error("protocol must be resident or isolated");
+    const residentProtocol = protocol === "resident";
+    const blocks = residentProtocol ? integerParam(q, "blocks", 2, 2) : 0;
     const requestedFlavor = q.get("flavor") || undefined;
     const unique = q.get("unique") === "1";
     const profile = q.get("profile") === "1";
+    const loadProfile = residentProtocol ? false : profile;
     const cache = q.get("cache") !== "0";
     const stateCache = q.has("stateCache") ? q.get("stateCache") !== "0" : undefined;
     const onPage = q.get("onPage") === "1";
@@ -79,18 +128,21 @@ async function run() {
     // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
     // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
     const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
-    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache, stateCache, profile, ...(onPage ? { onPage: true } : {}), ...(q.has("precision") ? { precision: q.get("precision") } : {}), submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache, stateCache, profile: loadProfile, ...(onPage ? { onPage: true } : {}), ...(q.has("precision") ? { precision: q.get("precision") } : {}), submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
     restore.splice(0).reverse().forEach((callback) => callback());
-    if (profile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
+    if (loadProfile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
     const adapterInfo = actualGpu?.adapter.info || {};
     const precision = actualHeader ? (await import(new URL("./pack-layout.js", runtime))).packPrecision(actualHeader) : kevala.info.model?.precision || null;
     log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+    const tuning = residentProtocol ? await tuningSnapshot(kevala.info.gpuTuning) : null;
+    const resident = residentProtocol ? { sessionId: crypto.randomUUID(), loadId: crypto.randomUUID(), tuning } : null;
     const results = {
+      protocol,
       model: name,
       modelInfo: kevala.info.model,
       runtime: runtime.href,
       precision,
-      profile,
+      profile: loadProfile,
       context: kevala.info.onPage ? "page" : "worker",
       cache: { packEnabled: cache, state: kevala.info.stateCache },
       pack: kevala.info.pack,
@@ -106,7 +158,8 @@ async function run() {
       flavor: kevala.info.flavor,
       cpuTiles: kevala.info.cpuTiles,
       cpuTuning: kevala.info.cpuTuning,
-      gpuTuning: kevala.info.gpuTuning,
+      gpuTuning: residentProtocol ? JSON.parse(tuning.planJson) : kevala.info.gpuTuning,
+      ...(residentProtocol ? { resident } : {}),
       selectedFlavor: kevala.info.flavor || null,
       hardwareConcurrency: navigator.hardwareConcurrency || null,
       crossOriginIsolated: globalThis.crossOriginIsolated === true,
@@ -125,43 +178,59 @@ async function run() {
       { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
     ];
     const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
-    for (const s of shapes.filter((_, i) => pick.includes(i))) {
-      // the longest gap between animation frames while this shape runs: how much it stalls the page
-      let gap = 0, lastF = performance.now(), on = true;
-      const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
-      requestAnimationFrame(tick);
-      const ms = [];
-      const samples = [];
-      const wallMs = [];
-      let tokens = 0;
-      let last = null;
-      for (let i = 0; i < warmups + runs; i++) {
-        // Give every measured request a distinct state so the model's request cache cannot help.
-        const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
-        const fingerprint = await requestHash(reqs);
-        const t = performance.now();
-        const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
-        const wall = performance.now() - t;
-        if (i >= warmups) {
-          ms.push(wall);
-          wallMs.push(wall);
-          samples.push({ ...r[0].timing, wallMs: wall, requestHash: fingerprint,
-            outputs: r.map(({ model, answers, raw_probabilities }) => ({ model, answers, ...(raw_probabilities ? { raw_probabilities } : {}) })) });
+    const runCases = async (profiled) => {
+      const cases = [];
+      for (const s of shapes.filter((_, i) => pick.includes(i))) {
+        // The longest frame gap while this shape runs measures how much it stalls the page.
+        let gap = 0, lastF = performance.now(), on = true;
+        const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        const ms = [];
+        const samples = [];
+        const wallMs = [];
+        let tokens = 0;
+        let last = null;
+        for (let i = 0; i < warmups + runs; i++) {
+          // Give every measured request a distinct state so the model's request cache cannot help.
+          const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+          const fingerprint = await requestHash(reqs);
+          const t = performance.now();
+          const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
+          const wall = performance.now() - t;
+          if (i >= warmups) {
+            ms.push(wall);
+            wallMs.push(wall);
+            samples.push({ ...r[0].timing, wallMs: wall, requestHash: fingerprint,
+              outputs: r.map(({ model, answers, raw_probabilities }) => ({ model, answers, ...(raw_probabilities ? { raw_probabilities } : {}) })) });
+          }
+          tokens = r[0].timing.tokens;
+          last = r[0].timing;
         }
-        tokens = r[0].timing.tokens;
-        last = r[0].timing;
+        on = false;
+        ms.sort((a, b) => a - b);
+        const middle = ms.length >> 1;
+        const p50 = ms.length % 2 ? ms[middle] : (ms[middle - 1] + ms[middle]) / 2;
+        const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.ceil(ms.length * 0.95) - 1], min: ms[0] };
+        c.last = last;
+        c.samples = samples;
+        c.wallMs = wallMs;
+        cases.push(c);
+        log(`${profiled ? "profile" : "wall"} ${s.name.padEnd(31)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
       }
-      on = false;
-      ms.sort((a, b) => a - b);
-      const middle = ms.length >> 1;
-      const p50 = ms.length % 2 ? ms[middle] : (ms[middle - 1] + ms[middle]) / 2;
-      const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.ceil(ms.length * 0.95) - 1], min: ms[0] };
-      c.last = last;
-      c.samples = samples;
-      c.wallMs = wallMs;
-      results.cases.push(c);
-      log(`${s.name.padEnd(38)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
-    }
+      return cases;
+    };
+    if (residentProtocol) {
+      results.blocks = [];
+      for (let block = 0; block < blocks; block++) {
+        const lanes = [];
+        for (const profiled of block % 2 ? [true, false] : [false, true]) {
+          if (!await kevala.profile(profiled)) throw new Error("timestamp-query is unavailable for GPU profiling");
+          lanes.push({ profile: profiled, cases: await runCases(profiled) });
+        }
+        results.blocks.push({ block, lanes });
+      }
+      results.cases = results.blocks[0].lanes.find((lane) => !lane.profile).cases;
+    } else results.cases = await runCases(profile);
     results.done = true;
     window.bench = results;
   } catch (error) {

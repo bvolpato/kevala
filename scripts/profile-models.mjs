@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
-import { mkdir, readFile, readdir, realpath, stat, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, realpath, stat, unlink, writeFile } from "node:fs/promises";
 import { cpus, freemem, loadavg, platform, release, totalmem } from "node:os";
 import { dirname, resolve, relative, sep } from "node:path";
 import { MODELS } from "../js/src/source.js";
 import { BASE_URL, ROOT, failed, runPage } from "./lib/browser-run.mjs";
-import { classifyProfileFailure, fileHash, inspectPack, profilePlan, SHAPES, summarizeProfileRuns, validateProfileRun } from "./lib/model-profile.mjs";
+import { classifyProfileFailure, fileHash, inspectPack, profilePlan, SHAPES, splitResidentProfileBlocks, summarizeProfileRuns, validateProfileRun } from "./lib/model-profile.mjs";
 import { withProfileLock } from "./lib/profile-lock.mjs";
 
 const HELP = `Profile local catalog packs serially, with separate wall and diagnostic GPU blocks.
@@ -20,7 +20,8 @@ Options use --name=value:
   --runtime=URL           Same-origin runtime entry point; default js/src/index.js
   --packs=DIRECTORY       Local packs named <model>-<precision>.kevala; default tmp
   --pack-base=URL         Same-origin served pack directory; default tmp/
-  --samples=9 --warmups=3 --blocks=2 --shapes=0,1,2 --timeout=600
+  --protocol=resident|isolated  Default: resident; isolated preserves per-lane loads
+  --samples=9 --warmups=3 --blocks=2 --shapes=0,1,2 --timeout=600 (per lane)
   --binary=PATH           One selected browser's executable
   --chromium-arg=--FLAG    Repeat for isolated Chromium flags
   --max-pack-bytes=N      Explicit preflight memory-policy bound, if needed
@@ -39,7 +40,7 @@ Exit status: 0 complete, 1 invalid/failed measurement, 2 incomplete coverage.
 function options(args) {
   const values = {};
   const chromiumArgs = [];
-  const allowed = new Set(["base", "output", "models", "precisions", "browser", "browsers", "runtime", "packs", "pack-base", "samples", "warmups", "blocks", "shapes", "timeout", "binary", "chromium-arg", "max-pack-bytes", "probability-tolerance", "lock"]);
+  const allowed = new Set(["base", "output", "models", "precisions", "browser", "browsers", "runtime", "packs", "pack-base", "protocol", "samples", "warmups", "blocks", "shapes", "timeout", "binary", "chromium-arg", "max-pack-bytes", "probability-tolerance", "lock"]);
   for (const arg of args) {
     if (arg === "--help" || arg === "--list") { values[arg.slice(2)] = true; continue; }
     const match = /^--([^=]+)=(.+)$/.exec(arg);
@@ -65,7 +66,10 @@ function options(args) {
   if (runtime.origin !== base.origin || packBase.origin !== base.origin) throw new Error("runtime and pack-base must use the base origin");
   const probabilityTolerance = Number(values["probability-tolerance"] ?? 0.0005);
   if (!Number.isFinite(probabilityTolerance) || probabilityTolerance < 0 || probabilityTolerance > 0.005) throw new Error("probability-tolerance must be between 0 and 0.005");
+  const protocol = values.protocol || "resident";
+  if (!["resident", "isolated"].includes(protocol)) throw new Error("protocol must be resident or isolated");
   return { ...values, base, runtime, packBase, browsers, chromiumArgs, shapes, probabilityTolerance,
+    protocol,
     models: values.models?.split(",") || Object.keys(MODELS),
     precisions: values.precisions === "all" ? "all" : (values.precisions || "q8").split(","),
     output: resolve(ROOT, values.output || "tmp/model-profile"), packs: resolve(ROOT, values.packs || "tmp"),
@@ -125,6 +129,8 @@ async function run(config, plan) {
     protocol: { samples: config.samples, warmups: config.warmups, blocks: config.blocks, shapes: config.shapes,
       models: config.models, precisions: config.precisions, browsers: config.browsers,
       cacheMode: "uncached", packCache: false, stateCache: false, uniqueStates: true, context: "on-page WebGPU engine",
+      profileProtocol: config.protocol,
+      modelLoadScope: config.protocol === "resident" ? "one model load per row; exact load-time GPU tuning snapshot is recorded; per-shape caches may evolve during measurement" : "isolated model load for each wall/profile lane (legacy protocol)",
       blockOrder: "wall/profile, then profile/wall, alternating by block",
       wall: "unprofiled awaited request milliseconds; loading, tuning and fixture hashing excluded",
       gpu: "separate instrumented per-kernel GPU timestamps; profiling changes dispatch passes and may change optional paths; not application latency",
@@ -176,28 +182,61 @@ async function run(config, plan) {
       if (headerResponse.status !== 206 || Number(headerResponse.headers.get("content-length")) !== pack.headerBytes) throw new Error(`${row.id}: server must support bounded byte ranges`);
       if (createHash("sha256").update(new Uint8Array(await headerResponse.arrayBuffer())).digest("hex") !== pack.headerSha256) throw new Error(`${row.id}: served pack header differs from the verified file`);
       const runs = [];
-      for (let block = 0; block < config.blocks; block++) for (const profile of block % 2 ? [true, false] : [false, true]) {
+      if (config.protocol === "resident") {
         const page = new URL("bench.html", config.base);
         page.hash = new URLSearchParams({ auto: "", backend: "webgpu", model: row.id, precision: row.precision, packUrl: url.href,
-          runtime: config.runtime.href, profile: profile ? "1" : "0", cache: "0", stateCache: "0", unique: "1", onPage: "1",
+          runtime: config.runtime.href, profile: "0", protocol: "resident", blocks: String(config.blocks), cache: "0", stateCache: "0", unique: "1", onPage: "1",
           runs: String(config.samples), warmups: String(config.warmups), shapes: config.shapes.join(",") }).toString();
-        const filename = `${block}-${profile ? "gpu" : "wall"}.json`;
-        const path = resolve(folder, filename);
+        const pagePath = resolve(folder, "resident-page.json");
         stage = "browser";
-        const child = runPage({ result: profile ? "bench" : "latency", url: page.href, output: path, browser: row.browser,
-          binary: config.binary, chromiumArgs: config.chromiumArgs.length ? config.chromiumArgs : undefined, timeoutSeconds: config.timeout, stdio: "pipe" });
-        let result;
+        const child = runPage({ result: "latency", url: page.href, output: pagePath, browser: row.browser,
+          binary: config.binary, chromiumArgs: config.chromiumArgs.length ? config.chromiumArgs : undefined, timeoutSeconds: config.timeout * 2 * config.blocks, stdio: "pipe" });
+        let pageResult;
         try {
-          result = JSON.parse(await readFile(path, "utf8"));
-          const raw = relative(config.output, path).split(sep).join("/");
+          pageResult = JSON.parse(await readFile(pagePath, "utf8"));
+          const raw = relative(config.output, pagePath).split(sep).join("/");
           if (!(row.raw ||= []).includes(raw)) row.raw.push(raw);
         } catch { /* Child startup failures may precede a page result. */ }
-        if (failed(child)) throw Object.assign(new Error(result?.error || child.error?.message || child.stderr?.trim() || `Browser exited ${child.status ?? child.signal}`), { code: child.error?.code, fatal: child.error?.code === "ETIMEDOUT" });
+        if (failed(child)) throw Object.assign(new Error(pageResult?.error || child.error?.message || child.stderr?.trim() || `Browser exited ${child.status ?? child.signal}`), { code: child.error?.code, fatal: child.error?.code === "ETIMEDOUT" });
         stage = "validation";
-        validateProfileRun(result, { ...row, spec: MODELS[row.id], samples: config.samples, warmups: config.warmups, profile,
-          shapes: config.shapes, runtime: config.runtime.href, packBytes: pack.bytes, responseModel: pack.responseModel });
-        runs.push({ block, profile, result });
-        console.error(`${row.id} ${row.precision} ${row.browser} block ${block + 1} ${profile ? "GPU diagnostic" : "wall"}: ${result.cases.map((item) => item.p50.toFixed(2)).join(" / ")} ms wall`);
+        for (const record of splitResidentProfileBlocks(pageResult, config.blocks)) {
+          const filename = `${record.block}-${record.profile ? "gpu" : "wall"}.json`;
+          const path = resolve(folder, filename);
+          await writeFile(path, JSON.stringify(record.result, null, 2) + "\n");
+          const raw = relative(config.output, path).split(sep).join("/");
+          if (!(row.raw ||= []).includes(raw)) row.raw.push(raw);
+          validateProfileRun(record.result, { ...row, spec: MODELS[row.id], samples: config.samples, warmups: config.warmups, profile: record.profile,
+            shapes: config.shapes, runtime: config.runtime.href, packBytes: pack.bytes, responseModel: pack.responseModel });
+          runs.push(record);
+          console.error(`${row.id} ${row.precision} ${row.browser} block ${record.block + 1} ${record.profile ? "GPU diagnostic" : "wall"}: ${record.result.cases.map((item) => item.p50.toFixed(2)).join(" / ")} ms wall`);
+        }
+        await unlink(pagePath);
+        const pageRaw = relative(config.output, pagePath).split(sep).join("/");
+        row.raw = row.raw.filter((raw) => raw !== pageRaw);
+      } else {
+        for (let block = 0; block < config.blocks; block++) for (const profile of block % 2 ? [true, false] : [false, true]) {
+          const page = new URL("bench.html", config.base);
+          page.hash = new URLSearchParams({ auto: "", backend: "webgpu", model: row.id, precision: row.precision, packUrl: url.href,
+            runtime: config.runtime.href, profile: profile ? "1" : "0", protocol: "isolated", cache: "0", stateCache: "0", unique: "1", onPage: "1",
+            runs: String(config.samples), warmups: String(config.warmups), shapes: config.shapes.join(",") }).toString();
+          const filename = `${block}-${profile ? "gpu" : "wall"}.json`;
+          const path = resolve(folder, filename);
+          stage = "browser";
+          const child = runPage({ result: profile ? "bench" : "latency", url: page.href, output: path, browser: row.browser,
+            binary: config.binary, chromiumArgs: config.chromiumArgs.length ? config.chromiumArgs : undefined, timeoutSeconds: config.timeout, stdio: "pipe" });
+          let result;
+          try {
+            result = JSON.parse(await readFile(path, "utf8"));
+            const raw = relative(config.output, path).split(sep).join("/");
+            if (!(row.raw ||= []).includes(raw)) row.raw.push(raw);
+          } catch { /* Child startup failures may precede a page result. */ }
+          if (failed(child)) throw Object.assign(new Error(result?.error || child.error?.message || child.stderr?.trim() || `Browser exited ${child.status ?? child.signal}`), { code: child.error?.code, fatal: child.error?.code === "ETIMEDOUT" });
+          stage = "validation";
+          validateProfileRun(result, { ...row, spec: MODELS[row.id], samples: config.samples, warmups: config.warmups, profile,
+            shapes: config.shapes, runtime: config.runtime.href, packBytes: pack.bytes, responseModel: pack.responseModel });
+          runs.push({ block, profile, result });
+          console.error(`${row.id} ${row.precision} ${row.browser} block ${block + 1} ${profile ? "GPU diagnostic" : "wall"}: ${result.cases.map((item) => item.p50.toFixed(2)).join(" / ")} ms wall`);
+        }
       }
       stage = "validation";
       const measured = summarizeProfileRuns(runs, { shapes: config.shapes, probabilityTolerance: config.probabilityTolerance, answerUnit: pack.answerUnit });
