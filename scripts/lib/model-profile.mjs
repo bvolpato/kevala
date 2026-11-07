@@ -5,6 +5,7 @@ import { packHeaderLength, packPrecision, packSize, parsePackHeader } from "../.
 
 export const PRECISIONS = ["q8", "bf16", "f32"];
 export const SHAPES = ["1 question, ~40 tokens", "1 question, ~128 tokens", "1 question, ~512 tokens", "5 questions, ~60 tokens each", "32 states x 1 question (~45 tokens)"];
+export const CLEF_HEAD_ATTRIBUTION = "Request snapshots are captured after head.finish resolves. requested is the immutable engine mode; selected and reason describe the resulting route. coordTile is the coordinator tile. validated and headDiagnosticsTile are persistent head diagnostics and may carry across requests.";
 const finite = (value) => typeof value === "number" && Number.isFinite(value);
 const check = (condition, message) => { if (!condition) throw new Error(message); };
 
@@ -285,6 +286,41 @@ function gpuValues(gpu, label) {
   return values;
 }
 
+const CLEF_HEAD_SNAPSHOT_FIELDS = ["requested", "selected", "validated", "reason", "flavor", "coordTile", "headDiagnosticsTile"];
+
+function clefHeadSnapshot(snapshot, label, requestIndex) {
+  check(snapshot && typeof snapshot === "object" && !Array.isArray(snapshot), `${label}: invalid Clef head snapshot`);
+  const expectedKeys = requestIndex === undefined ? CLEF_HEAD_SNAPSHOT_FIELDS : ["requestIndex", ...CLEF_HEAD_SNAPSHOT_FIELDS];
+  check(Object.keys(snapshot).length === expectedKeys.length && expectedKeys.every((key) => Object.hasOwn(snapshot, key)), `${label}: incomplete or unexpected Clef head snapshot fields`);
+  if (requestIndex !== undefined) check(snapshot.requestIndex === requestIndex, `${label}: Clef head request order differs`);
+  check(["auto", "cpu"].includes(snapshot.requested) && ["cpu", "gpu"].includes(snapshot.selected)
+    && typeof snapshot.validated === "boolean" && (snapshot.reason === null || typeof snapshot.reason === "string" && snapshot.reason.length <= 512)
+    && typeof snapshot.flavor === "string" && snapshot.flavor.length > 0 && snapshot.flavor.length <= 64
+    && Number.isSafeInteger(snapshot.coordTile) && snapshot.coordTile >= 0
+    && (snapshot.headDiagnosticsTile === null || Number.isSafeInteger(snapshot.headDiagnosticsTile) && snapshot.headDiagnosticsTile >= 0),
+  `${label}: invalid Clef head diagnostic values`);
+  return { ...(requestIndex === undefined ? {} : { requestIndex }), ...Object.fromEntries(CLEF_HEAD_SNAPSHOT_FIELDS.map((key) => [key, snapshot[key]])) };
+}
+
+function validateClefHeadResult(result, label, arch) {
+  const hasAfterWarmup = Object.hasOwn(result, "clefHeadAfterWarmup");
+  check(!hasAfterWarmup || arch === "clef", `${label}: Clef head trace is only valid for the Clef architecture`);
+  const afterWarmup = hasAfterWarmup ? clefHeadSnapshot(result.clefHeadAfterWarmup, `${label} after warmup`) : null;
+  for (const [caseIndex, item] of result.cases.entries()) for (const [sampleIndex, sample] of item.samples.entries()) {
+    const hasTrace = Object.hasOwn(sample, "clefHeadRequests");
+    check(hasTrace === hasAfterWarmup, `${label}.${caseIndex}.${sampleIndex}: incomplete Clef head trace`);
+    if (hasTrace) {
+      check(Array.isArray(sample.outputs) && Array.isArray(sample.clefHeadRequests) && sample.clefHeadRequests.length === sample.outputs.length,
+        `${label}.${caseIndex}.${sampleIndex}: incomplete per-request Clef head trace`);
+      sample.clefHeadRequests.forEach((snapshot, requestIndex) => {
+        const request = clefHeadSnapshot(snapshot, `${label}.${caseIndex}.${sampleIndex}.${requestIndex}`, requestIndex);
+        check(request.requested === afterWarmup.requested, `${label}.${caseIndex}.${sampleIndex}.${requestIndex}: Clef head requested mode changed after warmup`);
+      });
+    }
+  }
+  return hasAfterWarmup;
+}
+
 export function validateProfileRun(result, expected) {
   const { id, arch, precision, browser, spec, samples, warmups, profile, shapes, runtime, packBytes, responseModel, cacheMode = "uncached" } = expected;
   check(typeof responseModel === "string" && responseModel.length > 0, `${id}: missing verified response model contract`);
@@ -297,6 +333,7 @@ export function validateProfileRun(result, expected) {
   if (browser !== undefined) validateProfileBrowser(result.runner, browser);
   const hardware = adapterKey(result.adapter);
   check(Array.isArray(result.cases) && result.cases.length === shapes.length, `${id}: incomplete request cases`);
+  validateClefHeadResult(result, id, arch);
   let requestStageCoverage;
   for (const [index, item] of result.cases.entries()) {
     check(item.name === SHAPES[shapes[index]], `${id}: request case order differs`);
@@ -336,6 +373,15 @@ function summarizeRequestStageLane(laneRuns, caseIndex) {
   return { blocks, distributions };
 }
 
+function summarizeClefHeadLane(laneRuns, caseIndex) {
+  return laneRuns.map(({ block, result }) => ({
+    block,
+    afterWarmup: clefHeadSnapshot(result.clefHeadAfterWarmup, `${block}.${caseIndex} after warmup`),
+    samples: result.cases[caseIndex].samples.map((sample, sampleIndex) => ({ sampleIndex, requestHash: sample.requestHash,
+      requests: sample.clefHeadRequests.map((snapshot, requestIndex) => clefHeadSnapshot(snapshot, `${block}.${caseIndex}.${sampleIndex}.${requestIndex}`, requestIndex)) })),
+  }));
+}
+
 export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.0005, answerUnit = 0.0001 } = {}) {
   check(runs.length >= 4 && runs.length % 2 === 0, "At least two complete wall/profile blocks are required");
   const blocks = new Set(runs.map((run) => run.block));
@@ -354,10 +400,14 @@ export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.00
   let maxProbabilityDelta = 0;
   let maxPublicNoulDelta = 0;
   let requestStageCoverage;
+  let clefHeadCoverage;
   const publicNoulTolerance = 2 * probabilityTolerance + answerUnit;
   for (const run of runs) {
     check(run.result.done === true && !run.result.error, "Cannot attribute an incomplete GPU profile");
     check(adapterKey(run.result.adapter) === hardware && run.result.runner?.browserVersion === reference.runner?.browserVersion, "Adapter, device features, or browser changed during profile");
+    const hasClefHead = validateClefHeadResult(run.result, `${run.block} Clef head`, run.result.arch);
+    check(clefHeadCoverage === undefined || clefHeadCoverage === hasClefHead, "Mixed Clef head trace coverage between profile lanes");
+    clefHeadCoverage = hasClefHead;
     for (const [index, item] of run.result.cases.entries()) for (const [sampleIndex, sample] of item.samples.entries()) {
       requestStageCoverage = requireConsistentStageCoverage(requestStageCoverage,
         requestStageSample(sample, `${run.block}.${index}.${sampleIndex}`, sampleIndex), `${run.block}.${index}.${sampleIndex}`);
@@ -403,6 +453,11 @@ export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.00
         attribution: "Reported prepare, forward, and total timings use architecture-specific performance.now() boundaries in milliseconds. Residuals are computed per sample: postForwardResidualMs = reportedTotalMs - reportedPrepareMs - reportedForwardMs; outerResidualMs = wallMs - reportedTotalMs. Residuals cover work between timers, including CPU work, copies, and GPU waits; they are not pure CPU time.",
         wall: summarizeRequestStageLane(runs.filter((run) => !run.profile), index),
         gpuProfiler: summarizeRequestStageLane(runs.filter((run) => run.profile), index),
+      } } : {}),
+      ...(clefHeadCoverage ? { clefHead: {
+        attribution: CLEF_HEAD_ATTRIBUTION,
+        wall: summarizeClefHeadLane(runs.filter((run) => !run.profile), index),
+        gpuProfiler: summarizeClefHeadLane(runs.filter((run) => run.profile), index),
       } } : {}) };
   });
   return { cases, ...(resident ? { resident } : {}), correctness: { maxProbabilityDelta, probabilityTolerance, maxPublicNoulDelta, publicNoulTolerance,

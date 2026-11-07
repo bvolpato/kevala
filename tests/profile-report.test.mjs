@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { MODELS } from "../js/src/source.js";
-import { SHAPES, summarizeProfileRuns } from "../scripts/lib/model-profile.mjs";
+import { CLEF_HEAD_ATTRIBUTION, SHAPES, summarizeProfileRuns } from "../scripts/lib/model-profile.mjs";
 import { assembleProfileReport, deriveKernelCapabilityManifest, normalizeRuntimeFiles, writeProfileReport } from "../scripts/lib/profile-report.mjs";
 import { kernelCoverage } from "../scripts/lib/kernel-profile-catalog.mjs";
 import { reportOptions } from "../scripts/report-kernel-profile.mjs";
@@ -58,6 +58,16 @@ function requestStagesFixture() {
   return { attribution: "Test timer boundaries; residuals include intervening CPU, copy, and GPU wait work.",
     wall: requestStageTestLane(0), gpuProfiler: requestStageTestLane(1) };
 }
+function clefHeadSnapshot(requestIndex, selected = "gpu") {
+  return { ...(requestIndex === undefined ? {} : { requestIndex }), requested: "auto", selected, validated: true,
+    reason: selected === "gpu" ? null : "hidden-or-lexical-shape", flavor: "relaxed", coordTile: 0, headDiagnosticsTile: 0 };
+}
+function clefHeadLane(profile) {
+  return [0, 1].map((block) => ({ block, afterWarmup: clefHeadSnapshot(),
+    samples: [0, 1].map((sampleIndex) => ({ sampleIndex, requestHash: digest(sampleIndex ? "b" : "a"),
+      requests: [clefHeadSnapshot(0, profile ? "gpu" : "cpu"), clefHeadSnapshot(1, "cpu")] })) }));
+}
+function clefHeadFixture() { return { attribution: CLEF_HEAD_ATTRIBUTION, wall: clefHeadLane(false), gpuProfiler: clefHeadLane(true) }; }
 function models(browser = "firefox") {
   return { schemaVersion: 1, status: "complete", generatedAt: "2026-11-06T01:00:00.000Z", runtime: { commit: "a".repeat(40), workingTreeDirty: true,
     sha256: digest("b"), harnessSha256: digest("c"), assets: structuredClone(runtimeFiles), entry: "http://localhost/private/index.js" },
@@ -262,6 +272,48 @@ test("public report preserves complete request stages and rejects partial stage 
   delete malformed.model.models[0].cases[0].requestStages.wall.blocks[0].samples[0].reportedForwardMs;
   await malformed.persist();
   await assert.rejects(writeProfileReport(malformed), /invalid request stage value reportedForwardMs/);
+});
+
+test("public report passes through bounded Clef head traces and rejects incomplete ordering", async (t) => {
+  const input = await fixture(t);
+  input.model.models[0].id = "clef-flash";
+  input.model.protocol.models = ["clef-flash"];
+  await input.persist();
+  const oldReport = assembleProfileReport({ modelSummaries: [input.model], kernelSummaries: [input.kernel], registry });
+  assert.equal(oldReport.models.find((row) => row.id === "clef-flash").cases[0].clefHead, undefined);
+
+  input.model.models[0].cases[0].clefHead = clefHeadFixture();
+  await input.persist();
+  const report = await writeProfileReport(input);
+  const clefHead = report.models.find((row) => row.id === "clef-flash").cases[0].clefHead;
+  assert.deepEqual(clefHead, input.model.models[0].cases[0].clefHead);
+  assert.ok(clefHead.attribution.includes("persistent head diagnostics"));
+  assert.equal(clefHead.wall[0].afterWarmup.selected, "gpu");
+  assert.equal(clefHead.wall[0].samples[0].requests[0].coordTile, 0);
+  assert.equal(clefHead.wall[0].samples[0].requests[0].reason, "hidden-or-lexical-shape");
+  assert.equal(clefHead.wall[0].samples[0].requests[0].headDiagnosticsTile, 0);
+  assert.equal(clefHead.gpuProfiler[0].samples[0].requests[0].headDiagnosticsTile, 0);
+
+  const malformed = await fixture(t);
+  malformed.model.models[0].id = "clef-flash";
+  malformed.model.protocol.models = ["clef-flash"];
+  malformed.model.models[0].cases[0].clefHead = clefHeadFixture();
+  malformed.model.models[0].cases[0].clefHead.wall[0].samples[0].requests[1].requestIndex = 0;
+  await malformed.persist();
+  await assert.rejects(writeProfileReport(malformed), /Clef head request order differs/);
+
+  const wrongMode = await fixture(t);
+  wrongMode.model.models[0].id = "clef-flash";
+  wrongMode.model.protocol.models = ["clef-flash"];
+  wrongMode.model.models[0].cases[0].clefHead = clefHeadFixture();
+  wrongMode.model.models[0].cases[0].clefHead.gpuProfiler[0].samples[0].requests[0].requested = "cpu";
+  await wrongMode.persist();
+  await assert.rejects(writeProfileReport(wrongMode), /requested mode changed after warmup/);
+
+  const wrongArch = await fixture(t);
+  wrongArch.model.models[0].cases[0].clefHead = clefHeadFixture();
+  await wrongArch.persist();
+  await assert.rejects(writeProfileReport(wrongArch), /only valid for the Clef architecture/);
 });
 
 test("public kernel evidence stays bounded while exact measurements, isolated samples and model timings remain available", async (t) => {

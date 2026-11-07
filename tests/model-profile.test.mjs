@@ -25,6 +25,23 @@ function result(profile) {
     cases: [{ name: SHAPES[0], tokens: 12, samples, wallMs: samples.map((sample) => sample.wallMs) }] };
 }
 
+function manyRequestResult(profile) {
+  const r = result(profile);
+  r.cases[0].name = SHAPES[4];
+  for (const sample of r.cases[0].samples) sample.outputs = Array.from({ length: 32 }, () => structuredClone(sample.outputs[0]));
+  return r;
+}
+
+function attachClefHead(r, profile) {
+  r.clefHeadAfterWarmup = { requested: "auto", selected: "gpu", validated: true, reason: null,
+    flavor: "relaxed", coordTile: 0, headDiagnosticsTile: 0 };
+  for (const sample of r.cases[0].samples) sample.clefHeadRequests = sample.outputs.map((_, requestIndex) => ({ requestIndex,
+    requested: "auto", selected: profile && requestIndex % 2 === 0 ? "gpu" : "cpu", validated: true,
+    reason: profile && requestIndex % 2 === 0 ? null : "hidden-or-lexical-shape",
+    flavor: "relaxed", coordTile: 0, headDiagnosticsTile: 0 }));
+  return r;
+}
+
 const runs = () => [0, 1].flatMap((block) => [false, true].map((profile) => ({ block, profile, result: result(profile) })));
 const requestStageRuns = () => runs().map((run) => {
   const scale = run.profile ? 1.25 : 1;
@@ -122,6 +139,59 @@ test("raw profile validation refuses changed identity, caches, timings, requests
     assert.throws(() => validateProfileRun(r, { ...expected, profile: true }), undefined, label);
   }
   assert.throws(() => validateProfileRun(result(true), { ...expected, profile: false }), /protocol/);
+});
+
+test("Clef head traces retain ordered per-request routing while old captures remain valid", () => {
+  for (const profile of [false, true]) assert.doesNotThrow(() => validateProfileRun(result(profile), { ...expected, profile }));
+
+  const data = runs().map((run) => {
+    const captured = attachClefHead(manyRequestResult(run.profile), run.profile);
+    captured.arch = "clef";
+    return { ...run, result: captured };
+  });
+  const clefExpected = { ...expected, arch: "clef", spec: { ...spec, arch: "clef" }, shapes: [4] };
+  for (const run of data) assert.doesNotThrow(() => validateProfileRun(run.result, { ...clefExpected, profile: run.profile }));
+  const summary = summarizeProfileRuns(data, { shapes: [4] }).cases[0].clefHead;
+  assert.ok(summary.attribution.includes("persistent head diagnostics"));
+  assert.deepEqual(summary.wall.map(({ block }) => block), [0, 1]);
+  assert.deepEqual(summary.gpuProfiler.map(({ block }) => block), [0, 1]);
+  const wallRequests = summary.wall[0].samples[0].requests;
+  const profileRequests = summary.gpuProfiler[0].samples[0].requests;
+  assert.deepEqual(wallRequests.map(({ requestIndex }) => requestIndex), Array.from({ length: 32 }, (_, index) => index));
+  assert.deepEqual(profileRequests.map(({ requestIndex }) => requestIndex), Array.from({ length: 32 }, (_, index) => index));
+  assert.deepEqual(wallRequests.map(({ selected }) => selected), Array(32).fill("cpu"));
+  assert.equal(profileRequests[0].selected, "gpu");
+  assert.equal(profileRequests[1].selected, "cpu");
+  assert.equal(profileRequests[0].coordTile, 0);
+  assert.equal(profileRequests[0].headDiagnosticsTile, 0);
+  assert.ok(Object.hasOwn(profileRequests[0], "coordTile"));
+  assert.ok(Object.hasOwn(profileRequests[0], "headDiagnosticsTile"));
+});
+
+test("Clef head validation rejects incomplete, misordered, and malformed request snapshots", () => {
+  const contract = { ...expected, arch: "clef", spec: { ...spec, arch: "clef" }, shapes: [4], profile: false };
+  const missing = attachClefHead(manyRequestResult(false), false);
+  missing.arch = "clef";
+  delete missing.cases[0].samples[1].clefHeadRequests;
+  assert.throws(() => validateProfileRun(missing, contract), /incomplete Clef head trace/);
+
+  const misordered = attachClefHead(manyRequestResult(false), false);
+  misordered.arch = "clef";
+  [misordered.cases[0].samples[0].clefHeadRequests[0].requestIndex, misordered.cases[0].samples[0].clefHeadRequests[1].requestIndex] = [1, 0];
+  assert.throws(() => validateProfileRun(misordered, contract), /request order differs/);
+
+  const malformed = attachClefHead(manyRequestResult(false), false);
+  malformed.arch = "clef";
+  malformed.cases[0].samples[0].clefHeadRequests[0].coordTile = null;
+  assert.throws(() => validateProfileRun(malformed, contract), /invalid Clef head diagnostic values/);
+
+  const wrongMode = attachClefHead(manyRequestResult(false), false);
+  wrongMode.arch = "clef";
+  wrongMode.cases[0].samples[0].clefHeadRequests[0].requested = "cpu";
+  assert.throws(() => validateProfileRun(wrongMode, contract), /requested mode changed after warmup/);
+
+  const wrongArch = attachClefHead(manyRequestResult(false), false);
+  assert.throws(() => validateProfileRun(wrongArch, { ...expected, shapes: [4], profile: false }), /only valid for the Clef architecture/);
 });
 
 test("optional browser validation accepts Selenium product aliases and rejects selector or product mismatches", () => {

@@ -91,6 +91,9 @@ async function run() {
   const restore = [];
   let actualGpu = null;
   let actualHeader = null;
+  let clefHeadAfterWarmup = null;
+  let actualClefHead = null;
+  const clefHeadTrace = [];
   try {
     const backend = q.get("backend") || $("backend").value;
     const runtime = new URL(q.get("runtime") || "./js/src/index.js", document.baseURI);
@@ -117,13 +120,50 @@ async function run() {
     const cache = q.get("cache") !== "0";
     const stateCache = q.has("stateCache") ? q.get("stateCache") !== "0" : undefined;
     const onPage = q.get("onPage") === "1";
+    const clefSnapshot = (head) => {
+      const diagnostics = head.diagnostics || {};
+      const reason = typeof diagnostics.reason === "string" ? diagnostics.reason : null;
+      return {
+        requested: typeof diagnostics.requested === "string" ? diagnostics.requested : null,
+        selected: typeof diagnostics.selected === "string" ? diagnostics.selected : null,
+        validated: typeof diagnostics.validated === "boolean" ? diagnostics.validated : null,
+        reason,
+        flavor: typeof head.engine?.flavor === "string" ? head.engine.flavor : null,
+        coordTile: Number.isSafeInteger(head.coord?.tile) ? head.coord.tile : null,
+        headDiagnosticsTile: Number.isSafeInteger(diagnostics.tile) ? diagnostics.tile : null,
+      };
+    };
+    const boundedClefSnapshot = (snapshot, requestIndex) => ({ ...(requestIndex === undefined ? {} : { requestIndex }),
+      requested: snapshot.requested, selected: snapshot.selected, validated: snapshot.validated,
+      reason: typeof snapshot.reason === "string" ? snapshot.reason.slice(0, 512) : null,
+      flavor: snapshot.flavor, coordTile: snapshot.coordTile, headDiagnosticsTile: snapshot.headDiagnosticsTile });
     if (onPage) {
       const { archPlugin } = await import(new URL("./archs/index.js", runtime));
       for (const arch of ["laya", "kev", "clef", "gemma4"]) {
         const plugin = archPlugin(arch);
         const original = plugin.createGpu;
         restore.push(() => { plugin.createGpu = original; });
-        plugin.createGpu = function(gpu, ...args) { actualGpu = gpu; actualHeader = args[1]; return original.call(this, gpu, ...args); };
+        plugin.createGpu = function(gpu, ...args) {
+          actualGpu = gpu;
+          actualHeader = args[1];
+          const created = original.call(this, gpu, ...args);
+          if (arch === "clef" && created?.head) {
+            const head = created.head;
+            actualClefHead = head;
+            const finish = head.finish;
+            head.finish = async function(...finishArgs) {
+              try {
+                const value = await finish.apply(this, finishArgs);
+                clefHeadTrace.push(clefSnapshot(this));
+                return value;
+              } catch (error) {
+                clefHeadTrace.push({ ...clefSnapshot(this), error: String(error?.message || error).slice(0, 512) });
+                throw error;
+              }
+            };
+          }
+          return created;
+        };
       }
     }
     const t0 = performance.now();
@@ -131,6 +171,7 @@ async function run() {
     // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
     const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
     kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache, stateCache, profile: loadProfile, ...(onPage ? { onPage: true } : {}), ...(q.has("precision") ? { precision: q.get("precision") } : {}), submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    clefHeadAfterWarmup = actualClefHead ? boundedClefSnapshot(clefSnapshot(actualClefHead)) : null;
     restore.splice(0).reverse().forEach((callback) => callback());
     if (loadProfile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
     const adapterInfo = actualGpu?.adapter.info || {};
@@ -165,6 +206,7 @@ async function run() {
       selectedFlavor: kevala.info.flavor || null,
       hardwareConcurrency: navigator.hardwareConcurrency || null,
       crossOriginIsolated: globalThis.crossOriginIsolated === true,
+      ...(clefHeadAfterWarmup ? { clefHeadAfterWarmup } : {}),
       runs,
       warmups,
       unique,
@@ -196,14 +238,17 @@ async function run() {
           // Give every measured request a distinct state so the model's request cache cannot help.
           const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
           const fingerprint = await requestHash(reqs);
+          const clefTraceStart = clefHeadTrace.length;
           const t = performance.now();
           const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
           const wall = performance.now() - t;
           if (i >= warmups) {
             ms.push(wall);
             wallMs.push(wall);
+            const clefHeadRequests = clefHeadTrace.slice(clefTraceStart).map((snapshot, requestIndex) => boundedClefSnapshot(snapshot, requestIndex));
             samples.push({ ...r[0].timing, wallMs: wall, requestHash: fingerprint,
-              outputs: r.map(({ model, answers, raw_probabilities }) => ({ model, answers, ...(raw_probabilities ? { raw_probabilities } : {}) })) });
+              outputs: r.map(({ model, answers, raw_probabilities }) => ({ model, answers, ...(raw_probabilities ? { raw_probabilities } : {}) })),
+              ...(clefHeadAfterWarmup ? { clefHeadRequests } : {}) });
           }
           tokens = r[0].timing.tokens;
           last = r[0].timing;
@@ -238,7 +283,8 @@ async function run() {
   } catch (error) {
     const message = String(error?.message || error);
     log("ERROR " + message);
-    window.bench = { done: true, status: "error", error: message };
+    window.bench = { done: true, status: "error", error: message,
+      ...(clefHeadAfterWarmup ? { clefHeadAfterWarmup, clefHeadRequests: clefHeadTrace } : {}) };
   } finally {
     restore.splice(0).reverse().forEach((callback) => callback());
     kevala?.dispose();

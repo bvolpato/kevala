@@ -4,7 +4,7 @@ import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from "
 import { gzipSync } from "node:zlib";
 import { MODELS } from "../../js/src/source.js";
 import { KERNEL_HARNESSES, kernelCoverage, kernelHarnessSkipReason, parseKernelRegistry, validateKernelResult } from "./kernel-profile-catalog.mjs";
-import { classifyProfileFailure, summarizeProfileRuns, validateProfileBrowser, validateProfileRun } from "./model-profile.mjs";
+import { classifyProfileFailure, CLEF_HEAD_ATTRIBUTION, summarizeProfileRuns, validateProfileBrowser, validateProfileRun } from "./model-profile.mjs";
 
 const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const check = (condition, message) => { if (!condition) throw new Error(message); };
@@ -134,6 +134,54 @@ function validateRequestStages(stages, label) {
   return { attribution: stages.attribution, wall, gpuProfiler };
 }
 
+const CLEF_HEAD_FIELDS = ["requested", "selected", "validated", "reason", "flavor", "coordTile", "headDiagnosticsTile"];
+
+function validateClefHeadSnapshot(snapshot, label, requestIndex) {
+  const fields = requestIndex === undefined ? CLEF_HEAD_FIELDS : ["requestIndex", ...CLEF_HEAD_FIELDS];
+  check(object(snapshot) && Object.keys(snapshot).length === fields.length && fields.every((key) => Object.hasOwn(snapshot, key)), label + ": incomplete or unexpected Clef head snapshot fields");
+  if (requestIndex !== undefined) check(snapshot.requestIndex === requestIndex, label + ": Clef head request order differs");
+  check(["auto", "cpu"].includes(snapshot.requested) && ["cpu", "gpu"].includes(snapshot.selected)
+    && typeof snapshot.validated === "boolean" && (snapshot.reason === null || typeof snapshot.reason === "string" && snapshot.reason.length <= 512)
+    && typeof snapshot.flavor === "string" && snapshot.flavor.length > 0 && snapshot.flavor.length <= 64
+    && Number.isSafeInteger(snapshot.coordTile) && snapshot.coordTile >= 0
+    && (snapshot.headDiagnosticsTile === null || Number.isSafeInteger(snapshot.headDiagnosticsTile) && snapshot.headDiagnosticsTile >= 0), label + ": invalid Clef head diagnostic values");
+  return { ...(requestIndex === undefined ? {} : { requestIndex }), ...pick(snapshot, CLEF_HEAD_FIELDS) };
+}
+
+function validateClefHeadLane(lane, label) {
+  check(Array.isArray(lane) && lane.length >= 2, label + ": invalid Clef head blocks");
+  const blockIds = new Set(), sampleCount = lane[0]?.samples?.length;
+  check(Number.isSafeInteger(sampleCount) && sampleCount > 0, label + ": missing Clef head samples");
+  const blocks = lane.map((block) => {
+    check(object(block) && Number.isSafeInteger(block.block) && block.block >= 0 && !blockIds.has(block.block), label + ": invalid or duplicate Clef head block identity");
+    blockIds.add(block.block);
+    check(Array.isArray(block.samples) && block.samples.length === sampleCount, label + ": inconsistent Clef head sample count");
+    const afterWarmup = validateClefHeadSnapshot(block.afterWarmup, label + " after warmup");
+    const samples = block.samples.map((sample, sampleIndex) => {
+      check(object(sample) && sample.sampleIndex === sampleIndex && sha(sample.requestHash)
+        && Array.isArray(sample.requests) && sample.requests.length > 0 && sample.requests.length <= 32, label + ": invalid or incomplete Clef head request trace");
+      const requests = sample.requests.map((request, requestIndex) => validateClefHeadSnapshot(request, label + " request", requestIndex));
+      check(requests.every((request) => request.requested === afterWarmup.requested), label + ": Clef head requested mode changed after warmup");
+      return { sampleIndex, requestHash: sample.requestHash, requests };
+    });
+    return { block: block.block, afterWarmup, samples };
+  });
+  return blocks;
+}
+
+function validateClefHead(trace, label) {
+  check(object(trace) && trace.attribution === CLEF_HEAD_ATTRIBUTION, label + ": invalid Clef head attribution");
+  const wall = validateClefHeadLane(trace.wall, label + " wall");
+  const gpuProfiler = validateClefHeadLane(trace.gpuProfiler, label + " GPU profiler");
+  check(stableJson(wall.map(({ block }) => block).sort((a, b) => a - b))
+    === stableJson(gpuProfiler.map(({ block }) => block).sort((a, b) => a - b)), label + ": Clef head lane blocks differ");
+  check(wall[0].samples.length === gpuProfiler[0].samples.length, label + ": Clef head lane sample counts differ");
+  const identities = (blocks) => new Map(blocks.flatMap((block) => block.samples.map((sample) => [`${block.block}/${sample.sampleIndex}`, sample.requestHash])));
+  const wallIdentities = identities(wall), profileIdentities = identities(gpuProfiler);
+  check(wallIdentities.size === profileIdentities.size && [...wallIdentities].every(([key, requestHash]) => profileIdentities.get(key) === requestHash), label + ": Clef head request identities differ between lanes");
+  return { attribution: trace.attribution, wall, gpuProfiler };
+}
+
 function tuningDiagnostics(tuning) {
   const calibrators = [];
   let omitted = false;
@@ -194,6 +242,10 @@ function publicModel(row, catalog) {
       }
       const result = { ...pick(item, ["name", "tokens", "tokenCounts", "tokenRange"]), wall, gpu };
       if (item.requestStages !== undefined) result.requestStages = validateRequestStages(item.requestStages, modelKey(row) + " " + item.name);
+      if (item.clefHead !== undefined) {
+        check(catalog[row.id].arch === "clef", `${modelKey(row)}: Clef head trace is only valid for the Clef architecture`);
+        result.clefHead = validateClefHead(item.clefHead, modelKey(row) + " " + item.name);
+      }
       return result;
     });
     check(new Set(result.cases.map((item) => item.name)).size === result.cases.length, `${modelKey(row)}: duplicated cases`);
