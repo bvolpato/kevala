@@ -79,6 +79,8 @@ Use `--submit=await|split|none` to override submission for a benchmark load. If 
 
 Keep per-kernel medians and shares for attribution. Keep wall samples, p95, and block medians for latency. The runner checks backend and adapter identity, request hashes, token counts, model responses, normalized probabilities, and complete finite timestamp samples. Invalid measurements fail validation. Repeated same-runtime outputs must remain within the declared probability tolerance.
 
+Newer model-profile summaries include optional `requestStages` when every raw sample has `prepare`, `forward`, and `total` timings. Its `wall` and `gpuProfiler` lanes remain separate and retain each block's sample index, request hash, and token count. The report computes `postForwardResidualMs = total - prepare - forward`, `outerResidualMs = wallMs - total`, and their per-sample fractions before calculating distributions. The timing boundaries vary by architecture, and timer rounding can produce small negative residuals; the report keeps those values signed rather than clamping them. Residuals cover work between timers, including CPU work, copies, and GPU waits, so they do not represent pure CPU time. Older captures without stage timings omit `requestStages`.
+
 See the [2026-11-06 optimization comparison](model-optimization-performance.md) for scoped before/after results, complete mixed model timings, numerical guards and archived evidence.
 
 ## Profile the complete kernel registry

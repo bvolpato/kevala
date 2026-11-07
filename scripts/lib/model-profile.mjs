@@ -104,12 +104,66 @@ export function median(values) {
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 }
 
-export function metrics(values, blockValues) {
-  check(values.length > 0 && values.every((value) => finite(value) && value >= 0), "Invalid timing samples");
+function summarizeDistribution(values, blockValues) {
   const sorted = [...values].sort((a, b) => a - b);
   return { medianMs: median(values), meanMs: values.reduce((sum, value) => sum + value, 0) / values.length,
     p95Ms: sorted[Math.ceil(sorted.length * 0.95) - 1], samples: values,
     blockMediansMs: blockValues.map(median) };
+}
+
+export function metrics(values, blockValues) {
+  check(values.length > 0 && values.every((value) => finite(value) && value >= 0), "Invalid timing samples");
+  return summarizeDistribution(values, blockValues);
+}
+
+function requestStageMetrics(values, blockValues) {
+  check(values.length > 0 && values.every(finite), "Invalid request stage samples");
+  return summarizeDistribution(values, blockValues);
+}
+
+function requestStageFractionMetrics(values, blockValues) {
+  const { medianMs, meanMs, p95Ms, samples, blockMediansMs } = requestStageMetrics(values, blockValues);
+  return { median: medianMs, mean: meanMs, p95: p95Ms, samples, blockMedians: blockMediansMs };
+}
+
+const REQUEST_STAGE_FIELDS = ["prepare", "forward", "total"];
+
+function requestStageSample(sample, label, sampleIndex) {
+  const present = REQUEST_STAGE_FIELDS.filter((field) => Object.hasOwn(sample, field));
+  if (!present.length) return null;
+  check(present.length === REQUEST_STAGE_FIELDS.length,
+    `${label}: partial request stage timing fields (found ${present.join(", ")}; expected prepare, forward, and total)`);
+  const { prepare, forward, total, wallMs } = sample;
+  check(finite(prepare) && prepare >= 0 && finite(forward) && forward >= 0 && finite(total) && total > 0,
+    `${label}: invalid request stage timing values`);
+  check(finite(wallMs) && wallMs > 0, `${label}: invalid wall time for request stage timing`);
+  const postForwardResidualMs = total - prepare - forward;
+  const outerResidualMs = wallMs - total;
+  check(finite(postForwardResidualMs) && finite(outerResidualMs), `${label}: non-finite derived request stage timing`);
+  return {
+    sampleIndex,
+    requestHash: sample.requestHash,
+    tokens: sample.tokens,
+    reportedPrepareMs: prepare,
+    reportedForwardMs: forward,
+    reportedTotalMs: total,
+    wallMs,
+    postForwardResidualMs,
+    outerResidualMs,
+    prepareOfRuntimeTotal: prepare / total,
+    forwardOfRuntimeTotal: forward / total,
+    postForwardResidualOfRuntimeTotal: postForwardResidualMs / total,
+    postForwardResidualOfWall: postForwardResidualMs / wallMs,
+    runtimeTotalOfWall: total / wallMs,
+    outerResidualOfWall: outerResidualMs / wallMs,
+  };
+}
+
+function requireConsistentStageCoverage(current, sample, label) {
+  const present = sample !== null;
+  check(current === undefined || current === present,
+    `${label}: mixed request stage timing coverage; all measured samples must include prepare, forward, and total or none`);
+  return current === undefined ? present : current;
 }
 
 export function profilePlan(catalog, { models = Object.keys(catalog), precisions = ["q8"], browsers = ["firefox"] } = {}) {
@@ -243,11 +297,13 @@ export function validateProfileRun(result, expected) {
   if (browser !== undefined) validateProfileBrowser(result.runner, browser);
   const hardware = adapterKey(result.adapter);
   check(Array.isArray(result.cases) && result.cases.length === shapes.length, `${id}: incomplete request cases`);
+  let requestStageCoverage;
   for (const [index, item] of result.cases.entries()) {
     check(item.name === SHAPES[shapes[index]], `${id}: request case order differs`);
     check(item.samples?.length === samples && item.wallMs?.length === samples, `${id}: incomplete raw samples`);
     for (const [sampleIndex, sample] of item.samples.entries()) {
       check(finite(sample.wallMs) && sample.wallMs > 0 && sample.wallMs === item.wallMs[sampleIndex] && Number.isSafeInteger(sample.tokens) && sample.tokens > 0 && /^[a-f0-9]{64}$/.test(sample.requestHash), `${id}: invalid timing, token count, or request fingerprint`);
+      requestStageCoverage = requireConsistentStageCoverage(requestStageCoverage, requestStageSample(sample, `${id}.${index}.${sampleIndex}`, sampleIndex), `${id}.${index}.${sampleIndex}`);
       check(Array.isArray(sample.outputs) && sample.outputs.length === (shapes[index] === 4 ? 32 : 1), `${id}: missing request outputs`);
       sample.outputs.forEach((output, outputIndex) => {
         check(output.model === responseModel, `${id}: response model differs from the verified family response contract (${responseModel})`);
@@ -262,6 +318,22 @@ export function validateProfileRun(result, expected) {
     check(cacheMode !== "uncached" || new Set(item.samples.map((sample) => sample.requestHash)).size === samples, `${id}: uncached case requires distinct request fingerprints`);
   }
   return hardware;
+}
+
+const REQUEST_STAGE_DISTRIBUTIONS = ["reportedPrepareMs", "reportedForwardMs", "reportedTotalMs", "postForwardResidualMs", "outerResidualMs"];
+const REQUEST_STAGE_FRACTIONS = ["prepareOfRuntimeTotal", "forwardOfRuntimeTotal", "postForwardResidualOfRuntimeTotal", "postForwardResidualOfWall", "runtimeTotalOfWall", "outerResidualOfWall"];
+
+function summarizeRequestStageLane(laneRuns, caseIndex) {
+  const blocks = laneRuns.map(({ block, result }) => ({ block,
+    samples: result.cases[caseIndex].samples.map((sample, sampleIndex) => requestStageSample(sample, `${block}.${caseIndex}.${sampleIndex}`, sampleIndex)) }));
+  const distributions = Object.fromEntries([...REQUEST_STAGE_DISTRIBUTIONS, ...REQUEST_STAGE_FRACTIONS].map((field) => {
+    const blockValues = blocks.map(({ samples }) => samples.map((sample) => sample[field]));
+    const values = blockValues.flat();
+    return [field, REQUEST_STAGE_FRACTIONS.includes(field)
+      ? requestStageFractionMetrics(values, blockValues)
+      : requestStageMetrics(values, blockValues)];
+  }));
+  return { blocks, distributions };
 }
 
 export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.0005, answerUnit = 0.0001 } = {}) {
@@ -281,11 +353,14 @@ export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.00
   }
   let maxProbabilityDelta = 0;
   let maxPublicNoulDelta = 0;
+  let requestStageCoverage;
   const publicNoulTolerance = 2 * probabilityTolerance + answerUnit;
   for (const run of runs) {
     check(run.result.done === true && !run.result.error, "Cannot attribute an incomplete GPU profile");
     check(adapterKey(run.result.adapter) === hardware && run.result.runner?.browserVersion === reference.runner?.browserVersion, "Adapter, device features, or browser changed during profile");
     for (const [index, item] of run.result.cases.entries()) for (const [sampleIndex, sample] of item.samples.entries()) {
+      requestStageCoverage = requireConsistentStageCoverage(requestStageCoverage,
+        requestStageSample(sample, `${run.block}.${index}.${sampleIndex}`, sampleIndex), `${run.block}.${index}.${sampleIndex}`);
       if (run.profile) gpuValues(sample.gpu, "Profile");
       const prior = reference.cases[index].samples[sampleIndex];
       check(sample.tokens === prior.tokens && sample.requestHash === prior.requestHash, "Request or token count changed between blocks or timing modes");
@@ -323,7 +398,12 @@ export function summarizeProfileRuns(runs, { shapes, probabilityTolerance = 0.00
       tokenRange: [Math.min(...tokens), Math.max(...tokens)],
       wall: metrics(wallBlocks.flat(), wallBlocks),
       gpu: { ...metrics(gpuBlocks.flat(), gpuBlocks), kernels,
-        ...(heterogeneous ? { kernelAttribution: "median per-request GPU timestamp contribution; labels absent from completed samples were not dispatched and contribute zero" } : {}) } };
+        ...(heterogeneous ? { kernelAttribution: "median per-request GPU timestamp contribution; labels absent from completed samples were not dispatched and contribute zero" } : {}) },
+      ...(requestStageCoverage ? { requestStages: {
+        attribution: "Reported prepare, forward, and total timings use architecture-specific performance.now() boundaries in milliseconds. Residuals are computed per sample: postForwardResidualMs = reportedTotalMs - reportedPrepareMs - reportedForwardMs; outerResidualMs = wallMs - reportedTotalMs. Residuals cover work between timers, including CPU work, copies, and GPU waits; they are not pure CPU time.",
+        wall: summarizeRequestStageLane(runs.filter((run) => !run.profile), index),
+        gpuProfiler: summarizeRequestStageLane(runs.filter((run) => run.profile), index),
+      } } : {}) };
   });
   return { cases, ...(resident ? { resident } : {}), correctness: { maxProbabilityDelta, probabilityTolerance, maxPublicNoulDelta, publicNoulTolerance,
     scope: "same-pack repeated requests and profiled/unprofiled raw probability and rounded noul agreement; not an accuracy benchmark" } };
