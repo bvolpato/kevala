@@ -4,9 +4,9 @@ This completed diagnostic records per-request Clef GPU timestamps on an NVIDIA R
 
 ## Measured request latency
 
-The capture completed with exit code 0 and no reported failure. Its controller records Chromium 156. It used profile 1, automatic Clef-head routing, cache and state cache disabled, three warmups, nine samples per shape, and no head, kernel, flavor, or submit overrides. The three shapes returned 158-159, 251-252, and 659-660 tokens. The package preserves all 27 outputs, each with `answers`, `model`, and `usage`; the API returned no raw probabilities.
+The capture completed with exit code 0 and no reported failure. Its controller records Chromium 156. It used profile 1, automatic Clef-head routing, cache and state cache disabled, three warmups, nine samples per shape, and no head, kernel, flavor, or submit overrides. For the three request shapes, the input-token ranges were 158-159, 251-252, and 659-660. The package preserves all 27 outputs, each with `answers`, `model`, and `usage`; the API returned no raw probabilities.
 
-| Output tokens | p50 forward (ms) | p50 GPU-label sum (ms) | p50 wall (ms) |
+| Input tokens | p50 forward (ms) | p50 GPU-label sum (ms) | p50 wall (ms) |
 | ---: | ---: | ---: | ---: |
 | 158-159 | 152.545 | 148.100 | 189.035 |
 | 251-252 | 215.075 | 209.772 | 258.555 |

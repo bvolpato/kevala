@@ -8,7 +8,7 @@
     "maxSourceBytes": 1572864,
     "maxDecodedBytes": 1048576,
     "maxCompressedBytes": 262144,
-    "estimatedDecodedBytes": 619047,
+    "estimatedDecodedBytes": 619079,
     "sizeEstimateMethod": "Exact source bytes and base64 JSON framing, including the pinned plan bytes. Plan mode verifies the estimate without creating gzip.",
     "maxEntries": 64,
     "entryOrder": "UTF-8 bytewise ascending by archivePath",
@@ -231,8 +231,8 @@
     {
       "id": "report",
       "path": "docs/clef-gpu-kernel-profile.md",
-      "bytes": 5808,
-      "sha256": "cd1dfb56eff1f5b8e46afa1cea0cbd4f910cee2f4b4e5513eb4c78f32e0ca6e2"
+      "bytes": 5832,
+      "sha256": "497d11fbdb9c9dbbd61f08b4505d3fdc77ba7a6a74674a1c135d0959e24e8fef"
     }
   ],
   "entries": [

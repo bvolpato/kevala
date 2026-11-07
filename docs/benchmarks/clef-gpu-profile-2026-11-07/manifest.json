@@ -3,14 +3,14 @@
   "plan": {
     "path": "archive-plan.json",
     "bytes": 16251,
-    "sha256": "720d54a4bb141037efd4886e4e31ca836bad474c5f29ebba4db0b3361012d95b"
+    "sha256": "e0eb87c14236ab9fb6012352708a818bc2eaef3121b1969149289d5d7b4702a0"
   },
   "archive": {
     "path": "evidence.json.gz",
-    "bytes": 186391,
-    "sha256": "4c772ac10c4cef1715a211dfab8a716692628760292ff09fafc726263f1f0854",
-    "decodedBytes": 619047,
-    "decodedSha256": "4dd84590fed2917705bfbfa9de3b19ae51099883b892fca36225f86c3b4ca72f"
+    "bytes": 186411,
+    "sha256": "8b26eb08347e123a69dd4ec2e78292026bee48efb603b2586a3b5b5b67482182",
+    "decodedBytes": 619079,
+    "decodedSha256": "ccc6ada6981f5c5057997f31da4812fac1ad53a4f24d3d4cea7f4245c1f9c174"
   },
   "files": [
     {
@@ -21,7 +21,7 @@
     {
       "path": "archive-plan.json",
       "bytes": 16251,
-      "sha256": "720d54a4bb141037efd4886e4e31ca836bad474c5f29ebba4db0b3361012d95b"
+      "sha256": "e0eb87c14236ab9fb6012352708a818bc2eaef3121b1969149289d5d7b4702a0"
     },
     {
       "path": "archive-publication.mjs",
@@ -125,8 +125,8 @@
     },
     {
       "path": "report/clef-gpu-kernel-profile.md",
-      "bytes": 5808,
-      "sha256": "cd1dfb56eff1f5b8e46afa1cea0cbd4f910cee2f4b4e5513eb4c78f32e0ca6e2"
+      "bytes": 5832,
+      "sha256": "497d11fbdb9c9dbbd61f08b4505d3fdc77ba7a6a74674a1c135d0959e24e8fef"
     },
     {
       "path": "source/clef-kernel-profile-r1/bench-clef-kernel-profile.html",
