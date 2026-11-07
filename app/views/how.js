@@ -146,6 +146,11 @@ const TEMPLATE = `<div class="wrap">
         <p class="muted small">Time five request shapes, from one short question to 32 states in one pass.</p>
         <span class="go">bench.html →</span>
       </a>
+      <a class="card pad link-card" href="${DOCS}/host-followup-experiments.md">
+        <h3>Recent host experiments</h3>
+        <p class="muted small">Results from four performance experiments, including rejected changes and measurement limits.</p>
+        <span class="go">docs/host-followup-experiments.md →</span>
+      </a>
       <a class="card pad link-card" href="${DOCS}/architecture.md">
         <h3>Architecture notes</h3>
         <p class="muted small">The engine, the pack format, the kernels and the worker layout.</p>

@@ -1,0 +1,680 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-11-07T10:52:25.870Z",
+  "archive": {
+    "path": "evidence.json.gz",
+    "bytes": 1675687,
+    "sha256": "ade9b89ab2f33520291919a0c41539700eb63a59420557fc54130a64775bbf51",
+    "decodedBytes": 12386701,
+    "decodedSha256": "03589948a9a37727c94b2976eebf666ee4898537da10a75e413dd752abe83ef0"
+  },
+  "files": [
+    {
+      "path": "evidence/firefox-submit-threeway-v1/fixtures.mjs",
+      "bytes": 3384,
+      "sha256": "154289413ef334f266a8037ac6dc418df72cf2070fbda3908e23b115f218d41f"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/headed-probe.js",
+      "bytes": 47500,
+      "sha256": "200bb66128e5b1ed785fd05f4220d804dbb3e4505475f5fe2b657447f3e35150"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/index.html",
+      "bytes": 1273,
+      "sha256": "55fbcc50c044e81dde7875ff466120e3036b3216adde5464ed8a166aee51fd93"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/preflight.mjs",
+      "bytes": 3057,
+      "sha256": "26db706591401cd0bdc786abf7d8ab73f035a6289700c6f00ee90cb7c10182de"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/results/derived-revalidation-ratio-canonicalized-2026-11-07-v1.json",
+      "bytes": 10390,
+      "sha256": "f72f6465c9a1b965b75e59c6d711948a28b4351262c2b6d14cf8a23d56130ed6"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/results/raw-timing-2026-11-07T08-09-37.171Z.json",
+      "bytes": 1378324,
+      "sha256": "3c5c9affc1d8953f3b6805608ecbe530abe939564c77bdae3dfa09b352c7fee9"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/results/runner-timing-2026-11-07T08-09-37.171Z.json",
+      "bytes": 84632,
+      "sha256": "b884452a76312645ee8d329ebedfc95ae614eb2e26bad665481aa23a8b610d37"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/revalidate-ratio-drift.mjs",
+      "bytes": 9850,
+      "sha256": "d875a3ed678b64af348222bc65d39bdc060164ddbbd9eff106c40341755a16d5"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/run-headed.py",
+      "bytes": 8540,
+      "sha256": "c0fa886f4224cffd2c2d54cb238db86709a63962c0c745361be63c759f901798"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/run.mjs",
+      "bytes": 47459,
+      "sha256": "7c350cb2a49af684c12c39a610929e09daac355b082b8beb91058e58a7fe55b5"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/runtime-pin.json",
+      "bytes": 2894,
+      "sha256": "c19aecb64c763cc511118a01ea11559ca3368e307ce443d059928f57996684ef"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/SOURCE-SHA256SUMS",
+      "bytes": 1050,
+      "sha256": "c06f0323958bf1e0beb6e68ab339bf195526b52a51952daad182856aafc851a6"
+    },
+    {
+      "path": "evidence/firefox-submit-threeway-v1/validate.mjs",
+      "bytes": 20261,
+      "sha256": "d96cbd1cf41d88dd3d839ae14a9625defbef96b7d44822f4aa5746281229a2f9"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/attention-budget-1500.js",
+      "bytes": 24805,
+      "sha256": "1df518dc1ae972ed0e3c180677bb6d389fa663d653160ef52798d8249bc3c40d"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/calibration-helper.patch",
+      "bytes": 1565,
+      "sha256": "40940914854351cc55cc0fdad854b6c19d1d52d03e055396a32160e13b471e56"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/config.json",
+      "bytes": 12418,
+      "sha256": "1ab63ea843a67afdcbaeef2b17b9ff028654fc8d515a2402e9c5cd14f09fa631"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/fixtures.mjs",
+      "bytes": 1488,
+      "sha256": "eaa037966036fba70a3ac579dad2f1c2394bb4120008369cb69dc1aa2fd7b442"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/index.html",
+      "bytes": 238,
+      "sha256": "a5d572d2185118411e688913aaa87cfeb8d8a67f8ec652cb478f9caef23ddf4f"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/plan.json",
+      "bytes": 6026,
+      "sha256": "100e9c9ae766f78e198dd46c599e957318d90ef87efd4595bd8913eb5791174b"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/probe.js",
+      "bytes": 17574,
+      "sha256": "dea8a1c99937cd3c4865ce706c064e2229ff789679906033bfbed1e086a1bbff"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/results-v1/admission.json",
+      "bytes": 1809,
+      "sha256": "fa534f314c69bf2831fa50d2e53a2cc09927a731eeac85bf56808d0623956d72"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/results-v1/browser-command.json",
+      "bytes": 1157,
+      "sha256": "9473ed6155759089e46bba0f4ff345b9fd8ab478fc704edadf28897a7a7c2dd8"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/results-v1/browser.json",
+      "bytes": 452598,
+      "sha256": "867ec3d3205e259e7ab66ea2ae17c495546ce1a5582750f0546dc4030a87f18a"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/results-v1/receipt.json",
+      "bytes": 47244,
+      "sha256": "df1adf9f9d36721f4b9890042b715e2d60801997020099cb50db960eb3423353"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/run-browser.py",
+      "bytes": 3970,
+      "sha256": "b4b2635b53085c4a000dfd29485601599f8720395696cf637277d693be9eeb6c"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/run.mjs",
+      "bytes": 25218,
+      "sha256": "3594d1d9a82424713792fd6dbf771da2cb0bf2c999397c16c10a9fb042404193"
+    },
+    {
+      "path": "evidence/gemma-attention-budget-v1/source-index.json",
+      "bytes": 1612,
+      "sha256": "f1979962f6fa2fec603e9908271a5848607cb65786917ad1c6d2846ecaeab70c"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/config.json",
+      "bytes": 29926,
+      "sha256": "d5c7a0537e6ecc4b9987eb35a0541d1ae389038ab3dafbca6026ff919454f786"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/controller-lib.mjs",
+      "bytes": 9708,
+      "sha256": "ae7d50c678380871bd369dee8ff01fe31f1c71170ed9f3a69281f976257a1d50"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/fixtures.mjs",
+      "bytes": 1398,
+      "sha256": "52aeec28892dc9d0ea07332da8d42e4bdd626149929886401dab35274f77d95b"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/index.html",
+      "bytes": 249,
+      "sha256": "40d545b5de61a14be96fc87c91e3f5d7d2ab5a92aecf56e231abed90e2996ade"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/plan.json",
+      "bytes": 8155,
+      "sha256": "dabe699f4ebb4eb50078e31d522480c1fa31f3665b228f89d6d419d19395da4b"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/probe.js",
+      "bytes": 14154,
+      "sha256": "45e82f1c312517a41bc9622a9fac8c4b7c1f056a5e1b5f21a999d3e937e5fec7"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/production-candidate.patch",
+      "bytes": 479,
+      "sha256": "e7d55ff43686e956ecdd67a66b34dd0c6795506e8c95e927786fa4626f86d3fc"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/admission.json",
+      "bytes": 1960,
+      "sha256": "97bfd19093477ef39651c99102c344ce4329340a9629df0aa3c22b45da8543b2"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-0-A/browser-command.json",
+      "bytes": 1338,
+      "sha256": "90d853dc0db378f4ae6489ee00af59ec2c0c6ecee4153763145846220dd41cf3"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-0-A/browser.json",
+      "bytes": 242281,
+      "sha256": "dc65259905dd1279c746dbf7e842b9d559621fa0fe332916e3ae0f653cd98690"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-0-A/receipt.json",
+      "bytes": 19198,
+      "sha256": "83a0504ec8f116395b6dea1ee949723022b771c6fecc3695912cd9159baec832"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-1-B/browser-command.json",
+      "bytes": 1306,
+      "sha256": "181fedeff2b5b7352f06500eaf92e0e898ca1d3d5895c391791dbbbf4fd77f60"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-1-B/browser.json",
+      "bytes": 234018,
+      "sha256": "0b17c3262c1e42ed336f423fc6fefe2bfad64c7ce6c59a2002d08488e965d42e"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/results-v1/receipt.json",
+      "bytes": 185621,
+      "sha256": "5dbb653a77dbaee7e98731c252aae3ec3b13cbf3f0233586ff1a9bdfff5f223d"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/reuse.json",
+      "bytes": 2276,
+      "sha256": "84707800fa59eddf09e16b84f9b9727f32b69ec285c5dfb62ecb170d95361abe"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/run-browser.py",
+      "bytes": 3964,
+      "sha256": "d2e33ceb1d918e8cbb76c53e0f6ff0fa8028209b95d4ec4ed164081234ad4157"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/run.mjs",
+      "bytes": 25654,
+      "sha256": "e0607c84c935417911f1a8b8c34feb8cb0fa7cafa0d484a64479dc67bc713999"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/runtime-candidate/gpu-gemma4-attention.js",
+      "bytes": 24397,
+      "sha256": "00b24d908fbad27ad2b5630db5faa2633c4f342ab0485bc5e29e5640e44ccca6"
+    },
+    {
+      "path": "evidence/gemma-attention-cold-v1/source-index.json",
+      "bytes": 1886,
+      "sha256": "e22294f1e688b5916669e10c51e8f204a647839fa7ea3f65c79176c112e54d5b"
+    },
+    {
+      "path": "evidence/kev9-bf16-delivery/delivery-8d4e4fa458c8faf724d624670de721bd51cd7175-run42361138898-v1.json",
+      "bytes": 3201746,
+      "sha256": "64690c4cee23f33bef564276dbbdd8fe9eecba45442a4b5dcab2333cadf80938"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/bench-gpu-diagnostic.py",
+      "bytes": 39080,
+      "sha256": "42866bc173ac424ca14db935e60cbe436bc412b996cec22025f88fbed10314f1"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/ci76-runtime-binding-v1.json",
+      "bytes": 12115,
+      "sha256": "a057048d9123d9ac1d0c848972311d74c7053e6d98cc1f26354cf42ddca50687"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/execution-final-v1.json",
+      "bytes": 836,
+      "sha256": "519ce73678cfc1b0405d22fc1b1463701c85fdc8d40b5ca77739f9a797817a77"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/plan.json",
+      "bytes": 30663,
+      "sha256": "e6b5b7a372536ff112f6496a7f0ff6f1bf1c99d9944f01d5bf7c4551b1eab67b"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/prepare.mjs",
+      "bytes": 9312,
+      "sha256": "f35d4e5341c92ad090b9be9bbd4c549cb307128ae18ed83aec4c981232bda50e"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/probe.html",
+      "bytes": 174,
+      "sha256": "a3c1f12bfeae953458aae62f68555ac6dd3a6cc1ec30092745c05ed880845d92"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/probe.js",
+      "bytes": 22403,
+      "sha256": "bd62b1ce781179f31968e9f6d5f1ee19e34f310bc1f79e1f535ebd6a5635b056"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/run.mjs",
+      "bytes": 25232,
+      "sha256": "2d87c93df1e16ca609a1e962e034d5bd97c72eb6a676d66cbd8b8cb50901450b"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/0-clef-flash/cell-receipt.json",
+      "bytes": 6892,
+      "sha256": "8d80fd724d32ee3bbc0f1001560dbc310e8f6a3e93caa5e98fa4099ee95f41a0"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/0-clef-flash/command.json",
+      "bytes": 1465,
+      "sha256": "0bb3d46b41abd7e68d83be4528f9abcb26217127edc2a5f7530f495d72c63559"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/0-clef-flash/input.json",
+      "bytes": 12906,
+      "sha256": "5e29e6e45a52fb0d55dca572288d8005523cf207f23b19ed855b5f45d9faf242"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/0-clef-flash/raw-browser.json",
+      "bytes": 130280,
+      "sha256": "9ad75bb15e54ee8c787f63fa0d7a78eda06cad6dfa5081f2260d734d2d9f4918"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/admission.json",
+      "bytes": 3143,
+      "sha256": "8b5d813130bab99ca2dfd2a9c80e6f141e854fe906870094c4036426a296c9f3"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/inventory.json",
+      "bytes": 1838,
+      "sha256": "d523d1b5084e9da77b5ea995151145bcb878bf39f2e8df2f7e2317ce0efb8fa3"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/runs-v1/receipt.json",
+      "bytes": 93377,
+      "sha256": "17f6d8e9805ca48dd3816340be3b384629577f7d285090b1ec2f1424330161da"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/source-index.json",
+      "bytes": 12307,
+      "sha256": "910823588072c6a4aa2fc4370ed1f7843196d94fd36975ff700491535257eb5f"
+    },
+    {
+      "path": "evidence/matmul-fp32-k64-v1/validate.mjs",
+      "bytes": 11206,
+      "sha256": "9cc399c499eb3eb92f3433537a1802f5981b327b9a8eaaf37d28865b4b2f7a6f"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/bench-gpu-diagnostic.py",
+      "bytes": 39082,
+      "sha256": "7d6e87ef23add1bfac7d4ac6941a0e42945b87cc19b7315db5c29dc32ca2ae6f"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/browser-runner.patch",
+      "bytes": 4408,
+      "sha256": "5dc119df9d45468d56d9e66874387fc355327153c3b2974986cef8ee44dd52e8"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/controller-launch.patch",
+      "bytes": 11510,
+      "sha256": "e7eb125df20480a0cd850e8402e83eabb48fe373c15da4f34d0663cc72c5db97"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/plan.json",
+      "bytes": 26035,
+      "sha256": "620bfafa04b303e6d9aa2535feebf2c01f4b0ef4fef0e579f473de6642333260"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/prepare.mjs",
+      "bytes": 7035,
+      "sha256": "89de3d3e8a789a45b6dd27bb4cc8c33c7b9243f7c6db76d9ad8fd165311f5858"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/probe.html",
+      "bytes": 177,
+      "sha256": "301f8fb31ccb49c1cf134e3fe84184f2f9b5af45c46585c84ddd19ff06f33569"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/probe.js",
+      "bytes": 20910,
+      "sha256": "28fd7c9b493369a5d32c4899df82150103fdb0725c44e3a4115d33cdfc6384a5"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/run.mjs",
+      "bytes": 24068,
+      "sha256": "025db5a9e715e9dad9855826aaf9e88589f4bad68407820952b1c7816b3037ee"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/admission.json",
+      "bytes": 10264,
+      "sha256": "40fec17f18afb34162082ee986ea6d3ebbd0212db6f8b6577b5885fe96ef9125"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/browser-logs/chrome-gpu.log",
+      "bytes": 1303,
+      "sha256": "dfc6c307236c25996a2eaa6645f071a7dd0baeea329f37d3d04ce0427785a6e9"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/browser-logs/lifecycle.jsonl",
+      "bytes": 884,
+      "sha256": "ad776a1a1cf2a8c743df8a155bdc89a48d5250e8ccfb05cb4e42110547ad3f40"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/command.json",
+      "bytes": 1758,
+      "sha256": "cfeb08dbe3c6f7a16bf9d1f86b8730179f4f90aa5bf887134990ecca29740261"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/input.json",
+      "bytes": 14837,
+      "sha256": "ce6d0b0febd7a636e6bfbffd06a98df48072fe3f51248ca8bb7a2b8b54b3099e"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/inventory.json",
+      "bytes": 1571,
+      "sha256": "24f02e09011a4d13de0a1bd661257c9186e71c55e48fd3e0dd231baa4878e1ab"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/raw-browser.json",
+      "bytes": 405299,
+      "sha256": "797c47ae2049a7ce629052776f033b95bdf0470e4804f4b5a0073b21cb3be3fc"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/receipt.json",
+      "bytes": 90968,
+      "sha256": "74967220149fdfdbb9bf37ae9f4da76924f4eb54da680929a3950cb0a1e0d59c"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/runner.stderr",
+      "bytes": 199,
+      "sha256": "992d0889f01955407f80eb0c0ffb74e5855bdd11fc1edf6990c04517b4fc7a88"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/runner.stdout",
+      "bytes": 12,
+      "sha256": "40be9b3f9ac184bafe2c1918e0011197d56091c09129065b406bdf50e92a1eca"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/runtime-identity.json",
+      "bytes": 9060,
+      "sha256": "3380f0dc26a5aba9b3357617a340af3c94d86ff4912492bd01b37352bc885f3e"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/source-index.json",
+      "bytes": 6521,
+      "sha256": "cb575439660ce4a3f059bd1b9ec7e8d30cddff00314e3f4b3bf384b088209e92"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-diagnostic-v1/validate.mjs",
+      "bytes": 10296,
+      "sha256": "6ec66b3422013395712bb95bd7cfbbdbb07b09f23f4a8a23600f5f2004174b23"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/plan.json",
+      "bytes": 17943,
+      "sha256": "b2692355aa572a0b7c3e71c151f73b04bae21dbae2bd4d62e608890a3e2a7a26"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/prepare.mjs",
+      "bytes": 8755,
+      "sha256": "6f3b94a02e86c840d91445662336284be2990f0b2d781b2c833856a159dc0f58"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/probe.html",
+      "bytes": 177,
+      "sha256": "301f8fb31ccb49c1cf134e3fe84184f2f9b5af45c46585c84ddd19ff06f33569"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/probe.js",
+      "bytes": 20910,
+      "sha256": "28fd7c9b493369a5d32c4899df82150103fdb0725c44e3a4115d33cdfc6384a5"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/run.mjs",
+      "bytes": 21211,
+      "sha256": "487d1fe12d06d43a92e2f83da00039faba4411c7418194f252ed3e58039bcb6e"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runs-v1/admission.json",
+      "bytes": 2741,
+      "sha256": "e7028dfc0d3c5023622bff57bf49afd4eb37ae2d6cea6a599ffd7499330b3fb3"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runs-v1/command.json",
+      "bytes": 1224,
+      "sha256": "e9c6c00a961b55b48b9fcbf7e5b8bd610982026b4b5b4a56398545cadd5a700c"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runs-v1/input.json",
+      "bytes": 14813,
+      "sha256": "cc64748753727335d89aedce02f1d576009ce53894ad96e4bc10cf54885f2423"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runs-v1/inventory.json",
+      "bytes": 1076,
+      "sha256": "2c31408a3f5ef3adc8c4139df3272fa8d1bb5621dcd585074999db93a445b769"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runs-v1/raw-browser.json",
+      "bytes": 32701,
+      "sha256": "c6cfc7d7b790fa33b7c5b4a6d173e4526a2abf730865afc1310f2e161d274c2d"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runs-v1/receipt.json",
+      "bytes": 71147,
+      "sha256": "b5e6178059913bce99d921fb7ebcfcad74b44821be7595186019e2574b803af6"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/runtime-identity.json",
+      "bytes": 9060,
+      "sha256": "3380f0dc26a5aba9b3357617a340af3c94d86ff4912492bd01b37352bc885f3e"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/source-index.json",
+      "bytes": 1056,
+      "sha256": "3fd2e476ec944110f3ebd8b5c547088afaca3b481e6cad0855b9f7b6025bcf99"
+    },
+    {
+      "path": "evidence/matmul-shape-constants-v1/validate.mjs",
+      "bytes": 10296,
+      "sha256": "6ec66b3422013395712bb95bd7cfbbdbb07b09f23f4a8a23600f5f2004174b23"
+    },
+    {
+      "path": "evidence/no-cache-carries-delivery/delivery-06c58a1679e91ca2abcdbb2523440dc87099a27b-run42358893911-v1.json",
+      "bytes": 1673608,
+      "sha256": "9983ef96a3f0e54ea89e81d136c840ed516fc79780243255e821fcb17928b1d4"
+    },
+    {
+      "path": "publication/app/views/how.js",
+      "bytes": 16800,
+      "sha256": "90b11ee20e86a4d4a7a34e8a25646f4a77715c0a2960a29cc1d5ac73f0283807"
+    },
+    {
+      "path": "publication/docs/benchmarks/host-followup-experiments-2026-11-07/archive-publication.mjs",
+      "bytes": 30608,
+      "sha256": "7738981d8be4f8cde80ff534027162de9b1b0f4b56472d6cf0577531dc24de60"
+    },
+    {
+      "path": "publication/docs/benchmarks/host-followup-experiments-2026-11-07/README.md",
+      "bytes": 4500,
+      "sha256": "d7178f6f255c3ddd45af12508d7e8f91d542f294c8505d44b692f26eb87c27d4"
+    },
+    {
+      "path": "publication/docs/host-followup-experiments.md",
+      "bytes": 7952,
+      "sha256": "d98abe0cf34e4a762c255e70f3cb6b92a356f927ee3da4c59301f47ab05421e6"
+    }
+  ],
+  "references": {
+    "matmulConstants": {
+      "originalFailedReceipt": {
+        "path": "evidence/matmul-shape-constants-v1/runs-v1/receipt.json",
+        "bytes": 71147,
+        "sha256": "b5e6178059913bce99d921fb7ebcfcad74b44821be7595186019e2574b803af6"
+      },
+      "diagnosticReceipt": {
+        "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/receipt.json",
+        "bytes": 90968,
+        "sha256": "74967220149fdfdbb9bf37ae9f4da76924f4eb54da680929a3950cb0a1e0d59c"
+      },
+      "diagnosticRawBrowser": {
+        "path": "evidence/matmul-shape-constants-diagnostic-v1/runs-v1/raw-browser.json",
+        "bytes": 405299,
+        "sha256": "797c47ae2049a7ce629052776f033b95bdf0470e4804f4b5a0073b21cb3be3fc"
+      }
+    },
+    "fp32K64": {
+      "receipt": {
+        "path": "evidence/matmul-fp32-k64-v1/runs-v1/receipt.json",
+        "bytes": 93377,
+        "sha256": "17f6d8e9805ca48dd3816340be3b384629577f7d285090b1ec2f1424330161da"
+      },
+      "rawBrowser": {
+        "path": "evidence/matmul-fp32-k64-v1/runs-v1/0-clef-flash/raw-browser.json",
+        "bytes": 130280,
+        "sha256": "9ad75bb15e54ee8c787f63fa0d7a78eda06cad6dfa5081f2260d734d2d9f4918"
+      },
+      "cleanup": {
+        "path": "evidence/matmul-fp32-k64-v1/execution-final-v1.json",
+        "bytes": 836,
+        "sha256": "519ce73678cfc1b0405d22fc1b1463701c85fdc8d40b5ca77739f9a797817a77"
+      },
+      "ci76RuntimeBinding": {
+        "path": "evidence/matmul-fp32-k64-v1/ci76-runtime-binding-v1.json",
+        "bytes": 12115,
+        "sha256": "a057048d9123d9ac1d0c848972311d74c7053e6d98cc1f26354cf42ddca50687"
+      },
+      "ci75DeliveryRecord": {
+        "path": "evidence/no-cache-carries-delivery/delivery-06c58a1679e91ca2abcdbb2523440dc87099a27b-run42358893911-v1.json",
+        "bytes": 1673608,
+        "sha256": "9983ef96a3f0e54ea89e81d136c840ed516fc79780243255e821fcb17928b1d4"
+      },
+      "ci76DeliveryRecord": {
+        "path": "evidence/kev9-bf16-delivery/delivery-8d4e4fa458c8faf724d624670de721bd51cd7175-run42361138898-v1.json",
+        "bytes": 3201746,
+        "sha256": "64690c4cee23f33bef564276dbbdd8fe9eecba45442a4b5dcab2333cadf80938"
+      }
+    },
+    "gemmaCold": {
+      "failedReceipt": {
+        "path": "evidence/gemma-attention-cold-v1/results-v1/receipt.json",
+        "bytes": 185621,
+        "sha256": "5dbb653a77dbaee7e98731c252aae3ec3b13cbf3f0233586ff1a9bdfff5f223d"
+      },
+      "baselineRawBrowser": {
+        "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-0-A/browser.json",
+        "bytes": 242281,
+        "sha256": "dc65259905dd1279c746dbf7e842b9d559621fa0fe332916e3ae0f653cd98690"
+      },
+      "candidateRawBrowser": {
+        "path": "evidence/gemma-attention-cold-v1/results-v1/gemma-4-e2b-p0-1-B/browser.json",
+        "bytes": 234018,
+        "sha256": "0b17c3262c1e42ed336f423fc6fefe2bfad64c7ce6c59a2002d08488e965d42e"
+      },
+      "candidateAttentionSource": {
+        "path": "evidence/gemma-attention-cold-v1/runtime-candidate/gpu-gemma4-attention.js",
+        "bytes": 24397,
+        "sha256": "00b24d908fbad27ad2b5630db5faa2633c4f342ab0485bc5e29e5640e44ccca6"
+      }
+    },
+    "gemmaWarm": {
+      "receipt": {
+        "path": "evidence/gemma-attention-budget-v1/results-v1/receipt.json",
+        "bytes": 47244,
+        "sha256": "df1adf9f9d36721f4b9890042b715e2d60801997020099cb50db960eb3423353"
+      },
+      "rawBrowser": {
+        "path": "evidence/gemma-attention-budget-v1/results-v1/browser.json",
+        "bytes": 452598,
+        "sha256": "867ec3d3205e259e7ab66ea2ae17c495546ce1a5582750f0546dc4030a87f18a"
+      }
+    },
+    "firefoxSubmit": {
+      "rawTiming": {
+        "path": "evidence/firefox-submit-threeway-v1/results/raw-timing-2026-11-07T08-09-37.171Z.json",
+        "bytes": 1378324,
+        "sha256": "3c5c9affc1d8953f3b6805608ecbe530abe939564c77bdae3dfa09b352c7fee9"
+      },
+      "originalFailedReceipt": {
+        "path": "evidence/firefox-submit-threeway-v1/results/runner-timing-2026-11-07T08-09-37.171Z.json",
+        "bytes": 84632,
+        "sha256": "b884452a76312645ee8d329ebedfc95ae614eb2e26bad665481aa23a8b610d37"
+      },
+      "correctedDerivedReceipt": {
+        "path": "evidence/firefox-submit-threeway-v1/results/derived-revalidation-ratio-canonicalized-2026-11-07-v1.json",
+        "bytes": 10390,
+        "sha256": "f72f6465c9a1b965b75e59c6d711948a28b4351262c2b6d14cf8a23d56130ed6"
+      },
+      "revalidationSource": {
+        "path": "evidence/firefox-submit-threeway-v1/revalidate-ratio-drift.mjs",
+        "bytes": 9850,
+        "sha256": "d875a3ed678b64af348222bc65d39bdc060164ddbbd9eff106c40341755a16d5"
+      }
+    }
+  },
+  "exclusions": [
+    "model weights, scales, tensor payloads, and full model packs",
+    "compiled WASM and other binary runtime payloads",
+    "full runtime-v1 and runtime-candidate directories",
+    "matmul-shape-constants-diagnostic-v1/runs-v1/browser-logs/chromedriver.log (19,520,808 bytes)",
+    "matmul-fp32-k64-v1/runs-v1/0-clef-flash/browser-logs/chromedriver.log (1,689,696 bytes)",
+    "build output, credentials, and generated archives from earlier campaigns"
+  ],
+  "lease": {
+    "before": {
+      "identity": {
+        "canonicalPath": "/home/bruno/.cache/kevala/gpu-profile.lock",
+        "pid": 3154942,
+        "deviceMajor": "259",
+        "deviceMinor": "2",
+        "inode": "134897311",
+        "type": "FLOCK",
+        "advisory": "ADVISORY",
+        "mode": "WRITE",
+        "start": "0",
+        "end": "EOF"
+      },
+      "rawLine": "440: FLOCK  ADVISORY  WRITE 3154942 103:02:134897311 0 EOF"
+    },
+    "after": {
+      "identity": {
+        "canonicalPath": "/home/bruno/.cache/kevala/gpu-profile.lock",
+        "pid": 3154942,
+        "deviceMajor": "259",
+        "deviceMinor": "2",
+        "inode": "134897311",
+        "type": "FLOCK",
+        "advisory": "ADVISORY",
+        "mode": "WRITE",
+        "start": "0",
+        "end": "EOF"
+      },
+      "rawLine": "440: FLOCK  ADVISORY  WRITE 3154942 103:02:134897311 0 EOF"
+    }
+  }
+}
