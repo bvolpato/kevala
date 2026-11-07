@@ -186,6 +186,8 @@ The [Clef GPU head report](docs/clef-head-performance.md) records median paired 
 of 27–37% for warm Clef-flash Q8 requests across three trials on the Linux test host, with full-logit parity.
 The [native AVX2 matrix report](docs/native-linear-performance.md) records median paired inference-time
 reductions of 17.5% for Laya Q8 and 14.9% for Kev-0.8B Q8 after load on one logical CPU.
+The follow-up [native 2×4 packing report](docs/native-2x4-performance.md) records further median paired
+reductions of 57% and 51% on the same host, with exact response parity and slower small-shape controls.
 The [Firefox submission report](docs/firefox-submission-performance.md) records a headless Laya Q8
 experiment with explicit split submission: a 512-token request's median fell from 592.5 ms to 91.5 ms.
 

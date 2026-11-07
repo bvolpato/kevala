@@ -74,6 +74,56 @@ unsafe fn micro_2x4(a0: *const f32, a1: *const f32, w: *const f32, k: usize) -> 
     ([c[0].hsum(), c[1].hsum(), c[2].hsum(), c[3].hsum()], [c[4].hsum(), c[5].hsum(), c[6].hsum(), c[7].hsum()])
 }
 
+/// Each YMM holds the original four k lanes for both input rows, one row per half.
+/// Requires AVX2; called only from the whole-call AVX2 specialization.
+#[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
+#[inline(always)]
+unsafe fn micro_2x4_avx2(a0: *const f32, a1: *const f32, w: *const f32, k: usize) -> ([f32; 4], [f32; 4]) {
+    use std::arch::x86_64::*;
+
+    #[inline(always)]
+    unsafe fn hsum(v: __m128) -> f32 {
+        let pairs = _mm_add_ps(v, _mm_shuffle_ps::<0x4e>(v, v));
+        _mm_cvtss_f32(_mm_add_ss(pairs, _mm_shuffle_ps::<0x55>(pairs, pairs)))
+    }
+
+    let (w0, w1, w2, w3) = (w, w.add(k), w.add(2 * k), w.add(3 * k));
+    let mut c = [_mm256_setzero_ps(); 4];
+    let mut i = 0;
+    while i < k {
+        let x0 = _mm_loadu_ps(a0.add(i));
+        let x1 = _mm_loadu_ps(a1.add(i));
+        let x = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(x0), x1);
+        let v0 = _mm_loadu_ps(w0.add(i));
+        let v0 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v0), v0);
+        c[0] = _mm256_add_ps(c[0], _mm256_mul_ps(x, v0));
+        let v1 = _mm_loadu_ps(w1.add(i));
+        let v1 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v1), v1);
+        c[1] = _mm256_add_ps(c[1], _mm256_mul_ps(x, v1));
+        let v2 = _mm_loadu_ps(w2.add(i));
+        let v2 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v2), v2);
+        c[2] = _mm256_add_ps(c[2], _mm256_mul_ps(x, v2));
+        let v3 = _mm_loadu_ps(w3.add(i));
+        let v3 = _mm256_insertf128_ps::<1>(_mm256_castps128_ps256(v3), v3);
+        c[3] = _mm256_add_ps(c[3], _mm256_mul_ps(x, v3));
+        i += 4;
+    }
+    (
+        [
+            hsum(_mm256_castps256_ps128(c[0])),
+            hsum(_mm256_castps256_ps128(c[1])),
+            hsum(_mm256_castps256_ps128(c[2])),
+            hsum(_mm256_castps256_ps128(c[3])),
+        ],
+        [
+            hsum(_mm256_extractf128_ps::<1>(c[0])),
+            hsum(_mm256_extractf128_ps::<1>(c[1])),
+            hsum(_mm256_extractf128_ps::<1>(c[2])),
+            hsum(_mm256_extractf128_ps::<1>(c[3])),
+        ],
+    )
+}
+
 /// Four rows of x against four weight rows: sixteen accumulators, half the loads per
 /// multiply-add of `micro_2x4`. Needs 32 vector registers (ARM); on x86 it spills.
 #[inline(always)]
@@ -145,7 +195,67 @@ pub fn linear(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32]
 #[cfg(all(target_arch = "x86_64", not(target_feature = "avx2")))]
 #[target_feature(enable = "avx2")]
 unsafe fn linear_avx2(x: &[f32], t: usize, m: Mat, bias: Option<&[f32]>, out: &mut [f32], panel: &mut Vec<f32>) {
-    linear_impl(x, t, m, bias, out, panel);
+    let (n, k) = (m.n(), m.k());
+    debug_assert!(k % 4 == 0 && x.len() >= t * k && out.len() >= t * n);
+    // rows of x per pass, so a pass stays cache resident while every weight panel streams by once
+    let tb = ((1024 * 1024) / (k * 4)).clamp(8, 512) & !1;
+    if matches!(m, Mat::Q8 { .. } | Mat::Bf16 { .. }) && panel.len() < NR * k {
+        panel.resize(NR * k, 0.0);
+    }
+    let mut t0 = 0;
+    while t0 < t {
+        let t1 = (t0 + tb).min(t);
+        let mut n0 = 0;
+        while n0 < n {
+            let rows = NR.min(n - n0);
+            let wp: *const f32 = match m {
+                Mat::Q8 { q, scales, block, .. } => {
+                    dequant_panel(q, scales, k, block, n0, rows, panel);
+                    panel.as_ptr()
+                }
+                Mat::F32 { w, .. } => w[n0 * k..].as_ptr(),
+                Mat::Bf16 { w, .. } => {
+                    for (value, dst) in w[n0 * k..(n0 + rows) * k].iter().zip(panel.iter_mut()) {
+                        *dst = crate::convert::bf16_to_f32(*value);
+                    }
+                    panel.as_ptr()
+                }
+            };
+            let b = |j: usize| bias.map_or(0.0, |b| b[n0 + j]);
+            let mut r = t0;
+            unsafe {
+                if rows == NR && tile() == 1 {
+                    while r + 4 <= t1 {
+                        let o = micro_4x4(x.as_ptr().add(r * k), wp, k);
+                        for (i, row) in o.iter().enumerate() {
+                            for j in 0..NR {
+                                out[(r + i) * n + n0 + j] = row[j] + b(j);
+                            }
+                        }
+                        r += 4;
+                    }
+                }
+                if rows == NR {
+                    while r + 2 <= t1 {
+                        let (o0, o1) = micro_2x4_avx2(x.as_ptr().add(r * k), x.as_ptr().add((r + 1) * k), wp, k);
+                        for j in 0..NR {
+                            out[r * n + n0 + j] = o0[j] + b(j);
+                            out[(r + 1) * n + n0 + j] = o1[j] + b(j);
+                        }
+                        r += 2;
+                    }
+                }
+                while r < t1 {
+                    for j in 0..rows {
+                        out[r * n + n0 + j] = dot4(x.as_ptr().add(r * k), wp.add(j * k), k) + b(j);
+                    }
+                    r += 1;
+                }
+            }
+            n0 += NR;
+        }
+        t0 = t1;
+    }
 }
 
 #[inline(always)]
@@ -603,7 +713,8 @@ mod tests {
         for selected_tile in [0, 1] {
             set_tile(selected_tile);
             for values in [&values[..8], &values[..]] {
-                for (t, n, k) in [(1, 4, 4), (2, 4, 12), (5, 7, 20), (2, 4, 64), (9, 8, 64), (65, 4, 4096)] {
+                for (t, n, k) in [(1, 4, 4), (2, 4, 12), (5, 7, 20), (2, 4, 64), (7, 7, 68), (9, 8, 64), (65, 4, 4096)]
+                {
                     let x: Vec<f32> = (0..t * k + 1).map(|i| values[i % values.len()]).collect();
                     let w: Vec<f32> = (0..n * k + 1).map(|i| values[(i * 3 + 1) % values.len()]).collect();
                     let bf16: Vec<u16> = w.iter().map(|v| crate::convert::f32_to_bf16(*v)).collect();
