@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "derivation": "Recomputed from the immutable raw result. Mode p50s use 18 measured call wallMs values per mode. Each quartet mode mean uses its two raw call wallMs values; the ratio is split mean divided by await mean. ULP distances use IEEE-754 binary64 bit patterns for positive finite numbers.",
+  "raw": {
+    "sha256": "00b0951bb86a5e82519f8e0c37d7efa2c09332e24b8c7e83b503ecdd83991740",
+    "bytes": 687244
+  },
+  "runner": {
+    "sha256": "18c8be494da45e1758919880d4d8debcf2a516c666031285f2bbcd14c672106a",
+    "bytes": 60136
+  },
+  "sourceIdentities": {
+    "runtimeCommit": "be350ec53b774bbfff3733d690cc9689625a02e7",
+    "runtimeFingerprint": "eb46c3119c1befb08f1e63bcd3499583ed6684af00d9d6094caa845ca7754bc6",
+    "fixedPlanSha256": "523e82268185c0b9aa689b04f33ee5fb165fab490d269ce047da771abf8b9b6c",
+    "packSha256": "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c"
+  },
+  "cases": [
+    {
+      "id": "short-47",
+      "expectedTokens": 47,
+      "measuredCalls": 36,
+      "allModesWallP50Ms": 88,
+      "storedAllModesWallP50Ms": 88,
+      "modes": {
+        "await": {
+          "measuredCalls": 18,
+          "p50WallMs": 88,
+          "meanWallMs": 88.72222222222223
+        },
+        "split": {
+          "measuredCalls": 18,
+          "p50WallMs": 87,
+          "meanWallMs": 87.16666666666667
+        }
+      },
+      "quartets": [
+        {
+          "quartet": 0,
+          "run": 3,
+          "storedAwaitMeanWallMs": 91,
+          "recomputedAwaitMeanWallMs": 91,
+          "storedSplitMeanWallMs": 90,
+          "recomputedSplitMeanWallMs": 90,
+          "storedSplitToAwaitWallRatio": 0.989010989010989,
+          "recomputedSplitToAwaitWallRatio": 0.989010989010989,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 1,
+          "run": 4,
+          "storedAwaitMeanWallMs": 93.5,
+          "recomputedAwaitMeanWallMs": 93.5,
+          "storedSplitMeanWallMs": 88.5,
+          "recomputedSplitMeanWallMs": 88.5,
+          "storedSplitToAwaitWallRatio": 0.946524064171123,
+          "recomputedSplitToAwaitWallRatio": 0.946524064171123,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 2,
+          "run": 5,
+          "storedAwaitMeanWallMs": 86,
+          "recomputedAwaitMeanWallMs": 86,
+          "storedSplitMeanWallMs": 84.5,
+          "recomputedSplitMeanWallMs": 84.5,
+          "storedSplitToAwaitWallRatio": 0.9825581395348836,
+          "recomputedSplitToAwaitWallRatio": 0.9825581395348837,
+          "ratioUlpDistance": "1",
+          "splitFaster": true
+        },
+        {
+          "quartet": 3,
+          "run": 6,
+          "storedAwaitMeanWallMs": 86,
+          "recomputedAwaitMeanWallMs": 86,
+          "storedSplitMeanWallMs": 85.5,
+          "recomputedSplitMeanWallMs": 85.5,
+          "storedSplitToAwaitWallRatio": 0.994186046511628,
+          "recomputedSplitToAwaitWallRatio": 0.9941860465116279,
+          "ratioUlpDistance": "1",
+          "splitFaster": true
+        },
+        {
+          "quartet": 4,
+          "run": 7,
+          "storedAwaitMeanWallMs": 87.5,
+          "recomputedAwaitMeanWallMs": 87.5,
+          "storedSplitMeanWallMs": 86.5,
+          "recomputedSplitMeanWallMs": 86.5,
+          "storedSplitToAwaitWallRatio": 0.9885714285714284,
+          "recomputedSplitToAwaitWallRatio": 0.9885714285714285,
+          "ratioUlpDistance": "1",
+          "splitFaster": true
+        },
+        {
+          "quartet": 5,
+          "run": 8,
+          "storedAwaitMeanWallMs": 88,
+          "recomputedAwaitMeanWallMs": 88,
+          "storedSplitMeanWallMs": 86.5,
+          "recomputedSplitMeanWallMs": 86.5,
+          "storedSplitToAwaitWallRatio": 0.9829545454545454,
+          "recomputedSplitToAwaitWallRatio": 0.9829545454545454,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 6,
+          "run": 9,
+          "storedAwaitMeanWallMs": 89,
+          "recomputedAwaitMeanWallMs": 89,
+          "storedSplitMeanWallMs": 88,
+          "recomputedSplitMeanWallMs": 88,
+          "storedSplitToAwaitWallRatio": 0.9887640449438202,
+          "recomputedSplitToAwaitWallRatio": 0.9887640449438202,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 7,
+          "run": 10,
+          "storedAwaitMeanWallMs": 88.5,
+          "recomputedAwaitMeanWallMs": 88.5,
+          "storedSplitMeanWallMs": 88,
+          "recomputedSplitMeanWallMs": 88,
+          "storedSplitToAwaitWallRatio": 0.9943502824858758,
+          "recomputedSplitToAwaitWallRatio": 0.9943502824858758,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 8,
+          "run": 11,
+          "storedAwaitMeanWallMs": 89,
+          "recomputedAwaitMeanWallMs": 89,
+          "storedSplitMeanWallMs": 87,
+          "recomputedSplitMeanWallMs": 87,
+          "storedSplitToAwaitWallRatio": 0.9775280898876404,
+          "recomputedSplitToAwaitWallRatio": 0.9775280898876404,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        }
+      ],
+      "paired": {
+        "quartetCount": 9,
+        "medianSplitToAwaitMeanRatio": 0.9885714285714285,
+        "medianAwaitMinusSplitMeanWallMs": 1,
+        "splitFasterQuartets": 9
+      }
+    },
+    {
+      "id": "long-512",
+      "expectedTokens": 512,
+      "measuredCalls": 36,
+      "allModesWallP50Ms": 341.5,
+      "storedAllModesWallP50Ms": 341.5,
+      "modes": {
+        "await": {
+          "measuredCalls": 18,
+          "p50WallMs": 592.5,
+          "meanWallMs": 592.6666666666666
+        },
+        "split": {
+          "measuredCalls": 18,
+          "p50WallMs": 91.5,
+          "meanWallMs": 91.55555555555556
+        }
+      },
+      "quartets": [
+        {
+          "quartet": 0,
+          "run": 3,
+          "storedAwaitMeanWallMs": 596.5,
+          "recomputedAwaitMeanWallMs": 596.5,
+          "storedSplitMeanWallMs": 93.5,
+          "recomputedSplitMeanWallMs": 93.5,
+          "storedSplitToAwaitWallRatio": 0.1567476948868399,
+          "recomputedSplitToAwaitWallRatio": 0.1567476948868399,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 1,
+          "run": 4,
+          "storedAwaitMeanWallMs": 586,
+          "recomputedAwaitMeanWallMs": 586,
+          "storedSplitMeanWallMs": 86.5,
+          "recomputedSplitMeanWallMs": 86.5,
+          "storedSplitToAwaitWallRatio": 0.1476109215017065,
+          "recomputedSplitToAwaitWallRatio": 0.1476109215017065,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 2,
+          "run": 5,
+          "storedAwaitMeanWallMs": 593.5,
+          "recomputedAwaitMeanWallMs": 593.5,
+          "storedSplitMeanWallMs": 89.5,
+          "recomputedSplitMeanWallMs": 89.5,
+          "storedSplitToAwaitWallRatio": 0.15080033698399326,
+          "recomputedSplitToAwaitWallRatio": 0.15080033698399326,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 3,
+          "run": 6,
+          "storedAwaitMeanWallMs": 583,
+          "recomputedAwaitMeanWallMs": 583,
+          "storedSplitMeanWallMs": 84.5,
+          "recomputedSplitMeanWallMs": 84.5,
+          "storedSplitToAwaitWallRatio": 0.14493996569468268,
+          "recomputedSplitToAwaitWallRatio": 0.14493996569468268,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 4,
+          "run": 7,
+          "storedAwaitMeanWallMs": 590,
+          "recomputedAwaitMeanWallMs": 590,
+          "storedSplitMeanWallMs": 91.5,
+          "recomputedSplitMeanWallMs": 91.5,
+          "storedSplitToAwaitWallRatio": 0.15508474576271186,
+          "recomputedSplitToAwaitWallRatio": 0.15508474576271186,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 5,
+          "run": 8,
+          "storedAwaitMeanWallMs": 592,
+          "recomputedAwaitMeanWallMs": 592,
+          "storedSplitMeanWallMs": 93,
+          "recomputedSplitMeanWallMs": 93,
+          "storedSplitToAwaitWallRatio": 0.1570945945945946,
+          "recomputedSplitToAwaitWallRatio": 0.1570945945945946,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 6,
+          "run": 9,
+          "storedAwaitMeanWallMs": 595,
+          "recomputedAwaitMeanWallMs": 595,
+          "storedSplitMeanWallMs": 95.5,
+          "recomputedSplitMeanWallMs": 95.5,
+          "storedSplitToAwaitWallRatio": 0.16050420168067228,
+          "recomputedSplitToAwaitWallRatio": 0.16050420168067228,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 7,
+          "run": 10,
+          "storedAwaitMeanWallMs": 598.5,
+          "recomputedAwaitMeanWallMs": 598.5,
+          "storedSplitMeanWallMs": 99,
+          "recomputedSplitMeanWallMs": 99,
+          "storedSplitToAwaitWallRatio": 0.16541353383458646,
+          "recomputedSplitToAwaitWallRatio": 0.16541353383458646,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        },
+        {
+          "quartet": 8,
+          "run": 11,
+          "storedAwaitMeanWallMs": 599.5,
+          "recomputedAwaitMeanWallMs": 599.5,
+          "storedSplitMeanWallMs": 91,
+          "recomputedSplitMeanWallMs": 91,
+          "storedSplitToAwaitWallRatio": 0.1517931609674729,
+          "recomputedSplitToAwaitWallRatio": 0.1517931609674729,
+          "ratioUlpDistance": "0",
+          "splitFaster": true
+        }
+      ],
+      "paired": {
+        "quartetCount": 9,
+        "medianSplitToAwaitMeanRatio": 0.15508474576271186,
+        "medianAwaitMinusSplitMeanWallMs": 499.5,
+        "splitFasterQuartets": 9
+      }
+    }
+  ],
+  "combinedMetric": {
+    "definition": "geometric mean of per-case wall-clock p50 milliseconds",
+    "sourceImplementation": "scripts/bench-gpu.py latency_metric: math.exp(sum(math.log(value) for value in medians) / len(medians))",
+    "inputCombinedAllModesWallP50sMs": [
+      88,
+      341.5
+    ],
+    "storedMetricMs": 173.35512683506087,
+    "recomputationMethod": "For these two inputs, direct geometric mean as sqrt(product(p50s)).",
+    "recomputedMetricMs": 173.35512683506076,
+    "ulpDistance": "4"
+  }
+}

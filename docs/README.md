@@ -41,6 +41,7 @@ Reports distinguish retained changes from rejected experiments and reference mea
 
 | Report | Kernel |
 |---|---|
+| [Firefox submission policies](firefox-submission-performance.md) | Explicit await/split comparison on one resident Laya Q8 engine, exact outputs, and headless scope |
 | [Native AVX2 matrix projections](native-linear-performance.md) | Runtime dispatch, exact-output checks, bulk and small-shape controls, and paired native CLI requests |
 | [Clef GPU head projections](clef-head-performance.md) | Guarded F32 projections, full-logit parity, and paired complete-request latency |
 | [FP32 performance reference](performance-reference.md) | Native GEMM measurements, browser feature limits and rejected kernel experiments |

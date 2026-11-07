@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "label": "rejected-v1",
+  "capturedAt": "2026-11-07T01:48:23.020Z",
+  "reason": "Pre-execution source review found the frozen runtime does not expose info.precision; no browser, model, or GPU execution occurred for this source set.",
+  "files": [
+    {
+      "path": "index.html",
+      "bytes": 306,
+      "sha256": "5a7e6f90b3551e853bc90a97f9a49dfcf7866c42940837d02e2060dc8d903dbf"
+    },
+    {
+      "path": "firefox-submit.js",
+      "bytes": 19835,
+      "sha256": "9663479dd750046fb44531148df689f1457f0b6075d7f487df06bb00e4421b07"
+    },
+    {
+      "path": "fixtures.mjs",
+      "bytes": 3047,
+      "sha256": "707bed3f06d6be777d9478b87643c33302ed6757c7be75e330fe695896dfcfce"
+    },
+    {
+      "path": "preflight.mjs",
+      "bytes": 3057,
+      "sha256": "26db706591401cd0bdc786abf7d8ab73f035a6289700c6f00ee90cb7c10182de"
+    },
+    {
+      "path": "validate.mjs",
+      "bytes": 6091,
+      "sha256": "cb6969366dc0a3819e4ae813be168f1dc1e3e65bc95155053a97cc72e721266a"
+    },
+    {
+      "path": "run.mjs",
+      "bytes": 13230,
+      "sha256": "21e74fdf80454bf20f27e05c6736f37f1a6448b864e34c46e031b1912f21cb85"
+    }
+  ]
+}
