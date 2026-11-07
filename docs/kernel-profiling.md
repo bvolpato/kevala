@@ -81,6 +81,8 @@ Keep per-kernel medians and shares for attribution. Keep wall samples, p95, and 
 
 Newer model-profile summaries include optional `requestStages` when every raw sample has `prepare`, `forward`, and `total` timings. Its `wall` and `gpuProfiler` lanes remain separate and retain each block's sample index, request hash, and token count. The report computes `postForwardResidualMs = total - prepare - forward`, `outerResidualMs = wallMs - total`, and their per-sample fractions before calculating distributions. The timing boundaries vary by architecture, and timer rounding can produce small negative residuals; the report keeps those values signed rather than clamping them. Residuals cover work between timers, including CPU work, copies, and GPU waits, so they do not represent pure CPU time. Older captures without stage timings omit `requestStages`.
 
+The Speed page displays embedded request-stage data when present. The historical 2026-11-07 Q8 breakdown uses a separate supplement joined only when its sourceReportSha256 matches the exact published summary bytes and its model, precision, browser, and case identity matches. Its collapsed table shows unprofiled wall-lane block medians and samplewise completion and residual shares. A missing or stale supplement leaves the existing report usable; the original summary and raw evidence are unchanged.
+
 See the [2026-11-06 optimization comparison](model-optimization-performance.md) for scoped before/after results, complete mixed model timings, numerical guards and archived evidence.
 
 ## Profile the complete kernel registry

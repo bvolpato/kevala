@@ -1,6 +1,7 @@
 import { esc } from "../ui.js";
 
 const REPORT_PATH = "docs/benchmarks/kernel-profile-2026-11-07/summary.json";
+const REQUEST_STAGE_REPORT_PATH = "docs/benchmarks/kernel-profile-2026-11-07/request-stages.json";
 const OPTIMIZATION_REPORT_PATH = "docs/benchmarks/model-optimization-2026-11-06/summary.json";
 const RAW_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/kernel-profile-2026-11-07/summary.json";
 const RAW_OPTIMIZATION_REPORT_URL = "https://github.com/bvolpato/kevala/blob/main/docs/benchmarks/model-optimization-2026-11-06/summary.json";
@@ -161,20 +162,92 @@ function kernelRows(kernels, showDispatchCounts) {
   }).join("");
 }
 
-function caseDetails(testCase) {
+function stageMedian(samples, field) {
+  const values = samples.map((sample) => number(sample[field]));
+  if (!values.length || values.some((value) => value === null)) return null;
+  values.sort((a, b) => a - b);
+  const middle = values.length >> 1;
+  return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+}
+
+function stageShare(value) {
+  const parsed = number(value);
+  if (parsed === null) return "Not measured";
+  return `${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(parsed * 100)}%`;
+}
+
+function validRequestStages(stages) {
+  if (!stages || typeof stages !== "object" || typeof stages.attribution !== "string" || !stages.attribution.length
+    || !stages.wall || !Array.isArray(stages.wall.blocks) || !stages.wall.blocks.length) return false;
+  const blocks = new Set(), identities = new Map(), sampleCount = stages.wall.blocks[0]?.samples?.length;
+  if (!Number.isSafeInteger(sampleCount) || sampleCount < 1) return false;
+  return stages.wall.blocks.every((block) => {
+    if (!block || !Number.isSafeInteger(block.block) || blocks.has(block.block) || !Array.isArray(block.samples) || block.samples.length !== sampleCount) return false;
+    blocks.add(block.block);
+    return block.samples.every((sample, sampleIndex) => {
+      const numericFields = ["reportedPrepareMs", "reportedForwardMs", "reportedTotalMs", "wallMs", "postForwardResidualMs", "outerResidualMs",
+        "prepareOfRuntimeTotal", "forwardOfRuntimeTotal", "postForwardResidualOfRuntimeTotal", "postForwardResidualOfWall", "runtimeTotalOfWall", "outerResidualOfWall"];
+      if (!sample || sample.sampleIndex !== sampleIndex || !/^[a-f0-9]{64}$/.test(sample.requestHash) || !Number.isSafeInteger(sample.tokens) || sample.tokens <= 0
+        || !numericFields.every((field) => typeof sample[field] === "number" && Number.isFinite(sample[field]))
+        || sample.reportedPrepareMs < 0 || sample.reportedForwardMs < 0 || sample.reportedTotalMs <= 0 || sample.wallMs <= 0) return false;
+      const residual = sample.reportedTotalMs - sample.reportedPrepareMs - sample.reportedForwardMs;
+      const outerResidual = sample.wallMs - sample.reportedTotalMs;
+      if (sample.postForwardResidualMs !== residual || sample.outerResidualMs !== outerResidual
+        || sample.prepareOfRuntimeTotal !== sample.reportedPrepareMs / sample.reportedTotalMs
+        || sample.forwardOfRuntimeTotal !== sample.reportedForwardMs / sample.reportedTotalMs
+        || sample.postForwardResidualOfRuntimeTotal !== residual / sample.reportedTotalMs
+        || sample.postForwardResidualOfWall !== residual / sample.wallMs
+        || sample.runtimeTotalOfWall !== sample.reportedTotalMs / sample.wallMs
+        || sample.outerResidualOfWall !== outerResidual / sample.wallMs) return false;
+      const identity = identities.get(sampleIndex);
+      if (identity && (identity.requestHash !== sample.requestHash || identity.tokens !== sample.tokens)) return false;
+      identities.set(sampleIndex, { requestHash: sample.requestHash, tokens: sample.tokens });
+      return true;
+    });
+  });
+}
+
+function requestStageDetails(stages) {
+  if (!validRequestStages(stages)) return "";
+  const rows = stages.wall.blocks.map((block) => {
+    const samples = block.samples;
+    return `<tr><th scope="row">${esc(text(block.block))}</th><td class="num">${samples.length}</td>
+      <td class="num">${esc(milliseconds(stageMedian(samples, "reportedPrepareMs")))}</td>
+      <td class="num">${esc(milliseconds(stageMedian(samples, "reportedForwardMs")))}</td>
+      <td class="num">${esc(milliseconds(stageMedian(samples, "reportedTotalMs")))}</td>
+      <td class="num">${esc(milliseconds(stageMedian(samples, "postForwardResidualMs")))}</td>
+      <td class="num">${esc(milliseconds(stageMedian(samples, "outerResidualMs")))}</td>
+      <td class="num">${esc(stageShare(stageMedian(samples, "runtimeTotalOfWall")))}</td>
+      <td class="num">${esc(stageShare(stageMedian(samples, "postForwardResidualOfWall")))}</td></tr>`;
+  }).join("");
+  return `<details class="profile-disclosure profile-request-stages">
+    <summary>Request stages · unprofiled wall lane</summary>
+    <div class="profile-kernel-table" role="region" aria-label="Per-block request stage timings" tabindex="0">
+      <table class="data"><caption>Per-block medians from samplewise wall-lane timings</caption>
+        <thead><tr><th scope="col">Block</th><th scope="col" class="num">Samples</th><th scope="col" class="num">Prepare</th><th scope="col" class="num">Forward</th><th scope="col" class="num">Reported total</th><th scope="col" class="num">Post-forward residual</th><th scope="col" class="num">Outer residual</th><th scope="col" class="num">Completion share</th><th scope="col" class="num">Post-forward wall share</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <p class="profile-attribution-note">${esc(stages.attribution)} This table uses only the unprofiled wall lane. Shares are computed per request before block medians, and small negative residuals from timer rounding remain signed.</p>
+  </details>`;
+}
+
+function caseDetails(testCase, stageKey) {
   const wall = testCase.wall;
   const gpu = testCase.gpu;
+  const stages = testCase.requestStages;
   const showDispatchCounts = hasDispatchCounts(gpu?.kernels);
   const attribution = gpu?.kernelAttribution
     ? `<p class="profile-attribution-note">Per-kernel medians: ${esc(text(gpu.kernelAttribution))}. GPU total is shown separately above.</p>`
     : "";
-  return `<details class="profile-case">
+  return `<details class="profile-case" data-request-stage-key="${esc(stageKey)}">
     <summary>${esc(caseLabel(testCase))}</summary>
     <div class="profile-case-grid">
       <div><span>Wall latency · unprofiled</span><b>${esc(milliseconds(wall?.medianMs))}</b><small>p95 ${esc(milliseconds(wall?.p95Ms))} · ${esc(sampleCell(wall))}</small></div>
       <div><span>GPU total kernel time · profiled</span><b>${esc(milliseconds(gpu?.medianMs))}</b><small>${esc(sampleCell(gpu))} · diagnostic timing includes instrumentation overhead</small></div>
     </div>
     ${attribution}
+    ${requestStageDetails(stages)}
     <div class="profile-kernel-table" role="region" aria-label="Per-kernel timings for ${esc(text(testCase.name, "case"))}" tabindex="0">
       <table class="data"><caption>Per-kernel GPU medians · sub-millisecond values shown in µs</caption><thead><tr><th scope="col">Kernel</th><th scope="col" class="num">Median</th><th scope="col" class="num">Share</th>${showDispatchCounts ? "<th scope=\"col\">Dispatched samples</th>" : ""}</tr></thead><tbody>${kernelRows(gpu?.kernels, showDispatchCounts)}</tbody></table>
     </div>
@@ -260,6 +333,10 @@ function tuningSummaryDetails(value) {
   </details>`;
 }
 
+function requestStageKey(model, caseName) {
+  return JSON.stringify([model.id, model.precision, model.browser, caseName]);
+}
+
 function modelDetails(model) {
   const cases = Array.isArray(model.cases) ? model.cases : [];
   const reason = model.reason ? `<p class="profile-reason"><b>${esc(text(model.status))}:</b> ${esc(model.reason)}</p>` : "";
@@ -267,7 +344,7 @@ function modelDetails(model) {
     <p class="profile-pack"><b>Pack:</b> ${esc(packSummary(model.pack))}</p>
     ${reason}
     ${tuningSummaryDetails(model.tuningSummary)}
-    ${cases.length ? `<div class="profile-case-list">${cases.map(caseDetails).join("")}</div>` : `<p class="profile-missing">No case measurements were recorded. ${esc(text(model.reason, "Reason not reported."))}</p>`}
+    ${cases.length ? `<div class="profile-case-list">${cases.map((testCase) => caseDetails(testCase, requestStageKey(model, testCase.name))).join("")}</div>` : `<p class="profile-missing">No case measurements were recorded. ${esc(text(model.reason, "Reason not reported."))}</p>`}
   </div>`;
 }
 
@@ -561,6 +638,79 @@ function limitations(items) {
   return `<div class="profile-limitations"><h4>Limits of this run</h4><ul>${items.map((item) => `<li>${esc(text(item))}</li>`).join("")}</ul></div>`;
 }
 
+function requestStageSupplementMap(supplement, report, sourceReportSha256) {
+  if (!supplement || supplement.schemaVersion !== 1 || supplement.sourceReportSha256 !== sourceReportSha256
+    || !supplement.sourceCapture || supplement.sourceCapture.runtimeCommit !== report.runtime?.commit
+    || !/^[a-f0-9]{64}$/.test(supplement.sourceCapture.summarySha256)
+    || !/^[a-f0-9]{64}$/.test(supplement.reducerSha256) || !Array.isArray(supplement.models)) return null;
+  const reportRows = new Map(report.models.map((model) => [JSON.stringify([model.id, model.precision, model.browser]), model]));
+  const seenModels = new Set(), stages = new Map();
+  for (const supplementalModel of supplement.models) {
+    if (!supplementalModel || typeof supplementalModel.id !== "string" || typeof supplementalModel.precision !== "string"
+      || typeof supplementalModel.browser !== "string" || !Array.isArray(supplementalModel.cases)) return null;
+    const identity = JSON.stringify([supplementalModel.id, supplementalModel.precision, supplementalModel.browser]);
+    const reportModel = reportRows.get(identity);
+    if (!reportModel || seenModels.has(identity)) return null;
+    seenModels.add(identity);
+    if (!Array.isArray(supplementalModel.rawEvidence) || !Array.isArray(reportModel.evidence)
+      || supplementalModel.rawEvidence.length !== reportModel.evidence.length) return null;
+    for (const [index, reference] of supplementalModel.rawEvidence.entries()) {
+      const published = reportModel.evidence[index];
+      if (!reference || typeof reference.source !== "string" || !reference.source.endsWith(".json")
+        || reference.url !== published?.url || reference.sha256 !== published?.sha256 || reference.bytes !== published?.bytes
+        || reference.gzipSha256 !== published?.gzipSha256 || reference.gzipBytes !== published?.gzipBytes) return null;
+    }
+    const reportCases = new Set((Array.isArray(reportModel.cases) ? reportModel.cases : []).map((testCase) => testCase.name));
+    for (const supplementalCase of supplementalModel.cases) {
+      if (!supplementalCase || typeof supplementalCase.name !== "string" || !reportCases.has(supplementalCase.name)
+        || !validRequestStages(supplementalCase.requestStages)) return null;
+      const key = requestStageKey(supplementalModel, supplementalCase.name);
+      if (stages.has(key)) return null;
+      stages.set(key, supplementalCase.requestStages);
+    }
+  }
+  return stages;
+}
+
+async function reportSha256(bytes) {
+  if (!globalThis.crypto?.subtle) return null;
+  try {
+    const digest = new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256", bytes));
+    return [...digest].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  } catch {
+    return null;
+  }
+}
+
+async function loadRequestStageSupplement(report, sourceReportSha256, signal) {
+  if (!sourceReportSha256 || signal.aborted) return new Map();
+  const timeoutController = new AbortController();
+  const abort = () => timeoutController.abort();
+  signal.addEventListener("abort", abort, { once: true });
+  const timeout = setTimeout(abort, 3000);
+  try {
+    const response = await fetch(new URL(REQUEST_STAGE_REPORT_PATH, document.baseURI), { signal: timeoutController.signal, cache: "no-cache" });
+    if (!response.ok) return new Map();
+    const supplement = await response.json();
+    return requestStageSupplementMap(supplement, report, sourceReportSha256) ?? new Map();
+  } catch {
+    return new Map();
+  } finally {
+    clearTimeout(timeout);
+    signal.removeEventListener("abort", abort);
+  }
+}
+
+function applyRequestStageDetails(container, stages) {
+  if (!stages.size) return;
+  for (const testCase of container.querySelectorAll("details.profile-case[data-request-stage-key]")) {
+    if (testCase.querySelector(".profile-request-stages")) continue;
+    const html = requestStageDetails(stages.get(testCase.dataset.requestStageKey));
+    const anchor = [...testCase.children].find((element) => element.classList.contains("profile-kernel-table"));
+    if (html && anchor) anchor.insertAdjacentHTML("beforebegin", html);
+  }
+}
+
 function renderReport(report) {
   const models = report.models;
   const kernels = report.kernels.rows;
@@ -660,12 +810,18 @@ export function mountKernelProfile(container) {
   fetch(new URL(REPORT_PATH, document.baseURI), { signal: controller.signal, cache: "no-cache" })
     .then(async (response) => {
       if (!response.ok) throw new Error(`HTTP ${response.status} while loading ${REPORT_PATH}`);
-      return response.json();
+      const bytes = new Uint8Array(await response.arrayBuffer());
+      const sourceReportSha256 = await reportSha256(bytes);
+      return { report: JSON.parse(new TextDecoder().decode(bytes)), sourceReportSha256 };
     })
-    .then((report) => {
+    .then(({ report, sourceReportSha256 }) => {
       const problem = validateReport(report);
       if (problem) throw new Error(problem);
+      if (controller.signal.aborted) return;
       container.innerHTML = renderReport(report);
+      void loadRequestStageSupplement(report, sourceReportSha256, controller.signal)
+        .then((stages) => applyRequestStageDetails(container, stages))
+        .catch(() => {});
     })
     .catch((error) => {
       if (error?.name === "AbortError") return;

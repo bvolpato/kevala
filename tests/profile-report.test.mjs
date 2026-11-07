@@ -25,6 +25,39 @@ const measuredModel = (browser = "firefox") => ({ id: "first", name: "First", ar
   tuning: [{ large: "tuning" }], before: { privateTelemetry: true }, raw: [] });
 const measuredKernel = (name) => ({ name, status: "measured", compileStatus: "passed", numericalStatus: "passed", timingStatus: "isolated", reason: "CPU reference and timing passed.", harnesses: ["isolated"],
   isolated: [{ tokens: 1, timings: [{ label: "current", medianMs: 0.01, samples: [0.009, 0.011] }] }], evidence: [] });
+const requestStageMsFields = ["reportedPrepareMs", "reportedForwardMs", "reportedTotalMs", "postForwardResidualMs", "outerResidualMs"];
+const requestStageFractionFields = ["prepareOfRuntimeTotal", "forwardOfRuntimeTotal", "postForwardResidualOfRuntimeTotal", "postForwardResidualOfWall", "runtimeTotalOfWall", "outerResidualOfWall"];
+function testMedian(values) {
+  const sorted = [...values].sort((a, b) => a - b), middle = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+function requestStageTestSample(sampleIndex, block, lane) {
+  const reportedPrepareMs = [1.1, 1.8][sampleIndex], reportedForwardMs = [8.2, 11.9][sampleIndex];
+  const reportedTotalMs = [9.2, 15.1][sampleIndex], wallMs = [14.2, 18.3][sampleIndex] + block * 2 + lane;
+  const postForwardResidualMs = reportedTotalMs - reportedPrepareMs - reportedForwardMs, outerResidualMs = wallMs - reportedTotalMs;
+  return { sampleIndex, requestHash: digest(sampleIndex ? "b" : "a"), tokens: sampleIndex ? 42 : 40,
+    reportedPrepareMs, reportedForwardMs, reportedTotalMs, wallMs, postForwardResidualMs, outerResidualMs,
+    prepareOfRuntimeTotal: reportedPrepareMs / reportedTotalMs, forwardOfRuntimeTotal: reportedForwardMs / reportedTotalMs,
+    postForwardResidualOfRuntimeTotal: postForwardResidualMs / reportedTotalMs,
+    postForwardResidualOfWall: postForwardResidualMs / wallMs, runtimeTotalOfWall: reportedTotalMs / wallMs,
+    outerResidualOfWall: outerResidualMs / wallMs };
+}
+function requestStageTestLane(lane) {
+  const blocks = [0, 1].map((block) => ({ block, samples: [0, 1].map((sampleIndex) => requestStageTestSample(sampleIndex, block, lane)) }));
+  const distributions = {};
+  for (const [fields, fractional] of [[requestStageMsFields, false], [requestStageFractionFields, true]]) for (const field of fields) {
+    const valuesByBlock = blocks.map(({ samples }) => samples.map((sample) => sample[field])), values = valuesByBlock.flat();
+    const sorted = [...values].sort((a, b) => a - b), mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    distributions[field] = fractional
+      ? { median: testMedian(values), mean, p95: sorted[Math.ceil(sorted.length * 0.95) - 1], samples: values, blockMedians: valuesByBlock.map(testMedian) }
+      : { medianMs: testMedian(values), meanMs: mean, p95Ms: sorted[Math.ceil(sorted.length * 0.95) - 1], samples: values, blockMediansMs: valuesByBlock.map(testMedian) };
+  }
+  return { blocks, distributions };
+}
+function requestStagesFixture() {
+  return { attribution: "Test timer boundaries; residuals include intervening CPU, copy, and GPU wait work.",
+    wall: requestStageTestLane(0), gpuProfiler: requestStageTestLane(1) };
+}
 function models(browser = "firefox") {
   return { schemaVersion: 1, status: "complete", generatedAt: "2026-11-06T01:00:00.000Z", runtime: { commit: "a".repeat(40), workingTreeDirty: true,
     sha256: digest("b"), harnessSha256: digest("c"), assets: structuredClone(runtimeFiles), entry: "http://localhost/private/index.js" },
@@ -215,6 +248,22 @@ test("public evidence archives are deterministic, content hashed, linked, and pr
   assert.deepEqual(await Promise.all(files.map((path) => readFile(join(input.root, "docs/campaign/raw", path)))), compressed);
 });
 
+test("public report preserves complete request stages and rejects partial stage samples", async (t) => {
+  const input = await fixture(t);
+  input.model.models[0].cases[0].requestStages = requestStagesFixture();
+  await input.persist();
+  const report = await writeProfileReport(input);
+  const requestStages = report.models.find((row) => row.id === "laya").cases[0].requestStages;
+  assert.deepEqual(requestStages, input.model.models[0].cases[0].requestStages);
+  assert.ok(requestStages.wall.blocks[0].samples[0].postForwardResidualMs < 0);
+
+  const malformed = await fixture(t);
+  malformed.model.models[0].cases[0].requestStages = requestStagesFixture();
+  delete malformed.model.models[0].cases[0].requestStages.wall.blocks[0].samples[0].reportedForwardMs;
+  await malformed.persist();
+  await assert.rejects(writeProfileReport(malformed), /invalid request stage value reportedForwardMs/);
+});
+
 test("public kernel evidence stays bounded while exact measurements, isolated samples and model timings remain available", async (t) => {
   const input = await fixture(t), records = Array.from({ length: 4 }, (_, index) => ({ path: `result.timings.${index}`, rawSamples: true,
     values: { candidateMedianMs: 0.01 }, samples: { candidate: Array(5000).fill(0.01) } }));
@@ -232,6 +281,7 @@ test("public kernel evidence stays bounded while exact measurements, isolated sa
   assert.deepEqual(row.isolated, original.kernels[0].isolated);
   assert.deepEqual(report.models.find((model) => model.id === "laya").cases[0].wall.samples, input.model.models[0].cases[0].wall.samples);
   assert.deepEqual(report.models.find((model) => model.id === "laya").cases[0].gpu.samples, input.model.models[0].cases[0].gpu.samples);
+  assert.equal(report.models.find((model) => model.id === "laya").cases[0].requestStages, undefined);
   const archive = report.artifacts.find((item) => item.label.startsWith("Kernel capture"));
   assert.deepEqual(gunzipSync(await readFile(join(input.root, archive.url))), source);
   assert.deepEqual(JSON.parse(source).kernels[0].evidence[0].measurements, records);

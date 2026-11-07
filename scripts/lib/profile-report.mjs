@@ -55,6 +55,85 @@ function validateMetric(metric, label) {
   return pick(metric, ["medianMs", "p95Ms", "meanMs", "samples", "blockMediansMs"]);
 }
 
+const REQUEST_STAGE_MS_FIELDS = ["reportedPrepareMs", "reportedForwardMs", "reportedTotalMs", "postForwardResidualMs", "outerResidualMs"];
+const REQUEST_STAGE_FRACTION_FIELDS = ["prepareOfRuntimeTotal", "forwardOfRuntimeTotal", "postForwardResidualOfRuntimeTotal", "postForwardResidualOfWall", "runtimeTotalOfWall", "outerResidualOfWall"];
+
+function requestStageMedian(values) {
+  const sorted = [...values].sort((a, b) => a - b), middle = sorted.length >> 1;
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function validateRequestStageDistribution(metric, valuesByBlock, field, fractional, label) {
+  const values = valuesByBlock.flat();
+  const median = requestStageMedian(values), mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const sorted = [...values].sort((a, b) => a - b), p95 = sorted[Math.ceil(sorted.length * 0.95) - 1];
+  const sampleKey = "samples", blockKey = fractional ? "blockMedians" : "blockMediansMs";
+  const medianKey = fractional ? "median" : "medianMs", meanKey = fractional ? "mean" : "meanMs", p95Key = fractional ? "p95" : "p95Ms";
+  check(object(metric) && Array.isArray(metric[sampleKey]) && metric[sampleKey].length === values.length
+    && metric[sampleKey].every((value, index) => Number.isFinite(value) && value === values[index]), label + ": invalid " + field + " samples");
+  check(Array.isArray(metric[blockKey]) && metric[blockKey].length === valuesByBlock.length
+    && metric[blockKey].every((value, index) => Number.isFinite(value) && value === requestStageMedian(valuesByBlock[index])), label + ": invalid " + field + " block medians");
+  check(metric[medianKey] === median && metric[meanKey] === mean && metric[p95Key] === p95, label + ": invalid " + field + " distribution");
+  return pick(metric, [medianKey, meanKey, p95Key, sampleKey, blockKey]);
+}
+
+function validateRequestStageLane(lane, label, identities) {
+  check(object(lane) && Array.isArray(lane.blocks) && lane.blocks.length >= 2, label + ": invalid request stage blocks");
+  const blockIds = new Set(), sampleCount = lane.blocks[0]?.samples?.length;
+  check(Number.isSafeInteger(sampleCount) && sampleCount > 0, label + ": missing request stage samples");
+  const blocks = lane.blocks.map((block) => {
+    check(object(block) && Number.isSafeInteger(block.block) && block.block >= 0 && !blockIds.has(block.block), label + ": invalid or duplicate block identity");
+    blockIds.add(block.block);
+    check(Array.isArray(block.samples) && block.samples.length === sampleCount, label + ": inconsistent request stage sample count");
+    const samples = block.samples.map((sample, sampleIndex) => {
+      check(object(sample) && sample.sampleIndex === sampleIndex && /^[a-f0-9]{64}$/.test(sample.requestHash)
+        && Number.isSafeInteger(sample.tokens) && sample.tokens > 0, label + ": invalid request stage sample identity");
+      for (const field of REQUEST_STAGE_MS_FIELDS) check(Number.isFinite(sample[field]), label + ": invalid request stage value " + field);
+      for (const field of REQUEST_STAGE_FRACTION_FIELDS) check(Number.isFinite(sample[field]), label + ": invalid request stage fraction " + field);
+      check(sample.reportedPrepareMs >= 0 && sample.reportedForwardMs >= 0 && sample.reportedTotalMs > 0
+        && Number.isFinite(sample.wallMs) && sample.wallMs > 0,
+        label + ": invalid reported request stage timing");
+      const postForwardResidual = sample.reportedTotalMs - sample.reportedPrepareMs - sample.reportedForwardMs;
+      const outerResidual = sample.wallMs - sample.reportedTotalMs;
+      check(sample.postForwardResidualMs === postForwardResidual && sample.outerResidualMs === outerResidual
+        && sample.prepareOfRuntimeTotal === sample.reportedPrepareMs / sample.reportedTotalMs
+        && sample.forwardOfRuntimeTotal === sample.reportedForwardMs / sample.reportedTotalMs
+        && sample.postForwardResidualOfRuntimeTotal === postForwardResidual / sample.reportedTotalMs
+        && sample.postForwardResidualOfWall === postForwardResidual / sample.wallMs
+        && sample.runtimeTotalOfWall === sample.reportedTotalMs / sample.wallMs
+        && sample.outerResidualOfWall === outerResidual / sample.wallMs, label + ": inconsistent samplewise request stage derivation");
+      const known = identities.get(sample.sampleIndex);
+      if (known) check(known.requestHash === sample.requestHash && known.tokens === sample.tokens, label + ": request stage identity differs between blocks or lanes");
+      else identities.set(sample.sampleIndex, { requestHash: sample.requestHash, tokens: sample.tokens });
+      return { sampleIndex, requestHash: sample.requestHash, tokens: sample.tokens,
+        ...pick(sample, ["reportedPrepareMs", "reportedForwardMs", "reportedTotalMs", "wallMs", "postForwardResidualMs", "outerResidualMs", ...REQUEST_STAGE_FRACTION_FIELDS]) };
+    });
+    return { block: block.block, samples };
+  });
+  const distributions = {};
+  for (const field of REQUEST_STAGE_MS_FIELDS) {
+    distributions[field] = validateRequestStageDistribution(lane.distributions?.[field], blocks.map((block) => block.samples.map((sample) => sample[field])), field, false, label);
+  }
+  for (const field of REQUEST_STAGE_FRACTION_FIELDS) {
+    distributions[field] = validateRequestStageDistribution(lane.distributions?.[field], blocks.map((block) => block.samples.map((sample) => sample[field])), field, true, label);
+  }
+  check(object(lane.distributions) && Object.keys(lane.distributions).length === REQUEST_STAGE_MS_FIELDS.length + REQUEST_STAGE_FRACTION_FIELDS.length,
+    label + ": unexpected request stage distributions");
+  return { blocks, distributions };
+}
+
+function validateRequestStages(stages, label) {
+  check(object(stages) && typeof stages.attribution === "string" && stages.attribution.length > 0, label + ": invalid request stage attribution");
+  const identities = new Map();
+  const wall = validateRequestStageLane(stages.wall, label + " wall", identities);
+  const gpuProfiler = validateRequestStageLane(stages.gpuProfiler, label + " GPU profiler", identities);
+  check(stableJson(wall.blocks.map(({ block }) => block).sort((a, b) => a - b))
+    === stableJson(gpuProfiler.blocks.map(({ block }) => block).sort((a, b) => a - b)), label + ": request stage lane blocks differ");
+  check(wall.blocks[0].samples.length === gpuProfiler.blocks[0].samples.length, label + ": request stage lane sample counts differ");
+  check(identities.size > 0, label + ": missing request stage identities");
+  return { attribution: stages.attribution, wall, gpuProfiler };
+}
+
 function tuningDiagnostics(tuning) {
   const calibrators = [];
   let omitted = false;
@@ -113,7 +192,9 @@ function publicModel(row, catalog) {
         check(typeof item.gpu.kernelAttribution === "string" && item.gpu.kernelAttribution.length > 0, `${modelKey(row)}: invalid kernel attribution`);
         gpu.kernelAttribution = item.gpu.kernelAttribution;
       }
-      return { ...pick(item, ["name", "tokens", "tokenCounts", "tokenRange"]), wall, gpu };
+      const result = { ...pick(item, ["name", "tokens", "tokenCounts", "tokenRange"]), wall, gpu };
+      if (item.requestStages !== undefined) result.requestStages = validateRequestStages(item.requestStages, modelKey(row) + " " + item.name);
+      return result;
     });
     check(new Set(result.cases.map((item) => item.name)).size === result.cases.length, `${modelKey(row)}: duplicated cases`);
   } else {

@@ -160,6 +160,7 @@
 .view-how .profile-evidence-list li { white-space: normal; overflow-wrap: anywhere; }
 .view-how .profile-evidence-list a { overflow-wrap: anywhere; }
 .view-how .profile-case-list { display: grid; gap: 8px; }
+.view-how .profile-case-list > .profile-case { min-width: 0; }
 .view-how .profile-case { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-2); }
 .view-how .profile-case > summary { padding: 9px 11px; cursor: pointer; color: var(--text-2); font-size: 0.78rem; font-weight: 600; }
 .view-how .profile-case[open] > summary { border-bottom: 1px solid var(--border); }
