@@ -203,6 +203,7 @@ export class GpuGemma4 {
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.gpuKernel = gpu.kernel || "auto";
+    this.submitMode = gpu.submitMode;
     this.cfg = cfg;
     const hostTables = cfg.hostPle === true ? Array.from({ length: cfg.layers }, (_, i) => `ple.${i}.embed`) : [];
     if (cfg.hostWord) hostTables.push("embed");
@@ -1940,7 +1941,7 @@ export class GpuGemma4 {
       this.sourceTokens = T;
       let enc = this.device.createCommandEncoder({ label: "Gemma 4 forward" });
       for (let i = 0; i < plans.length; i++) {
-        if (plans[i].flushBefore) enc = await endChunk(this.device, enc);
+        if (plans[i].flushBefore) enc = await endChunk(this.device, enc, this.submitMode);
         this.T = plans[i].rows;
         this.encode(enc, plans[i].ops, plans[i].rows, profiler);
       }

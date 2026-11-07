@@ -76,6 +76,7 @@ export class GpuKev {
     this.wgsl = gpu.wgsl;
     this.name = gpu.name;
     this.gpuKernel = gpu.kernel || "auto";
+    this.submitMode = gpu.submitMode;
     this.cfg = cfg;
     this.dims = {
       linear: 2 * cfg.lin_key_heads * 128 + cfg.lin_heads * 128,
@@ -848,7 +849,7 @@ export class GpuKev {
     // long passes go out in chunks so the page keeps rendering (see YIELD_TOKENS)
     const yieldable = !this.profiler && T1 + T2 > YIELD_TOKENS;
     const flush = async () => {
-      enc = await endChunk(d, enc);
+      enc = await endChunk(d, enc, this.submitMode);
     };
     // an extension starts from its parent's keys and values, copied next to its own (through a
     // staging buffer: WebGPU copies cannot read and write the same buffer)

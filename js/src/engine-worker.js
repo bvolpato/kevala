@@ -14,7 +14,7 @@
 
 import { Wasm, compile, parseLayouts, wasmFlavor } from "./wasm.js";
 import { openPack, PieceSink, Batcher } from "./source.js";
-import { Profiler, requestDevice, SUBMIT, withGpuErrors } from "./gpu.js";
+import { Profiler, requestDevice, withGpuErrors } from "./gpu.js";
 import { archPlugin, registerArch, validatePackArchitecture } from "./archs/index.js";
 import { RemoteShard } from "./shard-client.js";
 import { CPU_KERNELS, cpuOptions, readTuning, threadCandidates, tuningKey, writeTuning } from "./cpu-policy.js";
@@ -228,6 +228,8 @@ async function load(o) {
       try {
         gpu = await requestDevice({ baseline: o.gpuBaseline, features: o.gpuFeatures, powerPreference: o.gpuPowerPreference });
         gpu.kernel = o.gpuKernel || "auto";
+        // GPU runtimes share the page's static gpu.js module, so keep scheduling policy per engine.
+        gpu.submitMode = o.submit || "await";
         activeGpu = gpu;
       } catch (e) {
         throw Object.assign(new Error(`WebGPU: ${e.message}`, { cause: e }), { code: "WEBGPU_INIT" });
@@ -367,8 +369,6 @@ async function load(o) {
       if (o.profile && gpu.device.features.has("timestamp-query")) setEngineProfiler(engine, true);
     }, "initializing GPU kernels");
     checkCancelled();
-    // module state: a second load on this page must not inherit the first one's choice
-    SUBMIT.mode = o.submit || "await";
   } else if (engine.local) {
     const { w, ptr, total } = engine.local;
     w.call(() => w.check(w.x.kevala_shard_load(ptr, total, 1)));
