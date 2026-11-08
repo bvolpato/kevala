@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "state": "source-first proposal; no physical execution authorized",
+  "baseCommit": "81a27608f24e0b2252318515e272387c48dec7d8",
+  "purpose": "Private exact-arithmetic FP32 BM128 operator comparison against the actual emitted production BM64 generic Q8 kernel.",
+  "productionPromotion": false,
+  "geometry": { "candidatePhysicalBM": 128, "baselinePhysicalBM": 64, "virtualSplitBM": 64, "BN": 64, "BK": 32, "workgroup": [32, 8, 1], "invocations": 256, "candidateSharedBytes": 24576, "baselineSharedBytes": 16384 },
+  "baseline": {
+    "producer": "The loaded production runtime gpu.wgsl, invoked only under the future proved canonical GPU lease.",
+    "matmulCall": { "kernel": "matmul", "spec": { "weights": "q8", "f16": false, "rows": 4, "row56": false, "groups": 1, "splitTarget": 256 } },
+    "reducerCall": { "kernel": "reduce", "sameSpec": true },
+    "identity": "Retain the actual emitter/runtime source pins, exact baseline/candidate/reducer emitted text, byte sizes and SHA256. No locally invented baseline or source-only emulation may substitute for actual emission."
+  },
+  "candidate": {
+    "construction": "Fail-closed narrow transformation of the actual emitted baseline: extend only physical rows, activation staging, named accumulators and corresponding stores.",
+    "preservedExactly": ["sx function", "mm_splits function", "mm_store function", "weight loads, Q8 sign extension and scale multiplication before FP32 staging", "eight increasing kq dot(vec4) additions per K32 block", "increasing kb order", "barriers", "virtual BM64 split count and partition", "PART plane and logical T strides", "actual emitted ordered reducer", "zero-bias addition, residual and ReLU order"],
+    "bindings": { "0": "Globals(T,R,S,pad)", "1": "P(N,K,mode,bias)", "2": "X FP32", "3": "W row-major packed int8 bytes", "4": "S FP32 per output row and K32 block", "5": "B FP32", "6": "Y FP32", "7": "PART FP32" },
+    "newBindings": false,
+    "preprocessing": "none; if any candidate-only preprocessing is later introduced, it must be included in candidate GPU timing and reviewed before execution",
+    "publicRowsApiChanged": false,
+    "excluded": ["BM104 search", "F16", "subgroup matrix", "integer arithmetic", "model inference", "compact/final-row dispatch", "matvec", "production selectors or calibration"]
+  },
+  "shapes": {
+    "laya512": { "M": 512, "K": 1024, "N": 5248, "timed": true, "splits": 1 },
+    "tail251": { "M": 251, "K": 1024, "N": 5248, "timed": true, "splits": 1 },
+    "tail659": { "M": 659, "K": 1024, "N": 5248, "timed": true, "splits": 1 },
+    "splitControl": { "M": 251, "K": 1024, "N": 1024, "timed": false, "splits": 4, "purpose": "Validation-only control: requested N5248 shapes are unsplit, so this focused case protects the unchanged split partition and reducer contract." }
+  },
+  "validationCases": [
+    { "shape": "laya512", "pattern": "positive", "mode": 0, "bias": false },
+    { "shape": "tail251", "pattern": "positive", "mode": 0, "bias": false },
+    { "shape": "tail659", "pattern": "positive", "mode": 0, "bias": false },
+    { "shape": "laya512", "pattern": "zero", "mode": 0, "bias": false },
+    { "shape": "laya512", "pattern": "edge-q8", "mode": 0, "bias": true },
+    { "shape": "laya512", "pattern": "fraction", "mode": 2, "bias": true },
+    { "shape": "laya512", "pattern": "cancellation", "mode": 1, "bias": true },
+    { "shape": "splitControl", "pattern": "cancellation", "mode": 1, "bias": true }
+  ],
+  "fixtureRecipes": {
+    "implementation": "makeFp32TallFixture in scripts/private/fp32-tall.js; deterministic integer-index recipes, no random seed or external inputs",
+    "positive": "Strictly positive dyadic X, int8 W in 1..7 and positive dyadic scales; every reference and candidate output must be finite and greater than zero.",
+    "zero": "Zero X/W, unit scales, zero bias; every output must be finite zero and bit-identical to the reference.",
+    "edge-q8": "All int8 boundary representatives -128,-127,-1,0,1,126,127 with signed fractional X, positive fractional scales and nonzero signed bias.",
+    "fraction": "Signed dyadic X and signed Q8 weights with fractional scales/bias; ReLU epilogue exercises ordered bias then clamp.",
+    "cancellation": "Adjacent K pairs share signed Q8 values while X alternates 1 and nearly -1; signed fractional bias and nonzero initial Y exercise cancellation and ordered residual addition.",
+    "sharedInputs": "Both lanes use identical uploaded X/W/S/B; initial Y is restored independently before each validation lane. No CPU matmul is substituted for the GPU baseline."
+  },
+  "correctness": {
+    "oracle": "Actual production generic BM64 GPU output using the same device, input buffers, logical M/N/K and split count.",
+    "comparison": "Every one of M*N output elements compared as Uint32 FP32 bits, including signed zero; both complete outputs must also be finite. No element sampling or tolerance fallback.",
+    "bitExactPolicy": "Source operations preserve each output's operand and addition order, but different shader register allocation/compiler transformations can still change bits. Any mismatch rejects this exact-arithmetic prototype. Retain counts and first32 bit mismatches; do not relax acceptance after observing hardware.",
+    "positiveControl": "All outputs in all three positive cases must be strictly positive, rejecting a zero-output or partial-write implementation.",
+    "outputSentinel": "Before each validation dispatch, fill logical output with quiet NaN word 0x7fc12345. No sentinel may remain in any logical output.",
+    "canaries": "Each Y and PART allocation has a leading guard of at least256 bytes aligned to observed minStorageBufferOffsetAlignment, plus a trailing guard of64 words. Bind from the aligned logical start and expose the guard after the active/padded interval. For Y, fill and compare EVERY tail element from M*N through ceil(M/128)*128*N, as well as both guards. For PART, compare guards after every active split plane. Alternate exact words 0x4f123456 and0xcf654321; retain compared/changed counts and bounded first mismatches.",
+    "postTiming": "Repeat full-output bitwise, finite, positive and canary checks after the final timed sample for each timed shape.",
+    "failure": "Reject the protocol on any shader/device/validation error, missing output, nonfinite value, bit mismatch, changed canary, incomplete sample, or GPU timestamp failure. No failed case is excluded from the report."
+  },
+  "timing": {
+    "shapes": ["laya512", "tail251", "tail659"],
+    "fixture": { "pattern": "positive", "mode": 0, "bias": false },
+    "setup": "Upload fixtures and compile both pipelines outside timing; reuse the actual baseline's explicit eight-binding layout and actual reducer. Baseline and candidate dispatch the SAME split count; candidate changes only Y workgroup count from ceil(M/64) to ceil(M/128).",
+    "warmup": { "invocationsPerLane": 3, "order": ["A", "B", "A", "B", "A", "B"] },
+    "repetitionsPerSample": 16,
+    "metric": "GPU timestamp elapsed for all16 complete operator invocations, normalized per invocation. Any split reducer and any candidate-only preprocessing are inside the interval. No CPU wall time is called GPU time.",
+    "aa": { "pairs": 9, "orderPerPair": ["A", "A"], "everySampleRetained": true },
+    "quartets": { "count": 9, "orders": ["ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA"], "everySampleRetained": true },
+    "schedule": "For each shape in the listed order: validate, run fixed warmup, all9 A/A pairs, then all9 predeclared quartets, then full post-timing validation. Never change repetitions, order, sample counts or exclusions based on observed speed.",
+    "aggregation": "Retain every raw timestamp result. For each quartet, compare mean A time with mean B time. Report every ratio and median ratio separately for each shape; no pooled ranking.",
+    "winGate": "Correctness and canaries must pass. Every A/A pair must differ by at most5%; candidate must win all9 quartets, with at least6 quartets at least5% faster, and median A/B must exceed both1.05 and1+maximum absolute A/A ratio deviation. Report an inconclusive or slower outcome honestly; no promotion is implied."
+  },
+  "futureExecutionBoundary": {
+    "required": "Root review and separate physical-run grant; actual Node-owned inherited canonical FD proved through pinned own-PID/fdinfo helpers, exclusive nonblocking nofork flock75, fresh bounded32/40/4GiB user scope, external deadline, private Service.env bus and exact child/stdIO cleanup.",
+    "parentHarness": "Not implemented by this source-first packet. Reuse reviewed operator/lifecycle primitives after source review; no new public runtime API.",
+    "currentStage": "No model pack, WASM, browser executable, Chrome, GPU compilation, allocations or dispatch are read or executed during preparation. Source checks begin only after source freeze under the bounded canonical own-FD scope."
+  }
+}

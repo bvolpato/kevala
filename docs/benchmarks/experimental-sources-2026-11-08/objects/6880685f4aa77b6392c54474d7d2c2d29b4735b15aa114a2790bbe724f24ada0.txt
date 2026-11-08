@@ -1,0 +1,127 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+
+const WORDS = [2686976, 0, 0, 0, 524288, 16384, 0, 512, 0];
+const ORDERS = ["ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA"];
+const FIXTURES = { integer: 305419896, dyadic: 2271560481, fractional: 324508639, cancellation: 610839776 };
+const SOURCE_PINS = {
+  helper: { bytes: 12993, sha256: "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb" },
+  protocol: { bytes: 19823, sha256: "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39" },
+  baseline: { bytes: 13558, sha256: "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c" },
+  reducer: { bytes: 1546, sha256: "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a" },
+};
+const median = (values) => {
+  const sorted = [...values].sort((a, b) => a - b), middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
+function validation(row, label) {
+  assert.deepEqual(row?.validation?.words, WORDS, `${label}: actual GPU status/coverage differs`);
+  assert.equal(row.validation.passed, true, `${label}: validation did not pass`);
+  assert.equal(row.validation.partUnchanged, true, `${label}: split PART sentinel changed`);
+  assert.deepEqual(row.validation.positiveCoverage, { outputs: 2686976, quantValues: 524288, quantBlocks: 16384, canaries: 512 }, `${label}: coverage summary differs`);
+}
+function sample(row, { block, quartet, position, logicalLane, kernel }) {
+  const label = `${block}:${quartet}:${position}`;
+  for (const [name, value] of Object.entries({ block, quartet, position, logicalLane, kernel, invocations: 16, passes: kernel === "candidate" ? 32 : 16 })) assert.equal(row?.[name], value, `${label}: ${name} differs`);
+  assert.deepEqual(row.dispatches, { baseline: kernel === "baseline" ? 16 : 0, quantize: kernel === "candidate" ? 16 : 0, integerMatmul: kernel === "candidate" ? 16 : 0, reduce: 0 }, `${label}: complete operator/preprocessing dispatch counts differ`);
+  const ticks = row.timestampNs;
+  for (const name of ["begin", "end", "elapsed"]) assert(typeof ticks?.[name] === "string" && /^(?:0|[1-9]\d*)$/.test(ticks[name]), `${label}: raw ${name} timestamp missing`);
+  const begin = BigInt(ticks.begin), end = BigInt(ticks.end), elapsed = BigInt(ticks.elapsed);
+  assert(end > begin && elapsed === end - begin, `${label}: timestamp span differs`);
+  assert(Number.isFinite(row.gpuMs) && row.gpuMs > 0 && row.gpuMs === Number(elapsed) / 1e6, `${label}: GPU duration differs from raw span`);
+  assert.equal(row.perInvocationMs, row.gpuMs / 16, `${label}: normalization differs`);
+  validation(row, label);
+}
+
+/** Validate only retained metadata. This function never requests GPU work or creates fixtures. */
+export function validateOperatorResult(page) {
+  assert.equal(page?.done, true, "page did not reach a terminal state");
+  assert.equal(page.status, "done", `operator did not complete: ${page.error || page.status}`);
+  assert.equal(page.phase, "complete", "page did not complete cleanup");
+  assert.equal(page.error, null, "completed page retains an error");
+  assert.deepEqual(page.errors, [], "completed page retains device/controller errors");
+  assert.equal(page.protocol?.schema, "private-laya-integer-matrix-v1");
+  assert.deepEqual(page.protocol.shape, { M: 512, N: 5248, K: 1024, block: 32 });
+  assert.equal(page.protocol.repetitions, 16); assert.deepEqual(page.protocol.orders, ORDERS);
+  assert.equal(page.protocol.warmupsPerLane, 3); assert.equal(page.protocol.AAQuartets, 9); assert.equal(page.protocol.pairedQuartets, 9);
+  assert.equal(page.protocol.reducerDispatches, 0); assert.equal(page.protocol.modelOrWasmLoads, 0); assert.equal(page.protocol.promotion, false);
+  assert.equal(page.compilation?.length, 7, "compilation coverage incomplete");
+  for (const entry of page.compilation) {
+    const diagnostics = entry.diagnostics;
+    assert(Number.isSafeInteger(diagnostics?.totalMessages) && diagnostics.totalMessages >= 0);
+    assert.equal(diagnostics.totalErrors, 0, "completed page retains native compilation errors");
+    assert(Array.isArray(diagnostics.messages) && diagnostics.messages.length <= 16 && diagnostics.messages.length <= diagnostics.totalMessages);
+    assert.equal(diagnostics.truncated, diagnostics.totalMessages > diagnostics.messages.length || diagnostics.messages.some((message) => message.messageTruncated === true));
+    assert(diagnostics.messages.every((message) => message.type !== "error"), "completed page retains compilation error diagnostics");
+  }
+  for (const [name, expected] of Object.entries(SOURCE_PINS)) {
+    const actual = page.sourceIdentities?.[name];
+    assert.equal(actual?.bytes, expected.bytes, `${name}: emitted source byte count differs`);
+    assert.equal(actual?.sha256, expected.sha256, `${name}: emitted source identity differs`);
+  }
+  const caps = page.capabilities;
+  assert.deepEqual(caps?.config, { componentType: "i8", resultComponentType: "i32", M: 16, N: 16, K: 32 });
+  assert.deepEqual(caps.requiredLimits, {});
+  assert.deepEqual(caps.requestedFeatures, ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"]);
+  assert(Array.isArray(caps.features) && caps.requestedFeatures.every((name) => caps.features.includes(name)) && !caps.features.includes("shader-f16"), "actual device features differ");
+  assert.equal(caps.shaderF16Requested, false);
+  assert.equal(caps.subgroupMinSize, 32); assert.equal(caps.subgroupMaxSize, 32);
+  assert(/nvidia/i.test([caps.adapter?.vendor, caps.adapter?.description].join(" ")) && /blackwell/i.test(caps.adapter?.architecture || ""), "adapter identity differs");
+  const identity = page.adapterIdentity;
+  assert.equal(identity?.nvidia, true); assert.equal(identity.blackwell, true); assert.equal(identity.nonfallback, true); assert.equal(identity.isFallbackAdapter, false);
+  const observedFallback = Object.values(identity.fallbackFlags || {}).filter((value) => value !== null);
+  assert(observedFallback.length > 0 && observedFallback.every((value) => value === false), "nonfallback observation is unavailable or contradictory");
+  assert(caps.deviceLimits?.maxComputeWorkgroupStorageSize >= 16384 && caps.deviceLimits.maxComputeInvocationsPerWorkgroup >= 256 && caps.deviceLimits.maxComputeWorkgroupSizeX >= 256 && caps.deviceLimits.maxStorageBufferBindingSize >= 10748416, "actual default device limits differ");
+  const gate = page.packingGate;
+  assert.equal(gate?.passed, true); assert.equal(gate.outputsCompared, 256); assert.equal(gate.mismatches, 0);
+  assert.equal(gate.guardsCompared, 128); assert.equal(gate.guardFailures, 0); assert.equal(gate.dispatches, 1);
+  assert.equal(gate.positive, 106); assert.equal(gate.negative, 150); assert.equal(gate.zero, 0);
+  assert(Array.isArray(gate.actual) && gate.actual.length === 256 && gate.actual.every((value) => Number.isInteger(value) && value >= -2147483648 && value <= 2147483647), "packing outputs incomplete");
+  const gateHash = createHash("sha256").update(new Uint8Array(new Int32Array(gate.actual).buffer)).digest("hex");
+  assert.equal(gateHash, "498117f912a5f1a4a3a2f6cd8bda7bacd741f38d389ea754e842b8fa463a58b3", "packing output bytes differ from audited CPU reference");
+  assert.equal(gate.actualSha256, gateHash); assert.equal(gate.expectedSha256, gateHash);
+  assert.equal(page.fixtures?.length, 4, "fixture coverage incomplete");
+  for (const [index, [id, seed]] of Object.entries(FIXTURES).entries()) {
+    const row = page.fixtures[index];
+    assert.equal(row.id, id); assert.equal(row.seed, seed); assert.deepEqual(row.shape, [512, 5248, 1024]);
+    assert.equal(row.exact, id === "integer" || id === "dyadic"); assert.equal(row.status, "pass");
+    for (const [name, bytes] of Object.entries({ X: 2097152, W: 5373952, S: 671744 })) {
+      const identity = row.inputIdentities?.[name];
+      assert.equal(identity?.bytes, bytes, `fixture:${id}: ${name} input byte count differs`);
+      assert(typeof identity.sha256 === "string" && /^[a-f0-9]{64}$/.test(identity.sha256), `fixture:${id}: ${name} input SHA256 missing or malformed`);
+    }
+    assert.deepEqual(row.dispatches, { baseline: 1, quantize: 1, integerMatmul: 1, reduce: 0 });
+    validation(row, `fixture:${id}`);
+  }
+  assert.equal(page.warmups?.length, 6, "fixed warmups incomplete");
+  for (let index = 0; index < 6; index++) {
+    const logicalLane = index % 2 ? "B" : "A";
+    sample(page.warmups[index], { block: "warmup", quartet: null, position: Math.floor(index / 2), logicalLane, kernel: logicalLane === "A" ? "baseline" : "candidate" });
+  }
+  for (const block of ["aa", "paired"]) {
+    const quartets = page.timing?.[block]; assert.equal(quartets?.length, 9, `${block}: fixed quartet count incomplete`);
+    for (let index = 0; index < 9; index++) {
+      const quartet = quartets[index]; assert.equal(quartet.index, index); assert.equal(quartet.order, ORDERS[index]); assert.equal(quartet.rows?.length, 4);
+      for (let position = 0; position < 4; position++) {
+        const logicalLane = ORDERS[index][position];
+        sample(quartet.rows[position], { block, quartet: index, position, logicalLane, kernel: block === "aa" || logicalLane === "A" ? "baseline" : "candidate" });
+      }
+      const baseline = median(quartet.rows.filter((row) => row.logicalLane === "A").map((row) => row.perInvocationMs));
+      const comparison = median(quartet.rows.filter((row) => row.logicalLane === "B").map((row) => row.perInvocationMs));
+      assert.equal(quartet.baselineMs, baseline); assert.equal(quartet.comparisonMs, comparison); assert.equal(quartet.gain, 1 - comparison / baseline, "quartet summary differs from retained samples");
+    }
+  }
+  const paired = page.timing.paired, aa = page.timing.aa, summary = page.timing.summary;
+  const medianGain = median(paired.map((quartet) => quartet.gain)), maxAASpread = Math.max(...aa.map((quartet) => Math.abs(quartet.gain)));
+  const byOrder = Object.fromEntries(["ABBA", "BAAB"].map((order) => [order, median(paired.filter((quartet) => quartet.order === order).map((quartet) => quartet.gain))]));
+  const criteria = { medianAtLeastFivePercent: medianGain >= 0.05, bothOrdersPositive: byOrder.ABBA > 0 && byOrder.BAAB > 0, exceedsAASpread: medianGain > maxAASpread };
+  assert.equal(summary?.medianGain, medianGain); assert.equal(summary.maxAASpread, maxAASpread); assert.deepEqual(summary.byOrder, byOrder);
+  assert.equal(summary.winningQuartets, paired.filter((quartet) => quartet.gain > 0).length); assert.deepEqual(summary.criteria, criteria);
+  assert.equal(summary.accepted, criteria.medianAtLeastFivePercent && criteria.bothOrdersPositive && criteria.exceedsAASpread, "performance assessment differs from raw timing");
+  const cleanup = page.cleanup;
+  for (const [created, destroyed] of [["buffersCreated", "buffersDestroyed"], ["querySetsCreated", "querySetsDestroyed"]]) {
+    assert(Number.isSafeInteger(cleanup?.[created]) && cleanup[created] > 0); assert.equal(cleanup[destroyed], cleanup[created], `${created}: resource counts differ`);
+  }
+  assert.equal(cleanup.mapsOpen, 0); assert.equal(cleanup.deviceDestroyed, true);
+  return { fixtures: 4, warmups: 6, timedRows: 72, aaQuartets: 9, pairedQuartets: 9, numericalGatesPassed: true, performanceAccepted: summary.accepted, medianGain, maxAASpread };
+}

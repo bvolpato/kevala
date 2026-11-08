@@ -1,0 +1,195 @@
+// Private experiment. Importing this module performs no GPU or model work.
+import { pipeline } from "./gpu.js";
+import { matmulShapes, selectedMatmulKernel } from "./gpu-tuning.js";
+import { prepareClefShapeValidation } from "./private-clef-shape-matmul-validation.js";
+import { requireClefShapeObserver } from "./private-clef-shape-matmul-observer.js";
+export { attachClefShapeObserver, detachClefShapeObserver } from "./private-clef-shape-matmul-observer.js";
+
+const check = (condition, message) => { if (!condition) throw new Error(`Private Clef shape matmul: ${message}`); };
+const shapeKey = (N, K, kernel) => `${N}:${K}:${kernel}`;
+const specFor = (pipes, rows, row56 = false) => ({ weights: "q8", f16: pipes.f16, groups: pipes.groups,
+  splitTarget: pipes.splitTarget, rows, row56 });
+const sourceIdentity = async (source) => {
+  const bytes = new TextEncoder().encode(source), digest = await crypto.subtle.digest("SHA-256", bytes);
+  return { bytes: bytes.length, sha256: [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("") };
+};
+
+/** The WASM ABI reads top-level n/k. A nested shape object would be silently ignored. */
+export function clefShapeMatmulSource(wgsl, kernel, spec, N, K) {
+  check(Number.isSafeInteger(N) && N > 0 && Number.isSafeInteger(K) && K > 0 && K % 32 === 0, "invalid N/K");
+  const baseline = wgsl(kernel, spec);
+  const candidate = wgsl(kernel, { ...spec, n: N, k: K });
+  const from = "  let N = p.N;\n  let K = p.K;";
+  const to = `  let N = ${N}u;\n  let K = ${K}u;`;
+  check(baseline.split(from).length === 2, "dynamic N/K source contract changed");
+  check(candidate === baseline.replace(from, to), "candidate must change only the two N/K bindings");
+  return { baseline, candidate };
+}
+
+function tuningIdentity(trunk) {
+  return JSON.stringify([...trunk.precisionTuning].map(([dtype, tuning]) => [dtype,
+    [...tuning.selection].sort(([a], [b]) => a.localeCompare(b)),
+    Object.entries(tuning.pipelines).map(([kind, p]) => [kind, p && [p.kernel, p.f16, p.groups, p.splitTarget]]) ]));
+}
+
+/** Compile against the loaded engine's existing explicit layouts. No weights or buffers are copied.
+ * There is no fallback: a compile error or deadline failure invalidates this experiment.
+ */
+export async function prepareClefShapeMatmul(trunk, { deadlineMs = 120000, maxPipelines = 60, observerToken } = {}) {
+  const observer = requireClefShapeObserver(trunk, observerToken);
+  observer.assertUnclaimed();
+  const observerMetadata = observer.assertCaptured();
+  check(trunk.head && trunk.gpuKernel === "auto", "requires an already loaded Clef engine with automatic GPU tuning");
+  check(trunk.stateCacheEnabled === false && !trunk.profiler, "requires state cache and profiling off");
+  check(!Object.hasOwn(trunk, "encode"), "an existing private encode override must not be replaced");
+  const tuning = trunk.precisionTuning.get("q8");
+  check(tuning && trunk.precisionTuning.size === 1, "requires Q8 projection weights");
+  const shapes = matmulShapes(trunk.weights, 12, "q8");
+  check(shapes.length > 0 && shapes.length <= 6, "requires one through six loaded projection N/K shapes");
+  const started = performance.now(), deadline = started + deadlineMs, candidates = new Map(), compiled = [];
+  const identity = tuningIdentity(trunk), originalEncode = trunk.encode;
+  const compile = async (code, label, layout) => {
+    check(compiled.length < maxPipelines, "pipeline budget exceeded");
+    const remaining = deadline - performance.now();
+    check(remaining > 0, "precompile deadline exceeded");
+    let timer;
+    try {
+      const p = await Promise.race([pipeline(trunk.device, code, label, layout), new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Private Clef shape matmul: precompile deadline exceeded")), remaining);
+      })]);
+      compiled.push(label);
+      return p;
+    } catch (error) {
+      throw Object.assign(error, { shapeStartup: { elapsedMs: performance.now() - started, deadlineMs, maxPipelines,
+        pipelines: [...compiled], failedLabel: label, status: "failed" } });
+    } finally { clearTimeout(timer); }
+  };
+  for (const { N, K } of shapes) {
+    for (const [kind, original] of Object.entries(tuning.pipelines)) {
+      if (!original) continue;
+      check(["generic", "wide"].includes(kind) && ["matmul", "matmul_wide"].includes(original.kernel), "unsupported selected kernel");
+      const layout = trunk.device.createPipelineLayout({ bindGroupLayouts: [original.layout] });
+      const mm = [], sourceContracts = [];
+      for (const rows of [1, 2, 3, 4]) {
+        const spec = specFor(original, rows), { baseline, candidate } = clefShapeMatmulSource(trunk.wgsl, original.kernel, spec, N, K);
+        mm[rows] = await compile(candidate, `private_clef_shape_${N}_${K}_${kind}_r${rows}`, layout);
+        sourceContracts.push({ rows, row56: false, onlyNKChanged: true, spec, n: N, k: K,
+          baseline: await sourceIdentity(baseline), candidate: await sourceIdentity(candidate) });
+      }
+      let mm56 = null;
+      if (original.mm56) {
+        const spec = specFor(original, 4, true), { baseline, candidate } = clefShapeMatmulSource(trunk.wgsl, original.kernel, spec, N, K);
+        mm56 = await compile(candidate, `private_clef_shape_${N}_${K}_${kind}_r4_row56`, layout);
+        sourceContracts.push({ rows: 4, row56: true, onlyNKChanged: true, spec, n: N, k: K,
+          baseline: await sourceIdentity(baseline), candidate: await sourceIdentity(candidate) });
+      }
+      candidates.set(shapeKey(N, K, kind), { original, mm, mm56, sourceContracts,
+        baselineMM: [...original.mm], baselineMM56: original.mm56, baselineReduce: [...original.reduce] });
+    }
+  }
+  check(tuningIdentity(trunk) === identity, "tuning changed during precompile");
+  const validator = await prepareClefShapeValidation(trunk, compile, observerToken);
+  check(performance.now() <= deadline, "precompile deadline exceeded");
+  const startup = { elapsedMs: performance.now() - started, deadlineMs, maxPipelines, pipelines: compiled, observer: observerMetadata,
+    shapes: shapes.map(({ N, K }) => ({ N, K })), sourceContracts: [...candidates].map(([key, p]) => ({ key, variants: p.sourceContracts })) };
+  let active = null, disposed = false;
+  const unchanged = () => {
+    validator.assertIntegrity();
+    check(!disposed && !trunk.profiler && trunk.gpuKernel === "auto", "experiment state or profiling changed");
+    check(trunk.stateCacheEnabled === false && trunk.precisionTuning.get("q8") === tuning && tuningIdentity(trunk) === identity, "tuning state or state-cache policy changed");
+    for (const candidate of candidates.values()) check(candidate.original.mm56 === candidate.baselineMM56 &&
+      candidate.baselineMM.every((p, i) => candidate.original.mm[i] === p) &&
+      candidate.baselineReduce.every((p, i) => candidate.original.reduce[i] === p), "production pipelines changed");
+  };
+
+  // Both arms use this wrapper. Production encode retains all row selection, grid and reduction rules.
+  const wrappedEncode = function (encoder, ops, T, S, sourceT = T) {
+    check(active && !disposed && !this.profiler, "encode occurred outside an armed unprofiled request");
+    check(sourceT === T && !ops.some((op) => op.finalRows), "compact or final-row path is excluded");
+    check(T > 1, "matvec is excluded");
+    const groups = new Map(ops.filter((op) => op.k === "mm").map((op) => [op.group, op]));
+    const state = active;
+    state.expected += ops.filter((op) => op.k === "mm" && op.dtype === "q8").length;
+    const wrapPass = (pass) => {
+      let op = null, selected = null;
+      return new Proxy(pass, { get(target, key) {
+        if (key === "setBindGroup") return (index, group, ...rest) => {
+          if (index === 0) op = groups.get(group) || null;
+          return target.setBindGroup(index, group, ...rest);
+        };
+        if (key === "setPipeline") return (p) => {
+          selected = null;
+          if (op?.dtype === "q8") {
+            const kind = selectedMatmulKernel(tuning.selection, op.N, op.K, T);
+            const candidate = candidates.get(shapeKey(op.N, op.K, kind));
+            check(candidate && candidate.original === (tuning.pipelines[kind] || op.pipes), "selected N/K pipeline was not precompiled");
+            const rows = candidate.original.mm.indexOf(p);
+            const row56 = p === candidate.original.mm56;
+            if (rows > 0 || row56) {
+              const replacement = row56 ? candidate.mm56 : candidate.mm[rows];
+              check(replacement, "selected row variant was not precompiled");
+              selected = { op, candidate, kind, rows: row56 ? 4 : rows, row56, applied: state.arm === "B" };
+              if (selected.applied) p = replacement;
+              selected.productionPipeline = p;
+            }
+          }
+          return target.setPipeline(p);
+        };
+        if (key === "dispatchWorkgroups") return (...args) => {
+          if (selected) {
+            if (state.validate) {
+              validator.encode(target, selected, T);
+              target.setPipeline(selected.productionPipeline);
+              target.setBindGroup(0, selected.op.group);
+            }
+            const countKey = `${selected.op.label}:${selected.op.N}:${selected.op.K}:${selected.kind}:r${selected.rows}:${selected.row56 ? "row56" : "standard"}:T${T}`;
+            const count = state.byProjection[countKey] ||= { eligible: 0, applied: 0 };
+            count.eligible++; state.eligible++;
+            if (selected.applied) { count.applied++; state.applied++; }
+          }
+          return target.dispatchWorkgroups(...args);
+        };
+        const value = Reflect.get(target, key, target);
+        return typeof value === "function" ? value.bind(target) : value;
+      } });
+    };
+    const proxy = new Proxy(encoder, { get(target, key) {
+      if (key === "beginComputePass") return (...args) => wrapPass(target.beginComputePass(...args));
+      const value = Reflect.get(target, key, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    } });
+    return originalEncode.call(this, proxy, ops, T, S, sourceT);
+  };
+  trunk.encode = wrappedEncode;
+  return {
+    startup,
+    suspendValidationObservers() { check(!active, "cannot suspend observers during a request"); validator.suspend(); },
+    resumeValidationObservers() { check(!active, "cannot resume observers during a request"); validator.resume(); },
+    assertValidationObservers(observing) { validator.assertIntegrity(observing); },
+    beginRequest(arm, { validate = false } = {}) {
+      unchanged();
+      check(trunk.encode === wrappedEncode && !active && ["A", "B"].includes(arm), "invalid or overlapping arm switch");
+      check(!validate || arm === "B", "operator validation requires the candidate arm");
+      if (validate) validator.begin();
+      active = { arm, validate, expected: 0, eligible: 0, applied: 0, byProjection: {} };
+    },
+    endRequest() {
+      const counts = active;
+      active = null;
+      try {
+        unchanged();
+        check(counts?.expected > 0 && counts.eligible === counts.expected, "production matmul dispatch coverage is missing");
+        check(counts.applied === (counts.arm === "B" ? counts.expected : 0), "candidate dispatch bypass or wrong arm");
+      } catch (error) { throw Object.assign(error, { applicationCounts: counts }); }
+      return counts;
+    },
+    collectValidation() { return validator.collect(); },
+    abortRequest() { const counts = active; active = null; validator.abort(); return counts; },
+    dispose() {
+      check(!active && trunk.encode === wrappedEncode, "cannot restore an active or replaced encoder");
+      delete trunk.encode;
+      validator.dispose();
+      disposed = true;
+    },
+  };
+}

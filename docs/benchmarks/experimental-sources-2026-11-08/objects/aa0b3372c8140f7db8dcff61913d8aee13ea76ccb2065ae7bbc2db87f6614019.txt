@@ -1,0 +1,89 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import test from "node:test";
+import { createCaptureServer } from "./run.mjs";
+
+test("pack recorder excludes the cancelled probe and hashes complete ranged transfers", async () => {
+  const pack = Buffer.from("range-recorder-fixture-24");
+  const packIdentity = {
+    bytes: pack.byteLength,
+    sha256: createHash("sha256").update(pack).digest("hex"),
+  };
+  const runToken = "recorder-fixture";
+  const packUrlPath = "/fixture/pack/laya-q8.kevala";
+  const root = await mkdtemp(join(tmpdir(), "kevala-pack-recorder-"));
+  const packPath = join(root, ...packUrlPath.split("/").filter(Boolean));
+  await mkdir(dirname(packPath), { recursive: true });
+  await writeFile(packPath, pack);
+
+  const capture = createCaptureServer(packIdentity, new Map(), { root, packUrlPath, runToken });
+  try {
+    await new Promise((resolveListen, reject) => {
+      capture.server.once("error", reject);
+      capture.server.listen(0, "127.0.0.1", resolveListen);
+    });
+    const address = capture.server.address();
+    assert.ok(address && typeof address !== "string");
+    const url = new URL(packUrlPath, `http://127.0.0.1:${address.port}`);
+    url.searchParams.set("run", runToken);
+    url.searchParams.set("engine", "A");
+
+    const head = await fetch(url, { method: "HEAD" });
+    assert.equal(head.status, 200);
+    await head.arrayBuffer();
+
+    const probe = await fetch(url, { headers: { range: "bytes=0-0" } });
+    assert.equal(probe.status, 206);
+    assert.equal(probe.headers.get("content-range"), `bytes 0-0/${pack.byteLength}`);
+    await probe.body.cancel();
+
+    for (const [start, end] of [[0, 7], [8, 15], [16, pack.byteLength - 1]]) {
+      const response = await fetch(url, { headers: { range: `bytes=${start}-${end}` } });
+      assert.equal(response.status, 206);
+      assert.equal(response.headers.get("content-range"), `bytes ${start}-${end}/${pack.byteLength}`);
+      assert.equal(Number(response.headers.get("content-length")), end - start + 1);
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), pack.subarray(start, end + 1));
+    }
+
+    await new Promise((resolveTurn) => setImmediate(resolveTurn));
+    const record = capture.packCaptures.A;
+    assert.equal(record.error, null);
+    assert.equal(record.probes.length, 1);
+    assert.equal(record.probes[0].kind, "range-probe");
+    assert.equal(record.probes[0].status, 206);
+    assert.equal(record.probes[0].contentRange, `bytes 0-0/${pack.byteLength}`);
+    assert.equal(record.responses.length, 3);
+    assert.ok(record.responses.every((response) => response.kind === "data-range" && response.finished && !response.error));
+    assert.deepEqual(record.responses.map(({ start, end, status, contentRange, contentLength, receivedBytes }) => [
+      start, end, status, contentRange, contentLength, receivedBytes,
+    ]), [
+      [0, 7, 206, `bytes 0-7/${pack.byteLength}`, 8, 8],
+      [8, 15, 206, `bytes 8-15/${pack.byteLength}`, 8, 8],
+      [16, pack.byteLength - 1, 206, `bytes 16-${pack.byteLength - 1}/${pack.byteLength}`, pack.byteLength - 16, pack.byteLength - 16],
+    ]);
+    assert.deepEqual(record.responses.map((response) => response.sha256), [[0, 7], [8, 15], [16, pack.byteLength - 1]].map(([start, end]) =>
+      createHash("sha256").update(pack.subarray(start, end + 1)).digest("hex")));
+    assert.equal(record.bytes, pack.byteLength);
+    assert.equal(record.sha256, packIdentity.sha256);
+    assert.equal(record.buffer, null);
+    assert.deepEqual(record.ranges.map(({ start, end, bytes }) => [start, end, bytes]), [
+      [0, 7, 8],
+      [8, 15, 8],
+      [16, pack.byteLength - 1, pack.byteLength - 16],
+    ]);
+    assert.deepEqual(capture.packRequests.map(({ method, kind, range }) => [method, kind, range]), [
+      ["HEAD", "head", null],
+      ["GET", "range-probe", "bytes=0-0"],
+      ["GET", "data-range", "bytes=0-7"],
+      ["GET", "data-range", "bytes=8-15"],
+      ["GET", "data-range", `bytes=16-${pack.byteLength - 1}`],
+    ]);
+  } finally {
+    capture.server.closeAllConnections?.();
+    if (capture.server.listening) await new Promise((resolveClose) => capture.server.close(resolveClose));
+    await rm(root, { recursive: true, force: true });
+  }
+});

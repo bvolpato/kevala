@@ -1,0 +1,14 @@
+const WORDS = "the customer wrote in about a recurring charge they did not recognise and wants a refund today ";
+
+export const fixture = Object.freeze({
+  id: "long-512",
+  expectedTokens: 512,
+  run3RequestSha256: "aefa250182c6163f4c20a16e94bd1daac5b57492cf7dc8ec3e09fa046a08382d",
+  state: WORDS.repeat(30),
+  question: Object.freeze({ type: "noul", instructions: "Is the customer asking for money back?" }),
+});
+
+export const request = Object.freeze({
+  state: `Run 3. ${fixture.state}`,
+  questions: Object.freeze({ q: fixture.question }),
+});

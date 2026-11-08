@@ -1,0 +1,16 @@
+export function checkLayaNoulResponse(response, expectedTokens) {
+  if (response?.timing?.tokens !== expectedTokens) {
+    throw new Error(`public result token count ${response?.timing?.tokens}, expected ${expectedTokens}`);
+  }
+  const answer = response.answers?.q;
+  if (answer?.type !== "noul") throw new Error(`public result type ${answer?.type}, expected noul`);
+  const values = [answer.confidence, answer.noul, answer.action?.act_probability];
+  if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 1)) {
+    throw new Error("public probabilities are missing or outside [0,1]");
+  }
+  // Laya rounds both noul and max(p, 1-p) independently to four decimal places.
+  const expectedConfidence = Math.max(answer.noul, 1 - answer.noul);
+  if (Math.abs(answer.confidence - expectedConfidence) > 0.0001) {
+    throw new Error("public confidence does not match the rounded Laya noul probability");
+  }
+}

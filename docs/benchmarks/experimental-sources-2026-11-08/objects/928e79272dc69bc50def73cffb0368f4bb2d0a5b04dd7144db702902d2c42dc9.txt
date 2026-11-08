@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kevala Clef GPU kernel profile</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  select, button { font: inherit; background: #161b22; color: inherit; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>Kevala Clef GPU kernel profile</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  threads <select id="threads"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
+  <button id="run">run</button>
+</p>
+<pre id="log"></pre>
+<script>
+(() => {
+  window.bench = { done: false, status: "loading", phase: "module-load" };
+  const publishFailure = (value, phase) => {
+    if (window.bench?.done === true) return;
+    let message;
+    try { message = String(value?.message || value || "page module failed"); }
+    catch { message = "page module failed with an unreadable error"; }
+    window.bench = { done: true, status: "error", phase: window.bench?.phase || phase, error: message.slice(0, 1024) };
+  };
+  window.addEventListener("error", (event) => {
+    const target = event.target;
+    if (target !== window) {
+      if (target?.tagName === "SCRIPT" && target.type === "module") {
+        publishFailure(`Module script failed to load: ${target.getAttribute("src") || "inline module"}`, "module-load");
+      }
+      return;
+    }
+    if (event instanceof ErrorEvent) publishFailure(event.message || event.error, "module-runtime");
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => publishFailure(event.reason, "module-runtime"));
+})();
+</script>
+<script type="module">
+import { adapterFallbackMetadata } from "./dev/adapter-metadata.js";
+
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+window.bench = { status: "idle" };
+
+const words = "the customer wrote in about a recurring charge they did not recognise and wants a refund today ";
+const Q = { type: "noul", instructions: "Is the customer asking for money back?" };
+
+function integerParam(q, name, fallback, minimum) {
+  const raw = q.get(name);
+  const value = raw === null || raw === "" ? fallback : Number(raw);
+  if (!Number.isInteger(value) || value < minimum) throw new Error(`${name} must be an integer >= ${minimum}`);
+  return value;
+}
+
+function decisionOutput(value) {
+  if (Array.isArray(value)) return value.map(decisionOutput);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value)
+      .filter(([key]) => !["timing", "stats", "tensor", "tensors"].includes(key))
+      .map(([key, child]) => [key, decisionOutput(child)]));
+  }
+  return value;
+}
+
+async function requestHash(requests) {
+  const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(requests)));
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function canonicalJson(value) {
+  const active = new Set();
+  const encode = (item, path) => {
+    if (item === null) return "null";
+    if (typeof item === "string" || typeof item === "boolean") return JSON.stringify(item);
+    if (typeof item === "number") {
+      if (!Number.isFinite(item)) throw new Error(`GPU tuning snapshot contains a non-finite number at ${path}`);
+      return JSON.stringify(item);
+    }
+    if (typeof item !== "object") throw new Error(`GPU tuning snapshot contains a non-JSON value at ${path}`);
+    if (active.has(item)) throw new Error(`GPU tuning snapshot contains a cycle at ${path}`);
+    active.add(item);
+    try {
+      if (Array.isArray(item)) {
+        const keys = Reflect.ownKeys(item).filter((key) => key !== "length");
+        if (keys.length !== item.length || !keys.every((key, index) => key === String(index))) throw new Error(`GPU tuning snapshot contains a sparse or extended array at ${path}`);
+        return `[${keys.map((key, index) => {
+          const descriptor = Object.getOwnPropertyDescriptor(item, key);
+          if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error(`GPU tuning snapshot contains a hidden or accessor array entry at ${path}[${index}]`);
+          return encode(descriptor.value, `${path}[${index}]`);
+        }).join(",")}]`;
+      }
+      const prototype = Object.getPrototypeOf(item);
+      if (prototype !== Object.prototype && prototype !== null) throw new Error(`GPU tuning snapshot contains a non-plain object at ${path}`);
+      const keys = Reflect.ownKeys(item);
+      if (!keys.every((key) => typeof key === "string")) throw new Error(`GPU tuning snapshot contains a symbol key at ${path}`);
+      keys.sort();
+      return `{${keys.map((key) => {
+        const descriptor = Object.getOwnPropertyDescriptor(item, key);
+        if (!descriptor.enumerable || !Object.hasOwn(descriptor, "value")) throw new Error(`GPU tuning snapshot contains a hidden or accessor property at ${path}.${key}`);
+        return `${JSON.stringify(key)}:${encode(descriptor.value, `${path}.${key}`)}`;
+      }).join(",")}}`;
+    } finally { active.delete(item); }
+  };
+  return encode(value, "gpuTuning");
+}
+
+async function tuningSnapshot(value) {
+  const planJson = canonicalJson(value);
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(planJson));
+  const sha256 = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return { planJson, sha256 };
+}
+
+async function run() {
+  $("log").textContent = "";
+  const q = new URLSearchParams(location.hash.slice(1));
+  window.bench = { status: "running" };
+  let kevala = null;
+  const restore = [];
+  let actualGpu = null;
+  let actualHeader = null;
+  let clefHeadAfterWarmup = null;
+  let actualClefHead = null;
+  const clefHeadTrace = [];
+  const clefHeadEventLimit = 64;
+  let activeClefHeadTiming = null;
+  const newClefHeadTiming = () => ({ rustCalls: Object.create(null), gpuWaves: Object.create(null), cpuFallbacks: Object.create(null),
+    eventCount: 0, droppedEvents: 0, eventLimit: clefHeadEventLimit, overflow: false });
+  const recordClefHeadEvent = (kind, name, durationMs, error) => {
+    if (!activeClefHeadTiming) return;
+    const timing = activeClefHeadTiming;
+    timing.eventCount++;
+    if (timing.eventCount > timing.eventLimit) {
+      timing.droppedEvents++;
+      timing.overflow = true;
+      return;
+    }
+    const group = kind === "rust-call" ? timing.rustCalls : kind === "gpu-wave" ? timing.gpuWaves : timing.cpuFallbacks;
+    const row = group[name] ||= { count: 0, totalMs: 0, maxMs: 0, errors: 0 };
+    row.count++;
+    row.totalMs += durationMs;
+    row.maxMs = Math.max(row.maxMs, durationMs);
+    if (error) row.errors++;
+  };
+  try {
+    const backend = q.get("backend") || $("backend").value;
+    const runtime = new URL(q.get("runtime") || "./js/src/index.js", document.baseURI);
+    if (runtime.origin !== location.origin) throw new Error("runtime must be same-origin");
+    const { Kevala, MODELS } = await import(runtime.href);
+    const threadOption = q.get("threads") || $("threads").value;
+    const threads = threadOption === "auto" ? "auto" : Number(threadOption);
+    const name = q.get("model") || "laya";
+    const local = q.get("pack") === "local";
+    if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
+    const packUrl = q.get("packUrl") ? new URL(q.get("packUrl"), document.baseURI) : null;
+    if (packUrl && packUrl.origin !== location.origin) throw new Error("packUrl must be same-origin");
+    const model = packUrl ? { name, url: packUrl.href } : local ? `./tmp/${name}-q8.kevala` : name;
+    const runs = integerParam(q, "runs", 10, 1);
+    const warmups = integerParam(q, "warmups", 2, 0);
+    const protocol = q.get("protocol") || "isolated";
+    if (!["resident", "isolated"].includes(protocol)) throw new Error("protocol must be resident or isolated");
+    const residentProtocol = protocol === "resident";
+    const blocks = residentProtocol ? integerParam(q, "blocks", 2, 2) : 0;
+    const requestedFlavor = q.get("flavor") || undefined;
+    const unique = q.get("unique") === "1";
+    const profile = q.get("profile") === "1";
+    const loadProfile = residentProtocol ? false : profile;
+    const cache = q.get("cache") !== "0";
+    const stateCache = q.has("stateCache") ? q.get("stateCache") !== "0" : undefined;
+    const onPage = q.get("onPage") === "1";
+    const clefSnapshot = (head) => {
+      const diagnostics = head.diagnostics || {};
+      const reason = typeof diagnostics.reason === "string" ? diagnostics.reason : null;
+      return {
+        requested: typeof diagnostics.requested === "string" ? diagnostics.requested : null,
+        selected: typeof diagnostics.selected === "string" ? diagnostics.selected : null,
+        validated: typeof diagnostics.validated === "boolean" ? diagnostics.validated : null,
+        reason,
+        flavor: typeof head.engine?.flavor === "string" ? head.engine.flavor : null,
+        coordTile: Number.isSafeInteger(head.coord?.tile) ? head.coord.tile : null,
+        headDiagnosticsTile: Number.isSafeInteger(diagnostics.tile) ? diagnostics.tile : null,
+      };
+    };
+    const boundedClefSnapshot = (snapshot, requestIndex) => ({ ...(requestIndex === undefined ? {} : { requestIndex }),
+      requested: snapshot.requested, selected: snapshot.selected, validated: snapshot.validated,
+      reason: typeof snapshot.reason === "string" ? snapshot.reason.slice(0, 512) : null,
+      flavor: snapshot.flavor, coordTile: snapshot.coordTile, headDiagnosticsTile: snapshot.headDiagnosticsTile });
+    if (onPage) {
+      const { archPlugin } = await import(new URL("./archs/index.js", runtime));
+      for (const arch of ["laya", "kev", "clef", "gemma4"]) {
+        const plugin = archPlugin(arch);
+        const original = plugin.createGpu;
+        restore.push(() => { plugin.createGpu = original; });
+        plugin.createGpu = function(gpu, ...args) {
+          actualGpu = gpu;
+          actualHeader = args[1];
+          const created = original.call(this, gpu, ...args);
+          if (arch === "clef" && created?.head) {
+            const head = created.head;
+            actualClefHead = head;
+            const call = head.call;
+            head.call = function(name, ...args) {
+              const started = performance.now();
+              let failed = false;
+              try { return call.call(this, name, ...args); }
+              catch (error) { failed = true; throw error; }
+              finally {
+                recordClefHeadEvent("rust-call", typeof name === "string" ? name.slice(0, 80) : "invalid-export-name", performance.now() - started, failed);
+              }
+            };
+            const wave = head.wave;
+            head.wave = async function(...args) {
+              const started = performance.now();
+              const phase = typeof args[1]?.phase === "string" ? args[1].phase.slice(0, 32) : "unknown";
+              let failed = false;
+              try { return await wave.apply(this, args); }
+              catch (error) { failed = true; throw error; }
+              finally {
+                recordClefHeadEvent("gpu-wave", phase, performance.now() - started, failed);
+              }
+            };
+            const cpu = head.cpu;
+            head.cpu = function(...args) {
+              const started = performance.now();
+              let failed = false;
+              try { return cpu.apply(this, args); }
+              catch (error) { failed = true; throw error; }
+              finally { recordClefHeadEvent("cpu-fallback", "cpu", performance.now() - started, failed); }
+            };
+            const finish = head.finish;
+            head.finish = async function(...finishArgs) {
+              try {
+                const value = await finish.apply(this, finishArgs);
+                clefHeadTrace.push(clefSnapshot(this));
+                return value;
+              } catch (error) {
+                clefHeadTrace.push({ ...clefSnapshot(this), error: String(error?.message || error).slice(0, 512) });
+                throw error;
+              }
+            };
+          }
+          return created;
+        };
+      }
+    }
+    const t0 = performance.now();
+    // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
+    // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
+    const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache, stateCache, profile: loadProfile, ...(onPage ? { onPage: true } : {}), ...(q.has("precision") ? { precision: q.get("precision") } : {}), submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    clefHeadAfterWarmup = actualClefHead ? boundedClefSnapshot(clefSnapshot(actualClefHead)) : null;
+    restore.splice(0).reverse().forEach((callback) => callback());
+    if (loadProfile && actualGpu && !actualGpu.device.features.has("timestamp-query")) throw new Error("timestamp-query is unavailable for GPU profiling");
+    const adapterInfo = actualGpu?.adapter.info || {};
+    const fallbackMetadata = actualGpu ? adapterFallbackMetadata(actualGpu.adapter) : null;
+    const precision = actualHeader ? (await import(new URL("./pack-layout.js", runtime))).packPrecision(actualHeader) : kevala.info.model?.precision || null;
+    log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+    const tuning = residentProtocol ? await tuningSnapshot(kevala.info.gpuTuning) : null;
+    const resident = residentProtocol ? { sessionId: crypto.randomUUID(), loadId: crypto.randomUUID(), tuning } : null;
+    const results = {
+      protocol,
+      model: name,
+      modelInfo: kevala.info.model,
+      runtime: runtime.href,
+      precision,
+      profile: loadProfile,
+      context: kevala.info.onPage ? "page" : "worker",
+      cache: { packEnabled: cache, state: kevala.info.stateCache },
+      pack: kevala.info.pack,
+      adapter: actualGpu ? { name: actualGpu.name, vendor: adapterInfo.vendor || null, architecture: adapterInfo.architecture || null,
+        device: adapterInfo.device || null, description: adapterInfo.description || null, ...fallbackMetadata,
+        features: [...actualGpu.device.features].sort(), limits: { maxBufferSize: actualGpu.device.limits.maxBufferSize,
+          maxStorageBufferBindingSize: actualGpu.device.limits.maxStorageBufferBindingSize, maxComputeWorkgroupStorageSize: actualGpu.device.limits.maxComputeWorkgroupStorageSize } } : null,
+      arch: kevala.info.arch,
+      backend: kevala.info.backend,
+      gpu: kevala.info.gpu,
+      threads: kevala.info.threads,
+      flavor: kevala.info.flavor,
+      cpuTiles: kevala.info.cpuTiles,
+      cpuTuning: kevala.info.cpuTuning,
+      gpuTuning: residentProtocol ? JSON.parse(tuning.planJson) : kevala.info.gpuTuning,
+      ...(residentProtocol ? { resident } : {}),
+      ...(clefHeadAfterWarmup ? { clefHeadInstrumentation: "per-request performance.now around private ClefHead.call Rust exports, async ClefHead.wave, and ClefHead.cpu fallback; includes wrapper overhead and is diagnostic, not a clean latency lane" } : {}),
+      selectedFlavor: kevala.info.flavor || null,
+      hardwareConcurrency: navigator.hardwareConcurrency || null,
+      crossOriginIsolated: globalThis.crossOriginIsolated === true,
+      ...(clefHeadAfterWarmup ? { clefHeadAfterWarmup } : {}),
+      runs,
+      warmups,
+      unique,
+      load_s: (performance.now() - t0) / 1000,
+      cases: [],
+    };
+    // shapes: one short question, one long state, several questions, a batch of states
+    const shapes = [
+      { name: "1 question, ~40 tokens", reqs: [{ state: "Refund the duplicate charge today or we cancel.", questions: { q: Q } }] },
+      { name: "1 question, ~128 tokens", reqs: [{ state: words.repeat(6), questions: { q: Q } }] },
+      { name: "1 question, ~512 tokens", reqs: [{ state: words.repeat(30), questions: { q: Q } }] },
+      { name: "5 questions, ~60 tokens each", reqs: [{ state: words.repeat(2), questions: Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`q${i}`, Q])) }] },
+      { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
+    ];
+    const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
+    const runCases = async (profiled) => {
+      const cases = [];
+      for (const s of shapes.filter((_, i) => pick.includes(i))) {
+        // The longest frame gap while this shape runs measures how much it stalls the page.
+        let gap = 0, lastF = performance.now(), on = true;
+        const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
+        requestAnimationFrame(tick);
+        const ms = [];
+        const samples = [];
+        const wallMs = [];
+        let tokens = 0;
+        let last = null;
+        for (let i = 0; i < warmups + runs; i++) {
+          // Give every measured request a distinct state so the model's request cache cannot help.
+          const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+          const fingerprint = await requestHash(reqs);
+          const clefTraceStart = clefHeadTrace.length;
+          const clefHeadTiming = newClefHeadTiming();
+          const previousClefHeadTiming = activeClefHeadTiming;
+          activeClefHeadTiming = clefHeadTiming;
+          const t = performance.now();
+          let r;
+          try { r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs); }
+          finally { activeClefHeadTiming = previousClefHeadTiming; }
+          const wall = performance.now() - t;
+          if (i >= warmups) {
+            ms.push(wall);
+            wallMs.push(wall);
+            const clefHeadRequests = clefHeadTrace.slice(clefTraceStart).map((snapshot, requestIndex) => boundedClefSnapshot(snapshot, requestIndex));
+            samples.push({ ...r[0].timing, wallMs: wall, requestHash: fingerprint,
+              outputs: r.map(decisionOutput),
+              ...(clefHeadAfterWarmup ? { clefHeadRequests, clefHeadTiming } : {}) });
+          }
+          tokens = r[0].timing.tokens;
+          last = r[0].timing;
+        }
+        on = false;
+        ms.sort((a, b) => a - b);
+        const middle = ms.length >> 1;
+        const p50 = ms.length % 2 ? ms[middle] : (ms[middle - 1] + ms[middle]) / 2;
+        const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.ceil(ms.length * 0.95) - 1], min: ms[0] };
+        c.last = last;
+        c.samples = samples;
+        c.wallMs = wallMs;
+        cases.push(c);
+        log(`${profiled ? "profile" : "wall"} ${s.name.padEnd(31)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
+      }
+      return cases;
+    };
+    if (residentProtocol) {
+      results.blocks = [];
+      for (let block = 0; block < blocks; block++) {
+        const lanes = [];
+        for (const profiled of block % 2 ? [true, false] : [false, true]) {
+          if (!await kevala.profile(profiled)) throw new Error("timestamp-query is unavailable for GPU profiling");
+          lanes.push({ profile: profiled, cases: await runCases(profiled) });
+        }
+        results.blocks.push({ block, lanes });
+      }
+      results.cases = results.blocks[0].lanes.find((lane) => !lane.profile).cases;
+    } else results.cases = await runCases(profile);
+    results.done = true;
+    window.bench = results;
+  } catch (error) {
+    const message = String(error?.message || error);
+    log("ERROR " + message);
+    window.bench = { done: true, status: "error", error: message,
+      ...(clefHeadAfterWarmup ? { clefHeadAfterWarmup, clefHeadRequests: clefHeadTrace } : {}) };
+  } finally {
+    restore.splice(0).reverse().forEach((callback) => callback());
+    kevala?.dispose();
+  }
+}
+$("run").onclick = () => run();
+if (location.hash.includes("auto")) {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get("backend")) $("backend").value = q.get("backend");
+  if (q.get("threads")) $("threads").value = q.get("threads");
+  $("run").click();
+}
+</script>
+</body>
+</html>

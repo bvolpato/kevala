@@ -1,0 +1,30 @@
+// Source-only regression. The caller supplies a fake-device trunk factory and both module APIs.
+import assert from "node:assert/strict";
+
+export async function checkClefShapeStartupOrdering({ makeTrunk, previousAPI, currentAPI }) {
+  const startup = async (api) => {
+    const trunk = makeTrunk();
+    const device = trunk.device;
+    const observerToken = api.attachClefShapeObserver?.(trunk);
+    // engine-worker.js performs run(warmup) inside load(), before the page can prepare validators.
+    trunk.build();
+    try {
+      const helper = await api.prepareClefShapeMatmul(trunk, { observerToken });
+      return { trunk, helper, observerToken, device };
+    } catch (error) {
+      if (observerToken) api.detachClefShapeObserver(trunk, observerToken);
+      throw error;
+    }
+  };
+  let previousError = null;
+  await assert.rejects(() => startup(previousAPI), (error) => {
+    previousError = error.message;
+    return error.message === "Private Clef operator validation: requires the loaded engine before its first request";
+  });
+  const loaded = await startup(currentAPI);
+  assert.equal(loaded.helper.startup.observer.attachedBeforeBuild, true);
+  assert(loaded.helper.startup.observer.observedBuilds > 0 && loaded.helper.startup.observer.existingMatmulGroupsValidated > 0);
+  assert.equal(loaded.trunk.device, loaded.device);
+  return { ...loaded, regression: { beforeFix: "failed-at-load-time-build-order", previousError,
+    afterFix: "passed-with-pre-init-owned-observer", startupObserver: loaded.helper.startup.observer } };
+}

@@ -1,0 +1,346 @@
+import { fixture, request } from "./fixture.mjs";
+import { checkLayaNoulResponse } from "./response-check.mjs";
+
+const statusElement = document.getElementById("status");
+const hex = (bytes) => [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+const sha256 = async (bytes) => hex(await crypto.subtle.digest("SHA-256", bytes));
+
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
+  }
+  if (typeof value === "number" && !Number.isFinite(value)) return null;
+  return value;
+}
+
+function replaceMethod(target, name, wrap, restores) {
+  const descriptor = Object.getOwnPropertyDescriptor(target, name);
+  if (descriptor && descriptor.configurable === false && descriptor.writable === false) {
+    throw new Error(`cannot instrument ${name}: instance method is not replaceable`);
+  }
+  const original = target[name];
+  if (typeof original !== "function") throw new Error(`cannot instrument ${name}: method is missing`);
+  const replacement = wrap(original);
+  Object.defineProperty(target, name, {
+    configurable: true,
+    enumerable: descriptor?.enumerable || false,
+    writable: true,
+    value: replacement,
+  });
+  if (target[name] !== replacement) throw new Error(`cannot instrument ${name}: replacement did not stick`);
+  restores.push(() => {
+    if (descriptor) Object.defineProperty(target, name, descriptor);
+    else delete target[name];
+  });
+}
+
+function instrumentTrunk(trunk, label) {
+  const queue = trunk.device?.queue;
+  if (!queue) throw new Error(`${label} Laya trunk has no GPU queue`);
+  const restores = [];
+  const calls = [];
+  let active = null;
+  const recorder = { calls, setActive(value) { active = value; } };
+
+  replaceMethod(queue, "submit", (original) => function (...args) {
+    if (active) {
+      active.submissions++;
+      active.events.push("submit");
+    }
+    return original.apply(this, args);
+  }, restores);
+  replaceMethod(queue, "onSubmittedWorkDone", (original) => function (...args) {
+    const call = active;
+    if (call) {
+      call.drainCalls++;
+      call.events.push("drain");
+    }
+    let result;
+    try {
+      result = original.apply(this, args);
+    } catch (error) {
+      if (call) call.drainErrors.push(String(error?.message || error));
+      throw error;
+    }
+    return Promise.resolve(result).then((value) => {
+      if (call) {
+        call.drainResolutions++;
+        call.events.push("drain-resolved");
+      }
+      return value;
+    }, (error) => {
+      if (call) call.drainErrors.push(String(error?.message || error));
+      throw error;
+    });
+  }, restores);
+  replaceMethod(trunk, "forward", (original) => async function (...args) {
+    const output = await original.apply(this, args);
+    if (active) {
+      const bytes = new Uint8Array(output.buffer, output.byteOffset, output.byteLength);
+      calls.push({
+        id: active.id,
+        engine: label,
+        bytes: output.byteLength,
+        floats: output.length,
+        sha256: await sha256(bytes),
+        finite: output.every(Number.isFinite),
+      });
+    }
+    return output;
+  }, restores);
+
+  return { recorder, restores };
+}
+
+function equalValue(left, right, description) {
+  if (left !== right) throw new Error(`${description} changed: ${left} != ${right}`);
+}
+
+async function run() {
+  const params = new URL(location.href).searchParams;
+  const token = params.get("run");
+  const runtimeUrl = params.get("runtime");
+  const wasmBase = params.get("wasmBase");
+  const packUrl = params.get("pack");
+  if (!token || !runtimeUrl || !wasmBase || !packUrl) throw new Error("smoke URL is missing frozen runtime parameters");
+
+  const result = {
+    schemaVersion: 1,
+    runToken: token,
+    status: "running",
+    phase: "starting",
+    label: "behavioral smoke only; no performance measurement",
+    runtimeUrl,
+    wasmBase,
+    fixture: fixture.id,
+    engines: [],
+    samples: [],
+    comparisons: [],
+    route: { requested: "onPage", engines: [], verifiedForEveryEngine: null },
+    hardware: {
+      browser: navigator.userAgent,
+      hardwareConcurrency: navigator.hardwareConcurrency || null,
+      crossOriginIsolated: globalThis.crossOriginIsolated === true,
+      webgpuAvailable: !!navigator.gpu,
+    },
+  };
+  state.result = result;
+  const requestSha256 = await sha256(new TextEncoder().encode(JSON.stringify([request])));
+  if (requestSha256 !== fixture.run3RequestSha256) throw new Error(`long-512 Run3 request hash changed: ${requestSha256}`);
+  result.fixtureRequestSha256 = requestSha256;
+
+  const [{ Kevala }, { archPlugin }] = await Promise.all([
+    import(runtimeUrl),
+    import(new URL("./archs/index.js", runtimeUrl).href),
+  ]);
+  const plugin = archPlugin("laya");
+  if (!plugin?.createGpu) throw new Error("runtime did not register the real Laya GPU plugin");
+  const originalCreateGpu = plugin.createGpu;
+  const engines = {};
+  const gpuContexts = {};
+  const instrumentations = {};
+
+  async function load(label, submit) {
+    if (engines[label]) throw new Error(`${label} was loaded more than once`);
+    plugin.createGpu = function captureRealLayaTrunk(context, layout, header, ...args) {
+      const trunk = originalCreateGpu.call(this, context, layout, header, ...args);
+      if (gpuContexts[label]) throw new Error(`${label} Laya plugin created more than one trunk`);
+      gpuContexts[label] = { trunk, header, device: context.device, adapter: context.adapter };
+      const instrumentation = instrumentTrunk(trunk, label);
+      instrumentations[label] = instrumentation;
+      return trunk;
+    };
+    try {
+      engines[label] = await Kevala.load({
+        backend: "webgpu",
+        onPage: true,
+        model: { name: "laya", url: `${packUrl}?run=${encodeURIComponent(token)}&engine=${label}` },
+        precision: "q8",
+        flavor: "relaxed",
+        wasmBase,
+        threads: 1,
+        cache: false,
+        stateCache: false,
+        gpuKernel: "auto",
+        profile: false,
+        submit,
+      });
+    } finally {
+      plugin.createGpu = originalCreateGpu;
+    }
+    const info = engines[label].info;
+    const context = gpuContexts[label];
+    const adapterInfo = context?.adapter?.info || {};
+    const engineEvidence = {
+      label,
+      requestedSubmit: submit,
+      backend: info?.backend ?? null,
+      onPage: info?.onPage ?? null,
+      model: info?.model?.name ?? null,
+      packBytes: info?.pack?.bytes ?? null,
+      flavor: info?.flavor ?? null,
+      arch: info?.config?.arch || "laya",
+      requestedPrecision: "q8",
+      trunkSubmitMode: context?.trunk?.submitMode ?? null,
+      realPluginTrunkCaptured: !!context?.trunk,
+      adapter: {
+        vendor: adapterInfo.vendor || "",
+        architecture: adapterInfo.architecture || "",
+        device: adapterInfo.device || "",
+        description: adapterInfo.description || "",
+        isFallbackAdapter: adapterInfo.isFallbackAdapter ?? context?.adapter?.isFallbackAdapter ?? null,
+      },
+      device: context ? {
+        features: [...context.device.features].sort(),
+        limits: {
+          maxBufferSize: context.device.limits.maxBufferSize,
+          maxStorageBufferBindingSize: context.device.limits.maxStorageBufferBindingSize,
+          maxComputeWorkgroupStorageSize: context.device.limits.maxComputeWorkgroupStorageSize,
+        },
+      } : null,
+    };
+    state.result.engines.push(engineEvidence);
+    state.result.route.engines.push({ label, backend: engineEvidence.backend, onPage: engineEvidence.onPage });
+    state.result.route.verifiedForEveryEngine = state.result.route.engines.every((engine) => engine.onPage === true && engine.backend === "webgpu");
+    if (!gpuContexts[label]?.trunk) throw new Error(`${label} plugin hook did not reach the real Laya trunk`);
+    if (info?.backend !== "webgpu" || info.onPage !== true || !navigator.gpu) {
+      throw new Error(`${label} engine did not load on-page with WebGPU: ${JSON.stringify(info)}`);
+    }
+    if (info?.pack?.bytes !== 478886720 || info?.model?.name !== "laya") {
+      throw new Error(`${label} loaded an unexpected pack: ${JSON.stringify({ pack: info?.pack, model: info?.model })}`);
+    }
+    return engineEvidence;
+  }
+
+  async function decide(label, id) {
+    const engine = engines[label];
+    const instrumentation = instrumentations[label];
+    const context = gpuContexts[label];
+    if (!engine || !context || !instrumentation) throw new Error(`${label} is not instrumented`);
+    const recorder = instrumentation.recorder;
+    const active = { id, submissions: 0, drainCalls: 0, drainResolutions: 0, drainErrors: [], events: [] };
+    const priorCalls = recorder.calls.length;
+    recorder.setActive(active);
+    let response;
+    try {
+      response = await engine.decide(request.state, request.questions);
+    } finally {
+      recorder.setActive(null);
+    }
+    const { timing, ...publicValue } = response || {};
+    const publicJson = JSON.stringify(canonical(publicValue));
+    const publicBytes = new TextEncoder().encode(publicJson);
+    const hidden = recorder.calls.slice(priorCalls);
+    const sample = {
+      id,
+      engine: label,
+      request: { fixture: fixture.id, expectedTokens: fixture.expectedTokens, json: JSON.stringify(request) },
+      tokenCount: timing?.tokens ?? null,
+      publicJson,
+      publicSha256: await sha256(publicBytes),
+      hiddenBuffer: hidden.length === 1 && hidden[0].id === id
+        ? { bytes: hidden[0].bytes, floats: hidden[0].floats, finite: hidden[0].finite, sha256: hidden[0].sha256 }
+        : null,
+      queue: {
+        submissions: active.submissions,
+        drainCalls: active.drainCalls,
+        drainResolutions: active.drainResolutions,
+        drainErrors: active.drainErrors,
+        events: active.events,
+      },
+    };
+    state.result.samples.push(sample);
+    state.result.phase = id;
+    checkLayaNoulResponse(response, fixture.expectedTokens);
+    if (hidden.length !== 1 || hidden[0].id !== id) {
+      throw new Error(`${id}: expected one returned trunk buffer, captured ${hidden.length}`);
+    }
+    if (!hidden[0].finite) throw new Error(`${id}: returned trunk buffer contains a non-finite value`);
+    return sample;
+  }
+
+  const expectedQueue = {
+    await: { submissions: 6, drainCalls: 5, drainResolutions: 5 },
+    none: { submissions: 1, drainCalls: 0, drainResolutions: 0 },
+  };
+  function checkQueue(sample, mode) {
+    for (const [field, expected] of Object.entries(expectedQueue[mode])) {
+      equalValue(sample.queue[field], expected, `${sample.id} ${mode} queue.${field}`);
+    }
+    equalValue(sample.queue.drainErrors.length, 0, `${sample.id} ${mode} queue drain errors`);
+    const expectedEvents = mode === "await"
+      ? Array.from({ length: 5 }, () => ["submit", "drain", "drain-resolved"]).flat().concat("submit")
+      : ["submit"];
+    if (JSON.stringify(sample.queue.events) !== JSON.stringify(expectedEvents)) {
+      throw new Error(`${sample.id} ${mode} submit/drain order changed: ${JSON.stringify(sample.queue.events)}`);
+    }
+  }
+
+  try {
+    result.phase = "load-A";
+    await load("A", "await");
+
+    result.phase = "A-before-B-load";
+    const aBefore = await decide("A", "A-before-B-load");
+    result.phase = "load-B";
+    await load("B", "none");
+    result.phase = "B-before-A-forward";
+    const bBefore = await decide("B", "B-before-A-forward");
+    result.phase = "A-after-B-load";
+    const aAfter = await decide("A", "A-after-B-load");
+    result.phase = "B-after-A-forward";
+    const bAfter = await decide("B", "B-after-A-forward");
+
+    checkQueue(aBefore, "await");
+    checkQueue(aAfter, "await");
+    checkQueue(bBefore, "none");
+    checkQueue(bAfter, "none");
+    for (const [label, before, after] of [["A", aBefore, aAfter], ["B", bBefore, bAfter]]) {
+      equalValue(after.publicSha256, before.publicSha256, `${label} public output hash after the other engine loaded`);
+      equalValue(after.hiddenBuffer.bytes, before.hiddenBuffer.bytes, `${label} hidden-buffer byte count after the other engine loaded`);
+      equalValue(after.hiddenBuffer.sha256, before.hiddenBuffer.sha256, `${label} complete hidden-buffer hash after the other engine loaded`);
+      result.comparisons.push({ engine: label, before: before.id, after: after.id, publicOutputEqual: true, hiddenBufferEqual: true });
+    }
+    result.status = "passed";
+    result.phase = "done";
+    statusElement.textContent = "Per-engine submission smoke passed. No performance claim.";
+    return result;
+  } finally {
+    for (const instrumentation of Object.values(instrumentations)) {
+      instrumentation.recorder.setActive(null);
+      for (const restore of instrumentation.restores.reverse()) restore();
+    }
+    for (const engine of Object.values(engines)) engine.dispose();
+  }
+}
+
+const state = { status: "ready", phase: "ready", result: null, error: null };
+const pageToken = new URL(location.href).searchParams.get("run");
+document.title = `Kevala per-engine submission smoke ${pageToken || "missing-token"}`;
+window.submitIsolationSmoke = {
+  state,
+  start() {
+    if (state.status !== "ready") throw new Error(`smoke cannot start during ${state.status}`);
+    state.status = "running";
+    state.phase = "running";
+    statusElement.textContent = `Running two-engine check ${new URL(location.href).searchParams.get("run") || ""}.`;
+    return run().then((result) => {
+      state.result = result;
+      state.status = "done";
+      state.phase = "done";
+      return result;
+    }, (error) => {
+      state.error = String(error?.stack || error?.message || error);
+      state.status = "error";
+      state.phase = state.result?.phase || "error";
+      if (state.result) {
+        state.result.status = "failed";
+        state.result.error = state.error;
+        state.result.failedPhase = state.phase;
+      }
+      statusElement.textContent = state.error;
+      throw error;
+    });
+  },
+};

@@ -1,0 +1,22 @@
+[package]
+name = "kevala-wasm"
+description = "WebAssembly exports for kevala."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+default = []
+cpu-bench = []
+clef-projection-probe = ["kevala/clef-projection-probe"]
+
+[lints]
+workspace = true
+
+[dependencies]
+kevala = { path = "../kevala" }

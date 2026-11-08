@@ -1,0 +1,27 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Private Laya integer matrix operator</title>
+<p id="status">Loading private source.</p>
+<script>
+(() => {
+  const result = window.gpuBench = {
+    done: false, status: "booting", phase: "bootstrap", error: null,
+    sourceIdentities: {}, capabilities: null, packingGate: null,
+    fixtures: [], warmups: [], timing: { aa: [], paired: [], summary: null },
+    cleanup: { buffersCreated: 0, buffersDestroyed: 0, querySetsCreated: 0, querySetsDestroyed: 0, deviceDestroyed: false, mapsOpen: 0 },
+    errors: [],
+  };
+  const fail = (error) => {
+    if (result.done) return;
+    result.error = String(error?.stack || error);
+    result.errors.push({ phase: result.phase, message: result.error });
+    result.status = "error";
+    result.done = true;
+    document.getElementById("status").textContent = result.error;
+  };
+  import("./scripts/private/laya-integer-matrix-page.js")
+    .then((module) => module.run(result, new URLSearchParams(location.search)))
+    .catch(fail);
+})();
+</script>

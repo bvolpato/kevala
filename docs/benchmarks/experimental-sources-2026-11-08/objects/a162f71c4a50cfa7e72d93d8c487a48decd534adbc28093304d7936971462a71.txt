@@ -1,0 +1,58 @@
+[
+  {
+    "path": "bench-laya-integer-matrix-split.html",
+    "route": "/bench-laya-integer-matrix-split.html",
+    "bytes": 1153,
+    "sha256": "5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492",
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-split-page.js",
+    "route": "/scripts/private/laya-integer-matrix-split-page.js",
+    "bytes": 28669,
+    "sha256": "0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd",
+    "contentType": "text/javascript; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix.js",
+    "route": "/scripts/private/laya-integer-matrix.js",
+    "bytes": 12993,
+    "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+    "contentType": "text/javascript; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-protocol.json",
+    "route": "/scripts/private/laya-integer-matrix-protocol.json",
+    "bytes": 19823,
+    "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+    "contentType": "application/json"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+    "route": "/scripts/private/laya-integer-matrix-baseline.wgsl",
+    "bytes": 13558,
+    "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+    "contentType": "text/plain; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+    "route": "/scripts/private/laya-integer-matrix-reduce.wgsl",
+    "bytes": 1546,
+    "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+    "contentType": "text/plain; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-split-protocol.json",
+    "route": "/scripts/private/laya-integer-matrix-split-protocol.json",
+    "bytes": 5151,
+    "sha256": "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81",
+    "contentType": "application/json"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-split-page-plan.json",
+    "route": "/scripts/private/laya-integer-matrix-split-page-plan.json",
+    "bytes": 7274,
+    "sha256": "ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37",
+    "contentType": "application/json"
+  }
+]

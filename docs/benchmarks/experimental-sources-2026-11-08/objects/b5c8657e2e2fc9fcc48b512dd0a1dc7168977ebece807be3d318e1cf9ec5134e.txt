@@ -1,0 +1,38 @@
+# Native AVX-512 prototype evidence
+
+This package supports the [performance report](../../native-avx512-performance.md). It preserves the completed prototype model run, selected source and gate evidence, and the two earlier failed receipts as distinct records.
+
+## Included evidence
+
+- The complete `models-v1` raw run inventory: 3,067 JSON, stdout, and stderr files totaling 48,953,846 bytes. `models-inventory-v1.json` pins every relative path, size, and SHA-256 digest.
+- The model run plan, receipt, release proof, source index, source validation, runner and schedule sources.
+- Baseline and prototype `kernels.rs` source snapshots, plus the prototype `build.rs` source.
+- Selected nine-frame gate evidence: its inventory metadata, receipt, release proof, code generation summary, source index, source receipt, source delta proof, identity revision, and patch.
+- The incomplete model-capture receipt and compile-budget failure receipt, each labeled by its original status.
+- This report, this README, the How page source, and the publisher source.
+
+The package excludes model weights, compiled executables and libraries, large gate build outputs, and the prior failed runs' full runtime directories. The selected gate metadata supports the prototype source and code generation review. It does not establish production validation.
+
+`evidence.json.gz` contains the selected files. `manifest.json` records each entry's size and SHA-256 digest, plus compressed and decoded archive digests.
+
+## Review commands
+
+From the repository root, run the plan command to check the pinned source and inventory metadata. It does not read the 3,067 raw run files.
+
+```sh
+node docs/benchmarks/native-avx512-2026-11-07/archive-publication.mjs --plan
+```
+
+The archive command reads raw evidence. The verification command reads and decompresses the archive. Run each only when the canonical profile lock is free. The script requires the current Node process to hold the full-range lock and refuses existing outputs.
+
+```sh
+flock --exclusive --nonblock --conflict-exit-code 75 --no-fork \
+  /home/bruno/.cache/kevala/gpu-profile.lock \
+  node docs/benchmarks/native-avx512-2026-11-07/archive-publication.mjs --archive
+
+flock --exclusive --nonblock --conflict-exit-code 75 --no-fork \
+  /home/bruno/.cache/kevala/gpu-profile.lock \
+  node docs/benchmarks/native-avx512-2026-11-07/archive-publication.mjs --verify
+```
+
+The publisher records the stable lease identity before and after I/O. It retains the raw `/proc/locks` line for diagnosis, but does not use its mutable sequence prefix for identity comparison. The archive and manifest are written with exclusive-create semantics.

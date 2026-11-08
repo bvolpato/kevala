@@ -1,0 +1,72 @@
+// Frozen private protocol. This file loads no model, WASM, browser or GPU.
+const freeze = (value) => {
+  if (value && typeof value === "object") { for (const child of Object.values(value)) freeze(child); Object.freeze(value); }
+  return value;
+};
+const words = "the customer wrote in about a recurring charge they did not recognise and wants a refund today ";
+const question = { type: "noul", instructions: "Is the customer asking for money back?" };
+const request = (state) => [{ state: `Run 0. ${state}`, questions: { q: { ...question } } }];
+
+export const CLEF_SHAPE_MATMUL_PROTOCOL = freeze({
+  id: "private-clef-shape-matmul-v1",
+  baseCommit: "81a27608f24e0b2252318515e272387c48dec7d8",
+  status: "frozen-source-plan",
+  hypothesis: "Compile only N/K into the already selected production Q8 matmul to reduce complete Clef request latency.",
+  priorEvidence: { kind: "synthetic-only", run: "tile-portable-v2-9b", integratedSpeedupProven: false },
+  load: { engines: 1, devices: 1, weightCopies: 1, model: "clef-flash", precision: "q8", backend: "webgpu", onPage: true,
+    cache: false, stateCache: false, profile: false, flavor: "auto", gpuKernel: "auto", clefHead: "auto", cpuAffinity: null },
+  unchanged: ["production chunk yielding", "resident-input policy", "lexical behavior", "automatic GPU tuning", "automatic head selection",
+    "dynamic T", "R3 preference", "BM56 selection", "split-K geometry", "reducer", "explicit eight-binding layout", "f16 setting", "arithmetic and epilogues"],
+  excluded: ["synthetic constants-only timing", "matvec", "compact rows", "final rows", "BM128", "new row API", "f16 override"],
+  precompile: { beforeWarmupsAndTiming: true, deadlineMs: 120000, maxPipelines: 60, maxNKShapes: 6,
+    useExistingExplicitLayout: true, reuseExistingReducer: true, sourceDiff: "Only let N = p.N and let K = p.K become u32 literals; top-level n/k ABI.",
+    fallback: "Any compile, source-contract or deadline failure fails the experiment. Never time a fallback as candidate.", retainStartupSeparately: true },
+  cases: [
+    { index: 0, name: "1 question, ~40 tokens", requests: request("Refund the duplicate charge today or we cancel."), expectedTokens: [158, 159] },
+    { index: 1, name: "1 question, ~128 tokens", requests: request(words.repeat(6)), expectedTokens: [251, 252] },
+    { index: 2, name: "1 question, ~512 tokens", requests: request(words.repeat(30)), expectedTokens: [659, 660] },
+  ],
+  sequencePerCase: { preOperatorValidation: true, warmupsPerArm: 3, warmupOrder: "ABABAB", rounds: 9,
+    eachRound: ["AA same-arm control pair", "one counterbalanced quartet"],
+    quartetOrders: ["ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA"],
+    postOperatorValidation: true, exclusions: 0, retiming: false, replacementSamples: false },
+  requests: { fixedPerCase: true, sameRequestWithinAllPairsAndQuartets: true,
+    retainExactJSONAndSHA256BeforeTiming: true, pinObservedTokenCountAcrossCase: true, allowMixedArmCaches: false },
+  timing: { clock: "performance.now around awaited complete decide call only", profile: false, normalProductionChunkYielding: true,
+    precompileArmSwitchHashAndOutputValidationOutsideInterval: true, retainedSamples: "All warmups, AA pairs and ABBA/BAAB samples, including failed gates." },
+  quality: { fullOperatorChecks: "Before and after timing, execute both production and candidate on each real projection input; compare all active FP32 output bits and finite values and sentinel tail coverage, with positive expected element and application counts. Validation requests are separate from timing.",
+    validationMechanism: "Observe production build binding descriptors and uniform metadata without reading payloads. Before each production matmul dispatch, replay baseline and candidate through production encodeMatmul into guarded shadows on the same live X/weights and actual epilogue inputs. Preserve the real dispatch and reducer. Compare every active element and the entire allocation outside active rows. For residual mode=1, also replay mode=0 on the same real X/weights with distinct poisoned active outputs, proving complete stores without mistaking legitimate FP32 residual rounding for a bypass.",
+    observerPhases: "Observe the untimed reference and validation setup, retaining descriptor/uniform maps. Restore original build/uni methods before warmups and the timed block. Assert original methods and the real device outside every wall interval. Resume observers before post-validation and the next case reference; dispose safely from either mode.",
+    observerAttachment: "Install the synchronous metadata observer in archPlugin.createGpu before initialization and Kevala.load's internal warmup. Post-load GPU preparation requires the exact owned observer token and complete captured metadata for every existing production matmul group; unknown tokens or unobserved groups fail before candidate compilation.",
+    initializedGuards: { prefixElements: 64, trailingMinimumElements: 64, tailSentinel: "0x4640e500", baselinePoison: "0x7fc00001", candidatePoison: "0x7fc00002", zeroedStatusWords: 8 },
+    operatorCoverage: "Every eligible Q8 projection occurrence in each declared case, including R3/BM56 and selected split reductions. Do not rely on source order or sticky head validation as parity proof.",
+    retainedAPIObjects: "Retain every actual response object after wall time, including timing. Compare all response fields except top-level timing exactly for the identical fixed request. Include answers, model and usage; retain raw probabilities only when returned by the API.",
+    responseGates: ["exact semantic API response equality", "answer shape", "finite numeric leaves", "argmax", "model identity", "stable observed token count"],
+    application: "Every B request must have eligible > 0 and applied === eligible. Every A request must have the same eligible projection counts and applied === 0. A bypass fails even if outputs match.",
+    freshParityRequired: true },
+  promotion: { allQualityGatesRequired: true, allCasesRequired: true, minimumPairedRequestGain: 0.05,
+    estimator: "For each quartet compare median of its two A walls and median of its two B walls; retain all nine paired ratios per case.",
+    stability: "All nine paired ratios must favor B; at least six must show >=5% gain, and the median ratio must show >=5% gain in every case.",
+    aaStability: "All nine AA within-pair absolute relative differences must be <=5%, and absolute median signed relative difference <=2% in every case.",
+    failedGate: "Retain failed experiment without promoting or silently revising the protocol." },
+  lifecycleReuse: { source: "/tmp/kevala-clef-route-diagnostic-v1", cloneOnly: true,
+    controller: "scripts/private/clef-kernel-profile.mjs", browser: "scripts/private/clef-route-browser.py",
+    plannedNewController: "scripts/private/run-clef-shape-matmul.mjs", plannedNewPage: "bench-clef-shape-matmul.html",
+    privateSources: ["bench-clef-shape-matmul.html", "js/src/private-clef-shape-matmul.js", "js/src/private-clef-shape-matmul-validation.js", "js/src/private-clef-shape-matmul-observer.js",
+      "scripts/private/clef-shape-matmul-page.mjs", "scripts/private/clef-shape-matmul-protocol.mjs",
+      "scripts/private/run-clef-shape-matmul.mjs", "scripts/private/clef-shape-matmul-browser.py", "scripts/private/q8-monitor-cadence.mjs",
+      "scripts/private/clef-shape-matmul-startup-regression.mjs"],
+    authorizationVariable: "KEVALA_CLEF_SHAPE_MATMUL_RUN_AUTHORIZED", outputDirectChild: "tmp/clef-shape-matmul-<unique>",
+    retain: ["full tracked runtime source pins", "own-FD canonical lease", "sampled PID/TID scope proofs", "private ChromeService.env session bus", "bounded logs and deadlines", "retained failures", "temporary existing WASM and Q8 links", "cleanup before lease release"],
+    lock: { path: "/home/bruno/.cache/kevala/gpu-profile.lock", device: "66306", inode: "134897311", ownPIDProof: true,
+      node: "/home/linuxbrew/.linuxbrew/Cellar/node@22/22.22.2_2/bin/node", flock: ["--exclusive", "--nonblock", "--conflict-exit-code", "75", "--no-fork"],
+      memoryHigh: "32G", memoryMax: "40G", memorySwapMax: "4G", expandEnvironment: false,
+      unset: ["VK_DRIVER_FILES", "KEVALA_PROFILE_LOCK_HELD", "KEVALA_BENCH_CDP"] },
+    beforeHardware: ["independent source review", "bounded locked syntax and source-plan execution", "static zero-model browser smoke", "root approval of concrete runner source"] },
+});
+
+export const clefShapeMatmulRequests = (index) => {
+  const entry = CLEF_SHAPE_MATMUL_PROTOCOL.cases[index];
+  if (!entry) throw new Error("Unknown Clef shape protocol case");
+  return structuredClone(entry.requests);
+};

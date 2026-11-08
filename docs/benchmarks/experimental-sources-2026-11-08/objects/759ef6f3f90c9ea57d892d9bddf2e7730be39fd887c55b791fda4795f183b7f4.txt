@@ -1,0 +1,180 @@
+{
+  "schema": "private-laya-integer-matrix-page-v1",
+  "status": "source-only-uncompiled-unexecuted",
+  "base": "81a27608f24e0b2252318515e272387c48dec7d8",
+  "page": "bench-laya-integer-matrix.html",
+  "pageObject": "window.gpuBench",
+  "queries": {
+    "default": "idle; static module imports only; zero adapter/device or fixture calls",
+    "run": "exact ?run=1",
+    "smoke": "exact ?smoke=1; verify only source assets and publish source-ready without GPU or fixture calls"
+  },
+  "frozenProtocol": {
+    "path": "scripts/private/laya-integer-matrix-protocol.json",
+    "bytes": 19823,
+    "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+    "unchanged": true
+  },
+  "frozenHelper": {
+    "path": "scripts/private/laya-integer-matrix.js",
+    "bytes": 12993,
+    "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+    "unchanged": true
+  },
+  "prerequisite": {
+    "physicalGateDataAudit": "Root and independent reviewer passed the prior tiny gate. This page repeats the identical packing gate on its actual device before full-size work.",
+    "priorCapture": "/tmp/kevala-integer-matrix-gate/tmp/capture-20261107-r1",
+    "priorResultSha256": "f92d5e879be733ec3ec130ecd6ce1d4e4073d00c3f05c29c8de9e532b64932a0",
+    "priorControllerSha256": "6be2cf1d41d8de0d1fab77594738821a4648ec732636172e64ab5ce79274e809",
+    "outputsCompared": 256,
+    "guardsCompared": 128,
+    "dispatches": 1,
+    "expectedI32LEBytesSha256": "498117f912a5f1a4a3a2f6cd8bda7bacd741f38d389ea754e842b8fa463a58b3",
+    "signs": {
+      "positive": 106,
+      "negative": 150,
+      "zero": 0
+    }
+  },
+  "device": {
+    "powerPreference": "high-performance",
+    "adapterRequestSequence": "Exactly the reviewed tiny gate/runtime sequence: high-performance request first; only if it returns null, make one default request. Record both outcomes. Do not retry feature/device failures.",
+    "adapterIdentity": "Record adapter.info and legacy isFallbackAdapter flags; require at least one observed flag, agreement when both present, and established nonfallback NVIDIA Blackwell identity before requesting the device.",
+    "requiredFeatures": [
+      "subgroups",
+      "chromium-experimental-subgroup-matrix",
+      "timestamp-query"
+    ],
+    "requiredLimits": {},
+    "shaderF16Requested": false,
+    "minimumDefaultWorkgroupStorageBytes": 16384,
+    "minimumDefaultInvocations": 256
+  },
+  "fixtures": {
+    "order": [
+      "integer",
+      "dyadic",
+      "fractional",
+      "cancellation"
+    ],
+    "seeds": {
+      "integer": 305419896,
+      "dyadic": 2271560481,
+      "fractional": 324508639,
+      "cancellation": 610839776
+    },
+    "generator": "Exactly the frozen protocol's uint32 Math.imul LCG and fixture formulas. Draw X in block/row-major order, then W, then S. Integer/dyadic consume32 draws per block; cancellation consumes16 and constructs/repeats the second half. The first generated value in each activation block is still consumed before the prescribed max-value replacement. Constant-scale fixtures draw but ignore S state, with no later data depending on it.",
+    "inputIdentities": "Compute byte sizes and SHA256 of complete synthetic X/W/S before any full-size dispatch. Retain hashes, not payload arrays. No full-size CPU matrix reference is executed.",
+    "periodicityCaveat": "The frozen low-byte weight draw repeats every256 LCG steps; exact fixtures therefore repeat weight rows. The separate nonuniform signed packing gate and fractional/cancellation per-column/per-block scales add independent addressing coverage. This page preserves the predeclared data, without claiming general model-input coverage.",
+    "comparison": "Integer/dyadic bitwise; fractional/cancellation absolute0.0005 + relative0.0001*max(1,abs(reference)); frozen helper implementation unchanged",
+    "retention": "Keep the fractional fixture's GPU resources after initial validation for all fixed timing rows. Destroy other fixture groups after validation. No fixture regeneration, sample replacement or failed-gate retry."
+  },
+  "validation": {
+    "positiveGPUStatus": [
+      2686976,
+      0,
+      0,
+      0,
+      524288,
+      16384,
+      0,
+      512,
+      0
+    ],
+    "statusWords": [
+      "outputs",
+      "mismatches",
+      "referenceNonfinite",
+      "candidateNonfinite",
+      "quantValues",
+      "quantBlocks",
+      "quantFailures",
+      "canaries",
+      "canaryFailures"
+    ],
+    "guards": "Four allocations R,C,Q,A each have64-word prefix and suffix sentinel0x5a17c9e3. Operator views exclude guards. Canary comparisons bind entire allocations.",
+    "poison": "R active0x7fc12345, C active0x7fc54321, Q active0x7f7f7f7f, A active0xffffffff. Initial fixture validation starts from all four poisoned allocations. Before each warmup/sample, rewrite the selected lane's output and, for B, both Q/A payloads and guards from the original poisoned host arrays. No poison writes occur inside the GPU timestamp span.",
+    "everySample": "After the timestamp read, compare all active outputs/encoding/metadata/canaries outside timestamps. The other lane's already validated output remains the comparison partner on the same unchanged fractional inputs. All nine actual GPU words are stored before asserting, so failures retain raw counts.",
+    "auxiliaryPart": "The production baseline remains unsplit. Its required PART binding is a4-byte sentinel buffer; copy and check it outside timestamps in addition to the frozen512 main-canary count. The reducer is fetched and hash-verified but is neither compiled nor dispatched, because mm_splits returns1.",
+    "readbackBytes": "36-byte GPU status plus4-byte unused PART sentinel;16-byte timestamp pair separately. No full-size outputs or activations are read back.",
+    "failure": "Stop on the first failed fixture/sample and retain all partial rows and raw failed status. No timing starts unless all four fixture validations pass."
+  },
+  "timing": {
+    "warmupOrder": [
+      "A",
+      "B",
+      "A",
+      "B",
+      "A",
+      "B"
+    ],
+    "warmupInvocationsPerRow": 16,
+    "AAQuartets": 9,
+    "pairedQuartets": 9,
+    "orders": [
+      "ABBA",
+      "BAAB",
+      "ABBA",
+      "BAAB",
+      "ABBA",
+      "BAAB",
+      "ABBA",
+      "BAAB",
+      "ABBA"
+    ],
+    "timedRows": 72,
+    "invocationsPerRow": 16,
+    "A": "16 actual production FP32 Q8 matmul passes",
+    "B": "16 quantization passes plus16 integer matrix passes; each invocation requantizes X",
+    "AA": "Both logical labels execute A; preserve logical lane labels and actual kernel=baseline",
+    "span": "Beginning timestamp on the first baseline/quantization pass and end timestamp on the final baseline/integer-matrix pass. One elapsed end-begin spans all16 invocations and all pass gaps. Resolve/map only after submission. Never sum disjoint dispatch timestamps.",
+    "timestamps": "WebGPU timestamp-query nanoseconds, preserved as decimal strings; duration also recorded as gpuMs and perInvocationMs. Implementation timestamp precision is not measured or corrected, and repetition count never adapts.",
+    "ratio": "For each quartet, baselineMs=median(two logical-A perInvocationMs), comparisonMs=median(two logical-B perInvocationMs), gain=1-comparisonMs/baselineMs.",
+    "acceptance": "median of9 paired gains >=0.05, both ABBA and BAAB median gains positive, and paired median gain greater than maximum absolute AA quartet gain. These criteria operationalize the existing frozen threshold and order/AA requirements prospectively.",
+    "outcome": "A nonwinning performance result is a complete done measurement. Numerical/coverage/timestamp/cleanup failures produce error. No model/request speedup or production promotion follows."
+  },
+  "resultSchema": {
+    "terminal": "done=true only after resource cleanup; status done or error for physical capture; source-ready for smoke only; no-query idle has done=false",
+    "fixture": "fixtures[]:{id,seed,shape,inputIdentities,exact,dispatches,validation,status}",
+    "warmups": "warmups[6] stores sample rows with block=warmup,quartet=null,position0..2 per lane",
+    "quartet": "timing.aa[9] and timing.paired[9]:{index,order,rows[4],baselineMs,comparisonMs,gain}",
+    "sample": "{block,quartet,position,logicalLane,kernel,invocations,passes,dispatches,timestampNs:{begin,end,elapsed},gpuMs,perInvocationMs,validation:{words[9],partUnchanged,passed,positiveCoverage}}",
+    "summary": "timing.summary:{medianGain,maxAASpread,byOrder:{ABBA,BAAB},winningQuartets,criteria:{medianAtLeastFivePercent,bothOrdersPositive,exceedsAASpread},accepted,meaning}",
+    "cleanup": "{buffersCreated,buffersDestroyed,querySetsCreated,querySetsDestroyed,deviceDestroyed,mapsOpen}; counts must match, mapsOpen0, deviceDestroyedtrue before physical done",
+    "partials": "Push every fixture/quartet/sample row before its GPU operations. Retain raw counters/timestamps before validating them. Errors retain exact phase and stack; compilation diagnostics and device errors are also stored.",
+    "boundedSize": "Fixed4fixtures,6warmups,72timedrows,256tiny gate outputs; no full tensor arrays. Each compilation retains at most16 diagnostic entries with256-character messages and totalMessages/totalErrors/truncated metadata, while all native errors are detected. Runtime errors retain at most64 entries with2048-character messages and total/truncated metadata; first terminal stack is capped8192 with explicit truncation. Parent enforces512KiB page JSON bound."
+  },
+  "lifecycle": "Parent/browser adaptation belongs to the separate gate owner. It reuses audited own-PID FD/session-bus/process/log cleanup. This page adds no parent framework, no external service and no WASM/model load.",
+  "sources": [
+    {
+      "path": "bench-laya-integer-matrix.html",
+      "bytes": 1104,
+      "sha256": "606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-page.js",
+      "bytes": 27283,
+      "sha256": "cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix.js",
+      "bytes": 12993,
+      "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-protocol.json",
+      "bytes": 19823,
+      "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+      "bytes": 13558,
+      "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+      "bytes": 1546,
+      "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+    }
+  ]
+}

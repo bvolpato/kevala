@@ -1,0 +1,303 @@
+//! Development-only, owned snapshots at the existing CPU projection boundaries.
+use super::{Head, Record, Value};
+
+const MAX_CAPTURE_BYTES: usize = 256 * 1024 * 1024;
+
+struct Projection {
+    record: usize,
+    ordinal: usize,
+    name: String,
+    weight_name: String,
+    bias_name: Option<String>,
+    first_weight_row: usize,
+    t: usize,
+    n: usize,
+    k: usize,
+    tile: u8,
+    input: Vec<f32>,
+    output: Vec<f32>,
+}
+struct CapturedRecord {
+    tokens: usize,
+    token_offset: usize,
+    option_counts: Vec<usize>,
+    logits: Option<Vec<f32>>,
+}
+
+pub(super) struct Capture {
+    active: bool,
+    complete: bool,
+    bytes: usize,
+    error: Option<String>,
+    records: Vec<CapturedRecord>,
+    projections: Vec<Projection>,
+}
+impl Capture {
+    fn fail(&mut self, message: &str) {
+        self.error = Some(message.into());
+        self.records.clear();
+        self.projections.clear();
+    }
+    fn reserve(&mut self, elements: usize) -> bool {
+        let bytes = elements.checked_mul(4).and_then(|bytes| self.bytes.checked_add(bytes));
+        match bytes {
+            Some(bytes) if bytes <= MAX_CAPTURE_BYTES => {
+                self.bytes = bytes;
+                true
+            }
+            _ => {
+                self.fail("clef projection probe exceeds its 256 MiB capture budget");
+                false
+            }
+        }
+    }
+    fn push(&mut self, mut projection: Projection, input: &[f32], output: &[f32]) {
+        if !self.active || self.error.is_some() {
+            return;
+        }
+        let Some(record) = self.records.last() else {
+            self.fail("clef projection probe has no active record");
+            return;
+        };
+        projection.record = self.records.len() - 1;
+        projection.t = record.tokens;
+        if projection.t.checked_mul(projection.k) != Some(input.len())
+            || projection.t.checked_mul(projection.n) != Some(output.len())
+        {
+            self.fail("clef projection probe shape differs from its record");
+            return;
+        }
+        let Some(elements) = input.len().checked_add(output.len()) else {
+            self.fail("clef projection probe size overflow");
+            return;
+        };
+        if !self.reserve(elements) {
+            return;
+        }
+        projection.input = input.to_vec();
+        projection.output = output.to_vec();
+        self.projections.push(projection);
+    }
+}
+fn integer(value: usize) -> Value {
+    Value::Int(value.to_string())
+}
+fn floats(values: &[f32]) -> Value {
+    Value::Object(vec![("ptr".into(), integer(values.as_ptr() as usize)), ("length".into(), integer(values.len()))])
+}
+
+impl Head {
+    /// Begin a new bounded capture. Existing capture pointers immediately become invalid.
+    pub fn probe_begin_capture(&mut self) {
+        self.probe = Some(Capture {
+            active: true,
+            complete: false,
+            bytes: 0,
+            error: None,
+            records: Vec::new(),
+            projections: Vec::new(),
+        });
+    }
+    /// Drop every captured activation/logit buffer. Weight pointers also require the loaded model.
+    pub fn probe_reset_capture(&mut self) {
+        self.probe = None;
+    }
+    pub(super) fn probe_record(&mut self, record: &Record) {
+        let Some(capture) = &mut self.probe else {
+            return;
+        };
+        if !capture.active || capture.error.is_some() {
+            return;
+        }
+        let token_offset = capture.records.last().map_or(Some(0), |r| r.token_offset.checked_add(r.tokens));
+        let Some(token_offset) = token_offset else {
+            capture.fail("clef projection probe record offset overflow");
+            return;
+        };
+        capture.records.push(CapturedRecord {
+            tokens: record.ids.len(),
+            token_offset,
+            option_counts: record.questions.iter().map(|q| q.option_spans.len()).collect(),
+            logits: None,
+        });
+    }
+    pub(super) fn probe_memory_projection(&mut self, input: &[f32], output: &[f32]) {
+        let Some(capture) = &mut self.probe else {
+            return;
+        };
+        capture.push(
+            Projection {
+                record: 0,
+                ordinal: 0,
+                name: "memory_projection".into(),
+                weight_name: "memory_projection.weight".into(),
+                bias_name: None,
+                first_weight_row: 0,
+                t: 0,
+                n: self.cfg.width,
+                k: self.cfg.hidden,
+                tile: crate::kernels::tile(),
+                input: Vec::new(),
+                output: Vec::new(),
+            },
+            input,
+            output,
+        );
+    }
+    pub(super) fn probe_memory_kv(&mut self, input: &[f32], name: &str, output: &[f32]) {
+        let ordinal = if let Some(index) = name
+            .strip_prefix("evidence_layers.")
+            .and_then(|s| s.strip_suffix(".attention"))
+            .and_then(|s| s.parse::<usize>().ok())
+            .filter(|&i| i < self.cfg.routing)
+        {
+            Some(1 + index)
+        } else {
+            name.strip_prefix("layers.")
+                .and_then(|s| s.strip_suffix(".multihead_attn"))
+                .and_then(|s| s.parse::<usize>().ok())
+                .filter(|&i| i < self.cfg.layers)
+                .map(|i| 1 + self.cfg.routing + i)
+        };
+        let (Some(ordinal), Some(capture)) = (ordinal, &mut self.probe) else {
+            return;
+        };
+        capture.push(
+            Projection {
+                record: 0,
+                ordinal,
+                name: name.into(),
+                weight_name: format!("{name}.in_proj_weight"),
+                bias_name: Some(format!("{name}.in_proj_bias")),
+                first_weight_row: self.cfg.width,
+                t: 0,
+                n: 2 * self.cfg.width,
+                k: self.cfg.width,
+                tile: crate::kernels::tile(),
+                input: Vec::new(),
+                output: Vec::new(),
+            },
+            input,
+            output,
+        );
+    }
+    pub(super) fn probe_logits(&mut self, logits: &[Vec<f32>]) {
+        let Some(capture) = &mut self.probe else {
+            return;
+        };
+        if !capture.active || capture.error.is_some() {
+            return;
+        }
+        let Some(record) = capture.records.last() else {
+            capture.fail("clef projection probe logits have no record");
+            return;
+        };
+        if logits.len() != record.option_counts.len()
+            || logits.iter().zip(&record.option_counts).any(|(row, &n)| row.len() != n)
+        {
+            capture.fail("clef projection probe raw logits differ from option counts");
+            return;
+        }
+        let Some(elements) = logits.iter().try_fold(0usize, |n, row| n.checked_add(row.len())) else {
+            capture.fail("clef projection probe logit size overflow");
+            return;
+        };
+        if !capture.reserve(elements) {
+            return;
+        }
+        capture.records.last_mut().unwrap().logits = Some(logits.iter().flatten().copied().collect());
+    }
+    /// Seal only a complete record-by-record graph. No numerical operation is rerun.
+    pub fn probe_complete_capture(&mut self) -> Result<(), String> {
+        let capture = self.probe.as_mut().ok_or("clef projection probe capture was not started")?;
+        if let Some(error) = &capture.error {
+            return Err(error.clone());
+        }
+        let per_record = 1 + self.cfg.routing + self.cfg.layers;
+        if capture.records.is_empty()
+            || capture.records.iter().any(|record| record.logits.is_none())
+            || capture.projections.len() != capture.records.len() * per_record
+        {
+            return Err("clef projection probe capture is incomplete".into());
+        }
+        for (record, entries) in capture.projections.chunks_exact(per_record).enumerate() {
+            if entries.iter().enumerate().any(|(ordinal, p)| p.record != record || p.ordinal != ordinal) {
+                return Err("clef projection probe projection order differs from the CPU graph".into());
+            }
+        }
+        capture.active = false;
+        capture.complete = true;
+        Ok(())
+    }
+    /// Read-only RAM descriptors, valid until prepare, error, another capture, or model replacement.
+    /// The JSON contains no weight, activation, or logit values.
+    pub fn probe_descriptor(&self) -> Result<Value, String> {
+        let capture = self
+            .probe
+            .as_ref()
+            .filter(|capture| capture.complete)
+            .ok_or("no completed clef projection probe capture")?;
+        let records = capture
+            .records
+            .iter()
+            .enumerate()
+            .map(|(index, record)| {
+                Value::Object(vec![
+                    ("index".into(), integer(index)),
+                    ("tokens".into(), integer(record.tokens)),
+                    ("tokenOffset".into(), integer(record.token_offset)),
+                    ("optionCounts".into(), Value::Array(record.option_counts.iter().copied().map(integer).collect())),
+                    ("rawLogits".into(), floats(record.logits.as_deref().unwrap())),
+                ])
+            })
+            .collect();
+        let mut projections = Vec::new();
+        for entry in &capture.projections {
+            let tensor = &self.tensors[&entry.weight_name];
+            let all_weights = self.store.f32s(tensor);
+            let weights = &all_weights[entry.first_weight_row * entry.k..(entry.first_weight_row + entry.n) * entry.k];
+            let bias = entry
+                .bias_name
+                .as_ref()
+                .map(|name| &self.values(name)[entry.first_weight_row..entry.first_weight_row + entry.n]);
+            projections.push(Value::Object(vec![
+                ("name".into(), Value::Str(entry.name.clone())),
+                ("ordinal".into(), integer(entry.ordinal)),
+                ("record".into(), integer(entry.record)),
+                ("t".into(), integer(entry.t)),
+                ("n".into(), integer(entry.n)),
+                ("k".into(), integer(entry.k)),
+                ("cpuTile".into(), integer(entry.tile as usize)),
+                ("segments".into(), Value::Array(vec![integer(entry.t)])),
+                ("input".into(), floats(&entry.input)),
+                ("output".into(), floats(&entry.output)),
+                ("weightTensor".into(), Value::Str(format!("clef.{}", entry.weight_name))),
+                ("firstWeightRow".into(), integer(entry.first_weight_row)),
+                ("weights".into(), floats(weights)),
+                ("biasPresent".into(), Value::Bool(bias.is_some())),
+                ("bias".into(), bias.map_or(Value::Null, floats)),
+                (
+                    "biasAddition".into(),
+                    Value::Str(if bias.is_some() { "after horizontal sum" } else { "+0 after horizontal sum" }.into()),
+                ),
+            ]));
+        }
+        Ok(Value::Object(vec![
+            ("schemaVersion".into(), integer(1)),
+            ("complete".into(), Value::Bool(true)),
+            ("dtype".into(), Value::Str("f32".into())),
+            ("captureBytes".into(), integer(capture.bytes)),
+            ("maxCaptureBytes".into(), integer(MAX_CAPTURE_BYTES)),
+            ("records".into(), Value::Array(records)),
+            ("projections".into(), Value::Array(projections)),
+            (
+                "lifetime".into(),
+                Value::Str("read-only RAM until prepare, error, new capture, or model replacement".into()),
+            ),
+            (
+                "dataPolicy".into(),
+                Value::Str("raw arrays stay in RAM; publish only hashes, ranges and parity results".into()),
+            ),
+        ]))
+    }
+}

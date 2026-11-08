@@ -1,0 +1,250 @@
+import { adapterFallbackMetadata } from "../../dev/adapter-metadata.js";
+import { Kevala } from "../../js/src/index.js";
+import { archPlugin } from "../../js/src/archs/index.js";
+import { packPrecision } from "../../js/src/pack-layout.js";
+import { prepareClefShapeMatmul, attachClefShapeObserver, detachClefShapeObserver } from "../../js/src/private-clef-shape-matmul.js";
+import { CLEF_SHAPE_MATMUL_PROTOCOL as protocol, clefShapeMatmulRequests } from "./clef-shape-matmul-protocol.mjs";
+
+const check = (value, message) => { if (!value) throw new Error(message); };
+const log = (message) => { document.getElementById("log").textContent += `${message}\n`; };
+const median = (values) => { const a = [...values].sort((x, y) => x - y), i = Math.floor(a.length / 2); return a.length % 2 ? a[i] : (a[i - 1] + a[i]) / 2; };
+
+function canonicalJSON(value) {
+  if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
+  if (typeof value === "number") { check(Number.isFinite(value), "Non-finite JSON number"); return JSON.stringify(value); }
+  check(value && typeof value === "object", "Non-JSON output value");
+  if (Array.isArray(value)) return `[${value.map(canonicalJSON).join(",")}]`;
+  check([Object.prototype, null].includes(Object.getPrototypeOf(value)), "Non-plain output object");
+  return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJSON(value[key])}`).join(",")}}`;
+}
+
+async function sha256(text) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function outputs(responses, model) {
+  check(Array.isArray(responses) && responses.length === 1, "Expected one actual complete API response");
+  canonicalJSON(responses);
+  const semantic = responses.map(({ timing, ...response }) => response);
+  const response = semantic[0];
+  check(response.model === model && response.answers && canonicalJSON(Object.keys(response.answers).sort()) === '["q"]', "Missing answers or wrong response model");
+  const answer = response.answers.q;
+  check(answer.type === "noul" && Number.isFinite(answer.noul) && answer.noul >= 0 && answer.noul <= 1, "Invalid noul answer");
+  const hasRaw = Object.hasOwn(response, "raw_probabilities");
+  let probabilities = [1 - answer.noul, answer.noul];
+  if (hasRaw) {
+    const map = response.raw_probabilities;
+    check(map && canonicalJSON(Object.keys(map).sort()) === '["q"]', "Invalid raw probability question map");
+    const raw = map.q;
+    check(raw && typeof raw === "object", "Invalid raw probability distribution");
+    if (!Array.isArray(raw)) check(canonicalJSON(Object.keys(raw).sort()) === '["false","true"]', "Invalid raw probability options");
+    probabilities = Array.isArray(raw) ? raw : [raw.false, raw.true];
+    check(probabilities.length === 2 && probabilities.every((p) => Number.isFinite(p) && p >= 0 && p <= 1) &&
+      Math.abs(probabilities[0] + probabilities[1] - 1) <= 0.0005, "Invalid raw probability distribution");
+  }
+  return { semantic, json: canonicalJSON(semantic), argmax: { q: probabilities[1] > probabilities[0] ? 1 : 0 },
+    argmaxSource: hasRaw ? "returned-raw-probabilities" : "returned-rounded-noul-answer", rawProbabilitiesReturned: hasRaw };
+}
+
+const projectionCoverage = (application) => canonicalJSON({ expected: application.expected, eligible: application.eligible,
+  byProjection: Object.fromEntries(Object.entries(application.byProjection).map(([key, value]) => [key, value.eligible])) });
+const headSnapshot = (head) => {
+  const d = head.diagnostics || {};
+  return { requested: d.requested ?? null, selected: d.selected ?? null, validated: d.validated ?? null,
+    reason: d.reason ?? null, flavor: head.engine?.flavor ?? null, coordTile: head.coord?.tile ?? null, headDiagnosticsTile: d.tile ?? null };
+};
+
+function latencyGates(sampleCase) {
+  const paired = sampleCase.quartets.map(({ samples }) => {
+    const a = median(samples.filter((s) => s.arm === "A").map((s) => s.wallMs));
+    const b = median(samples.filter((s) => s.arm === "B").map((s) => s.wallMs));
+    return { a, b, ratio: b / a, gain: (a - b) / a };
+  });
+  const aa = sampleCase.aa.map(({ samples: [a, b] }) => ({ signed: (b.wallMs - a.wallMs) / a.wallMs,
+    absolute: Math.abs(b.wallMs - a.wallMs) / a.wallMs }));
+  const aaStable = aa.length === 9 && aa.every((r) => r.absolute <= 0.05) && Math.abs(median(aa.map((r) => r.signed))) <= 0.02;
+  const gains = paired.map((p) => p.gain);
+  const stableGain = paired.length === 9 && paired.every((p) => p.ratio < 1) && gains.filter((g) => g >= 0.05).length >= 6 && median(gains) >= 0.05;
+  return { aaStable, stableGain, paired, aa, medianGain: median(gains), promotable: aaStable && stableGain };
+}
+
+let running = false;
+async function run() {
+  if (running) return;
+  running = true;
+  const result = { done: false, status: "running", phase: "source-preparation", protocol: protocol.id,
+    baseCommit: protocol.baseCommit, cases: [], engineCount: 0, deviceCount: 0, loadId: crypto.randomUUID(), sessionId: crypto.randomUUID(),
+    profile: false, context: "page", model: "clef-flash", loadOptions: { ...protocol.load } };
+  window.bench = result;
+  let kevala = null, helper = null, trunk = null, observerToken = null, actualGpu = null, header = null, precompileStarted = null;
+  const plugin = archPlugin("clef"), createGpu = plugin.createGpu;
+  const deadline = performance.now() + 900000;
+  const bounded = async (work, label, capMs = 30000) => {
+    const remaining = Math.min(capMs, deadline - performance.now());
+    check(remaining > 0, "Private Clef comparison deadline exceeded");
+    let timer;
+    const timeout = new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Private Clef ${label} deadline exceeded`)), remaining); });
+    try { return await Promise.race([work(), timeout]); }
+    finally { clearTimeout(timer); }
+  };
+  try {
+    const q = new URLSearchParams(location.hash.slice(1));
+    for (const [key, value] of [["backend", "webgpu"], ["model", "clef-flash"], ["precision", "q8"], ["profile", "0"], ["cache", "0"], ["stateCache", "0"], ["onPage", "1"]])
+      check(!q.has(key) || q.get(key) === value, `Frozen ${key} setting changed`);
+    for (const key of ["flavor", "gpuKernel", "clefHead", "cpuKernel", "submit", "features", "baseline", "threads", "retune", "runtime"])
+      check(!q.has(key), `Frozen protocol forbids a ${key} override`);
+    const pack = new URL(q.get("packUrl") || "./tmp/clef-flash-q8.kevala", document.baseURI);
+    check(pack.origin === location.origin, "Pack URL must be same-origin");
+    plugin.createGpu = function (gpu, ...args) {
+      result.engineCount++; result.deviceCount++;
+      check(result.engineCount === 1, "Experiment must load exactly one Clef engine and device");
+      actualGpu = gpu; header = args[1];
+      trunk = createGpu.call(this, gpu, ...args);
+      observerToken = attachClefShapeObserver(trunk);
+      return trunk;
+    };
+    result.phase = "load";
+    const loadStarted = performance.now();
+    kevala = await bounded(() => Kevala.load({ backend: "webgpu", model: { name: "clef-flash", url: pack.href }, precision: "q8",
+      onPage: true, cache: false, stateCache: false, profile: false, gpuKernel: "auto", clefHead: "auto", cpuKernel: "auto" }), "load", 300000);
+    result.loadMs = performance.now() - loadStarted;
+    plugin.createGpu = createGpu;
+    check(trunk?.head && actualGpu && result.engineCount === 1 && result.deviceCount === 1, "Missing single loaded Clef GPU engine");
+    check(!trunk.profiler && trunk.stateCacheEnabled === false && kevala.info.backend === "webgpu" && kevala.info.onPage === true, "Unprofiled GPU/cache load contract failed");
+    const info = actualGpu.adapter.info || {};
+    Object.assign(result, { arch: kevala.info.arch, backend: kevala.info.backend, modelInfo: kevala.info.model,
+      flavor: kevala.info.flavor, selectedFlavor: kevala.info.flavor, threads: kevala.info.threads, precision: packPrecision(header), pack: kevala.info.pack,
+      cache: { packEnabled: false, state: kevala.info.stateCache }, gpuTuning: kevala.info.gpuTuning, cpuTuning: kevala.info.cpuTuning,
+      cpuTiles: kevala.info.cpuTiles, hardwareConcurrency: navigator.hardwareConcurrency || null, crossOriginIsolated: globalThis.crossOriginIsolated === true,
+      adapter: { name: actualGpu.name, vendor: info.vendor || null, architecture: info.architecture || null,
+        device: info.device || null, description: info.description || null, ...adapterFallbackMetadata(actualGpu.adapter),
+        features: [...actualGpu.device.features].sort(), limits: { maxBufferSize: actualGpu.device.limits.maxBufferSize,
+          maxStorageBufferBindingSize: actualGpu.device.limits.maxStorageBufferBindingSize, maxComputeWorkgroupStorageSize: actualGpu.device.limits.maxComputeWorkgroupStorageSize } },
+      clefHeadAfterLoad: headSnapshot(trunk.head) });
+    result.phase = "precompile";
+    precompileStarted = performance.now();
+    helper = await bounded(() => prepareClefShapeMatmul(trunk, { ...protocol.precompile, observerToken }), "candidate preparation", protocol.precompile.deadlineMs + 1000);
+    result.startup = helper.startup;
+    for (const entry of protocol.cases) {
+      const requests = clefShapeMatmulRequests(entry.index), requestJSON = JSON.stringify(requests), requestHash = await sha256(requestJSON);
+      const sampleCase = { index: entry.index, name: entry.name, requestJSON, requestHash, tokens: null,
+        referenceOutputs: null, validation: [], warmups: [], aa: [], quartets: [] };
+      result.cases.push(sampleCase);
+      let referenceJSON = null, referenceCoverage = null, referenceArgmax = null;
+      let observing = true;
+      const measure = async (arm, sink, { validate = false } = {}) => {
+        check(JSON.stringify(requests) === requestJSON, "Fixed request changed");
+        check(!trunk.profiler, "Profiling was enabled during clean request measurement");
+        const sample = { arm, requestHash, wallMs: null, responses: null, application: null, status: "running", loadId: result.loadId };
+        sink.push(sample);
+        try {
+          helper.assertValidationObservers(observing);
+          helper.beginRequest(arm, { validate });
+          const start = performance.now();
+          let responses;
+          try { responses = [await kevala.decide(requests[0].state, requests[0].questions)]; }
+          finally { sample.wallMs = performance.now() - start; }
+          // Full API objects and every validation operation are captured after request wall time.
+          sample.responses = responses;
+          sample.application = helper.endRequest();
+          helper.assertValidationObservers(observing);
+          sample.clefHead = headSnapshot(trunk.head);
+          sample.finalRows = { ...trunk.lastFinalRows };
+          check(Number.isFinite(sample.wallMs) && sample.wallMs > 0 && !trunk.profiler, "Invalid unprofiled wall sample");
+          check(sample.finalRows.active === false && sample.finalRows.reason === "all-rows", "Clef did not retain all rows");
+          const output = outputs(responses, result.modelInfo.name);
+          sample.responses = JSON.parse(JSON.stringify(responses));
+          sample.semanticResponseJSON = output.json;
+          sample.argmax = output.argmax; sample.argmaxSource = output.argmaxSource;
+          sample.rawProbabilitiesReturned = output.rawProbabilitiesReturned;
+          const tokens = responses[0].timing?.tokens;
+          sample.tokens = tokens;
+          check(entry.expectedTokens.includes(tokens), "Pinned request token count is outside the declared shape");
+          if (sampleCase.tokens === null) sampleCase.tokens = tokens;
+          check(tokens === sampleCase.tokens, "Identical request token count changed");
+          if (referenceJSON === null) {
+            referenceJSON = output.json; referenceCoverage = projectionCoverage(sample.application); referenceArgmax = canonicalJSON(output.argmax);
+            sampleCase.referenceOutputs = JSON.parse(output.json);
+          }
+          check(output.json === referenceJSON && canonicalJSON(output.argmax) === referenceArgmax, "Complete API response or argmax differs for the identical request");
+          check(projectionCoverage(sample.application) === referenceCoverage, "Eligible projection coverage changed between arms");
+          sample.status = "complete";
+          return sample;
+        } catch (error) {
+          sample.status = "failed"; sample.error = String(error?.message || error);
+          sample.application ||= error.applicationCounts || null;
+          if (!sample.application) {
+            try { sample.application = helper.endRequest(); }
+            catch (applicationError) { sample.application = applicationError.applicationCounts || null; }
+          }
+          throw error;
+        }
+      };
+      const validate = async (phase) => {
+        const validation = { phase, samples: [], application: null, operator: null };
+        sampleCase.validation.push(validation);
+        let requestError = null;
+        try { await bounded(() => measure("B", validation.samples, { validate: true }), `${phase} operator request`); }
+        catch (error) { requestError = error; }
+        validation.application = validation.samples[0].application;
+        try { validation.operator = await bounded(() => helper.collectValidation(), `${phase} operator readback`); }
+        catch (error) { validation.operatorError = String(error?.message || error); if (!requestError) throw error; }
+        if (requestError) throw requestError;
+        const actual = validation.operator.checks.filter((c) => c.kind === "actual-epilogue");
+        const residuals = actual.filter((c) => c.actualMode === 1);
+        const probes = validation.operator.checks.filter((c) => c.kind === "mode0-poison-probe");
+        check(validation.operator.ok && actual.length === validation.application.expected && probes.length === residuals.length &&
+          validation.operator.expectedChecks === actual.length + probes.length, "Full real-input operator, finite, store or tail coverage failed");
+      };
+      result.phase = `case-${entry.index}-reference`;
+      const reference = [];
+      sampleCase.referenceSamples = reference;
+      await bounded(() => measure("A", reference), "reference request");
+      sampleCase.referenceSample = reference[0];
+      result.phase = `case-${entry.index}-pre-validation`;
+      await validate("pre");
+      helper.suspendValidationObservers(); observing = false;
+      helper.assertValidationObservers(false);
+      result.phase = `case-${entry.index}-warmups`;
+      for (const arm of protocol.sequencePerCase.warmupOrder) await bounded(() => measure(arm, sampleCase.warmups), "warmup request");
+      for (const [round, order] of protocol.sequencePerCase.quartetOrders.entries()) {
+        result.phase = `case-${entry.index}-round-${round}`;
+        const aa = { round, samples: [] }, quartet = { round, order, samples: [] };
+        sampleCase.aa.push(aa);
+        for (const arm of "AA") await bounded(() => measure(arm, aa.samples), "AA request");
+        sampleCase.quartets.push(quartet);
+        for (const arm of order) await bounded(() => measure(arm, quartet.samples), "quartet request");
+      }
+      helper.assertValidationObservers(false);
+      helper.resumeValidationObservers(); observing = true;
+      helper.assertValidationObservers(true);
+      result.phase = `case-${entry.index}-post-validation`;
+      await validate("post");
+      sampleCase.gates = latencyGates(sampleCase);
+      log(`${entry.name}: median gain ${(100 * sampleCase.gates.medianGain).toFixed(2)}%; AA stable ${sampleCase.gates.aaStable}; promotion gate ${sampleCase.gates.promotable}`);
+    }
+    result.gates = { quality: true, completeCoverage: result.cases.length === 3,
+      aaStable: result.cases.every((c) => c.gates.aaStable), stableGain: result.cases.every((c) => c.gates.stableGain),
+      promotable: result.cases.length === 3 && result.cases.every((c) => c.gates.promotable) };
+    result.phase = "complete"; result.status = "complete"; result.done = true;
+  } catch (error) {
+    result.status = "failed"; result.error = String(error?.message || error); result.errorCode = error?.code || null;
+    if (precompileStarted !== null && !result.startup) result.startup = error.shapeStartup || {
+      elapsedMs: performance.now() - precompileStarted, status: "failed", failedPhase: result.phase };
+    if (error?.applicationCounts) result.failedApplication = error.applicationCounts;
+    result.done = true;
+    log(`failed: ${result.error}`);
+  } finally {
+    plugin.createGpu = createGpu;
+    try { helper?.abortRequest(); helper?.dispose(); if (trunk && observerToken) detachClefShapeObserver(trunk, observerToken); }
+    catch (error) { result.cleanupError = String(error?.message || error); result.status = "failed"; result.done = true; }
+    kevala?.dispose();
+    window.bench = result;
+    running = false;
+  }
+}
+
+document.getElementById("run").onclick = run;
+window.bench = { done: false, status: "idle", phase: "ready", protocol: protocol.id };
+if (new URLSearchParams(location.hash.slice(1)).has("auto")) run();

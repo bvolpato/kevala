@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala benchmark</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  select, button { font: inherit; background: #161b22; color: inherit; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>kevala benchmark</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  threads <select id="threads"><option>1</option><option>2</option><option selected>4</option><option>8</option></select>
+  <button id="run">run</button>
+</p>
+<pre id="log"></pre>
+<script type="module">
+import { Kevala, MODELS } from "./js/src/index.js";
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+window.bench = { status: "idle" };
+
+const words = "the customer wrote in about a recurring charge they did not recognise and wants a refund today ";
+const Q = { type: "noul", instructions: "Is the customer asking for money back?" };
+
+function integerParam(q, name, fallback, minimum) {
+  const raw = q.get(name);
+  const value = raw === null || raw === "" ? fallback : Number(raw);
+  if (!Number.isInteger(value) || value < minimum) throw new Error(`${name} must be an integer >= ${minimum}`);
+  return value;
+}
+
+async function run() {
+  $("log").textContent = "";
+  const q = new URLSearchParams(location.hash.slice(1));
+  window.bench = { status: "running" };
+  let kevala = null;
+  try {
+    const backend = q.get("backend") || $("backend").value;
+    const threadOption = q.get("threads") || $("threads").value;
+    const threads = threadOption === "auto" ? "auto" : Number(threadOption);
+    const name = q.get("model") || "laya";
+    const local = q.get("pack") === "local";
+    if (local && !MODELS[name]) throw new Error(`Unknown local model: ${name}`);
+    const model = local ? `./tmp/${name}-q8.kevala` : name;
+    const runs = integerParam(q, "runs", 10, 1);
+    const warmups = integerParam(q, "warmups", 2, 0);
+    const requestedFlavor = q.get("flavor") || undefined;
+    const unique = q.get("unique") === "1";
+    const t0 = performance.now();
+    // baseline=1: WebGPU without optional features and with default limits, as the weakest device runs;
+    // features=shader-f16,timestamp-query: only those optional features (f16 without subgroups, as Firefox)
+    const gpuFeatures = q.get("features") ? q.get("features").split(",") : undefined;
+    kevala = await Kevala.load({ backend, threads, model, flavor: requestedFlavor, cpuKernel: q.get("cpuKernel") || "auto", gpuKernel: q.get("gpuKernel") || "auto", retune: q.get("retune") === "1", cache: q.get("cache") !== "0", profile: q.get("profile") === "1", submit: q.get("submit") || undefined, gpuBaseline: q.get("baseline") === "1", gpuFeatures });
+    log(`loaded in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+    const results = {
+      model: name,
+      arch: kevala.info.arch,
+      backend: kevala.info.backend,
+      gpu: kevala.info.gpu,
+      threads: kevala.info.threads,
+      flavor: kevala.info.flavor,
+      cpuTiles: kevala.info.cpuTiles,
+      cpuTuning: kevala.info.cpuTuning,
+      gpuTuning: kevala.info.gpuTuning,
+      selectedFlavor: kevala.info.flavor || null,
+      hardwareConcurrency: navigator.hardwareConcurrency || null,
+      crossOriginIsolated: globalThis.crossOriginIsolated === true,
+      runs,
+      warmups,
+      unique,
+      load_s: (performance.now() - t0) / 1000,
+      cases: [],
+    };
+    // shapes: one short question, one long state, several questions, a batch of states
+    const shapes = [
+      { name: "1 question, ~40 tokens", reqs: [{ state: "Refund the duplicate charge today or we cancel.", questions: { q: Q } }] },
+      { name: "1 question, ~128 tokens", reqs: [{ state: words.repeat(6), questions: { q: Q } }] },
+      { name: "1 question, ~512 tokens", reqs: [{ state: words.repeat(30), questions: { q: Q } }] },
+      { name: "5 questions, ~60 tokens each", reqs: [{ state: words.repeat(2), questions: Object.fromEntries([0, 1, 2, 3, 4].map((i) => [`q${i}`, Q])) }] },
+      { name: "32 states x 1 question (~45 tokens)", reqs: Array.from({ length: 32 }, (_, i) => ({ state: `Candidate ${i}: the piece lands flat with ${i % 3} holes.`, questions: { q: Q } })) },
+    ];
+    const pick = q.get("shapes") ? q.get("shapes").split(",").map(Number) : shapes.map((_, i) => i);
+    for (const s of shapes.filter((_, i) => pick.includes(i))) {
+      // the longest gap between animation frames while this shape runs: how much it stalls the page
+      let gap = 0, lastF = performance.now(), on = true;
+      const tick = (t) => { gap = Math.max(gap, t - lastF); lastF = t; if (on) requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+      const ms = [];
+      const samples = [];
+      const wallMs = [];
+      let tokens = 0;
+      let last = null;
+      for (let i = 0; i < warmups + runs; i++) {
+        const t = performance.now();
+        // Give every measured request a distinct state so the model's request cache cannot help.
+        const reqs = unique ? s.reqs.map((x) => ({ ...x, state: `Run ${i}. ${x.state}` })) : s.reqs;
+        const r = reqs.length === 1 ? [await kevala.decide(reqs[0].state, reqs[0].questions)] : await kevala.decideMany(reqs);
+        const wall = performance.now() - t;
+        if (i >= warmups) {
+          ms.push(wall);
+          wallMs.push(wall);
+          samples.push({ ...r[0].timing, wallMs: wall });
+        }
+        tokens = r[0].timing.tokens;
+        last = r[0].timing;
+      }
+      on = false;
+      ms.sort((a, b) => a - b);
+      const middle = ms.length >> 1;
+      const p50 = ms.length % 2 ? ms[middle] : (ms[middle - 1] + ms[middle]) / 2;
+      const c = { name: s.name, frameGap: gap, tokens, p50, p95: ms[Math.min(ms.length - 1, Math.floor(ms.length * 0.95))], min: ms[0] };
+      c.last = last;
+      c.samples = samples;
+      c.wallMs = wallMs;
+      results.cases.push(c);
+      log(`${s.name.padEnd(38)} ${String(tokens).padStart(5)} tok  p50 ${c.p50.toFixed(1).padStart(7)} ms  p95 ${c.p95.toFixed(1).padStart(7)} ms`);
+    }
+    results.done = true;
+    window.bench = results;
+  } catch (error) {
+    const message = String(error?.message || error);
+    log("ERROR " + message);
+    window.bench = { done: true, status: "error", error: message };
+  } finally {
+    kevala?.dispose();
+  }
+}
+$("run").onclick = () => run();
+if (location.hash.includes("auto")) {
+  const q = new URLSearchParams(location.hash.slice(1));
+  if (q.get("backend")) $("backend").value = q.get("backend");
+  if (q.get("threads")) $("threads").value = q.get("threads");
+  $("run").click();
+}
+</script>
+</body>
+</html>

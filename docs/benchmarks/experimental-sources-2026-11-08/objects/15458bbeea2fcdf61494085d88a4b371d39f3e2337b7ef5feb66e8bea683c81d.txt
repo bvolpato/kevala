@@ -1,0 +1,51 @@
+[
+  {
+    "path": "bench-laya-integer-matrix.html",
+    "route": "/bench-laya-integer-matrix.html",
+    "bytes": 1104,
+    "sha256": "606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3",
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-page.js",
+    "route": "/scripts/private/laya-integer-matrix-page.js",
+    "bytes": 27283,
+    "sha256": "cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019",
+    "contentType": "text/javascript; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix.js",
+    "route": "/scripts/private/laya-integer-matrix.js",
+    "bytes": 12993,
+    "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+    "contentType": "text/javascript; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-protocol.json",
+    "route": "/scripts/private/laya-integer-matrix-protocol.json",
+    "bytes": 19823,
+    "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+    "contentType": "application/json"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+    "route": "/scripts/private/laya-integer-matrix-baseline.wgsl",
+    "bytes": 13558,
+    "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+    "contentType": "text/plain; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+    "route": "/scripts/private/laya-integer-matrix-reduce.wgsl",
+    "bytes": 1546,
+    "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+    "contentType": "text/plain; charset=utf-8"
+  },
+  {
+    "path": "scripts/private/laya-integer-matrix-page-plan.json",
+    "route": "/scripts/private/laya-integer-matrix-page-plan.json",
+    "bytes": 10815,
+    "sha256": "759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4",
+    "contentType": "application/json"
+  }
+]

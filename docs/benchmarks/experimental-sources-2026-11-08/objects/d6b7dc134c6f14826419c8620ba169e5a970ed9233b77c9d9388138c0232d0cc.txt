@@ -1,0 +1,142 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = []
+# ///
+"""Focused regression checks for helpers embedded in the standalone runner."""
+
+import ast
+import hashlib
+import json
+import time
+import unittest
+from pathlib import Path
+
+
+RUNNER = Path(__file__).resolve().parents[1] / "bench-gpu.py"
+SOURCE_TREE = ast.parse(RUNNER.read_text(encoding="utf-8"), filename=str(RUNNER))
+FUNCTIONS = {"poll_q8_page", "thread_identity_delta", "_q8_check_original_anchors", "_q8_bounded_snapshot_partial"}
+HELPER_TREE = ast.Module(body=[node for node in SOURCE_TREE.body if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in FUNCTIONS], type_ignores=[])
+NAMESPACE = {"hashlib": hashlib, "json": json, "time": time,
+    "Q8_TERMINAL_EXPRESSION": "return Boolean(window.bench && window.bench.done === true);",
+    "Q8_RESULT_EXPRESSION": "return window.bench || null;"}
+exec(compile(HELPER_TREE, str(RUNNER), "exec"), NAMESPACE)
+poll_q8_page = NAMESPACE["poll_q8_page"]
+thread_identity_delta = NAMESPACE["thread_identity_delta"]
+_q8_bounded_snapshot_partial = NAMESPACE["_q8_bounded_snapshot_partial"]
+_q8_check_original_anchors = NAMESPACE["_q8_check_original_anchors"]
+
+
+class FakeBrowser:
+    def __init__(self, terminal_values: list[bool], result: object):
+        self.terminal_values = iter(terminal_values)
+        self.result = result
+        self.calls: list[str] = []
+
+    def execute_script(self, expression: str) -> object:
+        self.calls.append(expression)
+        if expression == "return Boolean(window.bench && window.bench.done === true);":
+            return next(self.terminal_values)
+        if expression == "return window.bench || null;":
+            return self.result
+        raise AssertionError(f"unexpected script expression: {expression}")
+
+
+class Q8TerminalPollTest(unittest.TestCase):
+    def test_false_continues_then_true_breaks_and_fetches_full_result_once(self) -> None:
+        browser = FakeBrowser([False, True], {"done": True, "q8SwiGluTrial": {"status": "complete"}})
+        now = [0.0]
+        samples: list[str] = []
+
+        def wait(seconds: float) -> None:
+            now[0] += seconds
+
+        complete, result = poll_q8_page(browser.execute_script, deadline=1.0, check_diagnostics=samples.append,
+            clock=lambda: now[0], wait=wait)
+
+        self.assertTrue(complete)
+        self.assertEqual(result, browser.result)
+        self.assertEqual(browser.calls, [
+            "return Boolean(window.bench && window.bench.done === true);",
+            "return Boolean(window.bench && window.bench.done === true);",
+            "return window.bench || null;",
+        ])
+        self.assertEqual(samples, ["poll", "poll", "terminal-before-result-fetch", "after-result-fetch"])
+        self.assertEqual(browser.calls.count("return window.bench || null;"), 1)
+
+    def test_timeout_never_fetches_full_result(self) -> None:
+        browser = FakeBrowser([False, False], {"done": True})
+        now = [0.0]
+
+        def wait(seconds: float) -> None:
+            now[0] += seconds
+
+        complete, result = poll_q8_page(browser.execute_script, deadline=0.5,
+            check_diagnostics=lambda _stage: None, clock=lambda: now[0], wait=wait)
+
+        self.assertFalse(complete)
+        self.assertIsNone(result)
+        self.assertEqual(len(browser.calls), 2)
+
+
+class Q8ThreadSnapshotTest(unittest.TestCase):
+    CGROUP = "0::/user.slice/kevala-q8.scope"
+
+    def thread(self, tid: int, start_ticks: str = "500", *, cgroup: str | None = None, process_start: str = "400") -> dict:
+        return {"pid": 41, "tid": tid, "startTicks": start_ticks, "processStartTicks": process_start,
+            "processStartTicksAfter": process_start, "cgroup": cgroup or self.CGROUP, "cgroupAfter": cgroup or self.CGROUP}
+
+    def test_individually_verified_new_tid_is_recorded_as_churn(self) -> None:
+        delta = thread_identity_delta([self.thread(41), self.thread(42, "501")],
+            [self.thread(41), self.thread(43, "502")], self.CGROUP)
+        self.assertEqual([row["tid"] for row in delta["newThreads"]], [43])
+        self.assertEqual([row["tid"] for row in delta["disappearedThreads"]], [42])
+        self.assertEqual(delta["stableThreadCount"], 1)
+
+    def test_escaped_cgroup_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "escaped its exact cgroup"):
+            thread_identity_delta([], [self.thread(43, cgroup="0::/outside")], self.CGROUP)
+
+    def test_reused_pid_or_tid_identity_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "TID 42 identity was reused"):
+            thread_identity_delta([self.thread(42, "501")], [self.thread(42, "999")], self.CGROUP)
+        with self.assertRaisesRegex(ValueError, "PID 41 identity was reused between TID inventories"):
+            thread_identity_delta([self.thread(42, "501")],
+                [self.thread(43, "502", process_start="401")], self.CGROUP)
+
+    def test_absent_original_anchor_passes_and_same_identity_fails(self) -> None:
+        phases = []
+        original = {"driver": {"pid": 900, "startTicks": "100"}}
+
+        def phase(name: str, **identity: object) -> None:
+            phases.append((name, identity))
+
+        def absent(_pid: int) -> dict:
+            raise FileNotFoundError
+
+        self.assertEqual(_q8_check_original_anchors(original, absent, phase), {"driver": {"state": "absent"}})
+        self.assertEqual(phases[-1], ("check-original-anchor", {"anchorName": "driver", "pid": 900}))
+
+        with self.assertRaisesRegex(ValueError, "driver process survived browser quit"):
+            _q8_check_original_anchors(original, lambda _pid: {"pid": 900, "startTicks": "100"}, phase)
+
+    def test_nested_churn_is_trimmed_under_the_partial_size_cap(self) -> None:
+        churn = [self.thread(100 + index, f"{500 + index}") | {"detail": "x" * 280} for index in range(2048)]
+        partial = {"stage": "regression", "roots": [41], "phases": [{"phase": "current-tid-inventory"}],
+            "current": {"phase": "current-tid-inventory", "pid": 41, "tid": 100,
+                "tidEvidence": {"before": self.thread(100), "after": self.thread(100)}},
+            "assurance": "sequential samples", "error": "bounded synthetic overflow", "passes": [
+                {"scan": 0, "threads": [], "liveThreads": [], "threadChurn": {
+                    "newThreads": churn, "disappearedThreads": churn, "stableThreadCount": 0}}]}
+
+        bounded = _q8_bounded_snapshot_partial(partial)
+
+        self.assertLessEqual(len(json.dumps(bounded, separators=(",", ":"), ensure_ascii=False).encode()), 512 * 1024)
+        churn_result = bounded["passes"][0]["threadChurn"]
+        self.assertEqual(churn_result["newThreadsTotal"], 2048)
+        self.assertTrue(churn_result["newThreadsTruncated"])
+        self.assertEqual(bounded["current"]["tidEvidence"]["before"]["tid"], 100)
+
+
+if __name__ == "__main__":
+    unittest.main()

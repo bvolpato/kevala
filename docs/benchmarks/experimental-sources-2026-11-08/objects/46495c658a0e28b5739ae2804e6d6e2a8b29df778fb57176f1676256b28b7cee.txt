@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>kevala parity check: Kev</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+  td, th { padding: 2px 10px; text-align: right; border-bottom: 1px solid #1f2630; } td:first-child { text-align: left; }
+  .bad { color: #ff6b6b; }
+</style>
+</head>
+<body>
+<h1>kevala parity: Kev-0.8B against Kev's own PyTorch code</h1>
+<p>
+  backend <select id="backend"><option value="auto">auto</option><option value="webgpu">webgpu</option><option value="wasm">wasm</option></select>
+  weights <select id="pack">
+    <option value="pack">int8 pack from Hugging Face (857 MB)</option>
+    <option value="checkpoint">original checkpoint, converted here (1.6 GB)</option>
+    <option value="local">dev pack in tmp/ (local server only)</option>
+  </select>
+  <button id="run">run</button>
+</p>
+<pre id="log"></pre>
+<table id="out"></table>
+<script type="module">
+import { Kevala } from "./js/src/index.js";
+const $ = (id) => document.getElementById(id);
+const log = (s) => ($("log").textContent += s + "\n");
+window.parity = null;
+
+// #pack=local&backend=webgpu (or pack=checkpoint, or a pack URL) runs at once, for scripted checks;
+// baseline=1 runs WebGPU without optional features and with default limits, like the weakest device
+const q = new URLSearchParams(location.hash.slice(1));
+if (q.get("backend")) $("backend").value = q.get("backend");
+if (["pack", "checkpoint", "local"].includes(q.get("pack"))) $("pack").value = q.get("pack");
+
+async function run() {
+  $("log").textContent = "";
+  $("out").innerHTML = "";
+  const backend = $("backend").value;
+  const threads = Number(q.get("threads") || 1);
+  const flavor = q.get("flavor") || undefined;
+  const choice = $("pack").value;
+  const url = q.get("pack")?.includes("/") ? q.get("pack") : null;
+  const name = q.get("model") || "kev-0.8b";
+  const model = url || (choice === "local" ? `./tmp/${name}-q8.kevala` : name);
+  const from = choice === "checkpoint" ? "checkpoint" : "pack";
+  const t0 = performance.now();
+  const kevala = await Kevala.load({ model, from, backend, threads, flavor, gpuKernel: q.get("gpuKernel") || "auto", cache: q.get("cache") !== "0", gpuBaseline: q.get("baseline") === "1" });
+  log(`ready in ${((performance.now() - t0) / 1000).toFixed(1)}s: ${kevala.info.backend} ${kevala.info.gpu || ""}`);
+  const reference = q.get("reference") || "./tests/fixtures/golden-kev.json";
+  const response = await fetch(reference);
+  if (!response.ok) throw new Error(`reference: HTTP ${response.status}`);
+  const golden = await response.json();
+  const rows = [["case", "q", "tokens", "argmax", "max |dp|", "ms"]];
+  let worst = 0, agree = 0, n = 0;
+  const times = [], details = [];
+  for (const c of golden.cases) {
+    const r = await kevala.decide(c.state, c.questions);
+    times.push(r.timing.forward);
+    Object.keys(c.questions).forEach((qid, i) => {
+      const want = c.probs[i];
+      const got = r.raw_probabilities[qid];
+      if (!got || got.length !== want.length || !got.every(Number.isFinite)) throw new Error(`${c.id}/${qid}: invalid probabilities`);
+      const dp = Math.max(...want.map((v, k) => Math.abs(v - got[k])));
+      const am = (v) => v.indexOf(Math.max(...v));
+      const ok = am(want) === am(got);
+      n++; agree += ok; worst = Math.max(worst, dp);
+      details.push({ id: c.id, question: qid, expected: want, actual: got, maxDp: dp, argmax: ok });
+      rows.push([c.id, qid, r.usage.input_tokens, ok ? "ok" : "MISS", dp.toFixed(4), r.timing.forward.toFixed(1)]);
+    });
+  }
+  times.sort((a, b) => a - b);
+  window.parity = {
+    backend: kevala.info.backend,
+    model: kevala.info.model,
+    reference,
+    referenceSource: golden.source || golden.model,
+    details,
+    gpu: kevala.info.gpu,
+    gpuTuning: kevala.info.gpuTuning,
+    threads: kevala.info.threads,
+    flavor: kevala.info.flavor,
+    selectedFlavor: kevala.info.flavor || null,
+    hardwareConcurrency: navigator.hardwareConcurrency || null,
+    crossOriginIsolated: globalThis.crossOriginIsolated === true,
+    questions: n,
+    argmax: agree,
+    maxDp: worst,
+    p50: times[times.length >> 1],
+    max: times[times.length - 1],
+    done: true,
+  };
+  log(JSON.stringify(window.parity));
+  $("out").innerHTML = rows.map((r, i) => `<tr>${r.map((v) => (i ? `<td class="${v === "MISS" || Number(v) > 0.02 ? "bad" : ""}">${v}</td>` : `<th>${v}</th>`)).join("")}</tr>`).join("");
+  kevala.dispose();
+}
+const start = () => run().catch((e) => { log("ERROR " + e.message); window.parity = { done: true, error: e.message }; });
+$("run").addEventListener("click", start);
+if (q.get("pack") || q.get("backend")) start();
+</script>
+</body>
+</html>

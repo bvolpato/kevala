@@ -1,0 +1,166 @@
+// Private operator checks. These run only in separate untimed validation requests.
+import { encodeMatmul } from "./gpu.js";
+import { requireClefShapeObserver, detachClefShapeObserver } from "./private-clef-shape-matmul-observer.js";
+
+const STATUS_WORDS = 8, STATUS_BYTES = STATUS_WORDS * 4;
+const GUARD_WORDS = 64, SENTINEL = 0x4640e500, POISON_A = 0x7fc00001, POISON_B = 0x7fc00002;
+const check = (value, message) => { if (!value) throw new Error(`Private Clef operator validation: ${message}`); };
+const bind = (device, layout, resources) => device.createBindGroup({ layout,
+  entries: resources.map((resource, binding) => ({ binding, resource })) });
+const resource = (buffer) => ({ buffer });
+const work = (pass, length) => {
+  const n = Math.ceil(length / 256);
+  pass.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
+};
+
+export async function prepareClefShapeValidation(trunk, compile, observerToken) {
+  const observer = requireClefShapeObserver(trunk, observerToken);
+  observer.claim();
+  const { groups, uniforms, assertIntegrity } = observer;
+  const params = "struct P { length: u32, activeCount: u32, guard: u32, mode: u32 }\n@group(0) @binding(0) var<uniform> p: P;\n";
+  const fill = params + `@group(0) @binding(1) var<storage, read> initial: array<u32>;
+@group(0) @binding(2) var<storage, read_write> baseline: array<u32>;
+@group(0) @binding(3) var<storage, read_write> candidate: array<u32>;
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let i = gid.x + gid.y * 65535u * 256u;
+  if (i >= p.length) { return; }
+  if (i >= p.guard && i < p.guard + p.activeCount) {
+    if (p.mode == 1u) { baseline[i] = initial[i - p.guard]; candidate[i] = initial[i - p.guard]; }
+    else { baseline[i] = ${POISON_A}u; candidate[i] = ${POISON_B}u; }
+  } else { baseline[i] = ${SENTINEL}u; candidate[i] = ${SENTINEL}u; }
+}`;
+  const compare = params + `@group(0) @binding(1) var<storage, read> baseline: array<u32>;
+@group(0) @binding(2) var<storage, read> candidate: array<u32>;
+@group(0) @binding(3) var<storage, read_write> status: array<atomic<u32>>;
+var<workgroup> localStatus: array<atomic<u32>, 8>;
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>, @builtin(local_invocation_index) li: u32) {
+  if (li < 8u) { atomicStore(&localStatus[li], 0u); }
+  workgroupBarrier();
+  let i = gid.x + gid.y * 65535u * 256u;
+  if (i < p.length) {
+    let a = baseline[i]; let b = candidate[i];
+    if (i >= p.guard && i < p.guard + p.activeCount) {
+      atomicAdd(&localStatus[6], 1u);
+      if (a != b) { atomicAdd(&localStatus[0], 1u); }
+      if ((a & 0x7f800000u) == 0x7f800000u) { atomicAdd(&localStatus[1], 1u); }
+      if ((b & 0x7f800000u) == 0x7f800000u) { atomicAdd(&localStatus[2], 1u); }
+      if (a == ${POISON_A}u) { atomicAdd(&localStatus[3], 1u); }
+      if (b == ${POISON_B}u) { atomicAdd(&localStatus[4], 1u); }
+    } else {
+      atomicAdd(&localStatus[7], 1u);
+      if (a != ${SENTINEL}u) { atomicAdd(&localStatus[5], 1u); }
+      if (b != ${SENTINEL}u) { atomicAdd(&localStatus[5], 1u); }
+    }
+  }
+  workgroupBarrier();
+  if (li < 8u) { atomicAdd(&status[li], atomicLoad(&localStatus[li])); }
+}`;
+  const pFill = await compile(fill, "private_clef_shape_validate_fill", "auto");
+  const pCompare = await compile(compare, "private_clef_shape_validate_compare", "auto");
+  let current = null;
+  const destroy = (state) => { for (const buffer of state?.owned || []) buffer.destroy(); };
+  const allocate = (state, bytes, usage, label) => {
+    const buffer = trunk.device.createBuffer({ size: bytes, usage, label });
+    state.owned.push(buffer);
+    return buffer;
+  };
+  const uniform = (state, values) => {
+    const buffer = allocate(state, 16, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, "private Clef validation params");
+    trunk.device.queue.writeBuffer(buffer, 0, new Uint32Array(values));
+    return buffer;
+  };
+  const replay = (pass, state, selected, T, forceModeZero) => {
+    const { op, candidate, kind, rows, row56 } = selected, d = trunk.device, U = GPUBufferUsage;
+    const original = candidate.original, source = groups.get(op.group), reduction = groups.get(op.reduce);
+    check(source?.length === 8 && reduction?.length === 5, "missing exact production binding descriptors");
+    const values = uniforms.get(source[1].buffer);
+    check(values?.length === 4 && values[0] === op.N && values[1] === op.K && [0, 1].includes(values[2]) && values[3] === 0, "unsupported production epilogue params");
+    const output = source[6], outputBytes = output.size ?? output.buffer.size - (output.offset || 0);
+    check(Number.isSafeInteger(outputBytes) && outputBytes >= T * op.N * 4 && outputBytes % 4 === 0, "invalid active output extent");
+    const elements = T * op.N;
+    let length = outputBytes / 4 + 2 * GUARD_WORDS;
+    check((length * 4) <= d.limits.maxStorageBufferBindingSize, "guarded output exceeds binding limit");
+    if (!state.shadow || state.shadow[0].size < length * 4) {
+      state.shadow = [0, 1].map((i) => allocate(state, length * 4, U.STORAGE, `private Clef validation shadow ${i}`));
+    }
+    length = state.shadow[0].size / 4;
+    check((GUARD_WORDS * 4) % d.limits.minStorageBufferOffsetAlignment === 0, "guard offset is not storage-aligned");
+    const mode = forceModeZero ? 0 : values[2];
+    const paramsBuffer = uniform(state, [length, elements, GUARD_WORDS, mode]);
+    const mmParams = forceModeZero ? resource(uniform(state, [op.N, op.K, 0, 0])) : source[1];
+    const status = allocate(state, STATUS_BYTES, U.STORAGE | U.COPY_SRC | U.COPY_DST, "private Clef validation status");
+    d.queue.writeBuffer(status, 0, new Uint32Array(STATUS_WORDS));
+    const views = state.shadow.map((buffer) => ({ buffer, offset: GUARD_WORDS * 4, size: outputBytes + GUARD_WORDS * 4 }));
+    const fillGroup = bind(d, pFill.getBindGroupLayout(0), [resource(paramsBuffer), output, ...state.shadow.map(resource)]);
+    pass.setPipeline(pFill); pass.setBindGroup(0, fillGroup); work(pass, length);
+    const operators = views.map((view) => ({ ...op,
+      group: bind(d, original.layout, source.map((r, i) => i === 1 ? mmParams : i === 6 ? view : r)),
+      reduce: bind(d, original.reduceLayout, reduction.map((r, i) => i === 1 ? mmParams : i === 4 ? view : r)),
+    }));
+    encodeMatmul(pass, original, operators[0], T);
+    // Candidate inherits the exact production row/grid/split/reducer settings and explicit layouts.
+    encodeMatmul(pass, { ...original, mm: candidate.mm, mm56: candidate.mm56 }, operators[1], T);
+    const compareGroup = bind(d, pCompare.getBindGroupLayout(0), [resource(paramsBuffer), ...state.shadow.map(resource), resource(status)]);
+    pass.setPipeline(pCompare); pass.setBindGroup(0, compareGroup); work(pass, length);
+    state.checks.push({ label: op.label, N: op.N, K: op.K, T, kernel: kind, rows, row56,
+      mode, actualMode: values[2], role: forceModeZero ? "poisoned-write-probe" : "actual-epilogue",
+      kind: forceModeZero ? "mode0-poison-probe" : "actual-epilogue",
+      elements, tailElements: length - elements, guardedPrefixElements: GUARD_WORDS,
+      applied: true, status });
+    return values[2];
+  };
+  return {
+    assertIntegrity,
+    suspend() {
+      check(!current, "collect validation before suspending its observers"); observer.suspend();
+    },
+    resume() {
+      check(!current, "collect validation before resuming its observers"); observer.resume();
+    },
+    begin() {
+      assertIntegrity(true); check(!current, "prior validation has not been collected");
+      current = { checks: [], owned: [], expectedChecks: 0 };
+    },
+    encode(pass, selected, T) {
+      check(current, "validation request was not armed");
+      current.expectedChecks++;
+      const mode = replay(pass, current, selected, T, false);
+      // A residual result can legitimately equal its initial value after FP32 rounding.
+      // An additional mode=0 replay on the same real X/weights poisons every output, proving all stores.
+      if (mode === 1) { current.expectedChecks++; replay(pass, current, selected, T, true); }
+    },
+    async collect() {
+      const state = current;
+      check(state?.checks.length > 0, "no real projection checks were encoded");
+      current = null;
+      const U = GPUBufferUsage;
+      const read = allocate(state, state.checks.length * STATUS_BYTES, U.MAP_READ | U.COPY_DST, "private Clef validation readback");
+      try {
+        const encoder = trunk.device.createCommandEncoder({ label: "private Clef validation counters" });
+        state.checks.forEach((entry, i) => encoder.copyBufferToBuffer(entry.status, 0, read, i * STATUS_BYTES, STATUS_BYTES));
+        trunk.device.queue.submit([encoder.finish()]);
+        await read.mapAsync(GPUMapMode.READ);
+        const counts = new Uint32Array(read.getMappedRange());
+        const checks = state.checks.map(({ status, ...entry }, i) => ({ ...entry,
+          bitMismatches: counts[i * STATUS_WORDS], baselineNonFinite: counts[i * STATUS_WORDS + 1],
+          candidateNonFinite: counts[i * STATUS_WORDS + 2], untouchedBaseline: counts[i * STATUS_WORDS + 3],
+          untouchedCandidate: counts[i * STATUS_WORDS + 4], tailMismatches: counts[i * STATUS_WORDS + 5],
+          activeCompared: counts[i * STATUS_WORDS + 6], tailCompared: counts[i * STATUS_WORDS + 7] }));
+        const ok = checks.length === state.expectedChecks && checks.every((entry) => entry.applied && entry.elements > 0 && entry.tailElements > 0 &&
+          entry.activeCompared === entry.elements && entry.tailCompared === entry.tailElements &&
+          [entry.bitMismatches, entry.baselineNonFinite, entry.candidateNonFinite, entry.untouchedBaseline, entry.untouchedCandidate, entry.tailMismatches].every((n) => n === 0));
+        return { ok, method: "gpu-array-u32-exact-with-positive-coverage", signedZeroChecked: true,
+          expectedChecks: state.expectedChecks, mode0ProbeExpected: checks.filter((entry) => entry.kind === "actual-epilogue" && entry.actualMode === 1).length,
+          readbackBytes: counts.byteLength, checks };
+      } finally { if (read.mapState === "mapped") read.unmap(); destroy(state); }
+    },
+    abort() { destroy(current); current = null; },
+    dispose() {
+      assertIntegrity();
+      destroy(current); current = null;
+      detachClefShapeObserver(trunk, observerToken);
+    },
+  };
+}

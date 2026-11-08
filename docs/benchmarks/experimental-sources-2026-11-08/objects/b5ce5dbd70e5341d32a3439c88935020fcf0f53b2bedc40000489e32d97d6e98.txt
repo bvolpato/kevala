@@ -1,0 +1,110 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.12"
+# dependencies = ["selenium>=4.25,<5"]
+# ///
+"""Run the bounded, isolated Firefox per-engine submission smoke."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--url", required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--timeout", type=float, default=600)
+    parser.add_argument("--firefox-binary", default=os.environ.get("FIREFOX_BIN") or os.environ.get("BROWSER_BIN") or "/usr/bin/firefox")
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    options = Options()
+    options.binary_location = args.firefox_binary
+    options.set_preference("dom.webgpu.enabled", True)
+    options.set_preference("dom.webgpu.workers.enabled", True)
+    options.add_argument("-no-remote")
+    driver = None
+    payload: dict[str, object] = {
+        "schemaVersion": 1,
+        "status": "failed",
+        "runner": {"browser": "Firefox", "headed": True, "ownedProcess": True, "performanceClaim": None},
+        "page": None,
+        "error": None,
+    }
+    try:
+        driver = webdriver.Firefox(options=options, service=Service(log_output=os.devnull))
+        driver.set_window_size(1280, 900)
+        driver.set_page_load_timeout(60)
+        driver.set_script_timeout(30)
+        driver.get(args.url)
+        token = driver.execute_script("return new URL(location.href).searchParams.get('run')")
+        if not token or token not in driver.title:
+            raise RuntimeError("Firefox smoke page has no matching run token")
+        if driver.execute_script("return document.visibilityState") != "visible":
+            raise RuntimeError("Firefox smoke page is not visible")
+        payload["runner"] = {
+            "browser": "Firefox",
+            "headed": True,
+            "ownedProcess": True,
+            "browserVersion": driver.capabilities.get("browserVersion"),
+            "seleniumMozProcessId": driver.capabilities.get("moz:processID"),
+            "windowTitle": driver.title,
+            "documentVisibility": "visible",
+            "performanceClaim": None,
+        }
+        driver.execute_script("window.submitIsolationSmoke.start()")
+        deadline = time.monotonic() + args.timeout
+        state = None
+        while time.monotonic() < deadline:
+            state = driver.execute_script("return window.submitIsolationSmoke?.state || null")
+            if state and state.get("status") in {"done", "error"}:
+                break
+            time.sleep(0.25)
+        if not state or state.get("status") not in {"done", "error"}:
+            raise TimeoutError(f"per-engine submission smoke exceeded {args.timeout} seconds")
+        payload["page"] = state
+        if state.get("status") != "done" or not state.get("result", {}).get("status") == "passed":
+            raise RuntimeError(state.get("error") or "per-engine submission smoke reported failure")
+        payload["status"] = "passed"
+    except Exception as error:
+        payload["error"] = f"{type(error).__name__}: {error}"
+        if driver:
+            try:
+                payload["page"] = driver.execute_script("return window.submitIsolationSmoke?.state || null")
+            except Exception:
+                pass
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except Exception as error:
+                payload["runner"]["quitError"] = f"{type(error).__name__}: {error}"
+                payload["error"] = payload["error"] or payload["runner"]["quitError"]
+                payload["status"] = "failed"
+    args.output.write_text(json.dumps(payload, indent=2, allow_nan=False) + "\n")
+    if payload["error"]:
+        print(payload["error"], file=sys.stderr)
+        return 1
+    print(json.dumps({"status": payload["status"], "browserVersion": payload["runner"].get("browserVersion")}))
+    return 0
+
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except Exception as exc:
+        print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
+        raise

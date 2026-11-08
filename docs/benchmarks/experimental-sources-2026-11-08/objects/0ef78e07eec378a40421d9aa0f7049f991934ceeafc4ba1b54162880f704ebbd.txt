@@ -1,0 +1,409 @@
+import * as operator from "./laya-integer-matrix.js";
+
+const assets = Object.freeze({
+  helper: ["./laya-integer-matrix.js", 12993, "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb"],
+  protocol: ["./laya-integer-matrix-protocol.json", 19823, "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39"],
+  diagnosticProtocol: ["./laya-integer-matrix-split-protocol.json", 5151, "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81"],
+  baseline: ["./laya-integer-matrix-baseline.wgsl", 13558, "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c"],
+  reducer: ["./laya-integer-matrix-reduce.wgsl", 1546, "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"],
+});
+const seeds = Object.freeze({ integer: 305419896, dyadic: 2271560481, fractional: 324508639, cancellation: 610839776 });
+const expectedStatus = Object.freeze([2686976, 0, 0, 0, 524288, 16384, 0, 512, 0]);
+const guard = 0x5a17c9e3;
+const repetitions = 16;
+const assert = (value, message) => { if (!value) throw new Error(message); };
+const median = (values) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const i = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[i] : (sorted[i - 1] + sorted[i]) / 2;
+};
+async function sha256(value) {
+  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", value)), (v) => v.toString(16).padStart(2, "0")).join("");
+}
+
+// Called only after the explicit run query, never by idle or source smoke.
+function fixtureData(id) {
+  let state = seeds[id];
+  const next = () => state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+  const X = new Float32Array(512 * 1024);
+  const W = new Int8Array(5248 * 1024);
+  const S = new Float32Array(5248 * 32);
+  const half = id === "cancellation" ? 16 : 32;
+  for (let blockIndex = 0; blockIndex < 512 * 32; blockIndex++) {
+    const start = blockIndex * 32;
+    for (let k = 0; k < half; k++) {
+      const draw = next();
+      let value = id === "integer" || id === "dyadic" ? draw % 255 - 127 : Math.fround(((draw >>> 8) % 131075 - 65537) / 65537);
+      if (k === 0) value = id === "integer" || id === "dyadic" ? 127 : 1;
+      X[start + k] = id === "dyadic" ? value / 256 : value;
+      if (half === 16) X[start + k + 16] = Math.fround(-value * (1 - 2 ** -22));
+    }
+  }
+  for (let blockIndex = 0; blockIndex < 5248 * 32; blockIndex++) {
+    const start = blockIndex * 32;
+    for (let k = 0; k < half; k++) {
+      const value = next() % 256 - 128;
+      W[start + k] = value;
+      if (half === 16) W[start + k + 16] = value;
+    }
+  }
+  for (let i = 0; i < S.length; i++) {
+    const draw = next();
+    S[i] = id === "integer" ? 1 : id === "dyadic" ? 1 / 16 : 2 ** (-7 - draw % 3);
+  }
+  return { X, W, S };
+}
+
+export async function run(result, query) {
+  const physical = location.search === "?run=1" && query.toString() === "run=1";
+  const smoke = location.search === "?smoke=1" && query.toString() === "smoke=1";
+  assert(location.search === "" || physical || smoke, "Only exact ?run=1 or ?smoke=1 queries are accepted");
+  if (!physical && !smoke) {
+    result.status = "idle"; result.phase = "idle";
+    document.getElementById("status").textContent = "Idle. An explicit run query is required.";
+    return;
+  }
+  const buffers = new Set();
+  const querySets = new Set();
+  const resourceGroups = new Map();
+  let device;
+  let cleaning = false;
+  let fatal = null;
+  let deadline = Infinity;
+  result.errorRetention = { total: 0, truncated: false };
+  const recordError = (entry) => {
+    result.errorRetention.total++;
+    if (result.errors.length >= 64) { result.errorRetention.truncated = true; return; }
+    const message = String(entry.message);
+    if (message.length > 2048) result.errorRetention.truncated = true;
+    result.errors.push({ ...entry, message: message.slice(0, 2048), messageTruncated: message.length > 2048 });
+  };
+  const phase = (name) => { result.phase = name; document.getElementById("status").textContent = name; };
+  const bounded = async (promise, label) => {
+    const ms = Math.min(30000, deadline - performance.now() - 5000);
+    assert(ms > 0, `Page work deadline reached at ${label}`);
+    let timer;
+    try { return await Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`Deadline at ${label}`)), ms); })]); }
+    finally { clearTimeout(timer); }
+  };
+  const healthy = () => { if (fatal) throw fatal; };
+  const makeBuffer = (label, size, usage, initial, group) => {
+    const buffer = device.createBuffer({ label, size, usage, mappedAtCreation: initial !== undefined });
+    buffers.add(buffer); result.cleanup.buffersCreated++;
+    if (group) { if (!resourceGroups.has(group)) resourceGroups.set(group, new Set()); resourceGroups.get(group).add(buffer); }
+    if (initial !== undefined) {
+      try { new Uint8Array(buffer.getMappedRange()).set(new Uint8Array(initial.buffer, initial.byteOffset, initial.byteLength)); }
+      finally { buffer.unmap(); }
+    }
+    return buffer;
+  };
+  const destroyBuffer = (buffer) => {
+    if (!buffers.has(buffer)) return;
+    buffer.unmap(); buffer.destroy(); buffers.delete(buffer); result.cleanup.buffersDestroyed++;
+  };
+  const destroyGroup = (group) => {
+    for (const buffer of resourceGroups.get(group) ?? []) destroyBuffer(buffer);
+    resourceGroups.delete(group);
+  };
+  const mappedCopy = async (buffer, size, label) => {
+    await bounded(buffer.mapAsync(GPUMapMode.READ, 0, size), label);
+    result.cleanup.mapsOpen++;
+    try { return buffer.getMappedRange(0, size).slice(0); }
+    finally { buffer.unmap(); result.cleanup.mapsOpen--; }
+  };
+  const scoped = async (label, operation) => {
+    device.pushErrorScope("validation"); device.pushErrorScope("out-of-memory");
+    let answer; let failure;
+    try { answer = await operation(); } catch (error) { failure = error; }
+    for (const filter of ["out-of-memory", "validation"]) {
+      try {
+        const error = await bounded(device.popErrorScope(), `${label}:${filter}`);
+        if (error) {
+          recordError({ phase: result.phase, label, filter, message: error.message });
+          failure ??= new Error(`${label}: ${error.message}`);
+        }
+      } catch (error) { failure ??= error; }
+    }
+    healthy();
+    if (failure) throw failure;
+    return answer;
+  };
+  try {
+    phase("verify-sources");
+    const sources = {};
+    for (const [name, [relative, bytes, hash]] of Object.entries(assets)) {
+      const response = await bounded(fetch(new URL(relative, import.meta.url), { cache: "no-store" }), `fetch ${name}`);
+      assert(response.ok, `${name}: HTTP ${response.status}`);
+      const data = await bounded(response.arrayBuffer(), `read ${name}`);
+      const actual = await sha256(data);
+      result.sourceIdentities[name] = { path: relative, bytes: data.byteLength, sha256: actual };
+      assert(data.byteLength === bytes && actual === hash, `Frozen ${name} identity differs`);
+      sources[name] = new TextDecoder().decode(data);
+    }
+    const protocol = JSON.parse(sources.protocol);
+    const diagnostic = JSON.parse(sources.diagnosticProtocol);
+    assert(protocol.futureTiming.invocationsPerSample === repetitions && diagnostic.invocationsPerSample === repetitions &&
+      diagnostic.warmups === 3 && diagnostic.samples === 9 && diagnostic.queryIndicesPerSample === 64, "Frozen diagnostic timing contract differs");
+    result.protocol = { schema: diagnostic.schema, numericProtocol: protocol.schema, shape: operator.shape, numericPolicy: operator.numericPolicy,
+      repetitions, warmups: 3, samples: 9, candidateOnly: true, queryIndicesPerSample: 64,
+      timestampSpan: "each quantization and matrix pass separately; enclosing total is first quantization beginning through final matrix end",
+      instrumentationLimitation: diagnostic.instrumentationLimitation,
+      reducerDispatches: 0, reducerReason: "Baseline mm_splits(512,5248,1024)=1:656 tiles exceeds192 threshold",
+      pageBudgetMs: 180000, cleanupReserveMs: 5000, modelOrWasmLoads: 0, promotion: false };
+    if (smoke) { result.status = "source-ready"; result.phase = "source-ready"; result.done = true; return; }
+    deadline = performance.now() + 180000;
+    result.status = "running";
+    phase("request-default-device");
+    assert(navigator.gpu, "WebGPU unavailable");
+    result.adapterRequests = { highPerformanceReturnedNull: null, defaultFallbackRequested: false, defaultFallbackReturnedAdapter: null, defaultFallbackReturnedNull: null };
+    let adapter = await bounded(navigator.gpu.requestAdapter({ powerPreference: "high-performance" }), "requestAdapter:high-performance");
+    result.adapterRequests.highPerformanceReturnedNull = adapter === null;
+    if (!adapter) {
+      result.adapterRequests.defaultFallbackRequested = true;
+      adapter = await bounded(navigator.gpu.requestAdapter(), "requestAdapter:default");
+      result.adapterRequests.defaultFallbackReturnedAdapter = Boolean(adapter);
+      result.adapterRequests.defaultFallbackReturnedNull = adapter === null;
+    }
+    assert(adapter, "No WebGPU adapter after high-performance and default requests");
+    const info = adapter.info;
+    const flag = (value) => typeof value === "boolean" ? value : null;
+    const fallbackFlags = { adapterInfo: flag(info.isFallbackAdapter), adapter: flag(adapter.isFallbackAdapter) };
+    const observedFlags = Object.values(fallbackFlags).filter((value) => value !== null);
+    const isFallbackAdapter = observedFlags.length && observedFlags.every((value) => value === observedFlags[0]) ? observedFlags[0] : null;
+    result.adapterIdentity = { vendor: info.vendor, architecture: info.architecture, device: info.device, description: info.description,
+      fallbackFlags, isFallbackAdapter, nvidia: /nvidia/i.test([info.vendor, info.description].join(" ")),
+      blackwell: /blackwell/i.test(info.architecture ?? ""), nonfallback: isFallbackAdapter === false };
+    assert(result.adapterIdentity.nvidia && result.adapterIdentity.blackwell && result.adapterIdentity.nonfallback, "Expected NVIDIA Blackwell nonfallback adapter metadata was not established");
+    for (const feature of ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"]) assert(adapter.features.has(feature), `Missing adapter feature ${feature}`);
+    device = await bounded(adapter.requestDevice({ requiredFeatures: ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"], requiredLimits: {} }), "requestDevice");
+    device.addEventListener("uncapturederror", (event) => {
+      if (cleaning) return;
+      recordError({ phase: result.phase, label: "uncaptured", message: event.error.message });
+      fatal ??= new Error(event.error.message);
+    });
+    device.lost.then((info) => { if (!cleaning) { recordError({ phase: result.phase, label: "device-lost", message: info.message, reason: info.reason }); fatal ??= new Error(`Device lost: ${info.message}`); } });
+    const selected = operator.requireCapabilities(adapter, device);
+    result.capabilities = { ...selected, requestedFeatures: ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"], features: Array.from(device.features),
+      shaderF16Requested: false, subgroupMinSize: info.subgroupMinSize, subgroupMaxSize: info.subgroupMaxSize,
+      adapter: { vendor: info.vendor, architecture: info.architecture, device: info.device, description: info.description },
+      deviceLimits: Object.fromEntries(["maxComputeWorkgroupStorageSize", "maxComputeInvocationsPerWorkgroup", "maxComputeWorkgroupSizeX", "maxStorageBufferBindingSize", "maxBufferSize"].map((key) => [key, device.limits[key]])) };
+    result.compilation = [];
+    const compile = async (name, code) => scoped(`compile:${name}`, async () => {
+      const module = device.createShaderModule({ label: name, code });
+      const diagnostics = await bounded(module.getCompilationInfo(), `${name}:compilation-info`);
+      const native = Array.from(diagnostics.messages);
+      const messages = native.slice(0, 16).map((m) => ({ type: m.type.slice(0, 32), message: m.message.slice(0, 256),
+        messageTruncated: m.message.length > 256, lineNum: m.lineNum, linePos: m.linePos, offset: m.offset, length: m.length }));
+      result.compilation.push({ name, diagnostics: { totalMessages: native.length, totalErrors: native.filter((m) => m.type === "error").length,
+        truncated: native.length > 16 || messages.some((m) => m.messageTruncated), messages } });
+      const firstError = native.find((m) => m.type === "error");
+      assert(!firstError, `${name}: ${firstError?.message}`);
+      return bounded(device.createComputePipelineAsync({ label: name, layout: "auto", compute: { module, entryPoint: "main" } }), `${name}:pipeline`);
+    });
+    const bind = (pipeline, resources) => device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: resources.map((resource, binding) => ({ binding, resource: resource?.buffer ? resource : { buffer: resource } })) });
+    const storageUsage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC;
+    const inputUsage = GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST;
+    const readUsage = GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ;
+    const uniform = (label, values, group) => makeBuffer(label, 16, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, new Uint32Array(values), group);
+    phase("packing-prerequisite");
+    const packingPipeline = await compile("private-packing-prerequisite", operator.packingGateWGSL);
+    await scoped("packing-prerequisite", async () => {
+      const fixture = operator.packingFixture();
+      const frozen = protocol.prerequisiteGate.fixture;
+      assert(await sha256(fixture.left) === frozen.left.sha256 && await sha256(fixture.right) === frozen.right.sha256 && await sha256(fixture.expected) === frozen.expected.sha256, "Packing fixture byte identities differ");
+      assert(fixture.expected.every((value, i) => value === frozen.expected.values[i]), "Packing CPU and frozen outputs differ");
+      const output = new Uint32Array(384).fill(guard); output.fill(0x6badc0de, 64, 320);
+      const left = makeBuffer("packing-left", fixture.left.byteLength, inputUsage, fixture.left, "packing");
+      const right = makeBuffer("packing-right", fixture.right.byteLength, inputUsage, fixture.right, "packing");
+      const y = makeBuffer("packing-output", output.byteLength, storageUsage, output, "packing");
+      const read = makeBuffer("packing-read", output.byteLength, readUsage, undefined, "packing");
+      const encoder = device.createCommandEncoder(); const pass = encoder.beginComputePass();
+      pass.setPipeline(packingPipeline); pass.setBindGroup(0, bind(packingPipeline, [left, right, y])); pass.dispatchWorkgroups(1); pass.end();
+      encoder.copyBufferToBuffer(y, 0, read, 0, output.byteLength); device.queue.submit([encoder.finish()]);
+      const data = await mappedCopy(read, output.byteLength, "packing-read");
+      const words = new Uint32Array(data); const actual = new Int32Array(data, 256, 256);
+      const mismatch = actual.reduce((n, value, i) => n + Number(value !== fixture.expected[i]), 0);
+      const guards = words.reduce((n, value, i) => n + Number((i < 64 || i >= 320) && value !== guard), 0);
+      result.packingGate = { outputsCompared: 256, mismatches: mismatch, guardsCompared: 128, guardFailures: guards, dispatches: 1,
+        expectedSha256: frozen.expected.sha256, actualSha256: await sha256(actual),
+        positive: actual.filter((v) => v > 0).length, negative: actual.filter((v) => v < 0).length, zero: actual.filter((v) => v === 0).length,
+        actual: Array.from(actual), passed: mismatch === 0 && guards === 0 };
+      assert(result.packingGate.passed && result.packingGate.positive === 106 && result.packingGate.negative === 150 && result.packingGate.zero === 0, "Packing prerequisite failed");
+    });
+    destroyGroup("packing");
+    phase("compile-full-operator");
+    const pipelines = {};
+    for (const [name, code] of [["baseline", sources.baseline], ["quantize", operator.quantizeWGSL], ["integerMatmul", operator.integerMatmulWGSL],
+      ["compareOutputs", operator.compareOutputsWGSL], ["compareQuantization", operator.compareQuantizationWGSL], ["compareCanaries", operator.compareCanariesWGSL]]) pipelines[name] = await compile(name, code);
+    const view = (allocation) => ({ buffer: allocation.buffer, offset: 256, size: allocation.words * 4 });
+    const guarded = (name, words, poison, group) => {
+      const data = new Uint32Array(words + 128).fill(guard); data.fill(poison, 64, 64 + words);
+      return { buffer: makeBuffer(name, data.byteLength, storageUsage, data, group), words, data };
+    };
+    const createFixture = async (id, record) => scoped(`allocate:${id}`, async () => {
+      const data = fixtureData(id);
+      const identities = {};
+      for (const [name, values] of Object.entries(data)) identities[name] = { bytes: values.byteLength, sha256: await sha256(values) };
+      record.inputIdentities = identities;
+      record.status = "allocating";
+      const X = makeBuffer(`${id}-X`, data.X.byteLength, inputUsage, data.X, id);
+      const W = makeBuffer(`${id}-W`, data.W.byteLength, inputUsage, data.W, id);
+      const S = makeBuffer(`${id}-S`, data.S.byteLength, inputUsage, data.S, id);
+      const R = guarded(`${id}-reference`, 2686976, 0x7fc12345, id);
+      const C = guarded(`${id}-candidate`, 2686976, 0x7fc54321, id);
+      const Q = guarded(`${id}-planes`, 393216, 0x7f7f7f7f, id);
+      const A = guarded(`${id}-metadata`, 65536, 0xffffffff, id);
+      const globals = uniform(`${id}-globals`, [512, 0, 0, 0], id);
+      const params = uniform(`${id}-params`, [5248, 1024, 0, 0], id);
+      const bias = makeBuffer(`${id}-bias`, 5248 * 4, inputUsage, new Uint32Array(5248), id);
+      const part = makeBuffer(`${id}-unused-part`, 4, storageUsage, new Uint32Array([guard]), id);
+      const exact = uniform(`${id}-comparison`, [id === "integer" || id === "dyadic" ? 1 : 0, 0, 0, 0], id);
+      const status = makeBuffer(`${id}-status`, 36, storageUsage, new Uint32Array(9), id);
+      const read = makeBuffer(`${id}-validation-read`, 40, readUsage, undefined, id);
+      const groups = {
+        baseline: bind(pipelines.baseline, [globals, params, X, W, S, bias, view(R), part]),
+        quantize: bind(pipelines.quantize, [X, view(Q), view(A)]),
+        integerMatmul: bind(pipelines.integerMatmul, [view(Q), W, view(A), S, view(C)]),
+        compareOutputs: bind(pipelines.compareOutputs, [view(R), view(C), status, exact]),
+        compareQuantization: bind(pipelines.compareQuantization, [X, view(Q), view(A), status]),
+      };
+      groups.canaries = [R, C, Q, A].map((allocation, i) => bind(pipelines.compareCanaries,
+        [allocation.buffer, status, uniform(`${id}-canary-${i}`, [allocation.words, 0, 0, 0], id)]));
+      return { id, identities, R, C, Q, A, part, status, read, groups };
+    });
+    const baselinePass = (encoder, fixture, timestampWrites) => {
+      const pass = encoder.beginComputePass({ label: "production-q8-f32-baseline", timestampWrites });
+      pass.setPipeline(pipelines.baseline); pass.setBindGroup(0, fixture.groups.baseline); pass.dispatchWorkgroups(82, 8, 1); pass.end();
+    };
+    const poison = (fixture, kernel) => {
+      const allocations = kernel === "baseline" ? [fixture.R] : [fixture.C, fixture.Q, fixture.A];
+      for (const allocation of allocations) device.queue.writeBuffer(allocation.buffer, 0, allocation.data);
+    };
+    const validate = async (fixture, record) => scoped(`validate:${fixture.id}`, async () => {
+      device.queue.writeBuffer(fixture.status, 0, new Uint32Array(9));
+      const encoder = device.createCommandEncoder(); const pass = encoder.beginComputePass();
+      pass.setPipeline(pipelines.compareOutputs); pass.setBindGroup(0, fixture.groups.compareOutputs); pass.dispatchWorkgroups(10496);
+      pass.setPipeline(pipelines.compareQuantization); pass.setBindGroup(0, fixture.groups.compareQuantization); pass.dispatchWorkgroups(2048);
+      for (const group of fixture.groups.canaries) { pass.setPipeline(pipelines.compareCanaries); pass.setBindGroup(0, group); pass.dispatchWorkgroups(1); }
+      pass.end(); encoder.copyBufferToBuffer(fixture.status, 0, fixture.read, 0, 36); encoder.copyBufferToBuffer(fixture.part, 0, fixture.read, 36, 4);
+      device.queue.submit([encoder.finish()]);
+      const actual = new Uint32Array(await mappedCopy(fixture.read, 40, "validation-read"));
+      record.validation = { words: Array.from(actual.subarray(0, 9)), partUnchanged: actual[9] === guard, passed: false };
+      const coverage = operator.validateStatus(actual.subarray(0, 9));
+      assert(record.validation.partUnchanged, "Unexpected split-K partial write");
+      record.validation.positiveCoverage = coverage; record.validation.passed = true;
+    });
+    let timingFixture;
+    for (const id of Object.keys(seeds)) {
+      phase(`validate-${id}`);
+      const row = { id, seed: seeds[id], shape: [512, 5248, 1024], status: "pending",
+        exact: id === "integer" || id === "dyadic", dispatches: { baseline: 0, quantize: 0, integerMatmul: 0, reduce: 0 } };
+      result.fixtures.push(row);
+      const fixture = await createFixture(id, row);
+      await scoped(`dispatch:${id}`, async () => {
+        const encoder = device.createCommandEncoder(); baselinePass(encoder, fixture);
+        operator.encodeCandidate(encoder, pipelines, fixture.groups);
+        row.dispatches = { baseline: 1, quantize: 1, integerMatmul: 1, reduce: 0 };
+        row.status = "dispatching";
+        device.queue.submit([encoder.finish()]);
+        await validate(fixture, row);
+      });
+      row.status = "pass";
+      if (id === "fractional") timingFixture = fixture; else destroyGroup(id);
+    }
+    const queries = device.createQuerySet({ label: "split-stage-timestamps", type: "timestamp", count: 64 });
+    querySets.add(queries); result.cleanup.querySetsCreated++;
+    const resolve = makeBuffer("timestamp-resolve", 512, GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC);
+    const timestampRead = makeBuffer("timestamp-read", 512, readUsage);
+    const sample = async (record) => scoped(`sample:${record.block}:${record.index}`, async () => {
+      const fixture = timingFixture;
+      assert(record.kernel === "candidate", "Diagnostic timing is candidate-only");
+      poison(fixture, "candidate");
+      const encoder = device.createCommandEncoder();
+      record.invocations = repetitions;
+      record.passes = 32;
+      record.dispatches = { baseline: 0, quantize: 16, integerMatmul: 16, reduce: 0 };
+      for (let i = 0; i < repetitions; i++) {
+        operator.encodeCandidate(encoder, pipelines, fixture.groups, {
+          quantize: { querySet: queries, beginningOfPassWriteIndex: i * 4, endOfPassWriteIndex: i * 4 + 1 },
+          integerMatmul: { querySet: queries, beginningOfPassWriteIndex: i * 4 + 2, endOfPassWriteIndex: i * 4 + 3 },
+        });
+      }
+      encoder.resolveQuerySet(queries, 0, 64, resolve, 0); encoder.copyBufferToBuffer(resolve, 0, timestampRead, 0, 512);
+      device.queue.submit([encoder.finish()]);
+      const ticks = new BigUint64Array(await mappedCopy(timestampRead, 512, "sample-timestamps"));
+      record.rawTimestampNs = Array.from(ticks, (value) => value.toString());
+      const total = ticks[63] - ticks[0];
+      record.timestampNs = { begin: ticks[0].toString(), end: ticks[63].toString(), elapsed: total.toString() };
+      record.stages = [];
+      let quantize = 0n, integerMatmul = 0n;
+      for (let i = 0; i < repetitions; i++) {
+        const stage = {};
+        for (const [name, start] of [["quantize", i * 4], ["integerMatmul", i * 4 + 2]]) {
+          const elapsed = ticks[start + 1] - ticks[start];
+          stage[name] = { beginIndex: start, endIndex: start + 1, begin: ticks[start].toString(), end: ticks[start + 1].toString(), elapsed: elapsed.toString(), gpuMs: Number(elapsed) / 1e6 };
+        }
+        record.stages.push({ invocation: i, ...stage });
+        quantize += ticks[i * 4 + 1] - ticks[i * 4];
+        integerMatmul += ticks[i * 4 + 3] - ticks[i * 4 + 2];
+      }
+      record.interPassGapsNs = Array.from({ length: 31 }, (_, i) => (ticks[(i + 1) * 2] - ticks[i * 2 + 1]).toString());
+      record.stageTotalsNs = { quantize: quantize.toString(), integerMatmul: integerMatmul.toString(), residual: (total - quantize - integerMatmul).toString() };
+      record.stageTotalsMs = { quantize: Number(quantize) / 1e6, integerMatmul: Number(integerMatmul) / 1e6, residual: Number(total - quantize - integerMatmul) / 1e6 };
+      record.zeroDurationPasses = { quantize: record.stages.filter((stage) => stage.quantize.elapsed === "0").length,
+        integerMatmul: record.stages.filter((stage) => stage.integerMatmul.elapsed === "0").length };
+      record.negativeInterPassGaps = record.interPassGapsNs.filter((gap) => BigInt(gap) < 0n).length;
+      assert(record.stages.every((stage) => BigInt(stage.quantize.elapsed) >= 0n && BigInt(stage.integerMatmul.elapsed) >= 0n), "GPU per-pass end precedes its beginning");
+      assert(total > 0n, "GPU enclosing timestamp span is not positive");
+      assert(record.interPassGapsNs.reduce((sum, gap) => sum + BigInt(gap), quantize + integerMatmul) === total, "Timestamp decomposition differs from enclosing span");
+      record.gpuMs = Number(total) / 1e6;
+      record.perInvocationMs = record.gpuMs / repetitions;
+      assert(Number.isFinite(record.gpuMs) && record.gpuMs > 0, "Invalid GPU elapsed time");
+      await validate(fixture, record);
+    });
+    phase("fixed-warmups");
+    for (let i = 0; i < 3; i++) {
+      const row = { block: "warmup", index: i, kernel: "candidate" };
+      result.warmups.push(row); await sample(row);
+    }
+    phase("fixed-diagnostic-samples");
+    for (let index = 0; index < 9; index++) {
+      const row = { block: "diagnostic", index, kernel: "candidate" };
+      result.timing.samples.push(row); await sample(row);
+    }
+    const samples = result.timing.samples;
+    result.timing.summary = { sampleCount: 9, invocationsPerSample: repetitions,
+      medianStageTotalsMs: { quantize: median(samples.map((row) => row.stageTotalsMs.quantize)),
+        integerMatmul: median(samples.map((row) => row.stageTotalsMs.integerMatmul)), enclosingTotal: median(samples.map((row) => row.gpuMs)) },
+      medianPerInvocationMs: { quantize: median(samples.map((row) => row.stageTotalsMs.quantize / repetitions)),
+        integerMatmul: median(samples.map((row) => row.stageTotalsMs.integerMatmul / repetitions)), enclosingTotal: median(samples.map((row) => row.perInvocationMs)) },
+      zeroDurationPasses: { quantize: samples.reduce((sum, row) => sum + row.zeroDurationPasses.quantize, 0),
+        integerMatmul: samples.reduce((sum, row) => sum + row.zeroDurationPasses.integerMatmul, 0) },
+      negativeInterPassGaps: samples.reduce((sum, row) => sum + row.negativeInterPassGaps, 0),
+      meaning: diagnostic.instrumentationLimitation };
+    assert(result.fixtures.length === 4 && result.warmups.length === 3 && samples.length === 9, "Incomplete fixed diagnostic protocol");
+    healthy(); result.status = "done";
+  } catch (error) {
+    const text = String(error?.stack || error);
+    result.error = text.slice(0, 8192); result.errorTruncated = text.length > 8192;
+    recordError({ phase: result.phase, message: text }); result.status = "error";
+  } finally {
+    if (device) {
+      phase("cleanup"); cleaning = true;
+      for (const buffer of [...buffers]) {
+        try { destroyBuffer(buffer); } catch (error) { recordError({ phase: "cleanup", message: String(error) }); result.status = "error"; }
+      }
+      for (const queries of querySets) {
+        try { queries.destroy(); result.cleanup.querySetsDestroyed++; } catch (error) { recordError({ phase: "cleanup", message: String(error) }); result.status = "error"; }
+      }
+      querySets.clear();
+      try { device.destroy(); result.cleanup.deviceDestroyed = true; } catch (error) { recordError({ phase: "cleanup", message: String(error) }); result.status = "error"; }
+      if (result.cleanup.buffersCreated !== result.cleanup.buffersDestroyed || result.cleanup.querySetsCreated !== result.cleanup.querySetsDestroyed || result.cleanup.mapsOpen !== 0) {
+        recordError({ phase: "cleanup", message: "Resource cleanup counts differ" }); result.status = "error";
+      }
+    }
+    if (physical) result.phase = result.status === "done" ? "complete" : "failed";
+    if (physical || smoke) result.done = true;
+    document.getElementById("status").textContent = result.error ?? result.status;
+  }
+}
