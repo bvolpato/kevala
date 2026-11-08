@@ -1,0 +1,201 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Private signed-i8 subgroup matrix packing gate</title>
+<script>
+(() => {
+  window.integerMatrixGate = { done: false, status: "loading", phase: "module-load", scope: "integer-subgroup-matrix-packing-gate" };
+  const publishFailure = (value, phase) => {
+    if (window.integerMatrixGate?.done === true) return;
+    let message;
+    try { message = String(value?.message || value || "page module failed"); }
+    catch { message = "page module failed with an unreadable error"; }
+    window.integerMatrixGate = { done: true, status: "error", phase: window.integerMatrixGate?.phase || phase, error: message.slice(0, 1024), scope: "integer-subgroup-matrix-packing-gate" };
+  };
+  window.addEventListener("error", (event) => {
+    const target = event.target;
+    if (target !== window) {
+      if (target?.tagName === "SCRIPT" && target.type === "module") {
+        publishFailure(`Module script failed to load: ${target.getAttribute("src") || "inline module"}`, "module-load");
+      }
+      return;
+    }
+    if (event instanceof ErrorEvent) publishFailure(event.message || event.error, "module-runtime");
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => publishFailure(event.reason, "module-runtime"));
+})();
+</script>
+<script type="module">
+import { packingFixture, packingGateWGSL } from "./integer-matrix-gate-helper.js";
+const MATRIX = "chromium-experimental-subgroup-matrix";
+const result = window.integerMatrixGate = { status: "idle", phase: "document-ready", done: false, scope: "integer-subgroup-matrix-packing-gate" };
+const pageUrl = new URL(location.href);
+const startRequested = pageUrl.search === "?run=1" && pageUrl.hash === "";
+const text = (value, maximum = 512) => typeof value === "string" ? value.slice(0, maximum) : null;
+const uint = (value) => Number.isSafeInteger(value) && value >= 0 ? value : null;
+const flag = (value) => typeof value === "boolean" ? value : null;
+const errorInfo = (error) => ({ name: text(error?.name, 128), message: text(String(error?.message || error), 2048) });
+function require(ok, message) { if (!ok) throw new Error(message); }
+function features(set) {
+  const names = [...set].sort();
+  require(names.length <= 128 && names.every((name) => typeof name === "string" && name.length <= 128), "Feature metadata exceeded its bound");
+  return names;
+}
+function limits(value) {
+  return Object.fromEntries(["maxComputeInvocationsPerWorkgroup", "maxComputeWorkgroupSizeX", "maxComputeWorkgroupStorageSize", "maxStorageBufferBindingSize", "maxBufferSize"].map((name) => [name, uint(value[name])]));
+}
+function configs(info) {
+  if (info.subgroupMatrixConfigs === undefined) return { exposed: false, entries: [] };
+  const entries = [...info.subgroupMatrixConfigs];
+  require(entries.length <= 128, "Subgroup matrix configuration count exceeded 128");
+  return { exposed: true, entries: entries.map((entry) => {
+    const value = { componentType: text(entry.componentType, 32), resultComponentType: text(entry.resultComponentType, 32), M: uint(entry.M), N: uint(entry.N), K: uint(entry.K) };
+    require([value.M, value.N, value.K].every((size) => size !== null && size > 0 && size <= 0xffffffff), "Subgroup matrix dimensions are not bounded positive u32 values");
+    return value;
+  }) };
+}
+function fixtureReference(fixture) {
+  require(fixture.left instanceof Int8Array && fixture.right instanceof Int8Array && fixture.expected instanceof Int32Array && fixture.expected.length === 256, "Unexpected packing fixture types");
+  const left = { positive: 0, negative: 0, zero: 0 }, right = { positive: 0, negative: 0, zero: 0 };
+  for (let row = 0; row < 16; row++) for (let k = 0; k < 32; k++) {
+    for (const [values, offset, signs] of [[fixture.left, 72 * 4, left], [fixture.right, 88 * 4, right]]) {
+      const value = values[offset + row * 1024 + k];
+      require(Number.isInteger(value), "Packing fixture address is outside its backing storage");
+      signs[value > 0 ? "positive" : value < 0 ? "negative" : "zero"]++;
+    }
+  }
+  const expected = new Int32Array(256);
+  for (let row = 0; row < 16; row++) for (let column = 0; column < 16; column++) {
+    let sum = 0;
+    for (let k = 0; k < 32; k++) sum += fixture.left[72 * 4 + row * 1024 + k] * fixture.right[88 * 4 + column * 1024 + k];
+    require(Number.isSafeInteger(sum) && sum >= -2147483648 && sum <= 2147483647, "CPU i32 reference overflow");
+    expected[row * 16 + column] = sum;
+  }
+  require(expected.every((value, index) => value === fixture.expected[index]), "Independent CPU reference differs from frozen helper fixture");
+  require(left.positive > 0 && left.negative > 0 && right.positive > 0 && right.negative > 0, "Both active inputs must exercise both signed-byte signs");
+  const positive = [...expected].filter((value) => value > 0).length;
+  require(positive === 106 && [...expected].filter((value) => value < 0).length === 150 && !expected.includes(0), "Frozen CPU reference sign counts differ from 106 positive/150 negative/0 zero");
+  require(left.positive === 219 && left.negative === 219 && left.zero === 74 && right.positive === 219 && right.negative === 220 && right.zero === 73, "Frozen active signed-byte counts differ");
+  return { expected: [...expected], positiveOutputCount: positive, activeInputSigns: { left, right } };
+}
+async function runGate(device, selectedConfig) {
+  const fixture = packingFixture(), reference = fixtureReference(fixture);
+  const gate = { status: "pending", selectedConfig, scope: "one-signed-i8-16x16x32-operation", wgsl: packingGateWGSL,
+    packing: { leftOffsetWords: 72, rightOffsetWords: 88, rowStrideWords: 256, backingRowStrideBytes: 1024 },
+    reference, compilation: { status: "pending" }, dispatches: 0, correctnessPassed: false };
+  let module, pipeline, scopeOpen = false;
+  try {
+    device.pushErrorScope("validation"); scopeOpen = true;
+    module = device.createShaderModule({ label: "private-i8-packing-gate", code: packingGateWGSL });
+    const info = await module.getCompilationInfo(), messages = [...info.messages];
+    gate.compilation.diagnostics = { totalMessages: messages.length, truncated: messages.length > 16, messages: messages.slice(0, 16).map((entry) => ({
+      type: text(entry.type, 32), message: text(entry.message, 256), lineNum: uint(entry.lineNum), linePos: uint(entry.linePos), offset: uint(entry.offset), length: uint(entry.length),
+    })) };
+    const error = await device.popErrorScope(); scopeOpen = false;
+    gate.compilation.moduleValidationError = error ? errorInfo(error) : null;
+    if (error || messages.some((entry) => entry.type === "error")) { gate.status = "compile-failed"; gate.compilation.status = "module-error"; return gate; }
+    device.pushErrorScope("validation"); scopeOpen = true;
+    try { pipeline = await device.createComputePipelineAsync({ label: "private-i8-packing-gate", layout: "auto", compute: { module, entryPoint: "main" } }); }
+    catch (error) { gate.compilation.pipelineError = errorInfo(error); }
+    const pipelineError = await device.popErrorScope(); scopeOpen = false;
+    gate.compilation.pipelineValidationError = pipelineError ? errorInfo(pipelineError) : null;
+    if (!pipeline || pipelineError || gate.compilation.pipelineError) { gate.status = "compile-failed"; gate.compilation.status = "pipeline-error"; return gate; }
+    gate.compilation.status = "pipeline-created";
+  } catch (error) { gate.status = "compile-failed"; gate.compilation.status = "exception"; gate.compilation.error = errorInfo(error); return gate; }
+  finally {
+    if (scopeOpen) {
+      try { const error = await device.popErrorScope(); gate.compilation.scopeCleanupError = error ? errorInfo(error) : null; }
+      catch (error) { gate.compilation.scopeCleanupError = errorInfo(error); }
+    }
+  }
+  const resources = [];
+  let readback, mapped = false, executionValidation = false, executionOom = false;
+  try {
+    device.pushErrorScope("out-of-memory"); executionOom = true;
+    device.pushErrorScope("validation"); executionValidation = true;
+    const make = (label, size, usage) => { const buffer = device.createBuffer({ label, size, usage }); resources.push(buffer); return buffer; };
+    const left = make("packing-left", fixture.left.byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+    const right = make("packing-right", fixture.right.byteLength, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
+    const output = make("packing-output-with-canaries", 384 * 4, GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC);
+    readback = make("packing-readback", 384 * 4, GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ);
+    const initial = new Int32Array(384).fill(0x5a17c9e3);
+    initial.fill(0x6badc0de, 64, 320);
+    device.queue.writeBuffer(left, 0, fixture.left);
+    device.queue.writeBuffer(right, 0, fixture.right);
+    device.queue.writeBuffer(output, 0, initial);
+    const bindGroup = device.createBindGroup({ layout: pipeline.getBindGroupLayout(0), entries: [left, right, output].map((buffer, binding) => ({ binding, resource: { buffer } })) });
+    const encoder = device.createCommandEncoder({ label: "one-private-packing-gate" });
+    const pass = encoder.beginComputePass();
+    pass.setPipeline(pipeline); pass.setBindGroup(0, bindGroup); pass.dispatchWorkgroups(1, 1, 1); gate.dispatches++;
+    pass.end(); encoder.copyBufferToBuffer(output, 0, readback, 0, 384 * 4);
+    device.queue.submit([encoder.finish()]);
+    await readback.mapAsync(GPUMapMode.READ); mapped = true;
+    const words = new Int32Array(readback.getMappedRange().slice(0));
+    require(words.length === 384, "Incomplete packing gate readback");
+    gate.outputs = [...words.subarray(64, 320)];
+    gate.canaries = { prefix: [...words.subarray(0, 64)], tail: [...words.subarray(320, 384)], compared: 128, changed: 0 };
+    gate.compared = 256; gate.different = 0; gate.mismatches = [];
+    for (let index = 0; index < 256; index++) if (gate.outputs[index] !== reference.expected[index]) {
+      gate.different++;
+      if (gate.mismatches.length < 32) gate.mismatches.push({ index, expected: reference.expected[index], actual: gate.outputs[index] });
+    }
+    for (const value of [...gate.canaries.prefix, ...gate.canaries.tail]) if (value !== 0x5a17c9e3) gate.canaries.changed++;
+    gate.positiveOutputCount = gate.outputs.filter((value) => value > 0).length;
+    const validation = await device.popErrorScope(); executionValidation = false;
+    const oom = await device.popErrorScope(); executionOom = false;
+    gate.executionErrors = { validation: validation ? errorInfo(validation) : null, outOfMemory: oom ? errorInfo(oom) : null };
+    gate.correctnessPassed = gate.different === 0 && gate.canaries.changed === 0 && gate.positiveOutputCount === reference.positiveOutputCount && !validation && !oom;
+    gate.status = validation || oom ? "execution-failed" : gate.correctnessPassed ? "passed" : "numerical-failed";
+  } catch (error) { gate.status = "execution-failed"; gate.executionError = errorInfo(error); }
+  finally {
+    if (executionValidation) { try { const error = await device.popErrorScope(); gate.executionValidationCleanupError = error ? errorInfo(error) : null; } catch (error) { gate.executionValidationCleanupError = errorInfo(error); } }
+    if (executionOom) { try { const error = await device.popErrorScope(); gate.executionOomCleanupError = error ? errorInfo(error) : null; } catch (error) { gate.executionOomCleanupError = errorInfo(error); } }
+    if (mapped) readback.unmap();
+    for (const buffer of resources) buffer.destroy();
+    gate.bufferObjectsDestroyed = resources.length;
+  }
+  return gate;
+}
+if (startRequested) {
+result.status = "running";
+result.phase = "adapter-request";
+let device;
+try {
+  require(navigator.gpu, "navigator.gpu is missing");
+  result.adapterRequests = { highPerformanceReturnedNull: null, defaultFallbackRequested: false, defaultFallbackReturnedAdapter: null, defaultFallbackReturnedNull: null };
+  let adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  result.adapterRequests.highPerformanceReturnedNull = adapter === null;
+  if (!adapter) {
+    result.adapterRequests.defaultFallbackRequested = true; adapter = await navigator.gpu.requestAdapter();
+    result.adapterRequests.defaultFallbackReturnedAdapter = Boolean(adapter); result.adapterRequests.defaultFallbackReturnedNull = adapter === null;
+  }
+  require(adapter, "No WebGPU adapter after high-performance and default requests");
+  const info = adapter.info || {}, fallbackFlags = { adapterInfo: flag(info.isFallbackAdapter), adapter: flag(adapter.isFallbackAdapter) };
+  const observed = Object.values(fallbackFlags).filter((value) => value !== null);
+  const isFallbackAdapter = observed.length && observed.every((value) => value === observed[0]) ? observed[0] : null;
+  result.adapter = { info: { vendor: text(info.vendor), architecture: text(info.architecture), device: text(info.device), description: text(info.description), subgroupMinSize: uint(info.subgroupMinSize), subgroupMaxSize: uint(info.subgroupMaxSize) },
+    features: features(adapter.features), fallbackFlags, isFallbackAdapter, limits: limits(adapter.limits), subgroupMatrixConfigs: configs(info) };
+  result.identity = { nvidia: /nvidia/i.test([info.vendor, info.description].join(" ")), blackwell: /blackwell/i.test(info.architecture || ""), nonfallback: isFallbackAdapter === false };
+  require(Object.values(result.identity).every(Boolean), "Expected NVIDIA Blackwell nonfallback adapter metadata was not established");
+  const requiredFeatures = ["subgroups", MATRIX].filter((name) => adapter.features.has(name));
+  result.deviceRequest = { requiredFeatures, requiredLimits: {}, shaderF16Requested: false };
+  result.phase = "device-request";
+  try { device = await adapter.requestDevice({ requiredFeatures }); }
+  catch (error) { result.device = { status: "request-rejected", error: errorInfo(error), destroyed: null }; }
+  if (device) result.device = { status: "created", features: features(device.features), limits: limits(device.limits), destroyed: false };
+  const selected = result.adapter.subgroupMatrixConfigs.entries.find((entry) => entry.componentType === "i8" && entry.resultComponentType === "i32" && entry.M === 16 && entry.N === 16 && entry.K === 32);
+  let skip = null;
+  if (!device) result.gate = { status: "device-rejected", reason: "device-request-rejected", correctnessPassed: false };
+  else {
+    require(!device.features.has("shader-f16"), "Gate device unexpectedly exposes shader-f16");
+    if (!selected) skip = "missing-advertised-i8-i32-M16-N16-K32-config";
+    else if (!device.features.has("subgroups") || !device.features.has(MATRIX)) skip = "required-device-features-unavailable";
+    else if (info.subgroupMinSize !== 32 || info.subgroupMaxSize !== 32) skip = "requires-fixed-subgroup-size-32";
+    else if (device.limits.maxComputeWorkgroupSizeX < 32 || device.limits.maxComputeInvocationsPerWorkgroup < 32 || device.limits.maxComputeWorkgroupStorageSize < 1024 || device.limits.maxStorageBufferBindingSize < 16000) skip = "insufficient-default-device-limits";
+    result.phase = "packing-gate";
+    result.gate = skip ? { status: "skipped", reason: skip, selectedConfig: selected || null, correctnessPassed: false } : await runGate(device, selected);
+  }
+  result.status = "complete"; result.phase = "complete";
+} catch (error) { result.status = "error"; result.error = String(error?.message || error).slice(0, 4096); }
+finally { if (device) { device.destroy(); if (result.device) result.device.destroyed = true; } result.done = true; }
+}
+</script>

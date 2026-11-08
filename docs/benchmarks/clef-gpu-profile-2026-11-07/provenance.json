@@ -1,0 +1,403 @@
+{
+  "schemaVersion": 1,
+  "captureDate": "2026-11-07",
+  "publicationBaseCommit": "7a6de58b74d2ad9e452e8ca317d84f4b83abfe86",
+  "rawInputs": [
+    {
+      "id": "clefResult",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/result.json",
+      "bytes": 1026534,
+      "sha256": "8bc21b0a6217f83f58e1e062a28dbd8438ad90fb1b16d884976faf0f02dc1c05"
+    },
+    {
+      "id": "clefController",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/controller.json",
+      "bytes": 49809,
+      "sha256": "c0f796de1abab95daa217357f5413e499d6537c7372bb4682df5063de4dc76c9"
+    },
+    {
+      "id": "clefRelease",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/external-release-observed-union-v2.json",
+      "bytes": 1684,
+      "sha256": "eed71a1e3f335db93a69368aa0d8fbbc25a6a2ae7f393dbec8bfb39d6346bc12"
+    },
+    {
+      "id": "clefLease000",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-000-clef-kernel-profile-controller-bind-before-inputs.json",
+      "bytes": 107022,
+      "sha256": "29882828cfb490f9f02dff233e4ba28633c1f890e0f59ca5fc5d0ab7563bd5fc"
+    },
+    {
+      "id": "clefLease001",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-001-before-source-and-runtime-inputs.json",
+      "bytes": 54661,
+      "sha256": "2e5c91be119834e5b28f0e48df2168a0a6670ec4e6432d4fe8e181db25fd2c56"
+    },
+    {
+      "id": "clefLease002",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-002-before-browser-load-of-runtime-wasm-and-model-pack.json",
+      "bytes": 54681,
+      "sha256": "1f03cac76fde8f960be227c5cf3e3aa6dea3b1fdcec26a5f1b83f9f351c1445a"
+    },
+    {
+      "id": "clefLease003",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-003-before-pack-identity-and-link.json",
+      "bytes": 54660,
+      "sha256": "59eaae9a87dff2f20523fcf19fc3e0edd7df7a3efe99ef72b5cfa1386bf5080b"
+    },
+    {
+      "id": "clefLease004",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-004-before-browser-controller.json",
+      "bytes": 54656,
+      "sha256": "c365df66cabe93a8dfa313658053e064de3e89078600e1cf91c24c2bacea5167"
+    },
+    {
+      "id": "clefLease005",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-005-after-browser-controller.json",
+      "bytes": 54602,
+      "sha256": "2062af11c09fe9c407d92b04ccc0bb9d37f734c931217a1568b4a17f0d62225f"
+    },
+    {
+      "id": "clefLease006",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-006-before-post-run-source-and-runtime-identity-check.json",
+      "bytes": 54627,
+      "sha256": "16e4751f0da4167352ad0398dd0bb0df03c2b7fb0cd2041929818f2df03311fe"
+    },
+    {
+      "id": "clefLease007",
+      "captureRoot": "clef",
+      "path": "tmp/clef-kernel-profile-20261107-r1/lease-007-after-owned-process-server-and-link-cleanup-and-scope-proof.json",
+      "bytes": 54637,
+      "sha256": "3788e0cf398e5ef6f047fae1d7493f66c34285f11b89b0088fca35b1fb557f08"
+    },
+    {
+      "id": "clefStaticSmoke",
+      "captureRoot": "campaign",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/clef-kernel-profile-static-browser-smoke-v2.json",
+      "bytes": 1759,
+      "sha256": "e0fb065f5763afdef577cf10ed1bbef3e3040aefe0e516b539203feffc061f95"
+    },
+    {
+      "id": "matrixResult",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/baseline/result.json",
+      "bytes": 1050925,
+      "sha256": "b87b82d845546238c587eaeed0678ae16cafcb306e4325cefe33143d3229d84d"
+    },
+    {
+      "id": "matrixController",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/controller.json",
+      "bytes": 30392,
+      "sha256": "8fd1b42daa625e1f0538e66a5cf14661da82e795fab664730555596c3b6e56ff"
+    },
+    {
+      "id": "matrixRelease",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/external-release-observed-union-v2.json",
+      "bytes": 1577,
+      "sha256": "731fe31cd3860dee8b1c60c0c31c0d06b44c49208f6db429e19480de2598b178"
+    },
+    {
+      "id": "matrixLease000",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/lease-000-feature-controller-bind-inherited-fd.json",
+      "bytes": 112119,
+      "sha256": "82b95d84b52955149c82da941c3def141f8b79da33d4fb2088b6c70bfe897ca7"
+    },
+    {
+      "id": "matrixLease001",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/lease-001-before-browser-binary-identity-read.json",
+      "bytes": 57219,
+      "sha256": "3828e119dfadfec5a6f147fa12adec2eb39a7ace9e7216c38db6bea92a41a2c0"
+    },
+    {
+      "id": "matrixLease002",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/lease-002-before-baseline-browser.json",
+      "bytes": 57210,
+      "sha256": "503178a964f50952927fe6eb521dcb5bc9bf6c31bdfb399a7db2d0f0f7e71fd9"
+    },
+    {
+      "id": "matrixLease003",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/lease-003-after-baseline-children-and-stdio-closed.json",
+      "bytes": 57250,
+      "sha256": "2cd599b3c26c60b00bfbba69e5e178393826ae5e6c89bb4821d857d4b45652bf"
+    },
+    {
+      "id": "matrixLease004",
+      "captureRoot": "matrix",
+      "path": "tmp/capture-20261107-r1/lease-004-after-owned-processes-stdio-and-server-closed.json",
+      "bytes": 57256,
+      "sha256": "854f1c0904e793337f2384cd736071f75cb5e8177f3fa9248cc6ed11477e16aa"
+    },
+    {
+      "id": "integerResult",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/baseline/result.json",
+      "bytes": 1090039,
+      "sha256": "f92d5e879be733ec3ec130ecd6ce1d4e4073d00c3f05c29c8de9e532b64932a0"
+    },
+    {
+      "id": "integerController",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/controller.json",
+      "bytes": 32442,
+      "sha256": "6be2cf1d41d8de0d1fab77594738821a4648ec732636172e64ab5ce79274e809"
+    },
+    {
+      "id": "integerRelease",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/external-release-observed-union-v1.json",
+      "bytes": 1801,
+      "sha256": "5e34768b806a347a51062494df03840ac5f71cb5da668f9917ce80bb1b4811bb"
+    },
+    {
+      "id": "integerLease000",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/lease-000-feature-controller-bind-inherited-fd.json",
+      "bytes": 110362,
+      "sha256": "d6471a8c91a4326abe7fc114f5b946984610bf838b7c98b251e0e19f6b2d07e0"
+    },
+    {
+      "id": "integerLease001",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/lease-001-before-browser-binary-identity-read.json",
+      "bytes": 56340,
+      "sha256": "88bc1275875592201b5f7dfa35e9edd434aa46375608ca72bf385696b8208fcc"
+    },
+    {
+      "id": "integerLease002",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/lease-002-before-baseline-browser.json",
+      "bytes": 56255,
+      "sha256": "e83547c31e316884781884843c01b760871b8ac14046497c487c47fac8fd2dc4"
+    },
+    {
+      "id": "integerLease003",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/lease-003-after-baseline-children-and-stdio-closed.json",
+      "bytes": 56290,
+      "sha256": "67de199db60b1a901564b4497a9925a532b454a95e8a0aa6e7d428222c97f049"
+    },
+    {
+      "id": "integerLease004",
+      "captureRoot": "integer",
+      "path": "tmp/capture-20261107-r1/lease-004-after-owned-processes-stdio-and-server-closed.json",
+      "bytes": 56372,
+      "sha256": "d96ad8c112db22795338456b9d7ccb5271ca9654cf425285840b6eea62a2f1a6"
+    },
+    {
+      "id": "integerStaticSmoke",
+      "captureRoot": "campaign",
+      "path": "tmp/sota-20261106-kdDTGn/campaign/integer-matrix-gate-static-browser-smoke-v1/browser.json",
+      "bytes": 1204,
+      "sha256": "1a1bed08abd1c61ede0f5fd4ac657fb941c8042085eec80d3b22e80a89aefcde"
+    }
+  ],
+  "sourceCopies": [
+    {
+      "id": "clefProfileHtml",
+      "originRoot": "clef",
+      "originPath": "bench-clef-kernel-profile.html",
+      "archivePath": "source/clef-kernel-profile-r1/bench-clef-kernel-profile.html",
+      "bytes": 20828,
+      "sha256": "928e79272dc69bc50def73cffb0368f4bb2d0a5b04dd7144db702902d2c42dc9"
+    },
+    {
+      "id": "clefProfileScript",
+      "originRoot": "clef",
+      "originPath": "scripts/private/clef-kernel-profile.mjs",
+      "archivePath": "source/clef-kernel-profile-r1/clef-kernel-profile.mjs",
+      "bytes": 71752,
+      "sha256": "cd978379ddca009376344c39842b092aa4cd175abbdeda052c9abe8535d7f9a4"
+    },
+    {
+      "id": "matrixProbeHtml",
+      "originRoot": "matrix",
+      "originPath": "scripts/private/subgroup-matrix-probe.html",
+      "archivePath": "source/subgroup-matrix-probe-r1/subgroup-matrix-probe.html",
+      "bytes": 8520,
+      "sha256": "24df77e2c8de8609f01021064a0b8b34655a6f3e62652955b9aa1e6479754d37"
+    },
+    {
+      "id": "matrixProbeScript",
+      "originRoot": "matrix",
+      "originPath": "scripts/private/subgroup-matrix-probe.mjs",
+      "archivePath": "source/subgroup-matrix-probe-r1/subgroup-matrix-probe.mjs",
+      "bytes": 26476,
+      "sha256": "0f97b431f8f16e8afd9197eba0d9e2e8f14199376fe704240f8651b2ba9dbf80"
+    },
+    {
+      "id": "matrixProbeRunner",
+      "originRoot": "matrix",
+      "originPath": "scripts/private/subgroup-matrix-probe.py",
+      "archivePath": "source/subgroup-matrix-probe-r1/subgroup-matrix-probe.py",
+      "bytes": 11242,
+      "sha256": "a109005fa7ffcd7b7a33e52ae224d73138bf31a4d0e468d1ce04da38431a0795"
+    },
+    {
+      "id": "matrixProbeTest",
+      "originRoot": "matrix",
+      "originPath": "scripts/private/subgroup-matrix-probe.test.mjs",
+      "archivePath": "source/subgroup-matrix-probe-r1/subgroup-matrix-probe.test.mjs",
+      "bytes": 7373,
+      "sha256": "fca439c24ad4ad71b14a13614e4797a37df40cecc93df04e275d28cce7fad1f1"
+    },
+    {
+      "id": "integerGateHelper",
+      "originRoot": "integer",
+      "originPath": "scripts/private/integer-matrix-gate-helper.js",
+      "archivePath": "source/integer-matrix-gate-r1/integer-matrix-gate-helper.js",
+      "bytes": 12993,
+      "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb"
+    },
+    {
+      "id": "integerGateHtml",
+      "originRoot": "integer",
+      "originPath": "scripts/private/integer-matrix-gate.html",
+      "archivePath": "source/integer-matrix-gate-r1/integer-matrix-gate.html",
+      "bytes": 15651,
+      "sha256": "aba79fa9a419448edec639fb53f8ed4979f887d5950cd1fb8d8c18caf652a18b"
+    },
+    {
+      "id": "integerGateScript",
+      "originRoot": "integer",
+      "originPath": "scripts/private/integer-matrix-gate.mjs",
+      "archivePath": "source/integer-matrix-gate-r1/integer-matrix-gate.mjs",
+      "bytes": 28731,
+      "sha256": "0a54825e0d7cae52d206d8c9dabd6ada471e8120363d52e47badc050d653a70c"
+    },
+    {
+      "id": "integerGateRunner",
+      "originRoot": "integer",
+      "originPath": "scripts/private/integer-matrix-gate.py",
+      "archivePath": "source/integer-matrix-gate-r1/integer-matrix-gate.py",
+      "bytes": 12229,
+      "sha256": "35081d3bc7e2ee29f7453214dafb1a101675f481dc46a7870d01f55f605e1b25"
+    },
+    {
+      "id": "integerGateTest",
+      "originRoot": "integer",
+      "originPath": "scripts/private/integer-matrix-gate.test.mjs",
+      "archivePath": "source/integer-matrix-gate-r1/integer-matrix-gate.test.mjs",
+      "bytes": 9305,
+      "sha256": "4bbf7ce574a2c4e2b829cf121bf6b8960a7bf690c86ee8dbd1327bf56af4a873"
+    }
+  ],
+  "clefSourcePinInventory": {
+    "capturedCount": 64,
+    "runtimeJsCount": 50,
+    "immutableReferenceCommit": "7a6de58b74d2ad9e452e8ca317d84f4b83abfe86",
+    "immutableByteMatchedCount": 60,
+    "packageCopyCount": 2,
+    "hashOnlyCount": 2,
+    "hashOnlyPaths": [
+      "bench.html",
+      "scripts/private/clef-route-diagnostic.mjs"
+    ],
+    "inventoryPath": "evidence/clef-profile/source-identities.json"
+  },
+  "generatedProjectionPins": [
+    {
+      "path": "evidence/clef-profile/result.json",
+      "bytes": 62963,
+      "sha256": "32f2ac593012d1b6ba769d2451a312f3966dc44176388a6522c001229f6a3a8c"
+    },
+    {
+      "path": "evidence/clef-profile/controller.json",
+      "bytes": 497,
+      "sha256": "8da377230c6a292d22383087195f8aad6bdb61a469f743711dad85576112a172"
+    },
+    {
+      "path": "evidence/clef-profile/source-identities.json",
+      "bytes": 30399,
+      "sha256": "26d3767be942427a3e077e6501d45692e599ea82cf22c14f11892d5fce7fc649"
+    },
+    {
+      "path": "evidence/clef-profile/release.json",
+      "bytes": 313,
+      "sha256": "c9748a399715d5fd3db2e8896dd320e6acd35811931cbe014e56d64f76118bbd"
+    },
+    {
+      "path": "evidence/clef-profile/static-browser-smoke.json",
+      "bytes": 1418,
+      "sha256": "3bbef7061adddad6158a3c5a2d6d9ea9a08736d27e52e3f8638dec5cdca7aadc"
+    },
+    {
+      "path": "evidence/clef-profile/leases.json",
+      "bytes": 3530,
+      "sha256": "3b00dd3547f3ab86042cb323d3e3dfc12f16a6cb65bf7d3cd64b508e744d1c22"
+    },
+    {
+      "path": "evidence/subgroup-matrix/result.json",
+      "bytes": 2632,
+      "sha256": "56e459d78bb10ab67c61b9b5c58af0c0ba38ad57e2bd32955fcd6def0ea6cb63"
+    },
+    {
+      "path": "evidence/subgroup-matrix/controller.json",
+      "bytes": 887,
+      "sha256": "81a6e58b8d5de578565a688d73be5e0db0e742afd4ba979d1dd33d5c479a585c"
+    },
+    {
+      "path": "evidence/subgroup-matrix/release.json",
+      "bytes": 313,
+      "sha256": "14465424581d6f7ab34b4e6d4a98452769b6fb28314219c3880014483a45666a"
+    },
+    {
+      "path": "evidence/subgroup-matrix/leases.json",
+      "bytes": 2237,
+      "sha256": "3b9df278d997262b3c36f236cd624b64d99a525540febe2f477d52ed59e26388"
+    },
+    {
+      "path": "evidence/integer-packing-gate/result.json",
+      "bytes": 9443,
+      "sha256": "16ac0ed41d184b4e81f6da7d3f96f783a5708cd4244136ea9fe825967319adb8"
+    },
+    {
+      "path": "evidence/integer-packing-gate/controller.json",
+      "bytes": 1000,
+      "sha256": "13b8fe2892d300790b05c553d7574ab4567a6d5625c6bbec3468fcdd715cb91f"
+    },
+    {
+      "path": "evidence/integer-packing-gate/release.json",
+      "bytes": 273,
+      "sha256": "bfd67889769d79586a68fb1525cb57a64bb4b56b4d39354ee0ade1569173863d"
+    },
+    {
+      "path": "evidence/integer-packing-gate/static-browser-smoke.json",
+      "bytes": 988,
+      "sha256": "be39fc82532b3473d87fd046792ebe333179dff310a3c56798c88aa46a480dc3"
+    },
+    {
+      "path": "evidence/integer-packing-gate/leases.json",
+      "bytes": 2237,
+      "sha256": "f4c024076c7520575ae6f266647e5fa41559eae76543fa69e80f2c6d41c55ea1"
+    }
+  ],
+  "exclusions": [
+    "model weights and pack payloads",
+    "compiled WASM and copied runtime trees",
+    "full raw controllers and runner logs",
+    "trace files and browser logs",
+    "full process and thread inventories",
+    "global /proc/locks text"
+  ],
+  "limits": {
+    "maxRawInputBytes": 1572864,
+    "maxDecodedBytes": 1048576,
+    "maxCompressedBytes": 262144
+  }
+}
