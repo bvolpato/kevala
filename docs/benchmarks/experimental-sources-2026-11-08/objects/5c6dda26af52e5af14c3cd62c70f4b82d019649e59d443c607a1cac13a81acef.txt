@@ -1,0 +1,304 @@
+{
+  "status": "source-only-prepared-not-executed",
+  "base": "fc7ef15a895587be8c94de96dab8344b89663e13",
+  "worktree": "/tmp/kevala-laya-geglu-epilogue-v2",
+  "defaultMode": "off",
+  "promotionAuthorized": false,
+  "sourceValidation": [
+    "node --check js/src/gpu-laya.js",
+    "node --check js/src/gpu-laya-geglu-epilogue.js",
+    "node --check scripts/private/laya-geglu-protocol.mjs",
+    "git diff --check",
+    "Source review only: four error counters plus two positive coverage counters, 24-byte status allocation/copy stride, exact per-layer expected count checks",
+    "Source review only: exact pinned request serialization plus role required to arm; every forward clears permit before off/ineligible early returns"
+  ],
+  "sources": [
+    {
+      "path": "js/src/gpu-laya.js",
+      "bytes": 16457,
+      "sha256": "f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5"
+    },
+    {
+      "path": "js/src/gpu-laya-geglu-epilogue.js",
+      "bytes": 13158,
+      "sha256": "72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738"
+    },
+    {
+      "path": "scripts/private/laya-geglu-protocol.mjs",
+      "bytes": 8719,
+      "sha256": "e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496"
+    },
+    {
+      "path": "js/src/gpu.js",
+      "bytes": 26543,
+      "sha256": "75df9b74a7d23eecae01785e44ea580e0239f48a2cca37cae4cd2a19505d965a"
+    },
+    {
+      "path": "js/src/gpu-tuning.js",
+      "bytes": 16021,
+      "sha256": "d42971e3a28f2ef6b22d4bcde559ddb048fa52e0273470e7e73ffba396ad3d6e"
+    },
+    {
+      "path": "crates/kevala/src/wgsl/matmul.wgsl",
+      "bytes": 17868,
+      "sha256": "af1e64f19937b7e5532a3b7b5d888e956f4fd486271fbb21dba7768ccdde8fc7"
+    },
+    {
+      "path": "crates/kevala/src/wgsl/matmul_gelu.wgsl",
+      "bytes": 11595,
+      "sha256": "ad84ce65511bfb99e3e5ad670754d6f9d200cc8ebc9035460bad688e84c94b13"
+    },
+    {
+      "path": "crates/kevala/src/wgsl/geglu.wgsl",
+      "bytes": 1130,
+      "sha256": "9310243591e00a5f5fb2051f6ab71a50180420838b370a8de5c9f767bc8ad56f"
+    }
+  ],
+  "headerReceipt": {
+    "path": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+    "realpath": "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala",
+    "identity": {
+      "dev": "66306",
+      "ino": "169085205",
+      "size": "478886720",
+      "mtimeNs": "1790052955230485668"
+    },
+    "reads": [
+      {
+        "offset": 0,
+        "length": 16
+      },
+      {
+        "offset": 16,
+        "length": 26297
+      }
+    ],
+    "hashedRange": {
+      "start": 0,
+      "endExclusive": 26313
+    },
+    "sha256": "f82cc6ce21f0b3f55000f505db8d7ee08f5f956ce9d1d1206607bf2c6476ecc8",
+    "payloadRead": false,
+    "scalesRead": false,
+    "wholePackHash": false,
+    "headerReadBudget": 8388608,
+    "modelRevision": "1c5edc17a7acd8701df6fc341c0d179f1c62c982",
+    "I": 2624,
+    "K": 1024,
+    "layers": 28,
+    "wi": {
+      "dtype": "q8",
+      "shape": [
+        5248,
+        1024
+      ],
+      "block": 32,
+      "bytes": 5373952,
+      "scalesBytes": 671744
+    },
+    "halfBindings": {
+      "first": "activated u",
+      "second": "multiplier gate",
+      "weightOffsetBytes": 2686976,
+      "scaleOffsetBytes": 335872
+    }
+  },
+  "requestIdentity": {
+    "format": "UTF-8 JSON.stringify(requests), exact property order stored below",
+    "long": {
+      "caseId": "long:first",
+      "canonicalRequestsJson": "[{\"state\":\"Run 0. the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today \",\"questions\":{\"q\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for money back?\"}}}]",
+      "sha256": "68561030404558e75b42f22a4e04de3b500520cdf89792ca2f30fa255757990f",
+      "expectedActiveT": 512
+    },
+    "medium": {
+      "caseId": "medium:fallback",
+      "canonicalRequestsJson": "[{\"state\":\"Run 0. the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today \",\"questions\":{\"q\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for money back?\"}}}]",
+      "sha256": "9b5ccb3bc564ca164ba25eb6bd329f7547bb83dac0c671fc9be04dd500d76444",
+      "expectedEligibility": "fallback because no exact LONG permit and active T differs from 512"
+    },
+    "cache": false,
+    "stateCache": false,
+    "variableMeasuredInputs": false,
+    "authorization": {
+      "lifetime": "one forward only; consumed and cleared at entry including off mode and ineligible lengths",
+      "arm": "run(requests, {beforeDecide}) must invoke beforeDecide(actualRequests) immediately before decide; exact actual request JSON and role long:first are required",
+      "fallbackCases": [
+        "absent permit at T512",
+        "wrong role at T512",
+        "wrong request Run 1 at T512",
+        "MEDIUM request"
+      ],
+      "reusedPermitEligible": false
+    },
+    "wrongLong": {
+      "caseId": "long:wrong-request",
+      "canonicalRequestsJson": "[{\"state\":\"Run 1. the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today the customer wrote in about a recurring charge they did not recognise and wants a refund today \",\"questions\":{\"q\":{\"type\":\"noul\",\"instructions\":\"Is the customer asking for money back?\"}}}]",
+      "sha256": "ae84bba6eab212af763ab323133b03566fb758441656650459a900e036b1e92e",
+      "expectedActiveT": 512,
+      "expectedEligibility": "fallback because request is not the exact pinned LONG"
+    }
+  },
+  "fixedProtocol": {
+    "machine": "RTX 5070 Ti 16GB / Ryzen 9950X3D / Chrome 156",
+    "machineVerifiedThisTurn": false,
+    "loadedInstances": 1,
+    "tuning": "preserve one actual load-time selector plan; never force generic or recalibrate per lane",
+    "lanes": {
+      "A": "off",
+      "B": "on"
+    },
+    "diagnostics": "before and after timings; baseline plus shadow candidate at every layer; exact u32 comparison, separate finite counters, GPU activeCompared and tailCompared counts; activeCompared must equal 1,343,488 and tailCompared actual act buffer elements minus active count; sentinel across entire inactive act allocation; 24 bytes status per layer; complete response equality excluding top-level timing only",
+    "diagnosticsDuringTiming": false,
+    "requestWarmups": "ABABAB, three per lane",
+    "quartets": [
+      "ABBA",
+      "BAAB",
+      "ABBA",
+      "BAAB",
+      "ABBA",
+      "BAAB",
+      "ABBA",
+      "BAAB",
+      "ABBA"
+    ],
+    "aaBeforeEachQuartet": "AA",
+    "quartetCount": 9,
+    "aaPairCount": 9,
+    "pairedKernelPhase": "separate existing-profiler phase after unprofiled requests; same 3 warmups and 9 fixed ABBA/BAAB quartets plus AA; preserve mm.wi+geglu baseline and paired candidate samples",
+    "ordersAndInputsFixedBeforeExecution": true,
+    "outlierRemoval": false,
+    "corrections": false,
+    "retries": false,
+    "hardCampaignDeadlineSeconds": 600,
+    "perRequestDeadlineSeconds": 30,
+    "abort": "Any request failure, validation error, device loss, incomplete evidence, deadline or containment bookend failure stops campaign; retain failed record, no replacement samples",
+    "acceptance": {
+      "exactLayerComparisons": true,
+      "completeRequestOutputs": "exact, including finite probabilities; only top-level timing excluded",
+      "kernelMedianGainMinimum": 0.05,
+      "kernelStableRule": "candidate faster in every paired quartet; at least six of nine quartet gains at least 5 percent",
+      "requestRule": "positive median gain in both ABBA and BAAB subsets; at least eight of nine quartets improve; median relative gain exceeds maximum absolute AA relative spread",
+      "promotion": "separate review required; this prototype does not promote itself"
+    },
+    "gpuCoverage": {
+      "statusWordsPerLayer": 6,
+      "statusBytesPerLayer": 24,
+      "readbackBytesFor28Layers": 672,
+      "requiredActiveComparedPerLayer": 1343488,
+      "requiredTailComparedPerLayer": "trunk.act.size / 4 - 1343488",
+      "zeroStatusAccepted": false,
+      "partialComparisonAccepted": false,
+      "duplicateComparisonAccepted": false
+    }
+  },
+  "containment": {
+    "lock": "/home/bruno/.cache/kevala/gpu-profile.lock",
+    "lockArgv": [
+      "flock",
+      "--exclusive",
+      "--nonblock",
+      "--conflict-exit-code",
+      "75",
+      "--no-fork",
+      "/home/bruno/.cache/kevala/gpu-profile.lock"
+    ],
+    "scopeArgv": [
+      "systemd-run",
+      "--user",
+      "--scope",
+      "-p",
+      "MemoryHigh=32G",
+      "-p",
+      "MemoryMax=40G",
+      "-p",
+      "MemorySwapMax=4G",
+      "--"
+    ],
+    "minimumMemAvailableGiB": 32,
+    "minimumSwapFreeGiB": 4,
+    "cpuScheduling": "normal unpinned scheduling; no CPU7 affinity contract",
+    "privateSessionBusHelper": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign/clef-affinity-startup-v1-private-session-bus-r2/session_bus.py",
+    "helperUsage": "PrivateSessionBus instantiated by fresh browser controller; use service_environment(os.environ) only as ChromeService(env=...); check before launch, after launch, after session, close after browser quit",
+    "desktopSessionConfigChanged": "Only the new ChromeService session-bus endpoint is unavailable; preserve parent environment, system/user buses and existing browser sessions",
+    "bookends": "sample actual controller, browser, renderer and GPU PIDs /proc/PID/cgroup plus memory limits at startup and after measurement; record private absent endpoint identity at both bookends",
+    "continuousContainmentClaim": false,
+    "idleHostClaim": false,
+    "existingBrowserAttach": false,
+    "timeoutCleanup": "Controller must quit and reap its owned browser tree on deadline; JavaScript rejection alone is not GPU cancellation"
+  },
+  "wasmIdentity": {
+    "source": "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/native-avx512-delivery/primary-wasm-sync-v1.json",
+    "sourceCiRun": 42379873911,
+    "bytesReadThisTurn": false,
+    "binaryHashComputedThisTurn": false,
+    "preparationOnly": true,
+    "requirement": "later use identical actual verified CI80 bytes in both lanes, served from same module; verify metadata against actual bytes only when heavy work authorized",
+    "expected": [
+      {
+        "flavor": "base",
+        "path": "js/src/kevala-base.wasm",
+        "bytes": 1375771,
+        "sha256": "793351ff820ca6818eae749c09c829f974fe718d805447bd2141ab99b4c1e831"
+      },
+      {
+        "flavor": "simd",
+        "path": "js/src/kevala-simd.wasm",
+        "bytes": 1382096,
+        "sha256": "f463d88be692c2da5a609cade3216ff94cb05732ab560d0df72517afe9db67f5"
+      },
+      {
+        "flavor": "relaxed",
+        "path": "js/src/kevala-relaxed.wasm",
+        "bytes": 1383425,
+        "sha256": "55aa0e56bce7a8f808d27c8db50767fb24102eb85d8d45bb369451c934836c0a"
+      }
+    ]
+  },
+  "notExecuted": [
+    "build",
+    "WGSL compilation or dispatch",
+    "WASM execution",
+    "model load",
+    "GPU numerical comparison",
+    "request timing",
+    "kernel timing",
+    "benchmark runner",
+    "archive read",
+    "WASM binary read or hash",
+    "commit",
+    "PR"
+  ],
+  "protocolVersion": "private-laya-geglu-v2",
+  "preservedV1": {
+    "worktree": "/tmp/kevala-laya-geglu-epilogue",
+    "modifiedByV2": false,
+    "files": [
+      {
+        "path": "js/src/gpu-laya.js",
+        "bytes": 16304,
+        "sha256": "1f138f638869bc488bc48e1045369763b822a0f7fd521a8448b6b24ac70cb79d"
+      },
+      {
+        "path": "js/src/gpu-laya-geglu-epilogue.js",
+        "bytes": 11203,
+        "sha256": "5c9b33d9fe5ea4871cbf16e96a0c270e0813f4a3722d47a99e0a365ee481e125"
+      },
+      {
+        "path": "scripts/private/laya-geglu-protocol.mjs",
+        "bytes": 6501,
+        "sha256": "2df092c627a1571ebfbfeacf3daf2c8c7a48237dc478005ba7eefe1c8442e43c"
+      },
+      {
+        "path": "scripts/private/laya-geglu-protocol.json",
+        "bytes": 12417,
+        "sha256": "0a06aeb21023b7ff79e9d3ff734468fa0523c29d698972d1cd4b99c23f5bfc42"
+      }
+    ]
+  },
+  "v2Scope": [
+    "positive GPU activeCompared and tailCompared counters required for every layer; skipped or duplicated compare fails",
+    "one-shot exact-request permit consumed and cleared before every forward early return",
+    "prepared callback arms context from actual requests immediately before decide; no runtime controller integration"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "schema": "private-laya-integer-matrix-split-v1",
+  "status": "source-only-uncompiled-unexecuted",
+  "scope": "Candidate-only split-stage diagnostic of the fixed rejected integer-matrix operator",
+  "baseCommit": "81a27608f24e0b2252318515e272387c48dec7d8",
+  "priorMeasurement": {
+    "capture": "/tmp/kevala-integer-matrix-operator/tmp/capture-20261107-r1",
+    "resultSha256": "aef07de1170cb059803838e1b7f7191997c780ffcffaedd71f591700b47f2c42",
+    "numerics": "PASS all four fixtures and all72 fixed rows, reported by root",
+    "performance": "REJECTED: candidate approximately4.704 times baseline; medianGain=-3.7044400725991284 dimensionless; zero winning quartets",
+    "preserveUnchanged": true,
+    "supersededOrRetimed": false
+  },
+  "numericContract": {
+    "helper": { "path": "scripts/private/laya-integer-matrix.js", "bytes": 12993, "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb" },
+    "protocol": { "path": "scripts/private/laya-integer-matrix-protocol.json", "bytes": 19823, "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39" },
+    "shape": [512, 5248, 1024],
+    "geometry": "Unchanged BM64 BN32 BK32,256 threads,8 subgroups,8KiB shared scratch,three activation planes",
+    "fixtures": ["integer", "dyadic", "fractional", "cancellation"],
+    "validation": "Repeat the identical packing prerequisite and all four fixed full-size validations. Preserve every original fixture formula, seed, input hash, baseline binding/dispatch, epilogue, poison, canary, finite/bitwise/quantization check and exact positive counter requirement.",
+    "statusWords": [2686976, 0, 0, 0, 524288, 16384, 0, 512, 0],
+    "tolerancesChanged": false,
+    "baselineRole": "The actual production baseline is dispatched only for untimed correctness validation. There are no baseline timing samples or ranking gates."
+  },
+  "fixture": "fractional",
+  "candidateOnly": true,
+  "warmups": 3,
+  "samples": 9,
+  "invocationsPerSample": 16,
+  "passesPerSample": 32,
+  "queryIndicesPerSample": 64,
+  "quantization": "Every invocation dispatches the unchanged quantizer and then the unchanged integer matrix. No prequantization or hoisting.",
+  "timestampLayout": {
+    "invocationI": "quantize begin4*i, quantize end4*i+1, integerMatmul begin4*i+2, integerMatmul end4*i+3",
+    "enclosing": "query63-query0, from first quantization pass beginning to final matrix pass end; derived from the same64 indices",
+    "retention": "Retain all64 raw u64 tick strings, each pass's begin/end indices and tick strings, all32 elapsed values,31 signed inter-pass gap values, stage sums and enclosing elapsed. Retain all warmup and sample rows before validating them.",
+    "units": "WebGPU nanoseconds. No period calibration, timestamp correction, adaptive repetitions or precision-based sample exclusion.",
+    "zeroSpans": "Zero-duration per-pass spans remain valid recorded observations at implementation timestamp resolution. Count them explicitly; do not retime or infer a positive hidden cost.",
+    "failures": "Reject negative duration within a begin/end pass pair, a nonpositive enclosing total or inconsistent exact timestamp decomposition. Preserve signed negative inter-pass gaps as diagnostic evidence rather than deleting them.",
+    "accounting": "quantizeSum + matrixSum + sum(interPassGaps) equals enclosingTotal in integer nanoseconds. The residual enclosingTotal-quantizeSum-matrixSum is signed and includes gaps/implementation timestamp behavior."
+  },
+  "everyRowValidation": "After timestamp resolution, run unchanged full-output/encoding/guard/unused-PART validation outside timestamps and retain all nine actual GPU status words. A failed check stops with all partial rows retained.",
+  "summary": "Medians across all nine samples of quantization sums, integer-matrix sums and enclosing totals, plus each divided by16; raw pass/tick data and zero-span/negative-gap counts remain available. No acceptance or promotion threshold.",
+  "instrumentationLimitation": "Diagnostic pass timestamps add GPU commands and may alter synchronization, scheduling and measured durations. These instrumented stage sums and enclosing totals cannot replace the rejected uninstrumented comparison or prove a clean latency partition. Timestamp precision may produce zero spans or signed gap artifacts. No baseline ranking, speedup rescue, model/request speedup or production promotion is inferred.",
+  "samplingPolicy": { "adaptiveRepetitions": false, "exclusions": 0, "corrections": false, "retries": 0, "retiming": false, "replacementSamples": false },
+  "entry": { "page": "bench-laya-integer-matrix-split.html", "object": "window.gpuBench", "physical": "exact ?run=1", "sourceSmoke": "exact ?smoke=1", "default": "idle, zero GPU or fixture calls" },
+  "lifecycle": "Reuse the existing reviewed page resource cleanup and later a separate cloned controller/browser boundary. No new lifecycle framework, model or WASM load.",
+  "preparation": "No GPU/model/WASM/binary/full-fixture execution. Source checks wait for root's release of the Clef capture. Independent source review and root grant precede runtime."
+}

@@ -1,0 +1,158 @@
+// Private operator prototype. Importing this file does not emit WGSL or start GPU work.
+export const FP32_TALL_SPEC = Object.freeze({ weights: "q8", f16: false, rows: 4, row56: false, groups: 1, splitTarget: 256 });
+export const FP32_TALL_GEOMETRY = Object.freeze({ physicalBM: 128, virtualBM: 64, BN: 64, BK: 32, workgroup: [32, 8, 1], invocations: 256, sharedBytes: 24576 });
+
+function require(ok, message) {
+  if (!ok) throw new Error(`FP32 tall prototype: ${message}`);
+}
+
+function count(source, text) {
+  return source.split(text).length - 1;
+}
+
+function functionText(source, name) {
+  const marker = `fn ${name}(`;
+  require(count(source, marker) === 1, `expected one ${name} function`);
+  const start = source.indexOf(marker), body = source.indexOf("{", start);
+  require(body >= 0, `missing ${name} body`);
+  let depth = 0;
+  for (let index = body; index < source.length; index++) {
+    if (source[index] === "{") depth++;
+    if (source[index] === "}" && --depth === 0) return source.slice(start, index + 1);
+  }
+  throw new Error(`FP32 tall prototype: unclosed ${name} body`);
+}
+
+function buildCandidate(baseline) {
+  require(typeof baseline === "string" && baseline.length <= 128 * 1024, "baseline WGSL is missing or exceeds its source bound");
+  require(!baseline.includes("enable f16;") && !baseline.includes("{{") && !baseline.includes("//#"), "expected fully emitted FP32 WGSL");
+  require(count(baseline, "@compute @workgroup_size(32, 8)") === 1, "expected the production 32x8 generic workgroup");
+  require(count(baseline, "@group(0) @binding(") === 8, "expected exactly the production eight bindings");
+  for (let binding = 0; binding < 8; binding++) require(count(baseline, `@group(0) @binding(${binding})`) === 1, `missing binding ${binding}`);
+  const preserved = Object.fromEntries(["sx", "mm_store", "mm_splits"].map((name) => [name, functionText(baseline, name)]));
+  require(preserved.mm_splits.includes("((T + 63u) / 64u)"), "expected the ordinary virtual-BM64 split rule");
+  require(preserved.mm_splits.includes("((N + 63u) / 64u)"), "expected the BN64 split rule");
+  require(preserved.mm_splits.includes("256u"), "expected the production split target 256");
+  let candidate = baseline;
+  const edits = [];
+  const replace = (label, from, to, expected = 1) => {
+    require(count(candidate, from) === expected, `${label} anchor count differs from ${expected}`);
+    candidate = candidate.split(from).join(to);
+    edits.push({ label, occurrences: expected });
+  };
+  replace("FP32 activation tile 64 to 128 rows", "var<workgroup> xs: array<vec4<f32>, 512>;", "var<workgroup> xs: array<vec4<f32>, 1024>;");
+  require(count(candidate, "var<workgroup> ws: array<vec4<f32>, 512>;") === 1, "expected the unchanged BN64 weight tile");
+  replace("physical row origin only", "let m0 = wg.y * 64u;", "let m0 = wg.y * 128u;");
+  replace("upper activation row", "let xrow = m0 + lr;", "let xrow = m0 + lr;\n  let xrow2 = xrow + 64u;");
+  replace("upper activation load registers", "  var xv1 = vec4<f32>(0.0);", "  var xv1 = vec4<f32>(0.0);\n  var xv2 = vec4<f32>(0.0);\n  var xv3 = vec4<f32>(0.0);");
+  replace("upper activation zero fill", "    xv1 = vec4<f32>(0.0);", "    xv1 = vec4<f32>(0.0);\n    xv2 = vec4<f32>(0.0);\n    xv3 = vec4<f32>(0.0);");
+  const lowerLoad = "    if (lr < 64u && xrow < T) {\n      let base = (xrow * K + kb * 32u) / 4u + lq * 2u;\n      xv0 = X[base];\n      xv1 = X[base + 1u];\n    }";
+  replace("upper activation storage loads", lowerLoad, lowerLoad + "\n    if (lr < 64u && xrow2 < T) {\n      let base2 = (xrow2 * K + kb * 32u) / 4u + lq * 2u;\n      xv2 = X[base2];\n      xv3 = X[base2 + 1u];\n    }");
+  const lowerShared = "    if (lr < 64u) {\n      xs[lr * 8u + lq * 2u] = vec4<f32>(xv0);\n      xs[lr * 8u + lq * 2u + 1u] = vec4<f32>(xv1);\n    }";
+  replace("upper activation shared stores", lowerShared, lowerShared + "\n    if (lr < 64u) {\n      xs[(lr + 64u) * 8u + lq * 2u] = vec4<f32>(xv2);\n      xs[(lr + 64u) * 8u + lq * 2u + 1u] = vec4<f32>(xv3);\n    }");
+  const declarations = Array.from({ length: 8 }, (_, offset) => `  var acc${offset + 8} = vec2<f32>(0.0);`).join("\n");
+  replace("sixteen named accumulator rows", "  var acc7 = vec2<f32>(0.0);", "  var acc7 = vec2<f32>(0.0);\n" + declarations);
+  const lastDot = "      let a7 = vec4<f32>(xs[(lid.y + 56u) * 8u + kq]);\n      acc7 += vec2<f32>(dot(a7, b0), dot(a7, b1));";
+  const upperDots = Array.from({ length: 8 }, (_, offset) => {
+    const index = offset + 8;
+    return `      let a${index} = vec4<f32>(xs[(lid.y + ${index * 8}u) * 8u + kq]);\n      acc${index} += vec2<f32>(dot(a${index}, b0), dot(a${index}, b1));`;
+  }).join("\n");
+  replace("same per-output dot order for upper rows", lastDot, lastDot + "\n" + upperDots, 8);
+  for (const component of ["x", "y"]) {
+    const lastStore = `      mm_store(acc7.${component}, row + 56u, col, bias, T, N, splits, wg.z);`;
+    const upperStores = Array.from({ length: 8 }, (_, offset) => {
+      const index = offset + 8;
+      return `      mm_store(acc${index}.${component}, row + ${index * 8}u, col, bias, T, N, splits, wg.z);`;
+    }).join("\n");
+    replace(`same epilogue for upper rows ${component}`, lastStore, lastStore + "\n" + upperStores);
+  }
+  for (const [name, original] of Object.entries(preserved)) require(functionText(candidate, name) === original, `${name} changed`);
+  require(count(candidate, "workgroupBarrier();") === count(baseline, "workgroupBarrier();"), "barrier count changed");
+  require(candidate.length <= 128 * 1024, "candidate WGSL exceeded its source bound");
+  return { candidate, edits, preservedFunctions: Object.keys(preserved) };
+}
+
+/** Call only under the externally proved canonical GPU lease, using the loaded runtime's gpu. */
+export function emitFp32TallSources(gpu) {
+  require(gpu && typeof gpu.wgsl === "function", "the actual loaded runtime gpu.wgsl emitter is required");
+  const spec = { ...FP32_TALL_SPEC };
+  const baseline = gpu.wgsl("matmul", spec);
+  const reducer = gpu.wgsl("reduce", spec);
+  require(typeof reducer === "string" && reducer.length <= 128 * 1024, "actual production reducer emission is missing or too large");
+  const transformed = buildCandidate(baseline);
+  require(functionText(baseline, "mm_splits") === functionText(reducer, "mm_splits"), "baseline and reducer split rules differ");
+  return { baseline, candidate: transformed.candidate, reducer,
+    producer: { method: "gpu.wgsl", calls: [{ kernel: "matmul", spec }, { kernel: "reduce", spec: { ...spec } }] },
+    geometry: { ...FP32_TALL_GEOMETRY }, edits: transformed.edits, preservedFunctions: transformed.preservedFunctions,
+    interface: { bindings: ["Globals", "P(N,K,mode,bias)", "X", "W", "S", "B", "Y", "PART"], reducerReused: true,
+      candidatePreprocessing: "none", arithmetic: "same increasing kb and kq, same dot(vec4), Q8 dequantization before FP32 staging, bias/store and ordered split reducer" } };
+}
+
+export function fp32TallDispatch(M, N, K) {
+  require([M, N, K].every((value) => Number.isSafeInteger(value) && value > 0), "positive integer matrix dimensions required");
+  require(K % 32 === 0, "K must contain whole Q8 blocks");
+  const tiles = Math.ceil(N / 64) * Math.ceil(M / 64);
+  const splits = tiles >= 192 ? 1 : Math.max(1, Math.min(8, Math.ceil(256 / tiles), Math.floor(K / 128)));
+  return { baseline: [Math.ceil(N / 64), Math.ceil(M / 64), splits], candidate: [Math.ceil(N / 64), Math.ceil(M / 128), splits],
+    reducer: splits > 1 ? [Math.min(Math.ceil(M * N / 256), 65535), Math.ceil(Math.ceil(M * N / 256) / 65535), 1] : null,
+    virtualBM: 64, partFloats: splits > 1 ? splits * M * N : 0 };
+}
+
+/** CPU fixture construction only. It does not allocate GPU objects or form a CPU matmul oracle. */
+export function makeFp32TallFixture({ M, N, K, pattern, mode = 0, bias = false }) {
+  const dispatch = fp32TallDispatch(M, N, K);
+  require(["positive", "zero", "edge-q8", "fraction", "cancellation"].includes(pattern), "unknown fixture pattern");
+  require([0, 1, 2].includes(mode) && typeof bias === "boolean", "invalid epilogue");
+  require(M <= 659 && N <= 5248 && K === 1024, "fixture exceeds the predeclared operator dimensions");
+  const X = new Float32Array(M * K), W = new Int8Array(N * K), S = new Float32Array(N * (K / 32)), B = new Float32Array(N), initialY = new Float32Array(M * N);
+  const edge = [-128, -127, -1, 0, 1, 126, 127];
+  for (let row = 0; row < M; row++) for (let k = 0; k < K; k++) {
+    let value = (1 + (row * 17 + k * 13) % 7) / 16;
+    if (pattern === "zero") value = 0;
+    if (pattern === "edge-q8") value = ((row * 7 + k * 11) % 17 - 8) / 8;
+    if (pattern === "fraction") value = ((row * 5 + k * 3) % 29 - 14) / 16;
+    if (pattern === "cancellation") value = k % 2 === 0 ? 1 : -(1 + ((row + Math.floor(k / 2)) % 7) / 1024);
+    X[row * K + k] = value;
+  }
+  for (let column = 0; column < N; column++) {
+    for (let k = 0; k < K; k++) {
+      let value = 1 + (column * 5 + k * 3) % 7;
+      if (pattern === "zero") value = 0;
+      if (pattern === "edge-q8") value = edge[(column * 3 + k) % edge.length];
+      if (pattern === "fraction") value = (column * 11 + k * 7) % 63 - 31;
+      if (pattern === "cancellation") value = (column * 7 + Math.floor(k / 2) * 3) % 255 - 127;
+      W[column * K + k] = value;
+    }
+    for (let block = 0; block < K / 32; block++) {
+      S[column * (K / 32) + block] = pattern === "zero" ? 1 : pattern === "positive" ? (1 + (column * 3 + block) % 5) / 32 : (1 + (column + block * 3) % 7) / 256;
+    }
+    if (bias) B[column] = ((column * 5) % 17 - 8) / 32;
+  }
+  if (mode === 1) for (let row = 0; row < M; row++) for (let column = 0; column < N; column++) initialY[row * N + column] = ((row + column * 3) % 17 - 8) / 64;
+  return { X, W, S, B, initialY, globals: new Uint32Array([M, 0, 0, 0]), params: new Uint32Array([N, K, mode, bias ? 1 : 0]), dispatch,
+    outputFloats: M * N, paddedOutputFloats: Math.ceil(M / 128) * 128 * N, positiveAllOutputsRequired: pattern === "positive", zeroAllOutputsRequired: pattern === "zero" };
+}
+
+export function compareFp32TallOutputs(reference, candidate, { positiveAllOutputsRequired = false, zeroAllOutputsRequired = false } = {}) {
+  require(reference instanceof Float32Array && candidate instanceof Float32Array && reference.length === candidate.length, "complete equal-length FP32 outputs required");
+  const referenceBits = new Uint32Array(reference.buffer, reference.byteOffset, reference.length);
+  const candidateBits = new Uint32Array(candidate.buffer, candidate.byteOffset, candidate.length);
+  const mismatches = [];
+  let different = 0, nonfiniteReference = 0, nonfiniteCandidate = 0, nonpositiveReference = 0, nonpositiveCandidate = 0, nonzeroReference = 0, nonzeroCandidate = 0;
+  for (let index = 0; index < reference.length; index++) {
+    if (!Number.isFinite(reference[index])) nonfiniteReference++;
+    if (!Number.isFinite(candidate[index])) nonfiniteCandidate++;
+    if (!(reference[index] > 0)) nonpositiveReference++;
+    if (!(candidate[index] > 0)) nonpositiveCandidate++;
+    if (reference[index] !== 0) nonzeroReference++;
+    if (candidate[index] !== 0) nonzeroCandidate++;
+    if (referenceBits[index] !== candidateBits[index]) {
+      different++;
+      if (mismatches.length < 32) mismatches.push({ index, referenceBits: referenceBits[index], candidateBits: candidateBits[index] });
+    }
+  }
+  return { compared: reference.length, different, nonfiniteReference, nonfiniteCandidate, nonpositiveReference, nonpositiveCandidate, nonzeroReference, nonzeroCandidate, mismatches,
+    ok: different === 0 && nonfiniteReference === 0 && nonfiniteCandidate === 0 &&
+      (!positiveAllOutputsRequired || nonpositiveReference === 0 && nonpositiveCandidate === 0) &&
+      (!zeroAllOutputsRequired || nonzeroReference === 0 && nonzeroCandidate === 0) };
+}

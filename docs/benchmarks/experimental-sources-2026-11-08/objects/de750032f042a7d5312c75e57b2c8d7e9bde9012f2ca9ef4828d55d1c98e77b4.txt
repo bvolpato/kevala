@@ -1,0 +1,394 @@
+#!/usr/bin/env node
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { lstat, readdir, readFile, realpath, writeFile } from "node:fs/promises";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { gzipSync, gunzipSync } from "node:zlib";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const repo = resolve(here, "../../..");
+const campaign = "/home/bruno/githubworkspace/kevala/tmp/sota-20261106-kdDTGn/campaign";
+const modelRun = join(campaign, "avx512-auto4-model-followup-r3-phase-r1");
+const modelData = join(modelRun, "models-v1");
+const gateRun = join(campaign, "avx512-auto4-model-cache-r2/final-identity-r1");
+const budgetFailure = join(campaign, "avx512-auto4-model-v1/gate-budget-r1");
+const candidateRoot = "/tmp/kevala-private-avx512-auto4-model-v1";
+const baselineCommit = "8e4ae3a3ff6592e9581696057f07fa90e036e10a";
+const lockPath = "/home/bruno/.cache/kevala/gpu-profile.lock";
+const archivePath = join(here, "evidence.json.gz");
+const manifestPath = join(here, "manifest.json");
+const mode = process.argv[2];
+const hash = data => createHash("sha256").update(data).digest("hex");
+const sortPaths = items => items.sort((a, b) => a < b ? -1 : a > b ? 1 : 0);
+
+const inventoryPin = {
+  relativePath: "models-inventory-v1.json",
+  bytes: 498671,
+  sha256: "04b787a1561d24b9e72f1b64a3318c1a21043d7faa2dee23436f00102eb5018d",
+};
+const inventoryTotals = { files: 3067, bytes: 48953846, json: 2457, stdout: 305, stderr: 305 };
+
+function pin(path, root, relativePath, bytes, sha256) {
+  const absoluteRoot = resolve(root);
+  const absolutePath = resolve(absoluteRoot, relativePath);
+  const rel = relative(absoluteRoot, absolutePath);
+  assert(rel && !rel.startsWith("..") && !isAbsolute(rel), `pin escapes its source root: ${path}`);
+  return { path, root: absoluteRoot, relativePath: rel, absolutePath, bytes, sha256 };
+}
+
+const fixedPins = [
+  pin("evidence/model-run/plan.json", modelRun, "plan.json", 108571, "70347014438f329765951a1b56c9eef08bebe538dd78195da78fc60dbed4c4b6"),
+  pin("evidence/model-run/models-inventory-v1.json", modelRun, inventoryPin.relativePath, inventoryPin.bytes, inventoryPin.sha256),
+  pin("evidence/model-run/models-release-proof-v1.json", modelRun, "models-release-proof-v1.json", 738, "69f3d68d8688ce593f7d1537584af97518dba946cf66f6d740c2322deeca83ce"),
+  pin("evidence/model-run/source-index.json", modelRun, "source-index.json", 3079, "1a963e05810a010862a2820ecbef550320a38b16d6bc68e154421c114e3fa5a3"),
+  pin("evidence/model-run/source-validation.json", modelRun, "source-validation.json", 6598, "2983e9d2ccdf65165235683b038b4690abf3aaa292d79ad089ff86f706bfee81"),
+  pin("evidence/model-run/run-models.mjs", modelRun, "run-models.mjs", 10030, "ff67bd1f430ca1be3842438c712bc054e0701b40a41a2f2e1b431e3fbbaabd76"),
+  pin("evidence/model-run/common.mjs", modelRun, "common.mjs", 7062, "c0c46fef835d5ed1d46faf05db07cb9b198917589075c1b07cc44f6ee29bc4e4"),
+  pin("evidence/model-run/control.mjs", modelRun, "control.mjs", 5529, "1f8cacbbfc307a387744e00c0dae90d5d645d34d2364e0b9e6cfb0a90649846e"),
+  pin("evidence/model-run/exec-cli.mjs", modelRun, "exec-cli.mjs", 461, "8a76fb66347633dfa506a7204b3670a02f5a3684a69ff845f581a1a1ed72bc13"),
+  pin("evidence/model-run/freeze.mjs", modelRun, "freeze.mjs", 12020, "2f384cd69c9048d4457456cf775f5716421cd56afe66e8c022f7c22d6ade4881"),
+  pin("evidence/model-run/schedule.json", modelRun, "schedule.json", 56141, "a5e24d5831988ee2be67a026b4f154713e7e8d14ce375ab1348b72d44f316ba9"),
+  pin("evidence/model-run/schedule.mjs", modelRun, "schedule.mjs", 3129, "afa7ea7da8332c2495f17b0d327804350b02d42991ef9aeb80ee08c72c8f7707"),
+  pin("evidence/model-run/verify-release.mjs", modelRun, "verify-release.mjs", 2484, "db9f97dce5f4686f2ab73e49307bd9f0131a2307c894fb956980c46aed91998a"),
+  pin("evidence/model-run/metadata/model.mjs", modelRun, "metadata/model.mjs", 3891, "5539b06d1ec2bb3fe5dae4077ab54574d015b35d6ae8e9439d7cd42dbe61274b"),
+
+  pin("evidence/prototype-gate/gates-inventory-v1.json", gateRun, "gates-inventory-v1.json", 41034, "70a5b07e991cb5e4d8cf2e5959c2177f8ca88e8e326193d31ac2e42d1aa7bc1b"),
+  pin("evidence/prototype-gate/gates-release-proof-v1.json", gateRun, "gates-release-proof-v1.json", 702, "5501f437833bca5a1b8c7102dc010f127093ed7cd808bf0571089056d8eb5218"),
+  pin("evidence/prototype-gate/gates-v1/receipt.json", gateRun, "gates-v1/receipt.json", 340975, "a76d7ca545d5d6426bda8c841d141b2dc578193f07e2d79e24df7af3fdef7af5"),
+  pin("evidence/prototype-gate/gates-v1/codegen.json", gateRun, "gates-v1/codegen.json", 36989, "c8abf6753d1c112da5107e4d711fcbb221358d0bec92e08efb1cfd6303ecd40b"),
+  pin("evidence/prototype-gate/source-delta-proof.json", gateRun, "source-delta-proof.json", 1772, "11407368935c2a619c6f3bd6dd69b1993d6794c923c717be4e3ae591bde1e531"),
+  pin("evidence/prototype-gate/source-index.json", gateRun, "source-index.json", 59729, "9dad9198e56cc932363698f91a0e0e55b7cb74536c52104655a13f1e69df06da"),
+  pin("evidence/prototype-gate/source-receipt.json", gateRun, "source-receipt.json", 52499, "dae99ad6c59ea9e7ad75a79a942546967d6d72ef0619c0256b8f4cb3051c3126"),
+  pin("evidence/prototype-gate/final-identity-revision.json", gateRun, "final-identity-revision.json", 1096, "9d4abaa6c6fd6b935481c66a0b533375bb6a48e4c4a507fb85169a9b7284bf4f"),
+  pin("evidence/prototype-gate/scoped.patch", gateRun, "scoped.patch", 6685, "4f6db097ce034a667e00f809d9e0f89c36f50f685879cc7cec10a5347863509d"),
+
+  pin("evidence/prior-failures/incomplete-model-capture-receipt.json", gateRun, "models-v1/receipt.json", 527548, "e2211a8f33ad7cb3ac26fee0ce11a1d12bf9808b1a85b88fafc8a844ea848297"),
+  pin("evidence/prior-failures/compile-budget-failure-receipt.json", budgetFailure, "gates-v1/receipt.json", 191410, "c2de5dbb543cfd65c28b47799ad52fc41eebbb01d3b0dc0d6f19518db8372143"),
+
+  pin("publication/docs/native-avx512-performance.md", repo, "docs/native-avx512-performance.md", 3960, "79f5f60e743eb3086af9d68999a9876a9edea9fec6fff08ae1b60cfc1cedd8df"),
+  pin("publication/docs/benchmarks/native-avx512-2026-11-07/README.md", repo, "docs/benchmarks/native-avx512-2026-11-07/README.md", 2662, "b5c8657e2e2fc9fcc48b512dd0a1dc7168977ebece807be3d318e1cf9ec5134e"),
+  pin("publication/app/views/how.js", repo, "app/views/how.js", 17130, "3fd0b7a2e41cc9b6c8484fe4c08af954bc2bd9e54214a267f496bc40a99e3c1a"),
+];
+
+const sourcePins = [
+  {
+    path: "evidence/source/prototype-baseline/crates/kevala/src/kernels.rs",
+    commit: baselineCommit,
+    relativePath: "crates/kevala/src/kernels.rs",
+    bytes: 33589,
+    sha256: "a1d101ed08726cafb2d7a301a39edf789adfc203044852fd8c7b4cf7cf12b5da",
+  },
+  pin("evidence/source/prototype-candidate/crates/kevala/src/kernels.rs", candidateRoot, "crates/kevala/src/kernels.rs", 37184, "d43c91d9bc1b90f05d6ec870f90c8b11c5ca5adc8d00bf598eb4145fc2958d0e"),
+  pin("evidence/source/prototype-candidate/crates/kevala/build.rs", candidateRoot, "crates/kevala/build.rs", 1540, "443856de805d5d967c2f730cd4f5149b84523adff4181e8868efef999f1f9734"),
+];
+
+const exclusions = [
+  "model weights and checkpoint payloads",
+  "compiled executables, libraries, and build caches",
+  "large gate build outputs and assembly dumps",
+  "full runtime directories from earlier failed captures",
+];
+
+function validateRelativePath(path) {
+  assert(typeof path === "string" && path.length > 0, "inventory path must be a nonempty string");
+  assert(!isAbsolute(path) && !path.includes("\\"), `inventory path is not a strict relative POSIX path: ${path}`);
+  const parts = path.split("/");
+  assert(parts.every(part => part && part !== "." && part !== ".."), `inventory path has an unsafe segment: ${path}`);
+}
+
+async function checkedFile(location, root, relativePath, bytes, digest, archivePath, includeData) {
+  validateRelativePath(relativePath);
+  const absoluteRoot = resolve(root);
+  const absolutePath = resolve(absoluteRoot, relativePath);
+  const rel = relative(absoluteRoot, absolutePath);
+  assert.equal(rel, relativePath, `path does not resolve under its fixed root: ${archivePath}`);
+  assert.equal(resolve(location), absolutePath, `unexpected source path for ${archivePath}`);
+  assert.equal(await realpath(absoluteRoot), absoluteRoot, `source root is not canonical: ${absoluteRoot}`);
+  const before = await lstat(absolutePath, { bigint: true });
+  assert(before.isFile() && !before.isSymbolicLink(), `source is not a regular file: ${absolutePath}`);
+  assert.equal(await realpath(absolutePath), absolutePath, `source path resolves through a symlink: ${absolutePath}`);
+  const data = await readFile(absolutePath);
+  const after = await lstat(absolutePath, { bigint: true });
+  assert.equal(after.dev, before.dev, `source device changed while reading: ${absolutePath}`);
+  assert.equal(after.ino, before.ino, `source inode changed while reading: ${absolutePath}`);
+  assert.equal(after.size, before.size, `source size changed while reading: ${absolutePath}`);
+  assert.equal(after.mtimeNs, before.mtimeNs, `source modified while reading: ${absolutePath}`);
+  assert.equal(data.length, bytes, `byte count mismatch for ${archivePath}`);
+  assert.equal(hash(data), digest, `SHA-256 mismatch for ${archivePath}`);
+  return { path: archivePath, bytes: data.length, sha256: digest, ...(includeData ? { encoding: "base64", data: data.toString("base64") } : {}) };
+}
+
+async function checkedPin(spec, includeData) {
+  return checkedFile(spec.absolutePath, spec.root, spec.relativePath, spec.bytes, spec.sha256, spec.path, includeData);
+}
+
+function checkedGitSource(spec, includeData) {
+  const data = execFileSync("git", ["-C", repo, "show", `${spec.commit}:${spec.relativePath}`], { maxBuffer: 2 * 1024 * 1024 });
+  assert.equal(data.length, spec.bytes, `byte count mismatch for ${spec.path}`);
+  assert.equal(hash(data), spec.sha256, `SHA-256 mismatch for ${spec.path}`);
+  return { path: spec.path, bytes: data.length, sha256: spec.sha256, ...(includeData ? { encoding: "base64", data: data.toString("base64") } : {}) };
+}
+
+async function loadModelInventory() {
+  const data = await readFile(join(modelRun, inventoryPin.relativePath));
+  assert.equal(data.length, inventoryPin.bytes, "model inventory byte count changed");
+  assert.equal(hash(data), inventoryPin.sha256, "model inventory SHA-256 changed");
+  const inventory = JSON.parse(data);
+  assert(inventory && typeof inventory === "object" && !Array.isArray(inventory), "model inventory must be a path map");
+  const entries = Object.entries(inventory).map(([path, record]) => {
+    validateRelativePath(path);
+    assert.deepEqual(Object.keys(record).sort(), ["bytes", "sha256"], `unexpected inventory descriptor: ${path}`);
+    assert(Number.isSafeInteger(record.bytes) && record.bytes >= 0, `invalid byte count: ${path}`);
+    assert(/^[a-f0-9]{64}$/.test(record.sha256), `invalid SHA-256: ${path}`);
+    return { path, bytes: record.bytes, sha256: record.sha256 };
+  }).sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+  const counts = { files: entries.length, bytes: entries.reduce((sum, file) => sum + file.bytes, 0), json: 0, stdout: 0, stderr: 0 };
+  for (const entry of entries) {
+    const extension = entry.path.split(".").at(-1);
+    assert(Object.hasOwn(counts, extension), `unexpected model inventory extension: ${entry.path}`);
+    counts[extension]++;
+  }
+  assert.deepEqual(counts, inventoryTotals, "model inventory summary changed");
+  return entries;
+}
+
+async function enumerateModelTree() {
+  const root = resolve(modelData);
+  assert.equal(await realpath(root), root, "model evidence root must be canonical");
+  const files = [];
+  async function visit(directory, prefix) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      validateRelativePath(relativePath);
+      const absolutePath = join(directory, entry.name);
+      assert(!entry.isSymbolicLink(), `symbolic link in model evidence tree: ${relativePath}`);
+      if (entry.isDirectory()) {
+        assert.equal(await realpath(absolutePath), absolutePath, `directory resolves through a symlink: ${relativePath}`);
+        await visit(absolutePath, relativePath);
+      } else {
+        assert(entry.isFile(), `unsupported entry in model evidence tree: ${relativePath}`);
+        assert.equal(await realpath(absolutePath), absolutePath, `file resolves through a symlink: ${relativePath}`);
+        files.push(relativePath);
+      }
+    }
+  }
+  const info = await lstat(root, { bigint: true });
+  assert(info.isDirectory() && !info.isSymbolicLink(), "model evidence root must be a real directory");
+  await visit(root, "");
+  return sortPaths(files);
+}
+
+async function lease() {
+  assert.equal(await realpath(lockPath), lockPath, "canonical profile lock path must resolve to itself");
+  const info = await lstat(lockPath, { bigint: true });
+  assert(info.isFile() && !info.isSymbolicLink(), "canonical profile lock must be a regular file");
+  const major = info.dev >> 8n & 0xfffn | info.dev >> 32n & 0xfffff000n;
+  const minor = info.dev & 0xffn | info.dev >> 12n & 0xffffff00n;
+  const matches = (await readFile("/proc/locks", "utf8")).split("\n").filter(line => {
+    const fields = line.trim().split(/\s+/), device = fields[5]?.split(":");
+    const validDevice = device?.length === 3 && /^[a-f0-9]+$/i.test(device[0]) &&
+      /^[a-f0-9]+$/i.test(device[1]) && /^\d+$/.test(device[2]);
+    return fields[1] === "FLOCK" && fields[2] === "ADVISORY" && fields[3] === "WRITE" &&
+      fields[4] === String(process.pid) && validDevice &&
+      BigInt(`0x${device[0]}`) === major && BigInt(`0x${device[1]}`) === minor &&
+      BigInt(device[2]) === info.ino && fields[6] === "0" && fields[7] === "EOF";
+  });
+  assert.equal(matches.length, 1, "current Node PID must hold the canonical FLOCK ADVISORY WRITE 0..EOF");
+  return {
+    identity: {
+      canonicalPath: lockPath,
+      pid: process.pid,
+      deviceMajor: String(major),
+      deviceMinor: String(minor),
+      inode: String(info.ino),
+      type: "FLOCK",
+      advisory: "ADVISORY",
+      mode: "WRITE",
+      start: "0",
+      end: "EOF",
+    },
+    rawLine: matches[0],
+  };
+}
+
+function addFile(files, seen, record) {
+  assert(!seen.has(record.path), `duplicate archive path: ${record.path}`);
+  seen.add(record.path);
+  files.push(record);
+}
+
+async function collect(includeData) {
+  const files = [];
+  const seen = new Set();
+  for (const spec of fixedPins) addFile(files, seen, await checkedPin(spec, includeData));
+  for (const spec of sourcePins) {
+    const record = spec.commit ? checkedGitSource(spec, includeData) : await checkedPin(spec, includeData);
+    addFile(files, seen, record);
+  }
+  const inventory = await loadModelInventory();
+  if (includeData) {
+    const actualPaths = await enumerateModelTree();
+    assert.deepEqual(actualPaths, inventory.map(entry => entry.path), "model evidence tree does not match its fixed inventory");
+    for (const entry of inventory) {
+      const location = resolve(modelData, entry.path);
+      addFile(files, seen, await checkedFile(location, modelData, entry.path, entry.bytes, entry.sha256, `evidence/model-run/models-v1/${entry.path}`, true));
+    }
+  } else {
+    for (const entry of inventory) addFile(files, seen, { path: `evidence/model-run/models-v1/${entry.path}`, bytes: entry.bytes, sha256: entry.sha256 });
+  }
+  const publisherPath = "publication/docs/benchmarks/native-avx512-2026-11-07/archive-publication.mjs";
+  const publisherAbsolute = fileURLToPath(import.meta.url);
+  const publisherStat = await lstat(publisherAbsolute, { bigint: true });
+  assert(publisherStat.isFile() && !publisherStat.isSymbolicLink(), "publisher must be a regular file");
+  assert.equal(await realpath(publisherAbsolute), publisherAbsolute, "publisher path must be canonical");
+  const publisherData = await readFile(publisherAbsolute);
+  addFile(files, seen, { path: publisherPath, bytes: publisherData.length, sha256: hash(publisherData), ...(includeData ? { encoding: "base64", data: publisherData.toString("base64") } : {}) });
+  files.sort((a, b) => a.path < b.path ? -1 : a.path > b.path ? 1 : 0);
+
+  const byPath = new Map(files.map(file => [file.path, { path: file.path, bytes: file.bytes, sha256: file.sha256 }]));
+  const references = {
+    modelRun: {
+      plan: byPath.get("evidence/model-run/plan.json"),
+      receipt: byPath.get("evidence/model-run/models-v1/receipt.json"),
+      inventory: byPath.get("evidence/model-run/models-inventory-v1.json"),
+      releaseProof: byPath.get("evidence/model-run/models-release-proof-v1.json"),
+      sourceIndex: byPath.get("evidence/model-run/source-index.json"),
+      sourceValidation: byPath.get("evidence/model-run/source-validation.json"),
+    },
+    prototypeGate: {
+      receipt: byPath.get("evidence/prototype-gate/gates-v1/receipt.json"),
+      releaseProof: byPath.get("evidence/prototype-gate/gates-release-proof-v1.json"),
+      inventoryMetadata: byPath.get("evidence/prototype-gate/gates-inventory-v1.json"),
+      codegen: byPath.get("evidence/prototype-gate/gates-v1/codegen.json"),
+      sourceDeltaProof: byPath.get("evidence/prototype-gate/source-delta-proof.json"),
+      sourceIndex: byPath.get("evidence/prototype-gate/source-index.json"),
+      sourceReceipt: byPath.get("evidence/prototype-gate/source-receipt.json"),
+    },
+    sourceSnapshots: {
+      baselineKernel: byPath.get("evidence/source/prototype-baseline/crates/kevala/src/kernels.rs"),
+      candidateKernel: byPath.get("evidence/source/prototype-candidate/crates/kevala/src/kernels.rs"),
+      candidateBuildScript: byPath.get("evidence/source/prototype-candidate/crates/kevala/build.rs"),
+    },
+    priorFailures: {
+      incompleteModelCapture: byPath.get("evidence/prior-failures/incomplete-model-capture-receipt.json"),
+      compileBudget: byPath.get("evidence/prior-failures/compile-budget-failure-receipt.json"),
+    },
+    publication: {
+      report: byPath.get("publication/docs/native-avx512-performance.md"),
+      readme: byPath.get("publication/docs/benchmarks/native-avx512-2026-11-07/README.md"),
+      howPageSource: byPath.get("publication/app/views/how.js"),
+      publisher: byPath.get(publisherPath),
+    },
+  };
+  for (const group of Object.values(references)) {
+    for (const value of Object.values(group)) assert(value, "missing archive reference");
+  }
+  const inventorySummary = { sha256: inventoryPin.sha256, files: inventoryTotals.files, bytes: inventoryTotals.bytes };
+  return { files, references, exclusions, inventorySummary };
+}
+
+async function outputExists(path) {
+  try { await lstat(path); return true; }
+  catch (error) { if (error.code === "ENOENT") return false; throw error; }
+}
+
+async function readRegularOutput(path) {
+  const absolute = resolve(path);
+  const info = await lstat(absolute, { bigint: true });
+  assert(info.isFile() && !info.isSymbolicLink(), `output must be a regular file: ${absolute}`);
+  assert.equal(await realpath(absolute), absolute, `output resolves through a symlink: ${absolute}`);
+  return readFile(absolute);
+}
+
+async function verify() {
+  const before = await lease();
+  const plan = await collect(false);
+  const manifestBytes = await readRegularOutput(manifestPath);
+  const manifest = JSON.parse(manifestBytes);
+  assert.equal(manifest.schemaVersion, 1);
+  assert.equal(manifest.archive.path, "evidence.json.gz");
+  const compressed = await readRegularOutput(archivePath);
+  assert.equal(compressed.length, manifest.archive.bytes);
+  assert.equal(hash(compressed), manifest.archive.sha256);
+  const decoded = gunzipSync(compressed);
+  assert.equal(decoded.length, manifest.archive.decodedBytes);
+  assert.equal(hash(decoded), manifest.archive.decodedSha256);
+  const payload = JSON.parse(decoded);
+  assert.equal(payload.schemaVersion, 1);
+  assert.deepEqual(payload.references, plan.references);
+  assert.deepEqual(payload.exclusions, exclusions);
+  assert.deepEqual(payload.inventory, plan.inventorySummary);
+  assert.equal(payload.files.length, plan.files.length);
+  const expected = new Map(plan.files.map(file => [file.path, { bytes: file.bytes, sha256: file.sha256 }]));
+  const seen = new Set();
+  const descriptors = [];
+  for (const file of payload.files) {
+    const { data, encoding, ...descriptor } = file;
+    assert.equal(encoding, "base64");
+    assert(expected.has(file.path), `unexpected archived path: ${file.path}`);
+    assert(!seen.has(file.path), `duplicate archived path: ${file.path}`);
+    seen.add(file.path);
+    assert.deepEqual({ bytes: file.bytes, sha256: file.sha256 }, expected.get(file.path));
+    const original = Buffer.from(data, "base64");
+    assert.equal(original.length, file.bytes);
+    assert.equal(hash(original), file.sha256);
+    descriptors.push(descriptor);
+  }
+  assert.deepEqual(descriptors, plan.files);
+  assert.deepEqual(manifest.files, descriptors);
+  const after = await lease();
+  assert.deepEqual(after.identity, before.identity);
+  console.log(JSON.stringify({ verified: true, files: payload.files.length, modelRunFiles: inventoryTotals.files, archiveSha256: manifest.archive.sha256, manifestSha256: hash(manifestBytes) }));
+}
+
+async function main() {
+  assert(["--plan", "--archive", "--verify"].includes(mode), "use --plan, --archive, or --verify");
+  assert.equal(process.argv.length, 3, "unexpected arguments");
+  if (mode === "--plan") {
+    const result = await collect(false);
+    console.log(JSON.stringify({
+      plan: true,
+      selectedFiles: result.files.length,
+      modelRunFiles: result.inventorySummary.files,
+      modelRunBytes: result.inventorySummary.bytes,
+      inventorySha256: result.inventorySummary.sha256,
+      fixedEvidenceFiles: result.files.length - result.inventorySummary.files,
+      exclusions,
+    }));
+    return;
+  }
+  if (mode === "--verify") {
+    await verify();
+    return;
+  }
+
+  const before = await lease();
+  assert.equal(await outputExists(archivePath), false, `refusing existing output: ${archivePath}`);
+  assert.equal(await outputExists(manifestPath), false, `refusing existing output: ${manifestPath}`);
+  const result = await collect(true);
+  const decoded = Buffer.from(JSON.stringify({ schemaVersion: 1, files: result.files, references: result.references, exclusions, inventory: result.inventorySummary }) + "\n");
+  const compressed = gzipSync(decoded, { level: 9, mtime: 0 });
+  assert.equal(hash(gunzipSync(compressed)), hash(decoded), "gzip byte roundtrip failed");
+  const after = await lease();
+  assert.deepEqual(after.identity, before.identity);
+  const manifest = {
+    schemaVersion: 1,
+    recordedAt: new Date().toISOString(),
+    archive: { path: "evidence.json.gz", bytes: compressed.length, sha256: hash(compressed), decodedBytes: decoded.length, decodedSha256: hash(decoded) },
+    files: result.files.map(({ data, encoding, ...descriptor }) => descriptor),
+    references: result.references,
+    exclusions,
+    inventory: result.inventorySummary,
+    lease: { before, after },
+  };
+  await writeFile(archivePath, compressed, { flag: "wx" });
+  await writeFile(manifestPath, JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
+  console.log(JSON.stringify({ archived: true, files: result.files.length, modelRunFiles: inventoryTotals.files, archiveSha256: hash(compressed), manifestSha256: hash(Buffer.from(JSON.stringify(manifest, null, 2) + "\n")) }));
+}
+
+main().catch(error => {
+  console.error(error.stack ?? error);
+  process.exitCode = 1;
+});

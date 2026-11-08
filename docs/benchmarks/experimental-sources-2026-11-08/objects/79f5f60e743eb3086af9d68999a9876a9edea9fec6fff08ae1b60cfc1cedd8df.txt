@@ -1,0 +1,37 @@
+# Native AVX-512 model timing prototype
+
+A private AVX-512 prototype showed median paired-ratio estimates that imply 2.5% to 5.0% time reductions in four native CLI inference cases. The result comes from one busy Linux host. It does not establish browser or GPU latency, broad workload gains, or production readiness.
+
+## Results
+
+For each quartet, the ratio is the baseline arm median divided by the candidate arm median. The table reports the median of those eight paired ratios. A ratio above 1 favors the candidate. The implied paired time reduction is `1 - 1 / ratio`. Each range is the minimum to maximum of eight paired ratios, not a confidence interval.
+
+| Model and request | Median of paired ratios | Implied paired time reduction | Quartets favoring candidate | Paired ratio range |
+| --- | ---: | ---: | ---: | ---: |
+| Laya Q8, short | 1.02596 | 2.53% | 7 of 8 | 0.93046 to 1.04912 |
+| Laya Q8, long | 1.03519 | 3.40% | 7 of 8 | 0.99343 to 1.09106 |
+| Kev-0.8B Q8, short | 1.02605 | 2.54% | 6 of 8 | 0.97974 to 1.12623 |
+| Kev-0.8B Q8, long | 1.05282 | 5.02% | 8 of 8 | 1.01169 to 1.16510 |
+
+Three ranges include 1. Separate A/A paired-ratio medians were 0.99853, 1.01073, 0.99644, and 1.00731. The audit applied no timing correction or outlier exclusion. The small sample does not establish a reliable gain across similar requests.
+
+## Method and limits
+
+The four fixed requests used Laya Q8 and Kev-0.8B Q8 with 35-character and 629-character inputs. The run recorded 304 fresh exact responses and audited 1,520 numeric values. It measured `Model::decide` after model load and input parsing, before response serialization. Printed timing resolution was 0.1 ms. Model load and total request time were separate observations.
+
+The run used logical CPU 7 on a busy host. The actual default remained tile 2. These are native CLI CPU timings. They are not browser latency, GPU latency, or end-to-end loading measurements. The results cover four requests and do not support a model ranking or a general speed claim.
+
+The baseline source was commit `8e4ae3a3ff6592e9581696057f07fa90e036e10a`. Its `crates/kevala/src/kernels.rs` SHA-256 was `a1d101ed08726cafb2d7a301a39edf789adfc203044852fd8c7b4cf7cf12b5da`. The private candidate overlay used kernel SHA-256 `d43c91d9bc1b90f05d6ec870f90c8b11c5ca5adc8d00bf598eb4145fc2958d0e` and `crates/kevala/build.rs` SHA-256 `443856de805d5d967c2f730cd4f5149b84523adff4181e8868efef999f1f9734`.
+
+A separate nine-frame prototype gate passed its recorded checks. Its code generation summary counted a 20-instruction ZMM inner loop. That count excludes helper setup, panic handling, and `vzeroupper`. The gate does not validate the production dispatch source or the current release build.
+
+Production dispatch has not been built, benchmarked, or release-validated. The experiment did not change the default. No production promotion follows from these measurements.
+
+## Evidence
+
+- Model run receipt: `bc4d5c34cf6bbd63ff8548e721254d065b17eacd3576b7baac9af84b1f1b7186`.
+- Raw model inventory: `04b787a1561d24b9e72f1b64a3318c1a21043d7faa2dee23436f00102eb5018d`, with 3,067 files and 48,953,846 bytes.
+- Model release proof: `69f3d68d8688ce593f7d1537584af97518dba946cf66f6d740c2322deeca83ce`.
+- Nine-frame gate receipt and release proof: `a76d7ca545d5d6426bda8c841d141b2dc578193f07e2d79e24df7af3fdef7af5` and `5501f437833bca5a1b8c7102dc010f127093ed7cd808bf0571089056d8eb5218`.
+
+Earlier failures remain separate from the completed evidence. The incomplete model capture receipt is `e2211a8f33ad7cb3ac26fee0ce11a1d12bf9808b1a85b88fafc8a844ea848297`. The original compile-budget failure receipt is `c2de5dbb543cfd65c28b47799ad52fc41eebbb01d3b0dc0d6f19518db8372143`. The evidence package retains these receipts as failures and omits their prior runtime directories, model weights, and compiled binaries. See [the evidence package README](benchmarks/native-avx512-2026-11-07/README.md) for its exact contents and review commands.

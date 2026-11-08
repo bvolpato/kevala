@@ -1,0 +1,139 @@
+{
+  "schema": "private-laya-integer-matrix-split-page-v1",
+  "status": "source-frozen-awaiting-independent-review",
+  "baseCommit": "81a27608f24e0b2252318515e272387c48dec7d8",
+  "page": "bench-laya-integer-matrix-split.html",
+  "pageObject": "window.gpuBench",
+  "physicalQuery": "exact ?run=1",
+  "smokeQuery": "exact ?smoke=1",
+  "default": "Idle after static source imports; no GPU request or fixture generation",
+  "sourceDerivation": {
+    "originalPage": "/tmp/kevala-laya-integer-matrix-v1/scripts/private/laya-integer-matrix-page.js",
+    "originalPageSha256": "cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019",
+    "preservedOriginalCapture": "/tmp/kevala-integer-matrix-operator/tmp/capture-20261107-r1",
+    "preservedResultSha256": "aef07de1170cb059803838e1b7f7191997c780ffcffaedd71f591700b47f2c42",
+    "unchangedCopies": {
+      "scripts/private/laya-integer-matrix.js": {
+        "bytes": 12993,
+        "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb"
+      },
+      "scripts/private/laya-integer-matrix-protocol.json": {
+        "bytes": 19823,
+        "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39"
+      },
+      "scripts/private/laya-integer-matrix-baseline.wgsl": {
+        "bytes": 13558,
+        "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c"
+      },
+      "scripts/private/laya-integer-matrix-reduce.wgsl": {
+        "bytes": 1546,
+        "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+      }
+    },
+    "unchangedPageFunctions": [
+      "fixtureData",
+      "requireCapabilities via frozen helper",
+      "compile",
+      "createFixture",
+      "baselinePass for untimed validation only",
+      "poison",
+      "validate",
+      "packing prerequisite",
+      "all four fixture validation loop",
+      "GPU error and resource cleanup"
+    ],
+    "changed": "Only diagnostic source/result metadata, candidate-only fixed timing sequence and timestamp query allocation/writes/readback/accounting. All helper WGSL, fixture data, arithmetic, geometry and numerical checks remain unchanged."
+  },
+  "protocol": "scripts/private/laya-integer-matrix-split-protocol.json",
+  "sequence": {
+    "packingPrerequisite": "Identical all256 signed outputs and128 guards against CPU/frozen reference",
+    "fullValidation": [
+      "integer",
+      "dyadic",
+      "fractional",
+      "cancellation"
+    ],
+    "retainFractionalResources": true,
+    "warmupRows": 3,
+    "sampleRows": 9,
+    "candidateInvocationsPerRow": 16,
+    "passesPerRow": 32,
+    "dispatchesPerRow": {
+      "baseline": 0,
+      "quantize": 16,
+      "integerMatmul": 16,
+      "reduce": 0
+    },
+    "everyRow": "Poison candidate/Q/metadata before submission outside the GPU span; quantize on every invocation; retain timestamps before checking them; run original all-active bit/finite/quantization/canary/PART checks outside timestamps afterward."
+  },
+  "queries": {
+    "querySetCount": 64,
+    "resolveBufferBytes": 512,
+    "mapReadBytes": 512,
+    "indices": "Invocation i: quantize begin4i/end4i+1, matrix begin4i+2/end4i+3; each of64 indices written exactly once per row",
+    "enclosingTotal": "tick63-tick0; no additional query writes",
+    "perPassZero": "Retain and count zero durations; timestamp precision never changes the fixed sequence",
+    "gaps": "Retain all31 signed nextBegin-previousEnd gaps and the signed residual total minus both stage sums; do not silently discard negative gaps."
+  },
+  "resultSchema": {
+    "scope": "split-stage-diagnostic-only",
+    "warmups": "warmups[3]",
+    "samples": "timing.samples[9]",
+    "row": "{block:'warmup'|'diagnostic',index,kernel:'candidate',invocations:16,passes:32,dispatches,rawTimestampNs[64],timestampNs:{begin,end,elapsed},stages[16],interPassGapsNs[31],stageTotalsNs,stageTotalsMs,zeroDurationPasses,negativeInterPassGaps,gpuMs,perInvocationMs,validation}",
+    "stage": "{invocation,quantize:{beginIndex,endIndex,begin,end,elapsed,gpuMs},integerMatmul:{beginIndex,endIndex,begin,end,elapsed,gpuMs}}",
+    "stageTotals": "quantize,integerMatmul,residual; all nanoseconds retained as signed decimal strings and milliseconds derived without correction",
+    "summary": "sampleCount9,invocationsPerSample16,medianStageTotalsMs,medianPerInvocationMs,zeroDurationPasses,negativeInterPassGaps,meaning; no gain/winner/AA/ABBA/acceptance fields",
+    "validation": "Unchanged words[9] exact[2686976,0,0,0,524288,16384,0,512,0],partUnchanged=true,positiveCoverage and passed retained for each completed validation/warmup/sample",
+    "cleanup": "Same owned buffer/query-set counts, mapsOpen0 and deviceDestroyedtrue before physical done; error paths retain all partial rows and bounded diagnostics",
+    "boundedResult": "Fixed4fixture records,3warmups+9samples with64raw ticks each,16stage records each and31gaps; no full tensor arrays; inherited bounded compiler/runtime errors. Parent may retain its existing512KiB page-result cap."
+  },
+  "interpretation": "Instrumented stage attribution only. Extra query commands can alter synchronization/scheduling and measured durations; timestamp precision can yield zeros or gap artifacts. Do not substitute these measurements for the rejected uninstrumented comparison, infer clean disjoint CPU/GPU latency or promote the candidate.",
+  "lifecycle": "Unchanged reviewed page cleanup. A separate controller will copy frozen assets and reuse the audited own-PID canonical FD, isolated scope, private Service.env session bus, process cleanup and retained-log boundary. No new framework here.",
+  "preparation": {
+    "rootReleaseRequiredBeforeSourceChecks": true,
+    "sourceChecks": "Syntax/JSON/source identities and unchanged-function comparison only; no module imports or fixture calls",
+    "GPU": false,
+    "model": false,
+    "WASM": false,
+    "binaryRead": false,
+    "fixtureGeneration": false,
+    "rootReleaseObservedBeforeChecks": true
+  },
+  "sources": [
+    {
+      "path": "bench-laya-integer-matrix-split.html",
+      "bytes": 1153,
+      "sha256": "5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-split-page.js",
+      "bytes": 28669,
+      "sha256": "0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-split-protocol.json",
+      "bytes": 5151,
+      "sha256": "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix.js",
+      "bytes": 12993,
+      "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-protocol.json",
+      "bytes": 19823,
+      "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+      "bytes": 13558,
+      "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c"
+    },
+    {
+      "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+      "bytes": 1546,
+      "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+    }
+  ]
+}

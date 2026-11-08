@@ -1,0 +1,632 @@
+#!/usr/bin/env node
+import { createHash, randomUUID } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { copyFile, mkdir, open, readFile, readdir, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { spawn } from "node:child_process";
+import { execFileSync } from "node:child_process";
+import { dirname, join, relative, resolve, sep } from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createKevalaServer } from "../../scripts/serve.mjs";
+import { packHeaderLength, parsePackHeader } from "../../js/src/pack-layout.js";
+import { MODELS } from "../../js/src/source.js";
+import { PROFILE_LOCK, withProfileLock } from "../../scripts/lib/profile-lock.mjs";
+
+const taskDir = dirname(fileURLToPath(import.meta.url));
+const root = resolve(taskDir, "../..");
+const token = `submit-${randomUUID()}`;
+const runRoot = join(taskDir, "runfiles", token);
+const runPaths = runUrlPaths(root, runRoot);
+const outDir = join(taskDir, "results");
+const resultPath = join(outDir, `${token}.json`);
+const controllerInputs = [
+  { path: join(taskDir, "run.mjs"), rel: "run.mjs" },
+  { path: join(taskDir, "run-firefox.py"), rel: "run-firefox.py" },
+  { path: join(root, "scripts/serve.mjs"), rel: "scripts/serve.mjs" },
+  { path: join(root, "scripts/lib/static-path.mjs"), rel: "scripts/lib/static-path.mjs" },
+  { path: join(root, "scripts/lib/local-packs.mjs"), rel: "scripts/lib/local-packs.mjs" },
+  { path: join(root, "scripts/lib/profile-lock.mjs"), rel: "scripts/lib/profile-lock.mjs" },
+];
+const packPath = process.env.KEVALA_LAYA_Q8_PACK || "/home/bruno/githubworkspace/kevala/tmp/laya-q8.kevala";
+const ciWasmPath = join(taskDir, "..", "ci68-wasm", "kevala-relaxed.wasm");
+const packPin = {
+  bytes: 478886720,
+  sha256: "b9cab75c38f026236b8d736377aa40f889d842c219d37da45cc06c782395555c",
+  headerBytes: 26313,
+  headerSha256: "f82cc6ce21f0b3f55000f505db8d7ee08f5f956ce9d1d1206607bf2c6476ecc8",
+};
+const wasmPin = {
+  bytes: 1383425,
+  sha256: "7f77afdbbaf7e3e3b1849d400196832f0aff9a42d3cda4faaa257ed50f1f2d3a",
+  ciRunId: "42327343263",
+  ciHead: "97778af0ed881c876313fcefa5a17399ceb10f2d",
+  artifactId: "13556410093",
+  artifactName: "wasm-97778af0ed881c876313fcefa5a17399ceb10f2d",
+  artifactDigest: "sha256:fc9ffe351b11290e87b07069ec588fc2d2ee42b37862cc542f06426b15eec6e4",
+};
+const requiredModulePaths = [
+  "index.js", "engine-worker.js", "source.js", "pack-layout.js", "wasm.js", "gpu.js",
+  "gpu-laya.js", "gpu-tuning.js", "archs/index.js", "archs/laya.js",
+];
+const probeFiles = ["index.html", "probe.js", "fixture.mjs", "response-check.mjs"];
+const changedFiles = [
+  "js/src/engine-worker.js", "js/src/gpu-laya.js", "js/src/gpu-kev.js", "js/src/gpu-gemma4.js",
+  "tests/per-engine-submit.test.mjs",
+];
+const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
+
+export function runUrlPaths(serverRoot, ownedRunRoot) {
+  const relativePath = relative(serverRoot, ownedRunRoot);
+  if (!relativePath || relativePath === ".." || relativePath.startsWith(`..${sep}`)) {
+    throw new Error("owned smoke run path must be inside the served root");
+  }
+  const prefix = `/${relativePath.split(sep).join("/")}`;
+  return {
+    prefix,
+    runtimePrefix: `${prefix}/runtime`,
+    harnessPrefix: `${prefix}/harness`,
+    packUrlPath: `${prefix}/pack/laya-q8.kevala`,
+  };
+}
+
+async function sha256File(path) {
+  const digest = createHash("sha256");
+  for await (const chunk of createReadStream(path)) digest.update(chunk);
+  return digest.digest("hex");
+}
+
+async function walkFiles(directory, prefix = "") {
+  const output = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isSymbolicLink()) throw new Error(`candidate source contains a symlink: ${rel}`);
+    if (entry.isDirectory()) output.push(...await walkFiles(path, rel));
+    else if (entry.isFile()) output.push({ path, rel });
+  }
+  return output.sort((a, b) => a.rel.localeCompare(b.rel));
+}
+
+async function sourceEntries() {
+  const runtime = await walkFiles(join(root, "js/src"), "js/src");
+  const harness = await Promise.all(probeFiles.map(async (name) => ({ path: join(taskDir, name), rel: `harness/${name}` })));
+  const tests = await Promise.all(changedFiles.filter((name) => name.startsWith("tests/")).map(async (name) => ({ path: join(root, name), rel: name })));
+  const controllers = controllerInputs.map((entry) => ({ ...entry, rel: `controller/${entry.rel}` }));
+  const entries = [...runtime, ...harness, ...tests, ...controllers];
+  for (const entry of entries) {
+    const info = await stat(entry.path);
+    if (!info.isFile()) throw new Error(`candidate source is not a regular file: ${entry.rel}`);
+  }
+  return entries;
+}
+
+async function fileManifest(entries) {
+  const files = [];
+  for (const entry of entries) {
+    const info = await stat(entry.path);
+    files.push({ path: entry.rel, bytes: info.size, sha256: await sha256File(entry.path) });
+  }
+  return files.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+function git(command, args) {
+  return execFileSync(command, args, { cwd: root, encoding: "utf8" }).trim();
+}
+
+async function verifyPack() {
+  const before = await stat(packPath);
+  if (!before.isFile() || before.size !== packPin.bytes) throw new Error("Laya Q8 pack size differs from the pinned fixture");
+  if (MODELS.laya?.packSha256 !== packPin.sha256) throw new Error("candidate model catalog digest differs from the pinned Laya Q8 fixture");
+  const digest = await sha256File(packPath);
+  if (digest !== packPin.sha256) throw new Error(`Laya Q8 pack digest differs from the pin: ${digest}`);
+
+  const file = await open(packPath, "r");
+  let headerBytes;
+  let header;
+  try {
+    const prefix = Buffer.alloc(16);
+    if ((await file.read(prefix, 0, prefix.length, 0)).bytesRead !== prefix.length || prefix.toString("ascii", 0, 4) !== "KVLA") {
+      throw new Error("Laya Q8 pack has an invalid KVLA prefix");
+    }
+    const length = packHeaderLength(prefix);
+    if (length !== packPin.headerBytes || length > Math.min(before.size, 16 * 1024 * 1024)) {
+      throw new Error("Laya Q8 pack header length differs from the pin");
+    }
+    headerBytes = Buffer.alloc(length);
+    if ((await file.read(headerBytes, 0, length, 0)).bytesRead !== length) throw new Error("Laya Q8 pack header is truncated");
+    header = parsePackHeader(headerBytes);
+  } finally {
+    await file.close();
+  }
+  if (hash(headerBytes) !== packPin.headerSha256) throw new Error("Laya Q8 pack header digest differs from the pin");
+  if ((header.config?.arch || "laya") !== "laya") throw new Error("pinned pack header is not Laya");
+  const after = await stat(packPath);
+  if (!sameFile(before, after)) throw new Error("Laya Q8 pack changed while its source identity was being checked");
+  return {
+    path: packPath,
+    bytes: before.size,
+    sha256: digest,
+    headerBytes: headerBytes.length,
+    headerSha256: hash(headerBytes),
+    header: { arch: header.config?.arch || "laya", model: header.model?.name || null },
+    sourceStat: statIdentity(before),
+  };
+}
+
+function statIdentity(value) {
+  return { dev: String(value.dev), ino: String(value.ino), size: value.size, mtimeMs: value.mtimeMs };
+}
+
+function sameFile(left, right) {
+  return left.dev === right.dev && left.ino === right.ino && left.size === right.size && left.mtimeMs === right.mtimeMs;
+}
+
+async function stage(entry, destination, urlPath, expected) {
+  await mkdir(dirname(destination), { recursive: true });
+  await copyFile(entry.path, destination);
+  const info = await stat(destination);
+  const digest = await sha256File(destination);
+  if (info.size !== expected.bytes || digest !== expected.sha256) throw new Error(`frozen copy differs from source: ${entry.rel}`);
+  return { ...expected, urlPath };
+}
+
+async function stageInputs(entries, ciWasm) {
+  const expected = new Map();
+  const { runtimePrefix, harnessPrefix, packUrlPath } = runPaths;
+  for (const entry of entries) {
+    if (entry.rel.startsWith("js/src/")) {
+      const rel = entry.rel.slice("js/src/".length);
+      const urlPath = `${runtimePrefix}/js/src/${rel}`;
+      const destination = join(runRoot, "runtime", "js", "src", rel);
+      const item = await stage(entry, destination, urlPath, { bytes: (await stat(entry.path)).size, sha256: await sha256File(entry.path) });
+      expected.set(urlPath, item);
+    } else if (entry.rel.startsWith("harness/")) {
+      const name = entry.rel.slice("harness/".length);
+      const urlPath = `${harnessPrefix}/${name}`;
+      const item = await stage(entry, join(runRoot, "harness", name), urlPath, { bytes: (await stat(entry.path)).size, sha256: await sha256File(entry.path) });
+      expected.set(urlPath, item);
+    }
+  }
+  const wasmUrlPath = `${runtimePrefix}/wasm/kevala-relaxed.wasm`;
+  const wasmDestination = join(runRoot, "runtime", "wasm", "kevala-relaxed.wasm");
+  const wasmItem = await stage({ path: ciWasm, rel: "ci68/kevala-relaxed.wasm" }, wasmDestination, wasmUrlPath, { bytes: wasmPin.bytes, sha256: wasmPin.sha256 });
+  expected.set(wasmUrlPath, wasmItem);
+  return { expected, runtimePrefix, harnessPrefix, packUrlPath, wasmUrlPath, wasmItem };
+}
+
+function captureResponseHeaders(res) {
+  const headers = new Map();
+  const rememberHeader = (name, value) => {
+    if (name != null) headers.set(String(name).toLowerCase(), Array.isArray(value) ? value.join(", ") : String(value));
+  };
+  const remember = (values) => {
+    if (!values) return;
+    const entries = Array.isArray(values)
+      ? Array.isArray(values[0])
+        ? values
+        : Array.from({ length: Math.floor(values.length / 2) }, (_, index) => [values[index * 2], values[index * 2 + 1]])
+      : Object.entries(values);
+    for (const [name, value] of entries) rememberHeader(name, value);
+  };
+  const originalSetHeader = res.setHeader;
+  res.setHeader = function (name, value) {
+    rememberHeader(name, value);
+    return originalSetHeader.call(this, name, value);
+  };
+  const originalRemoveHeader = res.removeHeader;
+  res.removeHeader = function (name) {
+    headers.delete(String(name).toLowerCase());
+    return originalRemoveHeader.call(this, name);
+  };
+  const originalWriteHead = res.writeHead;
+  res.writeHead = function (statusCode, statusMessageOrHeaders, maybeHeaders) {
+    remember(typeof statusMessageOrHeaders === "string" ? maybeHeaders : (statusMessageOrHeaders ?? maybeHeaders));
+    return originalWriteHead.apply(this, arguments);
+  };
+  return {
+    get(name) {
+      const normalized = String(name).toLowerCase();
+      return headers.has(normalized) ? headers.get(normalized) : res.getHeader(name);
+    },
+  };
+}
+
+export function createCaptureServer(packIdentity, expected, {
+  root: serverRoot = root,
+  packUrlPath = runPaths.packUrlPath,
+  runToken = token,
+} = {}) {
+  const server = createKevalaServer({ root: serverRoot, isolate: true });
+  const servedBytes = [];
+  const packRequests = [];
+  const packCaptures = {
+    A: { engine: "A", ranges: [], responses: [], probes: [], buffer: null, sha256: null, bytes: 0, error: null },
+    B: { engine: "B", ranges: [], responses: [], probes: [], buffer: null, sha256: null, bytes: 0, error: null },
+  };
+
+  server.prependListener("request", (req, res) => {
+    const url = new URL(req.url || "/", "http://127.0.0.1");
+    const urlPath = decodeURIComponent(url.pathname);
+    const engine = url.searchParams.get("engine");
+    const isPack = urlPath === packUrlPath && url.searchParams.get("run") === runToken && ["A", "B"].includes(engine);
+    if (isPack) {
+      const range = req.headers.range || null;
+      if (req.method !== "GET") {
+        packRequests.push({ engine, method: req.method, range, kind: req.method === "HEAD" ? "head" : "metadata" });
+        return;
+      }
+      const requested = parseRequestedRange(req.headers.range, packIdentity.bytes);
+      const probeRequest = requested.start === 0 && requested.end === 0 && range?.toLowerCase() === "bytes=0-0";
+      const requestRecord = { engine, method: req.method, range, kind: probeRequest ? "range-probe" : "data-range" };
+      packRequests.push(requestRecord);
+      const capture = packCaptures[engine];
+      if (probeRequest) {
+        const responseHeaders = captureResponseHeaders(res);
+        const probe = { ...requestRecord, status: null, contentRange: null, finished: false, aborted: false };
+        capture.probes.push(probe);
+        const recordResponse = (finished) => {
+          if (probe.finished || probe.aborted) return;
+          probe.status = res.statusCode;
+          probe.contentRange = responseHeaders.get("content-range") ?? null;
+          probe.finished = finished;
+          probe.aborted = !finished;
+        };
+        res.once("finish", () => recordResponse(true));
+        res.once("close", () => { if (!res.writableFinished) recordResponse(false); });
+        return;
+      }
+      if (capture.sha256) {
+        capture.error ||= `${engine} returned a second complete Laya pack`;
+        return;
+      }
+      if (!capture.buffer) capture.buffer = Buffer.allocUnsafe(packIdentity.bytes);
+      const responseHeaders = captureResponseHeaders(res);
+      const digest = createHash("sha256");
+      let received = 0;
+      let exceeded = false;
+      const response = {
+        ...requestRecord,
+        start: requested.start,
+        end: requested.end,
+        requestedBytes: requested.length,
+        status: null,
+        contentRange: null,
+        contentLength: null,
+        receivedBytes: 0,
+        sha256: null,
+        finished: false,
+        aborted: false,
+        error: null,
+      };
+      capture.responses.push(response);
+      const originalWrite = res.write;
+      res.write = function (chunk, ...args) {
+        if (chunk != null) {
+          const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+          digest.update(bytes);
+          const offset = requested.start + received;
+          if (offset + bytes.byteLength > requested.end + 1) {
+            exceeded = true;
+          } else {
+            bytes.copy(capture.buffer, offset);
+          }
+          received += bytes.byteLength;
+        }
+        return originalWrite.call(this, chunk, ...args);
+      };
+      let finalized = false;
+      const recordResponse = (finished) => {
+        if (finalized) return;
+        finalized = true;
+        response.status = res.statusCode;
+        response.contentRange = responseHeaders.get("content-range") ?? null;
+        const contentLength = responseHeaders.get("content-length");
+        response.contentLength = contentLength == null ? null : Number(contentLength);
+        response.receivedBytes = received;
+        response.sha256 = digest.digest("hex");
+        response.finished = finished;
+        response.aborted = !finished;
+        const contentRange = parseContentRange(response.contentRange);
+        const problems = [];
+        if (!finished) problems.push("response closed before finish");
+        if (response.status !== 206) problems.push(`status ${response.status}, expected 206`);
+        if (!contentRange) problems.push("missing or invalid Content-Range");
+        else if (contentRange.start !== requested.start || contentRange.end !== requested.end || contentRange.total !== packIdentity.bytes) {
+          problems.push(`Content-Range ${response.contentRange} does not match the requested range and pack size`);
+        }
+        if (response.contentLength !== requested.length) problems.push(`Content-Length ${response.contentLength}, expected ${requested.length}`);
+        if (received !== requested.length) problems.push(`received ${received} of ${requested.length} bytes`);
+        if (exceeded) problems.push("response body exceeded the requested range");
+        if (problems.length) {
+          response.error = problems.join("; ");
+          capture.error ||= `${engine} Laya pack range ${requested.start}-${requested.end}: ${response.error}`;
+          return;
+        }
+        capture.ranges.push({ start: contentRange.start, end: contentRange.end, bytes: received, sha256: response.sha256 });
+        capture.bytes += received;
+        const sorted = [...capture.ranges].sort((a, b) => a.start - b.start);
+        let next = 0;
+        for (const range of sorted) {
+          if (range.start < next) {
+            capture.error ||= `${engine} returned overlapping Laya pack ranges`;
+            return;
+          }
+          if (range.start > next) return;
+          next = range.end + 1;
+        }
+        if (next === packIdentity.bytes) {
+          capture.sha256 = hash(capture.buffer);
+          if (capture.sha256 !== packIdentity.sha256) capture.error = `${engine} served pack digest differs from the pinned source`;
+          capture.buffer = null;
+        }
+      };
+      res.once("finish", () => recordResponse(true));
+      res.once("close", () => { if (!res.writableFinished) recordResponse(false); });
+      return;
+    }
+
+    const expectedFile = expected.get(urlPath);
+    if (req.method !== "GET" || !expectedFile) return;
+    const digest = createHash("sha256");
+    let bytesWritten = 0;
+    const originalWrite = res.write;
+    res.write = function (chunk, ...args) {
+      if (chunk != null) {
+        const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        digest.update(bytes);
+        bytesWritten += bytes.byteLength;
+      }
+      return originalWrite.call(this, chunk, ...args);
+    };
+    res.once("finish", () => {
+      const record = { path: urlPath, status: res.statusCode, bytes: bytesWritten, sha256: digest.digest("hex") };
+      servedBytes.push(record);
+      if (record.status !== 200 || record.bytes !== expectedFile.bytes || record.sha256 !== expectedFile.sha256) {
+        record.error = "served bytes differ from frozen source";
+      }
+    });
+  });
+  return { server, servedBytes, packRequests, packCaptures, packUrlPath };
+}
+
+function parseRequestedRange(value, size) {
+  if (!value) return { start: 0, end: size - 1, length: size };
+  const match = /^bytes=(\d+)-(\d*)$/i.exec(value);
+  if (!match) throw new Error(`unexpected Laya pack range header ${value}`);
+  const start = Number(match[1]);
+  const end = match[2] ? Number(match[2]) : size - 1;
+  if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start < 0 || end < start || end >= size) {
+    throw new Error(`invalid Laya pack byte range ${value}`);
+  }
+  return { start, end, length: end - start + 1 };
+}
+
+function parseContentRange(value) {
+  const match = /^bytes (\d+)-(\d+)\/(\d+)$/i.exec(String(value || ""));
+  return match ? { start: Number(match[1]), end: Number(match[2]), total: Number(match[3]) } : null;
+}
+
+function verifyServerEvidence(capture, staged, packIdentity) {
+  const sourceRecords = capture.servedBytes;
+  const required = [
+    ...probeFiles.map((name) => `${staged.harnessPrefix}/${name}`),
+    ...requiredModulePaths.map((name) => `${staged.runtimePrefix}/js/src/${name}`),
+    staged.wasmUrlPath,
+  ];
+  for (const path of required) {
+    if (!sourceRecords.some((record) => record.path === path)) throw new Error(`Firefox did not fetch required frozen source ${path}`);
+  }
+  for (const record of sourceRecords) if (record.error) throw new Error(`${record.path}: ${record.error}`);
+  const byEngine = {};
+  for (const label of ["A", "B"]) {
+    const record = capture.packCaptures[label];
+    if (record.error) throw new Error(record.error);
+    if (!record.sha256 || record.sha256 !== packIdentity.sha256 || record.bytes !== packIdentity.bytes) {
+      throw new Error(`${label} did not return one complete pinned Laya pack`);
+    }
+    byEngine[label] = {
+      ranges: record.ranges,
+      responses: record.responses,
+      probes: record.probes,
+      bytes: record.bytes,
+      sha256: record.sha256,
+    };
+  }
+  return {
+    candidateServerBytes: sourceRecords,
+    packRequests: capture.packRequests,
+    completePackResponses: byEngine,
+  };
+}
+
+export async function runFirefox(url, output, {
+  spawnProcess = spawn,
+  executable = "uv",
+  cwd = taskDir,
+  env = process.env,
+  stopAfterMs = 620_000,
+  terminateAfterMs = 630_000,
+  killAfterMs = 640_000,
+  forwardOutput = true,
+} = {}) {
+  const args = ["run", "--script", "run-firefox.py", "--url", url, "--output", output, "--timeout", "600"];
+  let stdout = "";
+  let stderr = "";
+  const timers = [];
+  try {
+    const child = spawnProcess(executable, args, {
+      cwd,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    child.stdout.setEncoding("utf8").on("data", (data) => {
+      stdout += data;
+      if (forwardOutput) process.stdout.write(data);
+    });
+    child.stderr.setEncoding("utf8").on("data", (data) => {
+      stderr += data;
+      if (forwardOutput) process.stderr.write(data);
+    });
+    const exit = await new Promise((resolveExit, reject) => {
+      timers.push(setTimeout(() => child.kill("SIGINT"), stopAfterMs));
+      timers.push(setTimeout(() => child.kill("SIGTERM"), terminateAfterMs));
+      timers.push(setTimeout(() => child.kill("SIGKILL"), killAfterMs));
+      child.once("error", reject);
+      child.once("exit", (code, signal) => resolveExit({ code, signal }));
+    });
+    return { ...exit, stdout, stderr };
+  } finally {
+    for (const timer of timers) clearTimeout(timer);
+  }
+}
+
+async function main() {
+  const execution = {
+    profileLock: PROFILE_LOCK,
+    profileLockHeld: process.env.KEVALA_PROFILE_LOCK_HELD === PROFILE_LOCK,
+    resourceScope: process.env.KEVALA_SMOKE_SCOPE || null,
+    vkDriverFiles: process.env.VK_DRIVER_FILES ?? null,
+  };
+  if (!execution.profileLockHeld) throw new Error("smoke must run through the canonical nonblocking profile lock");
+  await mkdir(outDir, { recursive: true });
+  if (await stat(runRoot).catch(() => null)) throw new Error(`owned run path already exists: ${runRoot}`);
+  await mkdir(join(runRoot, "pack"), { recursive: true });
+
+  let server;
+  let serverState;
+  let browser;
+  let candidate;
+  let packIdentity;
+  let wasmArtifact;
+  let frozen;
+  let outcome = { status: "failed", error: null };
+  try {
+    const baseCommit = git("git", ["rev-parse", "HEAD"]);
+    const branch = git("git", ["branch", "--show-current"]);
+    const candidateStart = await fileManifest(await sourceEntries());
+    const candidateOverrides = await fileManifest(changedFiles.map((path) => ({ path: join(root, path), rel: path })));
+    const diff = execFileSync("git", ["diff", "--binary", "HEAD", "--", ...changedFiles], { cwd: root });
+    const wasmInputChanges = git("git", ["diff", "--name-only", wasmPin.ciHead, baseCommit, "--", "crates", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo", "scripts/build-wasm.sh"])
+      .split("\n").filter(Boolean);
+    if (wasmInputChanges.length) throw new Error(`CI68 WASM inputs changed after its source commit: ${wasmInputChanges.join(", ")}`);
+    candidate = {
+      baseCommit,
+      branch,
+      sourceSha256: hash(Buffer.from(JSON.stringify(candidateStart))),
+      sourceFiles: candidateStart,
+      changedFiles: candidateOverrides,
+      diffSha256: hash(diff),
+      controllers: await fileManifest(controllerInputs),
+      wasmSourceParity: { ciHead: wasmPin.ciHead, checkedPaths: ["crates", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", ".cargo", "scripts/build-wasm.sh"], changedFiles: [] },
+    };
+    packIdentity = await verifyPack();
+    const wasmInfo = await stat(ciWasmPath);
+    const wasmSha256 = await sha256File(ciWasmPath);
+    if (wasmInfo.size !== wasmPin.bytes || wasmSha256 !== wasmPin.sha256) throw new Error("local relaxed WASM differs from pinned CI68 artifact");
+    wasmArtifact = { ...wasmPin, path: ciWasmPath, bytes: wasmInfo.size, sha256: wasmSha256 };
+    const entries = await sourceEntries();
+    const staged = await stageInputs(entries, ciWasmPath);
+    const frozenFiles = [...staged.expected.values()].sort((a, b) => a.urlPath.localeCompare(b.urlPath));
+    frozen = {
+      schemaVersion: 1,
+      candidate,
+      runtimeFiles: frozenFiles,
+      runtimeFingerprint: hash(Buffer.from(JSON.stringify(frozenFiles))),
+      wasmArtifact: { ...wasmArtifact, urlPath: staged.wasmUrlPath },
+      pack: packIdentity,
+      fixture: {
+        path: "harness/fixture.mjs",
+        id: "long-512",
+        expectedTokens: 512,
+        run3RequestSha256: "aefa250182c6163f4c20a16e94bd1daac5b57492cf7dc8ec3e09fa046a08382d",
+      },
+    };
+    await writeFile(join(runRoot, "freeze-manifest.json"), `${JSON.stringify(frozen, null, 2)}\n`);
+
+    await symlink(packPath, join(runRoot, "pack", "laya-q8.kevala"));
+    serverState = createCaptureServer(packIdentity, staged.expected);
+    server = serverState.server;
+    await new Promise((resolveListen, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", resolveListen);
+    });
+    const address = server.address();
+    if (!address || typeof address === "string") throw new Error("owned local server did not bind a TCP port");
+    const origin = `http://127.0.0.1:${address.port}`;
+    const runtimeUrl = new URL(`${staged.runtimePrefix}/js/src/index.js`, `${origin}/`).href;
+    const wasmBase = `${origin}${staged.runtimePrefix}/wasm/`;
+    const packUrl = `${origin}${staged.packUrlPath}`;
+    const page = new URL(`${staged.harnessPrefix}/index.html`, `${origin}/`);
+    page.searchParams.set("run", token);
+    page.searchParams.set("runtime", runtimeUrl);
+    page.searchParams.set("wasmBase", wasmBase);
+    page.searchParams.set("pack", packUrl);
+
+    const browserPath = join(runRoot, "browser-result.json");
+    const runner = await runFirefox(page.href, browserPath);
+    try { browser = JSON.parse(await readFile(browserPath, "utf8")); } catch {}
+    if (runner.code !== 0 || browser?.status !== "passed") {
+      throw new Error(browser?.error || browser?.page?.error || runner.stderr.trim() || `Firefox runner exited ${runner.code ?? runner.signal}`);
+    }
+    const served = verifyServerEvidence(serverState, staged, packIdentity);
+    const candidateEnd = await fileManifest(await sourceEntries());
+    if (hash(Buffer.from(JSON.stringify(candidateEnd))) !== candidate.sourceSha256) throw new Error("candidate source bytes changed during the smoke");
+    const packAfter = await stat(packPath);
+    if (JSON.stringify(statIdentity(packAfter)) !== JSON.stringify(packIdentity.sourceStat)) throw new Error("Laya Q8 pack changed during the smoke");
+
+    outcome = {
+      status: "passed",
+      label: "behavioral smoke only; no performance measurement",
+      candidate,
+      execution,
+      frozen: { runtimeFingerprint: frozen.runtimeFingerprint, files: frozenFiles.length },
+      wasmArtifact: frozen.wasmArtifact,
+      pack: packIdentity,
+      browser,
+      served,
+    };
+  } catch (error) {
+    outcome = {
+      status: "failed",
+      error: String(error?.stack || error?.message || error),
+      candidate,
+      execution,
+      wasmArtifact,
+      pack: packIdentity,
+      frozen: frozen ? { runtimeFingerprint: frozen.runtimeFingerprint, files: frozen.runtimeFiles.length } : null,
+      browser,
+      servedPartial: serverState ? {
+        candidateServerBytes: serverState.servedBytes,
+        packRequests: serverState.packRequests,
+        packResponses: Object.fromEntries(Object.entries(serverState.packCaptures).map(([label, record]) => [label, {
+          ranges: record.ranges,
+          responses: record.responses,
+          probes: record.probes,
+          bytes: record.bytes,
+          sha256: record.sha256,
+          error: record.error,
+        }])),
+      } : null,
+    };
+  } finally {
+    if (server?.listening) {
+      server.closeAllConnections?.();
+      await new Promise((resolveClose) => server.close(() => resolveClose()));
+    }
+    if (serverState) for (const record of Object.values(serverState.packCaptures)) record.buffer = null;
+    await rm(runRoot, { recursive: true, force: true });
+  }
+  await writeFile(resultPath, `${JSON.stringify({ schemaVersion: 1, runToken: token, ...outcome }, null, 2)}\n`);
+  process.stdout.write(`${JSON.stringify({ resultPath, status: outcome.status, error: outcome.error || null })}\n`);
+  if (outcome.status !== "passed") process.exitCode = 1;
+}
+
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  (async () => {
+    try {
+      await withProfileLock(main);
+    } catch (error) {
+      process.stderr.write(`${String(error?.stack || error?.message || error)}\n`);
+      process.exitCode = 1;
+    }
+  })();
+}

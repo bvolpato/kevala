@@ -1,0 +1,1191 @@
+// Qwen3.5's text trunk on WebGPU, shared by Kev and SemIf scoring.
+//
+// A pass runs in two stages inside one command buffer. Stage 1 runs every request's state and
+// keeps what the question branches need: each DeltaNet layer's recurrent state and conv tail,
+// each attention layer's keys and values. Stage 2 runs every question branch, starting from its
+// state's carry. Only the pointer rows come back to the CPU.
+//
+// The kernels are WGSL sources in the Rust crate (crates/kevala/src/wgsl/kev_*.wgsl), specialized
+// by the WebAssembly binary through `gpu.wgsl`; this file builds pipelines and records dispatches.
+
+import { GpuWeights, pipeline, mmSplits, rowsPerThread, encodeMatmul, encodeMatvec, inErrorScopes, SPLIT_SCRATCH, YIELD_TOKENS, YIELD_CHUNKS, chunks, endChunk } from "./gpu.js";
+import { calibrateMatmul, selectedMatmulKernel } from "./gpu-tuning.js";
+import { calibrateMatvec } from "./gpu-matvec.js";
+import { calibrateRecurrence } from "./gpu-recur-tuning.js";
+import {
+  KEV_Q8_SWIGLU_CANARY,
+  KEV_Q8_SWIGLU_GUARD_BYTES,
+  KEV_Q8_SWIGLU_GUARD_WORDS,
+  KEV_Q8_SWIGLU_LAYER_WORDS,
+  createKevQ8SwiGluTrial,
+  kevQ8SwiGluCompatible,
+  kevQ8SwiGluCompareGroup,
+  kevQ8SwiGluEligible,
+  kevQ8SwiGluFillGroup,
+  kevQ8SwiGluLayerWeights,
+  kevQ8SwiGluStatusInit,
+} from "./gpu-q8-swiglu-trial.js";
+
+let U;
+
+// the cross-request state cache (see KevModel in crates/kevala/src/kev/mod.rs for the CPU twin)
+const CACHE_SLOTS = 4;
+const SLOT_ROWS = 1024;
+const CACHE_MIN = 32;
+const EXTEND_MIN = 16;
+
+/** Compact only a strict subset; an all-row consumer keeps the full graph. */
+export function finalRowPlan(tokens, rows, enabled = true) {
+  const result = { active: false, sourceRows: tokens, scorerRows: rows.length };
+  if (!enabled) return { ...result, reason: "disabled" };
+  if (!Number.isSafeInteger(tokens) || tokens < 1 || !rows.length || rows.some((row) => !Number.isSafeInteger(row) || row < 0 || row >= tokens)) return { ...result, reason: "invalid-rows" };
+  if (rows.length >= tokens) return { ...result, reason: "all-rows" };
+  return { ...result, active: true, reason: "selected-rows" };
+}
+
+/** Keep the full graph's row tile and K partition when only its output rows remain. */
+export function encodeFinalRowMatmul(pass, pipes, op, activeT, sourceT) {
+  const R = rowsPerThread(sourceT, pipes);
+  const row56 = R === 4 && pipes.f16 === false && pipes.groups === 1 && Math.ceil(sourceT / 56) === Math.ceil(sourceT / 64);
+  const splits = mmSplits(sourceT, op.N, op.K, pipes.splitTarget, 16 * R, 64 * pipes.groups);
+  pass.setPipeline((row56 && pipes.mm56) || pipes.mm[R]);
+  pass.setBindGroup(0, op.group);
+  pass.dispatchWorkgroups(Math.ceil(op.N / (64 * pipes.groups)), Math.ceil(activeT / (row56 && pipes.mm56 ? 56 : 16 * R)), splits);
+  if (splits > 1) {
+    const workgroups = Math.ceil((activeT * op.N) / 256);
+    pass.setPipeline(pipes.reduce[R]);
+    pass.setBindGroup(0, op.reduce);
+    pass.dispatchWorkgroups(Math.min(workgroups, 65535), Math.ceil(workgroups / 65535));
+  }
+}
+
+function finalRowVariant(pipes, tokens) {
+  const R = rowsPerThread(tokens, pipes);
+  const row56 = !!pipes.mm56 && R === 4 && pipes.f16 === false && pipes.groups === 1 && Math.ceil(tokens / 56) === Math.ceil(tokens / 64);
+  return { R, row56, physicalRows: row56 ? 56 : 16 * R };
+}
+
+/** The tiled attention's block table for segments of these lengths: blocks of up to 8 tokens. */
+function attnBlocks(lengths, cap) {
+  const table = new Uint32Array(cap * 4);
+  let n = 0;
+  lengths.forEach((len, seg) => {
+    for (let r0 = 0; r0 < len; r0 += 8) table.set([seg, r0, Math.min(8, len - r0), 0], 4 * (1 + n++));
+  });
+  table[0] = n;
+  return table;
+}
+
+export class GpuKev {
+  constructor(gpu, layout, cfg) {
+    U = GPUBufferUsage;
+    this.gpu = gpu;
+    this.device = gpu.device;
+    this.subgroup32 = !!gpu.subgroup32;
+    this.subgroup4 = !!gpu.subgroup4;
+    this.subgroupMinSize = this.subgroup4 ? (gpu.adapter?.info?.subgroupMinSize || 4) : 0;
+    // Each workgroup shares keys and values across 8 tokens and 4 query heads.
+    this.attnTileFp32 = this.subgroup32 && !this.device.features.has("shader-f16") && cfg.heads === 4 * cfg.kv_heads;
+    this.attnTile = (!!gpu.attentionTile && cfg.heads === 4 * cfg.kv_heads) || this.attnTileFp32;
+    this.wgsl = gpu.wgsl;
+    this.name = gpu.name;
+    this.gpuKernel = gpu.kernel || "auto";
+    this.submitMode = gpu.submitMode;
+    this.cfg = cfg;
+    this.dims = {
+      linear: 2 * cfg.lin_key_heads * 128 + cfg.lin_heads * 128,
+      linearOut: cfg.lin_heads * 128,
+      linearProj: 2 * cfg.lin_key_heads * 128 + 2 * cfg.lin_heads * 128,
+      attentionOut: cfg.heads * 256,
+      attentionProj: 2 * (cfg.heads + cfg.kv_heads) * 256,
+      kv: 2 * cfg.kv_heads * 256,
+    };
+    this.weights = new GpuWeights(gpu.device, layout, { rowTables: ["emb", "clef.lexical"] });
+    for (const t of this.weights.header.tensors) {
+      if (this.weights.get(t.name).shards) continue;
+      if (t.dtype === "q8" && t.block !== 32) {
+        throw Object.assign(new Error(`Qwen WebGPU projections require Q8 block size 32; ${t.name} has block size ${t.block}. Convert with block 32 or use the native CPU runtime.`), { code: "WEBGPU_INIT" });
+      }
+      this.checkBuffer(t.size, t.name);
+      if (t.scales_size) this.checkBuffer(t.scales_size, `${t.name}.scales`);
+    }
+    for (let i = 0; i < cfg.layers; i++) {
+      if (!cfg.full[i]) for (const n of ["a", "b"]) this.weights.keepHost.add(`L.${i}.${n}`);
+    }
+    this.cap = { T1: 0, T2: 0, P: 0, S: 0, R: 0 };
+    this.stats = { hits: 0, extensions: 0, misses: 0, tokensSaved: 0 };
+    this.stateCacheEnabled = true;
+    this.finalRowsEnabled = true;
+    this.finalRowPipelines = new Map();
+    this.finalRowPipelineErrors = new Map();
+    this.finalRowCompileMs = 0;
+    this.q8SwiGluTrialEnabled = gpu.kevalaQ8SwiGluTrial === true;
+    this.q8SwiGlu = null;
+    this.q8SwiGluCompatibility = null;
+    this.q8SwiGluPending = null;
+    this.q8SwiGluActivePermit = null;
+  }
+
+  write(dst, bytes) {
+    this.weights.write(dst, bytes);
+  }
+
+  missing() {
+    return this.weights.missing();
+  }
+
+  checkBuffer(size, label) {
+    const limit = Math.min(this.device.limits.maxStorageBufferBindingSize, this.device.limits.maxBufferSize);
+    if (!Number.isSafeInteger(size) || size > limit) {
+      throw Object.assign(new Error(`Qwen WebGPU buffer ${label} needs ${Math.ceil(size / 1048576)} MiB; this device allows ${Math.floor(limit / 1048576)} MiB per buffer. Reduce the batch size or use the native runtime.`), { code: "WEBGPU_INIT" });
+    }
+  }
+
+  async init() {
+    const miss = this.missing();
+    if (miss.length) throw new Error(`GPU trunk is missing ${miss.length} tensors (${miss[0]}...)`);
+    const d = this.device;
+    const kernels = {
+      RMS: ["kev_rms", { subgroups: this.subgroup32 }],
+      GATES: ["kev_gates"],
+      CONV: ["kev_conv"],
+      SAVE_TAIL: ["kev_save_tail"],
+      RECUR: ["kev_recur_lanes", { subgroups: this.subgroup4 }],
+      GNORM: ["kev_gnorm"],
+      APREP: ["kev_aprep", { subgroups: this.subgroup32 }],
+      SAVE_KV: ["kev_save_kv"],
+      KEYS: ["kev_attention_keys"],
+      ATTN: this.attnTile ? ["kev_attention_tile", { f16: !this.attnTileFp32 }] : ["kev_attention", { subgroups: this.subgroup32 }],
+      SILUMUL: ["kev_silumul"],
+      GATHER: ["kev_gather"],
+    };
+    const built = await Promise.all(Object.entries(kernels).map(([key, [name, spec]]) => pipeline(d, this.wgsl(name, { ...spec, kev: this.cfg }), name).then((p) => [key, p])));
+    this.p = Object.fromEntries(built);
+    if (this.q8SwiGluTrialEnabled) {
+      const entry = this.weights.get("L.0.gate_up");
+      this.q8SwiGluCompatibility = kevQ8SwiGluCompatible({ model: this.weights.header.model, config: this.weights.header.config, entry, device: d });
+      if (this.q8SwiGluCompatibility.eligible) this.q8SwiGlu = await createKevQ8SwiGluTrial(d, this.wgsl);
+    }
+    this.gpu.kevalaQ8SwiGluCapability = {
+      enabled: !!this.q8SwiGlu,
+      compatibility: this.q8SwiGluCompatibility,
+      source: this.q8SwiGlu?.source || null,
+    };
+    const projectionNames = new Set(["qkv", "qkvz", "o", "out", "gate_up", "down"]);
+    const dtypes = new Set(this.weights.header.tensors.filter((t) => projectionNames.has(t.name.split(".").at(-1))).map((t) => t.dtype));
+    this.precisionMm = new Map();
+    this.precisionTuning = new Map();
+    this.precisionMatvec = new Map();
+    for (const dtype of dtypes) {
+      const tuning = await calibrateMatmul(d, this.wgsl, this.weights, { kernel: this.gpuKernel, dtype });
+      const matvec = await calibrateMatvec(d, this.wgsl, this.weights, tuning, { kernel: this.gpuKernel, dtype });
+      tuning.diagnostics.matvec = matvec.diagnostics;
+      this.precisionTuning.set(dtype, tuning);
+      this.precisionMatvec.set(dtype, matvec);
+      this.precisionMm.set(dtype, tuning.pipelines.generic);
+    }
+    this.mm = this.precisionMm.values().next().value;
+    if (!this.mm) throw new Error("Qwen GPU trunk has no projection matrices");
+    this.tuning = this.precisionTuning.values().next().value;
+    this.tuning.diagnostics.precisions = Object.fromEntries([...this.precisionTuning].map(([dtype, tuning]) => [dtype, { ...tuning.diagnostics }]));
+    this.tuning.diagnostics.weightPrecision = [...dtypes];
+    const recurrence = await calibrateRecurrence(d, [
+      { lanes: 4, pipeline: this.p.RECUR },
+      ...[8, 16].map((lanes) => ({
+        lanes,
+        pipeline: () => pipeline(d, this.wgsl(`kev_recur_lanes${lanes}`, { subgroups: this.subgroupMinSize >= lanes, kev: this.cfg }), `kev_recur_lanes${lanes}`),
+      })),
+    ], this.cfg);
+    this.p.RECUR = recurrence.pipeline || this.p.RECUR;
+    this.recurTiles = recurrence.zTiles;
+    this.tuning.diagnostics.recurrence = { ...recurrence.diagnostics, lanes: recurrence.choice };
+    const cfg = this.cfg;
+    const W = (n) => this.weights.get(n);
+    const f32buf = (arr) => {
+      this.checkBuffer(arr.byteLength, "model constants");
+      const b = d.createBuffer({ label: "Qwen model constants", size: Math.max(16, arr.byteLength), usage: U.STORAGE | U.COPY_DST });
+      d.queue.writeBuffer(b, 0, arr);
+      return b;
+    };
+    // Stack a and b, then interleave their vec4 weights so adjacent gate lanes read together.
+    this.ab = [];
+    for (let i = 0; i < cfg.layers; i++) {
+      if (cfg.full[i]) {
+        this.ab.push(null);
+        continue;
+      }
+      const a = W(`L.${i}.a`).host;
+      const b = W(`L.${i}.b`).host;
+      const both = new Float32Array(a.length + b.length);
+      both.set(a);
+      both.set(b, a.length);
+      const interleaved = new Float32Array(both.length);
+      for (let k = 0; k < cfg.hidden / 4; k++) {
+        for (let j = 0; j < 2 * cfg.lin_heads; j++) {
+          for (let c = 0; c < 4; c++) interleaved[(k * 2 * cfg.lin_heads + j) * 4 + c] = both[j * cfg.hidden + k * 4 + c];
+        }
+      }
+      this.ab.push(f32buf(interleaved));
+    }
+    // Rotary table [pos][rotary/2] of (cos, sin), f32 inverse frequencies and angles as in PyTorch.
+    const maxPos = cfg.max_state + cfg.max_branch;
+    const half = cfg.rotary / 2;
+    const cs = new Float32Array(maxPos * cfg.rotary);
+    for (let i = 0; i < half; i++) {
+      const inv = Math.fround(1 / Math.fround(Math.pow(cfg.rope_theta, (2 * i) / cfg.rotary)));
+      for (let pos = 0; pos < maxPos; pos++) {
+        const a = Math.fround(pos * inv);
+        cs[(pos * half + i) * 2] = Math.cos(a);
+        cs[(pos * half + i) * 2 + 1] = Math.sin(a);
+      }
+    }
+    this.rope = f32buf(cs);
+    this.zeros = f32buf(new Float32Array(16));
+    this.rowPipelines = new Map();
+  }
+
+  rowTable(name, ids) {
+    const e = this.weights.get(name);
+    const [count] = e.info.shape;
+    if (!e.shards) throw new Error(`GPU tensor ${name} is not a row table`);
+    if (ids.some((id) => !Number.isInteger(id) || id < 0 || id >= count)) throw new Error(`GPU row table ${name} received an out-of-range row`);
+    return e;
+  }
+
+  async rowPipeline(e) {
+    const dtype = e.info.dtype;
+    if (!this.rowPipelines.has(dtype)) {
+      const layout = this.device.createBindGroupLayout({ entries: ["uniform", "read-only-storage", "read-only-storage", "read-only-storage", "storage"].map((type, binding) => ({ binding, visibility: GPUShaderStage.COMPUTE, buffer: { type } })) });
+      const pl = this.device.createPipelineLayout({ bindGroupLayouts: [layout] });
+      this.rowPipelines.set(dtype, await pipeline(this.device, this.wgsl("weight_rows", { weights: dtype }), `weight_rows_${dtype}`, pl));
+    }
+    return this.rowPipelines.get(dtype);
+  }
+
+  /** Reads selected embedding or lexical rows without placing the full table in WebAssembly. */
+  async weightRows(name, ids) {
+    const e = this.rowTable(name, ids);
+    const [, width] = e.info.shape;
+    const out = new Float32Array(ids.length * width);
+    if (!ids.length) return out;
+    const p = await this.rowPipeline(e);
+    const d = this.device;
+    return inErrorScopes(d, async () => {
+      for (const shard of e.shards) {
+        const positions = [];
+        for (let i = 0; i < ids.length; i++) if (ids[i] >= shard.start && ids[i] < shard.start + shard.count) positions.push(i);
+        if (!positions.length) continue;
+        const bytes = positions.length * width * 4;
+        this.checkBuffer(bytes, `${name} gathered rows`);
+        const owned = [];
+        const make = (size, usage) => {
+          const b = d.createBuffer({ size: Math.max(16, size), usage });
+          owned.push(b);
+          return b;
+        };
+        try {
+          const params = make(16, U.UNIFORM | U.COPY_DST);
+          const tokenIds = make(positions.length * 4, U.STORAGE | U.COPY_DST);
+          const gathered = make(bytes, U.STORAGE | U.COPY_SRC);
+          const read = make(bytes, U.MAP_READ | U.COPY_DST);
+          d.queue.writeBuffer(params, 0, new Uint32Array([positions.length, width, e.info.block || 0, shard.start]));
+          d.queue.writeBuffer(tokenIds, 0, new Uint32Array(positions.map((i) => ids[i])));
+          const group = d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: [params, tokenIds, shard.buf, shard.sbuf || this.zeros, gathered].map((buffer, binding) => ({ binding, resource: { buffer } })) });
+          const enc = d.createCommandEncoder();
+          const pass = enc.beginComputePass();
+          pass.setPipeline(p);
+          pass.setBindGroup(0, group);
+          pass.dispatchWorkgroups(positions.length);
+          pass.end();
+          enc.copyBufferToBuffer(gathered, 0, read, 0, bytes);
+          d.queue.submit([enc.finish()]);
+          await read.mapAsync(GPUMapMode.READ, 0, bytes);
+          const values = new Float32Array(read.getMappedRange(0, bytes));
+          positions.forEach((position, i) => out.set(values.subarray(i * width, (i + 1) * width), position * width));
+          read.unmap();
+        } finally {
+          for (const b of owned) b.destroy();
+        }
+      }
+      return out;
+    });
+  }
+
+  /** Runs a complete record directly from a GPU-resident embedding table. */
+  async forwardRows(name, ids, batch) {
+    const table = this.rowTable(name, ids);
+    if (table.info.shape[1] !== this.cfg.hidden || batch.T1 !== 0 || batch.T2 !== ids.length) throw new Error("GPU row input must match a complete branch and its hidden width");
+    const input = { table, ids: Uint32Array.from(ids), pipeline: await this.rowPipeline(table) };
+    return this.forward(new Float32Array(), input, batch, new Uint32Array());
+  }
+
+  prepareRowInput(input) {
+    if (this.rowInput?.table === input.table) return;
+    if (this.rowInput) {
+      const previous = new Set(this.rowInput.buffers);
+      this.owned = this.owned.filter((buffer) => !previous.has(buffer));
+      for (const buffer of previous) buffer.destroy();
+    }
+    const d = this.device;
+    const [, width] = input.table.info.shape;
+    const alignment = d.limits.minStorageBufferOffsetAlignment;
+    const idStride = Math.ceil(this.cap.T2 * 4 / alignment) * alignment;
+    const paramStride = d.limits.minUniformBufferOffsetAlignment;
+    const buffers = [];
+    const make = (size, usage) => {
+      this.checkBuffer(size, "row input scratch");
+      const buffer = d.createBuffer({ size: Math.max(16, size), usage });
+      buffers.push(buffer);
+      this.owned.push(buffer);
+      return buffer;
+    };
+    const ids = make(idStride * input.table.shards.length, U.STORAGE | U.COPY_DST);
+    const params = make(paramStride * input.table.shards.length, U.UNIFORM | U.COPY_DST);
+    const gathered = input.table.shards.length > 1 ? make(this.cap.T2 * width * 4, U.STORAGE | U.COPY_SRC) : null;
+    const groups = input.table.shards.map((shard, index) => {
+      const common = [{ buffer: params, offset: index * paramStride, size: 16 }, { buffer: ids, offset: index * idStride, size: this.cap.T2 * 4 }, { buffer: shard.buf }, { buffer: shard.sbuf || this.zeros }];
+      return [gathered || this.x2, this.x2].map((buffer) => d.createBindGroup({
+        layout: input.pipeline.getBindGroupLayout(0),
+        entries: [...common, { buffer }].map((resource, binding) => ({ binding, resource })),
+      }));
+    });
+    this.rowInput = { table: input.table, ids, params, idStride, paramStride, gathered, groups, buffers };
+  }
+
+  encodeRowInput(encoder, input) {
+    const active = input.table.shards.flatMap((shard, index) => {
+      const positions = [];
+      for (let row = 0; row < input.ids.length; row++) if (input.ids[row] >= shard.start && input.ids[row] < shard.start + shard.count) positions.push(row);
+      return positions.length ? [{ shard, index, positions }] : [];
+    });
+    const scratch = this.rowInput;
+    const width = input.table.info.shape[1];
+    const direct = active.length === 1;
+    for (const { shard, index, positions } of active) {
+      this.device.queue.writeBuffer(scratch.params, index * scratch.paramStride, new Uint32Array([positions.length, width, input.table.info.block || 0, shard.start]));
+      this.device.queue.writeBuffer(scratch.ids, index * scratch.idStride, Uint32Array.from(positions, (row) => input.ids[row]));
+      const pass = encoder.beginComputePass();
+      pass.setPipeline(input.pipeline);
+      pass.setBindGroup(0, scratch.groups[index][Number(direct)]);
+      pass.dispatchWorkgroups(positions.length);
+      pass.end();
+      if (!direct) {
+        for (let first = 0; first < positions.length;) {
+          let end = first + 1;
+          while (end < positions.length && positions[end] === positions[end - 1] + 1) end++;
+          encoder.copyBufferToBuffer(scratch.gathered, first * width * 4, this.x2, positions[first] * width * 4, (end - first) * width * 4);
+          first = end;
+        }
+      }
+    }
+  }
+
+  uni(values) {
+    const a = new ArrayBuffer(16);
+    const u = new Uint32Array(a);
+    const f = new Float32Array(a);
+    values.forEach((v, i) => (typeof v === "object" ? (f[i] = v.f) : (u[i] = v)));
+    const b = this.device.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.uniforms.push(b);
+    this.device.queue.writeBuffer(b, 0, a);
+    return b;
+  }
+
+  resetDynamicBuffers() {
+    for (const b of [...(this.owned || []), ...(this.uniforms || []), ...(this.carryBufs || [])]) b.destroy();
+    this.owned = [];
+    this.uniforms = [];
+    this.carryBufs = [];
+    this.cap = { T1: 0, T2: 0, P: 0, S: 0, R: 0 };
+    this.carrySize = { slots: 0, rows: 0 };
+    this.carry = null;
+    this.kvStage = null;
+    this.ops = null;
+    this.finalRows = null;
+    this.rowInput = null;
+    this.lru = [];
+  }
+
+  /** Sizes every buffer for a batch and rebuilds the bind groups when it grows. */
+  ensure(T1, T2, P, S, R) {
+    const c = this.cap;
+    if (T1 <= c.T1 && T2 <= c.T2 && P <= c.P && S <= c.S && R <= c.R) return;
+    const up = (n, min) => Math.max(min, 2 ** Math.ceil(Math.log2(Math.max(1, n))));
+    const cap = { T1: up(T1, 64), T2: up(T2, 64), P: up(P, 1), S: up(S, 4), R: up(R, 16) };
+    const T = Math.max(cap.T1, cap.T2);
+    this.checkBuffer(T * Math.max(this.cfg.hidden, this.dims.linearProj, this.dims.attentionProj, 2 * this.cfg.intermediate) * 4, "batch scratch");
+    this.checkBuffer(cap.R * this.cfg.hidden * 4, "scorer rows");
+    this.checkBuffer(cap.S * 32, "segments");
+    this.cap = cap;
+    for (const b of this.owned || []) b.destroy();
+    this.owned = [];
+    this.rowInput = null;
+    for (const b of this.uniforms || []) b.destroy();
+    this.uniforms = [];
+    const d = this.device;
+    const cfg = this.cfg;
+    const buf = (floats, extra = 0, label = "batch scratch") => {
+      this.checkBuffer(floats * 4, label);
+      const b = d.createBuffer({ label: `Qwen ${label}`, size: Math.max(16, floats * 4), usage: U.STORAGE | extra });
+      this.owned.push(b);
+      return b;
+    };
+    const D = cfg.hidden;
+    this.x = buf(T * D, U.COPY_DST | U.COPY_SRC);
+    this.x2 = buf(this.cap.T2 * D, U.COPY_DST | U.COPY_SRC);
+    this.h = buf(T * D);
+    this.proj = buf(T * Math.max(this.dims.linearProj, this.dims.attentionProj), 0, "QKV projection");
+    this.conv = buf(T * Math.max(this.dims.linear, this.dims.kv / 2), 0, "convolution");
+    this.core = buf(T * Math.max(this.dims.linearOut, this.dims.attentionOut), 0, "attention output");
+    this.gates = buf(T * 2 * cfg.lin_heads);
+    this.up = buf(T * 2 * cfg.intermediate, 0, "MLP projection");
+    this.act = buf(T * cfg.intermediate);
+    this.tok = buf(T * 4, U.COPY_DST);
+    this.tok2 = buf(this.cap.T2 * 4, U.COPY_DST | U.COPY_SRC);
+    this.segs = buf(this.cap.S * 8, U.COPY_DST);
+    this.segs2 = buf(this.cap.S * 8, U.COPY_DST | U.COPY_SRC);
+    // tiled attention blocks per stage: a count, then (segment, first position, tokens) per block
+    this.blockCap = Math.ceil(Math.max(T, this.cap.T2) / 8) + this.cap.S + 1;
+    this.ablocks = buf(this.blockCap * 4, U.COPY_DST);
+    this.ablocks2 = buf(this.blockCap * 4, U.COPY_DST | U.COPY_SRC);
+    this.rows = buf(this.cap.R, U.COPY_DST);
+    this.gathered = buf(this.cap.R * D, U.COPY_SRC);
+    this.part = buf(SPLIT_SCRATCH);
+    this.readback = d.createBuffer({ size: this.cap.R * D * 4, usage: U.MAP_READ | U.COPY_DST });
+    this.owned.push(this.readback);
+    this.g = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.owned.push(this.g);
+    this.g2 = d.createBuffer({ size: 16, usage: U.COPY_DST | U.COPY_SRC });
+    this.owned.push(this.g2);
+    this.finalG = d.createBuffer({ size: 16, usage: U.UNIFORM | U.COPY_DST });
+    this.owned.push(this.finalG);
+    if (this.q8SwiGlu) {
+      const capacityBytes = Math.max(this.cap.T1, this.cap.T2) * cfg.intermediate * 4;
+      this.q8SwiGluVerifyOutput = d.createBuffer({
+        label: "Q8 Kev SwiGLU verification output",
+        size: Math.max(16, capacityBytes + 2 * KEV_Q8_SWIGLU_GUARD_BYTES),
+        usage: U.STORAGE | U.COPY_DST,
+      });
+      this.q8SwiGluStatus = d.createBuffer({
+        label: "Q8 Kev SwiGLU verification status",
+        size: Math.max(16, cfg.layers * KEV_Q8_SWIGLU_LAYER_WORDS * 4),
+        usage: U.STORAGE | U.COPY_DST | U.COPY_SRC,
+      });
+      this.q8SwiGluStatusReadback = d.createBuffer({
+        label: "Q8 Kev SwiGLU verification readback",
+        size: Math.max(256, cfg.layers * KEV_Q8_SWIGLU_LAYER_WORDS * 4),
+        usage: U.MAP_READ | U.COPY_DST,
+      });
+      this.owned.push(this.q8SwiGluVerifyOutput, this.q8SwiGluStatus, this.q8SwiGluStatusReadback);
+    } else {
+      this.q8SwiGluVerifyOutput = null;
+      this.q8SwiGluStatus = null;
+      this.q8SwiGluStatusReadback = null;
+    }
+    if (!this.carry) {
+      if (this.stateCacheEnabled === false) this.ensureCarries(Math.max(P, 1), Math.max(T1, 16));
+      else this.ensureCarries(CACHE_SLOTS + 1, CACHE_SLOTS * SLOT_ROWS + 1024);
+    }
+    this.build();
+  }
+
+  /**
+   * Carry storage: when caching is enabled, CACHE_SLOTS retained slots with SLOT_ROWS rows
+   * of keys and values each, plus scratch slots and rows for states this pass does not cache.
+   * Growing it drops the cache and rebuilds the bind groups.
+   */
+  ensureCarries(slots, rows) {
+    const c = this.carrySize || { slots: 0, rows: 0 };
+    if (slots <= c.slots && rows <= c.rows && this.carry) return;
+    const up = (n) => 2 ** Math.ceil(Math.log2(Math.max(1, n)));
+    const size = { slots: Math.max(c.slots, up(slots)), rows: Math.max(c.rows, up(rows)) };
+    this.checkBuffer(size.rows * this.dims.kv * 4, "KV cache");
+    this.checkBuffer(size.slots * this.cfg.lin_heads * 16384 * 4, "recurrent state");
+    this.checkBuffer(size.slots * 3 * this.dims.linear * 4, "convolution tail");
+    this.carrySize = size;
+    for (const b of this.carryBufs || []) b.destroy();
+    this.carryBufs = [];
+    const buf = (floats, label) => {
+      this.checkBuffer(floats * 4, label);
+      const b = this.device.createBuffer({ label: `Qwen ${label}`, size: Math.max(16, floats * 4), usage: U.STORAGE | U.COPY_DST | U.COPY_SRC });
+      this.carryBufs.push(b);
+      return b;
+    };
+    this.kvStage = buf(SLOT_ROWS * this.dims.kv, "KV staging");
+    this.carry = [];
+    for (let i = 0; i < this.cfg.layers; i++) {
+      this.carry.push(this.cfg.full[i] ? { kv: buf(this.carrySize.rows * this.dims.kv, "KV cache") } : { state: buf(this.carrySize.slots * this.cfg.lin_heads * 16384, "recurrent state"), tail: buf(this.carrySize.slots * 3 * this.dims.linear, "convolution tail") });
+    }
+    this.lru = [];
+    if (this.cap.T1) this.build();
+  }
+
+  /**
+   * Plans stage 1 against the state cache. Each request's state is an exact hit (no work), an
+   * extension of a cached state (only the new tokens run, from its carry), or a miss.
+   */
+  plan(batch, ids) {
+    const slotRows = SLOT_ROWS;
+    const cacheSlots = this.stateCacheEnabled === false ? 0 : CACHE_SLOTS;
+    if (!cacheSlots) this.lru = [];
+    const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
+    const starts = (a, p) => p.length < a.length && p.every((v, i) => v === a[i]);
+    // Newly planned states run concurrently. Only retained states from a completed pass
+    // can supply a prefix carry; fresh exact duplicates share their planned destination.
+    const ready = new Set(this.lru);
+    const pinned = new Set();
+    const carries = [];
+    const segs = [];
+    const copies = [];
+    let scratchSlot = cacheSlots;
+    let scratchRow = cacheSlots * slotRows;
+    const fresh = new Map();
+    batch.states.forEach(([start, len], r) => {
+      if (!len) return carries.push(null);
+      const mine = ids.subarray(start, start + len);
+      const key = mine.join(",");
+      if (fresh.has(key)) return carries.push(fresh.get(key));
+      const hit = this.lru.find((e) => same(e.ids, mine));
+      if (hit) {
+        this.lru = [...this.lru.filter((e) => e !== hit), hit];
+        pinned.add(hit.slot);
+        this.stats.hits++;
+        this.stats.tokensSaved += len;
+        return carries.push(hit);
+      }
+      const ext = this.lru.filter((e) => ready.has(e) && e.len >= EXTEND_MIN && starts(mine, e.ids)).sort((a, b) => b.len - a.len)[0];
+      const from = ext ? ext.len : 0;
+      if (ext) {
+        pinned.add(ext.slot);
+        this.stats.extensions++;
+        this.stats.tokensSaved += from;
+      } else this.stats.misses++;
+      // destination: a cache slot when the state is cacheable, else scratch
+      let dst;
+      let kvBase;
+      let entry = null;
+      if (cacheSlots && len >= CACHE_MIN && len <= slotRows) {
+        let victim = null;
+        if (this.lru.length < cacheSlots) {
+          const used = new Set(this.lru.map((e) => e.slot));
+          victim = { slot: [...Array(cacheSlots).keys()].find((k) => !used.has(k) && !pinned.has(k)) };
+        } else {
+          victim = this.lru.find((e) => !pinned.has(e.slot));
+          if (victim) this.lru = this.lru.filter((e) => e !== victim);
+        }
+        if (victim && victim.slot !== undefined) {
+          dst = victim.slot;
+          kvBase = dst * slotRows;
+          entry = { ids: mine.slice(), slot: dst, kvBase, len };
+          this.lru.push(entry);
+          pinned.add(dst);
+        }
+      }
+      if (dst === undefined) {
+        dst = scratchSlot++;
+        kvBase = scratchRow;
+        scratchRow += len;
+      }
+      if (ext) copies.push({ from: ext.kvBase, to: kvBase, rows: from });
+      segs.push({ src: start + from, len: len - from, parent: ext ? ext.slot : 0xffffffff, pstart: ext ? ext.kvBase : 0, plen: from, dst, kvdst: kvBase + from, pos0: from });
+      const carry = entry || { slot: dst, kvBase, len };
+      fresh.set(key, carry);
+      carries.push(carry);
+    });
+    return { carries, segs, copies, slots: scratchSlot, rows: scratchRow };
+  }
+
+  build() {
+    const d = this.device;
+    const cfg = this.cfg;
+    const W = (n) => this.weights.get(n);
+    const bg = (p, list) => d.createBindGroup({ layout: p.getBindGroupLayout(0), entries: list.map((b, i) => ({ binding: i, resource: { buffer: b } })) });
+    const mm = (w, input, output, mode, globals = this.g) => {
+      const e = W(w);
+      const [N, K] = e.info.shape;
+      const u = this.uni([N, K, mode, 0]);
+      const pipes = this.precisionMm.get(e.info.dtype);
+      const op = {
+        k: "mm",
+        label: "mm." + w.split(".").pop(),
+        N,
+        K,
+        dtype: e.info.dtype,
+        pipes,
+        group: d.createBindGroup({ layout: pipes.layout, entries: [globals, u, input, e.buf, e.sbuf || this.zeros, this.zeros, output, this.part].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+        reduce: d.createBindGroup({ layout: pipes.reduceLayout, entries: [globals, u, this.part, this.zeros, output].map((b, i) => ({ binding: i, resource: { buffer: b } })) }),
+      };
+      const layerMatch = this.q8SwiGlu && /^L\.(\d+)\.gate_up$/.exec(w);
+      if (layerMatch) {
+        const params = this.uni([cfg.intermediate, cfg.hidden, 0, 0]);
+        op.q8SwiGluLayer = Number(layerMatch[1]);
+        op.q8SwiGluEntry = e;
+        op.q8SwiGluGlobals = globals;
+        op.q8SwiGluParams = params;
+        op.q8SwiGluGroup = kevQ8SwiGluLayerWeights(d, this.q8SwiGlu.gemmLayout, globals, e, params, input, { buffer: this.act, size: this.act.size }, this.part, cfg.intermediate, cfg.hidden);
+        op.q8SwiGluVerifyGroup = kevQ8SwiGluLayerWeights(d, this.q8SwiGlu.gemmLayout, globals, e, params, input,
+          { buffer: this.q8SwiGluVerifyOutput, offset: KEV_Q8_SWIGLU_GUARD_BYTES, size: this.q8SwiGluVerifyOutput.size - 2 * KEV_Q8_SWIGLU_GUARD_BYTES },
+          this.part, cfg.intermediate, cfg.hidden);
+        op.q8SwiGluCompareParams = this.uni([0, cfg.intermediate, op.q8SwiGluLayer, KEV_Q8_SWIGLU_GUARD_WORDS]);
+        op.q8SwiGluCompareGroup = kevQ8SwiGluCompareGroup(d, this.q8SwiGlu.compareLayout, op.q8SwiGluCompareParams,
+          this.act, this.q8SwiGluVerifyOutput, this.q8SwiGluStatus);
+        op.q8SwiGluFillGroup = kevQ8SwiGluFillGroup(d, this.q8SwiGlu.fillLayout, op.q8SwiGluCompareParams, this.q8SwiGluVerifyOutput);
+      }
+      return op;
+    };
+    const rms = (w, input, output, globals = this.g) => ({ k: "rms", group: bg(this.p.RMS, [globals, this.uni([cfg.hidden, 0, 0, { f: cfg.eps }]), input, w, output]) });
+    const one = [];
+    const two = [];
+    let finalMlpStart = 0;
+    let stateComplete = false;
+    const both = (op) => {
+      if (!stateComplete) one.push(op);
+      two.push(op);
+    };
+    for (let i = 0; i < cfg.layers; i++) {
+      const n = (s) => `L.${i}.${s}`;
+      both(rms(W(n("in_norm")).buf, this.x, this.h));
+      if (cfg.full[i]) {
+        const kv = this.carry[i].kv;
+        both(mm(n("qkv"), this.h, this.proj, 0));
+        both({ k: "aprep", group: bg(this.p.APREP, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("q_norm")).buf, W(n("k_norm")).buf, this.tok, this.rope]) });
+        if (!this.attnTile) both({ k: "keys", group: bg(this.p.KEYS, [this.g, this.proj, this.conv]) });
+        one.push({ k: "savekv", group: bg(this.p.SAVE_KV, [this.g, this.proj, kv, this.tok, this.segs]) });
+        // Stage 1 only supplies carries. Its final hidden rows have no consumer.
+        if (i === cfg.layers - 1) stateComplete = true;
+        const attn = this.attnTile ? [this.g, this.proj, kv, this.ablocks, this.segs, this.core] : [this.g, this.proj, kv, this.tok, this.segs, this.core, this.conv];
+        both({ k: "attn", group: bg(this.p.ATTN, attn) });
+        both(mm(n("o"), this.core, this.x, 1));
+      } else {
+        const { state, tail } = this.carry[i];
+        both(mm(n("qkvz"), this.h, this.proj, 0));
+        both({ k: "gates", group: bg(this.p.GATES, [this.g, this.h, this.ab[i], W(n("dt_bias")).buf, W(n("neg_a")).buf, this.gates]) });
+        both({ k: "conv", group: bg(this.p.CONV, [this.g, this.proj, W(n("conv")).buf, this.tok, this.segs, tail, this.conv]) });
+        one.push({ k: "savetail", group: bg(this.p.SAVE_TAIL, [this.g, this.proj, this.segs, tail]) });
+        both({ k: "recur", group: bg(this.p.RECUR, [this.g, this.conv, this.gates, this.segs, state, this.core]) });
+        if (i === cfg.layers - 1) stateComplete = true;
+        both({ k: "gnorm", group: bg(this.p.GNORM, [this.g, this.uni([{ f: cfg.eps }, 0, 0, 0]), this.proj, W(n("gnorm")).buf, this.core]) });
+        both(mm(n("out"), this.core, this.x, 1));
+      }
+      if (i === cfg.layers - 1) finalMlpStart = two.length;
+      both(rms(W(n("post_norm")).buf, this.x, this.h));
+      both(mm(n("gate_up"), this.h, this.up, 0));
+      both({ k: "silumul", I: cfg.intermediate, q8SwiGluLayer: this.q8SwiGlu ? i : undefined,
+        group: bg(this.p.SILUMUL, [this.g, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) });
+      both(mm(n("down"), this.act, this.x, 1));
+    }
+    two.push({ k: "gather", group: bg(this.p.GATHER, [this.g, this.x, this.rows, this.gathered]) });
+    this.ops = [one, two];
+    const n = (s) => `L.${cfg.layers - 1}.${s}`;
+    this.finalRows = {
+      prefix: two.slice(0, finalMlpStart),
+      gather: two.at(-1),
+      tail: [
+        rms(W(n("post_norm")).buf, this.gathered, this.h, this.finalG),
+        { ...mm(n("gate_up"), this.h, this.up, 0, this.finalG), finalRows: true },
+        { k: "silumul", I: cfg.intermediate, group: bg(this.p.SILUMUL, [this.finalG, this.uni([cfg.intermediate, 0, 0, 0]), this.up, this.act]) },
+        { ...mm(n("down"), this.act, this.gathered, 1, this.finalG), finalRows: true },
+      ],
+    };
+  }
+
+  async prepareFinalRows(tokens, rows) {
+    this.lastFinalRows = finalRowPlan(tokens, rows, this.finalRowsEnabled !== false && !!this.finalRows);
+    if (!this.lastFinalRows.active) return false;
+    const matrices = this.finalRows.tail.filter((item) => item.k === "mm").map((op) => {
+      const tuning = this.precisionTuning.get(op.dtype);
+      const choice = this.gpuKernel === "auto" ? selectedMatmulKernel(tuning?.selection, op.N, op.K, tokens) : this.gpuKernel;
+      const original = tuning?.pipelines[choice] || op.pipes;
+      return { op, original, ...finalRowVariant(original, tokens) };
+    });
+    this.lastFinalRows.tiles = matrices.map(({ op, physicalRows }) => ({ projection: op.label, source: Math.ceil(tokens / physicalRows), compact: Math.ceil(rows.length / physicalRows) }));
+    // Moving rows within the same padded tile rarely repays another compute pass or
+    // cold pipeline compilation. Require an actual projection workgroup reduction.
+    if (!this.lastFinalRows.tiles.some((item) => item.compact < item.source)) {
+      this.lastFinalRows = { ...this.lastFinalRows, active: false, reason: "same-row-tiles" };
+      return false;
+    }
+    for (const { op, original, R, row56 } of matrices) {
+      const key = `${op.dtype}:${original.kernel}:r${R}:${row56 ? "row56" : "standard"}`;
+      if (this.finalRowPipelineErrors.has(key)) {
+        this.lastFinalRows = { ...this.lastFinalRows, active: false, reason: this.finalRowPipelineErrors.get(key) };
+        return false;
+      }
+      if (!this.finalRowPipelines.has(key)) {
+        const started = performance.now();
+        try {
+          const pipes = await inErrorScopes(this.device, async () => {
+            const spec = { weights: op.dtype, f16: original.f16, groups: original.groups, splitTarget: original.splitTarget, rows: R };
+            const layout = this.device.createPipelineLayout({ bindGroupLayouts: [original.layout] });
+            const reduceLayout = this.device.createPipelineLayout({ bindGroupLayouts: [original.reduceLayout] });
+            const [matrix, reducer] = await Promise.all([
+              pipeline(this.device, this.wgsl(`${original.kernel}_gemma_source`, { ...spec, row56 }), "Qwen final-row matrix", layout),
+              pipeline(this.device, this.wgsl("reduce_gemma_source", spec), "Qwen final-row reduce", reduceLayout),
+            ]);
+            const mm = [], reduce = [];
+            mm[R] = matrix; reduce[R] = reducer;
+            return { ...original, mm, reduce, mm56: row56 ? matrix : null };
+          });
+          this.finalRowPipelines.set(key, pipes);
+        } catch (error) {
+          const reason = `source-pipeline-unavailable: ${String(error?.message || error)}`;
+          this.finalRowPipelineErrors.set(key, reason);
+          this.lastFinalRows = { ...this.lastFinalRows, active: false, reason };
+          return false;
+        } finally {
+          const elapsed = performance.now() - started;
+          this.finalRowCompileMs += elapsed;
+          this.lastFinalRows.pipelineCompileMs = (this.lastFinalRows.pipelineCompileMs || 0) + elapsed;
+        }
+      }
+      op.finalPipes = this.finalRowPipelines.get(key);
+    }
+    return true;
+  }
+
+  encode(enc, ops, T, S, sourceT = T, stage = "branch") {
+    const prof = this.profiler;
+    let pass = prof ? null : enc.beginComputePass();
+    for (const op of ops) {
+      if (prof) pass = prof.pass(enc, op.label || op.k);
+      pass.setBindGroup(0, op.group);
+      switch (op.k) {
+        case "mm": {
+          if (op.finalRows) {
+            encodeFinalRowMatmul(pass, op.finalPipes, op, T, sourceT);
+            break;
+          }
+          const tuning = this.precisionTuning.get(op.dtype);
+          const matvec = this.precisionMatvec.get(op.dtype);
+          if (stage === "prefill" && this.q8SwiGluTrialEnabled && this.q8SwiGlu && this.q8SwiGluMode !== "off" && op.q8SwiGluLayer !== undefined) {
+            const selected = this.gpuKernel === "auto" ? selectedMatmulKernel(tuning?.selection, op.N, op.K, T) : this.gpuKernel;
+            const kernel = tuning?.pipelines[selected] ? selected : "generic";
+            const candidate = kevQ8SwiGluEligible({
+              enabled: true,
+              profiler: this.profiler,
+              mode: this.q8SwiGluMode,
+              stage,
+              tokens: T,
+              expectedTokens: this.q8SwiGluActivePermit?.T1,
+              plannedLayers: this.q8SwiGluActivePermit?.plannedLayers,
+              matvecSelected: this.gpuKernel === "auto" && T === 1 && matvec?.selection.has(`${op.N}:${op.K}`),
+              op,
+              cfg: this.cfg,
+              baseline: kernel,
+              tuning: tuning?.pipelines[kernel],
+            });
+            if (candidate) {
+              this.q8SwiGluStats.eligiblePrefillGateUps++;
+              this.q8SwiGluPending = { mode: this.q8SwiGluMode, op, tokens: T };
+              if (this.q8SwiGluMode === "candidate") {
+                pass.setPipeline(this.q8SwiGlu.matmul);
+                pass.setBindGroup(0, op.q8SwiGluGroup);
+                pass.dispatchWorkgroups(Math.ceil(this.cfg.intermediate / 64), Math.ceil(T / 64), 1);
+                this.q8SwiGluStats.fusedDispatches++;
+                this.q8SwiGluStats.fusedActivationLayers.push(op.q8SwiGluLayer);
+                break;
+              }
+            }
+          }
+          if (this.gpuKernel === "auto" && T === 1 && matvec?.selection.has(`${op.N}:${op.K}`)) {
+            encodeMatvec(pass, matvec.pipelines, op, T);
+          } else {
+            const selected = this.gpuKernel === "auto" ? selectedMatmulKernel(tuning?.selection, op.N, op.K, T) : this.gpuKernel;
+            const kernel = tuning?.pipelines[selected] ? selected : "generic";
+            encodeMatmul(pass, tuning?.pipelines[kernel] || op.pipes, op, T);
+          }
+          break;
+        }
+        case "rms":
+          pass.setPipeline(this.p.RMS);
+          pass.dispatchWorkgroups(T);
+          break;
+        case "gates":
+          pass.setPipeline(this.p.GATES);
+          pass.dispatchWorkgroups(T);
+          break;
+        case "conv":
+          pass.setPipeline(this.p.CONV);
+          pass.dispatchWorkgroups(T, this.dims.linear / 256);
+          break;
+        case "savetail":
+          pass.setPipeline(this.p.SAVE_TAIL);
+          pass.dispatchWorkgroups(S, (3 * this.dims.linear) / 256);
+          break;
+        case "recur":
+          pass.setPipeline(this.p.RECUR);
+          pass.dispatchWorkgroups(S, this.cfg.lin_heads, this.recurTiles);
+          break;
+        case "gnorm":
+          pass.setPipeline(this.p.GNORM);
+          pass.dispatchWorkgroups(T, this.cfg.lin_heads);
+          break;
+        case "aprep":
+          pass.setPipeline(this.p.APREP);
+          pass.dispatchWorkgroups(T, this.cfg.heads + this.cfg.kv_heads);
+          break;
+        case "savekv":
+          pass.setPipeline(this.p.SAVE_KV);
+          pass.dispatchWorkgroups(T, this.dims.kv / 256);
+          break;
+        case "keys":
+          pass.setPipeline(this.p.KEYS);
+          pass.dispatchWorkgroups(Math.ceil(T / 16), this.dims.kv / 32);
+          break;
+        case "attn":
+          pass.setPipeline(this.p.ATTN);
+          // tiled: at most one partial block per segment beyond T / 8 full ones; spares return at once
+          if (this.attnTile) pass.dispatchWorkgroups(Math.ceil(T / 8) + S, this.cfg.kv_heads);
+          else pass.dispatchWorkgroups(T, this.cfg.heads);
+          break;
+        case "silumul": {
+          const pending = this.q8SwiGluPending;
+          if (pending && (pending.tokens !== T || pending.op.q8SwiGluLayer !== op.q8SwiGluLayer || op.I !== this.cfg.intermediate)) {
+            throw new Error("Q8 SwiGLU permitted gate_up dispatch did not reach its matching SiLU operation");
+          }
+          if (pending?.mode === "candidate") {
+            this.q8SwiGluStats.skippedSilumul++;
+            this.q8SwiGluStats.skippedSilumulLayers.push(pending.op.q8SwiGluLayer);
+            this.q8SwiGluPending = null;
+            break;
+          }
+          pass.setPipeline(this.p.SILUMUL);
+          const n = Math.ceil((T * op.I) / 256);
+          pass.dispatchWorkgroups(Math.min(n, 65535), Math.ceil(n / 65535));
+          if (pending?.mode === "verify" && pending.tokens === T && pending.op.q8SwiGluLayer === op.q8SwiGluLayer && op.I === this.cfg.intermediate) {
+            pass.setPipeline(this.q8SwiGlu.fill);
+            pass.setBindGroup(0, pending.op.q8SwiGluFillGroup);
+            const fillWork = Math.ceil(T * op.I / 256);
+            pass.dispatchWorkgroups(Math.min(fillWork, 65535), Math.ceil(fillWork / 65535));
+            this.q8SwiGluStats.shadowFillDispatches++;
+            pass.setPipeline(this.q8SwiGlu.matmul);
+            pass.setBindGroup(0, pending.op.q8SwiGluVerifyGroup);
+            pass.dispatchWorkgroups(Math.ceil(this.cfg.intermediate / 64), Math.ceil(T / 64), 1);
+            pass.setPipeline(this.q8SwiGlu.compare);
+            pass.setBindGroup(0, pending.op.q8SwiGluCompareGroup);
+            const work = Math.max(T * op.I, KEV_Q8_SWIGLU_GUARD_WORDS);
+            pass.dispatchWorkgroups(Math.min(Math.ceil(work / 256), 65535), Math.ceil(Math.ceil(work / 256) / 65535));
+            this.q8SwiGluStats.verifyDispatches++;
+            this.q8SwiGluStats.verifiedLayers++;
+            this.q8SwiGluStats.verifiedActivationLayers.push(pending.op.q8SwiGluLayer);
+          }
+          this.q8SwiGluPending = null;
+          break;
+        }
+        case "gather":
+          pass.setPipeline(this.p.GATHER);
+          pass.dispatchWorkgroups(this.R);
+          break;
+      }
+      if (prof) {
+        pass.end();
+        pass = null;
+      }
+    }
+    pass?.end();
+  }
+
+  /**
+   * Runs both stages. `x1` is the embedded states or a synchronous provider called only when
+   * the cache plan needs state rows; `x2` is the embedded branches. `batch` is the table from
+   * `kevala_kev_prepare`. Resolves to the pointer rows (`rows * hidden` f32).
+   */
+  async forward(x1, x2, batch, ids) {
+    try {
+      return await this.forwardPass(x1, x2, batch, ids);
+    } catch (e) {
+      // A partial or rejected pass may leave both new and retained carries invalid.
+      this.lru = [];
+      throw e;
+    } finally {
+      this.q8SwiGluPending = null;
+      this.q8SwiGluActivePermit = null;
+    }
+  }
+
+  async forwardPass(x1, x2, batch, ids) {
+    const d = this.device;
+    const D = this.cfg.hidden;
+    const { T2, branches, rows } = batch;
+    const requestedSwiGluMode = this.gpu.kevalaQ8SwiGluMode || "off";
+    const permit = this.gpu.kevalaQ8SwiGluPermit || null;
+    this.gpu.kevalaQ8SwiGluPermit = null;
+    const requestHash = this.gpu.kevalaQ8SwiGluCurrentRequestHash || null;
+    const permitMode = ["verify", "candidate"].includes(requestedSwiGluMode) && permit?.mode === requestedSwiGluMode &&
+      typeof requestHash === "string" && permit.requestHash === requestHash;
+    this.q8SwiGluMode = this.q8SwiGluTrialEnabled && this.q8SwiGlu && !this.profiler &&
+      (requestedSwiGluMode === "off" || permitMode) ? requestedSwiGluMode : "off";
+    this.q8SwiGluActivePermit = permitMode ? permit : null;
+    this.q8SwiGluStats = {
+      requestedMode: requestedSwiGluMode,
+      effectiveMode: this.q8SwiGluMode,
+      enabled: !!this.q8SwiGlu,
+      permitState: requestedSwiGluMode === "off" ? "not-required" : permitMode ? "consumed" : permit ? "rejected" : "absent",
+      permitRejection: requestedSwiGluMode === "off" || permitMode ? null : permit ? "mode-or-request-hash-mismatch" : "one-shot-permit-absent",
+      eligiblePrefillGateUps: 0,
+      fusedDispatches: 0,
+      verifyDispatches: 0,
+      skippedSilumul: 0,
+      skippedSilumulLayers: [],
+      verifiedLayers: 0,
+      fusedActivationLayers: [],
+      verifiedActivationLayers: [],
+      expectedActivationLayers: [],
+      unexecutedActivationLayers: [],
+      shadowFillDispatches: 0,
+      activationChecks: null,
+    };
+    this.gpu.kevalaQ8SwiGluStats = this.q8SwiGluStats;
+    this.q8SwiGluPending = null;
+    const rowInput = x2?.table ? x2 : null;
+    const B = branches.length;
+    this.R = rows.length;
+    const cacheSlots = this.stateCacheEnabled === false ? 0 : CACHE_SLOTS;
+    // size carries for the worst case first: growing them drops the cache, and the plan must
+    // only reference slots that will still hold their data
+    d.pushErrorScope("validation");
+    d.pushErrorScope("out-of-memory");
+    let plan, P, T1, setupError;
+    try {
+      this.ensureCarries(batch.T1 ? cacheSlots + batch.states.length : 1, batch.T1 ? cacheSlots * SLOT_ROWS + batch.T1 : 16);
+      plan = this.plan(batch, ids);
+      P = plan.segs.length;
+      T1 = plan.segs.reduce((a, g) => a + g.len, 0);
+      this.ensure(T1, T2, Math.max(P, 1), Math.max(P, B), rows.length);
+      if (rowInput) this.prepareRowInput(rowInput);
+    } catch (e) {
+      setupError = e;
+    }
+    const oom = await d.popErrorScope();
+    const setup = await d.popErrorScope();
+    if (setupError || oom || setup) {
+      this.resetDynamicBuffers();
+      throw setupError || Object.assign(new Error(`WebGPU setup: ${(oom || setup).message}`), { code: "WEBGPU_INIT" });
+    }
+    const plannedOps = (this.ops?.[0] || []).filter((op) => {
+      const tuning = this.precisionTuning.get(op.dtype);
+      const matvec = this.precisionMatvec.get(op.dtype);
+      const selected = this.gpuKernel === "auto" ? selectedMatmulKernel(tuning?.selection, op.N, op.K, T1) : this.gpuKernel;
+      const kernel = tuning?.pipelines[selected] ? selected : "generic";
+      return kevQ8SwiGluEligible({
+        enabled: this.q8SwiGluTrialEnabled && !!this.q8SwiGlu,
+        profiler: this.profiler,
+        mode: "verify",
+        stage: "prefill",
+        tokens: T1,
+        expectedTokens: T1,
+        matvecSelected: this.gpuKernel === "auto" && T1 === 1 && matvec?.selection.has(`${op.N}:${op.K}`),
+        op,
+        cfg: this.cfg,
+        baseline: kernel,
+        tuning: tuning?.pipelines[kernel],
+      });
+    });
+    const plannedLayers = plannedOps.map((op) => op.q8SwiGluLayer);
+    const uniquePlannedLayers = new Set(plannedLayers);
+    const plannedSetValid = plannedLayers.length > 0 && uniquePlannedLayers.size === plannedLayers.length &&
+      plannedLayers.every((layer) => Number.isSafeInteger(layer) && layer >= 0 && layer < this.cfg.layers);
+    if (!plannedSetValid) plannedLayers.length = 0;
+    const expectedPermitLayers = permit?.plannedLayers;
+    const permitShapeMatches = permitMode && Number.isSafeInteger(permit.T1) && Number.isSafeInteger(permit.T2) &&
+      permit.T1 === T1 && permit.T2 === T2 && Array.isArray(expectedPermitLayers) &&
+      JSON.stringify(expectedPermitLayers) === JSON.stringify(plannedLayers) && plannedSetValid;
+    this.q8SwiGluActivePermit = permitShapeMatches ? permit : null;
+    if (requestedSwiGluMode !== "off" && !permitShapeMatches) {
+      this.q8SwiGluMode = "off";
+      this.q8SwiGluStats.permitState = permitMode ? "consumed-rejected" : this.q8SwiGluStats.permitState;
+      this.q8SwiGluStats.permitRejection = permitMode ? "planned-shape-or-prefill-layers-mismatch" : this.q8SwiGluStats.permitRejection;
+    }
+    this.q8SwiGluStats.effectiveMode = this.q8SwiGluMode;
+    this.q8SwiGluStats.stage1Tokens = T1;
+    this.q8SwiGluStats.stage2Tokens = T2;
+    this.q8SwiGluStats.plannedEligiblePrefillOps = plannedLayers.length;
+    this.q8SwiGluStats.expectedActivationLayers = [...plannedLayers];
+    this.q8SwiGluStats.unexecutedActivationLayers = Array.from({ length: this.cfg.layers }, (_, layer) => layer)
+      .filter((layer) => !uniquePlannedLayers.has(layer));
+    this.gpu.kevalaQ8SwiGluStats = this.q8SwiGluStats;
+    let finalRows = false;
+    if (this.finalRowsEnabled === false || !this.finalRows || T2 <= 64 || rows.length >= T2) {
+      this.lastFinalRows = { active: false, sourceRows: T2, scorerRows: rows.length,
+        reason: this.finalRowsEnabled === false || !this.finalRows ? "disabled" : rows.length >= T2 ? "all-rows" : "same-row-tiles" };
+    } else finalRows = await this.prepareFinalRows(T2, rows);
+    const q = d.queue;
+    this.q8SwiGluVerifyRequest = this.q8SwiGluMode === "verify" && this.q8SwiGluActivePermit?.T1 === T1;
+    if (this.q8SwiGluVerifyRequest) {
+      const words = new Uint32Array(KEV_Q8_SWIGLU_GUARD_WORDS).fill(KEV_Q8_SWIGLU_CANARY);
+      const status = kevQ8SwiGluStatusInit(this.cfg.layers);
+      const tail = KEV_Q8_SWIGLU_GUARD_BYTES + T1 * this.cfg.intermediate * 4;
+      q.writeBuffer(this.q8SwiGluStatus, 0, status);
+      q.writeBuffer(this.q8SwiGluVerifyOutput, 0, words);
+      q.writeBuffer(this.q8SwiGluVerifyOutput, tail, words);
+      for (const op of plannedOps) {
+        q.writeBuffer(op.q8SwiGluCompareParams, 0, new Uint32Array([T1, this.cfg.intermediate, op.q8SwiGluLayer, KEV_Q8_SWIGLU_GUARD_WORDS]));
+      }
+    }
+    // stage 1: the planned segments, their embedded rows gathered from the full state rows
+    let seg1, tok1, x1c;
+    if (T1 > 0) {
+      const stateRows = typeof x1 === "function" ? x1() : x1;
+      seg1 = new Uint32Array(this.cap.S * 8);
+      tok1 = new Uint32Array(T1 * 4);
+      x1c = new Float32Array(T1 * D);
+      let at = 0;
+      plan.segs.forEach((g, si) => {
+        seg1.set([at, g.len, g.parent, g.pstart, g.plen, g.dst, g.kvdst, 0], si * 8);
+        x1c.set(stateRows.subarray(g.src * D, (g.src + g.len) * D), at * D);
+        for (let r = 0; r < g.len; r++) tok1.set([si, r, g.pos0 + r, 0], (at + r) * 4);
+        at += g.len;
+      });
+    }
+    // stage 2: every branch continues its request's carry
+    const seg2 = new Uint32Array(this.cap.S * 8);
+    const tok2 = new Uint32Array(T2 * 4);
+    branches.forEach(([start, len, req], b) => {
+      const c = plan.carries[req];
+      // an empty state (a folded single-question row) has no carry to continue
+      seg2.set([start, len, c ? c.slot : 0xffffffff, c ? c.kvBase : 0, c ? c.len : 0, 0, 0, 0], b * 8);
+      for (let r = 0; r < len; r++) tok2.set([b, r, (c ? c.len : 0) + r, 0], (start + r) * 4);
+    });
+    // every pass runs in error scopes: a rejected command buffer must be an error, not the
+    // previous pass's rows read back
+    d.pushErrorScope("validation");
+    d.pushErrorScope("out-of-memory");
+    if (T1 > 0) {
+      q.writeBuffer(this.g, 0, new Uint32Array([T1, rows.length, P, 1]));
+      q.writeBuffer(this.x, 0, x1c);
+      q.writeBuffer(this.tok, 0, tok1);
+      q.writeBuffer(this.segs, 0, seg1);
+      if (this.attnTile) q.writeBuffer(this.ablocks, 0, attnBlocks(plan.segs.map((g) => g.len), this.blockCap));
+    }
+    q.writeBuffer(this.g2, 0, new Uint32Array([T2, rows.length, B, 2]));
+    if (finalRows) q.writeBuffer(this.finalG, 0, new Uint32Array([rows.length, T2, B, 2]));
+    if (!rowInput) q.writeBuffer(this.x2, 0, x2);
+    q.writeBuffer(this.tok2, 0, tok2);
+    q.writeBuffer(this.segs2, 0, seg2);
+    if (this.attnTile) {
+      q.writeBuffer(this.ablocks2, 0, attnBlocks(branches.map(([, len]) => len), this.blockCap));
+    }
+    q.writeBuffer(this.rows, 0, new Uint32Array(rows));
+    let enc = d.createCommandEncoder();
+    // long passes go out in chunks so the page keeps rendering (see YIELD_TOKENS)
+    const yieldable = !this.profiler && T1 + T2 > YIELD_TOKENS;
+    const flush = async () => {
+      enc = await endChunk(d, enc, this.submitMode);
+    };
+    // an extension starts from its parent's keys and values, copied next to its own (through a
+    // staging buffer: WebGPU copies cannot read and write the same buffer)
+    for (const cp of plan.copies) {
+      if (cp.from === cp.to || !cp.rows) continue;
+      for (const c of this.carry) {
+        if (!c.kv) continue;
+        const stride = this.dims.kv * 4;
+        enc.copyBufferToBuffer(c.kv, cp.from * stride, this.kvStage, 0, cp.rows * stride);
+        enc.copyBufferToBuffer(this.kvStage, 0, c.kv, cp.to * stride, cp.rows * stride);
+      }
+    }
+    if (T1 > 0) {
+      const parts = yieldable ? chunks(this.ops[0], Math.max(1, Math.round((YIELD_CHUNKS * T1) / (T1 + T2)))) : [this.ops[0]];
+      for (let i = 0; i < parts.length; i++) {
+        if (i) await flush();
+        this.encode(enc, parts[i], T1, P, T1, "prefill");
+      }
+      if (yieldable) await flush();
+    }
+    // switch the shared buffers over to stage 2
+    if (rowInput) this.encodeRowInput(enc, rowInput);
+    enc.copyBufferToBuffer(this.x2, 0, this.x, 0, T2 * D * 4);
+    enc.copyBufferToBuffer(this.tok2, 0, this.tok, 0, T2 * 16);
+    enc.copyBufferToBuffer(this.segs2, 0, this.segs, 0, this.cap.S * 32);
+    if (this.attnTile) enc.copyBufferToBuffer(this.ablocks2, 0, this.ablocks, 0, this.blockCap * 16);
+    enc.copyBufferToBuffer(this.g2, 0, this.g, 0, 16);
+    const branchOps = finalRows ? [...this.finalRows.prefix, this.finalRows.gather] : this.ops[1];
+    const parts2 = yieldable ? chunks(branchOps, Math.max(1, Math.round((YIELD_CHUNKS * T2) / (T1 + T2)))) : [branchOps];
+    for (let i = 0; i < parts2.length; i++) {
+      if (i) await flush();
+      this.encode(enc, parts2[i], T2, B);
+    }
+    if (finalRows) this.encode(enc, this.finalRows.tail, rows.length, B, T2);
+    this.profiler?.finish(enc);
+    const bytes = rows.length * D * 4;
+    enc.copyBufferToBuffer(this.gathered, 0, this.readback, 0, bytes);
+    const swiGluStatusBytes = this.cfg.layers * KEV_Q8_SWIGLU_LAYER_WORDS * 4;
+    if (this.q8SwiGluVerifyRequest) enc.copyBufferToBuffer(this.q8SwiGluStatus, 0, this.q8SwiGluStatusReadback, 0, swiGluStatusBytes);
+    q.submit([enc.finish()]);
+    if (this.profiler) this.lastProfile = await this.profiler.collect();
+    const [passOom, passInvalid] = [await d.popErrorScope(), await d.popErrorScope()];
+    if (passOom || passInvalid) throw Object.assign(new Error(`WebGPU: ${(passOom || passInvalid).message}`), { code: "WEBGPU_INIT" });
+    await this.readback.mapAsync(GPUMapMode.READ, 0, bytes);
+    const out = new Float32Array(this.readback.getMappedRange(0, bytes).slice(0));
+    this.readback.unmap();
+    if (this.q8SwiGluVerifyRequest) {
+      await this.q8SwiGluStatusReadback.mapAsync(GPUMapMode.READ, 0, swiGluStatusBytes);
+      const raw = new Uint32Array(this.q8SwiGluStatusReadback.getMappedRange(0, swiGluStatusBytes).slice(0));
+      this.q8SwiGluStatusReadback.unmap();
+      const expected = new Set(this.q8SwiGluStats.expectedActivationLayers);
+      const verified = [...this.q8SwiGluStats.verifiedActivationLayers].sort((a, b) => a - b);
+      const expectedSorted = [...expected].sort((a, b) => a - b);
+      const exactLayerSet = JSON.stringify(verified) === JSON.stringify(expectedSorted);
+      const activeElements = T1 * this.cfg.intermediate;
+      this.q8SwiGluStats.activationChecks = Array.from({ length: this.cfg.layers }, (_, layer) => {
+        const at = layer * KEV_Q8_SWIGLU_LAYER_WORDS;
+        const planned = expected.has(layer);
+        return {
+          layer,
+          status: !planned ? "not-planned-in-prefill" : this.q8SwiGluStats.verifiedActivationLayers.includes(layer) ? "compared" : "not-compared",
+          mismatches: planned ? raw[at] : null,
+          nonFinite: planned ? raw[at + 1] : null,
+          canaryPairsChanged: planned ? raw[at + 2] : null,
+          firstMismatch: planned ? (raw[at + 3] === 0xffffffff ? null : raw[at + 3]) : null,
+          comparedElements: planned ? raw[at + 4] : null,
+          guardComparisons: planned ? raw[at + 5] : null,
+        };
+      });
+      const plannedChecks = this.q8SwiGluStats.activationChecks.filter((check) => expected.has(check.layer));
+      const expectedGuardComparisons = 2 * KEV_Q8_SWIGLU_GUARD_WORDS;
+      this.q8SwiGluStats.activationExact = expected.size > 0 && plannedChecks.length === expected.size && exactLayerSet &&
+        this.q8SwiGluStats.verifyDispatches === expected.size && this.q8SwiGluStats.verifiedLayers === expected.size &&
+        this.q8SwiGluStats.shadowFillDispatches === expected.size &&
+        plannedChecks.every((check) => check.status === "compared" && check.mismatches === 0 && check.nonFinite === 0 &&
+          check.canaryPairsChanged === 0 && check.comparedElements === activeElements && check.guardComparisons === expectedGuardComparisons);
+    }
+    return out;
+  }
+}
+
+/** Parses the table `kevala_kev_prepare` writes. */
+export function parseKevBatch(u) {
+  let i = 0;
+  const R = u[i++];
+  const T1 = u[i++];
+  const T2 = u[i++];
+  const n = u[i++];
+  const states = [];
+  for (let r = 0; r < R; r++) states.push([u[i++], u[i++]]);
+  const B = u[i++];
+  const branches = [];
+  for (let b = 0; b < B; b++) branches.push([u[i++], u[i++], u[i++]]);
+  const rows = Array.from(u.subarray(i, i + n));
+  return { R, T1, T2, states, branches, rows };
+}
+
+export function kevConfig(header) {
+  const c = header.config;
+  if (c.head_dim !== 256 || c.linear_key_head_dim !== 128 || c.linear_value_head_dim !== 128 || c.linear_conv_kernel_dim !== 4) {
+    throw new Error("Qwen WebGPU requires 256-wide attention heads, 128-wide linear heads, and a four-token convolution");
+  }
+  return {
+    hidden: c.hidden_size,
+    layers: c.layer_types.length,
+    full: c.layer_types.map((t) => t === "full_attention"),
+    intermediate: c.intermediate_size,
+    eps: c.rms_norm_eps,
+    rope_theta: c.rope_theta,
+    rotary: c.rotary_dim,
+    heads: c.num_attention_heads,
+    kv_heads: c.num_key_value_heads,
+    lin_key_heads: c.linear_num_key_heads,
+    lin_heads: c.linear_num_value_heads,
+    max_state: c.max_state,
+    max_branch: c.max_branch,
+  };
+}

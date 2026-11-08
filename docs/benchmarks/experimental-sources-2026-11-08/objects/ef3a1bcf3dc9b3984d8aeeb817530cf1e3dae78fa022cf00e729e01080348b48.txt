@@ -1,0 +1,29 @@
+use std::{env, process::Command};
+
+fn main() {
+    println!("cargo:rustc-check-cfg=cfg(kevala_avx512_intrinsics)");
+    println!("cargo:rerun-if-env-changed=RUSTC");
+    println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
+    if env::var("CARGO_CFG_TARGET_ARCH").as_deref() != Ok("x86_64") {
+        return;
+    }
+    let Some(rustc) = env::var_os("RUSTC") else { return };
+    let Ok(output) = Command::new(rustc).arg("--version").output() else { return };
+    if !output.status.success() {
+        return;
+    }
+    let Ok(version) = std::str::from_utf8(&output.stdout) else { return };
+    let mut words = version.split_whitespace();
+    if words.next() != Some("rustc") {
+        return;
+    }
+    let Some(version) = words.next() else { return };
+    let mut parts = version.split('.');
+    let Some(major) = parts.next().and_then(|part| part.parse::<u32>().ok()) else { return };
+    let Some(minor) = parts.next().and_then(|part| part.parse::<u32>().ok()) else { return };
+    // Reject prereleases as well as malformed versions: early 1.89 nightlies lack these APIs.
+    let Some(_) = parts.next().and_then(|part| part.parse::<u32>().ok()) else { return };
+    if parts.next().is_none() && (major, minor) >= (1, 89) {
+        println!("cargo:rustc-cfg=kevala_avx512_intrinsics");
+    }
+}

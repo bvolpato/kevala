@@ -1,0 +1,49 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { q8GlobalInventoryDue, q8KnownChildSample } from "../lib/q8-monitor-cadence.mjs";
+
+test("active scope and known-PID samples do not trigger full host scans at the fast cadence", () => {
+  const scopeReads = [];
+  const knownPidReads = [];
+  const fullProcessGroupScans = [];
+  let lastFullScan = null;
+
+  for (let nowMs = 0; nowMs <= 10_000; nowMs += 1_000) {
+    scopeReads.push(nowMs);
+    knownPidReads.push(nowMs);
+    if (q8GlobalInventoryDue(nowMs, lastFullScan, 5_000)) {
+      fullProcessGroupScans.push(nowMs);
+      lastFullScan = nowMs;
+    }
+  }
+
+  assert.deepEqual(scopeReads, [0, 1_000, 2_000, 3_000, 4_000, 5_000, 6_000, 7_000, 8_000, 9_000, 10_000]);
+  assert.deepEqual(knownPidReads, scopeReads);
+  assert.deepEqual(fullProcessGroupScans, [0, 5_000, 10_000]);
+  assert.equal(fullProcessGroupScans.length, 3);
+});
+
+test("global inventory cadence rejects invalid intervals and clock values", () => {
+  assert.throws(() => q8GlobalInventoryDue(1_000, null, 0), /positive interval/);
+  assert.throws(() => q8GlobalInventoryDue(Number.NaN, null, 5_000), /finite monotonic milliseconds/);
+});
+
+test("a known same-identity child outside the exact scope fails with identity evidence", () => {
+  const known = { pid: 41, startTicks: "500", cgroup: "0::/user.slice/kevala-q8.scope" };
+  const current = { ...known, cgroup: "0::/user.slice/other.scope" };
+
+  assert.throws(() => q8KnownChildSample(known, current, known.cgroup), (error) => {
+    assert.match(error.message, /PID 41 escaped its exact cgroup/);
+    assert.deepEqual(error.scopeMonitorEvidence, {
+      pid: 41,
+      startTicks: "500",
+      expectedCgroup: known.cgroup,
+      previousCgroup: known.cgroup,
+      observedCgroup: current.cgroup,
+    });
+    return true;
+  });
+  assert.equal(q8KnownChildSample(known, { ...known }, known.cgroup).pid, 41);
+  assert.equal(q8KnownChildSample(known, { ...known, startTicks: "501" }, known.cgroup), null);
+  assert.equal(q8KnownChildSample(known, null, known.cgroup), null);
+});

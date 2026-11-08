@@ -1,0 +1,21 @@
+//! Additive development-only capture descriptor. No overrides or asynchronous head ABI.
+use super::{done, family, st};
+use kevala::clef::ClefEngine;
+
+pub(super) fn reset() {
+    if let Ok(engine) = family::<ClefEngine>("a clef model") {
+        engine.head.probe_reset_capture();
+    }
+}
+/// Writes read-only f32 RAM pointers and shapes through the usual output bytes.
+/// Read the normal finish response before calling this export. The captured buffers survive
+/// descriptor reads and are invalidated by prepare, any ABI error, another finish, or model load.
+/// Do not publish raw weight, activation, or logit arrays.
+#[no_mangle]
+pub extern "C" fn kevala_clef_probe_descriptor() -> u32 {
+    done((|| {
+        let descriptor = family::<ClefEngine>("a clef model")?.head.probe_descriptor()?;
+        st().out = descriptor.to_json().into_bytes();
+        Ok(())
+    })())
+}

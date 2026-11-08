@@ -1,0 +1,75 @@
+{
+  "schema": "private-integer-matrix-operator-controller-v1",
+  "baseCommit": "7a6de58b74d2ad9e452e8ca317d84f4b83abfe86",
+  "scope": "One standalone synthetic Laya M512 N5248 K1024 operator experiment; no model/request integration or production promotion.",
+  "pageObject": "window.gpuBench",
+  "navigation": {
+    "default": "idle with zero adapter/device calls",
+    "physical": "exact ?run=1",
+    "sourceSmoke": "exact ?smoke=1; terminal source-ready with no GPU work",
+    "controllerAcceptsPhysicalQueryOnly": true
+  },
+  "pageStates": ["booting", "idle", "source-ready", "running", "done", "error"],
+  "terminal": {
+    "predicate": "window.gpuBench.done === true",
+    "successStatus": "done",
+    "failureStatus": "error",
+    "sourceReadyIsNotOperatorCompletion": true,
+    "cleanupMustCompleteBeforeDone": true,
+    "performanceWinIsNotRequiredForCompletedMeasurement": true
+  },
+  "requiredResultSections": ["done", "status", "phase", "sourceIdentities", "capabilities", "packingGate", "fixtures", "warmups", "timing", "cleanup", "errors"],
+  "device": {
+    "features": ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"],
+    "shaderF16": false,
+    "requiredLimits": {},
+    "subgroupMinSize": 32,
+    "subgroupMaxSize": 32,
+    "matrixConfig": { "componentType": "i8", "resultComponentType": "i32", "M": 16, "N": 16, "K": 32 }
+  },
+  "baseline": {
+    "source": "Frozen actual production gpu.wgsl emission; no runtime or WASM load.",
+    "matmulSha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+    "reducerSha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"
+  },
+  "correctness": {
+    "fixtureIds": ["integer", "dyadic", "fractional", "cancellation"],
+    "fixtureCount": 4,
+    "inputIdentities": { "XBytes": 2097152, "WBytes": 5373952, "SBytes": 671744, "digest": "Retain a complete 64-hex SHA256 for each full fixture input; no payload arrays are returned." },
+    "exactFixtures": ["integer", "dyadic"],
+    "otherFixturesTolerance": { "absolute": 0.0005, "relative": 0.0001 },
+    "statusWordNames": ["outputs", "mismatches", "referenceNonfinite", "candidateNonfinite", "quantValues", "quantBlocks", "quantFailures", "canaries", "canaryFailures"],
+    "requiredStatusWords": [2686976, 0, 0, 0, 524288, 16384, 0, 512, 0],
+    "scope": "All logical outputs, finite values, quantized values/blocks and canaries checked outside timestamps for every complete validation/sample. Actual GPU status words are retained; CPU constants alone do not prove coverage.",
+    "packingPrerequisite": "All256 signed-i8/i32 outputs and128 canaries must pass the reviewed K1024-stride gate before full-size work.",
+    "failure": "Retain terminal error and all partial rows; no exclusion, fabricated completed result or tolerance change."
+  },
+  "timing": {
+    "fixture": "fractional",
+    "warmupsPerLane": 3,
+    "warmupRows": 6,
+    "invocationsPerSample": 16,
+    "baselinePassesPerSample": 16,
+    "candidatePassesPerSample": 32,
+    "aaQuartets": 9,
+    "pairedQuartets": 9,
+    "timedRows": 72,
+    "orders": ["ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA", "BAAB", "ABBA"],
+    "aa": "Both labels execute the same production baseline; retain all36 rows.",
+    "paired": "A is the production baseline; B includes quantization plus integer matrix on every invocation, with no cached preprocessing; retain all36 rows.",
+    "span": "One timestamp at first pass beginning and one at last pass end, including all intervening candidate preprocessing and pass gaps. Resolve/read after completion.",
+    "forbidden": ["adaptive repetition counts", "dropped rows", "sample retries", "omitted preprocessing", "summed disjoint timestamp spans", "model/request speedup claims"],
+    "summary": "Preserve every raw row and ratio, AA spread, ABBA/BAAB results and fixed >=5% median/beyond-AA acceptance assessment; a nonwinning outcome remains a completed measurement."
+  },
+  "cleanup": {
+    "required": ["buffersCreated", "buffersDestroyed", "querySetsCreated", "querySetsDestroyed", "deviceDestroyed"],
+    "gates": "Nonnegative integer created/destroyed counts must match, all maps must close and deviceDestroyed must be true before terminal completion."
+  },
+  "boundary": {
+    "lifecycle": "Reuse the reviewed actual Node-owned canonical inherited FD, 32/40/4 GiB scope, private Service.env bus and PID/start/cgroup/stdio cleanup.",
+    "deadlines": { "pageSeconds": 180, "childSeconds": 210, "externalSeconds": 240, "externalKillAfterSeconds": 15 },
+    "limits": { "pageJsonBytes": 524288, "runnerJsonBytes": 16777216, "controllerJsonBytes": 4194304, "runnerLogBytes": 1048576, "chromeLogsBytes": 33554432 },
+    "sources": "Serve only frozen whitelisted page/module/protocol/WGSL assets. Record exact byte sizes and hashes before and after capture.",
+    "physicalExecution": "Separate root review and execution grant required; no Chrome executable, model or WASM reads during source preparation."
+  }
+}

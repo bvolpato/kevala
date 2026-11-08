@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Private Clef shape matmul comparison</title>
+<style>
+body { font: 14px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: #0b0d10; color: #d7dde5; margin: 2rem; }
+button { font: inherit; background: #161b22; color: inherit; border: 1px solid #30363d; padding: 4px 8px; border-radius: 6px; }
+</style>
+</head>
+<body>
+<h1>Private Clef shape matmul comparison</h1>
+<button id="run">run fixed protocol</button>
+<pre id="log"></pre>
+<script>
+(() => {
+  window.bench = { done: false, status: "loading", phase: "module-load" };
+  const publishFailure = (value, phase) => {
+    if (window.bench?.done === true) return;
+    let message;
+    try { message = String(value?.message || value || "page module failed"); }
+    catch { message = "page module failed with an unreadable error"; }
+    window.bench = { ...window.bench, done: true, status: "failed", phase: window.bench?.phase || phase, error: message.slice(0, 1024) };
+  };
+  window.addEventListener("error", (event) => {
+    const target = event.target;
+    if (target !== window) {
+      if (target?.tagName === "SCRIPT" && target.type === "module") publishFailure(`Module script failed to load: ${target.getAttribute("src") || "inline module"}`, "module-load");
+      return;
+    }
+    if (event instanceof ErrorEvent) publishFailure(event.message || event.error, "module-runtime");
+  }, true);
+  window.addEventListener("unhandledrejection", (event) => publishFailure(event.reason, "module-runtime"));
+})();
+</script>
+<script type="module" src="./scripts/private/clef-shape-matmul-page.mjs"></script>
+</body>
+</html>

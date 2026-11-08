@@ -1,0 +1,127 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Private subgroup matrix capability and compilation</title>
+<script type="module">
+const MATRIX = "chromium-experimental-subgroup-matrix";
+const result = window.subgroupMatrixProbe = { status: "running", done: false, scope: "capability-and-compilation-only" };
+const text = (value, maximum = 512) => typeof value === "string" ? value.slice(0, maximum) : null;
+const flag = (value) => typeof value === "boolean" ? value : null;
+const uint = (value) => Number.isSafeInteger(value) && value >= 0 ? value : null;
+const errorInfo = (error) => ({ name: text(error?.name, 128), message: text(String(error?.message || error), 2048) });
+function features(set) {
+  const names = [...set].sort();
+  if (names.length > 128 || names.some((name) => typeof name !== "string" || name.length > 128)) throw new Error("Feature metadata exceeded its bound");
+  return names;
+}
+function limits(value) {
+  return Object.fromEntries(["maxComputeInvocationsPerWorkgroup", "maxComputeWorkgroupSizeX", "maxComputeWorkgroupSizeY", "maxComputeWorkgroupSizeZ", "maxComputeWorkgroupStorageSize", "maxStorageBufferBindingSize", "maxBufferSize"].map((name) => [name, uint(value[name])]));
+}
+function configs(info) {
+  if (info.subgroupMatrixConfigs === undefined) return { exposed: false, entries: [] };
+  const entries = [...info.subgroupMatrixConfigs];
+  if (entries.length > 128) throw new Error("Subgroup matrix configuration count exceeded 128");
+  return { exposed: true, entries: entries.map((entry) => {
+    const value = { componentType: text(entry.componentType, 32), resultComponentType: text(entry.resultComponentType, 32), M: uint(entry.M), N: uint(entry.N), K: uint(entry.K) };
+    if ([value.M, value.N, value.K].some((size) => size === null || size === 0 || size > 0xffffffff)) throw new Error("Subgroup matrix dimensions are not bounded positive u32 values");
+    return value;
+  }) };
+}
+async function compile(device, config, workgroupSize) {
+  const { M, N, K } = config;
+  const wgsl = `enable chromium_experimental_subgroup_matrix;
+enable subgroups;
+const M = ${M};
+const N = ${N};
+const K = ${K};
+alias LeftType = subgroup_matrix_left<f32, K, M>;
+alias RightType = subgroup_matrix_right<f32, N, K>;
+@group(0) @binding(0) var<storage, read> lhs_input: array<f32, M * K>;
+@group(0) @binding(1) var<storage, read> rhs_input: array<f32, K * N>;
+@group(0) @binding(2) var<storage, read_write> output: array<f32, M * N>;
+@compute @workgroup_size(${workgroupSize})
+fn main() {
+  let lhs = subgroupMatrixLoad<LeftType, row_major>(&lhs_input, 0, K);
+  let rhs = subgroupMatrixLoad<RightType, row_major>(&rhs_input, 0, N);
+  let product = subgroupMatrixMultiply<f32>(lhs, rhs);
+  subgroupMatrixStore<row_major>(&output, 0, product, N);
+}
+`;
+  const outcome = { status: "pending", selectedConfig: config, workgroupSize: [workgroupSize, 1, 1], wgsl, pipelineCreated: false, diagnostics: null };
+  let scopeOpen = false;
+  try {
+    device.pushErrorScope("validation"); scopeOpen = true;
+    const module = device.createShaderModule({ label: "private-f32-subgroup-matrix-compile-only", code: wgsl });
+    const info = await module.getCompilationInfo();
+    const messages = [...info.messages];
+    outcome.diagnostics = { totalMessages: messages.length, truncated: messages.length > 16, messages: messages.slice(0, 16).map((entry) => ({
+      type: text(entry.type, 32), message: text(entry.message, 256), lineNum: uint(entry.lineNum), linePos: uint(entry.linePos), offset: uint(entry.offset), length: uint(entry.length),
+    })) };
+    const moduleError = await device.popErrorScope(); scopeOpen = false;
+    outcome.moduleValidationError = moduleError ? errorInfo(moduleError) : null;
+    if (moduleError || messages.some((entry) => entry.type === "error")) {
+      outcome.status = "failed"; outcome.stage = "shader-module";
+      return outcome;
+    }
+    device.pushErrorScope("validation"); scopeOpen = true;
+    try {
+      const pipeline = await device.createComputePipelineAsync({ label: "private-f32-subgroup-matrix-compile-only", layout: "auto", compute: { module, entryPoint: "main" } });
+      outcome.pipelineCreated = Boolean(pipeline);
+    } catch (error) { outcome.error = errorInfo(error); }
+    const pipelineError = await device.popErrorScope(); scopeOpen = false;
+    outcome.pipelineValidationError = pipelineError ? errorInfo(pipelineError) : null;
+    outcome.status = outcome.pipelineCreated && !outcome.error && !pipelineError ? "pipeline-created" : "failed";
+    outcome.stage = "compute-pipeline";
+  } catch (error) {
+    outcome.status = "failed"; outcome.error = errorInfo(error);
+  } finally {
+    if (scopeOpen) {
+      try { const error = await device.popErrorScope(); outcome.cleanupValidationError = error ? errorInfo(error) : null; }
+      catch (error) { outcome.errorScopeCleanupError = errorInfo(error); outcome.status = "failed"; }
+    }
+  }
+  return outcome;
+}
+let device;
+try {
+  if (!navigator.gpu) throw new Error("navigator.gpu is missing");
+  result.adapterRequests = { highPerformanceReturnedNull: null, defaultFallbackRequested: false, defaultFallbackReturnedAdapter: null, defaultFallbackReturnedNull: null };
+  let adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+  result.adapterRequests.highPerformanceReturnedNull = adapter === null;
+  if (!adapter) {
+    result.adapterRequests.defaultFallbackRequested = true;
+    adapter = await navigator.gpu.requestAdapter();
+    result.adapterRequests.defaultFallbackReturnedAdapter = Boolean(adapter);
+    result.adapterRequests.defaultFallbackReturnedNull = adapter === null;
+  }
+  if (!adapter) throw new Error("No WebGPU adapter after high-performance and default requests");
+  const info = adapter.info || {};
+  const fallbackFlags = { adapterInfo: flag(info.isFallbackAdapter), adapter: flag(adapter.isFallbackAdapter) };
+  const observed = Object.values(fallbackFlags).filter((value) => value !== null);
+  const isFallbackAdapter = observed.length && observed.every((value) => value === observed[0]) ? observed[0] : null;
+  result.adapter = { info: { vendor: text(info.vendor), architecture: text(info.architecture), device: text(info.device), description: text(info.description), subgroupMinSize: uint(info.subgroupMinSize), subgroupMaxSize: uint(info.subgroupMaxSize) },
+    features: features(adapter.features), fallbackFlags, isFallbackAdapter, limits: limits(adapter.limits), subgroupMatrixConfigs: configs(info) };
+  result.identity = { nvidia: /nvidia/i.test([info.vendor, info.description].join(" ")), blackwell: /blackwell/i.test(info.architecture || ""), nonfallback: isFallbackAdapter === false };
+  if (!Object.values(result.identity).every(Boolean)) throw new Error("Expected NVIDIA Blackwell nonfallback adapter metadata was not established");
+  const requiredFeatures = ["subgroups", MATRIX].filter((name) => adapter.features.has(name));
+  result.deviceRequest = { requiredFeatures, requiredLimits: {}, shaderF16Requested: false };
+  try {
+    device = await adapter.requestDevice({ requiredFeatures });
+  } catch (error) { result.device = { status: "request-rejected", error: errorInfo(error), destroyed: null }; }
+  if (device) result.device = { status: "created", features: features(device.features), limits: limits(device.limits), destroyed: false };
+  const selected = result.adapter.subgroupMatrixConfigs.entries.find((entry) => entry.componentType === "f32" && entry.resultComponentType === "f32");
+  const width = result.adapter.info.subgroupMaxSize;
+  let skip = null;
+  if (!device) skip = "device-request-rejected";
+  else if (!device.features.has("subgroups") || !device.features.has(MATRIX)) skip = "required-subgroup-matrix-device-features-unavailable";
+  else if (!result.adapter.subgroupMatrixConfigs.exposed) skip = "subgroup-matrix-configs-not-exposed";
+  else if (!selected) skip = "no-advertised-f32-f32-configuration";
+  else if (!width || width > device.limits.maxComputeWorkgroupSizeX || width > device.limits.maxComputeInvocationsPerWorkgroup) skip = "subgroup-max-size-does-not-fit-device-workgroup-limits";
+  result.compilation = skip ? { status: "skipped", reason: skip, selectedConfig: selected || null } : await compile(device, selected, width);
+  result.status = "complete";
+} catch (error) {
+  result.status = "error"; result.error = String(error?.message || error).slice(0, 4096);
+} finally {
+  if (device) { device.destroy(); if (result.device) result.device.destroyed = true; }
+  result.done = true;
+}
+</script>

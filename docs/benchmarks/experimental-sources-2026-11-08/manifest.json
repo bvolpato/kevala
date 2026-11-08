@@ -1,0 +1,2687 @@
+{
+  "schema_version": 1,
+  "base_commit": "1d4780c118dafc362f6774d7b552227952217133",
+  "date": "2026-11-08",
+  "scope": "Text source and configuration changes from 27 surviving experimental worktrees and the existing interrupted stash. Exact bytes are deduplicated as inert text. Generated outputs, binaries, models and raw run captures are excluded. Original worktrees and stash are preserved.",
+  "validation_scope": "Integrity and syntax checks only for this archive. Historical validation notes retain their original limited scope; unknown statuses are not promoted to tested or optimized.",
+  "experiments": [
+    {
+      "id": "kevala-clef-real-projection-probe",
+      "base_commit": "13f13a02d192f0bbf11d5f63622a66a65a198315",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala-wasm/Cargo.toml",
+          "bytes": 414,
+          "sha256": "a948dcef160a009726f10f6ed657dce4d0e9d432d14ae968e1c851f85c61712f",
+          "object_path": "objects/a948dcef160a009726f10f6ed657dce4d0e9d432d14ae968e1c851f85c61712f.txt"
+        },
+        {
+          "path": "crates/kevala-wasm/src/lib.rs",
+          "bytes": 37577,
+          "sha256": "ceb3ab6b57119d99f13e8adbd73736a820055a72c39381ffc63494eb24827393",
+          "object_path": "objects/ceb3ab6b57119d99f13e8adbd73736a820055a72c39381ffc63494eb24827393.txt"
+        },
+        {
+          "path": "crates/kevala/Cargo.toml",
+          "bytes": 373,
+          "sha256": "d620bcdcf7250514c58f7436d611112625eeeb8ef2b76de08ab025298d7bce22",
+          "object_path": "objects/d620bcdcf7250514c58f7436d611112625eeeb8ef2b76de08ab025298d7bce22.txt"
+        },
+        {
+          "path": "crates/kevala/src/clef/head.rs",
+          "bytes": 25101,
+          "sha256": "b3f0116b85f43a45cdf3975a816fa6f69cd3a36ed8b4ee0a531aa54f16a54711",
+          "object_path": "objects/b3f0116b85f43a45cdf3975a816fa6f69cd3a36ed8b4ee0a531aa54f16a54711.txt"
+        },
+        {
+          "path": "crates/kevala-wasm/src/clef_projection_probe.rs",
+          "bytes": 878,
+          "sha256": "381596dd3eb85353d2cf2549726af2fb86c8a128f002a0354ff31ceed3f388d5",
+          "object_path": "objects/381596dd3eb85353d2cf2549726af2fb86c8a128f002a0354ff31ceed3f388d5.txt"
+        },
+        {
+          "path": "crates/kevala/src/clef/head/probe.rs",
+          "bytes": 11772,
+          "sha256": "e5ddb53b132ebd304e522fcdd649f30e066c50310cf103c3fc69d655f9be6ce7",
+          "object_path": "objects/e5ddb53b132ebd304e522fcdd649f30e066c50310cf103c3fc69d655f9be6ce7.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-gemma-attention-budget-release",
+      "base_commit": "4e27753e6f385d6fabbb6040fdd82f058a9c48a8",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "js/src/gpu-gemma4-attention.js",
+          "bytes": 24397,
+          "sha256": "00b24d908fbad27ad2b5630db5faa2633c4f342ab0485bc5e29e5640e44ccca6",
+          "object_path": "objects/00b24d908fbad27ad2b5630db5faa2633c4f342ab0485bc5e29e5640e44ccca6.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-in-place-hidden-normalization",
+      "base_commit": "13f13a02d192f0bbf11d5f63622a66a65a198315",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala-wasm/src/lib.rs",
+          "bytes": 37063,
+          "sha256": "7075ba0c234e84d32e01362989acb550c22dd520242ea878c26c2860f37a366d",
+          "object_path": "objects/7075ba0c234e84d32e01362989acb550c22dd520242ea878c26c2860f37a366d.txt"
+        },
+        {
+          "path": "crates/kevala/src/clef/head.rs",
+          "bytes": 27477,
+          "sha256": "f3268f99f8d1fe9324cd49195e5e6fd7966d770a24f57c792c74cdb5a294d0e6",
+          "object_path": "objects/f3268f99f8d1fe9324cd49195e5e6fd7966d770a24f57c792c74cdb5a294d0e6.txt"
+        },
+        {
+          "path": "crates/kevala/src/clef/mod.rs",
+          "bytes": 6178,
+          "sha256": "8b19a57576331e11e652b621b278287556bd3a99795af1746744b73d7e25b515",
+          "object_path": "objects/8b19a57576331e11e652b621b278287556bd3a99795af1746744b73d7e25b515.txt"
+        },
+        {
+          "path": "crates/kevala/src/kev/mod.rs",
+          "bytes": 56781,
+          "sha256": "7dd1d67d99c6887439525aa2b51994f2e5ef6920cecd14ca92708cdd7adfe80d",
+          "object_path": "objects/7dd1d67d99c6887439525aa2b51994f2e5ef6920cecd14ca92708cdd7adfe80d.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-laya-geglu-epilogue",
+      "base_commit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "js/src/gpu-laya.js",
+          "bytes": 16304,
+          "sha256": "1f138f638869bc488bc48e1045369763b822a0f7fd521a8448b6b24ac70cb79d",
+          "object_path": "objects/1f138f638869bc488bc48e1045369763b822a0f7fd521a8448b6b24ac70cb79d.txt"
+        },
+        {
+          "path": "js/src/gpu-laya-geglu-epilogue.js",
+          "bytes": 11203,
+          "sha256": "5c9b33d9fe5ea4871cbf16e96a0c270e0813f4a3722d47a99e0a365ee481e125",
+          "object_path": "objects/5c9b33d9fe5ea4871cbf16e96a0c270e0813f4a3722d47a99e0a365ee481e125.txt"
+        },
+        {
+          "path": "scripts/private/laya-geglu-protocol.json",
+          "bytes": 12417,
+          "sha256": "0a06aeb21023b7ff79e9d3ff734468fa0523c29d698972d1cd4b99c23f5bfc42",
+          "object_path": "objects/0a06aeb21023b7ff79e9d3ff734468fa0523c29d698972d1cd4b99c23f5bfc42.txt"
+        },
+        {
+          "path": "scripts/private/laya-geglu-protocol.mjs",
+          "bytes": 6501,
+          "sha256": "2df092c627a1571ebfbfeacf3daf2c8c7a48237dc478005ba7eefe1c8442e43c",
+          "object_path": "objects/2df092c627a1571ebfbfeacf3daf2c8c7a48237dc478005ba7eefe1c8442e43c.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-laya-geglu-epilogue-v2",
+      "base_commit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "js/src/gpu-laya.js",
+          "bytes": 16457,
+          "sha256": "f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5",
+          "object_path": "objects/f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/js/src/gpu-laya.js"
+          ]
+        },
+        {
+          "path": "dev/laya-geglu-private.html",
+          "bytes": 228,
+          "sha256": "3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07",
+          "object_path": "objects/3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/dev/laya-geglu-private.html"
+          ]
+        },
+        {
+          "path": "dev/laya-geglu-private.js",
+          "bytes": 17706,
+          "sha256": "78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0",
+          "object_path": "objects/78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/dev/laya-geglu-private.js"
+          ]
+        },
+        {
+          "path": "js/src/gpu-laya-geglu-epilogue.js",
+          "bytes": 13158,
+          "sha256": "72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738",
+          "object_path": "objects/72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/js/src/gpu-laya-geglu-epilogue.js"
+          ]
+        },
+        {
+          "path": "scripts/private/laya-geglu-browser.py",
+          "bytes": 13514,
+          "sha256": "93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8",
+          "object_path": "objects/93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/scripts/private/laya-geglu-browser.py"
+          ]
+        },
+        {
+          "path": "scripts/private/laya-geglu-protocol.json",
+          "bytes": 18208,
+          "sha256": "5c6dda26af52e5af14c3cd62c70f4b82d019649e59d443c607a1cac13a81acef",
+          "object_path": "objects/5c6dda26af52e5af14c3cd62c70f4b82d019649e59d443c607a1cac13a81acef.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/scripts/private/laya-geglu-protocol.json"
+          ]
+        },
+        {
+          "path": "scripts/private/laya-geglu-protocol.mjs",
+          "bytes": 8719,
+          "sha256": "e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496",
+          "object_path": "objects/e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/scripts/private/laya-geglu-protocol.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/run-laya-geglu.mjs",
+          "bytes": 29209,
+          "sha256": "b1954a3f5411d49d37717407ec05c424e13868f61b05a4e0685425b845f8d82f",
+          "object_path": "objects/b1954a3f5411d49d37717407ec05c424e13868f61b05a4e0685425b845f8d82f.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/scripts/private/run-laya-geglu.mjs"
+          ]
+        }
+      ],
+      "excluded": [
+        {
+          "path": "scripts/private/laya-geglu-controller-packet.json",
+          "reason": "run capture or controller metadata"
+        }
+      ]
+    },
+    {
+      "id": "kevala-native-4x4",
+      "base_commit": "9d7ee8623aad5a1fdd65dde3484fa416fa3f14f4",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala/src/kernels.rs",
+          "bytes": 33589,
+          "sha256": "a1d101ed08726cafb2d7a301a39edf789adfc203044852fd8c7b4cf7cf12b5da",
+          "object_path": "objects/a1d101ed08726cafb2d7a301a39edf789adfc203044852fd8c7b4cf7cf12b5da.txt",
+          "previously_published_paths": [
+            "crates/kevala/src/kernels.rs"
+          ]
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-native-avx512",
+      "base_commit": "04eca01d0d3a2eb10562a0cec6083888202a6ff5",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala/src/kernels.rs",
+          "bytes": 34331,
+          "sha256": "306b6dccd4ecaaf4566f00da9d9b6542e929a2ac84ca482849552f6451c7851d",
+          "object_path": "objects/306b6dccd4ecaaf4566f00da9d9b6542e929a2ac84ca482849552f6451c7851d.txt"
+        },
+        {
+          "path": "crates/kevala/build.rs",
+          "bytes": 1306,
+          "sha256": "ef3a1bcf3dc9b3984d8aeeb817530cf1e3dae78fa022cf00e729e01080348b48",
+          "object_path": "objects/ef3a1bcf3dc9b3984d8aeeb817530cf1e3dae78fa022cf00e729e01080348b48.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-native-avx512-publication",
+      "base_commit": "fb937d7e28dec3be71292808e1013c6044eed0cd",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "app/views/how.js",
+          "bytes": 17130,
+          "sha256": "3fd0b7a2e41cc9b6c8484fe4c08af954bc2bd9e54214a267f496bc40a99e3c1a",
+          "object_path": "objects/3fd0b7a2e41cc9b6c8484fe4c08af954bc2bd9e54214a267f496bc40a99e3c1a.txt"
+        },
+        {
+          "path": "docs/benchmarks/native-avx512-2026-11-07/README.md",
+          "bytes": 2662,
+          "sha256": "b5c8657e2e2fc9fcc48b512dd0a1dc7168977ebece807be3d318e1cf9ec5134e",
+          "object_path": "objects/b5c8657e2e2fc9fcc48b512dd0a1dc7168977ebece807be3d318e1cf9ec5134e.txt"
+        },
+        {
+          "path": "docs/benchmarks/native-avx512-2026-11-07/archive-publication.mjs",
+          "bytes": 23539,
+          "sha256": "de750032f042a7d5312c75e57b2c8d7e9bde9012f2ca9ef4828d55d1c98e77b4",
+          "object_path": "objects/de750032f042a7d5312c75e57b2c8d7e9bde9012f2ca9ef4828d55d1c98e77b4.txt"
+        },
+        {
+          "path": "docs/native-avx512-performance.md",
+          "bytes": 3960,
+          "sha256": "79f5f60e743eb3086af9d68999a9876a9edea9fec6fff08ae1b60cfc1cedd8df",
+          "object_path": "objects/79f5f60e743eb3086af9d68999a9876a9edea9fec6fff08ae1b60cfc1cedd8df.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-native-q8-avx512",
+      "base_commit": "91c464557d78d6aa111df84d39545da27e99c343",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala/src/simd.rs",
+          "bytes": 11336,
+          "sha256": "9fdad5cb93eefb6a888b42f2b996cf77f217dcb6e8d98bbb4cd5d6f9c14270ee",
+          "object_path": "objects/9fdad5cb93eefb6a888b42f2b996cf77f217dcb6e8d98bbb4cd5d6f9c14270ee.txt"
+        },
+        {
+          "path": "crates/kevala/src/store.rs",
+          "bytes": 12092,
+          "sha256": "b92b4b699ad2ece7e2180a64733efd84e96a405e3fdad8092855c6c8dbb28d29",
+          "object_path": "objects/b92b4b699ad2ece7e2180a64733efd84e96a405e3fdad8092855c6c8dbb28d29.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-native-q8-panel",
+      "base_commit": "612a6fb72f2934a103a2cb5f6a33c41762c4e1d6",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala/src/kernels.rs",
+          "bytes": 24427,
+          "sha256": "ca5f8e981e38bc3d8c211a374ed3a4eaf477fe340e05a3501015b0f4c0f52fe2",
+          "object_path": "objects/ca5f8e981e38bc3d8c211a374ed3a4eaf477fe340e05a3501015b0f4c0f52fe2.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-per-engine-submit-policy-20261106",
+      "base_commit": "a6f2491547a0b14287249e6664b614072fc9c321",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "submit-smoke/per-engine-loader-v1-pre-review/fixture.mjs",
+          "bytes": 548,
+          "sha256": "42fa872ea11051767000f9327601af291fa7c64f11806957b70bb148533244b8",
+          "object_path": "objects/42fa872ea11051767000f9327601af291fa7c64f11806957b70bb148533244b8.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1-pre-review/index.html",
+          "bytes": 350,
+          "sha256": "7c27d77e223049ade09e2827461e921808b25e51187181b923d716a22df7708b",
+          "object_path": "objects/7c27d77e223049ade09e2827461e921808b25e51187181b923d716a22df7708b.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1-pre-review/probe.js",
+          "bytes": 13995,
+          "sha256": "ccfbee73e8aaae39d0fa9a7d33e520a51377ed51a4ebe5a70980d96a07087b72",
+          "object_path": "objects/ccfbee73e8aaae39d0fa9a7d33e520a51377ed51a4ebe5a70980d96a07087b72.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1-pre-review/response-check.mjs",
+          "bytes": 926,
+          "sha256": "08d09960b903d5ee30ac37f13588207bed31b5291a6cfcb941fb3fd241a8862e",
+          "object_path": "objects/08d09960b903d5ee30ac37f13588207bed31b5291a6cfcb941fb3fd241a8862e.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1-pre-review/run-firefox.py",
+          "bytes": 4461,
+          "sha256": "b5ce5dbd70e5341d32a3439c88935020fcf0f53b2bedc40000489e32d97d6e98",
+          "object_path": "objects/b5ce5dbd70e5341d32a3439c88935020fcf0f53b2bedc40000489e32d97d6e98.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1-pre-review/run.mjs",
+          "bytes": 22200,
+          "sha256": "7c939dc489912ad3f9cddf06c32de324fb5043ee4e59e54a1b31c1fe5f90a5d6",
+          "object_path": "objects/7c939dc489912ad3f9cddf06c32de324fb5043ee4e59e54a1b31c1fe5f90a5d6.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/fixture.mjs",
+          "bytes": 548,
+          "sha256": "42fa872ea11051767000f9327601af291fa7c64f11806957b70bb148533244b8",
+          "object_path": "objects/42fa872ea11051767000f9327601af291fa7c64f11806957b70bb148533244b8.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/index.html",
+          "bytes": 350,
+          "sha256": "7c27d77e223049ade09e2827461e921808b25e51187181b923d716a22df7708b",
+          "object_path": "objects/7c27d77e223049ade09e2827461e921808b25e51187181b923d716a22df7708b.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/probe.js",
+          "bytes": 13995,
+          "sha256": "ccfbee73e8aaae39d0fa9a7d33e520a51377ed51a4ebe5a70980d96a07087b72",
+          "object_path": "objects/ccfbee73e8aaae39d0fa9a7d33e520a51377ed51a4ebe5a70980d96a07087b72.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/recorder.test.mjs",
+          "bytes": 4409,
+          "sha256": "aa0b3372c8140f7db8dcff61913d8aee13ea76ccb2065ae7bbc2db87f6614019",
+          "object_path": "objects/aa0b3372c8140f7db8dcff61913d8aee13ea76ccb2065ae7bbc2db87f6614019.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/response-check.mjs",
+          "bytes": 926,
+          "sha256": "08d09960b903d5ee30ac37f13588207bed31b5291a6cfcb941fb3fd241a8862e",
+          "object_path": "objects/08d09960b903d5ee30ac37f13588207bed31b5291a6cfcb941fb3fd241a8862e.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/results/submit-20261106-fixed-recorder-executed-run.mjs",
+          "bytes": 28515,
+          "sha256": "db4d792334b274edef12da5a9635c9ae6ad5417bed5b3c9176ff962c8425d0eb",
+          "object_path": "objects/db4d792334b274edef12da5a9635c9ae6ad5417bed5b3c9176ff962c8425d0eb.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/results/submit-6aec56a4-731b-4ff0-9b7f-5625e059af66-executed-run.mjs",
+          "bytes": 23974,
+          "sha256": "2d0bcc752f3385042d989f96a05bb64ad674231e2c6c54a4a2015cfc9d5e8391",
+          "object_path": "objects/2d0bcc752f3385042d989f96a05bb64ad674231e2c6c54a4a2015cfc9d5e8391.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/run-firefox.py",
+          "bytes": 4461,
+          "sha256": "b5ce5dbd70e5341d32a3439c88935020fcf0f53b2bedc40000489e32d97d6e98",
+          "object_path": "objects/b5ce5dbd70e5341d32a3439c88935020fcf0f53b2bedc40000489e32d97d6e98.txt"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/run.mjs",
+          "bytes": 28515,
+          "sha256": "db4d792334b274edef12da5a9635c9ae6ad5417bed5b3c9176ff962c8425d0eb",
+          "object_path": "objects/db4d792334b274edef12da5a9635c9ae6ad5417bed5b3c9176ff962c8425d0eb.txt"
+        }
+      ],
+      "excluded": [
+        {
+          "path": "submit-smoke/ci68-wasm/kevala-base.wasm",
+          "reason": "binary or generated output"
+        },
+        {
+          "path": "submit-smoke/ci68-wasm/kevala-relaxed.wasm",
+          "reason": "binary or generated output"
+        },
+        {
+          "path": "submit-smoke/ci68-wasm/kevala-simd.wasm",
+          "reason": "binary or generated output"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/results/submit-5e72e299-faa9-4b13-916d-56687d37a11d.json",
+          "reason": "run capture or controller metadata"
+        },
+        {
+          "path": "submit-smoke/per-engine-loader-v1/results/submit-6aec56a4-731b-4ff0-9b7f-5625e059af66.json",
+          "reason": "run capture or controller metadata"
+        }
+      ]
+    },
+    {
+      "id": "kevala-private-avx512-auto4-model-v1",
+      "base_commit": "8e4ae3a3ff6592e9581696057f07fa90e036e10a",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala/src/kernels.rs",
+          "bytes": 37184,
+          "sha256": "d43c91d9bc1b90f05d6ec870f90c8b11c5ca5adc8d00bf598eb4145fc2958d0e",
+          "object_path": "objects/d43c91d9bc1b90f05d6ec870f90c8b11c5ca5adc8d00bf598eb4145fc2958d0e.txt"
+        },
+        {
+          "path": "crates/kevala/build.rs",
+          "bytes": 1540,
+          "sha256": "443856de805d5d967c2f730cd4f5149b84523adff4181e8868efef999f1f9734",
+          "object_path": "objects/443856de805d5d967c2f730cd4f5149b84523adff4181e8868efef999f1f9734.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-q8-panel-avx512",
+      "base_commit": "f4596f1d239ca84eb18255819f56684a5c5cf086",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "crates/kevala/src/kernels.rs",
+          "bytes": 41032,
+          "sha256": "eab06e0a27837902cde9edde012bf5b4deb3cca99b6cc660df9bead715985602",
+          "object_path": "objects/eab06e0a27837902cde9edde012bf5b4deb3cca99b6cc660df9bead715985602.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-q8-swiglu-epilogue",
+      "base_commit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "bench.html",
+          "bytes": 27746,
+          "sha256": "73bc768c7d15f542a5ac3102ced4018a1db574dfd328e465c0152c895c537e57",
+          "object_path": "objects/73bc768c7d15f542a5ac3102ced4018a1db574dfd328e465c0152c895c537e57.txt"
+        },
+        {
+          "path": "js/src/gpu-kev.js",
+          "bytes": 59720,
+          "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2",
+          "object_path": "objects/5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2.txt"
+        },
+        {
+          "path": "scripts/bench-gpu.py",
+          "bytes": 86154,
+          "sha256": "eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0",
+          "object_path": "objects/eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/shared/bench-gpu.py"
+          ]
+        },
+        {
+          "path": "js/src/gpu-q8-swiglu-trial.js",
+          "bytes": 8878,
+          "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758",
+          "object_path": "objects/5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/js/src/gpu-q8-swiglu-trial.js"
+          ]
+        },
+        {
+          "path": "scripts/compare-kev-swiglu.mjs",
+          "bytes": 47400,
+          "sha256": "680ee840e662711aacdefb4aae8e5715e06abe2b43bb53fdb72f0ec865e5f7b6",
+          "object_path": "objects/680ee840e662711aacdefb4aae8e5715e06abe2b43bb53fdb72f0ec865e5f7b6.txt"
+        },
+        {
+          "path": "scripts/tests/test_q8_terminal_poll.py",
+          "bytes": 6949,
+          "sha256": "d6b7dc134c6f14826419c8620ba169e5a970ed9233b77c9d9388138c0232d0cc",
+          "object_path": "objects/d6b7dc134c6f14826419c8620ba169e5a970ed9233b77c9d9388138c0232d0cc.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-q8-swiglu-epilogue-v5",
+      "base_commit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+      "validation": {
+        "source_validation": "Historical working copy. No functional, build, or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Preserved for reference only. No candidate is activated by this archive."
+      },
+      "files": [
+        {
+          "path": "bench.html",
+          "bytes": 28384,
+          "sha256": "f83e4391bdf8ebf2e4aa6fd90f0ae0820784cf0b9f088ef7fe7c353a593909b4",
+          "object_path": "objects/f83e4391bdf8ebf2e4aa6fd90f0ae0820784cf0b9f088ef7fe7c353a593909b4.txt"
+        },
+        {
+          "path": "js/src/gpu-kev.js",
+          "bytes": 59720,
+          "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2",
+          "object_path": "objects/5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2.txt"
+        },
+        {
+          "path": "scripts/bench-gpu.py",
+          "bytes": 90029,
+          "sha256": "84fbb84ab58d5f5e4628934ccf7b9caa5920d27a1b6e6432550c91639e31f00b",
+          "object_path": "objects/84fbb84ab58d5f5e4628934ccf7b9caa5920d27a1b6e6432550c91639e31f00b.txt"
+        },
+        {
+          "path": "js/src/gpu-q8-swiglu-trial.js",
+          "bytes": 8878,
+          "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758",
+          "object_path": "objects/5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/js/src/gpu-q8-swiglu-trial.js"
+          ]
+        },
+        {
+          "path": "scripts/compare-kev-swiglu.mjs",
+          "bytes": 53307,
+          "sha256": "90e5685c301c765aceb465f94f2d2d6ac28224540c3a43340ec75cad3ab39b4e",
+          "object_path": "objects/90e5685c301c765aceb465f94f2d2d6ac28224540c3a43340ec75cad3ab39b4e.txt"
+        },
+        {
+          "path": "scripts/lib/q8-monitor-cadence.mjs",
+          "bytes": 1119,
+          "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1",
+          "object_path": "objects/2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs"
+          ]
+        },
+        {
+          "path": "scripts/tests/q8-monitor-cadence.test.mjs",
+          "bytes": 2074,
+          "sha256": "4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41",
+          "object_path": "objects/4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41.txt"
+        },
+        {
+          "path": "scripts/tests/test_q8_terminal_poll.py",
+          "bytes": 12246,
+          "sha256": "8039f02c565eb75c8aa0d9bbe845db4db1a0c3d4e3575f74a9aacc44827c33ce",
+          "object_path": "objects/8039f02c565eb75c8aa0d9bbe845db4db1a0c3d4e3575f74a9aacc44827c33ce.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-clef-shape-matmul-v1",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "No published validation record located in the reviewed docs; not run during this audit.",
+        "physicalStatus": "No physical run status established from the reviewed published evidence.",
+        "evidence": []
+      },
+      "files": [
+        {
+          "path": "bench-clef-shape-matmul.html",
+          "bytes": 1719,
+          "sha256": "84cfd2c92ccc4181dd902fbbb938df9d2054b60b5bcf0136dd8add4e0f908054",
+          "object_path": "objects/84cfd2c92ccc4181dd902fbbb938df9d2054b60b5bcf0136dd8add4e0f908054.txt"
+        },
+        {
+          "path": "js/src/private-clef-shape-matmul-observer.js",
+          "bytes": 5209,
+          "sha256": "fca596e54773854283102c4736b96e4c9d34ef7ac0e9781cf9a9ee4794fa6373",
+          "object_path": "objects/fca596e54773854283102c4736b96e4c9d34ef7ac0e9781cf9a9ee4794fa6373.txt"
+        },
+        {
+          "path": "js/src/private-clef-shape-matmul-validation.js",
+          "bytes": 10376,
+          "sha256": "9fe3bd7740fd108742ab37fc1f550aae3e1397095453789c85dd85d3e76c7f45",
+          "object_path": "objects/9fe3bd7740fd108742ab37fc1f550aae3e1397095453789c85dd85d3e76c7f45.txt"
+        },
+        {
+          "path": "js/src/private-clef-shape-matmul.js",
+          "bytes": 11769,
+          "sha256": "622b5083e545ac44852fe9266cccb6406646f9bc0975ef9d34672c89d51404af",
+          "object_path": "objects/622b5083e545ac44852fe9266cccb6406646f9bc0975ef9d34672c89d51404af.txt"
+        },
+        {
+          "path": "scripts/private/clef-shape-matmul-browser.py",
+          "bytes": 95110,
+          "sha256": "856164df9f5b2854db6c26cd68659049fc275036bd78ae952cd3eaea0c5c8229",
+          "object_path": "objects/856164df9f5b2854db6c26cd68659049fc275036bd78ae952cd3eaea0c5c8229.txt"
+        },
+        {
+          "path": "scripts/private/clef-shape-matmul-page.mjs",
+          "bytes": 17291,
+          "sha256": "1e5f00f794cd16502c25df29292582a3e79f9bbe32a3c25f1e586e3c1034927f",
+          "object_path": "objects/1e5f00f794cd16502c25df29292582a3e79f9bbe32a3c25f1e586e3c1034927f.txt"
+        },
+        {
+          "path": "scripts/private/clef-shape-matmul-protocol.mjs",
+          "bytes": 8712,
+          "sha256": "624e64cd7540bd66509b10a3abb5fd88cc83fc0c9a7ee75ce0039863e4e9dbe7",
+          "object_path": "objects/624e64cd7540bd66509b10a3abb5fd88cc83fc0c9a7ee75ce0039863e4e9dbe7.txt"
+        },
+        {
+          "path": "scripts/private/clef-shape-matmul-startup-regression.mjs",
+          "bytes": 1544,
+          "sha256": "e75e2cabfd27795b5e37f081f9226a5ea8ff2b54bdd501895b86c095c4077447",
+          "object_path": "objects/e75e2cabfd27795b5e37f081f9226a5ea8ff2b54bdd501895b86c095c4077447.txt"
+        },
+        {
+          "path": "scripts/private/q8-monitor-cadence.mjs",
+          "bytes": 1119,
+          "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1",
+          "object_path": "objects/2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/scripts/lib/q8-monitor-cadence.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/run-clef-shape-matmul.mjs",
+          "bytes": 74569,
+          "sha256": "88f84a27b33ffcdb1e277904b23067cee2fbf730d35c79ff82f07ed01238f910",
+          "object_path": "objects/88f84a27b33ffcdb1e277904b23067cee2fbf730d35c79ff82f07ed01238f910.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-clef-route-diagnostic-v1",
+      "base_commit": "5becbb0d35208ba6b0a2ff04c0535a52a8963d5a",
+      "validation": {
+        "sourceValidation": "Original controller remained failed because its post-capture validator expected the legacy cache shape; corrected offline validator accepted all 27 recorded GPU routes without rerunning hardware.",
+        "physicalStatus": "Chrome 156.0.8078.4 on NVIDIA Blackwell RTX 5070 Ti; 27 recorded GPU-routed requests; no rerun.",
+        "sourcePins": [
+          "worktree HEAD 5becbb0d35208ba6b0a2ff04c0535a52a8963d5a",
+          "61 source identities; unchanged public runtime source referenced at 81a27608f24e0b2252318515e272387c48dec7d8"
+        ],
+        "evidence": [
+          "docs/clef-head-route-diagnostic.md",
+          "docs/benchmarks/clef-route-2026-11-07/README.md"
+        ]
+      },
+      "files": [
+        {
+          "path": "bench-clef-kernel-profile.html",
+          "bytes": 20828,
+          "sha256": "928e79272dc69bc50def73cffb0368f4bb2d0a5b04dd7144db702902d2c42dc9",
+          "object_path": "objects/928e79272dc69bc50def73cffb0368f4bb2d0a5b04dd7144db702902d2c42dc9.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/clef-kernel-profile-r1/bench-clef-kernel-profile.html"
+          ]
+        },
+        {
+          "path": "bench-clef-route-smoke.html",
+          "bytes": 1966,
+          "sha256": "16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee",
+          "object_path": "objects/16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/bench-clef-route-smoke.html"
+          ]
+        },
+        {
+          "path": "bench-clef-route.html",
+          "bytes": 20397,
+          "sha256": "a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9",
+          "object_path": "objects/a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/bench-clef-route.html"
+          ]
+        },
+        {
+          "path": "scripts/private/clef-kernel-profile.mjs",
+          "bytes": 71752,
+          "sha256": "cd978379ddca009376344c39842b092aa4cd175abbdeda052c9abe8535d7f9a4",
+          "object_path": "objects/cd978379ddca009376344c39842b092aa4cd175abbdeda052c9abe8535d7f9a4.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/clef-kernel-profile-r1/clef-kernel-profile.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/clef-route-browser.py",
+          "bytes": 95445,
+          "sha256": "3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619",
+          "object_path": "objects/3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/scripts/private/clef-route-browser.py"
+          ]
+        },
+        {
+          "path": "scripts/private/clef-route-diagnostic.mjs",
+          "bytes": 64936,
+          "sha256": "ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049",
+          "object_path": "objects/ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-corrected-offline/clef-route-diagnostic.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/q8-monitor-cadence.mjs",
+          "bytes": 1119,
+          "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1",
+          "object_path": "objects/2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/clef-route-r1-original/scripts/private/q8-monitor-cadence.mjs",
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/scripts/lib/q8-monitor-cadence.mjs"
+          ]
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-f16-feature-probe",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "R1 failed with a null adapter; R2 preferred-adapter baseline and diagnostic-toggle requests completed.",
+        "physicalStatus": "Chrome 156.0.8078.4 on NVIDIA Blackwell RTX 5070 Ti. Metadata-only: no shader, pipeline, buffer, dispatch, numerical check, or latency measurement.",
+        "sourcePins": [
+          "worktree HEAD 81a27608f24e0b2252318515e272387c48dec7d8"
+        ],
+        "evidence": [
+          "docs/clef-head-route-diagnostic.md",
+          "docs/benchmarks/clef-route-2026-11-07/README.md"
+        ]
+      },
+      "files": [
+        {
+          "path": "scripts/private/f16-feature-probe.html",
+          "bytes": 3463,
+          "sha256": "df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a",
+          "object_path": "objects/df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r2/f16-feature-probe.html"
+          ]
+        },
+        {
+          "path": "scripts/private/f16-feature-probe.mjs",
+          "bytes": 24714,
+          "sha256": "1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8",
+          "object_path": "objects/1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r2/f16-feature-probe.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/f16-feature-probe.py",
+          "bytes": 11053,
+          "sha256": "cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2",
+          "object_path": "objects/cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-common/f16-feature-probe.py"
+          ]
+        },
+        {
+          "path": "scripts/private/f16-feature-probe.test.mjs",
+          "bytes": 3619,
+          "sha256": "63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8",
+          "object_path": "objects/63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-route-2026-11-07/source/f16-feature-r2/f16-feature-probe.test.mjs"
+          ]
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-subgroup-matrix-probe",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "Probe reported no advertised f32-f32 configuration and skipped shader compilation (`no-advertised-f32-f32-configuration`).",
+        "physicalStatus": "NVIDIA Blackwell adapter/device metadata captured; no WGSL, pipeline, GPU buffer, dispatch, numerical result, or latency.",
+        "sourcePins": [
+          "worktree HEAD 81a27608f24e0b2252318515e272387c48dec7d8",
+          "runtime source pins reference 7a6de58b74d2ad9e452e8ca317d84f4b83abfe86"
+        ],
+        "evidence": [
+          "docs/clef-gpu-kernel-profile.md",
+          "docs/benchmarks/clef-gpu-profile-2026-11-07/README.md"
+        ]
+      },
+      "files": [
+        {
+          "path": "scripts/private/subgroup-matrix-probe.html",
+          "bytes": 8520,
+          "sha256": "24df77e2c8de8609f01021064a0b8b34655a6f3e62652955b9aa1e6479754d37",
+          "object_path": "objects/24df77e2c8de8609f01021064a0b8b34655a6f3e62652955b9aa1e6479754d37.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/subgroup-matrix-probe-r1/subgroup-matrix-probe.html"
+          ]
+        },
+        {
+          "path": "scripts/private/subgroup-matrix-probe.mjs",
+          "bytes": 26476,
+          "sha256": "0f97b431f8f16e8afd9197eba0d9e2e8f14199376fe704240f8651b2ba9dbf80",
+          "object_path": "objects/0f97b431f8f16e8afd9197eba0d9e2e8f14199376fe704240f8651b2ba9dbf80.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/subgroup-matrix-probe-r1/subgroup-matrix-probe.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/subgroup-matrix-probe.py",
+          "bytes": 11242,
+          "sha256": "a109005fa7ffcd7b7a33e52ae224d73138bf31a4d0e468d1ce04da38431a0795",
+          "object_path": "objects/a109005fa7ffcd7b7a33e52ae224d73138bf31a4d0e468d1ce04da38431a0795.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/subgroup-matrix-probe-r1/subgroup-matrix-probe.py"
+          ]
+        },
+        {
+          "path": "scripts/private/subgroup-matrix-probe.test.mjs",
+          "bytes": 7373,
+          "sha256": "fca439c24ad4ad71b14a13614e4797a37df40cecc93df04e275d28cce7fad1f1",
+          "object_path": "objects/fca439c24ad4ad71b14a13614e4797a37df40cecc93df04e275d28cce7fad1f1.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/subgroup-matrix-probe-r1/subgroup-matrix-probe.test.mjs"
+          ]
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-laya-integer-matrix-v1",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "No published validation record located in the reviewed docs; not run during this audit.",
+        "physicalStatus": "No physical run status established from the reviewed published evidence.",
+        "evidence": []
+      },
+      "files": [
+        {
+          "path": "bench-laya-integer-matrix.html",
+          "bytes": 1104,
+          "sha256": "606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3",
+          "object_path": "objects/606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+          "bytes": 13558,
+          "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+          "object_path": "objects/0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-page-plan.json",
+          "bytes": 10815,
+          "sha256": "759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4",
+          "object_path": "objects/759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-page.js",
+          "bytes": 27283,
+          "sha256": "cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019",
+          "object_path": "objects/cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-protocol.json",
+          "bytes": 19823,
+          "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+          "object_path": "objects/cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+          "bytes": 1546,
+          "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "object_path": "objects/0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix.js",
+          "bytes": 12993,
+          "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+          "object_path": "objects/70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-integer-matrix-gate",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "Independent integer-packing gate compiled its shader, dispatched once, and passed the retained output/canary check; this is limited to a signed i8 16x16x32 packing/store exercise.",
+        "physicalStatus": "Chrome 156.0.8078.4 on NVIDIA Blackwell RTX 5070 Ti; one compile and dispatch, no operator or latency claim.",
+        "sourcePins": [
+          "worktree HEAD 81a27608f24e0b2252318515e272387c48dec7d8",
+          "runtime source pins reference 7a6de58b74d2ad9e452e8ca317d84f4b83abfe86"
+        ],
+        "evidence": [
+          "docs/clef-gpu-kernel-profile.md",
+          "docs/benchmarks/clef-gpu-profile-2026-11-07/README.md"
+        ]
+      },
+      "files": [
+        {
+          "path": "scripts/private/integer-matrix-gate-helper.js",
+          "bytes": 12993,
+          "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+          "object_path": "objects/70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/integer-matrix-gate-r1/integer-matrix-gate-helper.js"
+          ]
+        },
+        {
+          "path": "scripts/private/integer-matrix-gate.html",
+          "bytes": 15651,
+          "sha256": "aba79fa9a419448edec639fb53f8ed4979f887d5950cd1fb8d8c18caf652a18b",
+          "object_path": "objects/aba79fa9a419448edec639fb53f8ed4979f887d5950cd1fb8d8c18caf652a18b.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/integer-matrix-gate-r1/integer-matrix-gate.html"
+          ]
+        },
+        {
+          "path": "scripts/private/integer-matrix-gate.mjs",
+          "bytes": 28731,
+          "sha256": "0a54825e0d7cae52d206d8c9dabd6ada471e8120363d52e47badc050d653a70c",
+          "object_path": "objects/0a54825e0d7cae52d206d8c9dabd6ada471e8120363d52e47badc050d653a70c.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/integer-matrix-gate-r1/integer-matrix-gate.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/integer-matrix-gate.py",
+          "bytes": 12229,
+          "sha256": "35081d3bc7e2ee29f7453214dafb1a101675f481dc46a7870d01f55f605e1b25",
+          "object_path": "objects/35081d3bc7e2ee29f7453214dafb1a101675f481dc46a7870d01f55f605e1b25.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/integer-matrix-gate-r1/integer-matrix-gate.py"
+          ]
+        },
+        {
+          "path": "scripts/private/integer-matrix-gate.test.mjs",
+          "bytes": 9305,
+          "sha256": "4bbf7ce574a2c4e2b829cf121bf6b8960a7bf690c86ee8dbd1327bf56af4a873",
+          "object_path": "objects/4bbf7ce574a2c4e2b829cf121bf6b8960a7bf690c86ee8dbd1327bf56af4a873.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/clef-gpu-profile-2026-11-07/source/integer-matrix-gate-r1/integer-matrix-gate.test.mjs"
+          ]
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-integer-matrix-operator",
+      "base_commit": "7a6de58b74d2ad9e452e8ca317d84f4b83abfe86",
+      "validation": {
+        "sourceValidation": "No published validation record located in the reviewed docs; test source is present, but this audit did not execute it.",
+        "physicalStatus": "No physical run status established from the reviewed published evidence.",
+        "evidence": []
+      },
+      "files": [
+        {
+          "path": "bench-laya-integer-matrix.html",
+          "bytes": 1104,
+          "sha256": "606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3",
+          "object_path": "objects/606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-operator-assets.json",
+          "bytes": 1948,
+          "sha256": "15458bbeea2fcdf61494085d88a4b371d39f3e2337b7ef5feb66e8bea683c81d",
+          "object_path": "objects/15458bbeea2fcdf61494085d88a4b371d39f3e2337b7ef5feb66e8bea683c81d.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-operator-contract.json",
+          "bytes": 4995,
+          "sha256": "855a1f1c44b2dd21e0db83b52487b6baf80d326267fedd08eb74a73d2c63b6d1",
+          "object_path": "objects/855a1f1c44b2dd21e0db83b52487b6baf80d326267fedd08eb74a73d2c63b6d1.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-operator-result.mjs",
+          "bytes": 11380,
+          "sha256": "6880685f4aa77b6392c54474d7d2c2d29b4735b15aa114a2790bbe724f24ada0",
+          "object_path": "objects/6880685f4aa77b6392c54474d7d2c2d29b4735b15aa114a2790bbe724f24ada0.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-operator-result.test.mjs",
+          "bytes": 7183,
+          "sha256": "b17547610bd23b38dc856d24d17174d016360876cff5b55a6f30ebc6eb34e2f8",
+          "object_path": "objects/b17547610bd23b38dc856d24d17174d016360876cff5b55a6f30ebc6eb34e2f8.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-operator.mjs",
+          "bytes": 29664,
+          "sha256": "b7bb0347d28e5ad57afc0891cb1a1597727e981fb280b5af76264f66ae3026a0",
+          "object_path": "objects/b7bb0347d28e5ad57afc0891cb1a1597727e981fb280b5af76264f66ae3026a0.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-operator.py",
+          "bytes": 12950,
+          "sha256": "5de5d8c33ad2c26694ea64866a7a5a135286efd26c8f0dc5278ca1fc8b6bb02b",
+          "object_path": "objects/5de5d8c33ad2c26694ea64866a7a5a135286efd26c8f0dc5278ca1fc8b6bb02b.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+          "bytes": 13558,
+          "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+          "object_path": "objects/0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-page-plan.json",
+          "bytes": 10815,
+          "sha256": "759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4",
+          "object_path": "objects/759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-page.js",
+          "bytes": 27283,
+          "sha256": "cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019",
+          "object_path": "objects/cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-protocol.json",
+          "bytes": 19823,
+          "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+          "object_path": "objects/cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+          "bytes": 1546,
+          "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "object_path": "objects/0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix.js",
+          "bytes": 12993,
+          "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+          "object_path": "objects/70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-laya-integer-matrix-split-v1",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "No published validation record located in the reviewed docs; not run during this audit.",
+        "physicalStatus": "No physical run status established from the reviewed published evidence.",
+        "evidence": []
+      },
+      "files": [
+        {
+          "path": "bench-laya-integer-matrix-split.html",
+          "bytes": 1153,
+          "sha256": "5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492",
+          "object_path": "objects/5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+          "bytes": 13558,
+          "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+          "object_path": "objects/0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-protocol.json",
+          "bytes": 19823,
+          "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+          "object_path": "objects/cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+          "bytes": 1546,
+          "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "object_path": "objects/0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-split-page-plan.json",
+          "bytes": 7274,
+          "sha256": "ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37",
+          "object_path": "objects/ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-split-page.js",
+          "bytes": 28669,
+          "sha256": "0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd",
+          "object_path": "objects/0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-split-protocol.json",
+          "bytes": 5151,
+          "sha256": "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81",
+          "object_path": "objects/515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix.js",
+          "bytes": 12993,
+          "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+          "object_path": "objects/70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-integer-matrix-split",
+      "base_commit": "7a6de58b74d2ad9e452e8ca317d84f4b83abfe86",
+      "validation": {
+        "sourceValidation": "No published validation record located in the reviewed docs; test source is present, but this audit did not execute it.",
+        "physicalStatus": "No physical run status established from the reviewed published evidence.",
+        "evidence": []
+      },
+      "files": [
+        {
+          "path": "bench-laya-integer-matrix-split.html",
+          "bytes": 1153,
+          "sha256": "5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492",
+          "object_path": "objects/5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-split-assets.json",
+          "bytes": 2275,
+          "sha256": "a162f71c4a50cfa7e72d93d8c487a48decd534adbc28093304d7936971462a71",
+          "object_path": "objects/a162f71c4a50cfa7e72d93d8c487a48decd534adbc28093304d7936971462a71.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-split-contract.json",
+          "bytes": 3706,
+          "sha256": "5fa3f3c4fc79fadaf3998acf7fd8b2b5e3620a8cd833ae9fc1c0866122955009",
+          "object_path": "objects/5fa3f3c4fc79fadaf3998acf7fd8b2b5e3620a8cd833ae9fc1c0866122955009.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-split-result.mjs",
+          "bytes": 13242,
+          "sha256": "da0d445070d9f4fb1009ebc7d16c900c3948c671509162e330303a2637c8079a",
+          "object_path": "objects/da0d445070d9f4fb1009ebc7d16c900c3948c671509162e330303a2637c8079a.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-split-result.test.mjs",
+          "bytes": 8291,
+          "sha256": "240cb104eabcd69637e8915ff8b6256f131d78bb18473b300e100ee83a1b8329",
+          "object_path": "objects/240cb104eabcd69637e8915ff8b6256f131d78bb18473b300e100ee83a1b8329.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-split.mjs",
+          "bytes": 30010,
+          "sha256": "2c28453e68cc299ada3364a22fb1b88bf5d97157880e955a94411fc8a2ddd27d",
+          "object_path": "objects/2c28453e68cc299ada3364a22fb1b88bf5d97157880e955a94411fc8a2ddd27d.txt"
+        },
+        {
+          "path": "scripts/private/integer-matrix-split.py",
+          "bytes": 12838,
+          "sha256": "c001be2da02e5efee6567f1256462b5765cc4767fbdcc30c7af6271d583766ae",
+          "object_path": "objects/c001be2da02e5efee6567f1256462b5765cc4767fbdcc30c7af6271d583766ae.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-baseline.wgsl",
+          "bytes": 13558,
+          "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+          "object_path": "objects/0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-protocol.json",
+          "bytes": 19823,
+          "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+          "object_path": "objects/cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-reduce.wgsl",
+          "bytes": 1546,
+          "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+          "object_path": "objects/0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-split-page-plan.json",
+          "bytes": 7274,
+          "sha256": "ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37",
+          "object_path": "objects/ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-split-page.js",
+          "bytes": 28669,
+          "sha256": "0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd",
+          "object_path": "objects/0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix-split-protocol.json",
+          "bytes": 5151,
+          "sha256": "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81",
+          "object_path": "objects/515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81.txt"
+        },
+        {
+          "path": "scripts/private/laya-integer-matrix.js",
+          "bytes": 12993,
+          "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+          "object_path": "objects/70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-fp32-tall-v1",
+      "base_commit": "81a27608f24e0b2252318515e272387c48dec7d8",
+      "validation": {
+        "sourceValidation": "No published validation record located in the reviewed docs; not run during this audit.",
+        "physicalStatus": "No physical run status established from the reviewed published evidence.",
+        "evidence": []
+      },
+      "files": [
+        {
+          "path": "scripts/private/fp32-tall-protocol.json",
+          "bytes": 8981,
+          "sha256": "4ae38bd4edda8c96003895205e0c60d21e4228198b99a3faf2e2bb07203f1f73",
+          "object_path": "objects/4ae38bd4edda8c96003895205e0c60d21e4228198b99a3faf2e2bb07203f1f73.txt"
+        },
+        {
+          "path": "scripts/private/fp32-tall.js",
+          "bytes": 11843,
+          "sha256": "0076d9e840af025a10e4565cf164ba5997ff20cd248b408eb68d9c0a9f7619ec",
+          "object_path": "objects/0076d9e840af025a10e4565cf164ba5997ff20cd248b408eb68d9c0a9f7619ec.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-q8-swiglu-epilogue-v6",
+      "base_commit": "fc7ef15a895587be8c94de96dab8344b89663e13",
+      "validation": {
+        "sourceValidation": "v6r1 failed before source/runtime admission; v6r2 completed numerical activation/output checks but failed its predeclared latency policy. Published source preflight pins 63 source identities and CI run 42379873911.",
+        "physicalStatus": "Completed v6r2 on Chrome 156.0.8078.4, NVIDIA Blackwell RTX 5070 Ti, Ryzen 9 9950X3D; one Kev 9B Q8 model. Median paired baseline/candidate ratio 0.980548; 1 of 9 pairs favored candidate. Remains private/default-off.",
+        "sourcePins": [
+          "worktree HEAD/base commit fc7ef15a895587be8c94de96dab8344b89663e13",
+          "js/src/gpu-kev.js 59,720 bytes SHA256 5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2",
+          "63 source identities; WASM CI run 42379873911"
+        ],
+        "evidence": [
+          "docs/host-followup-experiments.md",
+          "docs/benchmarks/gpu-epilogues-followup-2026-11-07/README.md"
+        ]
+      },
+      "files": [
+        {
+          "path": "bench.html",
+          "bytes": 29425,
+          "sha256": "9cbf1e51010f2efe1ebe3c2dd6923f25d776831bd95f0e0e57479a54be8bf0a7",
+          "object_path": "objects/9cbf1e51010f2efe1ebe3c2dd6923f25d776831bd95f0e0e57479a54be8bf0a7.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/bench.html"
+          ]
+        },
+        {
+          "path": "js/src/gpu-kev.js",
+          "bytes": 59720,
+          "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2",
+          "object_path": "objects/5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2.txt"
+        },
+        {
+          "path": "scripts/bench-gpu.py",
+          "bytes": 90973,
+          "sha256": "bf00d6ce15e05887d7c718988b165f07d879d36a5daf5afb598d4cc5ad265de3",
+          "object_path": "objects/bf00d6ce15e05887d7c718988b165f07d879d36a5daf5afb598d4cc5ad265de3.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/scripts/bench-gpu.py"
+          ]
+        },
+        {
+          "path": "js/src/gpu-q8-swiglu-trial.js",
+          "bytes": 8878,
+          "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758",
+          "object_path": "objects/5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/js/src/gpu-q8-swiglu-trial.js"
+          ]
+        },
+        {
+          "path": "scripts/compare-kev-swiglu.mjs",
+          "bytes": 56190,
+          "sha256": "43acefaf46effb6bebbf2551d44e7be4f371304b02c9c47b661623ad7c1ba64d",
+          "object_path": "objects/43acefaf46effb6bebbf2551d44e7be4f371304b02c9c47b661623ad7c1ba64d.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/scripts/compare-kev-swiglu.mjs"
+          ]
+        },
+        {
+          "path": "scripts/lib/q8-monitor-cadence.mjs",
+          "bytes": 1119,
+          "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1",
+          "object_path": "objects/2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/q8-v6/scripts/lib/q8-monitor-cadence.mjs"
+          ]
+        },
+        {
+          "path": "scripts/tests/q8-monitor-cadence.test.mjs",
+          "bytes": 2074,
+          "sha256": "4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41",
+          "object_path": "objects/4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41.txt"
+        },
+        {
+          "path": "scripts/tests/q8-page-bootstrap.test.mjs",
+          "bytes": 2435,
+          "sha256": "5e5e3de4f04d62c7d08d1bdf093f24793647108299d74fdcf2dafb60ce0c5eb8",
+          "object_path": "objects/5e5e3de4f04d62c7d08d1bdf093f24793647108299d74fdcf2dafb60ce0c5eb8.txt"
+        },
+        {
+          "path": "scripts/tests/test_q8_terminal_poll.py",
+          "bytes": 12943,
+          "sha256": "a51dde5a4eeee58bec3e1bf350dfc50f491835fab6f0073f71a026d79b1e2e54",
+          "object_path": "objects/a51dde5a4eeee58bec3e1bf350dfc50f491835fab6f0073f71a026d79b1e2e54.txt"
+        }
+      ],
+      "excluded": []
+    },
+    {
+      "id": "kevala-laya-geglu-bn32",
+      "base_commit": "5becbb0d35208ba6b0a2ff04c0535a52a8963d5a",
+      "validation": {
+        "sourceValidation": "Completed numerical validation: all 28 layers matched active and tail comparisons with zero mismatch/nonfinite/canary errors; default-off golden guard passed. Both predeclared latency gates failed; remains private/default-off.",
+        "physicalStatus": "Completed on Chrome 156.0.8078.4, NVIDIA Blackwell RTX 5070 Ti, Ryzen 9 9950X3D; generic FP32 selector and relaxed WASM. No rerun.",
+        "sourcePins": [
+          "worktree HEAD/base commit 5becbb0d35208ba6b0a2ff04c0535a52a8963d5a",
+          "67 runtime source identities; 70 resource identities"
+        ],
+        "evidence": [
+          "docs/host-followup-experiments.md",
+          "docs/benchmarks/gpu-epilogues-followup-2026-11-07/README.md"
+        ]
+      },
+      "files": [
+        {
+          "path": "js/src/gpu-laya.js",
+          "bytes": 16457,
+          "sha256": "f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5",
+          "object_path": "objects/f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/js/src/gpu-laya.js"
+          ]
+        },
+        {
+          "path": "dev/laya-geglu-private.html",
+          "bytes": 228,
+          "sha256": "3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07",
+          "object_path": "objects/3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/dev/laya-geglu-private.html"
+          ]
+        },
+        {
+          "path": "dev/laya-geglu-private.js",
+          "bytes": 17706,
+          "sha256": "78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0",
+          "object_path": "objects/78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/dev/laya-geglu-private.js"
+          ]
+        },
+        {
+          "path": "js/src/gpu-laya-geglu-epilogue.js",
+          "bytes": 16374,
+          "sha256": "cd55adb7a377565c3d6bf07d84b0ec5b317b307825aefb82e74020a40bb0d134",
+          "object_path": "objects/cd55adb7a377565c3d6bf07d84b0ec5b317b307825aefb82e74020a40bb0d134.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/laya-bn32/js/src/gpu-laya-geglu-epilogue.js"
+          ]
+        },
+        {
+          "path": "scripts/private/laya-geglu-browser.py",
+          "bytes": 13514,
+          "sha256": "93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8",
+          "object_path": "objects/93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/scripts/private/laya-geglu-browser.py"
+          ]
+        },
+        {
+          "path": "scripts/private/laya-geglu-protocol.json",
+          "bytes": 21655,
+          "sha256": "8ca5329e28ca4dfaceb1b3f5c7a163bd1b9358ad3b985df7ed8bda45564cb4a5",
+          "object_path": "objects/8ca5329e28ca4dfaceb1b3f5c7a163bd1b9358ad3b985df7ed8bda45564cb4a5.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/laya-bn32/scripts/private/laya-geglu-protocol.json"
+          ]
+        },
+        {
+          "path": "scripts/private/laya-geglu-protocol.mjs",
+          "bytes": 8719,
+          "sha256": "e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496",
+          "object_path": "objects/e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-2026-11-07/source/laya-r5/scripts/private/laya-geglu-protocol.mjs"
+          ]
+        },
+        {
+          "path": "scripts/private/run-laya-geglu.mjs",
+          "bytes": 29214,
+          "sha256": "2933bbe1d37f12c056d25a410a3950c7ef6644ee29a06e4acd0791086b30c919",
+          "object_path": "objects/2933bbe1d37f12c056d25a410a3950c7ef6644ee29a06e4acd0791086b30c919.txt",
+          "previously_published_paths": [
+            "docs/benchmarks/gpu-epilogues-followup-2026-11-07/source/laya-bn32/scripts/private/run-laya-geglu.mjs"
+          ]
+        }
+      ],
+      "excluded": [
+        {
+          "path": "scripts/private/laya-geglu-controller-packet.json",
+          "reason": "Controller/provenance packet with run metadata; not source payload; identical copy already exists in published docs."
+        }
+      ]
+    },
+    {
+      "id": "semif-matmul-preserved-stash-2026-09-25",
+      "base_commit": "d3a7489751fd32c4c35caa1226e54f31ab03beb1",
+      "stash_commit": "a7c172a1973140f4bb4a48d8794c60e349029bad",
+      "validation": {
+        "source_validation": "Historical interrupted stash, preserved without applying or changing it. No functional or performance validation of these exact bytes is established by this archive.",
+        "runtime_status": "Inert source snapshot only."
+      },
+      "files": [
+        {
+          "path": "README.md",
+          "bytes": 20184,
+          "sha256": "5e790d6f4e680e659e1d969a367ab4350d0d2112883adcb05443e3944615101e",
+          "object_path": "objects/5e790d6f4e680e659e1d969a367ab4350d0d2112883adcb05443e3944615101e.txt"
+        },
+        {
+          "path": "bench.html",
+          "bytes": 6949,
+          "sha256": "a782e6490e5ad0fb98532f737deded3d825f7fa21ae15f7efae85e5284e8e4aa",
+          "object_path": "objects/a782e6490e5ad0fb98532f737deded3d825f7fa21ae15f7efae85e5284e8e4aa.txt"
+        },
+        {
+          "path": "crates/kevala/src/gpu.rs",
+          "bytes": 12009,
+          "sha256": "1465dfd42a24b3d303c714b9205449e851a339bdfd4e0d0639c580628bbae7cc",
+          "object_path": "objects/1465dfd42a24b3d303c714b9205449e851a339bdfd4e0d0639c580628bbae7cc.txt"
+        },
+        {
+          "path": "crates/kevala/src/wgsl/matmul_wide.wgsl",
+          "bytes": 5682,
+          "sha256": "592150cd0e92c0c559209e883a7fc24cef9caf321a0b803e67078a1534098300",
+          "object_path": "objects/592150cd0e92c0c559209e883a7fc24cef9caf321a0b803e67078a1534098300.txt"
+        },
+        {
+          "path": "crates/kevala/tests/wgsl.rs",
+          "bytes": 4101,
+          "sha256": "847cceb96548f2b9817e4bfa32e16260539e74c57411491758c16adff74e2078",
+          "object_path": "objects/847cceb96548f2b9817e4bfa32e16260539e74c57411491758c16adff74e2078.txt"
+        },
+        {
+          "path": "dev/gpu-bench.js",
+          "bytes": 22294,
+          "sha256": "8accbfacd105340f671fdbd8e80981c25fef922a0e3834deb16789f4639d9efb",
+          "object_path": "objects/8accbfacd105340f671fdbd8e80981c25fef922a0e3834deb16789f4639d9efb.txt"
+        },
+        {
+          "path": "docs/semif-matmul.md",
+          "bytes": 11686,
+          "sha256": "908ea5384217c8a36aa56300fcf199a1d7598e6f57d18001f678ce5884fe8d04",
+          "object_path": "objects/908ea5384217c8a36aa56300fcf199a1d7598e6f57d18001f678ce5884fe8d04.txt"
+        },
+        {
+          "path": "js/src/engine-worker.js",
+          "bytes": 19153,
+          "sha256": "f95b9434fda264906c8c738e85668ee84c778a01a598bbdaaca6d45efdc17b06",
+          "object_path": "objects/f95b9434fda264906c8c738e85668ee84c778a01a598bbdaaca6d45efdc17b06.txt"
+        },
+        {
+          "path": "js/src/gpu-kev.js",
+          "bytes": 27939,
+          "sha256": "57b86e3a9e46f6ffce140901f861d85b930fa9653a244c12f3b6b7c1aa655542",
+          "object_path": "objects/57b86e3a9e46f6ffce140901f861d85b930fa9653a244c12f3b6b7c1aa655542.txt"
+        },
+        {
+          "path": "js/src/gpu-tuning.js",
+          "bytes": 13199,
+          "sha256": "b05f9873cd524b92eb795ac474f82620b5e2d8c380ad3958b5f6411406251980",
+          "object_path": "objects/b05f9873cd524b92eb795ac474f82620b5e2d8c380ad3958b5f6411406251980.txt"
+        },
+        {
+          "path": "js/src/gpu.js",
+          "bytes": 28841,
+          "sha256": "06d693696da4db996286914ca125416fa450adebe6360da5572d6114fc81cad9",
+          "object_path": "objects/06d693696da4db996286914ca125416fa450adebe6360da5572d6114fc81cad9.txt"
+        },
+        {
+          "path": "js/src/index.js",
+          "bytes": 12732,
+          "sha256": "63ad4ebdb059c240c94347d8f48cdaa715759522940eab99ab2ed93742b5d63f",
+          "object_path": "objects/63ad4ebdb059c240c94347d8f48cdaa715759522940eab99ab2ed93742b5d63f.txt"
+        },
+        {
+          "path": "parity-kev.html",
+          "bytes": 4832,
+          "sha256": "46495c658a0e28b5739ae2804e6d6e2a8b29df778fb57176f1676256b28b7cee",
+          "object_path": "objects/46495c658a0e28b5739ae2804e6d6e2a8b29df778fb57176f1676256b28b7cee.txt"
+        },
+        {
+          "path": "tests/gpu-tuning.test.mjs",
+          "bytes": 5265,
+          "sha256": "a29d07ec6078dd6ed8008be156bca2247c0b7fd7c049771835e63f8a01c1cb20",
+          "object_path": "objects/a29d07ec6078dd6ed8008be156bca2247c0b7fd7c049771835e63f8a01c1cb20.txt"
+        },
+        {
+          "path": "tests/load-recovery.test.mjs",
+          "bytes": 9030,
+          "sha256": "6bf3480c156b21d1a9029578d76b7ada7eb5501c628023199a20a007ad34ace8",
+          "object_path": "objects/6bf3480c156b21d1a9029578d76b7ada7eb5501c628023199a20a007ad34ace8.txt"
+        }
+      ],
+      "deleted_paths": [
+        "crates/kevala/src/wgsl/matmul_registers.wgsl"
+      ],
+      "excluded": [
+        {
+          "path": "docs/benchmarks/semif-matmul-linux-2026-09-22.json",
+          "reason": "Historical benchmark capture; raw result data is outside this source-only archive."
+        }
+      ]
+    }
+  ],
+  "objects": [
+    {
+      "path": "objects/0076d9e840af025a10e4565cf164ba5997ff20cd248b408eb68d9c0a9f7619ec.txt",
+      "bytes": 11843,
+      "sha256": "0076d9e840af025a10e4565cf164ba5997ff20cd248b408eb68d9c0a9f7619ec",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/00b24d908fbad27ad2b5630db5faa2633c4f342ab0485bc5e29e5640e44ccca6.txt",
+      "bytes": 24397,
+      "sha256": "00b24d908fbad27ad2b5630db5faa2633c4f342ab0485bc5e29e5640e44ccca6",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/06d693696da4db996286914ca125416fa450adebe6360da5572d6114fc81cad9.txt",
+      "bytes": 28841,
+      "sha256": "06d693696da4db996286914ca125416fa450adebe6360da5572d6114fc81cad9",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c.txt",
+      "bytes": 13558,
+      "sha256": "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/08d09960b903d5ee30ac37f13588207bed31b5291a6cfcb941fb3fd241a8862e.txt",
+      "bytes": 926,
+      "sha256": "08d09960b903d5ee30ac37f13588207bed31b5291a6cfcb941fb3fd241a8862e",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/0a06aeb21023b7ff79e9d3ff734468fa0523c29d698972d1cd4b99c23f5bfc42.txt",
+      "bytes": 12417,
+      "sha256": "0a06aeb21023b7ff79e9d3ff734468fa0523c29d698972d1cd4b99c23f5bfc42",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/0a54825e0d7cae52d206d8c9dabd6ada471e8120363d52e47badc050d653a70c.txt",
+      "bytes": 28731,
+      "sha256": "0a54825e0d7cae52d206d8c9dabd6ada471e8120363d52e47badc050d653a70c",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a.txt",
+      "bytes": 1546,
+      "sha256": "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd.txt",
+      "bytes": 28669,
+      "sha256": "0ef78e07eec378a40421d9aa0f7049f991934ceeafc4ba1b54162880f704ebbd",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/0f97b431f8f16e8afd9197eba0d9e2e8f14199376fe704240f8651b2ba9dbf80.txt",
+      "bytes": 26476,
+      "sha256": "0f97b431f8f16e8afd9197eba0d9e2e8f14199376fe704240f8651b2ba9dbf80",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/1465dfd42a24b3d303c714b9205449e851a339bdfd4e0d0639c580628bbae7cc.txt",
+      "bytes": 12009,
+      "sha256": "1465dfd42a24b3d303c714b9205449e851a339bdfd4e0d0639c580628bbae7cc",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/15458bbeea2fcdf61494085d88a4b371d39f3e2337b7ef5feb66e8bea683c81d.txt",
+      "bytes": 1948,
+      "sha256": "15458bbeea2fcdf61494085d88a4b371d39f3e2337b7ef5feb66e8bea683c81d",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee.txt",
+      "bytes": 1966,
+      "sha256": "16268df07c096cad6ed69087f51e7d187650f65d9b1193170018a611f468ccee",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8.txt",
+      "bytes": 24714,
+      "sha256": "1b16cba21289df64c94c8ffac03f55a2b344d8abf989707bb1f50297c264b0c8",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/1e5f00f794cd16502c25df29292582a3e79f9bbe32a3c25f1e586e3c1034927f.txt",
+      "bytes": 17291,
+      "sha256": "1e5f00f794cd16502c25df29292582a3e79f9bbe32a3c25f1e586e3c1034927f",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/1f138f638869bc488bc48e1045369763b822a0f7fd521a8448b6b24ac70cb79d.txt",
+      "bytes": 16304,
+      "sha256": "1f138f638869bc488bc48e1045369763b822a0f7fd521a8448b6b24ac70cb79d",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/240cb104eabcd69637e8915ff8b6256f131d78bb18473b300e100ee83a1b8329.txt",
+      "bytes": 8291,
+      "sha256": "240cb104eabcd69637e8915ff8b6256f131d78bb18473b300e100ee83a1b8329",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/24df77e2c8de8609f01021064a0b8b34655a6f3e62652955b9aa1e6479754d37.txt",
+      "bytes": 8520,
+      "sha256": "24df77e2c8de8609f01021064a0b8b34655a6f3e62652955b9aa1e6479754d37",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/2933bbe1d37f12c056d25a410a3950c7ef6644ee29a06e4acd0791086b30c919.txt",
+      "bytes": 29214,
+      "sha256": "2933bbe1d37f12c056d25a410a3950c7ef6644ee29a06e4acd0791086b30c919",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/2c28453e68cc299ada3364a22fb1b88bf5d97157880e955a94411fc8a2ddd27d.txt",
+      "bytes": 30010,
+      "sha256": "2c28453e68cc299ada3364a22fb1b88bf5d97157880e955a94411fc8a2ddd27d",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/2d0bcc752f3385042d989f96a05bb64ad674231e2c6c54a4a2015cfc9d5e8391.txt",
+      "bytes": 23974,
+      "sha256": "2d0bcc752f3385042d989f96a05bb64ad674231e2c6c54a4a2015cfc9d5e8391",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/2df092c627a1571ebfbfeacf3daf2c8c7a48237dc478005ba7eefe1c8442e43c.txt",
+      "bytes": 6501,
+      "sha256": "2df092c627a1571ebfbfeacf3daf2c8c7a48237dc478005ba7eefe1c8442e43c",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1.txt",
+      "bytes": 1119,
+      "sha256": "2e55faf61e4fdc9d7a918a6e524a68aa6b2b4b19d556fce3c0f116c129837bd1",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/306b6dccd4ecaaf4566f00da9d9b6542e929a2ac84ca482849552f6451c7851d.txt",
+      "bytes": 34331,
+      "sha256": "306b6dccd4ecaaf4566f00da9d9b6542e929a2ac84ca482849552f6451c7851d",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/35081d3bc7e2ee29f7453214dafb1a101675f481dc46a7870d01f55f605e1b25.txt",
+      "bytes": 12229,
+      "sha256": "35081d3bc7e2ee29f7453214dafb1a101675f481dc46a7870d01f55f605e1b25",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/381596dd3eb85353d2cf2549726af2fb86c8a128f002a0354ff31ceed3f388d5.txt",
+      "bytes": 878,
+      "sha256": "381596dd3eb85353d2cf2549726af2fb86c8a128f002a0354ff31ceed3f388d5",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07.txt",
+      "bytes": 228,
+      "sha256": "3c3a9a47fe01b465f1f85f99d10cf9090d431610315e4f484a1a779424733d07",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619.txt",
+      "bytes": 95445,
+      "sha256": "3e1420d083088f195aceb485b6b162b0ef113ee351fac901629103f445fe5619",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/3fd0b7a2e41cc9b6c8484fe4c08af954bc2bd9e54214a267f496bc40a99e3c1a.txt",
+      "bytes": 17130,
+      "sha256": "3fd0b7a2e41cc9b6c8484fe4c08af954bc2bd9e54214a267f496bc40a99e3c1a",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/42fa872ea11051767000f9327601af291fa7c64f11806957b70bb148533244b8.txt",
+      "bytes": 548,
+      "sha256": "42fa872ea11051767000f9327601af291fa7c64f11806957b70bb148533244b8",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/43acefaf46effb6bebbf2551d44e7be4f371304b02c9c47b661623ad7c1ba64d.txt",
+      "bytes": 56190,
+      "sha256": "43acefaf46effb6bebbf2551d44e7be4f371304b02c9c47b661623ad7c1ba64d",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/443856de805d5d967c2f730cd4f5149b84523adff4181e8868efef999f1f9734.txt",
+      "bytes": 1540,
+      "sha256": "443856de805d5d967c2f730cd4f5149b84523adff4181e8868efef999f1f9734",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/46495c658a0e28b5739ae2804e6d6e2a8b29df778fb57176f1676256b28b7cee.txt",
+      "bytes": 4832,
+      "sha256": "46495c658a0e28b5739ae2804e6d6e2a8b29df778fb57176f1676256b28b7cee",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/4ae38bd4edda8c96003895205e0c60d21e4228198b99a3faf2e2bb07203f1f73.txt",
+      "bytes": 8981,
+      "sha256": "4ae38bd4edda8c96003895205e0c60d21e4228198b99a3faf2e2bb07203f1f73",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/4bbf7ce574a2c4e2b829cf121bf6b8960a7bf690c86ee8dbd1327bf56af4a873.txt",
+      "bytes": 9305,
+      "sha256": "4bbf7ce574a2c4e2b829cf121bf6b8960a7bf690c86ee8dbd1327bf56af4a873",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41.txt",
+      "bytes": 2074,
+      "sha256": "4d706e8807f1489d9e76e13aa59ace2096f3619b7fc72c6a94d5fb6e71efcd41",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81.txt",
+      "bytes": 5151,
+      "sha256": "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/57b86e3a9e46f6ffce140901f861d85b930fa9653a244c12f3b6b7c1aa655542.txt",
+      "bytes": 27939,
+      "sha256": "57b86e3a9e46f6ffce140901f861d85b930fa9653a244c12f3b6b7c1aa655542",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/592150cd0e92c0c559209e883a7fc24cef9caf321a0b803e67078a1534098300.txt",
+      "bytes": 5682,
+      "sha256": "592150cd0e92c0c559209e883a7fc24cef9caf321a0b803e67078a1534098300",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758.txt",
+      "bytes": 8878,
+      "sha256": "5b262297f4c4276385964e716ff0cf69546a60a4f7476f73558419477c741758",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/5c6dda26af52e5af14c3cd62c70f4b82d019649e59d443c607a1cac13a81acef.txt",
+      "bytes": 18208,
+      "sha256": "5c6dda26af52e5af14c3cd62c70f4b82d019649e59d443c607a1cac13a81acef",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/5c9b33d9fe5ea4871cbf16e96a0c270e0813f4a3722d47a99e0a365ee481e125.txt",
+      "bytes": 11203,
+      "sha256": "5c9b33d9fe5ea4871cbf16e96a0c270e0813f4a3722d47a99e0a365ee481e125",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/5de5d8c33ad2c26694ea64866a7a5a135286efd26c8f0dc5278ca1fc8b6bb02b.txt",
+      "bytes": 12950,
+      "sha256": "5de5d8c33ad2c26694ea64866a7a5a135286efd26c8f0dc5278ca1fc8b6bb02b",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/5e5e3de4f04d62c7d08d1bdf093f24793647108299d74fdcf2dafb60ce0c5eb8.txt",
+      "bytes": 2435,
+      "sha256": "5e5e3de4f04d62c7d08d1bdf093f24793647108299d74fdcf2dafb60ce0c5eb8",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/5e790d6f4e680e659e1d969a367ab4350d0d2112883adcb05443e3944615101e.txt",
+      "bytes": 20184,
+      "sha256": "5e790d6f4e680e659e1d969a367ab4350d0d2112883adcb05443e3944615101e",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492.txt",
+      "bytes": 1153,
+      "sha256": "5eb8522aebdc0ab584f58985da12a97e72b0c74032b1c1d82846d19df629d492",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2.txt",
+      "bytes": 59720,
+      "sha256": "5f7b6cee99a58add86038e57813690cc4f3d8998c36db8a75c93a55ab69e71e2",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/5fa3f3c4fc79fadaf3998acf7fd8b2b5e3620a8cd833ae9fc1c0866122955009.txt",
+      "bytes": 3706,
+      "sha256": "5fa3f3c4fc79fadaf3998acf7fd8b2b5e3620a8cd833ae9fc1c0866122955009",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3.txt",
+      "bytes": 1104,
+      "sha256": "606fb745093a2d48bc4442ade18e1c2236d9500dac2436d64681ebb79e5bbae3",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/622b5083e545ac44852fe9266cccb6406646f9bc0975ef9d34672c89d51404af.txt",
+      "bytes": 11769,
+      "sha256": "622b5083e545ac44852fe9266cccb6406646f9bc0975ef9d34672c89d51404af",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/624e64cd7540bd66509b10a3abb5fd88cc83fc0c9a7ee75ce0039863e4e9dbe7.txt",
+      "bytes": 8712,
+      "sha256": "624e64cd7540bd66509b10a3abb5fd88cc83fc0c9a7ee75ce0039863e4e9dbe7",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/63ad4ebdb059c240c94347d8f48cdaa715759522940eab99ab2ed93742b5d63f.txt",
+      "bytes": 12732,
+      "sha256": "63ad4ebdb059c240c94347d8f48cdaa715759522940eab99ab2ed93742b5d63f",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8.txt",
+      "bytes": 3619,
+      "sha256": "63be0064e46f8e87b2e8a1b7538a705f016d4d853a23a8625d47cd70ac1bddf8",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/680ee840e662711aacdefb4aae8e5715e06abe2b43bb53fdb72f0ec865e5f7b6.txt",
+      "bytes": 47400,
+      "sha256": "680ee840e662711aacdefb4aae8e5715e06abe2b43bb53fdb72f0ec865e5f7b6",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/6880685f4aa77b6392c54474d7d2c2d29b4735b15aa114a2790bbe724f24ada0.txt",
+      "bytes": 11380,
+      "sha256": "6880685f4aa77b6392c54474d7d2c2d29b4735b15aa114a2790bbe724f24ada0",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/6bf3480c156b21d1a9029578d76b7ada7eb5501c628023199a20a007ad34ace8.txt",
+      "bytes": 9030,
+      "sha256": "6bf3480c156b21d1a9029578d76b7ada7eb5501c628023199a20a007ad34ace8",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/7075ba0c234e84d32e01362989acb550c22dd520242ea878c26c2860f37a366d.txt",
+      "bytes": 37063,
+      "sha256": "7075ba0c234e84d32e01362989acb550c22dd520242ea878c26c2860f37a366d",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb.txt",
+      "bytes": 12993,
+      "sha256": "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738.txt",
+      "bytes": 13158,
+      "sha256": "72c268d37d7fbe4aa6f6968ef7e81c7da1dfc663f509a6ff00cfe63e2b2fb738",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/73bc768c7d15f542a5ac3102ced4018a1db574dfd328e465c0152c895c537e57.txt",
+      "bytes": 27746,
+      "sha256": "73bc768c7d15f542a5ac3102ced4018a1db574dfd328e465c0152c895c537e57",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4.txt",
+      "bytes": 10815,
+      "sha256": "759ef6f3f90c9ea57d892d9bddf2e7730be39fd887c55b791fda4795f183b7f4",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0.txt",
+      "bytes": 17706,
+      "sha256": "78858b279d77153a2fed5a3b8af829253a98c96c0f95723a7a2964af9f13d6d0",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/79f5f60e743eb3086af9d68999a9876a9edea9fec6fff08ae1b60cfc1cedd8df.txt",
+      "bytes": 3960,
+      "sha256": "79f5f60e743eb3086af9d68999a9876a9edea9fec6fff08ae1b60cfc1cedd8df",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/7c27d77e223049ade09e2827461e921808b25e51187181b923d716a22df7708b.txt",
+      "bytes": 350,
+      "sha256": "7c27d77e223049ade09e2827461e921808b25e51187181b923d716a22df7708b",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/7c939dc489912ad3f9cddf06c32de324fb5043ee4e59e54a1b31c1fe5f90a5d6.txt",
+      "bytes": 22200,
+      "sha256": "7c939dc489912ad3f9cddf06c32de324fb5043ee4e59e54a1b31c1fe5f90a5d6",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/7dd1d67d99c6887439525aa2b51994f2e5ef6920cecd14ca92708cdd7adfe80d.txt",
+      "bytes": 56781,
+      "sha256": "7dd1d67d99c6887439525aa2b51994f2e5ef6920cecd14ca92708cdd7adfe80d",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/8039f02c565eb75c8aa0d9bbe845db4db1a0c3d4e3575f74a9aacc44827c33ce.txt",
+      "bytes": 12246,
+      "sha256": "8039f02c565eb75c8aa0d9bbe845db4db1a0c3d4e3575f74a9aacc44827c33ce",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/847cceb96548f2b9817e4bfa32e16260539e74c57411491758c16adff74e2078.txt",
+      "bytes": 4101,
+      "sha256": "847cceb96548f2b9817e4bfa32e16260539e74c57411491758c16adff74e2078",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/84cfd2c92ccc4181dd902fbbb938df9d2054b60b5bcf0136dd8add4e0f908054.txt",
+      "bytes": 1719,
+      "sha256": "84cfd2c92ccc4181dd902fbbb938df9d2054b60b5bcf0136dd8add4e0f908054",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/84fbb84ab58d5f5e4628934ccf7b9caa5920d27a1b6e6432550c91639e31f00b.txt",
+      "bytes": 90029,
+      "sha256": "84fbb84ab58d5f5e4628934ccf7b9caa5920d27a1b6e6432550c91639e31f00b",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/855a1f1c44b2dd21e0db83b52487b6baf80d326267fedd08eb74a73d2c63b6d1.txt",
+      "bytes": 4995,
+      "sha256": "855a1f1c44b2dd21e0db83b52487b6baf80d326267fedd08eb74a73d2c63b6d1",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/856164df9f5b2854db6c26cd68659049fc275036bd78ae952cd3eaea0c5c8229.txt",
+      "bytes": 95110,
+      "sha256": "856164df9f5b2854db6c26cd68659049fc275036bd78ae952cd3eaea0c5c8229",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/88f84a27b33ffcdb1e277904b23067cee2fbf730d35c79ff82f07ed01238f910.txt",
+      "bytes": 74569,
+      "sha256": "88f84a27b33ffcdb1e277904b23067cee2fbf730d35c79ff82f07ed01238f910",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/8accbfacd105340f671fdbd8e80981c25fef922a0e3834deb16789f4639d9efb.txt",
+      "bytes": 22294,
+      "sha256": "8accbfacd105340f671fdbd8e80981c25fef922a0e3834deb16789f4639d9efb",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/8b19a57576331e11e652b621b278287556bd3a99795af1746744b73d7e25b515.txt",
+      "bytes": 6178,
+      "sha256": "8b19a57576331e11e652b621b278287556bd3a99795af1746744b73d7e25b515",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/8ca5329e28ca4dfaceb1b3f5c7a163bd1b9358ad3b985df7ed8bda45564cb4a5.txt",
+      "bytes": 21655,
+      "sha256": "8ca5329e28ca4dfaceb1b3f5c7a163bd1b9358ad3b985df7ed8bda45564cb4a5",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/908ea5384217c8a36aa56300fcf199a1d7598e6f57d18001f678ce5884fe8d04.txt",
+      "bytes": 11686,
+      "sha256": "908ea5384217c8a36aa56300fcf199a1d7598e6f57d18001f678ce5884fe8d04",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/90e5685c301c765aceb465f94f2d2d6ac28224540c3a43340ec75cad3ab39b4e.txt",
+      "bytes": 53307,
+      "sha256": "90e5685c301c765aceb465f94f2d2d6ac28224540c3a43340ec75cad3ab39b4e",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/928e79272dc69bc50def73cffb0368f4bb2d0a5b04dd7144db702902d2c42dc9.txt",
+      "bytes": 20828,
+      "sha256": "928e79272dc69bc50def73cffb0368f4bb2d0a5b04dd7144db702902d2c42dc9",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8.txt",
+      "bytes": 13514,
+      "sha256": "93f452299998043dbf42b8ffaeb03cb7a10c54b25632cbf655f2ee29e91bbce8",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/9cbf1e51010f2efe1ebe3c2dd6923f25d776831bd95f0e0e57479a54be8bf0a7.txt",
+      "bytes": 29425,
+      "sha256": "9cbf1e51010f2efe1ebe3c2dd6923f25d776831bd95f0e0e57479a54be8bf0a7",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/9fdad5cb93eefb6a888b42f2b996cf77f217dcb6e8d98bbb4cd5d6f9c14270ee.txt",
+      "bytes": 11336,
+      "sha256": "9fdad5cb93eefb6a888b42f2b996cf77f217dcb6e8d98bbb4cd5d6f9c14270ee",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/9fe3bd7740fd108742ab37fc1f550aae3e1397095453789c85dd85d3e76c7f45.txt",
+      "bytes": 10376,
+      "sha256": "9fe3bd7740fd108742ab37fc1f550aae3e1397095453789c85dd85d3e76c7f45",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/a109005fa7ffcd7b7a33e52ae224d73138bf31a4d0e468d1ce04da38431a0795.txt",
+      "bytes": 11242,
+      "sha256": "a109005fa7ffcd7b7a33e52ae224d73138bf31a4d0e468d1ce04da38431a0795",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/a162f71c4a50cfa7e72d93d8c487a48decd534adbc28093304d7936971462a71.txt",
+      "bytes": 2275,
+      "sha256": "a162f71c4a50cfa7e72d93d8c487a48decd534adbc28093304d7936971462a71",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/a1d101ed08726cafb2d7a301a39edf789adfc203044852fd8c7b4cf7cf12b5da.txt",
+      "bytes": 33589,
+      "sha256": "a1d101ed08726cafb2d7a301a39edf789adfc203044852fd8c7b4cf7cf12b5da",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/a29d07ec6078dd6ed8008be156bca2247c0b7fd7c049771835e63f8a01c1cb20.txt",
+      "bytes": 5265,
+      "sha256": "a29d07ec6078dd6ed8008be156bca2247c0b7fd7c049771835e63f8a01c1cb20",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/a51dde5a4eeee58bec3e1bf350dfc50f491835fab6f0073f71a026d79b1e2e54.txt",
+      "bytes": 12943,
+      "sha256": "a51dde5a4eeee58bec3e1bf350dfc50f491835fab6f0073f71a026d79b1e2e54",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9.txt",
+      "bytes": 20397,
+      "sha256": "a53fe000f0a4b501f73bc85e27661fce0675e81cc0a949ff4d24a51b566eeca9",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/a782e6490e5ad0fb98532f737deded3d825f7fa21ae15f7efae85e5284e8e4aa.txt",
+      "bytes": 6949,
+      "sha256": "a782e6490e5ad0fb98532f737deded3d825f7fa21ae15f7efae85e5284e8e4aa",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/a948dcef160a009726f10f6ed657dce4d0e9d432d14ae968e1c851f85c61712f.txt",
+      "bytes": 414,
+      "sha256": "a948dcef160a009726f10f6ed657dce4d0e9d432d14ae968e1c851f85c61712f",
+      "languages": [
+        "toml"
+      ]
+    },
+    {
+      "path": "objects/aa0b3372c8140f7db8dcff61913d8aee13ea76ccb2065ae7bbc2db87f6614019.txt",
+      "bytes": 4409,
+      "sha256": "aa0b3372c8140f7db8dcff61913d8aee13ea76ccb2065ae7bbc2db87f6614019",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/aba79fa9a419448edec639fb53f8ed4979f887d5950cd1fb8d8c18caf652a18b.txt",
+      "bytes": 15651,
+      "sha256": "aba79fa9a419448edec639fb53f8ed4979f887d5950cd1fb8d8c18caf652a18b",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/b05f9873cd524b92eb795ac474f82620b5e2d8c380ad3958b5f6411406251980.txt",
+      "bytes": 13199,
+      "sha256": "b05f9873cd524b92eb795ac474f82620b5e2d8c380ad3958b5f6411406251980",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/b17547610bd23b38dc856d24d17174d016360876cff5b55a6f30ebc6eb34e2f8.txt",
+      "bytes": 7183,
+      "sha256": "b17547610bd23b38dc856d24d17174d016360876cff5b55a6f30ebc6eb34e2f8",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/b1954a3f5411d49d37717407ec05c424e13868f61b05a4e0685425b845f8d82f.txt",
+      "bytes": 29209,
+      "sha256": "b1954a3f5411d49d37717407ec05c424e13868f61b05a4e0685425b845f8d82f",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/b3f0116b85f43a45cdf3975a816fa6f69cd3a36ed8b4ee0a531aa54f16a54711.txt",
+      "bytes": 25101,
+      "sha256": "b3f0116b85f43a45cdf3975a816fa6f69cd3a36ed8b4ee0a531aa54f16a54711",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/b5c8657e2e2fc9fcc48b512dd0a1dc7168977ebece807be3d318e1cf9ec5134e.txt",
+      "bytes": 2662,
+      "sha256": "b5c8657e2e2fc9fcc48b512dd0a1dc7168977ebece807be3d318e1cf9ec5134e",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/b5ce5dbd70e5341d32a3439c88935020fcf0f53b2bedc40000489e32d97d6e98.txt",
+      "bytes": 4461,
+      "sha256": "b5ce5dbd70e5341d32a3439c88935020fcf0f53b2bedc40000489e32d97d6e98",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/b7bb0347d28e5ad57afc0891cb1a1597727e981fb280b5af76264f66ae3026a0.txt",
+      "bytes": 29664,
+      "sha256": "b7bb0347d28e5ad57afc0891cb1a1597727e981fb280b5af76264f66ae3026a0",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/b92b4b699ad2ece7e2180a64733efd84e96a405e3fdad8092855c6c8dbb28d29.txt",
+      "bytes": 12092,
+      "sha256": "b92b4b699ad2ece7e2180a64733efd84e96a405e3fdad8092855c6c8dbb28d29",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/bf00d6ce15e05887d7c718988b165f07d879d36a5daf5afb598d4cc5ad265de3.txt",
+      "bytes": 90973,
+      "sha256": "bf00d6ce15e05887d7c718988b165f07d879d36a5daf5afb598d4cc5ad265de3",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/c001be2da02e5efee6567f1256462b5765cc4767fbdcc30c7af6271d583766ae.txt",
+      "bytes": 12838,
+      "sha256": "c001be2da02e5efee6567f1256462b5765cc4767fbdcc30c7af6271d583766ae",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/ca5f8e981e38bc3d8c211a374ed3a4eaf477fe340e05a3501015b0f4c0f52fe2.txt",
+      "bytes": 24427,
+      "sha256": "ca5f8e981e38bc3d8c211a374ed3a4eaf477fe340e05a3501015b0f4c0f52fe2",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2.txt",
+      "bytes": 11053,
+      "sha256": "cb8c37f1a51fe13bafe1080f9d350b211522d2a6513118eed880add7b7ba80e2",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/ccfbee73e8aaae39d0fa9a7d33e520a51377ed51a4ebe5a70980d96a07087b72.txt",
+      "bytes": 13995,
+      "sha256": "ccfbee73e8aaae39d0fa9a7d33e520a51377ed51a4ebe5a70980d96a07087b72",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019.txt",
+      "bytes": 27283,
+      "sha256": "cd4a770047636815a4f99bb780d6f9e4832b15422a41610b093eaf33da829019",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/cd55adb7a377565c3d6bf07d84b0ec5b317b307825aefb82e74020a40bb0d134.txt",
+      "bytes": 16374,
+      "sha256": "cd55adb7a377565c3d6bf07d84b0ec5b317b307825aefb82e74020a40bb0d134",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/cd978379ddca009376344c39842b092aa4cd175abbdeda052c9abe8535d7f9a4.txt",
+      "bytes": 71752,
+      "sha256": "cd978379ddca009376344c39842b092aa4cd175abbdeda052c9abe8535d7f9a4",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/ceb3ab6b57119d99f13e8adbd73736a820055a72c39381ffc63494eb24827393.txt",
+      "bytes": 37577,
+      "sha256": "ceb3ab6b57119d99f13e8adbd73736a820055a72c39381ffc63494eb24827393",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39.txt",
+      "bytes": 19823,
+      "sha256": "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39",
+      "languages": [
+        "json"
+      ]
+    },
+    {
+      "path": "objects/d43c91d9bc1b90f05d6ec870f90c8b11c5ca5adc8d00bf598eb4145fc2958d0e.txt",
+      "bytes": 37184,
+      "sha256": "d43c91d9bc1b90f05d6ec870f90c8b11c5ca5adc8d00bf598eb4145fc2958d0e",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/d620bcdcf7250514c58f7436d611112625eeeb8ef2b76de08ab025298d7bce22.txt",
+      "bytes": 373,
+      "sha256": "d620bcdcf7250514c58f7436d611112625eeeb8ef2b76de08ab025298d7bce22",
+      "languages": [
+        "toml"
+      ]
+    },
+    {
+      "path": "objects/d6b7dc134c6f14826419c8620ba169e5a970ed9233b77c9d9388138c0232d0cc.txt",
+      "bytes": 6949,
+      "sha256": "d6b7dc134c6f14826419c8620ba169e5a970ed9233b77c9d9388138c0232d0cc",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/da0d445070d9f4fb1009ebc7d16c900c3948c671509162e330303a2637c8079a.txt",
+      "bytes": 13242,
+      "sha256": "da0d445070d9f4fb1009ebc7d16c900c3948c671509162e330303a2637c8079a",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/db4d792334b274edef12da5a9635c9ae6ad5417bed5b3c9176ff962c8425d0eb.txt",
+      "bytes": 28515,
+      "sha256": "db4d792334b274edef12da5a9635c9ae6ad5417bed5b3c9176ff962c8425d0eb",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/de750032f042a7d5312c75e57b2c8d7e9bde9012f2ca9ef4828d55d1c98e77b4.txt",
+      "bytes": 23539,
+      "sha256": "de750032f042a7d5312c75e57b2c8d7e9bde9012f2ca9ef4828d55d1c98e77b4",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a.txt",
+      "bytes": 3463,
+      "sha256": "df2575d2d836928a6bb18201d604f85a8127850ece3731615cf9123a8196552a",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/e5ddb53b132ebd304e522fcdd649f30e066c50310cf103c3fc69d655f9be6ce7.txt",
+      "bytes": 11772,
+      "sha256": "e5ddb53b132ebd304e522fcdd649f30e066c50310cf103c3fc69d655f9be6ce7",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496.txt",
+      "bytes": 8719,
+      "sha256": "e65f90b92d24fbdee78da668d43d3a00d107664cbdd2b781832bef70d89c6496",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/e75e2cabfd27795b5e37f081f9226a5ea8ff2b54bdd501895b86c095c4077447.txt",
+      "bytes": 1544,
+      "sha256": "e75e2cabfd27795b5e37f081f9226a5ea8ff2b54bdd501895b86c095c4077447",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/eab06e0a27837902cde9edde012bf5b4deb3cca99b6cc660df9bead715985602.txt",
+      "bytes": 41032,
+      "sha256": "eab06e0a27837902cde9edde012bf5b4deb3cca99b6cc660df9bead715985602",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0.txt",
+      "bytes": 86154,
+      "sha256": "eee15de6ed7e26d4329d9bdd4cb0653dcf62cad5b45d44f01cce5e110a599ff0",
+      "languages": [
+        "python"
+      ]
+    },
+    {
+      "path": "objects/ef3a1bcf3dc9b3984d8aeeb817530cf1e3dae78fa022cf00e729e01080348b48.txt",
+      "bytes": 1306,
+      "sha256": "ef3a1bcf3dc9b3984d8aeeb817530cf1e3dae78fa022cf00e729e01080348b48",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049.txt",
+      "bytes": 64936,
+      "sha256": "ef3c4c8e02ba2c9b692e255e9c03d787a16d257034ca779ee3bfbeeb0a306049",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/f3268f99f8d1fe9324cd49195e5e6fd7966d770a24f57c792c74cdb5a294d0e6.txt",
+      "bytes": 27477,
+      "sha256": "f3268f99f8d1fe9324cd49195e5e6fd7966d770a24f57c792c74cdb5a294d0e6",
+      "languages": [
+        "rust"
+      ]
+    },
+    {
+      "path": "objects/f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5.txt",
+      "bytes": 16457,
+      "sha256": "f7811cb50cbdd37b31401076b94ff5fe1e89abd7f4390dd0b51573db5a4f01b5",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/f83e4391bdf8ebf2e4aa6fd90f0ae0820784cf0b9f088ef7fe7c353a593909b4.txt",
+      "bytes": 28384,
+      "sha256": "f83e4391bdf8ebf2e4aa6fd90f0ae0820784cf0b9f088ef7fe7c353a593909b4",
+      "languages": [
+        "text"
+      ]
+    },
+    {
+      "path": "objects/f95b9434fda264906c8c738e85668ee84c778a01a598bbdaaca6d45efdc17b06.txt",
+      "bytes": 19153,
+      "sha256": "f95b9434fda264906c8c738e85668ee84c778a01a598bbdaaca6d45efdc17b06",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/fca439c24ad4ad71b14a13614e4797a37df40cecc93df04e275d28cce7fad1f1.txt",
+      "bytes": 7373,
+      "sha256": "fca439c24ad4ad71b14a13614e4797a37df40cecc93df04e275d28cce7fad1f1",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/fca596e54773854283102c4736b96e4c9d34ef7ac0e9781cf9a9ee4794fa6373.txt",
+      "bytes": 5209,
+      "sha256": "fca596e54773854283102c4736b96e4c9d34ef7ac0e9781cf9a9ee4794fa6373",
+      "languages": [
+        "javascript"
+      ]
+    },
+    {
+      "path": "objects/ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37.txt",
+      "bytes": 7274,
+      "sha256": "ff901361449c7992f7cc63bc6d6efec1bf7ad7014a712fdb5ce945251d88cd37",
+      "languages": [
+        "json"
+      ]
+    }
+  ],
+  "preserved_git_branches": [
+    {
+      "branch": "bvolpato/gemma-gpu-optimization",
+      "commit": "3167ae2f6658ae6352788fa5504cb8fba8a90ec9"
+    },
+    {
+      "branch": "bvolpato/gemma-mm-wide2",
+      "commit": "6c0cdd80cd724200289ccb6c57e90811994c7006"
+    },
+    {
+      "branch": "bvolpato/gpu-latency-goal",
+      "commit": "2c0440f0c5f919d9717ccf85675e5590bcf85b16"
+    },
+    {
+      "branch": "bvolpato/latency-attn32",
+      "commit": "34552a11db77957997bd151fb9ebc8b8c99abb12"
+    },
+    {
+      "branch": "bvolpato/latency-recur16",
+      "commit": "b4685a2d38c5357c5718248ac07a2c2e231f1b36"
+    },
+    {
+      "branch": "bvolpato/latency-recur8",
+      "commit": "b4685a2d38c5357c5718248ac07a2c2e231f1b36"
+    },
+    {
+      "branch": "bvolpato/qwen-final-tail",
+      "commit": "d2bb96e7ef6176d5d4c895375a39eac304818e2b"
+    },
+    {
+      "branch": "bvolpato/recur-runtime-guard",
+      "commit": "81edf97d6513342444c0c194c3ad5398e59e77e4"
+    },
+    {
+      "branch": "bvolpato/semif-matmul-tuning",
+      "commit": "d3a7489751fd32c4c35caa1226e54f31ab03beb1"
+    },
+    {
+      "branch": "bvolpato/shared-gpu-operations",
+      "commit": "f29200723795ae6740eb058d590e2228774af3e2"
+    },
+    {
+      "branch": "codex/gemma-gqa-tile",
+      "commit": "fb2dc51362895c53d1393ce3fd9c5c7a72ec64ca"
+    },
+    {
+      "branch": "codex/kev-attention-shader-unify",
+      "commit": "e2fbab8453e7813535d8fe0c5a94400534b90a14"
+    }
+  ]
+}

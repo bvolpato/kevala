@@ -1,0 +1,109 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import test from "node:test";
+import { validateSplitResult } from "./integer-matrix-split-result.mjs";
+
+// Metadata-only controller fixtures. No page/helper imports, tensor generation or GPU work.
+const protocol = JSON.parse(readFileSync(new URL("./laya-integer-matrix-protocol.json", import.meta.url), "utf8"));
+const contract = JSON.parse(readFileSync(new URL("./integer-matrix-split-contract.json", import.meta.url), "utf8"));
+const words = contract.requiredStatusWords;
+const validation = () => ({ words: [...words], partUnchanged: true, passed: true,
+  positiveCoverage: { outputs: 2686976, quantValues: 524288, quantBlocks: 16384, canaries: 512 } });
+function sample(block, index) {
+  const ticks = [], stages = [];
+  let cursor = 1000n + BigInt(index) * 10000n, quantize = 0n, integerMatmul = 0n;
+  for (let invocation = 0; invocation < 16; invocation++) {
+    const qb = cursor, qe = qb + (invocation === 0 ? 0n : 10n), mb = qe + (invocation === 0 ? -2n : 3n), me = mb + 20n;
+    ticks.push(qb, qe, mb, me); cursor = me + 4n;
+    const stage = { invocation };
+    for (const [name, offset, first, last] of [["quantize", invocation * 4, qb, qe], ["integerMatmul", invocation * 4 + 2, mb, me]]) {
+      stage[name] = { beginIndex: offset, endIndex: offset + 1, begin: first.toString(), end: last.toString(), elapsed: (last - first).toString(), gpuMs: Number(last - first) / 1e6 };
+    }
+    stages.push(stage); quantize += qe - qb; integerMatmul += me - mb;
+  }
+  const total = ticks[63] - ticks[0], residual = total - quantize - integerMatmul;
+  return { block, index, kernel: "candidate", invocations: 16, passes: 32,
+    dispatches: { baseline: 0, quantize: 16, integerMatmul: 16, reduce: 0 }, rawTimestampNs: ticks.map(String),
+    timestampNs: { begin: ticks[0].toString(), end: ticks[63].toString(), elapsed: total.toString() }, stages,
+    interPassGapsNs: Array.from({ length: 31 }, (_, gap) => (ticks[(gap + 1) * 2] - ticks[gap * 2 + 1]).toString()),
+    stageTotalsNs: { quantize: quantize.toString(), integerMatmul: integerMatmul.toString(), residual: residual.toString() },
+    stageTotalsMs: { quantize: Number(quantize) / 1e6, integerMatmul: Number(integerMatmul) / 1e6, residual: Number(residual) / 1e6 },
+    zeroDurationPasses: { quantize: 1, integerMatmul: 0 }, negativeInterPassGaps: 1,
+    gpuMs: Number(total) / 1e6, perInvocationMs: Number(total) / 1e6 / 16, validation: validation() };
+}
+function metadata() {
+  const sourceIdentities = {};
+  for (const [name, bytes, sha256] of [
+    ["helper", 12993, "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb"],
+    ["protocol", 19823, "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39"],
+    ["baseline", 13558, "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c"],
+    ["reducer", 1546, "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a"],
+    ["diagnosticProtocol", 5151, "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81"],
+  ]) sourceIdentities[name] = { bytes, sha256 };
+  const features = ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"];
+  const result = { done: true, status: "done", phase: "complete", error: null, errors: [], sourceIdentities,
+    compilation: Array.from({ length: 7 }, (_, index) => ({ name: `metadata-only-${index}`, diagnostics: { totalMessages: 0, totalErrors: 0, truncated: false, messages: [] } })),
+    protocol: { schema: "private-laya-integer-matrix-split-v1", numericProtocol: protocol.schema,
+      shape: { M: 512, N: 5248, K: 1024, block: 32 }, repetitions: 16, warmups: 3, samples: 9, candidateOnly: true, queryIndicesPerSample: 64,
+      instrumentationLimitation: "metadata-only diagnostic; instrumented timestamps are not a clean latency partition",
+      reducerDispatches: 0, modelOrWasmLoads: 0, promotion: false },
+    capabilities: { config: { componentType: "i8", resultComponentType: "i32", M: 16, N: 16, K: 32 }, requiredLimits: {},
+      requestedFeatures: features, features, shaderF16Requested: false, subgroupMinSize: 32, subgroupMaxSize: 32,
+      adapter: { vendor: "nvidia", architecture: "blackwell", description: "metadata-only test" },
+      deviceLimits: { maxComputeWorkgroupStorageSize: 16384, maxComputeInvocationsPerWorkgroup: 256, maxComputeWorkgroupSizeX: 256, maxStorageBufferBindingSize: 2 ** 27 } },
+    adapterIdentity: { nvidia: true, blackwell: true, nonfallback: true, isFallbackAdapter: false, fallbackFlags: { adapterInfo: false, adapter: null } },
+    packingGate: { passed: true, outputsCompared: 256, mismatches: 0, guardsCompared: 128, guardFailures: 0, dispatches: 1,
+      positive: 106, negative: 150, zero: 0, actual: protocol.prerequisiteGate.fixture.expected.values,
+      actualSha256: "498117f912a5f1a4a3a2f6cd8bda7bacd741f38d389ea754e842b8fa463a58b3", expectedSha256: "498117f912a5f1a4a3a2f6cd8bda7bacd741f38d389ea754e842b8fa463a58b3" },
+    fixtures: protocol.fixtures.map((fixture) => ({ id: fixture.id, seed: fixture.seed, shape: [512, 5248, 1024], exact: ["integer", "dyadic"].includes(fixture.id), status: "pass",
+      inputIdentities: { X: { bytes: 2097152, sha256: "0".repeat(64) }, W: { bytes: 5373952, sha256: "1".repeat(64) }, S: { bytes: 671744, sha256: "2".repeat(64) } },
+      dispatches: { baseline: 1, quantize: 1, integerMatmul: 1, reduce: 0 }, validation: validation() })),
+    warmups: Array.from({ length: 3 }, (_, index) => sample("warmup", index)),
+    timing: { samples: Array.from({ length: 9 }, (_, index) => sample("diagnostic", index)), summary: {
+      sampleCount: 9, invocationsPerSample: 16, medianStageTotalsMs: { quantize: 0.00015, integerMatmul: 0.00032, enclosingTotal: 0.000573 },
+      medianPerInvocationMs: { quantize: 0.000009375, integerMatmul: 0.00002, enclosingTotal: 0.0000358125 },
+      zeroDurationPasses: { quantize: 9, integerMatmul: 0 }, negativeInterPassGaps: 9,
+      meaning: "metadata-only diagnostic; instrumented timestamps are not a clean latency partition" } },
+    cleanup: { buffersCreated: 5, buffersDestroyed: 5, querySetsCreated: 1, querySetsDestroyed: 1, mapsOpen: 0, deviceDestroyed: true } };
+  return result;
+}
+
+
+test("metadata preserves zero-duration passes and signed negative gaps without a ranking", () => {
+  const result = validateSplitResult(metadata());
+  assert.equal(result.diagnosticOnly, true); assert.equal(result.samples, 9);
+  assert.equal(result.zeroDurationPasses.quantize, 9); assert.equal(result.negativeInterPassGaps, 9);
+  assert.equal(result.performanceAccepted, undefined);
+});
+test("metadata rejects a clipped negative gap", () => {
+  const page = metadata(); page.timing.samples[0].interPassGapsNs[0] = "0";
+  assert.throws(() => validateSplitResult(page), /signed gap/);
+});
+test("metadata rejects an imputed positive duration for a raw zero pass", () => {
+  const page = metadata(); page.timing.samples[0].stages[0].quantize.elapsed = "1";
+  assert.throws(() => validateSplitResult(page));
+});
+test("metadata rejects incomplete raw64 timestamp coverage", () => {
+  const page = metadata(); page.timing.samples[0].rawTimestampNs.pop();
+  assert.throws(() => validateSplitResult(page), /raw64/);
+});
+test("metadata rejects a timed baseline dispatch in the candidate-only diagnostic", () => {
+  const page = metadata(); page.timing.samples[0].dispatches.baseline = 1;
+  assert.throws(() => validateSplitResult(page), /candidate-only/);
+});
+test("metadata rejects one omitted fixed sample", () => {
+  const page = metadata(); page.timing.samples.pop();
+  assert.throws(() => validateSplitResult(page), /sample count/);
+});
+test("metadata rejects missing fixture input identity", () => {
+  const page = metadata(); delete page.fixtures[0].inputIdentities.X;
+  assert.throws(() => validateSplitResult(page), /input byte count/);
+});
+test("metadata rejects incomplete actual GPU coverage", () => {
+  const page = metadata(); page.timing.samples[1].validation.words[0]--;
+  assert.throws(() => validateSplitResult(page), /GPU status/);
+});
+test("metadata rejects an acceptance decision on a diagnostic result", () => {
+  const page = metadata(); page.timing.summary.accepted = true;
+  assert.throws(() => validateSplitResult(page), /no acceptance/);
+});

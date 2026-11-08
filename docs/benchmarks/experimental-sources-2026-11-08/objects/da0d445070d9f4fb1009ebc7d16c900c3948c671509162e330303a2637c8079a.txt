@@ -1,0 +1,155 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+
+const WORDS = [2686976, 0, 0, 0, 524288, 16384, 0, 512, 0];
+const FIXTURES = { integer: 305419896, dyadic: 2271560481, fractional: 324508639, cancellation: 610839776 };
+const SOURCE_PINS = {
+  helper: { bytes: 12993, sha256: "70e56d7d3ba2053fb46f84573f95647366e694f86950c3f3f1ee1bedc71460eb" },
+  protocol: { bytes: 19823, sha256: "cf1a5470780504b3aa20147f73935f96da08faf0d7d25a177545ec92512f3a39" },
+  baseline: { bytes: 13558, sha256: "0710c1bec14afcf918a2ac6785bc55c6f0ebf6580531ec491621f14a02cbe89c" },
+  reducer: { bytes: 1546, sha256: "0c2b71d87205b4fdae5d0ac63131545ff8f39a36cb5558b0fe80700562e40c3a" },
+  diagnosticProtocol: { bytes: 5151, sha256: "515c52a56a0c000cbd7310384ae1c9391a272f83b6ef6b4cd604d2324915bf81" },
+};
+const median = (values) => {
+  const sorted = [...values].sort((a, b) => a - b), middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+};
+function validation(row, label) {
+  assert.deepEqual(row?.validation?.words, WORDS, `${label}: actual GPU status/coverage differs`);
+  assert.equal(row.validation.passed, true, `${label}: validation did not pass`);
+  assert.equal(row.validation.partUnchanged, true, `${label}: split PART sentinel changed`);
+  assert.deepEqual(row.validation.positiveCoverage, { outputs: 2686976, quantValues: 524288, quantBlocks: 16384, canaries: 512 }, `${label}: coverage summary differs`);
+}
+function decimal(value, signed = false) {
+  assert(typeof value === "string" && (signed ? /^(?:0|-?[1-9]\d*)$/ : /^(?:0|[1-9]\d*)$/).test(value), "raw timestamp/gap is missing or noncanonical");
+  const parsed = BigInt(value);
+  if (!signed) assert(parsed <= 18446744073709551615n, "raw timestamp exceeds u64");
+  return parsed;
+}
+function sample(row, block, index) {
+  const label = `${block}:${index}`;
+  assert.equal(row?.block, block); assert.equal(row.index, index); assert.equal(row.kernel, "candidate");
+  assert.equal(row.invocations, 16); assert.equal(row.passes, 32);
+  assert.deepEqual(row.dispatches, { baseline: 0, quantize: 16, integerMatmul: 16, reduce: 0 }, `${label}: candidate-only dispatch counts differ`);
+  assert.equal(row.rawTimestampNs?.length, 64, `${label}: raw64 timestamp coverage incomplete`);
+  const ticks = row.rawTimestampNs.map((value) => decimal(value)), total = ticks[63] - ticks[0];
+  assert(total > 0n, `${label}: enclosing timestamp span is not positive`);
+  assert.deepEqual(row.timestampNs, { begin: ticks[0].toString(), end: ticks[63].toString(), elapsed: total.toString() });
+  assert.equal(row.stages?.length, 16, `${label}: stage records incomplete`);
+  let quantize = 0n, integerMatmul = 0n, zeroQuantize = 0, zeroInteger = 0;
+  for (let invocation = 0; invocation < 16; invocation++) {
+    const stage = row.stages[invocation]; assert.equal(stage.invocation, invocation);
+    for (const [name, first] of [["quantize", invocation * 4], ["integerMatmul", invocation * 4 + 2]]) {
+      const elapsed = ticks[first + 1] - ticks[first];
+      assert(elapsed >= 0n, `${label}: negative within-pass duration`);
+      const pass = stage[name];
+      assert.equal(pass?.beginIndex, first); assert.equal(pass.endIndex, first + 1);
+      assert.equal(pass.begin, ticks[first].toString()); assert.equal(pass.end, ticks[first + 1].toString());
+      assert.equal(pass.elapsed, elapsed.toString()); assert.equal(pass.gpuMs, Number(elapsed) / 1e6);
+      if (name === "quantize") { quantize += elapsed; if (!elapsed) zeroQuantize++; }
+      else { integerMatmul += elapsed; if (!elapsed) zeroInteger++; }
+    }
+  }
+  assert.equal(row.interPassGapsNs?.length, 31, `${label}: signed gap coverage incomplete`);
+  const gaps = row.interPassGapsNs.map((value, gap) => {
+    const actual = decimal(value, true), expected = ticks[(gap + 1) * 2] - ticks[gap * 2 + 1];
+    assert.equal(actual, expected, `${label}: signed gap was changed or clipped`); return actual;
+  });
+  const residual = total - quantize - integerMatmul;
+  assert.equal(gaps.reduce((sum, gap) => sum + gap, quantize + integerMatmul), total, `${label}: exact timestamp decomposition differs`);
+  assert.deepEqual(row.stageTotalsNs, { quantize: quantize.toString(), integerMatmul: integerMatmul.toString(), residual: residual.toString() });
+  assert.deepEqual(row.stageTotalsMs, { quantize: Number(quantize) / 1e6, integerMatmul: Number(integerMatmul) / 1e6, residual: Number(residual) / 1e6 });
+  assert.deepEqual(row.zeroDurationPasses, { quantize: zeroQuantize, integerMatmul: zeroInteger });
+  assert.equal(row.negativeInterPassGaps, gaps.filter((gap) => gap < 0n).length);
+  assert.equal(row.gpuMs, Number(total) / 1e6); assert(Number.isFinite(row.gpuMs) && row.gpuMs > 0);
+  assert.equal(row.perInvocationMs, row.gpuMs / 16);
+  validation(row, label);
+}
+
+/** Validate only retained metadata. This function never requests GPU work or creates fixtures. */
+export function validateSplitResult(page) {
+  assert.equal(page?.done, true, "page did not reach a terminal state");
+  assert.equal(page.status, "done", `operator did not complete: ${page.error || page.status}`);
+  assert.equal(page.phase, "complete", "page did not complete cleanup");
+  assert.equal(page.error, null, "completed page retains an error");
+  assert.deepEqual(page.errors, [], "completed page retains device/controller errors");
+  assert.equal(page.protocol?.schema, "private-laya-integer-matrix-split-v1");
+  assert.equal(page.protocol.numericProtocol, "private-laya-integer-matrix-v1");
+  assert.deepEqual(page.protocol.shape, { M: 512, N: 5248, K: 1024, block: 32 });
+  assert.equal(page.protocol.repetitions, 16); assert.equal(page.protocol.warmups, 3); assert.equal(page.protocol.samples, 9);
+  assert.equal(page.protocol.candidateOnly, true); assert.equal(page.protocol.queryIndicesPerSample, 64);
+  assert(typeof page.protocol.instrumentationLimitation === "string" && page.protocol.instrumentationLimitation.length > 0);
+  assert.equal(page.protocol.reducerDispatches, 0); assert.equal(page.protocol.modelOrWasmLoads, 0); assert.equal(page.protocol.promotion, false);
+  assert.equal(page.compilation?.length, 7, "compilation coverage incomplete");
+  for (const entry of page.compilation) {
+    const diagnostics = entry.diagnostics;
+    assert(Number.isSafeInteger(diagnostics?.totalMessages) && diagnostics.totalMessages >= 0);
+    assert.equal(diagnostics.totalErrors, 0, "completed page retains native compilation errors");
+    assert(Array.isArray(diagnostics.messages) && diagnostics.messages.length <= 16 && diagnostics.messages.length <= diagnostics.totalMessages);
+    assert.equal(diagnostics.truncated, diagnostics.totalMessages > diagnostics.messages.length || diagnostics.messages.some((message) => message.messageTruncated === true));
+    assert(diagnostics.messages.every((message) => message.type !== "error"), "completed page retains compilation error diagnostics");
+  }
+  for (const [name, expected] of Object.entries(SOURCE_PINS)) {
+    const actual = page.sourceIdentities?.[name];
+    assert.equal(actual?.bytes, expected.bytes, `${name}: emitted source byte count differs`);
+    assert.equal(actual?.sha256, expected.sha256, `${name}: emitted source identity differs`);
+  }
+  const caps = page.capabilities;
+  assert.deepEqual(caps?.config, { componentType: "i8", resultComponentType: "i32", M: 16, N: 16, K: 32 });
+  assert.deepEqual(caps.requiredLimits, {});
+  assert.deepEqual(caps.requestedFeatures, ["subgroups", "chromium-experimental-subgroup-matrix", "timestamp-query"]);
+  assert(Array.isArray(caps.features) && caps.requestedFeatures.every((name) => caps.features.includes(name)) && !caps.features.includes("shader-f16"), "actual device features differ");
+  assert.equal(caps.shaderF16Requested, false);
+  assert.equal(caps.subgroupMinSize, 32); assert.equal(caps.subgroupMaxSize, 32);
+  assert(/nvidia/i.test([caps.adapter?.vendor, caps.adapter?.description].join(" ")) && /blackwell/i.test(caps.adapter?.architecture || ""), "adapter identity differs");
+  const identity = page.adapterIdentity;
+  assert.equal(identity?.nvidia, true); assert.equal(identity.blackwell, true); assert.equal(identity.nonfallback, true); assert.equal(identity.isFallbackAdapter, false);
+  const observedFallback = Object.values(identity.fallbackFlags || {}).filter((value) => value !== null);
+  assert(observedFallback.length > 0 && observedFallback.every((value) => value === false), "nonfallback observation is unavailable or contradictory");
+  assert(caps.deviceLimits?.maxComputeWorkgroupStorageSize >= 16384 && caps.deviceLimits.maxComputeInvocationsPerWorkgroup >= 256 && caps.deviceLimits.maxComputeWorkgroupSizeX >= 256 && caps.deviceLimits.maxStorageBufferBindingSize >= 10748416, "actual default device limits differ");
+  const gate = page.packingGate;
+  assert.equal(gate?.passed, true); assert.equal(gate.outputsCompared, 256); assert.equal(gate.mismatches, 0);
+  assert.equal(gate.guardsCompared, 128); assert.equal(gate.guardFailures, 0); assert.equal(gate.dispatches, 1);
+  assert.equal(gate.positive, 106); assert.equal(gate.negative, 150); assert.equal(gate.zero, 0);
+  assert(Array.isArray(gate.actual) && gate.actual.length === 256 && gate.actual.every((value) => Number.isInteger(value) && value >= -2147483648 && value <= 2147483647), "packing outputs incomplete");
+  const gateHash = createHash("sha256").update(new Uint8Array(new Int32Array(gate.actual).buffer)).digest("hex");
+  assert.equal(gateHash, "498117f912a5f1a4a3a2f6cd8bda7bacd741f38d389ea754e842b8fa463a58b3", "packing output bytes differ from audited CPU reference");
+  assert.equal(gate.actualSha256, gateHash); assert.equal(gate.expectedSha256, gateHash);
+  assert.equal(page.fixtures?.length, 4, "fixture coverage incomplete");
+  for (const [index, [id, seed]] of Object.entries(FIXTURES).entries()) {
+    const row = page.fixtures[index];
+    assert.equal(row.id, id); assert.equal(row.seed, seed); assert.deepEqual(row.shape, [512, 5248, 1024]);
+    assert.equal(row.exact, id === "integer" || id === "dyadic"); assert.equal(row.status, "pass");
+    for (const [name, bytes] of Object.entries({ X: 2097152, W: 5373952, S: 671744 })) {
+      const identity = row.inputIdentities?.[name];
+      assert.equal(identity?.bytes, bytes, `fixture:${id}: ${name} input byte count differs`);
+      assert(typeof identity.sha256 === "string" && /^[a-f0-9]{64}$/.test(identity.sha256), `fixture:${id}: ${name} input SHA256 missing or malformed`);
+    }
+    assert.deepEqual(row.dispatches, { baseline: 1, quantize: 1, integerMatmul: 1, reduce: 0 });
+    validation(row, `fixture:${id}`);
+  }
+  assert.equal(page.warmups?.length, 3, "fixed candidate warmups incomplete");
+  for (let index = 0; index < 3; index++) sample(page.warmups[index], "warmup", index);
+  assert.equal(page.timing?.samples?.length, 9, "fixed diagnostic sample count incomplete");
+  assert.equal(page.timing.aa, undefined, "diagnostic must not contain AA timing");
+  assert.equal(page.timing.paired, undefined, "diagnostic must not contain a baseline comparison");
+  const samples = page.timing.samples, summary = page.timing.summary;
+  for (let index = 0; index < 9; index++) sample(samples[index], "diagnostic", index);
+  assert.equal(summary?.sampleCount, 9); assert.equal(summary.invocationsPerSample, 16);
+  assert.deepEqual(summary.medianStageTotalsMs, { quantize: median(samples.map((row) => row.stageTotalsMs.quantize)),
+    integerMatmul: median(samples.map((row) => row.stageTotalsMs.integerMatmul)), enclosingTotal: median(samples.map((row) => row.gpuMs)) });
+  assert.deepEqual(summary.medianPerInvocationMs, { quantize: median(samples.map((row) => row.stageTotalsMs.quantize / 16)),
+    integerMatmul: median(samples.map((row) => row.stageTotalsMs.integerMatmul / 16)), enclosingTotal: median(samples.map((row) => row.perInvocationMs)) });
+  assert.deepEqual(summary.zeroDurationPasses, { quantize: samples.reduce((sum, row) => sum + row.zeroDurationPasses.quantize, 0),
+    integerMatmul: samples.reduce((sum, row) => sum + row.zeroDurationPasses.integerMatmul, 0) });
+  assert.equal(summary.negativeInterPassGaps, samples.reduce((sum, row) => sum + row.negativeInterPassGaps, 0));
+  assert.equal(summary.accepted, undefined, "diagnostic has no acceptance decision");
+  assert.equal(summary.medianGain, undefined, "diagnostic has no baseline gain");
+  assert.equal(summary.meaning, page.protocol.instrumentationLimitation);
+  const cleanup = page.cleanup;
+  for (const [created, destroyed] of [["buffersCreated", "buffersDestroyed"], ["querySetsCreated", "querySetsDestroyed"]]) {
+    assert(Number.isSafeInteger(cleanup?.[created]) && cleanup[created] > 0); assert.equal(cleanup[destroyed], cleanup[created], `${created}: resource counts differ`);
+  }
+  assert.equal(cleanup.mapsOpen, 0); assert.equal(cleanup.deviceDestroyed, true);
+  return { diagnosticOnly: true, fixtures: 4, warmups: 3, samples: 9, invocationsPerRow: 16, rawIndicesPerRow: 64, numericalGatesPassed: true, medianStageTotalsMs: summary.medianStageTotalsMs, medianPerInvocationMs: summary.medianPerInvocationMs, zeroDurationPasses: summary.zeroDurationPasses, negativeInterPassGaps: summary.negativeInterPassGaps };
+}

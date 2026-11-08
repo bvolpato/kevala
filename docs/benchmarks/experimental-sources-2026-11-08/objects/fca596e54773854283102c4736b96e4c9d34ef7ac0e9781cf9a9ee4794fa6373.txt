@@ -1,0 +1,86 @@
+// Install synchronously in createGpu, before Kevala.load's own warmup can build op groups.
+const check = (value, message) => { if (!value) throw new Error(`Private Clef binding observer: ${message}`); };
+const owners = new WeakMap(), trunkTokens = new WeakMap();
+
+export function attachClefShapeObserver(trunk) {
+  check(!trunk.ops && !Object.hasOwn(trunk, "build") && !Object.hasOwn(trunk, "uni") && !trunkTokens.has(trunk), "must attach before any production build");
+  check(typeof trunk.build === "function" && typeof trunk.uni === "function" && trunk.device, "missing production build/uni/device");
+  const groups = new WeakMap(), uniforms = new WeakMap();
+  const originalBuild = trunk.build, originalUni = trunk.uni, originalDevice = trunk.device;
+  let observing = true, proxyActive = false, alive = true, claimed = false, builds = 0, uniformCount = 0;
+  const token = Object.freeze({ kind: "private-clef-shape-observer", revision: 1 });
+  const wrappedUni = function (values) {
+    check(alive && observing && this === trunk, "uniform observed outside its owned trunk");
+    const buffer = originalUni.call(this, values);
+    uniforms.set(buffer, values.slice()); uniformCount++;
+    return buffer;
+  };
+  const wrappedBuild = function (...args) {
+    check(alive && observing && !proxyActive && this === trunk && this.device === originalDevice, "build entered with a changed owner/device/state");
+    proxyActive = true;
+    this.device = new Proxy(originalDevice, { get(target, key) {
+      if (key === "createBindGroup") return (descriptor) => {
+        const group = target.createBindGroup(descriptor);
+        groups.set(group, [...descriptor.entries].sort((a, b) => a.binding - b.binding).map((entry) => ({ ...entry.resource })));
+        return group;
+      };
+      const value = Reflect.get(target, key, target);
+      return typeof value === "function" ? value.bind(target) : value;
+    } });
+    let result;
+    try { result = originalBuild.apply(this, args); builds++; }
+    finally { this.device = originalDevice; proxyActive = false; }
+    return result;
+  };
+  const assertIntegrity = (expected = observing) => {
+    check(alive && owners.get(token)?.trunk === trunk && trunkTokens.get(trunk) === token, "observer ownership is missing");
+    check(!proxyActive && trunk.device === originalDevice, "temporary build device proxy was not restored");
+    check(observing === expected, "observer mode differs from the request phase");
+    if (observing) check(trunk.build === wrappedBuild && trunk.uni === wrappedUni, "observer methods were replaced");
+    else check(!Object.hasOwn(trunk, "build") && !Object.hasOwn(trunk, "uni") && trunk.build === originalBuild && trunk.uni === originalUni, "original build/uni methods are not active");
+  };
+  const assertCaptured = () => {
+    assertIntegrity(true);
+    check(builds > 0 && Array.isArray(trunk.ops) && trunk.ops.length === 2 && trunk.ops.every(Array.isArray), "load-time production build was not observed");
+    const ops = trunk.ops.flat().filter((op) => op.k === "mm" && !op.finalRows);
+    check(ops.length > 0, "loaded production matmul groups are missing");
+    for (const op of ops) {
+      const source = groups.get(op.group), reduction = groups.get(op.reduce), values = source && uniforms.get(source[1]?.buffer);
+      check(source?.length === 8 && reduction?.length === 5 && values?.length === 4 && values[0] === op.N && values[1] === op.K && [0, 1].includes(values[2]) && values[3] === 0,
+        "loaded production group or uniform metadata was not observed");
+    }
+    return { attachedBeforeBuild: true, observedBuilds: builds, observedUniforms: uniformCount,
+      existingMatmulGroupsValidated: new Set(ops.map((op) => op.group)).size };
+  };
+  const owner = { trunk, groups, uniforms, assertIntegrity, assertCaptured,
+    claim() { assertCaptured(); check(!claimed, "observer token was already claimed"); claimed = true; },
+    assertUnclaimed() { assertCaptured(); check(!claimed, "observer token was already claimed"); },
+    suspend() { assertIntegrity(true); delete trunk.build; delete trunk.uni; observing = false; assertIntegrity(false); },
+    resume() { assertIntegrity(false); trunk.build = wrappedBuild; trunk.uni = wrappedUni; observing = true; assertIntegrity(true); },
+    dispose() {
+      assertIntegrity();
+      if (observing) { delete trunk.build; delete trunk.uni; observing = false; }
+      assertIntegrity(false); alive = false;
+      owners.delete(token); trunkTokens.delete(trunk);
+    },
+  };
+  owners.set(token, owner); trunkTokens.set(trunk, token);
+  trunk.uni = wrappedUni; trunk.build = wrappedBuild;
+  assertIntegrity(true);
+  return token;
+}
+
+export function requireClefShapeObserver(trunk, token) {
+  const owner = token && owners.get(token);
+  check(owner && owner.trunk === trunk && trunkTokens.get(trunk) === token, "requires the exact observer token installed before load-time build");
+  return owner;
+}
+
+export function detachClefShapeObserver(trunk, token) {
+  if (!token || !owners.has(token)) {
+    check(!trunkTokens.has(trunk), "cannot detach a live observer with an unknown token");
+    return false;
+  }
+  requireClefShapeObserver(trunk, token).dispose();
+  return true;
+}

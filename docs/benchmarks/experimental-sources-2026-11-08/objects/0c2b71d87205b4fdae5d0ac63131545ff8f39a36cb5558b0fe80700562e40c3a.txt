@@ -1,0 +1,34 @@
+// Sums the split-K partial tiles of a matmul and applies its epilogue (bias, residual add or
+// ReLU). Paired with the matmul variant of the same row and column tiling.
+// Laya trunk: the per-pass globals every kernel reads.
+struct Globals { T: u32, R: u32, S: u32, _b: u32 }
+@group(0) @binding(0) var<uniform> g: Globals;
+
+struct P { N: u32, K: u32, mode: u32, bias: u32 }
+@group(0) @binding(1) var<uniform> p: P;
+@group(0) @binding(2) var<storage, read> PART: array<f32>;
+@group(0) @binding(3) var<storage, read> B: array<f32>;
+@group(0) @binding(4) var<storage, read_write> Y: array<f32>;
+
+// Split-K: narrow matmuls at short lengths launch too few tiles to fill a GPU (a 1024-wide output
+// at 64 tokens is 16 workgroups), so K is split across up to 8 workgroups whose partial tiles a
+// second pass sums. The host computes the same count (runtime `mm_splits` twin in gpu.js).
+fn mm_splits(T: u32, N: u32, K: u32) -> u32 {
+  let tiles = ((N + 63u) / 64u) * ((T + 63u) / 64u);
+  if (tiles >= (256u * 3u + 3u) / 4u) { return 1u; }
+  return max(1u, min(min(8u, (256u + tiles - 1u) / tiles), K / 128u));
+}
+
+@compute @workgroup_size(256)
+fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+  let T = g.T;
+  let N = p.N;
+  let o = gid.x + gid.y * 65535u * 256u;
+  if (o >= T * N) { return; }
+  let splits = mm_splits(T, N, p.K);
+  var v = 0.0;
+  for (var s = 0u; s < splits; s++) { v += PART[s * T * N + o]; }
+  if (p.bias == 1u) { v += B[o % N]; }
+  if (p.mode == 1u) { v += Y[o]; } else if (p.mode == 2u) { v = max(v, 0.0); }
+  Y[o] = v;
+}

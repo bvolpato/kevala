@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kevala per-engine submission smoke</title>
+  </head>
+  <body>
+    <pre id="status">Loading per-engine submission smoke.</pre>
+    <script type="module" src="./probe.js"></script>
+  </body>
+</html>
