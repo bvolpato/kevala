@@ -1,0 +1,225 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Signed release tag to publish (for example, v0.2.2)"
+        required: true
+        type: string
+      dist_tag:
+        description: "npm dist-tag"
+        required: true
+        default: "latest"
+        type: choice
+        options:
+          - latest
+          - next
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24.21.0
+      - name: Ensure npm supports OIDC trusted publishing
+        run: |
+          set -euo pipefail
+          node --version
+          npm --version
+          if ! node -e 'const [maj, min, pat] = process.argv[1].split(".").map((n) => Number.parseInt(n, 10)); process.exit(maj > 11 || (maj === 11 && (min > 5 || (min === 5 && pat >= 1))) ? 0 : 1)' "$(npm --version)"; then
+            (cd "$RUNNER_TEMP" && npm install --global npm@11.21.0)
+            npm --version
+          fi
+      - name: Verify signed tag and download validated CI package
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_CONFIG_DIR: ${{ runner.temp }}/gh-release-config
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_TAG: ${{ inputs.tag }}
+          INPUT_DIST_TAG: ${{ inputs.dist_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$GH_CONFIG_DIR"
+          chmod 700 "$GH_CONFIG_DIR"
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            release_tag="$INPUT_TAG"
+            dist_tag="$INPUT_DIST_TAG"
+          else
+            release_tag="$REF_NAME"
+            dist_tag="latest"
+          fi
+
+          if [[ ! "$release_tag" =~ ^v([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?)$ ]]; then
+            echo "::error::Invalid release tag '${release_tag}'; expected v<semver>."
+            exit 1
+          fi
+          release_version="${BASH_REMATCH[1]}"
+          if [[ "$release_version" == *-* && "$dist_tag" == "latest" ]]; then
+            echo "::error::Prerelease version '${release_version}' cannot use the 'latest' dist-tag."
+            exit 1
+          fi
+
+          git fetch --no-tags origin "+refs/heads/main:refs/remotes/origin/main" "+refs/tags/${release_tag}:refs/tags/${release_tag}"
+
+          if [[ "$(git cat-file -t "refs/tags/${release_tag}")" != "tag" ]]; then
+            echo "::error::Tag '${release_tag}' must be an annotated signed tag, not a lightweight tag."
+            exit 1
+          fi
+
+          tag_object_sha="$(git rev-parse "refs/tags/${release_tag}")"
+          reviewed_commit_sha="$(git rev-parse "refs/tags/${release_tag}^{commit}")"
+
+          tag_meta="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object_sha}")"
+          verified="$(jq -r '.verification.verified' <<<"$tag_meta")"
+          target_sha="$(jq -r '.object.sha' <<<"$tag_meta")"
+          if [[ "$verified" != "true" ]]; then
+            reason="$(jq -r '.verification.reason // "unknown"' <<<"$tag_meta")"
+            echo "::error::Tag '${release_tag}' (${tag_object_sha}) is not verified on GitHub (reason: ${reason})."
+            exit 1
+          fi
+          if [[ "$target_sha" != "$reviewed_commit_sha" ]]; then
+            echo "::error::Tag '${release_tag}' target mismatch (${target_sha} != ${reviewed_commit_sha})."
+            exit 1
+          fi
+
+          if ! git merge-base --is-ancestor "$reviewed_commit_sha" refs/remotes/origin/main; then
+            echo "::error::Tagged commit ${reviewed_commit_sha} is not on origin/main."
+            exit 1
+          fi
+
+          git checkout --detach "$reviewed_commit_sha"
+
+          manifest_version="$(jq -r '.version' package.json)"
+          if [[ "$manifest_version" != "$release_version" ]]; then
+            echo "::error::package.json version '${manifest_version}' does not match tag '${release_tag}'."
+            exit 1
+          fi
+
+          ci_run_id=""
+          for poll in {1..30}; do
+            runs_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/ci.yml/runs?head_sha=${reviewed_commit_sha}&per_page=20")"
+            ci_run_id="$(jq -r '[.workflow_runs[] | select(.status == "completed" and .conclusion == "success" and .head_branch == "main" and (.event == "push" or .event == "workflow_dispatch"))][0].id // empty' <<<"$runs_json")"
+            if [[ -n "$ci_run_id" ]]; then
+              break
+            fi
+            in_progress="$(jq -r '[.workflow_runs[] | select(.status != "completed" and .head_branch == "main" and (.event == "push" or .event == "workflow_dispatch"))] | length' <<<"$runs_json")"
+            if [[ "$in_progress" -gt 0 && "$poll" -lt 30 ]]; then
+              echo "Waiting for CI run on ${reviewed_commit_sha} to complete (poll ${poll}/30)..."
+              sleep 20
+              continue
+            fi
+            break
+          done
+
+          if [[ -z "$ci_run_id" ]]; then
+            echo "::error::No successful ci.yml run found for commit ${reviewed_commit_sha}."
+            exit 1
+          fi
+
+          package_dir="${RUNNER_TEMP}/kevala-release-package"
+          rm -rf "$package_dir"
+          mkdir -p "$package_dir"
+          gh run download "$ci_run_id" --repo "$GITHUB_REPOSITORY" --name "package-${reviewed_commit_sha}" --dir "$package_dir"
+
+          package_tarball="${package_dir}/kevala-${release_version}.tgz"
+          if [[ ! -f "$package_tarball" ]]; then
+            echo "::error::Expected tarball '${package_tarball}' was not found in artifact package-${reviewed_commit_sha}."
+            exit 1
+          fi
+
+          node scripts/check-package.mjs "$package_tarball"
+
+          expected_integrity="sha512-$(openssl dgst -sha512 -binary "$package_tarball" | openssl base64 -A)"
+          expected_sha256="$(sha256sum "$package_tarball" | awk '{print $1}')"
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "release_version=${release_version}"
+            echo "dist_tag=${dist_tag}"
+            echo "reviewed_commit_sha=${reviewed_commit_sha}"
+            echo "ci_run_id=${ci_run_id}"
+            echo "package_tarball=${package_tarball}"
+            echo "expected_integrity=${expected_integrity}"
+            echo "expected_sha256=${expected_sha256}"
+          } >> "$GITHUB_OUTPUT"
+      - name: Publish validated tarball to npm
+        env:
+          PACKAGE_TARBALL: ${{ steps.resolve.outputs.package_tarball }}
+          DIST_TAG: ${{ steps.resolve.outputs.dist_tag }}
+        run: |
+          set -euo pipefail
+          npm publish "$PACKAGE_TARBALL" --access public --tag "$DIST_TAG"
+      - name: Verify npm registry readback
+        env:
+          RELEASE_VERSION: ${{ steps.resolve.outputs.release_version }}
+          REVIEWED_COMMIT_SHA: ${{ steps.resolve.outputs.reviewed_commit_sha }}
+          EXPECTED_INTEGRITY: ${{ steps.resolve.outputs.expected_integrity }}
+          EXPECTED_SHA256: ${{ steps.resolve.outputs.expected_sha256 }}
+          CI_RUN_ID: ${{ steps.resolve.outputs.ci_run_id }}
+        run: |
+          set -euo pipefail
+          registry_json=""
+          for poll in {1..18}; do
+            if out="$(npm view "kevala@${RELEASE_VERSION}" version gitHead dist.integrity dist.tarball --json 2>/dev/null)" && [[ -n "$out" ]]; then
+              published_version="$(jq -r '.version // empty' <<<"$out" 2>/dev/null || true)"
+              if [[ "$published_version" == "$RELEASE_VERSION" ]]; then
+                registry_json="$out"
+                break
+              fi
+            fi
+            if [[ "$poll" -lt 18 ]]; then
+              sleep 5
+            fi
+          done
+
+          if [[ -z "$registry_json" ]]; then
+            echo "::error::Timed out waiting for kevala@${RELEASE_VERSION} to appear on npm."
+            exit 1
+          fi
+
+          published_version="$(jq -r '.version // empty' <<<"$registry_json")"
+          published_integrity="$(jq -r '.["dist.integrity"] // .dist.integrity // empty' <<<"$registry_json")"
+          published_git_head="$(jq -r '.gitHead // empty' <<<"$registry_json")"
+          published_tarball="$(jq -r '.["dist.tarball"] // .dist.tarball // empty' <<<"$registry_json")"
+
+          if [[ "$published_version" != "$RELEASE_VERSION" ]]; then
+            echo "::error::npm readback version '${published_version}' did not match '${RELEASE_VERSION}'."
+            exit 1
+          fi
+          if [[ "$published_integrity" != "$EXPECTED_INTEGRITY" ]]; then
+            echo "::error::npm readback integrity '${published_integrity}' did not match '${EXPECTED_INTEGRITY}'."
+            exit 1
+          fi
+          if [[ -n "$published_git_head" && "$published_git_head" != "$REVIEWED_COMMIT_SHA" ]]; then
+            echo "::error::npm readback gitHead '${published_git_head}' did not match '${REVIEWED_COMMIT_SHA}'."
+            exit 1
+          fi
+
+          echo "Verified kevala@${RELEASE_VERSION} on npm:"
+          echo "  commit:    ${REVIEWED_COMMIT_SHA}"
+          echo "  ci_run_id: ${CI_RUN_ID}"
+          echo "  sha256:    ${EXPECTED_SHA256}"
+          echo "  integrity: ${published_integrity}"
+          echo "  tarball:   ${published_tarball}"
