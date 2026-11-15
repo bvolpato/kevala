@@ -4,6 +4,7 @@ Start with [How kevala works](architecture.md). The guides describe the current 
 
 ## Release notes
 
+- [Kevala 0.2.2](releases/0.2.2.md)
 - [Kevala 0.2.1](releases/0.2.1.md)
 - [Kevala 0.2.0](releases/0.2.0.md)
 
@@ -41,6 +42,13 @@ Reports distinguish retained changes from rejected experiments and reference mea
 
 | Report | Kernel |
 |---|---|
+| [Clef GPU kernel profile](clef-gpu-kernel-profile.md) | Per-request Clef GPU timestamps, subgroup-matrix metadata probe, and signed i8 packing gate |
+| [Clef head route diagnostic](clef-head-route-diagnostic.md) | Validated GPU Clef head route events and Dawn F16 capability metadata |
+| [Host follow-up experiments](host-followup-experiments.md) | Rejected Laya GEGLU and Kev Q8 epilogues, Q8 panel controls, and K64 tiling screen |
+| [Scoped Ryzen AVX-512 dispatch](native-avx512-dispatch.md) | CPUID-gated four-row linear specialization, compiler bounds, and exactness gates |
+| [Native AVX-512 performance](native-avx512-performance.md) | Paired CLI timings and identical-build A/A controls on Ryzen 9 9950X3D |
+| [Kev-9B BF16 short and medium profile](kev9-bf16-profile.md) | Resident WebGPU timings for short and medium Kev-9B BF16 requests |
+| [Smaller GPU carries with state cache disabled](gpu-cache-memory.md) | Explicit carry buffer savings when `stateCache: false` omits retained cache slots |
 | [Firefox submission policies](firefox-submission-performance.md) | Explicit await/split comparison on one resident Laya Q8 engine, exact outputs, and headless scope |
 | [Native AVX2 matrix projections](native-linear-performance.md) | Runtime dispatch, exact-output checks, bulk and small-shape controls, and paired native CLI requests |
 | [Native AVX2 2×4 packing](native-2x4-performance.md) | Wider packing with unchanged accumulation order, exact responses, paired model timings and slower controls |
